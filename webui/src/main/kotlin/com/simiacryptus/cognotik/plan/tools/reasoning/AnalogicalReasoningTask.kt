@@ -2,13 +2,16 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class AnalogicalReasoningTask(
     orchestrationConfig: OrchestrationConfig,
@@ -105,123 +108,235 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+        val startTime = System.currentTimeMillis()
+        log.info("Starting AnalogicalReasoningTask with source_domain='${executionConfig?.source_domain}', target_problem='${executionConfig?.target_problem}', num_analogies=${executionConfig?.num_analogies ?: 3}")
+
         val sourceDomain = executionConfig?.source_domain
         val targetProblem = executionConfig?.target_problem
         val numAnalogies = executionConfig?.num_analogies ?: 3
         val validateMappings = executionConfig?.validate_mappings ?: true
 
         if (sourceDomain.isNullOrBlank() || targetProblem.isNullOrBlank()) {
+            log.error("Configuration error: source_domain or target_problem is blank")
             resultFn("CONFIGURATION ERROR: Both source_domain and target_problem must be specified")
             return
         }
 
-        val newTask = task.ui.newTask(false)
+        log.info("Configuration validated successfully")
+
+        val tabs = TabbedDisplay(task)
         val ui = task.ui
         val api = orchestrationConfig.defaultChatter
 
-        newTask.add(
-            MarkdownUtil.renderMarkdown(
-                """
-                |## Analogical Reasoning Task
-                |
-                |**Source Domain:** $sourceDomain
-                |
-                |**Target Problem:** $targetProblem
-                |
-                |**Number of Analogies:** $numAnalogies
-                |
-                |**Validation:** ${if (validateMappings) "Enabled" else "Disabled"}
-                """.trimMargin(),
-                ui = ui
-            )
-        )
+        // Create overview tab
+        val overviewTask = task.ui.newTask(false)
+        tabs["Overview"] = overviewTask.placeholder
+        val overviewContent = buildString {
+            appendLine("# Analogical Reasoning Task")
+            appendLine()
+            appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+            appendLine()
+            appendLine("## Configuration")
+            appendLine()
+            appendLine("| Parameter | Value |")
+            appendLine("|-----------|-------|")
+            appendLine("| Source Domain | $sourceDomain |")
+            appendLine("| Target Problem | $targetProblem |")
+            appendLine("| Number of Analogies | $numAnalogies |")
+            appendLine("| Validation | ${if (validateMappings) "✓ Enabled" else "✗ Disabled"} |")
+            appendLine()
+            appendLine("## Progress")
+            appendLine()
+            appendLine("- ⏳ Gathering context...")
+        }
+        overviewTask.add(overviewContent.renderMarkdown)
+        task.update()
 
+        log.debug("Gathering prior context and related files")
         val priorContext = getPriorCode(agent.executionState)
         val contextFiles = getContextFiles()
+        // Update overview with context info
+        overviewTask.add(buildString {
+            appendLine()
+            appendLine("- ✓ Context gathered")
+            appendLine("- ⏳ Generating analogies...")
+        }.renderMarkdown)
+        task.update()
 
         // Step 1: Generate analogies
+        log.info("Starting analogy generation phase")
+        val analogiesTask = task.ui.newTask(false)
+        tabs["Analogy Generation"] = analogiesTask.placeholder
+        analogiesTask.add(buildString {
+            appendLine("# Generating Analogies")
+            appendLine()
+            appendLine("**Status:** In Progress")
+            appendLine()
+            appendLine("Generating $numAnalogies analogies from the source domain...")
+        }.renderMarkdown)
+        task.update()
+
         val analogiesPrompt = """
-You are an expert in analogical reasoning and creative problem-solving.
+ You are an expert in analogical reasoning and creative problem-solving.
 
-## Task
-Generate $numAnalogies high-quality analogies from the source domain to help solve the target problem.
+ ## Task
+ Generate $numAnalogies high-quality analogies from the source domain to help solve the target problem.
 
-## Source Domain
-$sourceDomain
+ ## Source Domain
+ $sourceDomain
 
-## Target Problem
-$targetProblem
+ ## Target Problem
+ $targetProblem
 
-## Additional Context
-$priorContext
+ ## Additional Context
+ $priorContext
 
-$contextFiles
+ $contextFiles
 
-## Instructions
-For each analogy:
-1. Identify a relevant concept, pattern, or system from the source domain
-2. Explain the concept clearly with its key characteristics
-3. Map the structural relationships to the target problem
-4. Identify specific insights this analogy provides
-5. Suggest concrete solutions or approaches based on the analogy
-6. Assess your confidence in the analogy's validity (0-1)
+ ## Instructions
+ For each analogy:
+ 1. Identify a relevant concept, pattern, or system from the source domain
+ 2. Explain the concept clearly with its key characteristics
+ 3. Map the structural relationships to the target problem
+ 4. Identify specific insights this analogy provides
+ 5. Suggest concrete solutions or approaches based on the analogy
+ 6. Assess your confidence in the analogy's validity (0-1)
 
-Focus on:
+ Focus on:
 - Deep structural similarities, not superficial resemblances
 - Actionable insights and solutions
 - Novel perspectives that challenge conventional thinking
 - Clear mapping between source and target concepts
 
-Generate the analogies now.
+ Generate the analogies now.
         """.trimIndent()
 
         val analogyParser = ParsedAgent(
             resultClass = AnalogicalReasoningResult::class.java,
             prompt = analogiesPrompt,
-            model = api!!,
+            model = api,
             temperature = 0.7,
             name = "AnalogicalReasoning",
             parsingModel = orchestrationConfig.parsingChatter,
         )
 
         var result: AnalogicalReasoningResult? = null
-        Retryable(newTask, newTask.ui) { sb ->
+        Retryable(analogiesTask, analogiesTask.ui) { sb ->
+            log.debug("Calling analogy parser API")
             result = analogyParser.answer(listOf(analogiesPrompt)).obj
+            log.info("Successfully generated ${result?.analogies?.size ?: 0} analogies")
             sb.append("Analogies generated")
             sb.toString()
         }
 
         if (result == null) {
+            log.error("Failed to generate analogies after retries")
+            analogiesTask.error(RuntimeException("Failed to generate analogies"))
+            overviewTask.add(buildString {
+                appendLine()
+                appendLine("- ✗ Analogy generation failed")
+            }.renderMarkdown)
+            task.update()
             resultFn("ERROR: Failed to generate analogies")
             return
         }
+        // Display generated analogies
+        analogiesTask.add(buildString {
+            appendLine()
+            appendLine("---")
+            appendLine()
+            appendLine("# Generated Analogies")
+            appendLine()
+            appendLine("**Status:** ✓ Complete")
+            appendLine()
+            appendLine("**Total Analogies:** ${result.analogies.size}")
+            appendLine()
+            result.analogies.forEachIndexed { index, analogy ->
+                appendLine("## ${index + 1}. ${analogy.title}")
+                appendLine()
+                appendLine("**Confidence:** ${String.format("%.1f%%", analogy.confidence * 100)}")
+                appendLine()
+                appendLine("### Source Concept")
+                appendLine(analogy.source_description)
+                appendLine()
+                appendLine("### Application")
+                appendLine(analogy.application)
+                appendLine()
+                appendLine("### Key Mappings (${analogy.mappings.size})")
+                analogy.mappings.take(3).forEach { mapping ->
+                    appendLine("- **${mapping.source_concept}** → **${mapping.target_concept}**")
+                    appendLine("  - ${mapping.mapping_rationale}")
+                }
+                if (analogy.mappings.size > 3) {
+                    appendLine("- *...and ${analogy.mappings.size - 3} more mappings*")
+                }
+                appendLine()
+                appendLine("### Insights (${analogy.insights.size})")
+                analogy.insights.take(3).forEach { appendLine("- $it") }
+                if (analogy.insights.size > 3) {
+                    appendLine("- *...and ${analogy.insights.size - 3} more insights*")
+                }
+                appendLine()
+                appendLine("---")
+                appendLine()
+            }
+        }.renderMarkdown)
+        task.update()
+        // Update overview
+        overviewTask.add(buildString {
+            appendLine()
+            appendLine("- ✓ Generated ${result.analogies.size} analogies")
+            if (validateMappings) {
+                appendLine("- ⏳ Validating mappings...")
+            }
+        }.renderMarkdown)
+        task.update()
 
         // Step 2: Validate mappings if requested
         if (validateMappings) {
-            val validationPrompt = """
- Review the following analogies and validate their structural coherence.
+            log.info("Starting mapping validation phase")
+            val validationTask = task.ui.newTask(false)
+            tabs["Validation"] = validationTask.placeholder
+            validationTask.add(buildString {
+                appendLine("# Mapping Validation")
+                appendLine()
+                appendLine("**Status:** In Progress")
+                appendLine()
+                appendLine("Validating structural coherence of ${result.analogies.size} analogies...")
+                appendLine()
+                appendLine("## Validation Criteria")
+                appendLine()
+                appendLine("1. ✓ Structural relationship parallelism")
+                appendLine("2. ✓ Mapping consistency and coherence")
+                appendLine("3. ✓ Logical derivation of insights")
+                appendLine("4. ✓ Absence of logical fallacies")
+            }.renderMarkdown)
+            task.update()
 
- ## Analogies
+            val validationPrompt = """
+Review the following analogies and validate their structural coherence.
+
+## Analogies
  ${
-                result!!.analogies.joinToString("\n\n") { analogy ->
+                result.analogies.joinToString("\n\n") { analogy ->
                     """
- ### ${analogy.title}
- **Source:** ${analogy.source_description}
- **Application:** ${analogy.application}
- **Mappings:**
- ${analogy.mappings.joinToString("\n") { "- ${it.source_concept} → ${it.target_concept}: ${it.mapping_rationale}" }}
- **Confidence:** ${analogy.confidence}
+### ${analogy.title}
+**Source:** ${analogy.source_description}
+**Application:** ${analogy.application}
+**Mappings:**
+${analogy.mappings.joinToString("\n") { "- ${it.source_concept} → ${it.target_concept}: ${it.mapping_rationale}" }}
+**Confidence:** ${analogy.confidence}
     """.trim()
                 }
             }
 
- ## Validation Criteria
- 1. Are the structural relationships truly parallel?
- 2. Are the mappings consistent and coherent?
- 3. Do the insights follow logically from the mappings?
- 4. Are there any logical fallacies or weak connections?
+## Validation Criteria
+1. Are the structural relationships truly parallel?
+2. Are the mappings consistent and coherent?
+3. Do the insights follow logically from the mappings?
+4. Are there any logical fallacies or weak connections?
 
- Provide a brief validation assessment.
+Provide a brief validation assessment.
             """.trimIndent()
 
             val validationAgent = ChatAgent(
@@ -231,73 +346,155 @@ Generate the analogies now.
             )
 
             var validationResult = ""
-            Retryable(newTask, newTask.ui) { sb ->
+            Retryable(validationTask, validationTask.ui) { sb ->
+                log.debug("Calling validation API")
                 validationResult = validationAgent.answer(listOf(validationPrompt))
+                log.info("Validation completed successfully")
                 sb.append(validationResult)
                 sb.toString()
             }
 
             result = result!!.copy(validation_notes = validationResult)
+            // Display validation results
+            validationTask.add(buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("# Validation Results")
+                appendLine()
+                appendLine("**Status:** ✓ Complete")
+                appendLine()
+                appendLine(validationResult)
+            }.renderMarkdown)
+            task.update()
+            // Update overview
+            overviewTask.add(buildString {
+                appendLine()
+                appendLine("- ✓ Validation completed")
+                appendLine("- ⏳ Synthesizing results...")
+            }.renderMarkdown)
+            task.update()
         }
 
         // Step 3: Format and display results
-        val formattedResult = formatAnalogicalReasoningResult(result!!)
 
-        newTask.add(MarkdownUtil.renderMarkdown(formattedResult, ui = ui))
+        log.info("Formatting and displaying final results")
+        val synthesisTask = task.ui.newTask(false)
+        tabs["Synthesis & Recommendations"] = synthesisTask.placeholder
+
+        val formattedResult = formatAnalogicalReasoningResult(result)
+        synthesisTask.add(formattedResult.renderMarkdown)
+        task.update()
 
         val resultText = buildString {
             appendLine("# Analogical Reasoning Results")
             appendLine()
-            appendLine("## Source Domain: $sourceDomain")
-            appendLine("## Target Problem: $targetProblem")
+            appendLine("**Source Domain:** $sourceDomain")
+            appendLine("**Target Problem:** $targetProblem")
             appendLine()
 
-            result!!.analogies.forEachIndexed { index, analogy ->
-                appendLine("### Analogy ${index + 1}: ${analogy.title}")
+            result.analogies.forEachIndexed { index, analogy ->
                 appendLine()
-                appendLine("**Source Description:**")
                 appendLine(analogy.source_description)
                 appendLine()
-                appendLine("**Application to Target:**")
                 appendLine(analogy.application)
                 appendLine()
-                appendLine("**Key Mappings:**")
                 analogy.mappings.forEach { mapping ->
-                    appendLine("- ${mapping.source_concept} → ${mapping.target_concept}")
-                    appendLine("  - Rationale: ${mapping.mapping_rationale}")
                 }
                 appendLine()
-                appendLine("**Insights:**")
                 analogy.insights.forEach { appendLine("- $it") }
                 appendLine()
-                appendLine("**Suggested Solutions:**")
                 analogy.suggested_solutions.forEach { appendLine("- $it") }
                 appendLine()
-                appendLine("**Confidence:** ${analogy.confidence}")
                 appendLine()
             }
 
-            appendLine("## Synthesized Insights")
-            result!!.synthesized_insights.forEach { appendLine("- $it") }
+
+            appendLine("## Key Insights")
+            result.synthesized_insights.forEach { appendLine("- $it") }
             appendLine()
 
             appendLine("## Recommended Approach")
-            appendLine(result!!.recommended_approach)
+            appendLine(result.recommended_approach)
 
-            if (result!!.validation_notes != null) {
+            if (result.validation_notes != null) {
                 appendLine()
-                appendLine("## Validation Notes")
-                appendLine(result!!.validation_notes)
+                appendLine(result.validation_notes)
+                appendLine()
+
+                appendLine("## Summary")
+                appendLine(
+                    "Generated ${result.analogies.size} analogies with average confidence of ${
+                        String.format(
+                            "%.1f%%",
+                            result.analogies.map { it.confidence }.average() * 100
+                        )
+                    }"
+                )
+                appendLine()
+                appendLine("*See the Synthesis & Recommendations tab for detailed analysis*")
             }
         }
 
-        newTask.complete(MarkdownUtil.renderMarkdown("✓ Analogical reasoning completed successfully", ui = ui))
+        // Final overview update
+        val totalTime = System.currentTimeMillis() - startTime
+        overviewTask.add(buildString {
+            appendLine()
+            appendLine("- ✓ Synthesis completed")
+            appendLine()
+            appendLine("## Summary")
+            appendLine()
+            appendLine("| Metric | Value |")
+            appendLine("|--------|-------|")
+            appendLine("| Total Analogies | ${result.analogies.size} |")
+            appendLine(
+                "| Average Confidence | ${
+                    String.format(
+                        "%.1f%%",
+                        result.analogies.map { it.confidence }.average() * 100
+                    )
+                } |"
+            )
+            appendLine("| Synthesized Insights | ${result.synthesized_insights.size} |")
+            appendLine("| Validation | ${if (validateMappings) "✓ Performed" else "✗ Skipped"} |")
+            appendLine("| Total Time | ${totalTime / 1000}s |")
+            appendLine()
+            appendLine("**Status:** ✓ Complete")
+        }.renderMarkdown)
+        task.update()
+
+        log.info(
+            "AnalogicalReasoningTask completed successfully: total_time=${totalTime}ms, analogies=${result.analogies.size}, avg_confidence=${
+                result.analogies.map { it.confidence }.average()
+            }"
+        )
+        task.complete("Completed in ${totalTime / 1000} seconds with ${result.analogies.size} analogies generated.")
         resultFn(resultText)
     }
 
     private fun formatAnalogicalReasoningResult(result: AnalogicalReasoningResult): String {
         return buildString {
-            appendLine("## Generated Analogies")
+            appendLine("# Synthesis & Recommendations")
+            appendLine()
+            appendLine("## Cross-Analogy Synthesis")
+            appendLine()
+            appendLine("### Key Insights")
+            appendLine()
+            result.synthesized_insights.forEach { appendLine("- $it") }
+            appendLine()
+            appendLine("### Recommended Approach")
+            appendLine()
+            appendLine(result.recommended_approach)
+            appendLine()
+            if (result.validation_notes != null) {
+                appendLine("### Validation Assessment")
+                appendLine()
+                appendLine(result.validation_notes)
+                appendLine()
+            }
+            appendLine("---")
+            appendLine()
+            appendLine("## Detailed Analogy Breakdown")
             appendLine()
 
             result.analogies.forEachIndexed { index, analogy ->
@@ -346,27 +543,19 @@ Generate the analogies now.
                 appendLine()
             }
 
-            appendLine("## Cross-Analogy Synthesis")
             appendLine()
-            result.synthesized_insights.forEach { appendLine("- $it") }
             appendLine()
 
             appendLine("## Recommended Approach")
             appendLine()
-            appendLine(result.recommended_approach)
 
-            if (result.validation_notes != null) {
-                appendLine()
-                appendLine("## Validation Assessment")
-                appendLine()
-                appendLine(result.validation_notes)
-            }
         }
     }
 
     private fun getContextFiles(): String {
         val relatedFiles = executionConfig?.related_files ?: return ""
         if (relatedFiles.isEmpty()) return ""
+        log.debug("Loading ${relatedFiles.size} related context files")
 
         return buildString {
             appendLine("## Related Files Context")
@@ -375,11 +564,14 @@ Generate the analogies now.
                 try {
                     val filePath = root.resolve(file)
                     if (filePath.toFile().exists()) {
+                        log.debug("Successfully loaded context file: $file")
                         appendLine("### $file")
                         appendLine("```")
                         appendLine(filePath.toFile().readText())
                         appendLine("```")
                         appendLine()
+                    } else {
+                        log.warn("Context file not found: $file")
                     }
                 } catch (e: Exception) {
                     log.warn("Error reading file: $file", e)

@@ -10,7 +10,7 @@ import kotlin.io.path.name
 object FileSelectionUtils {
     val log = LoggerFactory.getLogger(FileSelectionUtils::class.java)
 
-    fun filteredWalkAsciiTree(
+fun filteredWalkAsciiTree(
         rootFile: File,
         maxFilesPerDir: Int = 20,
         treatDocumentsAsText: Boolean = false,
@@ -18,17 +18,12 @@ object FileSelectionUtils {
     ): String {
         val sb = StringBuilder()
         val filterFn = if (treatDocumentsAsText) {
-            { file: File -> fn(file) || isDocumentFile(file) }
+            { file: File -> fn(file) && isDocumentFile(file) }
         } else fn
         if (!filterFn(rootFile)) {
             log.debug("Skipping root file for tree: ${rootFile.absolutePath}")
             return "" // Root itself doesn't match, so empty tree
         }
-        sb.append(rootFile.name)
-        if (rootFile.isDirectory) {
-            sb.append("/")
-        }
-        sb.appendLine()
         if (rootFile.isDirectory) {
             val children = rootFile.listFiles()?.toList() ?: emptyList()
             val entriesToConsider = children.take(maxFilesPerDir)
@@ -38,6 +33,10 @@ object FileSelectionUtils {
                     index == entriesToConsider.size - 1, maxFilesPerDir, filterFn, sb
                 )
             }
+        } else {
+            // If rootFile is not a directory, just show its name
+            sb.append(rootFile.name)
+            sb.appendLine()
         }
         return sb.toString()
     }
@@ -328,7 +327,7 @@ object FileSelectionUtils {
     private fun isIgnored(path: Path, ignoreFileName: String, markerFileName: String): Boolean {
         // Check common ignored directories
         when (path.name) {
-            "node_modules", "target", "build", ".gradle", "dist", "out" -> return true
+            "node_modules", "target", "build", ".gradle", "dist", "out", ".logs" -> return true
             ".git" -> return markerFileName == ".git" // Only ignore .git for gitignore
         }
 

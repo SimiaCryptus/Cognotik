@@ -19,10 +19,21 @@ import java.nio.file.FileSystems
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
-class AnalysisTask(
+ class AnalysisTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: AnalysisTaskExecutionConfigData?
-) : AbstractTask<AnalysisTask.AnalysisTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+) : AbstractTask<AnalysisTask.AnalysisTaskExecutionConfigData, AnalysisTask.AnalysisTaskTypeConfig>(orchestrationConfig, planTask) {
+    
+    class AnalysisTaskTypeConfig(
+        @Description("Enable non-interactive mode to skip user feedback and iteration")
+        val non_interactive: Boolean = true,
+        task_type: String? = Analysis.name,
+        name: String? = null
+    ) : TaskTypeConfig(
+        task_type = task_type,
+        name = name
+    )
+    
     class AnalysisTaskExecutionConfigData(
         @Description("The specific questions or topics to be addressed in the inquiry")
         val inquiry_questions: List<String>? = null,
@@ -42,21 +53,24 @@ class AnalysisTask(
         state = state
     )
 
-    override fun promptSegment() = (if (!orchestrationConfig.autoFix) """
-Analysis - Directly answer questions or provide insights using the LLM. Reading files is optional and can be included if relevant to the inquiry.
-  * Specify the questions and the goal of the inquiry.
-  * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
-  * User response/feedback and iteration are supported.
-  * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
-""" else """
-Analysis - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
-  * Specify the questions and the goal of the inquiry.
-  * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
-  * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
-""") + """
-Available files:
-${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
-"""
+    override fun promptSegment(): String {
+        val availableFiles = getAvailableFiles(root)
+        return (if (!orchestrationConfig.autoFix) """
+    Analysis - Directly answer questions or provide insights using the LLM. Reading files is optional and can be included if relevant to the inquiry.
+      * Specify the questions and the goal of the inquiry.
+      * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
+      * User response/feedback and iteration are supported.
+      * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
+    """ else """
+    Analysis - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
+      * Specify the questions and the goal of the inquiry.
+      * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
+      * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
+    """) + """
+    Available files:
+    ${availableFiles.joinToString("\n") { "  - $it" }}
+    """
+    }
 
     override fun run(
         agent: TaskOrchestrator,
@@ -87,64 +101,73 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                 ?: this.orchestrationConfig.defaultChatter).getChildClient(task),
             temperature = this.orchestrationConfig.temperature,
         )
-        val inquiryResult = if (!orchestrationConfig.autoFix) Discussable(
-            task = task,
-            userMessage = {
-                "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
-                    taskConfig?.inquiry_questions?.joinToString(
-                        "\n"
+        val inquiryResult = if (orchestrationConfig.autoFix || typeConfig.non_interactive)
+            insightActor.answer(
+                toInput(
+                    "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
+                        taskConfig?.inquiry_questions?.joinToString(
+                            "\n"
+                        )
+                    }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
+                ),
+            ).apply {
+                task.add(MarkdownUtil.renderMarkdown(this, ui = task.ui))
+            }
+        else
+            Discussable(
+                task = task,
+                userMessage = {
+                    "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
+                        taskConfig?.inquiry_questions?.joinToString(
+                            "\n"
+                        )
+                    }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
+                },
+                heading = "",
+                initialResponse = { it: String -> insightActor.answer(toInput(it)) },
+                outputFn = { design: String ->
+                    MarkdownUtil.renderMarkdown(design)
+                },
+                reviseResponse = { usermessages: List<Pair<String, Role>> ->
+                    val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
+                        taskConfig?.inquiry_questions?.joinToString("\n")
+                    }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
+                    val messages = usermessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
+                        .toTypedArray<ModelSchema.ChatMessage>()
+                    insightActor.respond(
+                        messages = messages,
+                        input = toInput(inStr),
                     )
-                }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
-            },
-            heading = "",
-            initialResponse = { it: String -> insightActor.answer(toInput(it)) },
-            outputFn = { design: String ->
-                MarkdownUtil.renderMarkdown(design, ui = task.ui)
-            },
-            reviseResponse = { usermessages: List<Pair<String, Role>> ->
-                val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
-                    taskConfig?.inquiry_questions?.joinToString("\n")
-                }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
-                val messages = usermessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
-                    .toTypedArray<ModelSchema.ChatMessage>()
-                insightActor.respond(
-                    messages = messages,
-                    input = toInput(inStr),
-                )
-            },
-            atomicRef = AtomicReference(),
-            semaphore = Semaphore(0),
-        ).call() else insightActor.answer(
-            toInput(
-                "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
-                    taskConfig?.inquiry_questions?.joinToString(
-                        "\n"
-                    )
-                }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
-            ),
-        ).apply {
-            task.add(MarkdownUtil.renderMarkdown(this, ui = task.ui))
-        }
+                },
+                atomicRef = AtomicReference(),
+                semaphore = Semaphore(0),
+            ).call()
         resultFn(inquiryResult ?: "(no response)")
     }
 
-    private fun getInputFileCode(): String =
-        ((executionConfig?.input_files ?: listOf()))
+    private fun getInputFileCode(): String {
+        val strings = executionConfig?.input_files ?: listOf()
+        val flatMap = strings
             .flatMap { pattern: String ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-                listOf(FileSelectionUtils.filteredWalkAsciiTree(root.toFile()) {
+                (FileSelectionUtils.filteredWalk(root.toFile()) {
                     //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
                     when {
                         FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
                         matcher.matches(root.relativize(it.toPath())) -> true
+                        it.isDirectory -> true
                         else -> false
                     }
                 })
             }
+        val filter = flatMap.filter { file ->
+            file.isFile && file.exists()
+        }
+        return filter
             .distinct()
             .sortedBy { it }
             .joinToString("\n\n") { relativePath ->
-                val file = root.resolve(relativePath).toFile()
+                val file = root.toFile().resolve(relativePath)
                 try {
                     val content = if (executionConfig?.extractContent == true && !isTextFile(file)) {
                         extractDocumentContent(file)
@@ -157,6 +180,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                     ""
                 }
             }
+    }
 
     private fun isTextFile(file: File): Boolean {
         val textExtensions = setOf(
@@ -204,11 +228,11 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(AnalysisTask::class.java)
+private val log = LoggerFactory.getLogger(AnalysisTask::class.java)
         val Analysis = TaskType(
             "Analysis",
             AnalysisTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
+            AnalysisTaskTypeConfig::class.java,
             "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
             """
             Provides direct answers and insights using the LLM, optionally referencing project files.

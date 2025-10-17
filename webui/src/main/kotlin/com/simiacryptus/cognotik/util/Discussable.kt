@@ -99,7 +99,7 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
         design: T,
         feedbackSB: StringBuilder,
         feedbackTask: SessionTask,
-    ) = task.ui.hrefLink("Accept", classname = "href-link cmd-button") {
+    ) = task.hrefLink("Accept", classname = "href-link cmd-button") {
         log.info("Accept link clicked for tabIndex: $tabIndex")
         feedbackSB.clear()
         feedbackTask.complete()
