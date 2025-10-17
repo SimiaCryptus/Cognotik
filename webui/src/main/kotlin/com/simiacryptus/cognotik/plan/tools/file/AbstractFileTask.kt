@@ -33,18 +33,29 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
         state = state
     )
 
-    protected fun getInputFileCode(): String =
-        ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf()))
+    protected fun getInputFileCode(): String {
+        val strings = (executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())
+        val flatMap = strings
             .flatMap { pattern: String ->
                 val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-                listOf(FileSelectionUtils.filteredWalkAsciiTree(root.toFile()) { path ->
-                    matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                (FileSelectionUtils.filteredWalk(root.toFile()) {
+                    //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                    when {
+                        FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+                        matcher.matches(root.relativize(it.toPath())) -> true
+                        it.isDirectory -> true
+                        else -> false
+                    }
                 })
             }
+        val filter = flatMap.filter { file ->
+            file.isFile && file.exists()
+        }
+        return filter
             .distinct()
             .sortedBy { it }
             .joinToString("\n\n") { relativePath ->
-                val file = root.resolve(relativePath).toFile()
+                val file = root.toFile().resolve(relativePath)
                 try {
                     val content = if (executionConfig?.extractContent == true && !isTextFile(file)) {
                         extractDocumentContent(file)
@@ -57,6 +68,7 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
                     ""
                 }
             }
+    }
 
     private fun isTextFile(file: java.io.File): Boolean {
         val textExtensions = setOf(

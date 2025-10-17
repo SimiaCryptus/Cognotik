@@ -1,152 +1,621 @@
-# CrawlerAgentTask
+# Web Crawler Agent Documentation
 
 ## Overview
 
-The `CrawlerAgentTask` is a sophisticated web crawling and content analysis task that can search the web, fetch content from URLs, and analyze the retrieved information based on specified queries. It supports multiple seeding methods (Google Search or direct URLs) and various content fetching strategies (HTTP client or Selenium).
+The `CrawlerAgentTask` is a sophisticated web crawling and content analysis system that can search the web, fetch content from URLs, analyze pages using AI, and automatically follow relevant links. It's designed to gather and synthesize information from multiple web sources based on specific queries or goals.
 
 ## Key Features
 
-- **Multiple Seed Methods**: Start crawling from Google search results or direct URLs
-- **Concurrent Processing**: Process multiple pages simultaneously for efficiency
-- **Smart Link Following**: Automatically discover and follow relevant links
-- **Content Analysis**: AI-powered analysis of fetched content based on specified queries
-- **Caching**: Avoid re-fetching previously processed URLs
-- **Error Handling**: Robust error handling with configurable error thresholds
-- **Result Summarization**: Automatic summarization of large result sets
+- **Multiple Seeding Methods**: Start crawling from Google search results or direct URLs
+- **Intelligent Content Fetching**: Support for HTML, PDF, DOCX, and other document formats
+- **AI-Powered Analysis**: Uses language models to extract relevant information from pages
+- **Automatic Link Following**: Discovers and follows relevant links based on analysis
+- **Robots.txt Compliance**: Respects website crawling rules and rate limits
+- **Priority Queue**: Processes pages based on relevance scores and depth
+- **Concurrent Processing**: Handles multiple pages simultaneously for efficiency
+- **Content Caching**: Avoids re-fetching the same URLs
+- **Comprehensive Logging**: Detailed tracking of crawling progress and errors
+
+## Architecture
+
+### Core Components
+
+#### 1. CrawlerAgentTask
+The main orchestrator that manages the crawling workflow:
+- Initializes the page queue with seed URLs
+- Manages concurrent page processing
+- Coordinates content fetching and analysis
+- Generates final summaries
+
+#### 2. Seed Methods
+Strategies for initializing the crawler:
+
+**GoogleSearch**: Searches Google and extracts top results
+```kotlin
+enum class SeedMethod {
+    GoogleSearch,
+    DirectUrls
+}
+```
+
+**DirectUrls**: Uses explicitly provided URLs
+
+#### 3. Fetch Strategies
+Methods for retrieving web content:
+
+**HttpClient**: Standard HTTP client with SSL support
+- Handles HTML, text, and document formats
+- Extracts text from PDFs, DOCX, etc.
+- Simplifies HTML for better analysis
+
+**Selenium**: Browser automation for JavaScript-heavy sites
+- Renders dynamic content
+- Captures screenshots
+- Handles complex interactions
+
+#### 4. Content Processing Pipeline
+
+```
+URL → Fetch → Simplify → Analyze → Extract Links → Queue New URLs
+```
+
+1. **Fetch**: Retrieve content using selected strategy
+2. **Simplify**: Clean HTML, extract text from documents
+3. **Analyze**: Use AI to extract relevant information
+4. **Extract Links**: Find and score new URLs to follow
+5. **Queue**: Add promising links to priority queue
 
 ## Configuration
 
-### Task Settings (`CrawlerTaskSettings`)
+### Task Type Configuration
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `seed_method` | `SeedMethod` | Method to seed the crawler (GoogleSearch, DirectUrls) | `GoogleSearch` |
-| `fetch_method` | `FetchMethod` | Method to fetch content (HttpClient, Selenium) | `HttpClient` |
-| `task_type` | `String` | Task type identifier | `"CrawlerAgentTask"` |
-| `enabled` | `Boolean` | Whether the task is enabled | `false` |
-| `model` | `ApiChatModel` | AI model to use for analysis | `null` |
+```kotlin
+class CrawlerTaskTypeConfig(
+    val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
+    val fetch_method: FetchMethod? = FetchMethod.HttpClient,
+    val allowed_domains: String? = null,
+    val respect_robots_txt: Boolean? = true,
+    val max_pages_per_task: Int? = 30,
+    val max_depth: Int? = 3,
+    val max_queue_size: Int? = 100,
+    val concurrent_page_processing: Int? = 3,
+    val max_final_output_size: Int? = 15000,
+    val min_content_length: Int? = 500,
+    val follow_links: Boolean? = true,
+    val allow_revisit_pages: Boolean? = false,
+    val create_final_summary: Boolean? = true
+)
+```
 
-### Task Configuration (`CrawlerTaskConfigData`)
+### Execution Configuration
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `search_query` | `String?` | Google search query to seed the crawler | `null` |
-| `direct_urls` | `String?` | Comma-separated list of URLs to analyze | `null` |
-| `content_queries` | `Any?` | Questions to consider when analyzing content | `null` |
-| `max_pages_per_task` | `Int?` | Maximum pages to process in one task | `30` |
-| `task_description` | `String?` | Description of the task | `null` |
-| `task_dependencies` | `List<String>?` | List of dependent task IDs | `null` |
+```kotlin
+class CrawlerTaskExecutionConfigData(
+    val search_query: String? = null,
+    val direct_urls: List<String>? = null,
+    val content_queries: Any? = null,
+    val allowed_domains: String? = null
+)
+```
 
-### Constructor Parameters
+## Usage Examples
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `follow_links` | `Boolean` | Whether to follow links found in content | `true` |
-| `max_pages_per_task` | `Int` | Maximum pages to process | `50` |
-| `max_final_output_size` | `Int` | Maximum size of final output in characters | `10000` |
-| `concurrent_page_processing` | `Int` | Number of pages to process concurrently | `3` |
-| `allow_revisit_pages` | `Boolean` | Whether to allow revisiting already processed pages | `false` |
-| `create_final_summary` | `Boolean?` | Whether to create a summary of results | `true` |
-| `min_content_length` | `Int` | Minimum content length to process (chars) | `100` |
+### Example 1: Google Search with Analysis
+
+```kotlin
+val config = CrawlerTaskExecutionConfigData(
+    search_query = "artificial intelligence recent developments",
+    content_queries = """
+        Extract:
+        - Key technological breakthroughs
+        - Companies involved
+        - Potential applications
+        - Publication dates
+    """,
+    allowed_domains = "arxiv.org nature.com sciencedaily.com"
+)
+```
+
+### Example 2: Direct URL Analysis
+
+```kotlin
+val config = CrawlerTaskExecutionConfigData(
+    direct_urls = listOf(
+        "https://example.com/article1",
+        "https://example.com/article2"
+    ),
+    content_queries = "Summarize the main arguments and supporting evidence"
+)
+```
+
+### Example 3: Deep Crawl with Link Following
+
+```kotlin
+val typeConfig = CrawlerTaskTypeConfig(
+    seed_method = SeedMethod.DirectUrls,
+    max_depth = 5,
+    max_pages_per_task = 100,
+    follow_links = true,
+    concurrent_page_processing = 5
+)
+```
 
 ## Data Structures
 
 ### LinkData
-Represents a link to be processed:
-- `link`: URL of the page
-- `title`: Title or description of the link
-- `tags`: Associated tags
-- `relevance_score`: Relevance score (1-100)
-- `started`: Processing started flag
-- `completed`: Processing completed flag
-- `depth`: Crawl depth from seed
-- `error`: Error message if processing failed
-- `processingTimeMs`: Time taken to process
-
-### ParsedPage
-Result of analyzing a page:
-- `page_type`: Type of page (OK, Error, Irrelevant)
-- `page_information`: Extracted information
-- `tags`: Associated tags
-- `link_data`: Links found on the page
-
-## Processing Flow
-
-1. **Initialization**
-   - Create output directory (`.websearch`)
-   - Initialize seed items using configured seed method
-   - Set up page queue with seed items
-
-2. **Crawling Loop**
-   - Process pages concurrently up to `concurrent_page_processing` limit
-   - For each page:
-     - Fetch content using configured fetch method
-     - Check content length against `min_content_length`
-     - Analyze content based on `content_queries`
-     - Extract and queue new links if `follow_links` is enabled
-     - Save analysis results
-
-3. **Result Compilation**
-   - Combine all analysis results
-   - Create final summary if results exceed `max_final_output_size`
-   - Return formatted output
-
-## Output
-
-The task produces:
-- **Markdown-formatted analysis** of each processed page
-- **Saved analysis files** in `.websearch` directory with metadata
-- **Final summary** combining insights from all pages
-- **Tabbed display** in UI showing individual page results
-
-## Error Handling
-
-- **Error threshold**: Stops processing if errors exceed 50% of max pages
-- **Invalid URLs**: Filters out malformed or blacklisted URLs
-- **Content validation**: Skips pages with insufficient content
-- **Graceful degradation**: Continues processing other pages on individual failures
-
-## Blacklisted Domains
-
-The following domains are automatically excluded:
-- Social media: facebook.com, twitter.com, instagram.com, linkedin.com, tiktok.com, pinterest.com, reddit.com
-- Video platforms: youtube.com
-- E-commerce: amazon.com, ebay.com, aliexpress.com
-
-## Usage Example
+Represents a URL to be crawled:
 
 ```kotlin
-val task = CrawlerAgentTask(
-    orchestrationConfig = config,
-    planTask = CrawlerTaskConfigData(
-        search_query = "artificial intelligence trends 2024",
-        content_queries = "What are the key AI developments and predictions?",
-        max_pages_per_task = 20
-    ),
-    follow_links = true,
-    concurrent_page_processing = 5,
-    create_final_summary = true
+data class LinkData(
+    val link: String?,
+    val title: String?,
+    val tags: List<String>?,
+    val relevance_score: Double = 100.0,
+    var depth: Int = 0,
+    var started: Boolean = false,
+    var completed: Boolean = false,
+    var error: String? = null
 )
 ```
 
-## Performance Considerations
+**Priority Calculation**: `relevance_score / (depth + 1.0)`
+- Higher relevance = higher priority
+- Lower depth = higher priority
 
-- **Concurrent processing**: Adjust `concurrent_page_processing` based on available resources
-- **Caching**: URL content is cached to avoid redundant fetches
-- **Content chunking**: Large content is split into manageable chunks for analysis
-- **Rate limiting**: Consider implementing delays between requests to avoid overwhelming servers
+### ParsedPage
+Result of AI analysis:
 
-## File Storage
+```kotlin
+data class ParsedPage(
+    val page_type: PageType,  // OK, Error, Irrelevant
+    val page_information: Any?,
+    val tags: List<String>?,
+    val link_data: List<LinkData>?
+)
+```
 
-Analysis results are saved in the `.websearch` directory with the following structure:
-- Main directory: Successful analyses
-- `error/`: Pages that encountered errors
-- `irrelevant/`: Pages marked as irrelevant
-- File naming: `{url_safe}_{index}_{timestamp}.md`
+## Processing Flow
 
-## Limitations
+### 1. Initialization
+```
+┌─────────────────┐
+│  Seed Method    │
+│  (Google/URLs)  │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Priority Queue │
+│  (LinkData)     │
+└─────────────────┘
+```
 
-- Maximum iterations: 1000 to prevent infinite loops
-- URL safety: Special characters in URLs are sanitized for file names
-- Content size: Very large pages are chunked for processing
-- Link explosion: Maximum 10 links extracted per page to prevent exponential growth
+### 2. Crawling Loop
+```
+┌──────────────────────────────────────────┐
+│  While (pages < max && errors < limit)   │
+│  ┌────────────────────────────────────┐  │
+│  │  Get Next Page from Queue          │  │
+│  │  (Highest Priority)                │  │
+│  └──────────┬─────────────────────────┘  │
+│             │                             │
+│             ▼                             │
+│  ┌────────────────────────────────────┐  │
+│  │  Fetch Content                     │  │
+│  │  (HTTP/Selenium)                   │  │
+│  └──────────┬─────────────────────────┘  │
+│             │                             │
+│             ▼                             │
+│  ┌────────────────────────────────────┐  │
+│  │  Simplify/Extract Text             │  │
+│  └──────────┬─────────────────────────┘  │
+│             │                             │
+│             ▼                             │
+│  ┌────────────────────────────────────┐  │
+│  │  AI Analysis                       │  │
+│  │  (Extract Information)             │  │
+│  └──────────┬─────────────────────────┘  │
+│             │                             │
+│             ▼                             │
+│  ┌────────────────────────────────────┐  │
+│  │  Extract & Score Links             │  │
+│  └──────────┬─────────────────────────┘  │
+│             │                             │
+│             ▼                             │
+│  ┌────────────────────────────────────┐  │
+│  │  Add to Queue (if relevant)        │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+```
+
+### 3. Finalization
+```
+┌─────────────────┐
+│  All Results    │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Create Summary │
+│  (if enabled)   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Final Output   │
+└─────────────────┘
+```
+
+## Content Fetching Strategies
+
+### HttpClient Strategy
+
+**Advantages**:
+- Fast and lightweight
+- Good for static content
+- Handles documents (PDF, DOCX)
+- Low resource usage
+
+**Limitations**:
+- Cannot execute JavaScript
+- May miss dynamic content
+- Limited interaction capabilities
+
+**Supported Formats**:
+- HTML pages
+- Plain text
+- PDF documents
+- Microsoft Office (DOC, DOCX, XLS, XLSX, PPT, PPTX)
+- OpenDocument formats (ODT, ODS, ODP)
+- RTF files
+
+### Selenium Strategy
+
+**Advantages**:
+- Executes JavaScript
+- Renders dynamic content
+- Can interact with pages
+- Captures visual state
+
+**Limitations**:
+- Slower than HTTP
+- Higher resource usage
+- Requires browser driver
+- More complex setup
+
+**Use Cases**:
+- Single-page applications
+- JavaScript-heavy sites
+- Sites requiring interaction
+- Visual verification needed
+
+## Robots.txt Compliance
+
+The crawler respects robots.txt rules when enabled:
+
+### Features
+- **Automatic Fetching**: Downloads and caches robots.txt per domain
+- **Rule Parsing**: Supports Disallow, Allow, Crawl-delay, Sitemap
+- **User-Agent Matching**: Respects rules for "*" and "CognotikBot"
+- **Pattern Matching**: Handles wildcards and path patterns
+- **Crawl Delays**: Automatically applies specified delays
+
+### Example robots.txt
+```
+User-agent: *
+Disallow: /admin/
+Disallow: /private/
+Allow: /public/
+Crawl-delay: 1
+
+Sitemap: https://example.com/sitemap.xml
+```
+
+## Content Analysis
+
+### AI-Powered Extraction
+
+The crawler uses language models to:
+1. **Classify Pages**: Determine if content is relevant, error, or irrelevant
+2. **Extract Information**: Pull out specific data based on queries
+3. **Score Links**: Evaluate relevance of discovered URLs
+4. **Summarize Content**: Create concise summaries of findings
+
+### Analysis Prompt Structure
+
+```kotlin
+val prompt = """
+Below are analyses of different parts of a web page related to this goal: $analysisGoal
+
+Create a unified summary that combines the key insights from all parts.
+Use markdown formatting for your response.
+Identify the most important links that should be followed up on.
+"""
+```
+
+### Content Chunking
+
+For large pages (>50KB):
+1. Split into manageable chunks
+2. Analyze each chunk separately
+3. Combine results into unified summary
+4. Preserve context across chunks
+
+## Output and Storage
+
+### Directory Structure
+```
+.websearch/
+├── raw_pages/          # Original HTML
+├── reduced_pages/      # Simplified HTML
+├── documents/          # Downloaded files
+├── extracted_text/     # Text from documents
+├── text_pages/         # Plain text content
+├── error/              # Failed analyses
+└── irrelevant/         # Filtered content
+```
+
+### Analysis Files
+Each analyzed page is saved as:
+```
+{url_safe}_{index}_{timestamp}.md
+```
+
+With metadata header:
+```markdown
+<!-- {
+  "url": "https://example.com/page",
+  "timestamp": "2024-01-15T10:30:00",
+  "index": 1,
+  "query": "search query",
+  "content_query": "analysis goal"
+} -->
+
+## Page Title
+
+Analysis content...
+```
+
+## Error Handling
+
+### Retry Logic
+- Tracks retry count per URL
+- Implements exponential backoff
+- Maximum retry attempts configurable
+
+### Error Types
+1. **Network Errors**: Connection failures, timeouts
+2. **HTTP Errors**: 4xx, 5xx status codes
+3. **Parse Errors**: Invalid HTML, malformed documents
+4. **Analysis Errors**: AI model failures
+5. **Resource Errors**: Memory limits, disk space
+
+### Error Recovery
+```kotlin
+try {
+    // Fetch and process
+} catch (e: Exception) {
+    log.error("Error processing URL: $url", e)
+    errorCount.incrementAndGet()
+    page.error = e.message
+    // Continue with next page
+}
+```
+
+## Performance Optimization
+
+### Concurrent Processing
+- Configurable worker threads
+- Completion service for task management
+- Active task tracking
+
+### Caching
+- URL content cache (in-memory)
+- Robots.txt cache (per domain)
+- Prevents redundant fetches
+
+### Queue Management
+- Priority-based processing
+- Maximum queue size limits
+- Duplicate URL detection
+
+### Resource Limits
+- Maximum pages per task
+- Maximum crawl depth
+- Content size limits
+- Queue size limits
+
+## Best Practices
+
+### 1. Define Clear Goals
+```kotlin
+content_queries = """
+Extract specific information:
+- Data point 1
+- Data point 2
+- Evaluation criteria
+- Filtering priorities
+"""
+```
+
+### 2. Restrict Domains
+```kotlin
+allowed_domains = "example.com trusted-source.org"
+```
+
+### 3. Set Reasonable Limits
+```kotlin
+max_pages_per_task = 50  // Don't crawl too much
+max_depth = 3            // Prevent infinite loops
+concurrent_page_processing = 3  // Balance speed/resources
+```
+
+### 4. Respect Websites
+```kotlin
+respect_robots_txt = true  // Always enable
+// Crawler automatically applies delays
+```
+
+### 5. Monitor Progress
+- Check logs for errors
+- Review intermediate results
+- Adjust configuration as needed
+
+## Troubleshooting
+
+### Common Issues
+
+**1. No Results Found**
+- Check search query specificity
+- Verify allowed_domains aren't too restrictive
+- Ensure URLs are accessible
+
+**2. Too Many Errors**
+- Reduce concurrent_page_processing
+- Check network connectivity
+- Verify robots.txt compliance
+
+**3. Irrelevant Content**
+- Refine content_queries
+- Adjust relevance scoring
+- Restrict domains more carefully
+
+**4. Memory Issues**
+- Reduce max_queue_size
+- Lower max_pages_per_task
+- Decrease concurrent_page_processing
+
+**5. Slow Performance**
+- Increase concurrent_page_processing
+- Use HttpClient instead of Selenium
+- Reduce max_depth
+
+## API Reference
+
+### Main Methods
+
+#### `run()`
+Executes the crawling task
+```kotlin
+fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+)
+```
+
+#### `addToQueue()`
+Adds a new URL to the processing queue
+```kotlin
+fun addToQueue(
+    newLink: LinkData,
+    maxDepth: Int,
+    maxQueueSize: Int
+): Boolean
+```
+
+#### `getNextPage()`
+Retrieves the highest priority page from queue
+```kotlin
+fun getNextPage(): LinkData?
+```
+
+#### `fetchAndProcessUrl()`
+Fetches and processes content from a URL
+```kotlin
+private fun fetchAndProcessUrl(
+    url: String,
+    webSearchDir: File,
+    index: Int,
+    pool: ExecutorService,
+    fetchStrategy: FetchStrategy
+): String
+```
+
+#### `transformContent()`
+Analyzes content using AI
+```kotlin
+private fun transformContent(
+    content: String,
+    analysisGoal: String,
+    orchestrationConfig: OrchestrationConfig,
+    task: SessionTask
+): ParsedResponse<ParsedPage>
+```
+
+## Advanced Features
+
+### Custom Fetch Strategies
+
+Implement `FetchStrategy` interface:
+```kotlin
+interface FetchStrategy {
+    fun fetch(
+        url: String,
+        webSearchDir: File,
+        index: Int,
+        pool: ExecutorService,
+        orchestrationConfig: OrchestrationConfig
+    ): String
+}
+```
+
+### Custom Seed Methods
+
+Implement `SeedStrategy` interface:
+```kotlin
+interface SeedStrategy {
+    fun getSeedItems(
+        executionConfig: CrawlerTaskExecutionConfigData?,
+        orchestrationConfig: OrchestrationConfig
+    ): List<LinkData>?
+}
+```
+
+### Link Extraction
+
+Automatic extraction from:
+- Markdown links: `[text](url)`
+- HTML anchor tags: `<a href="url">`
+- Structured data from AI analysis
+
+### Content Filtering
+
+Multiple filtering stages:
+1. **Domain whitelist/blacklist**
+2. **Robots.txt compliance**
+3. **Duplicate detection**
+4. **Relevance scoring**
+5. **Content length requirements**
+
+## Security Considerations
+
+### SSL/TLS
+- Accepts all certificates (configurable)
+- Supports HTTPS connections
+- Handles certificate errors gracefully
+
+### Rate Limiting
+- Respects robots.txt crawl delays
+- Configurable concurrent requests
+- Automatic backoff on errors
+
+### Content Validation
+- URL format validation
+- Content type checking
+- Size limit enforcement
+- Malicious content detection
+
+## Future Enhancements
+
+Potential improvements:
+- [ ] Distributed crawling support
+- [ ] Advanced JavaScript rendering
+- [ ] Image and video analysis
+- [ ] Multi-language support
+- [ ] Custom extraction rules
+- [ ] Real-time monitoring dashboard
+- [ ] Export to various formats
+- [ ] Integration with knowledge graphs

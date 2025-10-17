@@ -95,7 +95,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         )
 
         val contextFiles = getContextFiles()
-        val priorCode = getPriorCode(agent.executionState!!)
+        val priorCode = getPriorCode(agent.executionState)
 
         val result = StringBuilder()
 

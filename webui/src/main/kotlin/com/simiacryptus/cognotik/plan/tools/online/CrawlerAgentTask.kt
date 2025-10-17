@@ -30,7 +30,7 @@ import kotlin.math.min
 class CrawlerAgentTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: CrawlerTaskExecutionConfigData?,
-) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(
+ ) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
@@ -38,6 +38,8 @@ class CrawlerAgentTask(
     class CrawlerTaskTypeConfig(
         @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
+        @Description("Whitespace-separated list of allowed domains/URL prefixes to restrict crawling (optional)") val allowed_domains: String? = null,
+        @Description("Respect robots.txt rules when crawling (default: true)") val respect_robots_txt: Boolean? = true,
         @Description("Maximum number of pages to process in a single task") val max_pages_per_task: Int? = null,
         @Description("Maximum depth to crawl from seed pages") val max_depth: Int? = null,
         @Description("Maximum queue size to prevent memory issues") val max_queue_size: Int? = null,
@@ -58,7 +60,8 @@ class CrawlerAgentTask(
     class CrawlerTaskExecutionConfigData(
         @Description("The search query to use for Google search") val search_query: String? = null,
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: List<String>? = null,
-        @Description("The question(s) considered when processing the content") val content_queries: Any? = null,
+        @Description("The query considered when processing the content - this should contain a detailed listing of the desired data, evaluation criteria, and filtering priorities used to transform the page into the desired summary") val content_queries: Any? = null,
+        @Description("Whitespace-separated list of allowed domains/URL prefixes to restrict crawling (optional)") val allowed_domains: String? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -72,13 +75,20 @@ class CrawlerAgentTask(
     var selenium: Selenium2S3? = null
 
     val urlContentCache = ConcurrentHashMap<String, String>()
-    private val pageQueueLock = Any()
+    private val robotsTxtParser = RobotsTxtParser()
+    private val pageQueueLock = Object()
+
+    // Use a priority queue that sorts by calculated priority (higher first)
+    private val pageQueue = java.util.PriorityQueue<LinkData>(
+        compareByDescending { it.calculatePriority() }
+    )
+    private val seenUrls = ConcurrentHashMap.newKeySet<String>()
 
     override fun promptSegment() = """
         CrawlerAgent - Search Google, fetch top results, and analyze content
         ** Specify the search query
         ** Or provide direct URLs to analyze
-        ** Specify the analysis goal or focus
+        ** Specify a detailed query/analysis prompt to guide content processing
         ** Results will be saved to .websearch directory for future reference
         ** Links found in analysis can be automatically followed for deeper research
       """.trimIndent()
@@ -111,8 +121,9 @@ class CrawlerAgentTask(
         var depth: Int = 0
         var error: String? = null
         var processingTimeMs: Long = 0
-        var retryCount: Int = 0
-        var lastRetryTime: Long = 0
+
+        // Priority calculation: higher relevance and lower depth = higher priority
+        fun calculatePriority(): Double = relevance_score / (depth + 1.0)
     }
 
     enum class PageType {
@@ -170,8 +181,17 @@ class CrawlerAgentTask(
                 }
                 log.debug("Created websearch directory: ${webSearchDir.absolutePath}")
             }
+            val tabs = TabbedDisplay(task)
 
-            val seedMethod = typeConfig.seed_method ?: SeedMethod.GoogleSearch
+
+            val seedMethod = typeConfig.seed_method ?: when {
+                !executionConfig?.search_query.isNullOrBlank() -> SeedMethod.GoogleSearch
+                !executionConfig?.direct_urls.isNullOrEmpty() -> SeedMethod.DirectUrls
+                else -> {
+                    log.error("No seed method specified and no search query or direct URLs provided")
+                    return "Error: No seed method specified and no search query or direct URLs provided"
+                }
+            }
             log.info("Using seed method: $seedMethod")
             val seedItems = try {
                 seedMethod.createStrategy(this, agent.user).getSeedItems(executionConfig, orchestrationConfig)
@@ -184,9 +204,43 @@ class CrawlerAgentTask(
                 log.warn("No seed items returned from seed method: $seedMethod")
                 return "Warning: No seed items found to start crawling"
             }
+            // Create seed links tab
+            val seedLinksTask = task.ui.newTask(false)
+            tabs["Seed Links"] = seedLinksTask.placeholder
+            val seedLinksContent = buildString {
+                appendLine("# Seed Links")
+                appendLine()
+                appendLine("**Method:** ${seedMethod.name}")
+                appendLine()
+                appendLine("**Total Seeds:** ${seedItems.size}")
+                appendLine()
+                appendLine("---")
+                appendLine()
+                seedItems.forEachIndexed { index, item ->
+                    appendLine("## ${index + 1}. [${item.title ?: "Untitled"}](${item.link})")
+                    appendLine()
+                    appendLine("- **URL:** ${item.link}")
+                    appendLine("- **Relevance Score:** ${item.relevance_score}")
+                    if (!item.tags.isNullOrEmpty()) {
+                        appendLine("- **Tags:** ${item.tags.joinToString(", ")}")
+                    }
+                    appendLine()
+                }
+            }
+            seedLinksTask.add(seedLinksContent.renderMarkdown)
+            task.update()
 
-            val pageQueue = mutableListOf<LinkData>().apply {
+
+            synchronized(pageQueueLock) {
                 seedItems.forEach { item ->
+                    if (item.link != null && isBlacklistedDomain(item.link)) {
+                        log.info("Skipping blacklisted seed URL: ${item.link}")
+                        return@forEach
+                    }
+                    if (typeConfig.respect_robots_txt == true && !robotsTxtParser.isAllowed(item.link ?: "")) {
+                        log.info("Skipping seed URL disallowed by robots.txt: ${item.link}")
+                        return@forEach
+                    }
                     LinkData(
                         link = item.link,
                         title = item.title,
@@ -194,13 +248,12 @@ class CrawlerAgentTask(
                         relevance_score = item.relevance_score
                     ).let { linkData ->
                         log.debug("Adding seed item to page queue: {}", linkData)
-                        addToQueue(
-                            this,
-                            linkData,
-                            typeConfig.max_depth ?: (typeConfig.max_depth ?: 3),
-                            typeConfig.max_queue_size ?: (typeConfig.max_queue_size ?: 100)
-                        )
-                        if (this.isEmpty()) {
+                        if (!addToQueue(
+                                linkData,
+                                typeConfig.max_depth ?: 3,
+                                typeConfig.max_queue_size ?: 100
+                            )
+                        ) {
                             log.warn("No valid seed items found after processing")
                         }
                     }
@@ -218,7 +271,6 @@ class CrawlerAgentTask(
                 typeConfig.concurrent_page_processing ?: 3
             log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
 
-            val tabs = TabbedDisplay(task)
             val completionService: CompletionService<Unit> = ExecutorCompletionService(agent.pool)
             val activeTasks = ConcurrentHashMap.newKeySet<String>()
             val processedCount = AtomicInteger(0)
@@ -235,21 +287,21 @@ class CrawlerAgentTask(
                 val maxDepthConfig = typeConfig.max_depth ?: (typeConfig.max_depth ?: 3)
                 val maxQueueSizeConfig = typeConfig.max_queue_size ?: (typeConfig.max_queue_size ?: 100)
                 log.debug("Starting crawling loop: maxPages=$maxPages, maxErrors=$maxErrors, maxIterations=${1000}")
-                while (shouldContinue(pageQueue, maxPages, errorCount, maxErrors, loopIterations, activeTasks)) {
+                while (shouldContinue(maxPages, errorCount, maxErrors, loopIterations, activeTasks)) {
                     if (loopIterations.get() % 10 == 0) {
                         synchronized(pageQueueLock) {
-                            log.info("Loop iteration ${loopIterations.get()}: completed=${pageQueue.count { it.completed }}, active=${activeTasks.size}, errors=${errorCount.get()}")
+                            log.info("Loop iteration ${loopIterations.get()}: queue_size=${pageQueue.size}, active=${activeTasks.size}, errors=${errorCount.get()}")
                         }
                     }
                     val queueStats = synchronized(pageQueueLock) {
-                        "total=${pageQueue.size}, completed=${pageQueue.count { it.completed }}, started=${pageQueue.count { it.started }}, active=${activeTasks.size}"
+                        "queue_size=${pageQueue.size}, seen=${seenUrls.size}, active=${activeTasks.size}"
                     }
                     // Queue new tasks while we have capacity and unstarted pages
                     while (
                         activeTasks.size < concurrentProcessing && // Limit concurrent tasks
-                        synchronized(pageQueueLock) { pageQueue.count { !it.started } > 0 } && // There are still unstarted pages
+                        synchronized(pageQueueLock) { pageQueue.isNotEmpty() } && // There are still unstarted pages
                         errorCount.get() < maxErrors && // Not too many errors
-                        pageQueue.count { it.completed } < maxPages // Haven't hit max pages yet
+                        processedCount.get() < maxPages // Haven't hit max pages yet
                     ) {
                         addCrawlTask(
                             queueStats = queueStats,
@@ -257,7 +309,6 @@ class CrawlerAgentTask(
                             activeTasks = activeTasks,
                             errorCount = errorCount,
                             maxErrors = maxErrors,
-                            pageQueue = pageQueue,
                             task = task,
                             tabs = tabs,
                             processedCount = processedCount,
@@ -287,15 +338,14 @@ class CrawlerAgentTask(
                         }
                     } else {
                         // No active tasks, check if there are unstarted pages we missed
-                        val unstartedCount = synchronized(pageQueueLock) { pageQueue.count { !it.started } }
+                        val unstartedCount = synchronized(pageQueueLock) { pageQueue.size }
                         if (unstartedCount > 0) {
                             log.warn("No active tasks but $unstartedCount unstarted pages remain - continuing")
                             continue
                         }
                     }
 
-                    val completedCount = synchronized(pageQueueLock) { pageQueue.count { it.completed } }
-                    log.info("Crawling progress: completed=$completedCount/${pageQueue.size}, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
+                    log.info("Crawling progress: processed=${processedCount.get()}/$maxPages, queue=${pageQueue.size}, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
                     //while (activeTasks.isNotEmpty()) sleep(1000)
                 }
                 if (loopIterations.get() >= 1000) {
@@ -358,13 +408,16 @@ class CrawlerAgentTask(
     }
 
     fun addToQueue(
-        pageQueue: MutableList<LinkData>,
         newLink: LinkData,
         maxDepth: Int,
         maxQueueSize: Int
     ): Boolean = synchronized(pageQueueLock) {
         if (newLink.link.isNullOrBlank()) {
             log.warn("Attempted to add invalid or empty URL to queue: $newLink")
+            return false
+        }
+        if (typeConfig.respect_robots_txt == true && !robotsTxtParser.isAllowed(newLink.link)) {
+            log.debug("Skipping URL disallowed by robots.txt: ${newLink.link}")
             return false
         }
         if (pageQueue.size >= maxQueueSize) {
@@ -375,33 +428,35 @@ class CrawlerAgentTask(
             log.debug("Skipping link due to depth limit (depth=${newLink.depth} > maxDepth=$maxDepth): ${newLink.link}")
             return false
         }
-        if (pageQueue.any { it.link == newLink.link }) {
+        if (seenUrls.contains(newLink.link)) {
             log.debug("Skipping duplicate link already in queue: ${newLink.link}")
             return false
         }
+        seenUrls.add(newLink.link)
         pageQueue.add(newLink)
-        log.debug("Added new link to queue: ${newLink.link} (depth=${newLink.depth})")
+        log.debug("Added new link to queue: ${newLink.link} (depth=${newLink.depth}, priority=${newLink.calculatePriority()})")
         true
     }
 
-    fun getNextPage(pageQueue: MutableList<LinkData>): LinkData? = synchronized(pageQueueLock) {
-        val nextPage = pageQueue.firstOrNull { !it.started && !it.completed }
+    fun getNextPage(): LinkData? = synchronized(pageQueueLock) {
+        // Poll removes and returns the highest priority element
+        val nextPage = pageQueue.poll()
         nextPage?.let {
             it.started = true
+            log.debug("Retrieved next page from queue: ${it.link} (priority=${it.calculatePriority()}, remaining=${pageQueue.size})")
         }
         nextPage
     }
 
     private fun shouldContinue(
-        pageQueue: MutableList<LinkData>,
         maxPages: Int,
         errorCount: AtomicInteger,
         maxErrors: Int,
         loopIterations: AtomicInteger,
         activeTasks: MutableSet<String>
     ): Boolean = synchronized(pageQueueLock) {
-        val completed = pageQueue.count { it.completed }
-        val unstarted = pageQueue.count { !it.started }
+        val completed = seenUrls.size - pageQueue.size - activeTasks.size
+        val unstarted = pageQueue.size
         val hasActiveTasks = activeTasks.isNotEmpty()
 
         // Continue if:
@@ -426,7 +481,6 @@ class CrawlerAgentTask(
         activeTasks: MutableSet<String>,
         errorCount: AtomicInteger,
         maxErrors: Int,
-        pageQueue: MutableList<LinkData>,
         task: SessionTask,
         tabs: TabbedDisplay,
         processedCount: AtomicInteger,
@@ -440,14 +494,13 @@ class CrawlerAgentTask(
         analysisResultsMap: ConcurrentHashMap<Int, String>
     ): Boolean {
         log.info("Status before queuing next page: $queueStats, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
-        val page = getNextPage(pageQueue) ?: return true
+        val page = getNextPage() ?: return true
         if (page.link.isNullOrBlank()) {
             log.error("Invalid page link encountered: $page")
             errorCount.incrementAndGet()
-            synchronized(pageQueueLock) {
-                page.completed = true
-                page.error = "Invalid or empty URL"
-            }
+            page.completed = true
+            page.completed = true
+            page.error = "Invalid or empty URL"
             return false
         }
         activeTasks.add(page.link)
@@ -462,10 +515,9 @@ class CrawlerAgentTask(
         } catch (e: Exception) {
             log.error("Failed to create subtask for URL: ${page.link}", e)
             errorCount.incrementAndGet()
-            synchronized(pageQueueLock) {
-                page.completed = true
-                page.error = "Failed to create subtask: ${e.message}"
-            }
+            page.completed = true
+            page.completed = true
+            page.error = "Failed to create subtask: ${e.message}"
             return false
         }
 
@@ -482,7 +534,6 @@ class CrawlerAgentTask(
                     agent,
                     fetchStrategy,
                     orchestrationConfig,
-                    pageQueue,
                     errorCount,
                     subTask,
                     analysisResultsMap
@@ -490,10 +541,9 @@ class CrawlerAgentTask(
             } catch (e: Exception) {
                 log.error("Uncaught exception in page processing task for: ${page.link}", e)
                 errorCount.incrementAndGet()
-                synchronized(pageQueueLock) {
-                    page.completed = true
-                    page.error = "Uncaught exception: ${e.message}"
-                }
+                page.completed = true
+                page.completed = true
+                page.error = "Uncaught exception: ${e.message}"
             } finally {
                 activeTasks.remove(page.link)
             }
@@ -512,7 +562,6 @@ class CrawlerAgentTask(
         agent: TaskOrchestrator,
         fetchStrategy: FetchStrategy,
         orchestrationConfig: OrchestrationConfig,
-        pageQueue: MutableList<LinkData>,
         errorCount: AtomicInteger,
         task: SessionTask,
         analysisResultsMap: ConcurrentHashMap<Int, String>
@@ -520,6 +569,14 @@ class CrawlerAgentTask(
         val pageStartTime = System.currentTimeMillis()
         log.info("Starting to process page ${processedCount.get() + 1}: url='${link}', title='${page.title}'")
         val currentIndex = processedCount.incrementAndGet()
+        // Apply crawl delay if robots.txt specifies one
+        if (typeConfig.respect_robots_txt == true) {
+            robotsTxtParser.getCrawlDelay(link)?.let { delay ->
+                log.debug("Applying robots.txt crawl delay of ${delay}ms for: $link")
+                Thread.sleep(delay)
+            }
+        }
+
         if (currentIndex > maxPages) {
             log.warn("Max pages limit ($maxPages) reached, stopping processing for page: ${link}")
         } else {
@@ -600,7 +657,7 @@ class CrawlerAgentTask(
                             this.appendLine(analysis.text)
                             this.appendLine()
 
-                            if (/*taskConfig?.follow_links ?:*/ typeConfig.follow_links == true) {
+                            if (typeConfig.follow_links == true) {
 
                                 var linkData = parsedPage.link_data
                                 val allowRevisit = /*taskConfig?.allow_revisit_pages ?:*/
@@ -611,28 +668,68 @@ class CrawlerAgentTask(
                                 } else {
                                     log.debug("Using ${linkData.size} structured links from analysis for '$url'")
                                 }
-                                val filteredLinks = linkData
-                                    .take(10) // Limit links per page to prevent explosion
-                                    .filter { link ->
-                                        VALID_URL_PATTERN.matcher(link.link!!).matches() &&
-                                                !isBlacklistedDomain(link.link) &&
-                                                (allowRevisit || pageQueue.none { it.link == link.link })
-                                    }
+                                // Add extracted links section to UI
+                                if (linkData.isNotEmpty()) {
+                                    this.appendLine()
+                                    this.appendLine("### Extracted Links (${linkData.size} found)")
+                                    this.appendLine()
+                                }
+
 
                                 var addedCount = 0
+                                val skippedLinks = mutableListOf<Pair<LinkData, String>>()
+
                                 linkData
-                                    .take(10)
+                                    .take(10) // Limit links per page to prevent explosion
                                     .filter { link ->
-                                        VALID_URL_PATTERN.matcher(link.link ?: "").matches() &&
-                                                !isBlacklistedDomain(link.link!!)
+                                        val isValid = VALID_URL_PATTERN.matcher(link.link!!).matches()
+                                        val isNotBlacklisted = !isBlacklistedDomain(link.link)
+                                        val isNotDuplicate = allowRevisit || !seenUrls.contains(link.link)
+                                        val isAllowedByRobots = typeConfig.respect_robots_txt != true ||
+                                                robotsTxtParser.isAllowed(link.link)
+
+                                        if (!isValid) {
+                                            skippedLinks.add(link to "Invalid URL format")
+                                        } else if (!isNotBlacklisted) {
+                                            skippedLinks.add(link to "Blacklisted domain")
+                                        } else if (!isNotDuplicate) {
+                                            skippedLinks.add(link to "Already in queue")
+                                        } else if (!isAllowedByRobots) {
+                                            skippedLinks.add(link to "Disallowed by robots.txt")
+                                        }
+
+                                        isValid && isNotBlacklisted && isNotDuplicate && isAllowedByRobots
                                     }
                                     .forEach { link ->
                                         val newLink = link.apply { depth = page.depth + 1 }
-                                        if (addToQueue(pageQueue, newLink, maxDepth, maxQueueSize)) {
+                                        if (addToQueue(newLink, maxDepth, maxQueueSize)) {
                                             addedCount++
+                                            this.appendLine("- ✅ **[${link.title ?: "Untitled"}](${link.link})** (depth: ${newLink.depth}, relevance: ${link.relevance_score})")
+                                        } else {
+                                            skippedLinks.add(link to "Queue limit reached or max depth exceeded")
                                         }
                                     }
+                                // Show skipped links
+                                if (skippedLinks.isNotEmpty()) {
+                                    this.appendLine()
+                                    this.appendLine("<details>")
+                                    this.appendLine("<summary>Skipped Links (${skippedLinks.size})</summary>")
+                                    this.appendLine()
+                                    skippedLinks.forEach { (link, reason) ->
+                                        this.appendLine("- ⏭️ **[${link.title ?: "Untitled"}](${link.link})** - *${reason}*")
+                                    }
+                                    this.appendLine()
+                                    this.appendLine("</details>")
+                                    this.appendLine()
+                                }
+
                                 log.info("Added $addedCount new links to queue from '$url' (filtered from ${linkData.size} total)")
+                                // Add summary
+                                if (linkData.isNotEmpty()) {
+                                    this.appendLine()
+                                    this.appendLine("**Link Processing Summary:** ${addedCount} added to queue, ${skippedLinks.size} skipped")
+                                    this.appendLine()
+                                }
                             }
                         } catch (e: Exception) {
                             log.error("Error processing URL: $url", e)
@@ -651,16 +748,14 @@ class CrawlerAgentTask(
                 task.error(e)
                 log.error("Error processing page: ${link}", e)
                 errorCount.incrementAndGet()
-                synchronized(pageQueueLock) {
-                    page.error = e.message
-                }
+                page.error = e.message
+                page.error = e.message
                 analysisResultsMap[currentIndex] =
                     "## ${currentIndex}. [${page.title}](${link})\n\n*Error processing this result: ${e.message}*\n\n"
             } finally {
-                synchronized(pageQueueLock) {
-                    page.processingTimeMs = System.currentTimeMillis() - pageStartTime
-                    page.completed = true
-                }
+                page.completed = true
+                page.processingTimeMs = System.currentTimeMillis() - pageStartTime
+                page.completed = true
                 log.debug("Page processing completed: url='${link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")
             }
         }
@@ -674,12 +769,44 @@ class CrawlerAgentTask(
         )
         return try {
             val uri = URI.create(url)
+
+            // Check if URL is restricted by allowed_domains whitelist
+            val allowedDomains =
+                ((typeConfig.allowed_domains?.split(Regex("\\s+"))?.filter { it.isNotBlank() } ?: listOf()) +
+                        (executionConfig?.allowed_domains?.split(Regex("\\s+"))?.filter { it.isNotBlank() }
+                            ?: listOf())).toSet()
+            if (!allowedDomains.isNullOrEmpty()) {
+                val isAllowed = allowedDomains.any { allowedDomainOrPrefix ->
+                    val normalizedAllowed = allowedDomainOrPrefix.lowercase().trim()
+                    when {
+                        // Check if it's a full URL prefix match
+                        normalizedAllowed.startsWith("http://") || normalizedAllowed.startsWith("https://") -> {
+                            url.lowercase().startsWith(normalizedAllowed)
+                        }
+                        // Check if it's a domain match (exact or subdomain)
+                        else -> {
+                            val domain = uri.host?.lowercase()
+                            if (domain == null) {
+                                log.warn("Could not extract domain from URL: $url")
+                                return true
+                            }
+                            domain == normalizedAllowed || domain.endsWith(".${normalizedAllowed}")
+                        }
+                    }
+                }
+                if (!isAllowed) {
+                    log.debug("URL not in allowed domains list: $url")
+                    return true
+                }
+            }
+
+            // Check blacklist
             val domain = uri.host?.lowercase()
             if (domain == null) {
                 log.warn("Could not extract domain from URL: $url")
                 return true
             }
-            blacklistedDomains.any { domain?.contains(it) == true }
+            blacklistedDomains.any { domain.contains(it) }
         } catch (e: Exception) {
             log.warn("Invalid URL format: $url", e)
             true // Blacklist invalid URLs

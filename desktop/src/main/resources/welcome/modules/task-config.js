@@ -198,6 +198,20 @@ class TaskConfigManager {
                         type: 'checkbox',
                         default: true,
                         tooltip: 'Generate a comprehensive summary of all results'
+                    },
+                    {
+                        id: 'respect_robots_txt',
+                        label: 'Respect robots.txt',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Obey the rules set in robots.txt files'
+                    },
+                    {
+                        id: 'allowed_domains',
+                        label: 'Allowed Domains',
+                        type: 'textarea',
+                        placeholder: 'Enter one domain per line (e.g., example.com)',
+                        tooltip: 'List of domains that the crawler is allowed to visit'
                     }
                 ]
             },

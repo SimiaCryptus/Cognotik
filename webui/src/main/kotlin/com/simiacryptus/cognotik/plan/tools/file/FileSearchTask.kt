@@ -313,9 +313,12 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
     companion object {
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
-        fun getAvailableFiles(path: Path): List<String> {
+        fun getAvailableFiles(
+            path: Path,
+            treatDocumentsAsText: Boolean = false,
+            ): List<String> {
             return try {
-                listOf(FileSelectionUtils.filteredWalkAsciiTree(path.toFile(), 20))
+                listOf(FileSelectionUtils.filteredWalkAsciiTree(path.toFile(), 20, treatDocumentsAsText = treatDocumentsAsText))
             } catch (e: Exception) {
                 log.error("Error listing available files", e)
                 listOf("Error listing files: ${e.message}")

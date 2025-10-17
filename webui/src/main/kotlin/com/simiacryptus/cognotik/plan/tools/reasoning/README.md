@@ -1,6 +1,7 @@
 # Reasoning Tools User Guide
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Tool Overview](#tool-overview)
 3. [Getting Started](#getting-started)
@@ -13,11 +14,14 @@
 
 ## Introduction
 
-The Reasoning Tools suite provides advanced AI-powered analysis capabilities for complex problem-solving, decision-making, and code analysis. These tools implement various cognitive reasoning strategies to help you explore problems from multiple angles, validate assumptions, and generate high-quality solutions.
+The Reasoning Tools suite provides advanced AI-powered analysis capabilities for complex problem-solving,
+decision-making, and code analysis. These tools implement various cognitive reasoning strategies to help you explore
+problems from multiple angles, validate assumptions, and generate high-quality solutions.
 
 ### What Are Reasoning Tools?
 
-Reasoning tools are specialized AI agents that apply structured thinking methodologies to analyze problems, code, and decisions. Unlike simple code generation, these tools:
+Reasoning tools are specialized AI agents that apply structured thinking methodologies to analyze problems, code, and
+decisions. Unlike simple code generation, these tools:
 
 - **Think systematically** through problems using proven reasoning frameworks
 - **Challenge assumptions** and explore alternatives
@@ -28,6 +32,7 @@ Reasoning tools are specialized AI agents that apply structured thinking methodo
 ### When to Use Reasoning Tools
 
 Use reasoning tools when you need:
+
 - Deep analysis of complex problems
 - Multiple perspectives on architectural decisions
 - Root cause analysis for bugs or issues
@@ -42,18 +47,18 @@ Use reasoning tools when you need:
 
 ### Quick Reference Table
 
-| Tool | Best For | Complexity | Output Type |
-|------|----------|------------|-------------|
-| **AbstractionLadder** | Finding patterns, generalizations | Medium | Hierarchical analysis |
-| **AnalogicalReasoning** | Creative problem-solving | Medium | Analogies + solutions |
-| **CausalInference** | Root cause analysis | High | Causal relationships |
-| **ChainOfThought** | Step-by-step reasoning | Medium | Reasoning chain |
-| **ConstraintSatisfaction** | Multi-objective optimization | High | Optimal solution |
-| **CounterfactualAnalysis** | What-if scenarios | Medium | Scenario comparisons |
-| **DecompositionSynthesis** | Breaking down complexity | High | Subproblem solutions |
-| **MetaCognitiveReflection** | Quality assurance | Low | Critique + improvements |
-| **MultiPerspectiveAnalysis** | Holistic evaluation | Medium | Multi-view synthesis |
-| **SocraticDialogue** | Deep exploration | Medium | Dialogue transcript |
+| Tool                         | Best For                          | Complexity | Output Type             |
+|------------------------------|-----------------------------------|------------|-------------------------|
+| **AbstractionLadder**        | Finding patterns, generalizations | Medium     | Hierarchical analysis   |
+| **AnalogicalReasoning**      | Creative problem-solving          | Medium     | Analogies + solutions   |
+| **CausalInference**          | Root cause analysis               | High       | Causal relationships    |
+| **ChainOfThought**           | Step-by-step reasoning            | Medium     | Reasoning chain         |
+| **ConstraintSatisfaction**   | Multi-objective optimization      | High       | Optimal solution        |
+| **CounterfactualAnalysis**   | What-if scenarios                 | Medium     | Scenario comparisons    |
+| **DecompositionSynthesis**   | Breaking down complexity          | High       | Subproblem solutions    |
+| **MetaCognitiveReflection**  | Quality assurance                 | Low        | Critique + improvements |
+| **MultiPerspectiveAnalysis** | Holistic evaluation               | Medium     | Multi-view synthesis    |
+| **SocraticDialogue**         | Deep exploration                  | Medium     | Dialogue transcript     |
 
 ---
 
@@ -102,6 +107,7 @@ AbstractionLadderTaskExecutionConfigData(
 #### Use Cases
 
 **Example 1: Understanding a Design Pattern**
+
 ```kotlin
 concrete_concept = "Observer pattern implementation in EventBus.kt"
 direction = "up"
@@ -110,6 +116,7 @@ identify_patterns = true
 ```
 
 **Output**:
+
 - Level 0: Specific EventBus implementation
 - Level 1: Observer pattern abstraction
 - Level 2: Publish-subscribe messaging
@@ -117,6 +124,7 @@ identify_patterns = true
 - Pattern analysis and refactoring opportunities
 
 **Example 2: Finding Concrete Implementations**
+
 ```kotlin
 concrete_concept = "Repository pattern"
 direction = "down"
@@ -125,6 +133,7 @@ identify_patterns = true
 ```
 
 **Output**:
+
 - Level 0: Repository pattern concept
 - Level -1: Database repository implementations
 - Level -2: Specific DAO classes
@@ -167,6 +176,7 @@ AnalogicalReasoningTaskExecutionConfigData(
 #### Use Cases
 
 **Example 1: Architectural Design**
+
 ```kotlin
 source_domain = "urban traffic management"
 target_problem = "Optimizing API request routing and load balancing"
@@ -175,6 +185,7 @@ validate_mappings = true
 ```
 
 **Output**:
+
 - Analogy 1: Traffic lights → Rate limiting
 - Analogy 2: Highway lanes → Request queues
 - Analogy 3: GPS routing → Dynamic load balancing
@@ -182,6 +193,7 @@ validate_mappings = true
 - Concrete implementation suggestions
 
 **Example 2: Error Handling**
+
 ```kotlin
 source_domain = "medical diagnosis and treatment"
 target_problem = "Implementing robust error handling and recovery"
@@ -189,6 +201,7 @@ num_analogies = 3
 ```
 
 **Output**:
+
 - Analogy 1: Symptoms → Error signals
 - Analogy 2: Diagnosis → Root cause analysis
 - Analogy 3: Treatment → Recovery strategies
@@ -204,12 +217,14 @@ num_analogies = 3
 #### Effective Source Domains
 
 ✅ **Good choices**:
+
 - Biological systems (immune system, neural networks, ecosystems)
 - Physical systems (hydraulics, electrical circuits, mechanics)
 - Social systems (organizations, markets, cities)
 - Natural phenomena (weather, geology, evolution)
 
 ❌ **Poor choices**:
+
 - Abstract concepts (philosophy, mathematics)
 - Overly similar domains (comparing two programming paradigms)
 
@@ -239,6 +254,7 @@ CausalInferenceTaskExecutionConfigData(
 #### Use Cases
 
 **Example 1: Performance Degradation**
+
 ```kotlin
 observed_effect = "Application crashes every 6 hours"
 potential_causes = listOf(
@@ -253,6 +269,7 @@ evidence_sources = listOf("logs/application.log", "metrics/heap-dump.json")
 ```
 
 **Output**:
+
 - Causal analysis of each potential cause
 - Evidence evaluation (temporal precedence, mechanism, counterfactuals)
 - Root cause identification
@@ -261,6 +278,7 @@ evidence_sources = listOf("logs/application.log", "metrics/heap-dump.json")
 - Recommendations
 
 **Example 2: Bug Investigation**
+
 ```kotlin
 observed_effect = "User data corruption in production"
 potential_causes = listOf(
@@ -311,6 +329,7 @@ ChainOfThoughtTaskExecutionConfigData(
 #### Use Cases
 
 **Example 1: Algorithm Design**
+
 ```kotlin
 problem_statement = """
 Design an efficient algorithm to find the k most frequent elements
@@ -321,6 +340,7 @@ validate_steps = true
 ```
 
 **Output**:
+
 ```
 Step 1: Understand constraints
 - Reasoning: Stream means we can't store all data...
@@ -340,6 +360,7 @@ Final Summary: Complete algorithm with complexity analysis
 ```
 
 **Example 2: Architectural Decision**
+
 ```kotlin
 problem_statement = """
 Should we migrate from monolithic architecture to microservices?
@@ -360,12 +381,14 @@ validate_steps = true
 #### When to Use
 
 ✅ **Good for**:
+
 - Complex algorithmic problems
 - Multi-factor decisions
 - Problems requiring proof or justification
 - Learning/understanding complex concepts
 
 ❌ **Not ideal for**:
+
 - Simple, straightforward tasks
 - When you need multiple perspectives (use MultiPerspectiveAnalysis)
 - Exploratory analysis (use SocraticDialogue)
@@ -401,6 +424,7 @@ ConstraintSatisfactionTaskExecutionConfigData(
 #### Use Cases
 
 **Example 1: Technology Selection**
+
 ```kotlin
 problem_description = "Choose a frontend framework for our web application"
 hard_constraints = listOf(
@@ -419,6 +443,7 @@ search_strategy = "backtracking"
 ```
 
 **Output**:
+
 ```
 Solution Overview:
 Recommended: React with Next.js
@@ -449,6 +474,7 @@ Alternative Solutions:
 ```
 
 **Example 2: Resource Allocation**
+
 ```kotlin
 problem_description = "Allocate cloud resources across services"
 hard_constraints = listOf(
@@ -468,18 +494,21 @@ search_strategy = "local"  // Good for optimization problems
 #### Search Strategies
 
 **Backtracking** (systematic search)
+
 - ✅ Finds optimal solution if one exists
 - ✅ Explores solution space thoroughly
 - ❌ Slower for large search spaces
 - **Use when**: Solution quality is critical
 
 **Forward** (greedy search)
+
 - ✅ Fast, finds solutions quickly
 - ✅ Good for time-constrained decisions
 - ❌ May miss optimal solution
 - **Use when**: Speed matters, "good enough" is acceptable
 
 **Local** (hill-climbing)
+
 - ✅ Excellent for optimization problems
 - ✅ Handles continuous variables well
 - ❌ Can get stuck in local optima
@@ -496,15 +525,17 @@ search_strategy = "local"  // Good for optimization problems
 #### Common Patterns
 
 **Architecture Decisions**:
+
 ```kotlin
 hard_constraints = ["Must scale to X users", "Budget limit", "Team skills"]
-soft_constraints = {"Maintainability": 0.9, "Performance": 0.8, "Cost": 0.7}
+soft_constraints = { "Maintainability": 0.9, "Performance": 0.8, "Cost": 0.7 }
 ```
 
 **Library Selection**:
+
 ```kotlin
 hard_constraints = ["License compatibility", "Language support", "Maintenance status"]
-soft_constraints = {"Community size": 0.7, "Documentation": 0.8, "Performance": 0.6}
+soft_constraints = { "Community size": 0.7, "Documentation": 0.8, "Performance": 0.6 }
 ```
 
 ---
@@ -536,6 +567,7 @@ CounterfactualAnalysisTaskExecutionConfigData(
 #### Use Cases
 
 **Example 1: Post-Mortem Analysis**
+
 ```kotlin
 actual_scenario = """
 We deployed the new feature on Friday evening.
@@ -555,6 +587,7 @@ control_factors = listOf(
 ```
 
 **Output**:
+
 ```
 Actual Scenario Analysis:
 - Friday evening deployment reduced immediate user impact
@@ -591,6 +624,7 @@ Lessons learned:
 ```
 
 **Example 2: Technology Decision Validation**
+
 ```kotlin
 actual_scenario = "We chose PostgreSQL for our primary database"
 counterfactuals = listOf(
@@ -617,6 +651,7 @@ control_factors = listOf(
 #### Analysis Framework
 
 The tool evaluates:
+
 1. **Outcomes**: What actually happened vs. what would have happened
 2. **Causal factors**: Which factors drove the differences
 3. **Trade-offs**: Benefits and costs of each scenario
@@ -644,11 +679,14 @@ DecompositionSynthesisTaskExecutionConfigData(
 #### Decomposition Strategies
 
 **Functional** (by capability)
+
 ```kotlin
 complex_problem = "Build an e-commerce platform"
 decomposition_strategy = "functional"
 ```
+
 Output subproblems:
+
 - User authentication and authorization
 - Product catalog management
 - Shopping cart functionality
@@ -657,11 +695,14 @@ Output subproblems:
 - Inventory management
 
 **Temporal** (by sequence)
+
 ```kotlin
 complex_problem = "Implement CI/CD pipeline"
 decomposition_strategy = "temporal"
 ```
+
 Output subproblems:
+
 - Code commit and version control
 - Automated testing phase
 - Build and artifact creation
@@ -670,11 +711,14 @@ Output subproblems:
 - Monitoring and rollback
 
 **Spatial** (by location/component)
+
 ```kotlin
 complex_problem = "Design microservices architecture"
 decomposition_strategy = "spatial"
 ```
+
 Output subproblems:
+
 - API Gateway layer
 - Authentication service
 - Business logic services
@@ -683,11 +727,14 @@ Output subproblems:
 - Monitoring and logging
 
 **Hierarchical** (by abstraction level)
+
 ```kotlin
 complex_problem = "Optimize application performance"
 decomposition_strategy = "hierarchical"
 ```
+
 Output subproblems:
+
 - Level 1: System architecture optimization
 - Level 2: Service-level optimizations
 - Level 3: Algorithm and data structure improvements
@@ -696,6 +743,7 @@ Output subproblems:
 #### Use Cases
 
 **Example 1: Feature Implementation**
+
 ```kotlin
 complex_problem = """
 Implement a recommendation engine that:
@@ -711,6 +759,7 @@ validate_coherence = true
 ```
 
 **Output**:
+
 ```
 Problem Decomposition (Functional Strategy):
 
@@ -801,12 +850,12 @@ Suggestions:
 
 #### When to Use Each Strategy
 
-| Strategy | Best For | Example |
-|----------|----------|---------|
-| **Functional** | Feature-rich systems | E-commerce platform, CRM system |
-| **Temporal** | Process-oriented tasks | CI/CD pipeline, data migration |
-| **Spatial** | Distributed systems | Microservices, multi-tier architecture |
-| **Hierarchical** | Optimization problems | Performance tuning, refactoring |
+| Strategy         | Best For               | Example                                |
+|------------------|------------------------|----------------------------------------|
+| **Functional**   | Feature-rich systems   | E-commerce platform, CRM system        |
+| **Temporal**     | Process-oriented tasks | CI/CD pipeline, data migration         |
+| **Spatial**      | Distributed systems    | Microservices, multi-tier architecture |
+| **Hierarchical** | Optimization problems  | Performance tuning, refactoring        |
 
 ---
 

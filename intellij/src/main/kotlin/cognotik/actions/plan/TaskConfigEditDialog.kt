@@ -1,35 +1,35 @@
 package cognotik.actions.plan
 
- import com.intellij.openapi.project.Project
- import com.intellij.openapi.ui.ComboBox
- import com.intellij.openapi.ui.DialogWrapper
- import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBTextArea
- import com.intellij.ui.components.JBTextField
- import com.intellij.ui.dsl.builder.Align
- import com.intellij.ui.dsl.builder.panel
- import com.simiacryptus.cognotik.chat.model.ChatModel
- import com.simiacryptus.cognotik.interpreter.CodeRuntimes
- import com.simiacryptus.cognotik.plan.TaskType
- import com.simiacryptus.cognotik.plan.TaskTypeConfig
- import com.simiacryptus.cognotik.plan.newSettings
- import com.simiacryptus.cognotik.plan.tools.RunCodeTask
- import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
- import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
- import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
+import com.intellij.ui.components.JBTextField
+import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.panel
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.interpreter.CodeRuntimes
+import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.newSettings
+import com.simiacryptus.cognotik.plan.tools.RunCodeTask
+import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
- import java.awt.Dimension
- import javax.swing.JComponent
- import javax.swing.JScrollPane
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
+import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
+import java.awt.Dimension
 import javax.swing.JCheckBox
+import javax.swing.JComponent
+import javax.swing.JScrollPane
 
- class TaskConfigEditDialog(
+class TaskConfigEditDialog(
     project: Project?,
     private val taskType: TaskType<*, *>,
     private val config: TaskTypeConfig,
     private val availableModels: List<ChatModel>
- ) : DialogWrapper(project) {
+) : DialogWrapper(project) {
 
     private val configNameField = JBTextField(config.name ?: taskType.name).apply {
         toolTipText = "Unique name for this task configuration"
@@ -58,7 +58,7 @@ import javax.swing.JCheckBox
                     .align(Align.FILL)
                     .comment("Enter a unique name for this configuration")
             }
-            
+
             row("AI Model:") {
                 cell(modelCombo)
                     .align(Align.FILL)
@@ -77,7 +77,7 @@ import javax.swing.JCheckBox
         preferredSize = Dimension(600, 500)
     }
 
-private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
+    private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
         when (config) {
             is RunCodeTask.RunCodeTaskTypeConfig -> createRunCodeFields(config)
             is SelfHealingTask.SelfHealingTaskTypeConfig -> createSelfHealingFields(config)
@@ -122,6 +122,7 @@ private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
             }
         }
     }
+
     private fun com.intellij.ui.dsl.builder.Panel.createMCPToolFields(config: MCPToolTask.MCPToolTaskTypeConfig) {
         group("MCP Tool Settings") {
             row("Default Server:") {
@@ -175,6 +176,13 @@ private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
                     .comment("Method used to fetch content from URLs")
                 configFields["fetch_method"] = combo
             }
+            row {
+                val respectRobotsCheckbox = JCheckBox("Respect robots.txt", config.respect_robots_txt ?: true)
+                respectRobotsCheckbox.toolTipText = "Follow robots.txt rules when crawling websites"
+                cell(respectRobotsCheckbox)
+                    .comment("Enable to respect robots.txt crawl rules and delays")
+                configFields["respect_robots_txt"] = respectRobotsCheckbox
+            }
             row("Max Pages Per Task:") {
                 val field = JBTextField(config.max_pages_per_task?.toString() ?: "30")
                 field.toolTipText = "Maximum number of pages to process (1-100)"
@@ -203,6 +211,15 @@ private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
                     .comment("Skip pages with less content than this threshold")
                 configFields["min_content_length"] = field
             }
+            row("Allowed Domains:") {
+                val field = JBTextField(config.allowed_domains ?: "")
+                field.toolTipText =
+                    "Whitespace-separated list of allowed domains/URL prefixes (leave empty to allow all)"
+                cell(field)
+                    .align(Align.FILL)
+                    .comment("Restrict crawling to specific domains or URL prefixes (e.g., 'example.com https://docs.example.com')")
+                configFields["allowed_domains"] = field
+            }
             row {
                 val followLinksCheckbox = JCheckBox("Follow Links", config.follow_links ?: true)
                 followLinksCheckbox.toolTipText = "Automatically follow links found in analyzed pages"
@@ -229,7 +246,7 @@ private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
 
     override fun doOKAction() {
         val name = configNameField.text.trim()
-        
+
         if (name.isEmpty()) {
             Messages.showWarningDialog(
                 "Configuration name cannot be empty",
@@ -254,8 +271,8 @@ private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
 
         super.doOKAction()
     }
-    
-private fun validateTaskSpecificFields(): Boolean {
+
+    private fun validateTaskSpecificFields(): Boolean {
         // Validate MCPTool numeric fields
         if (config is MCPToolTask.MCPToolTaskTypeConfig) {
             val timeout = (configFields["default_timeout"] as? JBTextField)?.text?.trim()
@@ -283,7 +300,7 @@ private fun validateTaskSpecificFields(): Boolean {
                 }
             }
         }
-        
+
         // Validate CrawlerAgent numeric fields
         if (config is CrawlerAgentTask.CrawlerTaskTypeConfig) {
             val maxPages = (configFields["max_pages_per_task"] as? JBTextField)?.text?.trim()
@@ -334,11 +351,34 @@ private fun validateTaskSpecificFields(): Boolean {
                     return false
                 }
             }
+            // Validate allowed_domains format
+            val allowedDomains = (configFields["allowed_domains"] as? JBTextField)?.text?.trim()
+            if (!allowedDomains.isNullOrEmpty()) {
+                val domains = allowedDomains.split(Regex("\\s+"))
+                val invalidDomains = domains.filter { domain ->
+                    domain.isNotBlank() && !domain.matches(Regex("^(https?://)?[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}(/.*)?$"))
+                }
+                if (invalidDomains.isNotEmpty()) {
+                    Messages.showWarningDialog(
+                        "Invalid domain format: ${invalidDomains.joinToString(", ")}\n\n" +
+                                "Domains should be in format: 'example.com' or 'https://example.com/path'",
+                        "Invalid Domain Format"
+                    )
+                    configFields["allowed_domains"]?.requestFocusInWindow()
+                    return false
+                }
+            }
         }
-        
+
         // Validate numeric fields
         configFields.forEach { (key, component) ->
-            if (component is JBTextField && key in listOf("timeout", "max_retries", "max_pages", "concurrent_processing")) {
+            if (component is JBTextField && key in listOf(
+                    "timeout",
+                    "max_retries",
+                    "max_pages",
+                    "concurrent_processing"
+                )
+            ) {
                 val value = component.text.trim()
                 if (value.isNotEmpty()) {
                     try {
@@ -377,8 +417,8 @@ private fun validateTaskSpecificFields(): Boolean {
         // Apply task-specific configuration
         return applyTaskSpecificConfig(baseConfig)
     }
-    
-private fun applyTaskSpecificConfig(baseConfig: TaskTypeConfig): TaskTypeConfig {
+
+    private fun applyTaskSpecificConfig(baseConfig: TaskTypeConfig): TaskTypeConfig {
         return when (config) {
             is RunCodeTask.RunCodeTaskTypeConfig -> {
                 RunCodeTask.RunCodeTaskTypeConfig(
@@ -404,6 +444,7 @@ private fun applyTaskSpecificConfig(baseConfig: TaskTypeConfig): TaskTypeConfig 
                         ?: emptyList()).toMutableList()
                 )
             }
+
             is MCPToolTask.MCPToolTaskTypeConfig -> {
                 MCPToolTask.MCPToolTaskTypeConfig(
                     task_type = baseConfig.task_type!!,
@@ -430,10 +471,13 @@ private fun applyTaskSpecificConfig(baseConfig: TaskTypeConfig): TaskTypeConfig 
                         (configFields["fetch_method"] as? ComboBox<*>)?.selectedItem as? String
                             ?: "HttpClient"
                     ),
+                    respect_robots_txt = (configFields["respect_robots_txt"] as? JCheckBox)?.isSelected,
                     max_pages_per_task = (configFields["max_pages_per_task"] as? JBTextField)?.text?.toIntOrNull(),
                     concurrent_page_processing = (configFields["concurrent_page_processing"] as? JBTextField)?.text?.toIntOrNull(),
                     max_final_output_size = (configFields["max_final_output_size"] as? JBTextField)?.text?.toIntOrNull(),
                     min_content_length = (configFields["min_content_length"] as? JBTextField)?.text?.toIntOrNull(),
+                    allowed_domains = (configFields["allowed_domains"] as? JBTextField)?.text?.trim()
+                        ?.takeIf { it.isNotEmpty() },
                     follow_links = (configFields["follow_links"] as? JCheckBox)?.isSelected,
                     allow_revisit_pages = (configFields["allow_revisit_pages"] as? JCheckBox)?.isSelected,
                     create_final_summary = (configFields["create_final_summary"] as? JCheckBox)?.isSelected

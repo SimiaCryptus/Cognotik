@@ -88,7 +88,7 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
         )
 
         val contextFiles = getContextFiles()
-        val priorCode = getPriorCode(agent.executionState!!)
+        val priorCode = getPriorCode(agent.executionState)
 
         // Create tabs for each perspective
         val tabs = TabbedDisplay(newTask)
