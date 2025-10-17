@@ -272,7 +272,7 @@ DecompositionSynthesis - Decompose complex problems and synthesize solutions
     }
 
     private fun buildContext(agent: TaskOrchestrator): String {
-        val priorCode = getPriorCode(agent.executionState!!)
+        val priorCode = getPriorCode(agent.executionState)
         val relatedFiles = executionConfig?.related_files?.joinToString("\n") { "- $it" } ?: ""
 
         return """

@@ -200,6 +200,13 @@ class TaskConfigManager {
                         tooltip: 'Generate a comprehensive summary of all results'
                     },
                     {
+                        id: 'respect_robots_txt',
+                        label: 'Respect robots.txt',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Obey the rules set in robots.txt files'
+                    },
+                    {
                         id: 'allowed_domains',
                         label: 'Allowed Domains',
                         type: 'textarea',

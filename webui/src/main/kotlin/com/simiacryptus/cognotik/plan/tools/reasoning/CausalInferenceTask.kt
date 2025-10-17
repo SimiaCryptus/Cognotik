@@ -80,9 +80,9 @@ CausalInference - Identify causal relationships and root causes
 
         // Gather evidence from sources
         val evidenceContext = gatherEvidence()
-        val priorContext = getPriorCode(agent.executionState!!)
+        val priorContext = getPriorCode(agent.executionState)
 
-        val potentialCauses = executionConfig?.potential_causes ?: emptyList()
+        val potentialCauses = executionConfig.potential_causes ?: emptyList()
         val causesText = if (potentialCauses.isNotEmpty()) {
             "**Potential Causes to Investigate:**\n" + potentialCauses.joinToString("\n") { "- $it" }
         } else {
@@ -123,7 +123,7 @@ val chatAgent = ChatAgent(
         )
 
         // If building causal graph, generate visualization
-        if (executionConfig?.build_causal_graph == true) {
+        if (executionConfig.build_causal_graph) {
             val graphPrompt = """
  Based on the causal analysis above, create a Mermaid diagram showing the causal relationships.
  Use the following format:

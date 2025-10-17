@@ -100,7 +100,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
             )
         )
 
-        val priorCode = getPriorCode(agent.executionState!!)
+        val priorCode = getPriorCode(agent.executionState)
 
         val prompt = buildPrompt(
             problemDescription,

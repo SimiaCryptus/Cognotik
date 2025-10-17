@@ -41,41 +41,41 @@ class AnalogicalReasoningTask(
 
     data class AnalogyMapping(
         @Description("The source concept from the source domain")
-        val source_concept: String,
+        val source_concept: String = "",
         @Description("The target concept in the problem domain")
-        val target_concept: String,
+        val target_concept: String = "",
         @Description("Explanation of how the concepts map to each other")
-        val mapping_rationale: String,
+        val mapping_rationale: String = "",
         @Description("Structural similarities between source and target")
-        val structural_similarities: List<String>,
+        val structural_similarities: List<String> = emptyList(),
         @Description("Key differences or limitations of the analogy")
-        val limitations: List<String>
+        val limitations: List<String> = emptyList()
     )
 
     data class Analogy(
         @Description("Title of the analogy")
-        val title: String,
+        val title: String = "",
         @Description("Description of the source domain concept")
-        val source_description: String,
+        val source_description: String = "",
         @Description("How this applies to the target problem")
-        val application: String,
+        val application: String = "",
         @Description("Detailed mappings between source and target concepts")
-        val mappings: List<AnalogyMapping>,
+        val mappings: List<AnalogyMapping> = emptyList(),
         @Description("Insights gained from this analogy")
-        val insights: List<String>,
+        val insights: List<String> = emptyList(),
         @Description("Potential solutions suggested by this analogy")
-        val suggested_solutions: List<String>,
+        val suggested_solutions: List<String> = emptyList(),
         @Description("Confidence score (0-1) in the validity of this analogy")
-        val confidence: Double
+        val confidence: Double = 0.0
     )
 
     data class AnalogicalReasoningResult(
         @Description("List of generated analogies")
-        val analogies: List<Analogy>,
+        val analogies: List<Analogy> = emptyList(),
         @Description("Synthesis of insights across all analogies")
-        val synthesized_insights: List<String>,
+        val synthesized_insights: List<String> = emptyList(),
         @Description("Recommended approach based on analogical reasoning")
-        val recommended_approach: String,
+        val recommended_approach: String = "",
         @Description("Validation results if validation was requested")
         val validation_notes: String? = null
     )
@@ -136,7 +136,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
             )
         )
 
-        val priorContext = getPriorCode(agent.executionState!!)
+        val priorContext = getPriorCode(agent.executionState)
         val contextFiles = getContextFiles()
 
         // Step 1: Generate analogies

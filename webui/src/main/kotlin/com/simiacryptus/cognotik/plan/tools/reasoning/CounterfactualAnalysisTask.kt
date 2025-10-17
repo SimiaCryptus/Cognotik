@@ -91,7 +91,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
         )
 
         val contextFiles = getContextFiles()
-        val priorCode = getPriorCode(agent.executionState!!)
+        val priorCode = getPriorCode(agent.executionState)
 
         // Analyze actual scenario
         val actualAnalysis = analyzeScenario(

@@ -91,7 +91,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
             )
         )
 
-        val priorContext = getPriorCode(agent.executionState!!)
+        val priorContext = getPriorCode(agent.executionState)
         val contextFiles = getContextFiles()
 
         val tabs = TabbedDisplay(newTask, closable = false)

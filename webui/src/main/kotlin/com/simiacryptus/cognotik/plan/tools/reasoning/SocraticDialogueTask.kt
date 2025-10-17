@@ -86,7 +86,7 @@ SocraticDialogue - Explore ideas through Socratic questioning
             )
         )
 
-        val priorContext = getPriorCode(agent.executionState!!)
+        val priorContext = getPriorCode(agent.executionState)
 
         // Create the Socratic questioner agent
         val questionerAgent = ChatAgent(
