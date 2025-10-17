@@ -26,11 +26,14 @@ import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.AbstractionLadderTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.AnalogicalReasoningTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
 import com.simiacryptus.cognotik.plan.tools.reasoning.ConstraintSatisfactionTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.DecompositionSynthesisTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.MetaCognitiveReflectionTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.SocraticDialogueTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.SocraticDialogueTask.Companion.SocraticDialogue
 import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
+import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask.Companion.CommandSession
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask.RunShellCommandTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
@@ -49,22 +52,6 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 ) : DynamicEnum<TaskType<*, *>>(name) {
 
     companion object {
-        val ChainOfThought = TaskType(
-            "ChainOfThought",
-            ChainOfThoughtTask.ChainOfThoughtTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Break down complex problems into explicit reasoning steps",
-            """
-              Performs step-by-step reasoning with validation:
-              <ul>
-                <li>Breaks complex problems into logical steps</li>
-                <li>Validates each step before proceeding</li>
-                <li>Provides reasoning transparency</li>
-                <li>Can backtrack if validation fails</li>
-                <li>Generates comprehensive reasoning chains</li>
-              </ul>
-            """
-        )
         val VectorSearch = TaskType(
             "VectorSearch",
             VectorSearchTask.VectorSearchTaskExecutionConfigData::class.java,
@@ -177,23 +164,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           </ul>
         """
         )
-        val CommandSession = TaskType(
-            "CommandSession",
-            CommandSessionTask.CommandSessionTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Manage interactive command-line sessions",
-            """
-          Manages interactive command-line sessions with state persistence.
-          <ul>
-            <li>Creates and maintains command sessions</li>
-            <li>Supports multiple concurrent sessions</li>
-            <li>Configurable timeouts and cleanup</li>
-            <li>Session state preservation</li>
-            <li>Comprehensive output capture</li>
-          </ul>
-        """
-        )
-        val CrawlerAgent = TaskType(
+      val CrawlerAgent = TaskType(
             "CrawlerAgent",
             CrawlerAgentTask.CrawlerTaskExecutionConfigData::class.java,
             CrawlerAgentTask.CrawlerTaskTypeConfig::class.java,
@@ -291,23 +262,6 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 <li>Configurable consensus threshold</li>
                 <li>Useful for architectural decisions and code reviews</li>
                 <li>Supports context from related files</li>
-              </ul>
-            """
-        )
-        val SocraticDialogue = TaskType(
-            "SocraticDialogue",
-            SocraticDialogueTask.SocraticDialogueTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Explore ideas through Socratic questioning",
-            """
-              Uses Socratic questioning methodology to deeply explore ideas.
-              <ul>
-                <li>Creates dialogue between questioner and responder agents</li>
-                <li>Challenges assumptions and definitions</li>
-                <li>Explores implications and consequences</li>
-                <li>Identifies contradictions and tensions</li>
-                <li>Configurable dialogue depth and constraints</li>
-                <li>Generates synthesis of insights discovered</li>
               </ul>
             """
         )
@@ -430,12 +384,12 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                     task
                 )
             }
-            registerConstructor(CommandSession) { settings, task ->
-                CommandSessionTask(
-                    settings,
-                    task
-                )
-            }
+//            registerConstructor(CommandSession) { settings, task ->
+//                CommandSessionTask(
+//                    settings,
+//                    task
+//                )
+//            }
             registerConstructor(CrawlerAgent) { settings, task ->
                 CrawlerAgentTask(
                     settings,
