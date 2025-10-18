@@ -1,16 +1,19 @@
 package com.simiacryptus.cognotik.plan.tools.knowledge
 
+import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.apps.parse.DocumentRecord
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.DistanceType
+import com.simiacryptus.cognotik.embedding.EmbedderClient
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -40,12 +43,12 @@ class VectorSearchTask(
         val min_length: Int = 0,
         @Description("List of regex patterns that must be present in the content")
         val required_regexes: List<String> = emptyList(),
-        val model: String = OllamaEmbeddingModels.NomicEmbedText.modelName!!,
+        val model: String? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = "EmbeddingSearch",
+        task_type = VectorSearch.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -97,9 +100,7 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
         fun createEmbeddingWithRetry(query: String, maxRetries: Int = 3): DoubleArray? {
             repeat(maxRetries) { attempt ->
                 try {
-                    return executionConfig.model.let {
-                        EmbeddingModel.values()[it] ?: throw IllegalArgumentException("Unknown embedding model: $it")
-                    }.instance().embed(query)
+                    return embedderClient(executionConfig.model).embed(query)
                 } catch (e: Exception) {
                     if (attempt == maxRetries - 1) {
                         log.error("Failed to create embedding for query after $maxRetries attempts: $query", e)
@@ -181,29 +182,47 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
                 appendLine("## Result ${index + 1}")
                 appendLine("* Distance: %.3f".format(result.distance))
                 appendLine("* File: ${result.record.sourcePath}")
-                appendLine(getContextSummary(result.record.sourcePath, result.record.jsonPath))
+                appendLine(getContextSummary(result.record))
                 appendLine("Metadata:\n```json\n${result.record.metadata}\n```")
                 appendLine()
             }
         }
     }
 
-    private fun getContextSummary(sourcePath: String, jsonPath: String): String {
+    private fun getContextSummary(record: DocumentRecord): String {
         return try {
-            val sourceFile = File(sourcePath)
+            val sourceFile = File(record.sourcePath)
             if (!sourceFile.exists()) {
-                return "Source file not found: $sourcePath"
+                return "Source file not found: ${record.sourcePath}"
             }
-            val objectMapper = ObjectMapper()
-            val jsonNode = objectMapper.readTree(sourceFile)
-            val contextNode = getNodeAtPath(jsonNode, jsonPath)
-            buildString {
-                appendLine("```json")
-                appendLine(summarizeContext(contextNode, jsonPath, jsonNode))
-                appendLine("```")
+            try {
+                val objectMapper = ObjectMapper()
+                val jsonNode = objectMapper.readTree(sourceFile)
+                val contextNode = getNodeAtPath(jsonNode, record.jsonPath)
+                buildString {
+                    appendLine("```json")
+                    appendLine(summarizeContext(contextNode, record.jsonPath, jsonNode))
+                    appendLine("```")
+                }
+            } catch (e: JsonParseException) {
+                buildString {
+                    appendLine()
+                    appendLine("**Source Path:** ${record.sourcePath}")
+                    appendLine()
+                    appendLine("**JSON Path:** ${record.jsonPath}")
+                    appendLine()
+                    appendLine("```text")
+                    appendLine(record.text)
+                    appendLine("```")
+                    appendLine()
+//                    appendLine("```text")
+//                    appendLine(summarizeTextContext(sourceFile, record.jsonPath))
+//                    appendLine("```")
+                    appendLine()
+                }
             }
         } catch (e: Exception) {
-            log.error("Error getting context summary for $sourcePath:$jsonPath", e)
+            log.warn("Error getting context summary for ${record.sourcePath}:${record.jsonPath}", e)
             "Context summary unavailable: ${e.message}"
         }
     }
@@ -275,6 +294,30 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
 
     companion object {
         private val log = LoggerFactory.getLogger(VectorSearchTask::class.java)
+
+        val VectorSearch = TaskType(
+            "VectorSearch",
+            VectorSearchTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Perform semantic search using AI embeddings",
+            """
+                      Performs semantic search using AI embeddings across indexed content.
+                      <ul>
+                        <li>Uses OpenAI embeddings for semantic matching</li>
+                        <li>Supports positive and negative search queries</li>
+                        <li>Configurable similarity metrics and thresholds</li>
+                        <li>Regular expression filtering capabilities</li>
+                        <li>Returns ranked results with context</li>
+                      </ul>
+                    """
+        )
+
+        var embedderClient : (String?) -> EmbedderClient = {
+            val modelName = it ?: OllamaEmbeddingModels.NomicEmbedText.modelName!!
+            val embeddingModel = EmbeddingModel.values()[modelName]
+                ?: throw IllegalArgumentException("Unknown embedding model: $modelName")
+            embeddingModel.instance()
+        }
     }
 }
 

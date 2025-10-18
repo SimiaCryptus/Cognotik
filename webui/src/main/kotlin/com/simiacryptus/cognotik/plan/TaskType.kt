@@ -19,7 +19,9 @@ import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSe
 import com.simiacryptus.cognotik.plan.tools.file.GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask.WriteHtmlTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
+import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.Companion.KnowledgeIndexing
 import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
+import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask.Companion.VectorSearch
 import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
@@ -52,23 +54,6 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 ) : DynamicEnum<TaskType<*, *>>(name) {
 
     companion object {
-        val VectorSearch = TaskType(
-            "VectorSearch",
-            VectorSearchTask.VectorSearchTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Perform semantic search using AI embeddings",
-            """
-                      Performs semantic search using AI embeddings across indexed content.
-                      <ul>
-                        <li>Uses OpenAI embeddings for semantic matching</li>
-                        <li>Supports positive and negative search queries</li>
-                        <li>Configurable similarity metrics and thresholds</li>
-                        <li>Regular expression filtering capabilities</li>
-                        <li>Returns ranked results with context</li>
-                      </ul>
-                    """
-        )
-
         val RunShellCommand = TaskType(
             "RunShellCommand",
             RunShellCommandTaskExecutionConfigData::class.java,
@@ -129,22 +114,6 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             <li>Filters results by various criteria</li>
             <li>Formats results with relevant details</li>
             <li>Handles API rate limiting</li>
-          </ul>
-        """
-        )
-        val KnowledgeIndexing = TaskType( // TODO: This should be automatically done as needed during embedding search
-            "KnowledgeIndexing",
-            KnowledgeIndexingTask.KnowledgeIndexingTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Index content for semantic search capabilities",
-            """
-          Indexes documents and code for semantic search capabilities.
-          <ul>
-            <li>Processes both documentation and source code</li>
-            <li>Creates searchable content chunks</li>
-            <li>Supports parallel processing</li>
-            <li>Configurable chunking strategies</li>
-            <li>Progress tracking and reporting</li>
           </ul>
         """
         )

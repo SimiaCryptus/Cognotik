@@ -34,7 +34,7 @@ class KnowledgeIndexingTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = TaskType.KnowledgeIndexing.name,
+        task_type = KnowledgeIndexing.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -124,5 +124,23 @@ class KnowledgeIndexingTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(KnowledgeIndexingTask::class.java)
+
+        val KnowledgeIndexing = TaskType( // TODO: This should be automatically done as needed during embedding search
+            "KnowledgeIndexing",
+            KnowledgeIndexingTask.KnowledgeIndexingTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Index content for semantic search capabilities",
+            """
+          Indexes documents and code for semantic search capabilities.
+          <ul>
+            <li>Processes both documentation and source code</li>
+            <li>Creates searchable content chunks</li>
+            <li>Supports parallel processing</li>
+            <li>Configurable chunking strategies</li>
+            <li>Progress tracking and reporting</li>
+          </ul>
+        """
+        )
+
     }
 }
