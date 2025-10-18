@@ -163,7 +163,7 @@ class TaskConfigEditDialog(
             row("Seed Method:") {
                 val methods = SeedMethod.entries.map { it.name }.toTypedArray()
                 val combo = ComboBox(methods)
-                combo.selectedItem = config.seed_method?.name ?: "GoogleSearch"
+                combo.selectedItem = config.seed_method?.name ?: "GoogleProxy"
                 cell(combo)
                     .comment("Method to seed the crawler (e.g., GoogleSearch, DirectUrls)")
                 configFields["seed_method"] = combo
@@ -465,7 +465,7 @@ class TaskConfigEditDialog(
                     model = baseConfig.model,
                     seed_method = SeedMethod.valueOf(
                         (configFields["seed_method"] as? ComboBox<*>)?.selectedItem as? String
-                            ?: "GoogleSearch"
+                            ?: "GoogleProxy"
                     ),
                     fetch_method = FetchMethod.valueOf(
                         (configFields["fetch_method"] as? ComboBox<*>)?.selectedItem as? String

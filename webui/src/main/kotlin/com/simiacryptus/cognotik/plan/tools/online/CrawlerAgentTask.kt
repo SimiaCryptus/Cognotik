@@ -36,7 +36,7 @@ class CrawlerAgentTask(
 ) {
 
     class CrawlerTaskTypeConfig(
-        @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
+        @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleProxy,
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
         @Description("Whitespace-separated list of allowed domains/URL prefixes to restrict crawling (optional)") val allowed_domains: String? = null,
         @Description("Respect robots.txt rules when crawling (default: true)") val respect_robots_txt: Boolean? = true,
