@@ -56,8 +56,10 @@ object JsonUtil {
             ).registerModule(JavaTimeModule())
     }
 
-    fun toJson(data: Any?): String {
-        return objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(data)
+    fun toJson(data: Any?): String = when (data) {
+      null -> "null"
+      is String -> data
+      else -> objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(data)
     }
 
     fun <T> fromJson(data: String, type: Type): T {

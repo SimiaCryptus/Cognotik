@@ -28,7 +28,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
 
     abstract fun getChatClient(
         key: String,
-        base: String,
+        base: String = this.base,
         workPool: ExecutorService,
         logLevel: Level = Level.INFO,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),

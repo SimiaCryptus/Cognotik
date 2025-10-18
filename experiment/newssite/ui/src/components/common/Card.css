@@ -1,0 +1,79 @@
+.card {
+  background-color: var(--color-background);
+  border-radius: var(--border-radius-lg);
+  transition: all 0.2s ease-in-out;
+  width: 100%;
+}
+
+.card--default {
+  border: 1px solid var(--color-border);
+}
+
+.card--outlined {
+  border: 2px solid var(--color-border);
+}
+
+.card--elevated {
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+}
+
+/* Padding variants */
+.card--padding-none {
+  padding: 0;
+}
+
+.card--padding-small {
+  padding: 0.75rem;
+}
+
+.card--padding-medium {
+  padding: 1rem;
+}
+
+.card--padding-large {
+  padding: 1.5rem;
+}
+
+/* Interactive states */
+.card--hoverable:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card--clickable {
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border: 1px solid var(--color-border);
+}
+
+.card--clickable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Card sections */
+.card__header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+}
+
+.card__body {
+  flex: 1;
+}
+
+.card__footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  margin-top: 1rem;
+}
+
+/* Remove padding from sections when card has no padding */
+.card--padding-none .card__header,
+.card--padding-none .card__body,
+.card--padding-none .card__footer {
+  padding: 1rem;
+}

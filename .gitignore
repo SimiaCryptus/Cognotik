@@ -11,7 +11,7 @@ android/local.properties
 .gradle/
 .idea/
 openai.key
-*.log
+*.log*
 # Cypress
 cypress/videos/
 cypress/screenshots/

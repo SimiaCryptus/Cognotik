@@ -24,6 +24,11 @@ open class ProxyAgent<T : Any>(
     private var temperature: Double = 0.5,
     val validation: Boolean = true,
     private var maxRetries: Int = 5,
+    val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
+      "com.simiacryptus", "com.simiacryptus"
+    ) {
+      override val includeMethods: Boolean get() = false
+    }
 ) {
 
     init {
@@ -57,7 +62,8 @@ open class ProxyAgent<T : Any>(
                     .withIndex()
                     .associate { (idx, p) ->
                         val (arg, param) = p
-                        (param.name ?: "arg$idx") to JsonUtil.toJson(arg!!)
+                      val toJson = JsonUtil.toJson(arg!!)
+                      (param.name ?: "arg$idx") to toJson
                     }
             } else {
                 (args ?: arrayOf()).zip(method.parameters)
@@ -115,12 +121,6 @@ open class ProxyAgent<T : Any>(
             temperature = originalTemp
         }
     } as T
-
-    open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
-        "com.simiacryptus", "com.simiacryptus"
-    ) {
-        override val includeMethods: Boolean get() = false
-    }
 
     val examples = HashMap<String, MutableList<RequestResponse>>()
 
