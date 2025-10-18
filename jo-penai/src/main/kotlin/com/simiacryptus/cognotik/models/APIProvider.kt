@@ -7,6 +7,10 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.chat.*
 import com.simiacryptus.cognotik.chat.model.*
+import com.simiacryptus.cognotik.embedding.EmbeddingClientInterface
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
+import com.simiacryptus.cognotik.embedding.OpenAIEmbeddingModels
 import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.util.DynamicEnum
@@ -36,6 +40,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
     ): ChatClientInterface
 
     abstract fun getChatModels(key: String, baseUrl: String): List<ChatModel>
+    open fun getEmbeddingModels(key: String, baseUrl: String): List<EmbeddingModel> = emptyList()
 
     open fun getTranscriptionModels(key: String, baseUrl: String): List<AudioModels> = emptyList()
 
@@ -126,6 +131,26 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logLevel = logLevel,
                 logStreams = logStreams
             )
+
+            override fun getEmbeddingModels(key: String, baseUrl: String): List<EmbeddingModel> {
+                return OllamaEmbeddingModels.values.values.toList()
+            }
+
+            override fun getEmbeddingClient(
+                key: String,
+                base: String,
+                workPool: ExecutorService,
+                logLevel: Level,
+                logStreams: MutableList<BufferedOutputStream>,
+                scheduledPool: ListeningScheduledExecutorService
+            ) = com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient(
+                apiKey = key,
+                apiBase = base,
+                workPool = workPool,
+                logLevel = logLevel,
+                logStreams = logStreams,
+                scheduledPool = scheduledPool
+            )
         }
         val OpenAI: APIProvider = object : APIProvider("OpenAI", "https://api.openai.com/v1") {
 
@@ -152,6 +177,10 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 scheduledPool = scheduledPool
             )
 
+
+            override fun getEmbeddingModels(key: String, baseUrl: String): List<EmbeddingModel> {
+                return OpenAIEmbeddingModels.values.values.toList()
+            }
 
             override fun getEmbeddingClient(
                 key: String,
@@ -244,16 +273,7 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logStreams = logStreams,
                 scheduledPool = scheduledPool
             )
-            override fun getEmbeddingClient(
-                key: String,
-                base: String,
-                workPool: ExecutorService,
-                logLevel: Level,
-                logStreams: MutableList<BufferedOutputStream>,
-                scheduledPool: ListeningScheduledExecutorService
-            ): com.simiacryptus.cognotik.embedding.EmbeddingClientInterface {
-                throw UnsupportedOperationException("AWS does not support embedding functionality yet")
-            }
+
         }
         val Groq: APIProvider = object : APIProvider("Groq", "https://api.groq.com/openai/v1") {
 

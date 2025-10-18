@@ -66,6 +66,7 @@ object UITools {
     }
 
     val log = LoggerFactory.getLogger(UITools::class.java)
+
     private val threadFactory: ThreadFactory = ThreadFactoryBuilder().setNameFormat("API Thread %d").build()
     val pool: ListeningExecutorService by lazy {
         MoreExecutors.listeningDecorator(
@@ -79,6 +80,7 @@ object UITools {
             )
         )
     }
+
     val scheduledPool: ListeningScheduledExecutorService by lazy {
         MoreExecutors.listeningDecorator(ScheduledThreadPoolExecutor(1, threadFactory))
     }

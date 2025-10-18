@@ -16,13 +16,13 @@ import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
- import com.simiacryptus.cognotik.models.APIProvider
- import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.diff.PatchProcessors
- import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
- import com.simiacryptus.cognotik.util.LoggerFactory
- import java.awt.*
+import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.image.ImageModels
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
+import com.simiacryptus.cognotik.util.LoggerFactory
+import java.awt.*
 import java.awt.event.ActionEvent
 import javax.swing.*
 import javax.swing.event.ListSelectionEvent
@@ -182,6 +182,7 @@ class AppSettingsComponent : Disposable {
 
     @Name("Embedding Model")
     val embeddingModel = ComboBox<String>()
+
     @Name("Patch Processor")
     val patchProcessor = ComboBox<String>()
 
@@ -497,11 +498,12 @@ class AppSettingsComponent : Disposable {
         } catch (e: Exception) {
             log.error("Error populating API table: ${e.message}", e)
         }
-        val apis = fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.getUserSettings().apis
+        val apis =
+            fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.getUserSettings().apis
         try {
 
             // Get all available models from APIs with valid keys
-            val availableModels = try {
+            val availableChatModels = try {
                 apis.filter { api ->
                     api.key != null
                 }.flatMap { api ->
@@ -518,25 +520,42 @@ class AppSettingsComponent : Disposable {
                 log.error("Failed to load available models: ${e.message}", e)
                 emptyMap()
             }
+            val availableEmbeddingModels = try {
+                apis.filter { api ->
+                    api.key != null
+                }.flatMap { api ->
+                    try {
+                        val embeddingModels: List<EmbeddingModel>? = api.provider?.getEmbeddingModels(api.key!!, api.baseUrl)
+                        embeddingModels?.filter { model ->
+                            isVisible(model)
+                        }?.map { it.modelName to it } ?: emptyList()
+                    } catch (e: Exception) {
+                        log.warn("Failed to get chat models for provider ${api.provider?.name}: ${e.message}")
+                        emptyList()
+                    }
+                }.toMap().toSortedMap(compareBy { it })
+            } catch (e: Exception) {
+                log.error("Failed to load available models: ${e.message}", e)
+                emptyMap()
+            }
 
-            availableModels.forEach {
+            availableChatModels.forEach {
                 this.smartModel.addItem(it.value.modelName)
                 this.fastModel.addItem(it.value.modelName)
             }
-            log.debug("Loaded ${availableModels.size} available models")
+            availableEmbeddingModels.forEach {
+                this.embeddingModel.addItem(it.value.modelName)
+            }
+            log.debug("Loaded ${availableChatModels.size} available models")
         } catch (e: Exception) {
             log.error("Error loading models: ${e.message}", e)
         }
         try {
-
             ImageModels.values.values.forEach {
                 this.mainImageModel.addItem(it.name)
             }
-            EmbeddingModel.values().keys.forEach {
-                this.embeddingModel.addItem(it)
-            }
             PatchProcessors.values().forEach {
-            this.patchProcessor.addItem(it.name)
+                this.patchProcessor.addItem(it.name)
             }
         } catch (e: Exception) {
             log.error("Error loading image and embedding models: ${e.message}", e)
@@ -545,7 +564,9 @@ class AppSettingsComponent : Disposable {
 
         val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }.filter { modelItem ->
             val chatModel = apis.filter { it.key != null }
-                    .mapNotNull { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem } }.firstOrNull()
+                .mapNotNull { apiData ->
+                    apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
+                }.firstOrNull()
             if (chatModel == null) {
                 false
             } else {
@@ -555,13 +576,21 @@ class AppSettingsComponent : Disposable {
         }.sortedBy { modelItem ->
             val model =
                 apis.filter { it.key != null }
-                    .find { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.any { it.modelName == modelItem } == true }
-                    ?.let { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem } }!!
+                    .find { apiData ->
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                            ?.any { it.modelName == modelItem } == true
+                    }
+                    ?.let { apiData ->
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                            ?.find { it.modelName == modelItem }
+                    }!!
             "${model.provider?.name} - ${model.modelName}"
         }.toList()
         val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }.filter { modelItem ->
             val chatModel = apis.filter { it.key != null }
-                .mapNotNull { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem } }.firstOrNull()
+                .mapNotNull { apiData ->
+                    apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
+                }.firstOrNull()
             if (chatModel == null) {
                 false
             } else {
@@ -572,8 +601,14 @@ class AppSettingsComponent : Disposable {
             val model =
                 //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
                 apis.filter { it.key != null }
-                    .find { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.any { it.modelName == modelItem } == true }
-                    ?.let { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem } }
+                    .find { apiData ->
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                            ?.any { it.modelName == modelItem } == true
+                    }
+                    ?.let { apiData ->
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                            ?.find { it.modelName == modelItem }
+                    }
             "${model?.provider?.name} - ${model?.modelName}"
         }.toList()
         smartModel.removeAllItems()
@@ -644,8 +679,13 @@ class AppSettingsComponent : Disposable {
                 val userSettings = fileApplicationServices.userSettingsManager.getUserSettings()
                 val model = userSettings.apis
                     .filter { it.key != null }
-                    .find { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.any { it.modelName == value } == true }
-                    ?.let { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == value } }
+                    .find { apiData ->
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+                            ?.any { it.modelName == value } == true
+                    }
+                    ?.let { apiData ->
+                        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == value }
+                    }
                 text = "${model?.provider?.name} - $value"
             }
         }
@@ -672,6 +712,7 @@ class AppSettingsComponent : Disposable {
             }
         }
     }
+
     private fun getPatchProcessorRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {
         override fun customize(
             list: JList<out String>, value: String?, index: Int, selected: Boolean, hasFocus: Boolean

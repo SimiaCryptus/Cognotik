@@ -10,6 +10,7 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
@@ -659,7 +660,7 @@ class PlanConfigDialog(
     // Validation patterns
     private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")
 
-    fun isVisible(chatModel: ChatModel) =
+    fun isVisible(chatModel: LLMModel) =
       ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter { it.key != null }
         .any { it.provider == chatModel.provider }
   }
