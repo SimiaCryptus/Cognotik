@@ -35,16 +35,6 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import java.io.File
 import kotlin.random.Random
 
-data class CommandConfig(
-    val commands: List<PatchApp.CommandSettings>,
-    val exitCodeOption: String,
-    val autoFix: Boolean,
-    val maxRetries: Int,
-    val additionalInstructions: String,
-    val includeGitDiffs: Boolean = false,
-    val includeLineNumbers: Boolean = false,
-    val apiBudget: Double,
-)
 
 @State(name = "com.simiacryptus.cognotik.config.AppSettingsState", storages = [Storage("SdkSettingsPlugin.xml")])
 data class AppSettingsState(
