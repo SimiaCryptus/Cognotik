@@ -183,10 +183,10 @@ class CrawlerAgentTask(
             }
             val tabs = TabbedDisplay(task)
 
-
-            val seedMethod = typeConfig.seed_method ?: when {
-                !executionConfig?.search_query.isNullOrBlank() -> SeedMethod.GoogleSearch
+            val seedMethod = when {
                 !executionConfig?.direct_urls.isNullOrEmpty() -> SeedMethod.DirectUrls
+                typeConfig.seed_method != null -> typeConfig.seed_method!!
+                !executionConfig?.search_query.isNullOrBlank() -> SeedMethod.GoogleProxy
                 else -> {
                     log.error("No seed method specified and no search query or direct URLs provided")
                     return "Error: No seed method specified and no search query or direct URLs provided"

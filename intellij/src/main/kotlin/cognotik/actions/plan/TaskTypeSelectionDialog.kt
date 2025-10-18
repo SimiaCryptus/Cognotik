@@ -148,9 +148,7 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
                 "SeleniumSession", "SelfHealing"
             ) -> "Execution & Automation"
 
-            taskType.name in listOf("GitHubSearch", "CrawlerAgent") -> "Online & Search"
-
-            taskType.name == "MCPTool" -> "Integration"
+            taskType.name in listOf("GitHubSearch", "CrawlerAgent", "MCPTool") -> "Online & Search"
 
             else -> "Other"
         }
