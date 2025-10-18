@@ -29,7 +29,7 @@
     </extensions>
 
     <actions>
-        <group id="cognotik.ui.MainMenu"
+<group id="cognotik.ui.MainMenu"
                class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                popup="true"
                icon="MyIcons.icon"
@@ -40,6 +40,11 @@
                     id="GenericChat"
                     text="💬 Cognotik Chat"
                     description="Initiate a general-purpose chat session to discuss coding concepts, get assistance with programming tasks, or explore software development ideas">
+            </action>
+            <action class="cognotik.actions.plan.UnifiedPlanFromMenuAction"
+                    id="UnifiedPlan"
+                    text="🧠 Task Planning"
+                    description="Choose from multiple planning strategies in a unified interface with customizable task settings">
             </action>
         </group>
         <group id="cognotik.ui.EditorMenu"

@@ -168,6 +168,9 @@ class AppSettingsComponent : Disposable {
     @Name("Suppress Errors")
     val suppressErrors = JBCheckBox()
 
+    @Name("Use Scratches System Path")
+    val useScratchesSystemPath = JBCheckBox()
+
     @Name("Model")
     val smartModel = ComboBox<String>()
 
