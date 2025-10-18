@@ -23,7 +23,7 @@ cache:
 
 logging:
   level:
-    root: DEBUG
+    root: INFO
     com.example.news: DEBUG
     org.springframework.web: DEBUG
 

@@ -49,7 +49,7 @@ interface UseUserStoriesState {
 export const useUserStories = (
   username: string | null,
   page: number = 1,
-  pageSize: number = 30
+  pageSize: number = 5
 ): UseUserStoriesState => {
   const [data, setData] = useState<PaginatedStoryIds | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,7 +90,7 @@ interface UseUserCommentsState {
 export const useUserComments = (
   username: string | null,
   page: number = 1,
-  pageSize: number = 30
+  pageSize: number = 5
 ): UseUserCommentsState => {
   const [data, setData] = useState<PaginatedCommentIds | null>(null);
   const [loading, setLoading] = useState(true);

@@ -16,7 +16,7 @@ interface UseStoryState {
   refetch: () => Promise<void>;
 }
 
-export const useTopStories = (page: number = 1, pageSize: number = 30): UseStoriesState => {
+export const useTopStories = (page: number = 1, pageSize: number = 5): UseStoriesState => {
   const [data, setData] = useState<PaginatedStoryIds | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -41,7 +41,7 @@ export const useTopStories = (page: number = 1, pageSize: number = 30): UseStori
   return { data, loading, error, refetch: fetchData };
 };
 
-export const useNewStories = (page: number = 1, pageSize: number = 30): UseStoriesState => {
+export const useNewStories = (page: number = 1, pageSize: number = 5): UseStoriesState => {
   const [data, setData] = useState<PaginatedStoryIds | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -99,7 +99,7 @@ export const useStory = (id: number | null): UseStoryState => {
 export const useStoryComments = (
   storyId: number | null,
   page: number = 1,
-  pageSize: number = 30
+  pageSize: number = 5
 ): UseStoriesState => {
   const [data, setData] = useState<PaginatedStoryIds | null>(null);
   const [loading, setLoading] = useState(true);
@@ -180,20 +180,23 @@ export const useBatchStories = (): UseBatchStoriesState => {
         ids.map(id => storiesService.getStory(id))
       );
 
-      const newStories = new Map(stories);
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          newStories.set(ids[index], result.value);
-        }
-      });
+        const newStories = new Map(stories);
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
+                newStories.set(ids[index], result.value);
+            }
+        });
 
-      setStories(newStories);
+        setStories(newStories);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch stories'));
+        if (err instanceof Error && err.name === 'AbortError') {
+            return;
+        }
+        setError(err instanceof Error ? err : new Error('Failed to fetch stories'));
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   }, [stories]);
 
-  return { stories, loading, error, fetchStories };
+    return { stories, loading, error, fetchStories };
 };

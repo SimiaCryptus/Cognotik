@@ -21,7 +21,7 @@ interface UsePaginationReturn {
 
 export const usePagination = ({
   initialPage = 1,
-  initialPageSize = 30,
+  initialPageSize = 5,
   totalCount = 0,
 }: UsePaginationProps = {}): UsePaginationReturn => {
   const [page, setPage] = useState(initialPage);
@@ -95,7 +95,7 @@ interface UseInfiniteScrollReturn {
 }
 
 export const useInfiniteScroll = ({
-  initialPageSize = 30,
+  initialPageSize = 5,
   onLoadMore,
 }: UseInfiniteScrollProps): UseInfiniteScrollReturn => {
   const [page, setPage] = useState(1);

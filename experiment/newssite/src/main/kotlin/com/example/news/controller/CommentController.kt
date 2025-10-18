@@ -12,7 +12,7 @@ class CommentController(private val newsApiService: NewsApiService) {
     
     @GetMapping("/{id}")
     @Cacheable(CacheConfig.COMMENT_CACHE, key = "#id")
-    suspend fun getCommentDetails(@PathVariable id: Long): Comment {
+    suspend fun getCommentDetails(@PathVariable id: String): Comment {
         return newsApiService.getCommentDetails(id)
     }
 }

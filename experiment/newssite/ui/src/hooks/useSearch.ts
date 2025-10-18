@@ -87,7 +87,7 @@ const initialFormState: SearchFormState = {
   before: '',
   sortOrder: StorySortOrder.SCORE,
   page: 1,
-  pageSize: 30,
+  pageSize: 5,
 };
 
 export const useSearchForm = (): UseSearchFormState => {

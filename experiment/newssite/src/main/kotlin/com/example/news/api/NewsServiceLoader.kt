@@ -24,9 +24,9 @@ object NewsServiceLoader {
   fun createNewsService(
     clazz: Class<NewsApiService> = NewsApiService::class.java,
     model: ChatInterface = chatInterface(),
-    temperature: Double = 0.1,
+    temperature: Double = 0.8,
     validation: Boolean = true,
-    maxRetries: Int = 3,
+    maxRetries: Int = 1,
     describer: AbbrevWhitelistYamlDescriber = describer()
   ): NewsApiService = ProxyAgent(
     clazz = clazz,

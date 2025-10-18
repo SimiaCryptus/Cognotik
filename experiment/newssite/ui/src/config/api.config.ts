@@ -8,7 +8,7 @@ export const API_CONFIG = {
   BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/',
   
   // Default pagination settings
-  DEFAULT_PAGE_SIZE: 30,
+  DEFAULT_PAGE_SIZE: 5,
   MAX_PAGE_SIZE: 100,
   
   // Request timeout in milliseconds

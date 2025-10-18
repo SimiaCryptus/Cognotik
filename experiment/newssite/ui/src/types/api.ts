@@ -80,7 +80,7 @@ export interface PaginatedCommentIds {
  */
  export interface PaginationParams {
   page?: number; // Default: 1
-  pageSize?: number; // Default: 30, Max: 100
+  pageSize?: number; // Default: 5, Max: 100
   [key: string]: string | number | boolean | undefined;
 }
 

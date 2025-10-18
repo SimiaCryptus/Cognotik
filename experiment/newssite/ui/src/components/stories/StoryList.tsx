@@ -9,41 +9,41 @@ import { useBatchStories } from '../../hooks/useStories';
 import './StoryList.css';
 
 export interface StoryListProps {
-  storyIds: number[];
-  currentPage: number;
-  totalPages: number;
-  hasMore: boolean;
-  onPageChange: (page: number) => void;
-  loading?: boolean;
-  error?: Error | null;
-  emptyMessage?: string;
-  className?: string;
+storyIds: number[];
+currentPage: number;
+totalPages: number;
+hasMore: boolean;
+onPageChange: (page: number) => void;
+loading?: boolean;
+error?: Error | null;
+emptyMessage?: string;
+className?: string;
 }
 
 export const StoryList: React.FC<StoryListProps> = ({
-  storyIds,
-  currentPage,
-  totalPages,
-  hasMore,
-  onPageChange,
-  loading = false,
-  error = null,
-  emptyMessage = 'No stories found',
-  className = '',
-}) => {
-  const { stories, loading: storiesLoading, error: storiesError, fetchStories } = useBatchStories();
+ storyIds,
+ currentPage,
+ totalPages,
+ hasMore,
+ onPageChange,
+ loading = false,
+ error = null,
+ emptyMessage = 'No stories found',
+ className = '',
+ }) => {
+ const { stories, loading: storiesLoading, error: storiesError, fetchStories } = useBatchStories();
 
-  useEffect(() => {
+ useEffect(() => {
     if (storyIds.length > 0) {
       fetchStories(storyIds);
     }
-  }, [storyIds, fetchStories]);
+  }, [storyIds.join(',')]);
 
-  if (loading || storiesLoading) {
+if (loading || storiesLoading) {
     return <Loading size="large" text="Loading stories..." />;
   }
 
-  if (error || storiesError) {
+if (error || storiesError) {
     return (
       <Error
         message={error?.message || storiesError?.message || 'Failed to load stories'}
@@ -52,15 +52,15 @@ export const StoryList: React.FC<StoryListProps> = ({
     );
   }
 
-  if (storyIds.length === 0) {
+if (storyIds.length === 0) {
     return <EmptyState message={emptyMessage} />;
   }
 
-  const storyList = storyIds
+const storyList = storyIds
     .map(id => stories.get(id))
     .filter((story): story is Story => story !== undefined);
 
-  return (
+return (
     <div className={`story-list ${className}`}>
       <div className="story-list__items">
         {storyList.map((story, index) => (
