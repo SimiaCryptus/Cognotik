@@ -25,11 +25,11 @@ interface SeedMethodFactory {
 }
 
 enum class SeedMethod : SeedMethodFactory {
-  GoogleSearch {
-    override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = GoogleSearch().createStrategy(task, user)
-  },
   GoogleProxy {
     override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = GoogleProxy().createStrategy(task, user)
+  },
+  GoogleSearch {
+    override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = GoogleSearch().createStrategy(task, user)
   },
   SearchIO_Google_Search {
     override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = SearchAPISearch("google", "organic_results").createStrategy(task, user)

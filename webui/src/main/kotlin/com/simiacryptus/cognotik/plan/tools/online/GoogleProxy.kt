@@ -14,9 +14,8 @@ import kotlin.math.min
 
 class GoogleProxy : SeedMethodFactory {
   companion object {
-    // Configure this via environment variable or config file
     private val PROXY_ENDPOINT = System.getenv("GOOGLE_SEARCH_PROXY_ENDPOINT")
-      ?: "https://your-api-id.execute-api.us-east-1.amazonaws.com/search"
+      ?: "https://1lrgx057rh.execute-api.us-east-1.amazonaws.com/search"
   }
 
   override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy = object : SeedStrategy {
@@ -100,7 +99,6 @@ class GoogleProxy : SeedMethodFactory {
     }
 
     override fun isEnabled(): Boolean {
-      // Always enabled since we're using the proxy
       return true
     }
   }

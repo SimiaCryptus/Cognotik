@@ -1,24 +1,30 @@
 # lambda_function.py
+import base64
+import boto3
 import json
 import os
 import urllib.parse
 import urllib.request
-import boto3
 from botocore.exceptions import ClientError
 
 # Initialize KMS client
 kms = boto3.client('kms')
 
+
 def decrypt_value(encrypted_value):
     """Decrypt a KMS-encrypted value"""
     try:
+        # Decode from base64 (standard KMS format)
+        ciphertext_blob = base64.b64decode(encrypted_value)
+
         response = kms.decrypt(
-            CiphertextBlob=bytes.fromhex(encrypted_value)
+            CiphertextBlob=ciphertext_blob
         )
         return response['Plaintext'].decode('utf-8')
     except ClientError as e:
         print(f"Decryption failed: {e}")
         raise
+
 
 def lambda_handler(event, context):
     """

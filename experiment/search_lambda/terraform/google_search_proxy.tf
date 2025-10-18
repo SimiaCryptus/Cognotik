@@ -58,11 +58,11 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 
 # Lambda Function
 resource "aws_lambda_function" "google_search_proxy" {
-  filename         = "lambda_function.zip"
+  filename         = "../lambda/lambda_function.zip"
   function_name    = "cognotik-google-search-proxy"
   role            = aws_iam_role.google_search_proxy.arn
   handler         = "lambda_function.lambda_handler"
-  source_code_hash = filebase64sha256("lambda_function.zip")
+  source_code_hash = filebase64sha256("../lambda/lambda_function.zip")
   runtime         = "python3.11"
   timeout         = 30
   memory_size     = 256
