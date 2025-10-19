@@ -63,11 +63,13 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
+    System.currentTimeMillis()
     log.info("Starting MetaCognitiveReflection task for subject_task_id: ${executionConfig?.subject_task_id}")
-    // Step 1: Validate configuration
+
     val subjectTaskId = executionConfig?.subject_task_id
     if (subjectTaskId.isNullOrBlank()) {
       log.error("Configuration error: No subject_task_id specified")
+      task.complete("CONFIGURATION ERROR: No subject_task_id specified")
       resultFn("CONFIGURATION ERROR: No subject_task_id specified for reflection")
       return
     }
@@ -75,6 +77,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     val executionState = agent.executionState
     if (executionState == null) {
       log.error("Execution state not available")
+      task.complete("ERROR: Execution state not available")
       resultFn("ERROR: Execution state not available")
       return
     }
@@ -82,14 +85,19 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     val subjectTaskResult = executionState.taskResult[subjectTaskId]
     if (subjectTaskResult.isNullOrBlank()) {
       log.error("No result found for task: $subjectTaskId")
+      task.complete("ERROR: No result found for task '$subjectTaskId'")
       resultFn("ERROR: No result found for task '$subjectTaskId'")
       return
     }
-    // Step 2: Initialize UI with TabbedDisplay for better organization
 
-    val api = orchestrationConfig.defaultChatter
+    val api = orchestrationConfig.defaultChatter ?: run {
+      log.error("No default chatter available")
+      task.complete("ERROR: No API available")
+      resultFn("ERROR: No API available")
+      return
+    }
+
     val tabbedDisplay = TabbedDisplay(task)
-    // Overview Tab
     val overviewTask = task.ui.newTask()
     tabbedDisplay["Overview"] = overviewTask.placeholder
 

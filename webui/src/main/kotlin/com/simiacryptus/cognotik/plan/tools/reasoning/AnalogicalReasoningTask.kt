@@ -118,6 +118,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
 
       if (sourceDomain.isNullOrBlank() || targetProblem.isNullOrBlank()) {
         log.error("Configuration error: source_domain or target_problem is blank")
+        task.complete("CONFIGURATION ERROR: Both source_domain and target_problem must be specified")
         task.error(RuntimeException("Configuration error: source_domain or target_problem is blank"))
         resultFn("CONFIGURATION ERROR: Both source_domain and target_problem must be specified")
         return
@@ -126,8 +127,12 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
       log.info("Configuration validated successfully")
 
       val tabs = TabbedDisplay(task)
-      task.ui
-      val api = orchestrationConfig.defaultChatter
+      val api = orchestrationConfig.defaultChatter ?: run {
+        log.error("No default chatter available")
+        task.complete("ERROR: No API available")
+        resultFn("ERROR: No API available")
+        return
+      }
 
       // Create overview tab
       val overviewTask = task.ui.newTask(false)

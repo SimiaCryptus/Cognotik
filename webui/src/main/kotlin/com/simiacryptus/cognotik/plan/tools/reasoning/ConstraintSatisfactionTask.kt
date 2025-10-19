@@ -69,6 +69,8 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
     try {
       val problemDescription = executionConfig?.problem_description
       if (problemDescription.isNullOrBlank()) {
+        log.error("No problem description provided")
+        task.complete("CONFIGURATION ERROR: No problem description provided")
         resultFn("CONFIGURATION ERROR: No problem description provided")
         return
       }
@@ -79,7 +81,12 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       val maxIterations = executionConfig.max_iterations
 
       val toInput = { it: String -> listOf(it) }
-      val api = orchestrationConfig.defaultChatter
+      val api = orchestrationConfig.defaultChatter ?: run {
+        log.error("No default chatter available")
+        task.complete("ERROR: No API available")
+        resultFn("ERROR: No API available")
+        return
+      }
       log.info(
         """
         |Starting Constraint Satisfaction Task:

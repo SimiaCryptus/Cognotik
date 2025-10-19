@@ -53,11 +53,13 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
   override fun run(
     agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig
   ) {
+    val startTime = System.currentTimeMillis()
     log.info("Starting Abstraction Ladder Analysis - Concept: ${executionConfig?.concrete_concept}, Direction: ${executionConfig?.direction}, Levels: ${executionConfig?.levels}")
 
     val concept = executionConfig?.concrete_concept
     if (concept.isNullOrBlank()) {
       log.error("Configuration error: No concrete concept specified")
+      task.complete("CONFIGURATION ERROR: No concrete concept specified")
       resultFn("CONFIGURATION ERROR: No concrete concept specified")
       return
     }
@@ -65,6 +67,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     val direction = executionConfig.direction.lowercase()
     if (direction !in listOf("up", "down", "both")) {
       log.error("Configuration error: Invalid direction '$direction'")
+      task.complete("CONFIGURATION ERROR: Invalid direction")
       resultFn("CONFIGURATION ERROR: Direction must be 'up', 'down', or 'both'")
       return
     }
@@ -72,7 +75,12 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     val levels = executionConfig.levels.coerceIn(1, 5)
     val identifyPatterns = executionConfig.identify_patterns
 
-    val api = orchestrationConfig.defaultChatter
+    val api = orchestrationConfig.defaultChatter ?: run {
+      log.error("No default chatter available")
+      task.complete("ERROR: No API available")
+      resultFn("ERROR: No API available")
+      return
+    }
 
     // Initialize UI with tabbed display for better organization
     val tabbedDisplay = TabbedDisplay(task)
@@ -175,12 +183,14 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         )
       )
 
+      val duration = System.currentTimeMillis() - startTime
       log.info("Abstraction Ladder Analysis completed successfully - Concept: $concept, Levels: $levels")
-      task.complete("Abstraction ladder analysis complete for '$concept' with $levels levels in $direction direction(s)")
+      task.complete("Abstraction ladder analysis complete for '$concept' with $levels levels in $direction direction(s) (${duration}ms)")
       resultFn(result.toString())
 
     } catch (e: Exception) {
-      log.error("Error in abstraction ladder analysis", e)
+      val duration = System.currentTimeMillis() - startTime
+      log.error("Error in abstraction ladder analysis after ${duration}ms", e)
       task.error(e)
       task.add(
         MarkdownUtil.renderMarkdown(

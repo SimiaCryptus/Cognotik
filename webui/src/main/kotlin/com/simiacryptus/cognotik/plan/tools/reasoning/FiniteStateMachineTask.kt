@@ -83,7 +83,12 @@ FiniteStateMachine - Model concepts using finite state machine analysis
     }
 
     val ui = task.ui
-    val api = orchestrationConfig.defaultChatter
+    val api = orchestrationConfig.defaultChatter ?: run {
+      log.error("No default chatter available")
+      task.complete("ERROR: No API available")
+      resultFn("ERROR: No API available")
+      return
+    }
 
     try {
       // Create tabbed display for organized output
@@ -92,7 +97,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
       // Overview tab
       val overviewTask = task.ui.newTask(false)
       tabs["Overview"] = overviewTask.placeholder
-      
+
       val domainContext = executionConfig.domain_context ?: "general domain"
       val initialStates = executionConfig.initial_states ?: emptyList()
       val knownEvents = executionConfig.known_events ?: emptyList()
@@ -127,7 +132,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
       log.info("Step 1: Identifying all possible states")
       val statesTask = task.ui.newTask(false)
       tabs["States"] = statesTask.placeholder
-      
+
       val statesLoading = statesTask.add(
         MarkdownUtil.renderMarkdown("## State Identification\n\n🔄 Analyzing concept to identify all possible states...", ui = ui)
       )
@@ -184,7 +189,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
       log.info("Step 2: Identifying state transitions and events")
       val transitionsTask = task.ui.newTask(false)
       tabs["Transitions"] = transitionsTask.placeholder
-      
+
       val transitionsLoading = transitionsTask.add(
         MarkdownUtil.renderMarkdown("## Transition Analysis\n\n🔄 Identifying events and state transitions...", ui = ui)
       )
@@ -216,7 +221,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
       log.info("Step 3: Generating state diagram")
       val diagramTask = task.ui.newTask(false)
       tabs["State Diagram"] = diagramTask.placeholder
-      
+
       val diagramLoading = diagramTask.add(
         MarkdownUtil.renderMarkdown("## State Diagram\n\n🔄 Generating visual representation...", ui = ui)
       )
@@ -280,7 +285,7 @@ Generate the Mermaid diagram now:
         log.info("Step 4: Identifying edge cases and error states")
         val edgeCasesTask = task.ui.newTask(false)
         tabs["Edge Cases"] = edgeCasesTask.placeholder
-        
+
         val edgeCasesLoading = edgeCasesTask.add(
           MarkdownUtil.renderMarkdown("## Edge Cases Analysis\n\n🔄 Identifying edge cases and error states...", ui = ui)
         )
@@ -323,7 +328,7 @@ Provide a structured analysis of edge cases and recommendations.
         log.info("Step 5: Validating FSM properties")
         val validationTask = task.ui.newTask(false)
         tabs["Validation"] = validationTask.placeholder
-        
+
         val validationLoading = validationTask.add(
           MarkdownUtil.renderMarkdown("## FSM Validation\n\n🔄 Validating state machine properties...", ui = ui)
         )
@@ -372,7 +377,7 @@ Provide a structured validation report.
         log.info("Step 6: Generating test scenarios")
         val testScenariosTask = task.ui.newTask(false)
         tabs["Test Scenarios"] = testScenariosTask.placeholder
-        
+
         val testScenariosLoading = testScenariosTask.add(
           MarkdownUtil.renderMarkdown("## Test Scenario Generation\n\n🔄 Creating test scenarios...", ui = ui)
         )
@@ -420,7 +425,7 @@ Generate at least 5-10 diverse test scenarios.
       log.info("Step 7: Generating comprehensive summary")
       val summaryTask = task.ui.newTask(false)
       tabs["Summary"] = summaryTask.placeholder
-      
+
       val summaryLoading = summaryTask.add(
         MarkdownUtil.renderMarkdown("## Summary\n\n🔄 Generating comprehensive summary...", ui = ui)
       )
@@ -638,7 +643,7 @@ Format as a clear table or structured list.
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(FiniteStateMachineTask::class.java)
-    
+
     val FiniteStateMachine = TaskType(
       "FiniteStateMachine",
       FiniteStateMachineTaskExecutionConfigData::class.java,

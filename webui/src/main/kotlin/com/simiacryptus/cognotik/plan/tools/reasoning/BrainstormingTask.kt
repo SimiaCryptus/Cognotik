@@ -21,7 +21,7 @@ class BrainstormingTask(
   planTask
 ) {
 
-  val maxSummaryLength : Int = 50000
+  val maxSummaryLength: Int = 50000
 
   data class BrainstormedOption(
     val title: String = "",
@@ -60,7 +60,7 @@ class BrainstormingTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
 
-  ) : TaskExecutionConfig(
+    ) : TaskExecutionConfig(
     task_type = Brainstorming.name,
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
@@ -164,7 +164,7 @@ Brainstorming - Generate and analyze multiple solution options
             """
             |# Context from Previous Tasks
             |
-            |$priorContext
+            |${priorContext.take(maxSummaryLength)}${if (priorContext.length > maxSummaryLength) "\n... (truncated for display)" else ""}
             """.trimMargin(), ui = ui
           )
         )

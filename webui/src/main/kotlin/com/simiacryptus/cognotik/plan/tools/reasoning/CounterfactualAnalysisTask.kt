@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
@@ -64,28 +65,56 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
+    System.currentTimeMillis()
+    log.info("Starting CounterfactualAnalysis task for scenario: ${executionConfig?.actual_scenario}")
+
     val actualScenario = executionConfig?.actual_scenario
     val counterfactuals = executionConfig?.counterfactuals ?: emptyList()
 
     if (actualScenario.isNullOrBlank()) {
+      log.error("No actual scenario specified")
+      task.complete("CONFIGURATION ERROR: No actual scenario specified")
       resultFn("CONFIGURATION ERROR: No actual scenario specified")
       return
     }
 
     if (counterfactuals.isEmpty()) {
+      log.error("No counterfactual scenarios specified")
+      task.complete("CONFIGURATION ERROR: No counterfactual scenarios specified")
       resultFn("CONFIGURATION ERROR: No counterfactual scenarios specified")
       return
     }
 
     val toInput = { it: String -> listOf(it) }
-    val api = orchestrationConfig.defaultChatter
+    val api = orchestrationConfig.defaultChatter ?: run {
+      log.error("No default chatter available")
+      task.complete("ERROR: No API available")
+      resultFn("ERROR: No API available")
+      return
+    }
 
-    task.add(
-      MarkdownUtil.renderMarkdown(
-        "## Counterfactual Analysis: ${executionConfig?.task_description ?: "Scenario Analysis"}",
-        ui = task.ui
+    try {
+      val tabs = TabbedDisplay(task)
+      val overviewTask = task.ui.newTask(false)
+      tabs["Overview"] = overviewTask.placeholder
+
+      overviewTask.add(
+        MarkdownUtil.renderMarkdown(
+          """
+          |## Counterfactual Analysis
+          |
+          |**Actual Scenario:** ${actualScenario.take(200)}${if (actualScenario.length > 200) "..." else ""}
+          |
+          |**Counterfactuals:** ${counterfactuals.size}
+          |
+          |**Status:** 🔄 Starting analysis...
+          """.trimMargin(),
+          ui = task.ui
+        )
       )
-    )
+    } catch (e: Exception) {
+      log.warn("Failed to create overview tab", e)
+    }
 
     val contextFiles = getContextFiles()
     val priorCode = getPriorCode(agent.executionState)

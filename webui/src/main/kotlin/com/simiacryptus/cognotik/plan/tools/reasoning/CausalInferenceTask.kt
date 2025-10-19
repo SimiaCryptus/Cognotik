@@ -80,7 +80,12 @@ CausalInference - Identify causal relationships and root causes
 
     val toInput = { it: String -> listOf(it) }
     val ui = task.ui
-    val api = orchestrationConfig.defaultChatter
+    val api = orchestrationConfig.defaultChatter ?: run {
+      log.error("No default chatter available")
+      task.complete("ERROR: No API available")
+      resultFn("ERROR: No API available")
+      return
+    }
     try {
       // Create tabbed display for organized output
       val tabs = TabbedDisplay(task)

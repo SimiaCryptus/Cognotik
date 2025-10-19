@@ -96,11 +96,11 @@ Reasoning tools work best when integrated into a task workflow:
 
 ```kotlin
 AbstractionLadderTaskExecutionConfigData(
-    concrete_concept = "The specific code pattern or concept to analyze",
-    direction = "both",  // "up" (generalize), "down" (concretize), or "both"
-    levels = 3,  // Number of abstraction levels (1-5)
-    identify_patterns = true,  // Find design patterns and anti-patterns
-    related_files = listOf("src/main/kotlin/**/*.kt")
+  concrete_concept = "The specific code pattern or concept to analyze",
+  direction = "both",  // "up" (generalize), "down" (concretize), or "both"
+  levels = 3,  // Number of abstraction levels (1-5)
+  identify_patterns = true,  // Find design patterns and anti-patterns
+  related_files = listOf("src/main/kotlin/**/*.kt")
 )
 ```
 
@@ -165,11 +165,11 @@ identify_patterns = true
 
 ```kotlin
 AnalogicalReasoningTaskExecutionConfigData(
-    source_domain = "biological immune systems",
-    target_problem = "Designing a microservices health check system",
-    num_analogies = 3,
-    validate_mappings = true,
-    related_files = listOf("docs/architecture.md")
+  source_domain = "biological immune systems",
+  target_problem = "Designing a microservices health check system",
+  num_analogies = 3,
+  validate_mappings = true,
+  related_files = listOf("docs/architecture.md")
 )
 ```
 
@@ -238,16 +238,16 @@ num_analogies = 3
 
 ```kotlin
 CausalInferenceTaskExecutionConfigData(
-    observed_effect = "API response times increased by 300% after deployment",
-    potential_causes = listOf(
-        "Database connection pool exhaustion",
-        "Increased traffic volume",
-        "New caching layer misconfiguration",
-        "Memory leak in service"
-    ),
-    build_causal_graph = true,
-    identify_confounders = true,
-    evidence_sources = listOf("logs/**/*.log", "metrics/*.json")
+  observed_effect = "API response times increased by 300% after deployment",
+  potential_causes = listOf(
+    "Database connection pool exhaustion",
+    "Increased traffic volume",
+    "New caching layer misconfiguration",
+    "Memory leak in service"
+  ),
+  build_causal_graph = true,
+  identify_confounders = true,
+  evidence_sources = listOf("logs/**/*.log", "metrics/*.json")
 )
 ```
 
@@ -258,10 +258,10 @@ CausalInferenceTaskExecutionConfigData(
 ```kotlin
 observed_effect = "Application crashes every 6 hours"
 potential_causes = listOf(
-    "Memory leak",
-    "Database connection leak",
-    "Scheduled job interference",
-    "External API timeout accumulation"
+  "Memory leak",
+  "Database connection leak",
+  "Scheduled job interference",
+  "External API timeout accumulation"
 )
 build_causal_graph = true
 identify_confounders = true
@@ -282,10 +282,10 @@ evidence_sources = listOf("logs/application.log", "metrics/heap-dump.json")
 ```kotlin
 observed_effect = "User data corruption in production"
 potential_causes = listOf(
-    "Race condition in concurrent writes",
-    "Database transaction isolation issue",
-    "Cache invalidation bug",
-    "Serialization error"
+  "Race condition in concurrent writes",
+  "Database transaction isolation issue",
+  "Cache invalidation bug",
+  "Serialization error"
 )
 identify_confounders = true
 evidence_sources = listOf("logs/error.log", "src/main/kotlin/data/*.kt")
@@ -319,10 +319,10 @@ The tool applies these principles:
 
 ```kotlin
 ChainOfThoughtTaskExecutionConfigData(
-    problem_statement = "Design a distributed caching strategy for our microservices",
-    reasoning_depth = null,  // Auto-determine depth
-    validate_steps = true,
-    related_files = listOf("docs/architecture.md", "src/main/kotlin/cache/*.kt")
+  problem_statement = "Design a distributed caching strategy for our microservices",
+  reasoning_depth = null,  // Auto-determine depth
+  validate_steps = true,
+  related_files = listOf("docs/architecture.md", "src/main/kotlin/cache/*.kt")
 )
 ```
 
@@ -403,21 +403,21 @@ validate_steps = true
 
 ```kotlin
 ConstraintSatisfactionTaskExecutionConfigData(
-    problem_description = "Select a database technology for our new service",
-    hard_constraints = listOf(
-        "Must support ACID transactions",
-        "Must handle 10,000 writes/second",
-        "Must have active community support",
-        "Budget limit: $5,000/month"
-    ),
-    soft_constraints = mapOf(
-        "Minimize operational complexity" to 0.9,
-        "Maximize query performance" to 0.8,
-        "Prefer open-source solutions" to 0.6,
-        "Minimize learning curve for team" to 0.7
-    ),
-    search_strategy = "backtracking",
-    max_iterations = 100
+  problem_description = "Select a database technology for our new service",
+  hard_constraints = listOf(
+    "Must support ACID transactions",
+    "Must handle 10,000 writes/second",
+    "Must have active community support",
+    "Budget limit: $5,000/month"
+  ),
+  soft_constraints = mapOf(
+    "Minimize operational complexity" to 0.9,
+    "Maximize query performance" to 0.8,
+    "Prefer open-source solutions" to 0.6,
+    "Minimize learning curve for team" to 0.7
+  ),
+  search_strategy = "backtracking",
+  max_iterations = 100
 )
 ```
 
@@ -428,16 +428,16 @@ ConstraintSatisfactionTaskExecutionConfigData(
 ```kotlin
 problem_description = "Choose a frontend framework for our web application"
 hard_constraints = listOf(
-    "Must support TypeScript",
-    "Must have component-based architecture",
-    "Must be actively maintained",
-    "Team has React experience"
+  "Must support TypeScript",
+  "Must have component-based architecture",
+  "Must be actively maintained",
+  "Team has React experience"
 )
 soft_constraints = mapOf(
-    "Minimize bundle size" to 0.8,
-    "Maximize developer productivity" to 0.9,
-    "Strong ecosystem and libraries" to 0.7,
-    "Good documentation" to 0.6
+  "Minimize bundle size" to 0.8,
+  "Maximize developer productivity" to 0.9,
+  "Strong ecosystem and libraries" to 0.7,
+  "Good documentation" to 0.6
 )
 search_strategy = "backtracking"
 ```
@@ -478,15 +478,15 @@ Alternative Solutions:
 ```kotlin
 problem_description = "Allocate cloud resources across services"
 hard_constraints = listOf(
-    "Total budget: $10,000/month",
-    "Each service must have minimum 2 instances",
-    "Database must have backup redundancy",
-    "Must meet SLA of 99.9% uptime"
+  "Total budget: $10,000/month",
+  "Each service must have minimum 2 instances",
+  "Database must have backup redundancy",
+  "Must meet SLA of 99.9% uptime"
 )
 soft_constraints = mapOf(
-    "Minimize cost" to 0.9,
-    "Maximize performance headroom" to 0.7,
-    "Optimize for peak traffic handling" to 0.8
+  "Minimize cost" to 0.9,
+  "Maximize performance headroom" to 0.7,
+  "Optimize for peak traffic handling" to 0.8
 )
 search_strategy = "local"  // Good for optimization problems
 ```
@@ -548,19 +548,19 @@ soft_constraints = { "Community size": 0.7, "Documentation": 0.8, "Performance":
 
 ```kotlin
 CounterfactualAnalysisTaskExecutionConfigData(
-    actual_scenario = "We chose microservices architecture for our platform",
-    counterfactuals = listOf(
-        "What if we had chosen a modular monolith instead?",
-        "What if we had used serverless functions?",
-        "What if we had kept the original monolithic architecture?"
-    ),
-    compare_outcomes = true,
-    control_factors = listOf(
-        "Team size (5 developers)",
-        "Budget ($50k/month)",
-        "Traffic (100k requests/day)"
-    ),
-    related_files = listOf("docs/architecture-decision-record.md")
+  actual_scenario = "We chose microservices architecture for our platform",
+  counterfactuals = listOf(
+    "What if we had chosen a modular monolith instead?",
+    "What if we had used serverless functions?",
+    "What if we had kept the original monolithic architecture?"
+  ),
+  compare_outcomes = true,
+  control_factors = listOf(
+    "Team size (5 developers)",
+    "Budget ($50k/month)",
+    "Traffic (100k requests/day)"
+  ),
+  related_files = listOf("docs/architecture-decision-record.md")
 )
 ```
 
@@ -574,15 +574,15 @@ We deployed the new feature on Friday evening.
 The deployment caused a 2-hour outage affecting 30% of users.
 """
 counterfactuals = listOf(
-    "What if we had deployed during business hours with gradual rollout?",
-    "What if we had run the deployment in staging for 24 hours first?",
-    "What if we had implemented feature flags for instant rollback?"
+  "What if we had deployed during business hours with gradual rollout?",
+  "What if we had run the deployment in staging for 24 hours first?",
+  "What if we had implemented feature flags for instant rollback?"
 )
 compare_outcomes = true
 control_factors = listOf(
-    "Same code changes",
-    "Same infrastructure",
-    "Same team on-call"
+  "Same code changes",
+  "Same infrastructure",
+  "Same team on-call"
 )
 ```
 
@@ -628,15 +628,15 @@ Lessons learned:
 ```kotlin
 actual_scenario = "We chose PostgreSQL for our primary database"
 counterfactuals = listOf(
-    "What if we had chosen MongoDB?",
-    "What if we had chosen DynamoDB?",
-    "What if we had used a multi-database approach?"
+  "What if we had chosen MongoDB?",
+  "What if we had chosen DynamoDB?",
+  "What if we had used a multi-database approach?"
 )
 compare_outcomes = true
 control_factors = listOf(
-    "Same data model complexity",
-    "Same query patterns",
-    "Same scale requirements"
+  "Same data model complexity",
+  "Same query patterns",
+  "Same scale requirements"
 )
 ```
 
@@ -667,12 +667,12 @@ The tool evaluates:
 
 ```kotlin
 DecompositionSynthesisTaskExecutionConfigData(
-    complex_problem = "Implement a real-time collaborative document editing system",
-    decomposition_strategy = "functional",  // or "temporal", "spatial", "hierarchical"
-    max_depth = 3,
-    synthesize_solution = true,
-    validate_coherence = true,
-    related_files = listOf("docs/requirements.md")
+  complex_problem = "Implement a real-time collaborative document editing system",
+  decomposition_strategy = "functional",  // or "temporal", "spatial", "hierarchical"
+  max_depth = 3,
+  synthesize_solution = true,
+  validate_coherence = true,
+  related_files = listOf("docs/requirements.md")
 )
 ```
 
@@ -867,18 +867,18 @@ Suggestions:
 
 ```kotlin
 MetaCognitiveReflectionTaskExecutionConfigData(
-    subject_task_id = "task_123",  // ID of task to reflect upon
-    reflection_aspects = listOf(
-        "assumptions",
-        "biases",
-        "alternatives",
-        "confidence",
-        "completeness",
-        "logic"
-    ),
-    suggest_improvements = true,
-    identify_gaps = true,
-    evaluate_confidence = true
+  subject_task_id = "task_123",  // ID of task to reflect upon
+  reflection_aspects = listOf(
+    "assumptions",
+    "biases",
+    "alternatives",
+    "confidence",
+    "completeness",
+    "logic"
+  ),
+  suggest_improvements = true,
+  identify_gaps = true,
+  evaluate_confidence = true
 )
 ```
 
@@ -980,41 +980,48 @@ Edge Cases Not Addressed:
 Unexplored Alternatives:
 
 1. Event-driven architecture instead of synchronous calls
-  - Would improve decoupling
-  - Better scalability
-  - Trade-off: Increased complexity
+
+- Would improve decoupling
+- Better scalability
+- Trade-off: Increased complexity
 
 2. Caching layer for frequently accessed data
-  - Would reduce database load
-  - Faster response times
-  - Trade-off: Cache invalidation complexity
+
+- Would reduce database load
+- Faster response times
+- Trade-off: Cache invalidation complexity
 
 3. Batch processing for bulk operations
-  - Would improve efficiency
-  - Better resource utilization
-  - Trade-off: Delayed processing
+
+- Would improve efficiency
+- Better resource utilization
+- Trade-off: Delayed processing
 
 ## Improvement Suggestions
 
 1. Add explicit edge case testing
-  - Create test cases for boundary conditions
-  - Test with null/empty inputs
-  - Verify concurrent access scenarios
+
+- Create test cases for boundary conditions
+- Test with null/empty inputs
+- Verify concurrent access scenarios
 
 2. Implement comprehensive error handling
-  - Add try-catch blocks for external calls
-  - Provide meaningful error messages
-  - Log errors with context
+
+- Add try-catch blocks for external calls
+- Provide meaningful error messages
+- Log errors with context
 
 3. Conduct performance profiling
-  - Measure response times under load
-  - Identify bottlenecks
-  - Optimize critical paths
+
+- Measure response times under load
+- Identify bottlenecks
+- Optimize critical paths
 
 4. Address security concerns
-  - Review input validation
-  - Check authentication/authorization
-  - Audit sensitive data handling
+
+- Review input validation
+- Check authentication/authorization
+- Audit sensitive data handling
 
 ## Knowledge Gaps
 

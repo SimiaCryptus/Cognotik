@@ -117,11 +117,11 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting DecompositionSynthesisTask with problem: ${executionConfig?.complex_problem?.take(100)}")
-    // Step 1: Validate configuration
 
     val problem = executionConfig?.complex_problem
     if (problem.isNullOrBlank()) {
       log.error("No problem specified in execution config")
+      task.complete("CONFIGURATION ERROR: No problem specified")
       resultFn("CONFIGURATION ERROR: No problem specified")
       return
     }
@@ -129,8 +129,12 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     // Create tabbed display for organized output
     val tabs = TabbedDisplay(task)
     val ui = task.ui
-    val api = orchestrationConfig.defaultChatter
-    // Step 2: Initialize UI with overview
+    val api = orchestrationConfig.defaultChatter ?: run {
+      log.error("No default chatter available")
+      task.complete("ERROR: No API available")
+      resultFn("ERROR: No API available")
+      return
+    }
 
 
     // Overview tab
@@ -701,7 +705,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
       parsingChatter = orchestrationConfig.parsingChatter,
     )
 
-    val synthesized: SynthesizedSolution? = synthesisAgent.answer(listOf(problem)).obj
+    val synthesized: SynthesizedSolution = synthesisAgent.answer(listOf(problem)).obj
     return synthesized!!
   }
 
@@ -744,7 +748,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
       parsingChatter = orchestrationConfig.parsingChatter,
     )
 
-    val validation: CoherenceValidation? = validationAgent.answer(listOf(synthesized.solution)).obj
+    val validation: CoherenceValidation = validationAgent.answer(listOf(synthesized.solution)).obj
     return validation!!
   }
 
