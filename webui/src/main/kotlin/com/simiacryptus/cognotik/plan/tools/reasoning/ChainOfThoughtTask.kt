@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -183,7 +182,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
                 val stepStartTime = System.currentTimeMillis()
                 log.info("Starting reasoning step $stepNumber of $maxSteps")
 
-                val stepTask = ui.newTask(cancelable = false, root = false)
+              val stepTask = ui.newTask(false)
                 tabs["Step $stepNumber"] = stepTask.placeholder
                 stepTask.add(
                     MarkdownUtil.renderMarkdown(
@@ -515,12 +514,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
             parsingModel = orchestrationConfig.parsingChatter,
         )
 
-        var step: ReasoningStep? = null
-        Retryable(task, task.ui) { sb ->
-            step = reasoningAgent.answer(listOf(question)).obj.copy(step_number = stepNumber)
-            sb.append("Step $stepNumber completed")
-            sb.toString()
-        }
+      var step: ReasoningStep? = reasoningAgent.answer(listOf(question)).obj.copy(step_number = stepNumber)
         val finalStep = step!!
 
         task.add(
@@ -587,12 +581,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
             parsingModel = orchestrationConfig.parsingChatter,
         )
 
-        var validation: StepValidation? = null
-        Retryable(task, task.ui) { sb ->
-            validation = validationAgent.answer(listOf("Validate step ${step.step_number}")).obj
-            sb.append("Validation completed")
-            sb.toString()
-        }
+      var validation: StepValidation? = validationAgent.answer(listOf("Validate step ${step.step_number}")).obj
         return validation!!
     }
 
@@ -624,12 +613,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
             name = "ReasoningSummary"
         )
 
-        var summary = ""
-        Retryable(task, task.ui) { sb ->
-            summary = summaryAgent.answer(listOf("Generate summary"))
-            sb.append(summary)
-            sb.toString()
-        }
+      var summary = summaryAgent.answer(listOf("Generate summary"))
         return summary
     }
 

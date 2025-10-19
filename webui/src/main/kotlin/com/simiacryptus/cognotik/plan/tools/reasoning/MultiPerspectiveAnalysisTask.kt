@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -76,14 +75,12 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
             return
         }
 
-        val newTask = task.ui.newTask(false)
-        val ui = task.ui
-        val api = orchestrationConfig.defaultChatter
+      val api = orchestrationConfig.defaultChatter
 
-        newTask.add(
+      task.add(
             MarkdownUtil.renderMarkdown(
                 "## Multi-Perspective Analysis: $subject\n\nAnalyzing from ${perspectives.size} perspectives...",
-                ui = ui
+              ui = task.ui
             )
         )
 
@@ -91,12 +88,12 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
         val priorCode = getPriorCode(agent.executionState)
 
         // Create tabs for each perspective
-        val tabs = TabbedDisplay(newTask)
+      val tabs = TabbedDisplay(task)
         val perspectiveResults = mutableMapOf<String, String>()
 
         // Analyze from each perspective
         perspectives.forEach { perspective ->
-            val perspectiveTask = ui.newTask(false).apply {
+          val perspectiveTask = task.ui.newTask(false).apply {
                 tabs[perspective] = placeholder
             }
 
@@ -128,18 +125,13 @@ Provide a thorough analysis from the $perspective viewpoint.
             )
 
             try {
-                var analysis: String? = null
-                Retryable(perspectiveTask) { sb ->
-                    analysis = chatAgent.answer(listOf(prompt))
-                    sb.append(analysis)
-                    analysis
-                }
+              var analysis: String? = chatAgent.answer(listOf(prompt))
 
                 perspectiveResults[perspective] = analysis ?: ""
                 perspectiveTask.complete(
                     MarkdownUtil.renderMarkdown(
                         "### $perspective Perspective\n\n$analysis",
-                        ui = ui
+                      ui = task.ui
                     )
                 )
             } catch (e: Exception) {
@@ -153,11 +145,13 @@ Provide a thorough analysis from the $perspective viewpoint.
 
         // Synthesize if requested
         val finalResult = if (executionConfig.synthesize) {
-            val synthesisTask = ui.newTask(false)
+          val synthesisTask = task.ui.newTask(false).apply {
+            tabs["Synthesis"] = placeholder
+          }
             synthesisTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## Synthesizing Perspectives...",
-                    ui = ui
+                  ui = task.ui
                 )
             )
 
@@ -191,14 +185,11 @@ Provide a comprehensive synthesis that integrates all perspectives.
             )
 
             try {
-                val synthesis = Retryable(synthesisTask) {
-                    synthesisAgent.answer(listOf(synthesisPrompt))
-                }
-
+              val synthesis = synthesisAgent.answer(listOf(synthesisPrompt))
                 synthesisTask.complete(
                     MarkdownUtil.renderMarkdown(
                         "## Synthesis\n\n$synthesis",
-                        ui = ui
+                      ui = task.ui
                     )
                 )
 
@@ -240,7 +231,7 @@ Provide a comprehensive synthesis that integrates all perspectives.
             }
         }
 
-        newTask.complete()
+      task.complete()
         resultFn(finalResult)
     }
 

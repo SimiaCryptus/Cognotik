@@ -5,42 +5,42 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
 class ConstraintSatisfactionTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: ConstraintSatisfactionTaskExecutionConfigData?
+  orchestrationConfig: OrchestrationConfig,
+  planTask: ConstraintSatisfactionTaskExecutionConfigData?
 ) : AbstractTask<ConstraintSatisfactionTask.ConstraintSatisfactionTaskExecutionConfigData, TaskTypeConfig>(
-    orchestrationConfig,
-    planTask
+  orchestrationConfig,
+  planTask
 ) {
 
-    class ConstraintSatisfactionTaskExecutionConfigData(
-        @Description("The problem requiring constraint satisfaction")
-        val problem_description: String? = null,
-        @Description("Hard constraints that must be satisfied (cannot be violated)")
-        val hard_constraints: List<String>? = null,
-        @Description("Soft constraints to optimize with their relative weights (0.0-1.0)")
-        val soft_constraints: Map<String, Double>? = null,
-        @Description("Search strategy: 'backtracking' (systematic), 'forward' (greedy), 'local' (hill-climbing)")
-        val search_strategy: String = "backtracking",
-        @Description("Maximum search iterations before returning best solution found")
-        val max_iterations: Int = 100,
-        @Description("Additional files for context")
-        val related_files: List<String>? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
-    ) : TaskExecutionConfig(
-        task_type = ConstraintSatisfaction.name,
-        task_description = problem_description,
-        task_dependencies = task_dependencies?.toMutableList(),
-        state = state
-    )
+  class ConstraintSatisfactionTaskExecutionConfigData(
+    @Description("The problem requiring constraint satisfaction")
+    val problem_description: String? = null,
+    @Description("Hard constraints that must be satisfied (cannot be violated)")
+    val hard_constraints: List<String>? = null,
+    @Description("Soft constraints to optimize with their relative weights (0.0-1.0)")
+    val soft_constraints: Map<String, Double>? = null,
+    @Description("Search strategy: 'backtracking' (systematic), 'forward' (greedy), 'local' (hill-climbing)")
+    val search_strategy: String = "backtracking",
+    @Description("Maximum search iterations before returning best solution found")
+    val max_iterations: Int = 100,
+    @Description("Additional files for context")
+    val related_files: List<String>? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = TaskState.Pending,
+  ) : TaskExecutionConfig(
+    task_type = ConstraintSatisfaction.name,
+    task_description = problem_description,
+    task_dependencies = task_dependencies?.toMutableList(),
+    state = state
+  )
 
-    override fun promptSegment(): String {
-        return """
+  override fun promptSegment(): String {
+    return """
 ConstraintSatisfaction - Solve problems with multiple competing constraints
   ** Specify the problem description clearly
   ** Define hard constraints that MUST be satisfied (non-negotiable requirements)
@@ -56,34 +56,46 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
      - Configuration optimization with multiple objectives
      - Design trade-off analysis
         """.trimIndent()
-    }
+  }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val problemDescription = executionConfig?.problem_description
-        if (problemDescription.isNullOrBlank()) {
-            resultFn("CONFIGURATION ERROR: No problem description provided")
-            return
-        }
+  override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    val startTime = System.currentTimeMillis()
+    try {
+      val problemDescription = executionConfig?.problem_description
+      if (problemDescription.isNullOrBlank()) {
+        resultFn("CONFIGURATION ERROR: No problem description provided")
+        return
+      }
 
-        val hardConstraints = executionConfig.hard_constraints ?: emptyList()
-        val softConstraints = executionConfig.soft_constraints ?: emptyMap()
-        val searchStrategy = executionConfig.search_strategy
-        val maxIterations = executionConfig.max_iterations
+      val hardConstraints = executionConfig.hard_constraints ?: emptyList()
+      val softConstraints = executionConfig.soft_constraints ?: emptyMap()
+      val searchStrategy = executionConfig.search_strategy
+      val maxIterations = executionConfig.max_iterations
 
-        val newTask = task.ui.newTask(false)
-        val toInput = { it: String -> listOf(it) }
-        val ui = task.ui
-        val api = orchestrationConfig.defaultChatter
-
-        newTask.add(
-            MarkdownUtil.renderMarkdown(
-                """
+      val toInput = { it: String -> listOf(it) }
+      val api = orchestrationConfig.defaultChatter
+      log.info(
+        """
+        |Starting Constraint Satisfaction Task:
+        |  Problem: $problemDescription
+        |  Hard Constraints: ${hardConstraints.size}
+        |  Soft Constraints: ${softConstraints.size}
+        |  Strategy: $searchStrategy
+        |  Max Iterations: $maxIterations
+        """.trimMargin()
+      )
+      val tabbedDisplay = TabbedDisplay(task)
+      task.ui.newTask(false).apply {
+        tabbedDisplay["Problem Overview"] = placeholder
+        add(
+          MarkdownUtil.renderMarkdown(
+            """
                 |## Constraint Satisfaction Problem
                 |
                 |**Problem**: $problemDescription
@@ -96,76 +108,151 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
                 |
                 |**Strategy**: $searchStrategy (max iterations: $maxIterations)
                 """.trimMargin(),
-                ui = ui
-            )
+            ui = task.ui
+          )
         )
-
-        val priorCode = getPriorCode(agent.executionState)
-
-        val prompt = buildPrompt(
-            problemDescription,
-            hardConstraints,
-            softConstraints,
-            searchStrategy,
-            maxIterations,
-            priorCode
+      }
+      task.update()
+      // Step 2: Gather Context
+      task.ui.newTask(false).apply {
+        tabbedDisplay["Context"] = placeholder
+        add(
+          MarkdownUtil.renderMarkdown(
+            "### Gathering context from previous tasks...",
+            ui = task.ui
+          )
         )
+      }
+      task.update()
 
-        val chatAgent = ChatAgent(
-            prompt = promptSegment(),
-            model = api,
+
+      val priorCode = getPriorCode(agent.executionState)
+
+      val prompt = buildPrompt(
+        problemDescription,
+        hardConstraints,
+        softConstraints,
+        searchStrategy,
+        maxIterations,
+        priorCode
+      )
+      task.ui.newTask(false).apply {
+        tabbedDisplay["Context"] = placeholder
+        add(
+          MarkdownUtil.renderMarkdown(
+            """
+            |### Context Gathered
+            |✅ Previous task results collected
+            |✅ Prompt constructed
+            """.trimMargin(),
+            ui = task.ui
+          )
         )
+      }
+      task.update()
+      // Step 3: Generate Solution
+      task.ui.newTask(false).apply {
+        tabbedDisplay["Solution Generation"] = placeholder
+        task.add(
+          MarkdownUtil.renderMarkdown(
+            "### Generating constraint satisfaction solution...\n\nThis may take a moment.",
+            ui = task.ui
+          )
+        )
+      }
+      task.update()
 
-        var answer: String? = null
-        Retryable(newTask, newTask.ui) { sb ->
-            answer = chatAgent.answer(toInput(prompt))
-            sb.append(answer ?: "")
-            sb.toString()
-        }
+
+      val chatAgent = ChatAgent(
+        prompt = prompt,
+        model = api,
+      )
+
+      var answer: String? = chatAgent.answer(toInput(""))
+      task.ui.newTask(false).apply {
+        tabbedDisplay["Solution Generation"] = placeholder
+        add(
+          MarkdownUtil.renderMarkdown(
+            """
+            |### Solution Generated
+            |✅ Complete
+            """.trimMargin(),
+            ui = task.ui
+          )
+        )
+      }
+      task.update()
+      // Step 4: Display Solution
+      task.ui.newTask(false).apply {
+        tabbedDisplay["Final Solution"] = placeholder
         val solution = answer
 
-        newTask.add(
-            MarkdownUtil.renderMarkdown(
-                """
+        add(
+          MarkdownUtil.renderMarkdown(
+            """
                 |## Solution
                 |
                 |$solution
                 """.trimMargin(),
-                ui = ui
-            )
+            ui = task.ui
+          )
         )
+      }
+      task.update()
+      val duration = System.currentTimeMillis() - startTime
+      log.info("Constraint Satisfaction Task completed in ${duration}ms")
 
-        if (orchestrationConfig.autoFix) {
-            newTask.complete("Constraint satisfaction solution generated")
-            resultFn(answer ?: "No solution generated")
-        } else {
-            newTask.add(
-                MarkdownUtil.renderMarkdown(
-                    acceptButtonFooter(ui) {
-                        try {
-                            newTask.complete("Constraint satisfaction solution accepted")
-                            resultFn(answer ?: "No solution generated")
-                        } catch (e: Exception) {
-                            log.error("Error accepting solution", e)
-                            newTask.error(e)
-                            resultFn("ERROR: ${e.message}")
-                        }
-                    },
-                    ui = ui
-                )
-            )
-        }
+
+      if (orchestrationConfig.autoFix) {
+        task.complete("Constraint satisfaction solution generated and auto-applied")
+        task.complete("Constraint satisfaction solution generated")
+        resultFn(answer ?: "No solution generated")
+      } else {
+        task.add(
+          MarkdownUtil.renderMarkdown(
+            acceptButtonFooter(task.ui) {
+              try {
+                task.complete("Constraint satisfaction solution accepted")
+                resultFn(answer ?: "No solution generated")
+              } catch (e: Exception) {
+                log.error("Error accepting constraint satisfaction solution", e)
+                task.error(e)
+                resultFn("ERROR: ${e.message}")
+              }
+            },
+            ui = task.ui
+          )
+        )
+      }
+    } catch (e: Exception) {
+      log.error("Error in Constraint Satisfaction Task", e)
+      task.error(e)
+      task.add(
+        MarkdownUtil.renderMarkdown(
+          """
+          |## ❌ Error
+          |
+          |An error occurred while solving the constraint satisfaction problem:
+          |```
+          |${e.message}
+          |```
+          """.trimMargin(),
+          ui = task.ui
+        )
+      )
+      resultFn("ERROR: Failed to generate constraint satisfaction solution - ${e.message}")
     }
+  }
 
-    private fun buildPrompt(
-        problemDescription: String,
-        hardConstraints: List<String>,
-        softConstraints: Map<String, Double>,
-        searchStrategy: String,
-        maxIterations: Int,
-        priorCode: String
-    ): String {
-        return """
+  private fun buildPrompt(
+    problemDescription: String,
+    hardConstraints: List<String>,
+    softConstraints: Map<String, Double>,
+    searchStrategy: String,
+    maxIterations: Int,
+    priorCode: String
+  ): String {
+    return """
 You are an expert problem solver specializing in constraint satisfaction problems (CSP).
 
 ## Problem Description:
@@ -176,10 +263,10 @@ ${hardConstraints.mapIndexed { i, c -> "${i + 1}. $c" }.joinToString("\n")}
 
 ## Soft Constraints (optimize with given weights):
 ${
-            softConstraints.entries.mapIndexed { i, (constraint, weight) ->
-                "${i + 1}. $constraint (weight: $weight)"
-            }.joinToString("\n")
-        }
+      softConstraints.entries.mapIndexed { i, (constraint, weight) ->
+        "${i + 1}. $constraint (weight: $weight)"
+      }.joinToString("\n")
+    }
 
 ## Search Strategy:
 $searchStrategy
@@ -230,16 +317,16 @@ Provide your solution in the following structure:
 
 Generate the constraint satisfaction solution now:
         """.trimIndent()
-    }
+  }
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(ConstraintSatisfactionTask::class.java)
-        val ConstraintSatisfaction = TaskType(
-            "ConstraintSatisfaction",
-            ConstraintSatisfactionTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Solve problems with multiple competing constraints",
-            """
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(ConstraintSatisfactionTask::class.java)
+    val ConstraintSatisfaction = TaskType(
+      "ConstraintSatisfaction",
+      ConstraintSatisfactionTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Solve problems with multiple competing constraints",
+      """
               Solves constraint satisfaction problems with hard and soft constraints.
               <ul>
                 <li>Handles hard constraints that must be satisfied</li>
@@ -250,6 +337,6 @@ Generate the constraint satisfaction solution now:
                 <li>Useful for architectural decisions, resource allocation, and optimization</li>
               </ul>
             """
-        )
-    }
+    )
+  }
 }

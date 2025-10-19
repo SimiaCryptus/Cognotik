@@ -6,42 +6,41 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
 class CounterfactualAnalysisTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: CounterfactualAnalysisTaskExecutionConfigData?
+  orchestrationConfig: OrchestrationConfig,
+  planTask: CounterfactualAnalysisTaskExecutionConfigData?
 ) : AbstractTask<CounterfactualAnalysisTask.CounterfactualAnalysisTaskExecutionConfigData, TaskTypeConfig>(
-    orchestrationConfig,
-    planTask
+  orchestrationConfig,
+  planTask
 ) {
 
-    class CounterfactualAnalysisTaskExecutionConfigData(
-        @Description("The actual scenario or decision to analyze")
-        val actual_scenario: String? = null,
-        @Description("Alternative conditions to explore (what-if scenarios)")
-        val counterfactuals: List<String>? = null,
-        @Description("Whether to compare outcomes across scenarios")
-        val compare_outcomes: Boolean = true,
-        @Description("Factors to hold constant across scenarios")
-        val control_factors: List<String>? = null,
-        @Description("Additional files for context (e.g., historical data, related analyses)")
-        val related_files: List<String>? = null,
-        @Description("Detailed description of the analysis objectives")
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
-    ) : TaskExecutionConfig(
-        task_type = CounterfactualAnalysis.name,
-        task_description = task_description,
-        task_dependencies = task_dependencies?.toMutableList(),
-        state = state
-    )
+  class CounterfactualAnalysisTaskExecutionConfigData(
+    @Description("The actual scenario or decision to analyze")
+    val actual_scenario: String? = null,
+    @Description("Alternative conditions to explore (what-if scenarios)")
+    val counterfactuals: List<String>? = null,
+    @Description("Whether to compare outcomes across scenarios")
+    val compare_outcomes: Boolean = true,
+    @Description("Factors to hold constant across scenarios")
+    val control_factors: List<String>? = null,
+    @Description("Additional files for context (e.g., historical data, related analyses)")
+    val related_files: List<String>? = null,
+    @Description("Detailed description of the analysis objectives")
+    task_description: String? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = TaskState.Pending,
+  ) : TaskExecutionConfig(
+    task_type = CounterfactualAnalysis.name,
+    task_description = task_description,
+    task_dependencies = task_dependencies?.toMutableList(),
+    state = state
+  )
 
-    override fun promptSegment(): String {
-        return """
+  override fun promptSegment(): String {
+    return """
 CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relationships and decision impacts
   ** Specify the actual scenario or decision that occurred
   ** Provide a list of alternative conditions to explore (counterfactuals)
@@ -56,125 +55,123 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
   ** Related files can include historical data, previous analyses, or context documents
   ** Output includes detailed analysis of each scenario and comparative insights
         """.trimIndent()
+  }
+
+  override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    val actualScenario = executionConfig?.actual_scenario
+    val counterfactuals = executionConfig?.counterfactuals ?: emptyList()
+
+    if (actualScenario.isNullOrBlank()) {
+      resultFn("CONFIGURATION ERROR: No actual scenario specified")
+      return
     }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val actualScenario = executionConfig?.actual_scenario
-        val counterfactuals = executionConfig?.counterfactuals ?: emptyList()
-
-        if (actualScenario.isNullOrBlank()) {
-            resultFn("CONFIGURATION ERROR: No actual scenario specified")
-            return
-        }
-
-        if (counterfactuals.isEmpty()) {
-            resultFn("CONFIGURATION ERROR: No counterfactual scenarios specified")
-            return
-        }
-
-        val newTask = task.ui.newTask(false)
-        val toInput = { it: String -> listOf(it) }
-        val ui = task.ui
-        val api = orchestrationConfig.defaultChatter
-
-        newTask.add(
-            MarkdownUtil.renderMarkdown(
-                "## Counterfactual Analysis: ${executionConfig?.task_description ?: "Scenario Analysis"}",
-                ui = ui
-            )
-        )
-
-        val contextFiles = getContextFiles()
-        val priorCode = getPriorCode(agent.executionState)
-
-        // Analyze actual scenario
-        val actualAnalysis = analyzeScenario(
-            "Actual Scenario",
-            actualScenario,
-            contextFiles,
-            priorCode,
-            api,
-            newTask,
-            toInput
-        )
-
-        // Analyze counterfactual scenarios
-        val counterfactualAnalyses = counterfactuals.mapIndexed { index, counterfactual ->
-            analyzeScenario(
-                "Counterfactual ${index + 1}",
-                counterfactual,
-                contextFiles,
-                priorCode,
-                api,
-                newTask,
-                toInput
-            )
-        }
-
-        // Compare outcomes if requested
-        val comparisonAnalysis = if (executionConfig?.compare_outcomes == true) {
-            compareScenarios(
-                actualScenario,
-                actualAnalysis,
-                counterfactuals,
-                counterfactualAnalyses,
-                executionConfig?.control_factors,
-                contextFiles,
-                priorCode,
-                api,
-                newTask,
-                toInput
-            )
-        } else {
-            ""
-        }
-
-        val fullAnalysis = buildString {
-            appendLine("# Counterfactual Analysis Results")
-            appendLine()
-            appendLine("## Actual Scenario")
-            appendLine(actualScenario)
-            appendLine()
-            appendLine("### Analysis")
-            appendLine(actualAnalysis)
-            appendLine()
-
-            counterfactuals.forEachIndexed { index, counterfactual ->
-                appendLine("## Counterfactual Scenario ${index + 1}")
-                appendLine(counterfactual)
-                appendLine()
-                appendLine("### Analysis")
-                appendLine(counterfactualAnalyses[index])
-                appendLine()
-            }
-
-            if (comparisonAnalysis.isNotBlank()) {
-                appendLine("## Comparative Analysis")
-                appendLine(comparisonAnalysis)
-            }
-        }
-
-        newTask.add(MarkdownUtil.renderMarkdown(fullAnalysis, ui = ui))
-        newTask.complete()
-        resultFn(fullAnalysis)
+    if (counterfactuals.isEmpty()) {
+      resultFn("CONFIGURATION ERROR: No counterfactual scenarios specified")
+      return
     }
 
-    private fun analyzeScenario(
-        scenarioName: String,
-        scenario: String,
-        contextFiles: String,
-        priorCode: String,
-        api: ChatInterface,
-        task: SessionTask,
-        toInput: (String) -> List<String>
-    ): String {
-        val prompt = """
+    val toInput = { it: String -> listOf(it) }
+    val api = orchestrationConfig.defaultChatter
+
+    task.add(
+      MarkdownUtil.renderMarkdown(
+        "## Counterfactual Analysis: ${executionConfig?.task_description ?: "Scenario Analysis"}",
+        ui = task.ui
+      )
+    )
+
+    val contextFiles = getContextFiles()
+    val priorCode = getPriorCode(agent.executionState)
+
+    // Analyze actual scenario
+    val actualAnalysis = analyzeScenario(
+      "Actual Scenario",
+      actualScenario,
+      contextFiles,
+      priorCode,
+      api,
+      task,
+      toInput
+    )
+
+    // Analyze counterfactual scenarios
+    val counterfactualAnalyses = counterfactuals.mapIndexed { index, counterfactual ->
+      analyzeScenario(
+        "Counterfactual ${index + 1}",
+        counterfactual,
+        contextFiles,
+        priorCode,
+        api,
+        task,
+        toInput
+      )
+    }
+
+    // Compare outcomes if requested
+    val comparisonAnalysis = if (executionConfig?.compare_outcomes == true) {
+      compareScenarios(
+        actualScenario,
+        actualAnalysis,
+        counterfactuals,
+        counterfactualAnalyses,
+        executionConfig?.control_factors,
+        contextFiles,
+        priorCode,
+        api,
+        task,
+        toInput
+      )
+    } else {
+      ""
+    }
+
+    val fullAnalysis = buildString {
+      appendLine("# Counterfactual Analysis Results")
+      appendLine()
+      appendLine("## Actual Scenario")
+      appendLine(actualScenario)
+      appendLine()
+      appendLine("### Analysis")
+      appendLine(actualAnalysis)
+      appendLine()
+
+      counterfactuals.forEachIndexed { index, counterfactual ->
+        appendLine("## Counterfactual Scenario ${index + 1}")
+        appendLine(counterfactual)
+        appendLine()
+        appendLine("### Analysis")
+        appendLine(counterfactualAnalyses[index])
+        appendLine()
+      }
+
+      if (comparisonAnalysis.isNotBlank()) {
+        appendLine("## Comparative Analysis")
+        appendLine(comparisonAnalysis)
+      }
+    }
+
+    task.add(MarkdownUtil.renderMarkdown(fullAnalysis, ui = task.ui))
+    task.complete()
+    resultFn(fullAnalysis)
+  }
+
+  private fun analyzeScenario(
+    scenarioName: String,
+    scenario: String,
+    contextFiles: String,
+    priorCode: String,
+    api: ChatInterface,
+    task: SessionTask,
+    toInput: (String) -> List<String>
+  ): String {
+    val prompt = """
 Analyze the following scenario in detail:
 
 ## Scenario: $scenarioName
@@ -201,42 +198,37 @@ ${executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None spec
 Provide a comprehensive analysis:
         """.trimIndent()
 
-        val chatAgent = ChatAgent(
-            prompt = promptSegment(),
-            model = api,
-        )
+    val chatAgent = ChatAgent(
+      prompt = promptSegment(),
+      model = api,
+    )
 
-        var result: String? = null
-        Retryable(task) { sb ->
-            result = chatAgent.answer(toInput(prompt))
-            sb.append(result)
-            result
-        }
-        return result ?: ""
-    }
+    var result: String? = chatAgent.answer(toInput(prompt))
+    return result ?: ""
+  }
 
-    private fun compareScenarios(
-        actualScenario: String,
-        actualAnalysis: String,
-        counterfactuals: List<String>,
-        counterfactualAnalyses: List<String>,
-        controlFactors: List<String>?,
-        contextFiles: String,
-        priorCode: String,
-        api: ChatInterface,
-        task: SessionTask,
-        toInput: (String) -> List<String>
-    ): String {
-        val scenarioComparisons = counterfactuals.zip(counterfactualAnalyses)
-            .mapIndexed { index, (counterfactual, analysis) ->
-                """
+  private fun compareScenarios(
+    actualScenario: String,
+    actualAnalysis: String,
+    counterfactuals: List<String>,
+    counterfactualAnalyses: List<String>,
+    controlFactors: List<String>?,
+    contextFiles: String,
+    priorCode: String,
+    api: ChatInterface,
+    task: SessionTask,
+    toInput: (String) -> List<String>
+  ): String {
+    val scenarioComparisons = counterfactuals.zip(counterfactualAnalyses)
+      .mapIndexed { index, (counterfactual, analysis) ->
+        """
 ## Counterfactual ${index + 1}
 **Scenario:** $counterfactual
 **Analysis:** $analysis
                 """.trimIndent()
-            }.joinToString("\n\n")
+      }.joinToString("\n\n")
 
-        val prompt = """
+    val prompt = """
 Compare the following scenarios and provide insights on their differences:
 
 ## Actual Scenario
@@ -267,47 +259,42 @@ $priorCode
 Provide a comprehensive comparative analysis:
         """.trimIndent()
 
-        val chatAgent = ChatAgent(
-            prompt = promptSegment(),
-            model = api,
-        )
+    val chatAgent = ChatAgent(
+      prompt = promptSegment(),
+      model = api,
+    )
 
-        var result: String? = null
-        Retryable(task) { sb ->
-            result = chatAgent.answer(toInput(prompt))
-            sb.append(result)
-            result
+    var result: String? = chatAgent.answer(toInput(prompt))
+    return result ?: ""
+  }
+
+  private fun getContextFiles(): String {
+    val relatedFiles = executionConfig?.related_files ?: emptyList()
+    if (relatedFiles.isEmpty()) return "No related files provided"
+
+    return relatedFiles.joinToString("\n\n") { pattern ->
+      try {
+        val file = root.resolve(pattern).toFile()
+        if (file.exists() && file.isFile) {
+          "# ${file.name}\n\n```\n${file.readText()}\n```"
+        } else {
+          "# $pattern\n(File not found)"
         }
-        return result ?: ""
+      } catch (e: Exception) {
+        log.warn("Error reading file: $pattern", e)
+        "# $pattern\n(Error reading file: ${e.message})"
+      }
     }
+  }
 
-    private fun getContextFiles(): String {
-        val relatedFiles = executionConfig?.related_files ?: emptyList()
-        if (relatedFiles.isEmpty()) return "No related files provided"
-
-        return relatedFiles.joinToString("\n\n") { pattern ->
-            try {
-                val file = root.resolve(pattern).toFile()
-                if (file.exists() && file.isFile) {
-                    "# ${file.name}\n\n```\n${file.readText()}\n```"
-                } else {
-                    "# $pattern\n(File not found)"
-                }
-            } catch (e: Exception) {
-                log.warn("Error reading file: $pattern", e)
-                "# $pattern\n(Error reading file: ${e.message})"
-            }
-        }
-    }
-
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(CounterfactualAnalysisTask::class.java)
-        val CounterfactualAnalysis = TaskType(
-            "CounterfactualAnalysis",
-            CounterfactualAnalysisTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Explore what-if scenarios to understand causal relationships and decision impacts",
-            """
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(CounterfactualAnalysisTask::class.java)
+    val CounterfactualAnalysis = TaskType(
+      "CounterfactualAnalysis",
+      CounterfactualAnalysisTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Explore what-if scenarios to understand causal relationships and decision impacts",
+      """
               Performs counterfactual analysis to explore alternative scenarios and outcomes.
               <ul>
                 <li>Analyzes actual scenarios and alternative conditions</li>
@@ -318,6 +305,6 @@ Provide a comprehensive comparative analysis:
                 <li>Useful for retrospective analysis and strategic planning</li>
               </ul>
             """
-        )
-    }
+    )
+  }
 }

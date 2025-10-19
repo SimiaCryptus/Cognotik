@@ -5,46 +5,44 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.file.FileSystems
-import java.util.concurrent.atomic.AtomicInteger
 
 class CausalInferenceTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: CausalInferenceTaskExecutionConfigData?
+  orchestrationConfig: OrchestrationConfig,
+  planTask: CausalInferenceTaskExecutionConfigData?
 ) : AbstractTask<CausalInferenceTask.CausalInferenceTaskExecutionConfigData, TaskTypeConfig>(
-    orchestrationConfig,
-    planTask
+  orchestrationConfig,
+  planTask
 ) {
 
-    class CausalInferenceTaskExecutionConfigData(
-        @Description("The observed effect or outcome to explain")
-        val observed_effect: String? = null,
-        @Description("Potential causes to investigate")
-        val potential_causes: List<String>? = null,
-        @Description("Whether to build a causal graph")
-        val build_causal_graph: Boolean = true,
-        @Description("Whether to identify confounding factors")
-        val identify_confounders: Boolean = true,
-        @Description("Data sources for evidence (file patterns or paths)")
-        val evidence_sources: List<String>? = null,
-        @Description("Additional files for context")
-        val related_files: List<String>? = null,
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
-    ) : TaskExecutionConfig(
-        task_type = CausalInference.name,
-        task_description = task_description,
-        task_dependencies = task_dependencies?.toMutableList(),
-        state = state
-    )
+  class CausalInferenceTaskExecutionConfigData(
+    @Description("The observed effect or outcome to explain")
+    val observed_effect: String? = null,
+    @Description("Potential causes to investigate")
+    val potential_causes: List<String>? = null,
+    @Description("Whether to build a causal graph")
+    val build_causal_graph: Boolean = true,
+    @Description("Whether to identify confounding factors")
+    val identify_confounders: Boolean = true,
+    @Description("Data sources for evidence (file patterns or paths)")
+    val evidence_sources: List<String>? = null,
+    @Description("Additional files for context")
+    val related_files: List<String>? = null,
+    task_description: String? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = TaskState.Pending,
+  ) : TaskExecutionConfig(
+    task_type = CausalInference.name,
+    task_description = task_description,
+    task_dependencies = task_dependencies?.toMutableList(),
+    state = state
+  )
 
-    override fun promptSegment(): String {
-        return """
+  override fun promptSegment(): String {
+    return """
 CausalInference - Identify causal relationships and root causes
   ** Specify the observed effect or outcome to explain
   ** List potential causes to investigate
@@ -57,55 +55,64 @@ CausalInference - Identify causal relationships and root causes
      - Understanding system behavior
      - Distinguishing correlation from causation
         """.trimIndent()
+  }
+
+  override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    val startTime = System.currentTimeMillis()
+    log.info("Starting CausalInference task for effect: ${executionConfig?.observed_effect}")
+
+    val observedEffect = executionConfig?.observed_effect
+    if (observedEffect.isNullOrBlank()) {
+      val errorMsg = "CONFIGURATION ERROR: No observed effect specified"
+      log.error(errorMsg)
+      task.complete(errorMsg)
+      resultFn("CONFIGURATION ERROR: No observed effect specified")
+      return
     }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val observedEffect = executionConfig?.observed_effect
-        if (observedEffect.isNullOrBlank()) {
-            resultFn("CONFIGURATION ERROR: No observed effect specified")
-            return
-        }
+    val toInput = { it: String -> listOf(it) }
+    val ui = task.ui
+    val api = orchestrationConfig.defaultChatter
+    try {
+      // Create tabbed display for organized output
+      val tabs = TabbedDisplay(task)
 
-        val toInput = { it: String -> listOf(it) }
-        val ui = task.ui
-        val api = orchestrationConfig.defaultChatter
-        // Create tabbed display for organized output
-        val tabs = TabbedDisplay(task)
-
-        // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
-        var overviewTaskStatus = overviewTask.add(
-            MarkdownUtil.renderMarkdown(
-                """
+      // Overview tab
+      val overviewTask = task.ui.newTask(false)
+      tabs["Overview"] = overviewTask.placeholder
+      var overviewTaskStatus = overviewTask.add(
+        MarkdownUtil.renderMarkdown(
+          """
             |## Causal Inference Analysis
             |
             |**Observed Effect:** $observedEffect
             |
             |**Status:** 🔄 Gathering evidence...
         """.trimMargin(), ui = ui
-            )
         )
-        task.update()
+      )
+      task.update()
 
-        // Gather evidence from sources
-        val evidenceTask = task.ui.newTask(false)
-        tabs["Evidence Sources"] = evidenceTask.placeholder
-        val evidenceLoading =
-            evidenceTask.add(MarkdownUtil.renderMarkdown("## Evidence Sources\n\n🔄 Loading evidence...", ui = ui))
-        task.update()
+      // Gather evidence from sources
+      log.debug("Gathering evidence from ${executionConfig?.evidence_sources?.size ?: 0} sources")
+      val evidenceTask = task.ui.newTask(false)
+      tabs["Evidence Sources"] = evidenceTask.placeholder
+      val evidenceLoading =
+        evidenceTask.add(MarkdownUtil.renderMarkdown("## Evidence Sources\n\n🔄 Loading evidence...", ui = ui))
+      task.update()
 
-        val evidenceContext = gatherEvidence()
-        evidenceLoading?.clear()
-        evidenceTask.add(
-            MarkdownUtil.renderMarkdown(
-                """
+      val evidenceContext = gatherEvidence()
+      log.debug("Evidence gathered: ${evidenceContext.length} characters")
+      evidenceLoading?.clear()
+      evidenceTask.add(
+        MarkdownUtil.renderMarkdown(
+          """
             |## Evidence Sources
             |
             |✅ Evidence gathered successfully
@@ -121,24 +128,25 @@ CausalInference - Identify causal relationships and root causes
             |
             |</details>
         """.trimMargin(), ui = ui
-            )
         )
-        task.update()
+      )
+      task.update()
+      log.debug("Retrieving prior context from execution state")
 
-        val priorContext = getPriorCode(agent.executionState)
+      val priorContext = getPriorCode(agent.executionState)
 
-        val potentialCauses = executionConfig.potential_causes ?: emptyList()
-        val causesText = if (potentialCauses.isNotEmpty()) {
-            "**Potential Causes to Investigate:**\n" + potentialCauses.joinToString("\n") { "- $it" }
-        } else {
-            "**Note:** No specific potential causes provided. Will identify causes from evidence."
-        }
+      val potentialCauses = executionConfig.potential_causes ?: emptyList()
+      val causesText = if (potentialCauses.isNotEmpty()) {
+        "**Potential Causes to Investigate:**\n" + potentialCauses.joinToString("\n") { "- $it" }
+      } else {
+        "**Note:** No specific potential causes provided. Will identify causes from evidence."
+      }
 
-        // Update overview with causes
-        overviewTaskStatus?.clear()
-        overviewTaskStatus = overviewTask.add(
-            MarkdownUtil.renderMarkdown(
-                """
+      // Update overview with causes
+      overviewTaskStatus?.clear()
+      overviewTaskStatus = overviewTask.add(
+        MarkdownUtil.renderMarkdown(
+          """
             |## Causal Inference Analysis
             |
             |**Observed Effect:** $observedEffect
@@ -147,60 +155,59 @@ CausalInference - Identify causal relationships and root causes
             |
             |**Status:** 🔄 Analyzing causal relationships...
         """.trimMargin(), ui = ui
-            )
         )
-        task.update()
+      )
+      task.update()
+      log.debug("Building analysis prompt with ${potentialCauses.size} potential causes")
 
-        // Build the analysis prompt
-        val prompt = buildAnalysisPrompt(
-            observedEffect,
-            potentialCauses,
-            evidenceContext,
-            priorContext
+      // Build the analysis prompt
+      val prompt = buildAnalysisPrompt(
+        observedEffect,
+        potentialCauses,
+        evidenceContext,
+        priorContext
+      )
+      log.debug("Initializing ChatAgent with model: ${api.javaClass.simpleName}")
+
+      val chatAgent = ChatAgent(
+        prompt = prompt,
+        model = api,
+      )
+      // Analysis tab
+      val analysisTask = task.ui.newTask(false)
+      tabs["Causal Analysis"] = analysisTask.placeholder
+      val analysisTaskLoading = analysisTask.add(
+        MarkdownUtil.renderMarkdown(
+          "## Causal Analysis\n\n🔄 Performing causal inference...",
+          ui = ui
         )
-
-        val chatAgent = ChatAgent(
-            prompt = promptSegment(),
-            model = api,
-        )
-        // Analysis tab
-        val analysisTask = task.ui.newTask(false)
-        tabs["Causal Analysis"] = analysisTask.placeholder
-        val analysisTaskLoading = analysisTask.add(
-            MarkdownUtil.renderMarkdown(
-                "## Causal Analysis\n\n🔄 Performing causal inference...",
-                ui = ui
-            )
-        )
-        task.update()
+      )
+      task.update()
+      log.debug("Requesting causal analysis from LLM")
 
 
-        var answer: String? = null
-        Retryable(analysisTask) { sb ->
-            answer = chatAgent.answer(toInput(prompt))
-            sb.append(answer)
-            answer
-        }
+      var answer: String? = chatAgent.answer(toInput(prompt))
 
-        analysisTaskLoading?.clear()
-        analysisTask.add(
-            MarkdownUtil.renderMarkdown(
-                """
+      analysisTaskLoading?.clear()
+      analysisTask.add(
+        MarkdownUtil.renderMarkdown(
+          """
                 |## Causal Analysis Results
                 |
                 |✅ Analysis complete
                 |
                 |$answer
                 """.trimMargin(),
-                ui = ui
-            )
+          ui = ui
         )
-        task.update()
-        // Update overview status
-        overviewTaskStatus?.clear()
-        overviewTask.add(
-            MarkdownUtil.renderMarkdown(
-                """
+      )
+      task.update()
+
+      // Update overview status
+      overviewTaskStatus?.clear()
+      overviewTask.add(
+        MarkdownUtil.renderMarkdown(
+          """
             |## Causal Inference Analysis
             |
             |**Observed Effect:** $observedEffect
@@ -209,23 +216,24 @@ CausalInference - Identify causal relationships and root causes
             |
             |**Status:** ✅ Analysis complete
         """.trimMargin(), ui = ui
-            )
+        )
+      )
+      task.update()
+
+      // If building causal graph, generate visualization
+      if (executionConfig.build_causal_graph) {
+        log.debug("Building causal graph visualization")
+        val graphTask = task.ui.newTask(false)
+        tabs["Causal Graph"] = graphTask.placeholder
+        var graphTaskStatus = graphTask.add(
+          MarkdownUtil.renderMarkdown(
+            "## Causal Graph\n\n🔄 Generating causal graph visualization...",
+            ui = ui
+          )
         )
         task.update()
 
-        // If building causal graph, generate visualization
-        if (executionConfig.build_causal_graph) {
-            val graphTask = task.ui.newTask(false)
-            tabs["Causal Graph"] = graphTask.placeholder
-            var graphTaskStatus = graphTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "## Causal Graph\n\n🔄 Generating causal graph visualization...",
-                    ui = ui
-                )
-            )
-            task.update()
-
-            val graphPrompt = """
+        val graphPrompt = """
 Based on the causal analysis above, create a Mermaid diagram showing the causal relationships.
 Use the following format:
 - Use `graph TD` for top-down flow
@@ -234,22 +242,17 @@ Use the following format:
 - Label confounders clearly
 - Use descriptive node labels
 
- Generate the Mermaid diagram now:
+Generate the Mermaid diagram now:
             """.trimIndent()
+        log.debug("Requesting causal graph from LLM")
 
-            var graphResult: String? = null
-            Retryable(graphTask) { sb ->
-                graphResult = chatAgent.answer(toInput(graphPrompt))
-                sb.append(graphResult)
-                graphResult
-            }
-
-            val mermaidCode = extractMermaidCode(graphResult ?: "")
-            graphTaskStatus?.clear()
-            if (mermaidCode.isNotEmpty()) {
-                graphTaskStatus = graphTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
+        var graphResult: String? = chatAgent.answer(toInput(graphPrompt))
+        val mermaidCode = extractMermaidCode(graphResult ?: "")
+        graphTaskStatus?.clear()
+        if (mermaidCode.isNotEmpty()) {
+          graphTaskStatus = graphTask.add(
+            MarkdownUtil.renderMarkdown(
+              """
                         |## Causal Graph
                         |
                         |✅ Graph generated successfully
@@ -258,57 +261,73 @@ Use the following format:
                         |$mermaidCode
                         |```
                         """.trimMargin(),
-                        ui = ui
-                    )
-                )
-            } else {
-                graphTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
+              ui = ui
+            )
+          )
+        } else {
+          graphTask.add(
+            MarkdownUtil.renderMarkdown(
+              """
                         |## Causal Graph
                         |
                         |⚠️ Failed to generate graph visualization
                         |
                         |The analysis did not produce a valid Mermaid diagram.
                         """.trimMargin(),
-                        ui = ui
-                    )
-                )
-            }
-            task.update()
+              ui = ui
+            )
+          )
         }
+        task.update()
+      }
 
-        task.complete()
-        resultFn(answer ?: "Analysis completed")
+      val duration = System.currentTimeMillis() - startTime
+      val summary = "Causal inference analysis completed for effect: $observedEffect"
+      log.info("$summary (duration: ${duration}ms, causes analyzed: ${potentialCauses.size}, evidence sources: ${executionConfig?.evidence_sources?.size ?: 0})")
+
+      task.complete(summary)
+      resultFn(answer ?: "Analysis completed")
+
+    } catch (e: Exception) {
+      val duration = System.currentTimeMillis() - startTime
+      log.error("CausalInference task failed after ${duration}ms for effect: $observedEffect", e)
+      task.error(e)
+
+      val errorTask = task.ui.newTask(false)
+//            tabs["Error"] = errorTask.placeholder
+      errorTask.add(MarkdownUtil.renderMarkdown("## ❌ Error\n\nAn error occurred during causal inference analysis:\n\n```\n${e.message}\n```", ui = ui))
+      task.complete("Analysis failed: ${e.message}")
+      resultFn("ERROR: Causal inference analysis failed - ${e.message}")
     }
+  }
 
-    private fun buildAnalysisPrompt(
-        observedEffect: String,
-        potentialCauses: List<String>,
-        evidenceContext: String,
-        priorContext: String
-    ): String {
-        val causesSection = if (potentialCauses.isNotEmpty()) {
-            """
+  private fun buildAnalysisPrompt(
+    observedEffect: String,
+    potentialCauses: List<String>,
+    evidenceContext: String,
+    priorContext: String
+  ): String {
+    val causesSection = if (potentialCauses.isNotEmpty()) {
+      """
             |## Potential Causes to Investigate:
             |${potentialCauses.joinToString("\n") { "- $it" }}
             """.trimMargin()
-        } else {
-            "## Note: Identify potential causes from the evidence provided."
-        }
+    } else {
+      "## Note: Identify potential causes from the evidence provided."
+    }
 
-        val confoundersSection = if (executionConfig?.identify_confounders == true) {
-            """
+    val confoundersSection = if (executionConfig?.identify_confounders == true) {
+      """
             |
             |## Confounding Factors:
             |Identify any confounding variables that might create spurious correlations.
             |Explain how these confounders affect the causal interpretation.
             """.trimMargin()
-        } else {
-            ""
-        }
+    } else {
+      ""
+    }
 
-        return """
+    return """
 You are an expert in causal inference and root cause analysis. Your task is to identify the true causal relationships behind an observed effect.
 
 ## Observed Effect:
@@ -357,58 +376,58 @@ Provide a structured analysis with:
 
 Generate the causal analysis now:
         """.trimIndent()
+  }
+
+  private fun gatherEvidence(): String {
+    val evidenceSources = executionConfig?.evidence_sources ?: emptyList()
+    val relatedFiles = executionConfig?.related_files ?: emptyList()
+    val allSources = (evidenceSources + relatedFiles).distinct()
+
+    if (allSources.isEmpty()) {
+      return "No specific evidence sources provided."
     }
-
-    private fun gatherEvidence(): String {
-        val evidenceSources = executionConfig?.evidence_sources ?: emptyList()
-        val relatedFiles = executionConfig?.related_files ?: emptyList()
-        val allSources = (evidenceSources + relatedFiles).distinct()
-
-        if (allSources.isEmpty()) {
-            return "No specific evidence sources provided."
+    val maxFileSize = 2000 // Reduced from 5000
+    val maxTotalSize = 10000 // Limit total evidence context
+    var totalSize = 0
+    return allSources.flatMap { pattern ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      root.toFile().walkTopDown()
+        .filter { file ->
+          file.isFile && matcher.matches(root.relativize(file.toPath()))
         }
-        val maxFileSize = 2000 // Reduced from 5000
-        val maxTotalSize = 10000 // Limit total evidence context
-        var totalSize = 0
-        return allSources.flatMap { pattern ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            root.toFile().walkTopDown()
-                .filter { file ->
-                    file.isFile && matcher.matches(root.relativize(file.toPath()))
-                }
-                .map { file ->
-                    val relativePath = root.relativize(file.toPath())
-                    try {
-                        if (totalSize >= maxTotalSize) {
-                            return@map "### $relativePath\n(Skipped - evidence limit reached)"
-                        }
-                        val content = file.readText()
-                        val truncated = content.take(maxFileSize)
-                        totalSize += truncated.length
-                        "### $relativePath\n```\n$truncated${if (content.length > maxFileSize) "\n... (truncated)" else ""}\n```"
-                    } catch (e: Exception) {
-                        log.warn("Error reading evidence file: $relativePath", e)
-                        "### $relativePath\n(Error reading file: ${e.message})"
-                    }
-                }
-                .toList()
-        }.joinToString("\n\n")
-    }
+        .map { file ->
+          val relativePath = root.relativize(file.toPath())
+          try {
+            if (totalSize >= maxTotalSize) {
+              return@map "### $relativePath\n(Skipped - evidence limit reached)"
+            }
+            val content = file.readText()
+            val truncated = content.take(maxFileSize)
+            totalSize += truncated.length
+            "### $relativePath\n```\n$truncated${if (content.length > maxFileSize) "\n... (truncated)" else ""}\n```"
+          } catch (e: Exception) {
+            log.warn("Error reading evidence file: $relativePath", e)
+            "### $relativePath\n(Error reading file: ${e.message})"
+          }
+        }
+        .toList()
+    }.joinToString("\n\n")
+  }
 
-    private fun extractMermaidCode(response: String): String {
-        val mermaidBlockRegex = "```mermaid\\s*([\\s\\S]*?)```".toRegex()
-        val match = mermaidBlockRegex.find(response)
-        return match?.groupValues?.get(1)?.trim() ?: ""
-    }
+  private fun extractMermaidCode(response: String): String {
+    val mermaidBlockRegex = "```mermaid\\s*([\\s\\S]*?)```".toRegex()
+    val match = mermaidBlockRegex.find(response)
+    return match?.groupValues?.get(1)?.trim() ?: ""
+  }
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(CausalInferenceTask::class.java)
-        val CausalInference = TaskType(
-            "CausalInference",
-            CausalInferenceTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Identify causal relationships and root causes",
-            """
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(CausalInferenceTask::class.java)
+    val CausalInference = TaskType(
+      "CausalInference",
+      CausalInferenceTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Identify causal relationships and root causes",
+      """
               Performs causal inference analysis to identify true causal relationships.
               <ul>
                 <li>Distinguishes causation from correlation</li>
@@ -419,6 +438,6 @@ Generate the causal analysis now:
                 <li>Useful for debugging and root cause analysis</li>
               </ul>
             """
-        )
-    }
+    )
+  }
 }
