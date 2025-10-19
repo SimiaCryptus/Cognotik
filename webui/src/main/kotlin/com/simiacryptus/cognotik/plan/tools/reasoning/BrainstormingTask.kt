@@ -21,6 +21,8 @@ class BrainstormingTask(
   planTask
 ) {
 
+  val maxSummaryLength : Int = 50000
+
   data class BrainstormedOption(
     val title: String = "",
     val description: String = "",
@@ -40,6 +42,7 @@ class BrainstormingTask(
     val requirements: List<String> = emptyList()
   )
 
+
   class BrainstormingTaskExecutionConfigData(
     @Description("The problem or question to brainstorm solutions for")
     val problem_statement: String? = null,
@@ -56,6 +59,7 @@ class BrainstormingTask(
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
+
   ) : TaskExecutionConfig(
     task_type = Brainstorming.name,
     task_description = task_description,
@@ -81,6 +85,7 @@ Brainstorming - Generate and analyze multiple solution options
      - Problem solving
         """.trimIndent()
   }
+
 
   override fun run(
     agent: TaskOrchestrator,
@@ -375,7 +380,7 @@ Brainstorming - Generate and analyze multiple solution options
         }
         appendLine("## Key Findings")
         appendLine()
-        appendLine(summary.take(1000) + if (summary.length > 1000) "..." else "")
+        appendLine(summary.take(maxSummaryLength) + if (summary.length > maxSummaryLength) "..." else "")
         appendLine()
         appendLine("---")
         appendLine("**Options:** ${options.size} | **Analysis Depth:** $analysisDepth | **Time:** ${(System.currentTimeMillis() - startTime) / 1000}s")

@@ -19,6 +19,7 @@ class GameTheoryTask(
   orchestrationConfig,
   planTask
 ) {
+  val maxOutputLengthPerField = 5000
 
   data class GameAnalysis(
     val game_type: String? = null,
@@ -591,29 +592,29 @@ Provide this in a clear, structured format.
 
         if (structureAnalysis.isNotEmpty()) {
           appendLine("## Game Structure")
-          appendLine(structureAnalysis.take(500))
-          if (structureAnalysis.length > 500) appendLine("... (see full analysis in UI)")
+          appendLine(structureAnalysis.take(maxOutputLengthPerField))
+          if (structureAnalysis.length > maxOutputLengthPerField) appendLine("... (see full analysis in UI)")
           appendLine()
         }
 
         if (nashEquilibria.isNotEmpty()) {
           appendLine("## Nash Equilibria")
-          appendLine(nashEquilibria.take(500))
-          if (nashEquilibria.length > 500) appendLine("... (see full analysis in UI)")
+          appendLine(nashEquilibria.take(maxOutputLengthPerField))
+          if (nashEquilibria.length > maxOutputLengthPerField) appendLine("... (see full analysis in UI)")
           appendLine()
         }
 
         if (dominantStrategies.isNotEmpty()) {
           appendLine("## Dominant Strategies")
-          appendLine(dominantStrategies.take(500))
-          if (dominantStrategies.length > 500) appendLine("... (see full analysis in UI)")
+          appendLine(dominantStrategies.take(maxOutputLengthPerField))
+          if (dominantStrategies.length > maxOutputLengthPerField) appendLine("... (see full analysis in UI)")
           appendLine()
         }
 
         if (recommendations.isNotEmpty()) {
           appendLine("## Key Recommendations")
-          appendLine(recommendations.take(500))
-          if (recommendations.length > 500) appendLine("... (see full analysis in UI)")
+          appendLine(recommendations.take(maxOutputLengthPerField))
+          if (recommendations.length > maxOutputLengthPerField) appendLine("... (see full analysis in UI)")
           appendLine()
         }
 

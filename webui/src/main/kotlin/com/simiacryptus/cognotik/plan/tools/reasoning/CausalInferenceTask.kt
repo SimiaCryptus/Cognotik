@@ -18,6 +18,8 @@ class CausalInferenceTask(
   planTask
 ) {
 
+  val maxOutputLength: Int = 20000
+
   class CausalInferenceTaskExecutionConfigData(
     @Description("The observed effect or outcome to explain")
     val observed_effect: String? = null,
@@ -123,7 +125,7 @@ CausalInference - Identify causal relationships and root causes
             |<summary>Evidence Context:</summary>
             |
             |```
-            |${evidenceContext.take(1000)}${if (evidenceContext.length > 1000) "\n... (truncated)" else ""}
+            |${evidenceContext.take(maxOutputLength)}${if (evidenceContext.length > maxOutputLength) "\n... (truncated)" else ""}
             |```
             |
             |</details>
