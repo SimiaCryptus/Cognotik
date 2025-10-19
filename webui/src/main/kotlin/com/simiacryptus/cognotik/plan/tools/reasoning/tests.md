@@ -587,6 +587,521 @@ known_events: ["Start trial", "Convert to paid", "Payment succeeds", "Payment fa
 - validate_properties: true
 - generate_test_scenarios: true
 
+
+# Test Prompts for New Reasoning Types
+
+## 1. TemporalReasoningTask
+
+### Prompt 1: Technical Debt Accumulation
+
+"I want to understand how technical debt has accumulated in our codebase over the past 2 years. Analyze the period from January 2022 to December 2023, looking at weekly changes. Identify patterns in when debt increases (after releases? during crunch time?), calculate the rate of accumulation, find critical transition points where debt spiked, and predict where we'll be in 6 months if trends continue."
+
+**Configuration hints:**
+- subject: "Technical debt in main codebase"
+- time_range: "2022-01-01 to 2023-12-31"
+- granularity: "weekly"
+- identify_patterns: true
+- predict_future: true
+- prediction_horizon: "6 months"
+- analyze_rate_of_change: true
+- identify_transitions: true
+- related_files: ["**/git-log.txt", "**/code-quality-metrics.csv"]
+
+### Prompt 2: Performance Degradation Timeline
+
+"Our API response times have gotten worse over the last year. Analyze the timeline from Q1 2023 to Q4 2023 on a monthly basis. I need to see when performance started degrading, identify any sudden drops, understand if there are cyclical patterns (worse during business hours? end of month?), and predict when we'll hit our SLA limits if this continues."
+
+**Configuration hints:**
+- subject: "API response time performance"
+- time_range: "2023-01-01 to 2023-12-31"
+- granularity: "monthly"
+- identify_patterns: true
+- predict_future: true
+- prediction_horizon: "3 months"
+- analyze_rate_of_change: true
+- identify_transitions: true
+- critical_events: ["Major releases", "Infrastructure changes", "Traffic spikes"]
+
+### Prompt 3: Team Velocity Evolution
+
+"Track how our development team's velocity has changed over the past 18 months. Look at sprint-by-sprint data from January 2022 to June 2023. Find patterns in productivity (seasonal? after hiring? after process changes?), identify when velocity accelerated or decelerated, and predict future capacity for planning purposes."
+
+**Configuration hints:**
+- subject: "Development team sprint velocity"
+- time_range: "2022-01-01 to 2023-06-30"
+- granularity: "weekly"
+- identify_patterns: true
+- predict_future: true
+- prediction_horizon: "6 months"
+- analyze_rate_of_change: true
+- identify_transitions: true
+- critical_events: ["New hires", "Process changes", "Tool migrations"]
+
+---
+
+## 2. SystemsThinkingTask
+
+### Prompt 1: CI/CD Pipeline Dynamics
+
+"Analyze our CI/CD pipeline as a system. We have feedback loops between build failures and developer behavior, delays between code commit and production deployment, and accumulating technical debt. Identify reinforcing loops (more failures → more fixes → more changes → more failures), balancing loops (monitoring → alerts → fixes → stability), find leverage points where small changes could have big impacts, and simulate what happens if we: 1) Add more automated tests, 2) Reduce batch sizes, 3) Implement feature flags."
+
+**Configuration hints:**
+- system_description: "CI/CD pipeline with build, test, and deployment stages, including developer feedback loops and technical debt accumulation"
+- identify_feedback_loops: true
+- map_delays: true
+- find_leverage_points: true
+- simulate_interventions: ["Add 50% more automated tests", "Reduce deployment batch size by 75%", "Implement feature flags for all new features"]
+- time_horizon: "6 months"
+- identify_archetypes: true
+- analyze_emergent_behavior: true
+
+### Prompt 2: On-Call Rotation System
+
+"Analyze our on-call rotation system. Engineers get burned out from too many alerts (vicious cycle), but reducing alerts means missing real issues. There are delays between implementing fixes and seeing alert reduction. Identify feedback loops, find the 'Shifting the Burden' archetype (are we treating symptoms instead of root causes?), locate leverage points, and simulate: 1) Doubling the on-call rotation size, 2) Implementing alert fatigue metrics, 3) Requiring root cause analysis for all pages."
+
+**Configuration hints:**
+- system_description: "On-call rotation system with alert fatigue, burnout, incident response, and technical debt dynamics"
+- identify_feedback_loops: true
+- map_delays: true
+- find_leverage_points: true
+- simulate_interventions: ["Double on-call rotation size", "Implement alert fatigue tracking and thresholds", "Require documented root cause analysis for all pages"]
+- time_horizon: "1 year"
+- identify_archetypes: true
+- analyze_emergent_behavior: true
+
+### Prompt 3: Code Review Process
+
+"Analyze our code review process as a system. Fast reviews encourage more PRs, but rushed reviews miss bugs. Thorough reviews improve quality but create bottlenecks. There are delays between review feedback and learning. Identify feedback loops, find leverage points, and simulate: 1) Requiring 2 reviewers instead of 1, 2) Setting 24-hour review SLA, 3) Implementing automated review tools."
+
+**Configuration hints:**
+- system_description: "Code review process with quality vs. speed tradeoffs, learning delays, bottlenecks, and knowledge sharing dynamics"
+- identify_feedback_loops: true
+- map_delays: true
+- find_leverage_points: true
+- simulate_interventions: ["Require 2 reviewers for all PRs", "Implement 24-hour review SLA", "Deploy automated code review tools for 80% of checks"]
+- time_horizon: "6 months"
+- identify_archetypes: true
+- analyze_emergent_behavior: true
+
+---
+
+## 3. ProbabilisticReasoningTask
+
+### Prompt 1: Production Outage Root Cause
+
+"We had a production outage last night. Here's what we know: API latency spiked to 10 seconds, database CPU hit 100%, error rate jumped to 15%, and it happened during a deployment. What caused it? Consider these hypotheses with prior probabilities: Bad deployment (0.4), Database query regression (0.25), Sudden traffic spike (0.15), Infrastructure failure (0.1), DDoS attack (0.05), Memory leak (0.05). Calculate expected values for investigation time and downtime risk for each. Identify which uncertainties matter most. Suggest experiments to narrow it down."
+
+**Configuration hints:**
+- hypotheses: {
+  "Bad deployment introduced performance regression": 0.4,
+  "Database query regression from recent schema change": 0.25,
+  "Sudden legitimate traffic spike": 0.15,
+  "Infrastructure failure (AWS issue)": 0.1,
+  "DDoS attack": 0.05,
+  "Memory leak in new feature": 0.05
+  }
+- evidence: ["API latency spiked to 10s", "Database CPU at 100%", "Error rate 15%", "Occurred during deployment window", "No AWS status page issues", "Traffic volume normal"]
+- calculate_expected_value: true
+- identify_key_uncertainties: true
+- suggest_experiments: true
+- risk_tolerance: "low"
+- decision_context: "Production outage root cause analysis - need to prevent recurrence"
+
+### Prompt 2: Feature Adoption Prediction
+
+"We're launching a new feature. Will it succeed? Consider: Strong adoption (0.3), Moderate adoption (0.4), Weak adoption (0.2), Complete failure (0.1). Evidence: Beta users gave 4.2/5 rating, 60% of beta users activated it, similar features at competitors have 40% adoption, our last 3 features had mixed results (one hit, two misses). Calculate expected value of continued investment vs. cutting losses. What uncertainties matter most? What experiments would reduce uncertainty?"
+
+**Configuration hints:**
+- hypotheses: {
+  "Strong adoption (>50% of users within 3 months)": 0.3,
+  "Moderate adoption (20-50% of users)": 0.4,
+  "Weak adoption (5-20% of users)": 0.2,
+  "Complete failure (<5% adoption)": 0.1
+  }
+- evidence: ["Beta users rated 4.2/5", "60% of beta users activated feature", "Competitor similar features have 40% adoption", "Our last 3 features: 1 success, 2 failures", "Feature requires behavior change", "Marketing budget is limited"]
+- calculate_expected_value: true
+- identify_key_uncertainties: true
+- suggest_experiments: true
+- risk_tolerance: "medium"
+- decision_context: "Feature launch decision - invest more or cut losses?"
+
+### Prompt 3: Security Vulnerability Assessment
+
+"We discovered a potential security vulnerability. How serious is it? Consider: Critical exploitable vulnerability (0.15), High severity but hard to exploit (0.25), Medium severity (0.35), Low severity (0.2), False positive (0.05). Evidence: Static analysis flagged it, affects authentication code, requires specific conditions to trigger, no known exploits in the wild, similar pattern was exploited in another product last year. Calculate expected value of immediate hotfix vs. scheduled fix. What should we investigate first?"
+
+**Configuration hints:**
+- hypotheses: {
+  "Critical - easily exploitable, high impact": 0.15,
+  "High severity but requires specific conditions": 0.25,
+  "Medium severity - limited impact or hard to exploit": 0.35,
+  "Low severity - minimal risk": 0.2,
+  "False positive - not actually exploitable": 0.05
+  }
+- evidence: ["Static analysis tool flagged it", "Affects authentication code path", "Requires specific race condition", "No known exploits in wild", "Similar pattern exploited in competitor product", "Affects 30% of user base"]
+- calculate_expected_value: true
+- identify_key_uncertainties: true
+- suggest_experiments: true
+- risk_tolerance: "low"
+- decision_context: "Security vulnerability triage - immediate hotfix or scheduled fix?"
+
+---
+
+## 4. NarrativeReasoningTask
+
+### Prompt 1: User Journey Through Onboarding
+
+"Analyze the user journey through our onboarding process as a narrative. Characters: new user (motivated but confused), onboarding flow (the guide), support team (helpers), product complexity (antagonist). Setting: first 30 minutes after signup. Conflict: user wants to accomplish their goal but faces friction. Timeline: signup → email verification → tutorial → first action → success or abandonment. Construct the narrative, identify plot points (inciting incident, obstacles, climax, resolution), analyze user motivations, predict 3 alternative outcomes, and find inconsistencies in the experience."
+
+**Configuration hints:**
+- subject: "User onboarding journey from signup to first successful action"
+- narrative_elements: {
+  "characters": ["New user", "Onboarding flow", "Support team", "Product complexity"],
+  "setting": "First 30 minutes after account creation",
+  "conflict": "User wants to accomplish goal but faces friction and confusion",
+  "timeline": "Signup → Email verification → Tutorial → First action attempt → Resolution"
+  }
+- construct_narrative: true
+- identify_plot_points: true
+- predict_outcomes: true
+- alternative_narratives: 3
+- analyze_motivations: true
+- find_inconsistencies: true
+
+### Prompt 2: Technical Debt Story Arc
+
+"Tell the story of how technical debt accumulated in our payment processing system. Characters: original developers (heroes who shipped fast), new team members (inheritors of legacy), product managers (pushing for features), technical debt (growing antagonist), customers (affected by bugs). Timeline: Initial launch (2020) → rapid growth (2021) → scaling pains (2022) → crisis point (2023) → current state. Construct the narrative arc, identify key plot points, analyze character motivations (why did each group make their choices?), predict 3 possible endings, and find inconsistencies in our approach."
+
+**Configuration hints:**
+- subject: "Evolution of technical debt in payment processing system from 2020 to present"
+- narrative_elements: {
+  "characters": ["Original developers", "New team members", "Product managers", "Technical debt", "Customers"],
+  "setting": "Payment processing system over 4 years",
+  "conflict": "Speed vs. quality, short-term wins vs. long-term sustainability",
+  "timeline": "2020 launch → 2021 growth → 2022 scaling issues → 2023 crisis → 2024 present"
+  }
+- construct_narrative: true
+- identify_plot_points: true
+- predict_outcomes: true
+- alternative_narratives: 3
+- analyze_motivations: true
+- find_inconsistencies: true
+
+### Prompt 3: Migration Project Narrative
+
+"Analyze our database migration project as a story. Characters: migration team (protagonists), legacy database (old world), new database (promised land), production traffic (constant pressure), stakeholders (demanding timeline). Setting: 6-month migration window. Conflict: need zero downtime but systems are tightly coupled. Timeline: planning → dual-write implementation → data sync → validation → cutover → cleanup. Construct narrative, identify plot points, analyze team motivations, predict 3 alternative outcomes (success, partial success, failure), find inconsistencies in the plan."
+
+**Configuration hints:**
+- subject: "Zero-downtime database migration project"
+- narrative_elements: {
+  "characters": ["Migration team", "Legacy database", "New database", "Production traffic", "Stakeholders"],
+  "setting": "6-month migration window with zero downtime requirement",
+  "conflict": "Need seamless migration but systems are tightly coupled and complex",
+  "timeline": "Planning → Dual-write → Data sync → Validation → Cutover → Cleanup"
+  }
+- construct_narrative: true
+- identify_plot_points: true
+- predict_outcomes: true
+- alternative_narratives: 3
+- analyze_motivations: true
+- find_inconsistencies: true
+
+---
+
+## 5. LateralThinkingTask
+
+### Prompt 1: Reducing Build Times
+
+"Our CI builds take 45 minutes and it's killing productivity. Apply lateral thinking to find unconventional solutions. Use these techniques: reversal (what if we made builds slower?), random stimulus (apply concepts from fast food restaurants), challenge assumptions (what if we didn't need to build everything?), exaggeration (what if builds took 10 seconds? 10 hours?), escape (ignore the constraint that we need reproducible builds). Generate 5 alternatives per technique. Evaluate feasibility. I want creative, breakthrough ideas, not just 'add more caching.'"
+
+**Configuration hints:**
+- problem: "CI build pipeline takes 45 minutes, blocking developer productivity and slowing iteration"
+- techniques: ["reversal", "random_stimulus", "challenge_assumptions", "exaggeration", "escape"]
+- num_alternatives: 5
+- evaluate_feasibility: true
+- domain_context: "Software CI/CD pipeline with Docker builds, tests, and deployments"
+- constraints: ["Must maintain build reproducibility", "Limited infrastructure budget", "Can't break existing workflows"]
+
+### Prompt 2: Improving Code Review Quality
+
+"Code reviews are either too slow or too shallow. Apply lateral thinking: reversal (what if we eliminated code reviews?), random stimulus (apply concepts from peer review in academic publishing), challenge assumptions (what if reviewers didn't need to understand the whole codebase?), metaphor (code review as a restaurant kitchen inspection), provocation (Po: code reviews should happen before code is written). Generate creative alternatives. Evaluate feasibility."
+
+**Configuration hints:**
+- problem: "Code reviews are either too slow (blocking PRs) or too shallow (missing bugs), can't find the right balance"
+- techniques: ["reversal", "random_stimulus", "challenge_assumptions", "metaphor", "provocation"]
+- num_alternatives: 5
+- evaluate_feasibility: true
+- domain_context: "Software development team with 20 engineers, GitHub PRs, async communication"
+- constraints: ["Must maintain code quality", "Can't add significant overhead", "Team is distributed across timezones"]
+
+### Prompt 3: Reducing Alert Fatigue
+
+"We get 500 alerts per day and ignore most of them. Apply lateral thinking: reversal (what if we had zero alerts?), random stimulus (apply concepts from email spam filters), challenge assumptions (what if alerts didn't go to humans?), exaggeration (what if we had 10,000 alerts? 1 alert?), escape (ignore the constraint that we need to know about every issue). Generate unconventional solutions. Evaluate feasibility."
+
+**Configuration hints:**
+- problem: "Alert fatigue - 500 alerts/day, most ignored, real issues get missed in the noise"
+- techniques: ["reversal", "random_stimulus", "challenge_assumptions", "exaggeration", "escape"]
+- num_alternatives: 5
+- evaluate_feasibility: true
+- domain_context: "Production monitoring with Datadog, PagerDuty, multiple microservices"
+- constraints: ["Can't miss critical issues", "Limited time to tune alerts", "Multiple teams own different services"]
+
+---
+
+## 6. DialecticalReasoningTask
+
+### Prompt 1: Microservices vs. Monolith
+
+"Resolve the tension between microservices and monolith architectures. Thesis: 'Microservices enable independent scaling, deployment, and team autonomy.' Antithesis: 'Monoliths are simpler, easier to debug, and avoid distributed system complexity.' Context: mid-size company with 50 engineers, growing product. Iterate through 3 synthesis levels to find a higher-level understanding that transcends this opposition. Preserve strengths from both sides."
+
+**Configuration hints:**
+- thesis: "Microservices architecture enables independent scaling, deployment, and team autonomy, allowing faster iteration"
+- antithesis: "Monolithic architecture is simpler, easier to debug, avoids distributed system complexity, and has better performance"
+- context: "Mid-size company with 50 engineers, growing product, currently has a monolith but considering microservices"
+- synthesis_levels: 3
+- preserve_strengths: true
+
+### Prompt 2: Type Safety vs. Flexibility
+
+"Resolve the tension between static typing and dynamic typing. Thesis: 'Static typing catches bugs at compile time, enables better tooling, and serves as documentation.' Antithesis: 'Dynamic typing enables faster prototyping, more flexible code, and less boilerplate.' Context: team choosing language for new service. Iterate through 3 synthesis levels. Preserve strengths from both."
+
+**Configuration hints:**
+- thesis: "Static typing catches bugs at compile time, enables superior IDE support and refactoring, and serves as living documentation"
+- antithesis: "Dynamic typing enables rapid prototyping, more flexible and concise code, and easier metaprogramming"
+- context: "Engineering team choosing language/framework for new high-traffic API service, team has experience with both paradigms"
+- synthesis_levels: 3
+- preserve_strengths: true
+
+### Prompt 3: Move Fast vs. Stability
+
+"Resolve the tension between moving fast and maintaining stability. Thesis: 'Move fast and break things - rapid iteration and experimentation drive innovation.' Antithesis: 'Stability and reliability are paramount - breaking production erodes user trust.' Context: SaaS company with paying customers but facing competitive pressure. Iterate through 4 synthesis levels. Preserve strengths."
+
+**Configuration hints:**
+- thesis: "Move fast and break things - rapid iteration, experimentation, and risk-taking drive innovation and competitive advantage"
+- antithesis: "Stability and reliability are paramount - production incidents erode user trust, cost money, and damage reputation"
+- context: "SaaS company with 10,000 paying customers, facing aggressive competition, need to innovate but can't afford downtime"
+- synthesis_levels: 4
+- preserve_strengths: true
+
+---
+
+## 7. ConstraintRelaxationTask
+
+### Prompt 1: API Design Under Constraints
+
+"Design a new API endpoint with these constraints: Must be RESTful (0.9), Must return in <100ms (0.95), Must be backward compatible (1.0), Must support pagination (0.7), Must include HATEOAS links (0.4), Must use JSON (0.8), Must support filtering (0.6), Must be idempotent (0.85). Use progressive relaxation strategy, reintroduce by priority, find creative ways to satisfy multiple constraints simultaneously. Max 5 iterations."
+
+**Configuration hints:**
+- problem: "Design new API endpoint for retrieving user activity history with complex requirements"
+- constraints: {
+  "Must be backward compatible with existing API": 1.0,
+  "Must return in under 100ms": 0.95,
+  "Must follow RESTful principles": 0.9,
+  "Must be idempotent": 0.85,
+  "Must use JSON format": 0.8,
+  "Must support pagination": 0.7,
+  "Must support filtering and sorting": 0.6,
+  "Must include HATEOAS links": 0.4
+  }
+- relaxation_strategy: "progressive"
+- reintroduction_order: "by_priority"
+- find_creative_satisfactions: true
+- max_iterations: 5
+
+### Prompt 2: Database Schema Migration
+
+"Design a database schema migration with constraints: Zero downtime (1.0), No data loss (1.0), Rollback-able (0.95), Complete in <1 hour (0.8), No application changes (0.6), Maintain referential integrity (0.9), Support both old and new schemas (0.7), Minimal storage overhead (0.5). Use selective relaxation, reintroduce by difficulty, find creative solutions. Max 6 iterations."
+
+**Configuration hints:**
+- problem: "Migrate database schema from single table to normalized structure with 3 tables, production system with 24/7 uptime requirement"
+- constraints: {
+  "Zero downtime during migration": 1.0,
+  "No data loss": 1.0,
+  "Must be rollback-able": 0.95,
+  "Maintain referential integrity": 0.9,
+  "Complete migration in under 1 hour": 0.8,
+  "Support both old and new schemas during transition": 0.7,
+  "No application code changes": 0.6,
+  "Minimal storage overhead": 0.5
+  }
+- relaxation_strategy: "selective"
+- reintroduction_order: "by_difficulty"
+- find_creative_satisfactions: true
+- max_iterations: 6
+
+### Prompt 3: Monitoring System Design
+
+"Design a monitoring system with constraints: Real-time alerts (0.95), No false positives (0.9), Covers all services (1.0), Low overhead (<1% CPU) (0.85), Easy to configure (0.7), Supports custom metrics (0.6), Historical data for 90 days (0.75), Auto-remediation (0.5). Use hierarchical relaxation, reintroduce by dependency, find creative satisfactions. Max 5 iterations."
+
+**Configuration hints:**
+- problem: "Design comprehensive monitoring system for microservices architecture with 50+ services"
+- constraints: {
+  "Must cover all services": 1.0,
+  "Real-time alerting (<1 minute latency)": 0.95,
+  "No false positives (high precision)": 0.9,
+  "Low overhead (<1% CPU, <100MB memory per service)": 0.85,
+  "Historical data retention for 90 days": 0.75,
+  "Easy to configure and maintain": 0.7,
+  "Support custom application metrics": 0.6,
+  "Auto-remediation capabilities": 0.5
+  }
+- relaxation_strategy: "hierarchical"
+- reintroduction_order: "by_dependency"
+- find_creative_satisfactions: true
+- max_iterations: 5
+
+---
+
+## 8. AdversarialReasoningTask
+
+### Prompt 1: Authentication System Red Team
+
+"Red team our authentication system. Attack vectors: security, logic, performance. Adversary capability: advanced. The system uses JWT tokens, OAuth2, rate limiting, and MFA. Generate detailed exploit scenarios. Suggest mitigations. Challenge these assumptions: 'JWTs are secure', 'Rate limiting prevents brute force', 'MFA makes accounts unbreakable'. Find 5 vulnerabilities per vector."
+
+**Configuration hints:**
+- target_system: "Authentication system using JWT tokens, OAuth2 flows, rate limiting, and optional MFA"
+- attack_vectors: ["security", "logic", "performance"]
+- adversary_capability: "advanced"
+- generate_exploits: true
+- suggest_mitigations: true
+- challenge_assumptions: [
+  "JWT tokens are inherently secure",
+  "Rate limiting effectively prevents brute force attacks",
+  "MFA makes accounts effectively unbreakable",
+  "OAuth2 flows are foolproof"
+  ]
+- max_vulnerabilities_per_vector: 5
+
+### Prompt 2: API Gateway Red Team
+
+"Red team our API gateway. Attack vectors: security, performance, business logic. Adversary capability: intermediate. The gateway handles rate limiting, authentication, request routing, and caching. Don't generate detailed exploits (just describe vulnerabilities). Suggest mitigations. Challenge assumptions: 'Rate limits are per-user', 'Caching is safe', 'Routing logic is secure'. Find 5 vulnerabilities per vector."
+
+**Configuration hints:**
+- target_system: "API gateway handling rate limiting, authentication, request routing, response caching, and load balancing"
+- attack_vectors: ["security", "performance", "business"]
+- adversary_capability: "intermediate"
+- generate_exploits: false
+- suggest_mitigations: true
+- challenge_assumptions: [
+  "Rate limits are properly enforced per user",
+  "Response caching doesn't leak sensitive data",
+  "Request routing logic is secure",
+  "Load balancing is fair and can't be gamed"
+  ]
+- max_vulnerabilities_per_vector: 5
+
+### Prompt 3: Payment Processing Red Team
+
+"Red team our payment processing flow. Attack vectors: security, logic, compliance, business. Adversary capability: nation-state. The system handles credit cards, refunds, subscriptions, and fraud detection. Generate detailed exploits. Suggest mitigations. Challenge assumptions: 'PCI compliance means we're secure', 'Fraud detection catches everything', 'Refund logic is bulletproof'. Find 5 vulnerabilities per vector."
+
+**Configuration hints:**
+- target_system: "Payment processing system handling credit cards, refunds, subscriptions, fraud detection, and PCI compliance"
+- attack_vectors: ["security", "logic", "compliance", "business"]
+- adversary_capability: "nation-state"
+- generate_exploits: true
+- suggest_mitigations: true
+- challenge_assumptions: [
+  "PCI compliance certification means the system is secure",
+  "Fraud detection catches all fraudulent transactions",
+  "Refund logic is bulletproof and can't be exploited",
+  "Subscription billing is tamper-proof"
+  ]
+- max_vulnerabilities_per_vector: 5
+
+---
+
+## 9. AbductiveReasoningTask
+
+### Prompt 1: Memory Leak Investigation
+
+"We have a memory leak. Observations: 1) Memory usage grows 100MB/hour, 2) Happens only in production, not staging, 3) Started after last deployment, 4) Garbage collection runs but doesn't help, 5) Heap dumps show growing array of user sessions, 6) CPU usage is normal. Generate 5 hypotheses explaining ALL these observations. Evaluate explanatory power, simplicity, testability, and prior probability. Suggest tests to validate top hypotheses."
+
+**Configuration hints:**
+- observations: [
+  "Memory usage grows steadily at ~100MB per hour",
+  "Issue only occurs in production, not in staging environment",
+  "Started immediately after last deployment (3 days ago)",
+  "Garbage collection runs but doesn't reclaim memory",
+  "Heap dumps show growing array of user session objects",
+  "CPU usage remains normal",
+  "No obvious memory leaks in new code"
+  ]
+- generate_hypotheses: true
+- max_hypotheses: 5
+- evaluate_criteria: ["explanatory_power", "simplicity", "testability", "prior_probability"]
+- suggest_tests: true
+- domain_context: "Node.js microservice handling user sessions, deployed on Kubernetes"
+
+### Prompt 2: Intermittent Test Failures
+
+"Tests fail randomly. Observations: 1) Fails 5% of the time, 2) Always the same 3 tests, 3) Failures are non-deterministic, 4) Happens more often on CI than locally, 5) Error messages vary (timeout, assertion failure, null pointer), 6) Tests pass when run individually, 7) Started 2 weeks ago. Generate hypotheses. Evaluate them. Suggest tests."
+
+**Configuration hints:**
+- observations: [
+  "Test suite fails randomly about 5% of the time",
+  "Always the same 3 tests that fail",
+  "Failures are non-deterministic - same test passes then fails",
+  "Happens more frequently on CI than on local machines",
+  "Error messages vary: timeouts, assertion failures, null pointers",
+  "Tests pass reliably when run individually",
+  "Issue started approximately 2 weeks ago",
+  "No obvious code changes in the failing tests"
+  ]
+- generate_hypotheses: true
+- max_hypotheses: 5
+- evaluate_criteria: ["explanatory_power", "simplicity", "testability", "prior_probability"]
+- suggest_tests: true
+- domain_context: "Python test suite using pytest, running on GitHub Actions CI"
+
+### Prompt 3: API Latency Spikes
+
+"API has latency spikes. Observations: 1) P99 latency spikes to 5 seconds every 10 minutes, 2) P50 latency stays normal at 50ms, 3) Spikes affect all endpoints equally, 4) Database queries are fast during spikes, 5) Happens at regular intervals, 6) CPU and memory are normal, 7) Network metrics show no issues. Generate hypotheses. Evaluate. Suggest tests."
+
+**Configuration hints:**
+- observations: [
+  "P99 latency spikes to 5 seconds approximately every 10 minutes",
+  "P50 latency remains normal at ~50ms during spikes",
+  "Spikes affect all API endpoints equally",
+  "Database query times remain fast during spikes",
+  "Spikes occur at very regular intervals",
+  "CPU and memory utilization are normal",
+  "Network metrics show no packet loss or bandwidth issues",
+  "Application logs show no errors during spikes"
+  ]
+- generate_hypotheses: true
+- max_hypotheses: 5
+- evaluate_criteria: ["explanatory_power", "simplicity", "testability", "prior_probability"]
+- suggest_tests: true
+- domain_context: "REST API built with Express.js, deployed on AWS ECS, using PostgreSQL database"
+
+---
+
+## Usage Notes
+
+These prompts are designed to:
+
+1. **Be Realistic** - Based on actual software engineering scenarios
+2. **Be Specific** - Include concrete details and constraints
+3. **Be Challenging** - Require sophisticated reasoning, not simple answers
+4. **Be Parseable** - Written in natural language that can be converted to configuration
+5. **Demonstrate Tool Value** - Show how each reasoning type provides unique insights
+
+Each prompt includes:
+- Natural language description suitable for speaking to an AI
+- Specific configuration hints showing how to map to tool parameters
+- Realistic context from software development
+- Clear success criteria
+
+The prompts cover common software engineering challenges:
+- **Temporal**: Performance degradation, technical debt, team dynamics
+- **Systems**: CI/CD, on-call, code review processes
+- **Probabilistic**: Outage analysis, feature adoption, security triage
+- **Narrative**: User journeys, technical debt stories, migration projects
+- **Lateral**: Build times, code review, alert fatigue
+- **Dialectical**: Architecture debates, type systems, speed vs. stability
+- **Constraint Relaxation**: API design, migrations, monitoring systems
+- **Adversarial**: Authentication, API gateway, payment security
+- **Abductive**: Memory leaks, test failures, latency spikes
+
 ---
 
 ## Additional Usage Notes for New Tools

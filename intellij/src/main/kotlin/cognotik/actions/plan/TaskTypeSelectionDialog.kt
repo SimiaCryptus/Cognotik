@@ -134,7 +134,10 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
         "MultiPerspectiveAnalysis", "SocraticDialogue", "AnalogicalReasoning",
         "CounterfactualAnalysis", "AbstractionLadder", "ConstraintSatisfaction",
         "GameTheory", "FiniteStateMachine", "Brainstorming",
-        "CausalInference", "DecompositionSynthesis"
+        "CausalInference", "DecompositionSynthesis",
+        "AbductiveReasoning", "AdversarialReasoning", "ConstraintRelaxation",
+        "DialecticalReasoning", "LateralThinking", "NarrativeReasoning",
+        "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning"
       ) -> "Reasoning"
 
       taskType.name in listOf(

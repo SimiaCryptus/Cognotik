@@ -499,6 +499,60 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           task
         )
       }
+      registerConstructor(AbductiveReasoningTask.AbductiveReasoning) { settings, task ->
+        AbductiveReasoningTask(
+          settings,
+          task
+        )
+      }
+      registerConstructor(AdversarialReasoningTask.AdversarialReasoning) { settings, task ->
+        AdversarialReasoningTask(
+          settings,
+          task
+        )
+      }
+      registerConstructor(ConstraintRelaxationTask.ConstraintRelaxation) { settings, task ->
+        ConstraintRelaxationTask(
+          settings,
+          task
+        )
+      }
+      registerConstructor(DialecticalReasoningTask.DialecticalReasoning) { settings, task ->
+        DialecticalReasoningTask(
+          settings,
+          task
+        )
+      }
+      registerConstructor(LateralThinkingTask.LateralThinking) { settings, task ->
+        LateralThinkingTask(
+          settings,
+          task
+        )
+      }
+      registerConstructor(NarrativeReasoningTask.NarrativeReasoning) { settings, task ->
+        NarrativeReasoningTask(
+          settings,
+          task
+        )
+      }
+      registerConstructor(ProbabilisticReasoningTask.ProbabilisticReasoning) { settings, task ->
+        ProbabilisticReasoningTask(
+          settings,
+          task
+        )
+      }
+      registerConstructor(SystemsThinkingTask.SystemsThinking) { settings, task ->
+        SystemsThinkingTask(
+          settings,
+          task
+        )
+      }
+      registerConstructor(TemporalReasoningTask.TemporalReasoning) { settings, task ->
+        TemporalReasoningTask(
+          settings,
+          task
+        )
+      }
     }
 
     fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
