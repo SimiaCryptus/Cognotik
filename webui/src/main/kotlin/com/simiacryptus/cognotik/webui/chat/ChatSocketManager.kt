@@ -238,7 +238,7 @@ open class ChatSocketManager(
             model = model,
             temperature = temperature,
             name = "Topics",
-            parsingModel = parsingModel,
+            parsingChatter = parsingModel,
         )
         return if (fastTopicParsing) {
             topicsParsedActor.getParser().apply(response)

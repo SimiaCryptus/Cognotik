@@ -195,7 +195,7 @@ open class ConversationalMode(
         }
       },
       model = orchestrationConfig.defaultChatter.getChildClient(task),
-      parsingModel = orchestrationConfig.parsingChatter.getChildClient(task),
+      parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task),
       temperature = orchestrationConfig.temperature,
       describer = describer,
       parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
@@ -335,7 +335,7 @@ open class ConversationalMode(
       model = model,
       temperature = orchestrationConfig.temperature,
       name = "Topics",
-      parsingModel = orchestrationConfig.parsingChatter,
+      parsingChatter = orchestrationConfig.parsingChatter,
     )
     return topicsParsedActor.getParser().apply(response)
   }

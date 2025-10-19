@@ -11,20 +11,20 @@ import com.simiacryptus.cognotik.util.toContentList
 import java.util.function.Function
 
 open class ParsedAgent<T : Any>(
-    var resultClass: Class<T>? = null,
-    val exampleInstance: T? = resultClass?.getConstructor()?.newInstance(),
-    prompt: String = "",
-    name: String? = resultClass?.simpleName,
-    model: ChatInterface,
-    temperature: Double = 0.3,
-    val parsingModel: ChatInterface,
-    val deserializerRetries: Int = 2,
-    open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
+  var resultClass: Class<T>? = null,
+  val exampleInstance: T? = resultClass?.getConstructor()?.newInstance(),
+  prompt: String = "",
+  name: String? = resultClass?.simpleName,
+  model: ChatInterface,
+  temperature: Double = 0.3,
+  val parsingChatter: ChatInterface,
+  val deserializerRetries: Int = 2,
+  open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "aicoder.actions"
     ) {
         override val includeMethods: Boolean get() = false
     },
-    var parserPrompt: String? = null,
+  var parserPrompt: String? = null,
 ) : BaseAgent<List<String>, ParsedResponse<T>>(
     prompt = prompt,
     name = name,
@@ -72,7 +72,7 @@ open class ParsedAgent<T : Any>(
         }\n```\n\nThis is an example output:\n```json\n${JsonUtil.toJson(exampleInstance!!)}\n```${promptSuffix?.let { "\n$it" } ?: ""}"
         for (i in 0 until deserializerRetries) {
             try {
-                val content = parsingModel.copy(temperature = 0.0).chat(
+                val content = parsingChatter.copy(temperature = 0.0).chat(
                     listOf(
                         ModelSchema.ChatMessage(role = ModelSchema.Role.system, content = prompt.toContentList()),
                         ModelSchema.ChatMessage(
@@ -154,7 +154,7 @@ open class ParsedAgent<T : Any>(
         name = name,
         model = model,
         temperature = temperature,
-        parsingModel = parsingModel,
+        parsingChatter = parsingChatter,
     )
 
     companion object {

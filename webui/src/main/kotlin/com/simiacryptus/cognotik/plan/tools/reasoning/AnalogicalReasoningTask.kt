@@ -219,7 +219,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
         model = api,
         temperature = 0.7,
         name = "AnalogicalReasoning",
-        parsingModel = orchestrationConfig.parsingChatter,
+        parsingChatter = orchestrationConfig.parsingChatter,
       )
 
       var result: AnalogicalReasoningResult? = analogyParser.answer(listOf(analogiesPrompt)).obj

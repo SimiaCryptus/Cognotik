@@ -68,7 +68,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                     ParsedAgent(
                         resultClass = TestJokeDataStructure::class.java,
                         prompt = "Tell me a joke",
-                        parsingModel = model,
+                        parsingChatter = model,
                         model = model,
                     )
                 )

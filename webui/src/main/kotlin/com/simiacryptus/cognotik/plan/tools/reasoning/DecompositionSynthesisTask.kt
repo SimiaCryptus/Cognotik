@@ -517,7 +517,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
       resultClass = ProblemDecomposition::class.java,
       prompt = prompt,
       model = api,
-      parsingModel = orchestrationConfig.parsingChatter,
+      parsingChatter = orchestrationConfig.parsingChatter,
     )
 
     val decomposition = decompositionAgent.answer(listOf(problem)).obj
@@ -593,7 +593,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         resultClass = SubproblemSolution::class.java,
         prompt = prompt,
         model = api,
-        parsingModel = orchestrationConfig.parsingChatter,
+        parsingChatter = orchestrationConfig.parsingChatter,
       )
 
       val solution = solutionAgent.answer(listOf(subproblem.description)).obj
@@ -698,7 +698,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
       resultClass = SynthesizedSolution::class.java,
       prompt = prompt,
       model = api,
-      parsingModel = orchestrationConfig.parsingChatter,
+      parsingChatter = orchestrationConfig.parsingChatter,
     )
 
     val synthesized: SynthesizedSolution? = synthesisAgent.answer(listOf(problem)).obj
@@ -741,7 +741,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
       resultClass = CoherenceValidation::class.java,
       prompt = prompt,
       model = api!!,
-      parsingModel = orchestrationConfig.parsingChatter,
+      parsingChatter = orchestrationConfig.parsingChatter,
     )
 
     val validation: CoherenceValidation? = validationAgent.answer(listOf(synthesized.solution)).obj

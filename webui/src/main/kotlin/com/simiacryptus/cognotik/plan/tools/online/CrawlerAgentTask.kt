@@ -1054,7 +1054,7 @@ class CrawlerAgentTask(
             resultClass = ParsedPage::class.java,
             model = model,
             describer = describer,
-            parsingModel = model,
+            parsingChatter = model,
         ).answer(listOf(content))
     } catch (e: Exception) {
         log.error("Error during content transformation", e)

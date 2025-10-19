@@ -62,7 +62,7 @@ open class DocumentParsingModel(
             resultClass = DocumentData::class.java,
             exampleInstance = exampleInstance,
             prompt = "",
-            parsingModel = parsingModel,
+            parsingChatter = parsingModel,
             temperature = temperature,
             model = parsingModel,
         ).getParser(

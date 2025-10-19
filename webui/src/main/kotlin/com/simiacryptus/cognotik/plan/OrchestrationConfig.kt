@@ -187,7 +187,7 @@ class OrchestrationConfig(
                                           (Remember: the JSON file content is already loaded by the platform.)
                                           """.trimIndent(),
             model = model,
-            parsingModel = parsingModel,
+            parsingChatter = parsingModel,
             temperature = temperature,
             describer = describer,
             parserPrompt = ("\nTask Subtype Schema:\n\n" + availableTaskTypes.joinToString("\n\n") { taskType ->

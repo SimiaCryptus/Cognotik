@@ -511,7 +511,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
             model = api,
             temperature = 0.3,
             name = "ReasoningStep$stepNumber",
-            parsingModel = orchestrationConfig.parsingChatter,
+            parsingChatter = orchestrationConfig.parsingChatter,
         )
 
       var step: ReasoningStep? = reasoningAgent.answer(listOf(question)).obj.copy(step_number = stepNumber)
@@ -578,7 +578,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
             model = api,
             temperature = 0.1,
             name = "StepValidation",
-            parsingModel = orchestrationConfig.parsingChatter,
+            parsingChatter = orchestrationConfig.parsingChatter,
         )
 
       var validation: StepValidation? = validationAgent.answer(listOf("Validate step ${step.step_number}")).obj

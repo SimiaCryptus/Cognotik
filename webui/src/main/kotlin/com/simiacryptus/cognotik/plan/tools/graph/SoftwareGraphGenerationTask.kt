@@ -96,7 +96,7 @@ class SoftwareGraphGenerationTask(
                     } + "\n\nGenerate appropriate NodeId values for each node.\nEnsure all relationships between nodes are properly established.\nFormat the response as a valid SoftwareGraph JSON structure.",
             model = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                 ?: this.orchestrationConfig.defaultChatter).getChildClient(task),
-            parsingModel = this.orchestrationConfig.parsingChatter,
+            parsingChatter = this.orchestrationConfig.parsingChatter,
             temperature = this.orchestrationConfig.temperature,
             describer = describer,
         )

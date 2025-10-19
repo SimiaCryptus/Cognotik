@@ -555,7 +555,7 @@ open class HierarchicalPlanningMode(
                         ${availableTaskTypes.joinToString("\n") { it.name }}
                     """.trimIndent(),
             model = chatInterface,
-            parsingModel = orchestrationConfig.parsingChatter,
+            parsingChatter = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
             describer = TaskContextYamlDescriber(orchestrationConfig),
             parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
@@ -659,7 +659,7 @@ open class HierarchicalPlanningMode(
                 Return a list of goal objects with unique IDs and descriptions.
             """.trimIndent(),
             model = chatInterface,
-            parsingModel = orchestrationConfig.parsingChatter,
+            parsingChatter = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
             describer = TaskContextYamlDescriber(orchestrationConfig)
         )
@@ -747,7 +747,7 @@ open class HierarchicalPlanningMode(
             promptStr
         },
         model = chatInterface,
-        parsingModel = orchestrationConfig.parsingChatter,
+        parsingChatter = orchestrationConfig.parsingChatter,
         temperature = orchestrationConfig.temperature,
         describer = TaskContextYamlDescriber(orchestrationConfig)
     )
