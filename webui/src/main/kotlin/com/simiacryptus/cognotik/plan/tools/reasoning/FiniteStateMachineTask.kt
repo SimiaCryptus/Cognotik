@@ -18,6 +18,7 @@ class FiniteStateMachineTask(
   orchestrationConfig,
   planTask
 ) {
+  val maxDescriptionLength = 500
 
   class FiniteStateMachineTaskExecutionConfigData(
     @Description("The concept, system, or process to model as a finite state machine")
@@ -499,8 +500,8 @@ Keep the summary concise but informative.
         appendLine("# FSM Analysis: $conceptToModel")
         appendLine()
         appendLine("## Summary")
-        appendLine(summaryAnalysis.take(500))
-        if (summaryAnalysis.length > 500) appendLine("...")
+        appendLine(summaryAnalysis.take(maxDescriptionLength))
+        if (summaryAnalysis.length > maxDescriptionLength) appendLine("...")
         appendLine()
         appendLine("## Key Components")
         appendLine("- States identified and analyzed")

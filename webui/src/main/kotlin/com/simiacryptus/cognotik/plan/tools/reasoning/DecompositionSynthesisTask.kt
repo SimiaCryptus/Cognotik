@@ -17,6 +17,7 @@ class DecompositionSynthesisTask(
   orchestrationConfig,
   planTask
 ) {
+  val maxDescriptionLength = 1000
 
   class DecompositionSynthesisTaskExecutionConfigData(
     @Description("The complex problem to decompose")
@@ -116,7 +117,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     orchestrationConfig: OrchestrationConfig
   ) {
     val startTime = System.currentTimeMillis()
-    log.info("Starting DecompositionSynthesisTask with problem: ${executionConfig?.complex_problem?.take(100)}")
+    log.info("Starting DecompositionSynthesisTask with problem: ${executionConfig?.complex_problem?.take(maxDescriptionLength)}")
 
     val problem = executionConfig?.complex_problem
     if (problem.isNullOrBlank()) {
@@ -144,7 +145,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     val overviewContent = buildString {
       appendLine("# Decomposition & Synthesis Analysis")
       appendLine()
-      appendLine("**Problem:** ${problem.take(200)}${if (problem.length > 200) "..." else ""}")
+      appendLine("**Problem:** ${problem.take(maxDescriptionLength)}${if (problem.length > maxDescriptionLength) "..." else ""}")
       appendLine()
       appendLine("**Strategy:** ${executionConfig.decomposition_strategy}")
       appendLine("**Max Depth:** ${executionConfig.max_depth}")

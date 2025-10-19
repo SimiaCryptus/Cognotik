@@ -62,7 +62,7 @@ class GameTheoryTask(
     state: TaskState? = TaskState.Pending,
   ) : TaskExecutionConfig(
     task_type = GameTheory.name,
-    task_description = task_description ?: "Analyze game theory scenario: ${game_scenario?.take(50)}",
+    task_description = task_description ?: "Analyze game theory scenario: ${game_scenario?.take(1000)}",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
   )

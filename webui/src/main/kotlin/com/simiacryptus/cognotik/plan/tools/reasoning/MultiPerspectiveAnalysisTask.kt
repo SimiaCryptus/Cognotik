@@ -17,6 +17,7 @@ class MultiPerspectiveAnalysisTask(
   orchestrationConfig,
   planTask
 ) {
+  val maxDescriptionLength = 2000
 
   class MultiPerspectiveAnalysisTaskExecutionConfigData(
     @Description("The topic or problem to analyze from multiple viewpoints")
@@ -99,7 +100,7 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
           """
                     |## Multi-Perspective Analysis
                     |
-                    |**Subject:** ${subject.take(200)}${if (subject.length > 200) "..." else ""}
+                    |**Subject:** ${subject.take(maxDescriptionLength)}${if (subject.length > maxDescriptionLength) "..." else ""}
                     |
                     |**Perspectives:** ${perspectives.joinToString(", ")}
                     |

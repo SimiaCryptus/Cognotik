@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -20,6 +19,7 @@ class DialecticalReasoningTask(
   orchestrationConfig,
   planTask
 ) {
+  val maxDescriptionLength = 5000
 
   class DialecticalReasoningTaskExecutionConfigData(
     @Description("The thesis statement or position to analyze")
@@ -476,7 +476,7 @@ Aim for progressively deeper insight and integration.
         // Add to concise result only for first and last levels
         if (level == 1 || level == synthesisLevels) {
           resultBuilder.append("### Synthesis Level $level\n\n")
-          resultBuilder.append("${synthesis.take(500)}${if (synthesis.length > 500) "..." else ""}\n\n")
+          resultBuilder.append("${synthesis.take(maxDescriptionLength)}${if (synthesis.length > maxDescriptionLength) "..." else ""}\n\n")
         }
 
         synthesisTask.add(

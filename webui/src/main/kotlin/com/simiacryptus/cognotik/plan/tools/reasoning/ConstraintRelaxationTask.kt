@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -19,6 +18,7 @@ class ConstraintRelaxationTask(
   orchestrationConfig,
   planTask
 ) {
+  val maxOutputSize = 500
 
   class ConstraintRelaxationTaskExecutionConfigData(
     @Description("The problem description to solve")
@@ -270,8 +270,8 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
       solutionBuilder.append("## Initial Relaxed Solution\n\n")
       solutionBuilder.append("**Relaxed:** ${relaxedConstraints.joinToString(", ")}\n\n")
-      solutionBuilder.append(relaxedSolution.take(500))
-      if (relaxedSolution.length > 500) solutionBuilder.append("...")
+      solutionBuilder.append(relaxedSolution.take(maxOutputSize))
+      if (relaxedSolution.length > maxOutputSize) solutionBuilder.append("...")
       solutionBuilder.append("\n\n")
 
       var currentSolution = relaxedSolution
@@ -693,10 +693,10 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
   }
 
   private data class ReintroductionStep(
-    val constraint: String,
-    val priority: Double,
-    val solution: String,
-    val iterationTime: Long
+    val constraint: String = "",
+    val priority: Double = 0.0,
+    val solution: String = "",
+    val iterationTime: Long = 0L
   )
 
   companion object {

@@ -21,7 +21,7 @@ class BrainstormingTask(
   planTask
 ) {
 
-  val maxSummaryLength: Int = 50000
+  val maxSummaryLength: Int = 10000
 
   data class BrainstormedOption(
     val title: String = "",
@@ -375,7 +375,7 @@ Brainstorming - Generate and analyze multiple solution options
         appendLine()
         options.forEachIndexed { index, option ->
           appendLine("### ${index + 1}. ${option.title}")
-          appendLine(option.description.take(200) + if (option.description.length > 200) "..." else "")
+          appendLine(option.description.take(maxSummaryLength) + if (option.description.length > maxSummaryLength) "..." else "")
           appendLine()
         }
         appendLine("## Key Findings")

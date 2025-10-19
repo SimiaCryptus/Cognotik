@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -19,6 +18,7 @@ class ProbabilisticReasoningTask(
   orchestrationConfig,
   planTask
 ) {
+  val maxDescriptionLength = 10000
 
   class ProbabilisticReasoningTaskExecutionConfigData(
     @Description("Map of hypotheses to their prior probabilities (must sum to 1.0)")
@@ -235,8 +235,8 @@ Consider both the strength of evidence and its reliability.
       resultBuilder.append("# Probabilistic Reasoning Analysis\n\n")
       resultBuilder.append("**Context:** $decisionContext\n\n")
       resultBuilder.append("## Bayesian Update\n\n")
-      resultBuilder.append(updateResult.take(1000))
-      if (updateResult.length > 1000) resultBuilder.append("\n... (see full analysis in UI)")
+      resultBuilder.append(updateResult.take(maxDescriptionLength))
+      if (updateResult.length > maxDescriptionLength) resultBuilder.append("\n... (see full analysis in UI)")
       resultBuilder.append("\n\n")
 
       // Expected Value Analysis (if requested)
@@ -278,8 +278,8 @@ Consider both the strength of evidence and its reliability.
         task.update()
 
         resultBuilder.append("## Expected Value Analysis\n\n")
-        resultBuilder.append(evResult.take(500))
-        if (evResult.length > 500) resultBuilder.append("\n... (see full analysis in UI)")
+        resultBuilder.append(evResult.take(maxDescriptionLength))
+        if (evResult.length > maxDescriptionLength) resultBuilder.append("\n... (see full analysis in UI)")
         resultBuilder.append("\n\n")
 
         overviewTask.add(
@@ -330,8 +330,8 @@ Consider both the strength of evidence and its reliability.
         task.update()
 
         resultBuilder.append("## Key Uncertainties\n\n")
-        resultBuilder.append(uncertaintyResult.take(500))
-        if (uncertaintyResult.length > 500) resultBuilder.append("\n... (see full analysis in UI)")
+        resultBuilder.append(uncertaintyResult.take(maxDescriptionLength))
+        if (uncertaintyResult.length > maxDescriptionLength) resultBuilder.append("\n... (see full analysis in UI)")
         resultBuilder.append("\n\n")
 
         overviewTask.add(
@@ -382,8 +382,8 @@ Consider both the strength of evidence and its reliability.
         task.update()
 
         resultBuilder.append("## Suggested Experiments\n\n")
-        resultBuilder.append(experimentResult.take(500))
-        if (experimentResult.length > 500) resultBuilder.append("\n... (see full analysis in UI)")
+        resultBuilder.append(experimentResult.take(maxDescriptionLength))
+        if (experimentResult.length > maxDescriptionLength) resultBuilder.append("\n... (see full analysis in UI)")
         resultBuilder.append("\n\n")
 
         overviewTask.add(
@@ -418,7 +418,7 @@ Consider both the strength of evidence and its reliability.
       task.update()
 
       val finalResult = resultBuilder.toString()
-      task.safeComplete("Completed Bayesian analysis of ${hypotheses.size} hypotheses in ${totalTime / 1000}s", log)
+      task.safeComplete("Completed Bayesian analysis of ${hypotheses.size} hypotheses in ${totalTime / maxDescriptionLength}s", log)
       resultFn(finalResult)
 
     } catch (e: Exception) {

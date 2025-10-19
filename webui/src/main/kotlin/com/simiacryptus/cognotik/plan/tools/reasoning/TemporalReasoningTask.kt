@@ -12,7 +12,6 @@ import org.slf4j.Logger
 import java.nio.file.FileSystems
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 class TemporalReasoningTask(
   orchestrationConfig: OrchestrationConfig,
@@ -56,23 +55,23 @@ class TemporalReasoningTask(
   )
 
   data class TimelineEvent(
-    val timestamp: String,
-    val event_type: String,
-    val description: String,
-    val significance: String,
+    val timestamp: String = LocalDate.now().format(DateTimeFormatter.ISO_DATE),
+    val event_type: String = "generic",
+    val description: String = "",
+    val significance: String = "medium",
     val related_metrics: Map<String, String>? = null
   )
 
   data class TemporalPattern(
-    val pattern_type: String,
-    val description: String,
-    val frequency: String,
-    val confidence: String,
-    val examples: List<String>
+    val pattern_type: String = "recurring",
+    val description: String = "",
+    val frequency: String = "unknown",
+    val confidence: String = "medium",
+    val examples: List<String> = emptyList()
   )
 
   data class TimelineAnalysis(
-    val timeline_events: List<TimelineEvent>,
+    val timeline_events: List<TimelineEvent> = emptyList(),
     val patterns: List<TemporalPattern>? = null,
     val rate_of_change_analysis: String? = null,
     val transition_points: List<String>? = null,
@@ -543,8 +542,6 @@ Generate the Mermaid timeline diagram now:
     }
 
     val maxFileSize = 2000
-    val maxTotalSize = 10000
-    var totalSize = 0
 
     return relatedFiles.flatMap { pattern ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -555,12 +552,8 @@ Generate the Mermaid timeline diagram now:
         .map { file ->
           val relativePath = root.relativize(file.toPath())
           try {
-            if (totalSize >= maxTotalSize) {
-              return@map "### $relativePath\n(Skipped - data limit reached)"
-            }
             val content = file.readText()
             val truncated = content.take(maxFileSize)
-            totalSize += truncated.length
             "### $relativePath\n```\n$truncated${if (content.length > maxFileSize) "\n... (truncated)" else ""}\n```"
           } catch (e: Exception) {
             log.warn("Error reading temporal data file: $relativePath", e)

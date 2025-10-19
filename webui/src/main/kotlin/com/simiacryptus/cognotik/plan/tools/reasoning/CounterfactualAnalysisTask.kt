@@ -17,6 +17,7 @@ class CounterfactualAnalysisTask(
   orchestrationConfig,
   planTask
 ) {
+  val maxDescriptionLength = 200
 
   class CounterfactualAnalysisTaskExecutionConfigData(
     @Description("The actual scenario or decision to analyze")
@@ -103,7 +104,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
           """
           |## Counterfactual Analysis
           |
-          |**Actual Scenario:** ${actualScenario.take(200)}${if (actualScenario.length > 200) "..." else ""}
+          |**Actual Scenario:** ${actualScenario.take(maxDescriptionLength)}${if (actualScenario.length > maxDescriptionLength) "..." else ""}
           |
           |**Counterfactuals:** ${counterfactuals.size}
           |

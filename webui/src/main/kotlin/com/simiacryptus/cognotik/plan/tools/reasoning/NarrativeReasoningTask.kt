@@ -6,12 +6,13 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
+private const val i = 100
 
 class NarrativeReasoningTask(
   orchestrationConfig: OrchestrationConfig,
@@ -21,10 +22,7 @@ class NarrativeReasoningTask(
   planTask
 ) {
 
-  data class NarrativeElement(
-    val type: String,
-    val content: Any
-  )
+  val maxDescriptionLength = 100
 
   class NarrativeReasoningTaskExecutionConfigData(
     @Description("The subject or scenario to analyze through narrative reasoning")
@@ -61,52 +59,56 @@ class NarrativeReasoningTask(
   )
 
   data class ParsedNarrative(
-    val title: String,
-    val summary: String,
-    val acts: List<NarrativeAct>,
-    val themes: List<String>,
-    val tone: String
+    val title: String = "",
+    val summary: String = "",
+    val acts: List<NarrativeAct> = emptyList(),
+    val themes: List<String> = emptyList(),
+    val tone: String = ""
   )
 
   data class NarrativeAct(
-    val act_number: Int,
-    val title: String,
-    val description: String,
-    val key_events: List<String>,
-    val character_developments: Map<String, String>
+    val act_number: Int = 1,
+    val title: String = "",
+    val description: String = "",
+    val key_events: List<String> = emptyList(),
+    val character_developments: Map<String, String> = emptyMap()
   )
 
   data class PlotPoint(
-    val type: String,
-    val description: String,
-    val significance: String,
-    val timing: String,
-    val affected_characters: List<String>
+    val type: String = "",
+    val description: String = "",
+    val significance: String = "",
+    val timing: String = "",
+    val affected_characters: List<String> = emptyList()
+  )
+
+  data class PlotPoints(
+    val points: List<PlotPoint> = emptyList()
   )
 
   data class CharacterAnalysis(
-    val name: String,
-    val role: String,
-    val motivations: List<String>,
-    val goals: List<String>,
-    val conflicts: List<String>,
-    val arc: String
+    val name: String = "",
+    val role: String = "",
+    val motivations: List<String> = emptyList(),
+    val goals: List<String> = emptyList(),
+    val conflicts: List<String> = emptyList(),
+    val arc: String = ""
   )
 
   data class NarrativeOutcome(
-    val scenario: String,
-    val probability: String,
-    val key_factors: List<String>,
-    val consequences: List<String>,
-    val resolution_path: String
+    val scenario: String = "",
+    val probability: String = "",
+    val key_factors: List<String> = emptyList(),
+    val consequences: List<String> = emptyList(),
+    val resolution_path: String = ""
   )
 
   data class NarrativeInconsistency(
-    val type: String,
-    val description: String,
-    val location: String,
-    val severity: String,
-    val suggested_resolution: String
+    val type: String = "",
+    val description: String = "",
+    val location: String = "",
+    val severity: String = "",
+    val suggested_resolution: String = ""
   )
 
   override fun promptSegment(): String {
@@ -330,7 +332,7 @@ Focus on clarity, coherence, and emotional resonance.
         task.update()
 
         val plotPointAgent = ParsedAgent(
-          resultClass = Array<PlotPoint>::class.java,
+          resultClass = PlotPoints::class.java,
           prompt = """
 You are a narrative structure expert. Identify the key plot points in this narrative.
 
@@ -360,7 +362,7 @@ Be specific and concrete.
           parsingChatter = orchestrationConfig.parsingChatter
         )
 
-        val plotPoints = plotPointAgent.answer(listOf("Identify plot points")).obj
+        val plotPoints = plotPointAgent.answer(listOf("Identify plot points")).obj.points
         log.debug("Identified ${plotPoints.size} plot points")
 
         val plotPointsContent = buildString {
@@ -392,7 +394,7 @@ Be specific and concrete.
 
         resultBuilder.append("## Key Plot Points\n")
         plotPoints.take(3).forEach { point ->
-          resultBuilder.append("- **${point.type}:** ${point.description.take(100)}...\n")
+          resultBuilder.append("- **${point.type}:** ${point.description.take(maxDescriptionLength)}...\n")
         }
         resultBuilder.append("\n")
 
@@ -680,7 +682,7 @@ Be thorough but fair. If the narrative is consistent, say so.
         if (inconsistencies.isNotEmpty()) {
           resultBuilder.append("## Narrative Inconsistencies\n")
           inconsistencies.take(3).forEach { inconsistency ->
-            resultBuilder.append("- **${inconsistency.type}:** ${inconsistency.description.take(80)}...\n")
+            resultBuilder.append("- **${inconsistency.type}:** ${inconsistency.description.take(maxDescriptionLength)}...\n")
           }
           resultBuilder.append("\n")
         }

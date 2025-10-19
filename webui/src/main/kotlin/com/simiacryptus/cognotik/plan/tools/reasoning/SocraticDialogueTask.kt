@@ -20,6 +20,8 @@ class SocraticDialogueTask(
   planTask
 ) {
 
+  val maxDescriptionLength = 1500
+
   class SocraticDialogueTaskExecutionConfigData(
     @Description("The initial question or hypothesis to explore")
     val initial_question: String? = null,
@@ -257,8 +259,8 @@ Provide substantive, well-reasoned responses that advance the dialogue.
         // Store only key points in concise output
         if (depth == 1 || depth == maxDepth) {
           dialogueBuilder.append("### Exchange $depth\n")
-          dialogueBuilder.append("**Q:** ${currentQuestion.take(150)}${if (currentQuestion.length > 150) "..." else ""}\n")
-          dialogueBuilder.append("**A:** ${currentResponse.take(200)}${if (currentResponse.length > 200) "..." else ""}\n\n")
+          dialogueBuilder.append("**Q:** ${currentQuestion.take(maxDescriptionLength)}${if (currentQuestion.length > maxDescriptionLength) "..." else ""}\n")
+          dialogueBuilder.append("**A:** ${currentResponse.take(maxDescriptionLength)}${if (currentResponse.length > maxDescriptionLength) "..." else ""}\n\n")
         }
 
         MarkdownUtil.renderMarkdown(

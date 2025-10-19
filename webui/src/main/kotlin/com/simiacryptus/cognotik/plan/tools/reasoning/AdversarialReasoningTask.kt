@@ -1,12 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.actors.ChatAgent
-import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -20,6 +18,7 @@ class AdversarialReasoningTask(
   orchestrationConfig,
   planTask
 ) {
+  val maxDescriptionLength = 1500
 
   data class VulnerabilityReport(
     val category: String = "",
@@ -29,13 +28,6 @@ class AdversarialReasoningTask(
     val potential_impact: String = "",
     val exploit_steps: List<String> = emptyList(),
     val mitigation_strategies: List<String> = emptyList()
-  )
-
-  data class AdversarialAnalysis(
-    val vulnerabilities: List<VulnerabilityReport> = emptyList(),
-    val edge_cases: List<String> = emptyList(),
-    val failure_modes: List<String> = emptyList(),
-    val overall_risk_assessment: String = ""
   )
 
   class AdversarialReasoningTaskExecutionConfigData(
@@ -442,7 +434,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             .take(5)
             .forEach { vuln ->
               appendLine("### ${vuln.severity.uppercase()}: ${vuln.category}")
-              appendLine(vuln.description.take(200) + if (vuln.description.length > 200) "..." else "")
+              appendLine(vuln.description.take(maxDescriptionLength) + if (vuln.description.length > maxDescriptionLength) "..." else "")
               appendLine()
             }
         }
@@ -857,7 +849,7 @@ Consider both immediate fixes and long-term architectural improvements.
           .take(3)
           .forEachIndexed { index, vuln ->
             appendLine("${index + 1}. **${vuln.category}** (${vuln.severity})")
-            appendLine("   - ${vuln.description.take(150)}${if (vuln.description.length > 150) "..." else ""}")
+            appendLine("   - ${vuln.description.take(maxDescriptionLength)}${if (vuln.description.length > maxDescriptionLength) "..." else ""}")
             appendLine()
           }
       }

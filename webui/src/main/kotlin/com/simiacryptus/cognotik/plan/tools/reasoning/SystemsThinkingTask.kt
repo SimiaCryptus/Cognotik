@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -19,6 +18,8 @@ class SystemsThinkingTask(
   orchestrationConfig,
   planTask
 ) {
+
+  val maxDescriptionLength = 1500
 
   class SystemsThinkingTaskExecutionConfigData(
     @Description("Description of the system to analyze")
@@ -538,8 +539,8 @@ $simulationAnalysis
         appendLine()
         appendLine("## Key Findings")
         appendLine()
-        appendLine(synthesis.take(1500))
-        if (synthesis.length > 1500) appendLine("\n... (see full analysis in task output)")
+        appendLine(synthesis.take(maxDescriptionLength))
+        if (synthesis.length > maxDescriptionLength) appendLine("\n... (see full analysis in task output)")
         appendLine()
         appendLine("---")
         appendLine()

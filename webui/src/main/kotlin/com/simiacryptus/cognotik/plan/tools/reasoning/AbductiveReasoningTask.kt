@@ -20,24 +20,25 @@ class AbductiveReasoningTask(
   orchestrationConfig,
   planTask
 ) {
+  val maxOutputSize = 5000
 
   data class Hypothesis(
-    val id: Int,
-    val description: String,
-    val explanation: String,
-    val explanatory_power: Double,
-    val simplicity: Double,
-    val testability: Double,
-    val prior_probability: Double,
-    val overall_score: Double,
-    val supporting_evidence: List<String>,
-    val contradicting_evidence: List<String>,
-    val testable_predictions: List<String>
+    val id: Int = 0,
+    val description: String = "",
+    val explanation: String = "",
+    val explanatory_power: Double = 0.0,
+    val simplicity: Double = 0.0,
+    val testability: Double = 0.0,
+    val prior_probability: Double = 0.0,
+    val overall_score: Double = 0.0,
+    val supporting_evidence: List<String> = emptyList(),
+    val contradicting_evidence: List<String> = emptyList(),
+    val testable_predictions: List<String> = emptyList()
   )
 
   data class HypothesesResponse(
-    val hypotheses: List<Hypothesis>,
-    val reasoning: String
+    val hypotheses: List<Hypothesis> = emptyList(),
+    val reasoning: String = ""
   )
 
   class AbductiveReasoningTaskExecutionConfigData(
@@ -445,8 +446,8 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         appendLine()
         appendLine("## Key Findings")
         appendLine()
-        appendLine(analysis.take(500))
-        if (analysis.length > 500) appendLine("...")
+        appendLine(analysis.take(maxOutputSize))
+        if (analysis.length > maxOutputSize) appendLine("...")
       }
 
       log.info("AbductiveReasoningTask completed: total_time=${totalTime}ms, observations=${observations.size}, hypotheses=${hypotheses.size}, best_score=${bestHypothesis?.overall_score}")
