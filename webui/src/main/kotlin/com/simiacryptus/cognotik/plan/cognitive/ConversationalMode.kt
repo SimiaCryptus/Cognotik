@@ -41,11 +41,8 @@ open class ConversationalMode(
 
     private val messagesLock = Any()
     private val messages get() = messageMaps.computeIfAbsent(session) { ConcurrentLinkedQueue() }
-
     private val messageBuffer = ConcurrentLinkedQueue<String>()
-
     private var isProcessing = false
-
     private val systemPrompt = "Given the following input, choose ONE task to execute and describe it in detail."
 
     override fun initialize() {
@@ -60,9 +57,6 @@ open class ConversationalMode(
                     "${it.task_type}${it.name?.let { name -> ":$name" } ?: ""}"
                 }
             }")
-//        synchronized(messagesLock) {
-//            messages.add(ModelSchema.ChatMessage(ModelSchema.Role.system, systemPrompt.toContentList()))
-//        }
     }
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
@@ -77,7 +71,7 @@ open class ConversationalMode(
             isProcessing = true
         }
 
-        task.echo(renderMarkdown(userMessage))
+        task.echo(userMessage.renderMarkdown())
         ui.pool.submit {
             try {
                 while (!Thread.interrupted()) {
@@ -187,6 +181,7 @@ open class ConversationalMode(
                     },
                     orchestrationConfig = orchestrationConfig,
                 )
+              this.complete()
             }
             resultSemaphore.acquire()
             task.complete()

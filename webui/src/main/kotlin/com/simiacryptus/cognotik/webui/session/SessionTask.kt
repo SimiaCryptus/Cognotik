@@ -131,7 +131,7 @@ open class SessionTask(
         @Description("The message to echo")
         message: String,
         @Description("Whether to show the spinner for the task (default: true)")
-        showSpinner: Boolean = true,
+        showSpinner: Boolean = false,
         @Description("The html tag to wrap the message in (default: div)")
         tag: String = "div"
     ) = add(message, showSpinner, tag, "user-message")
