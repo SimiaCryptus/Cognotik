@@ -105,9 +105,10 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
             resultFn("CONFIGURATION ERROR: No input files specified")
             return
         } else if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).distinct().size == 1) {
-            ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).first()
+          ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).first()
+        } else if ((executionConfig?.files ?: listOf()).distinct().size == 1) {
+          (executionConfig?.files ?: listOf()).first()
         } else {
-            resultFn("CONFIGURATION ERROR: No input files specified")
             null
         }
 

@@ -330,8 +330,8 @@ open class SessionTask(
       }
       val resolve = dir.resolve(relativePath)
       resolve.parentFile?.let { parent ->
-        if (!parent.exists() && !parent.mkdirs()) {
-          throw RuntimeException("Failed to create parent directory: ${parent.absolutePath}")
+        if (!parent.exists()) {
+          if (!parent.mkdirs()) log.warn("Failed to create parent directory: {}", parent.absolutePath)
         }
       }
       log.debug("Successfully created file path: {}", resolve.absolutePath)
