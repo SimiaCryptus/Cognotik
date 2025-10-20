@@ -19,7 +19,6 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.*
@@ -30,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference
  * A cognitive mode that implements the auto-planning strategy with iterative thinking.
  */
 open class AdaptivePlanningMode(
-    override val ui: SocketManager,
+    override val task: SessionTask,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?,
@@ -38,6 +37,7 @@ open class AdaptivePlanningMode(
     private val maxTasksPerIteration: Int = orchestrationConfig.maxTasksPerIteration,
     private val maxIterations: Int = orchestrationConfig.maxIterations
 ) : CognitiveMode {
+
     private val log = LoggerFactory.getLogger(AdaptivePlanningMode::class.java)
 
     private val currentUserMessage = AtomicReference<String?>(null)
@@ -65,23 +65,22 @@ open class AdaptivePlanningMode(
 
     private fun startAutoPlanChat(userMessage: String) {
         log.debug("Starting auto plan chat with initial message: $userMessage")
-        val task = ui.newTask(true)
         task.echo(renderMarkdown(userMessage))
 
         val continueLoop = true
         val tabbedDisplay = TabbedDisplay(task)
-        ui.pool.execute {
+        this.task.ui.pool.execute {
             try {
                 log.debug("Starting main execution loop")
                 task.complete()
 
-                val coordinator = ui.dataStorage?.let {
+                val coordinator = this.task.ui.dataStorage?.let {
                     TaskOrchestrator(
                         user = user,
                         session = session,
                         dataStorage = it,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                            ?: this.task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     )
                 }
                 log.debug("Created plan coordinator")
@@ -233,7 +232,7 @@ ${JsonUtil.toJson(taskConfig)}
             } finally {
                 log.debug("Finalizing auto plan chat")
                 isRunning = false
-                val summaryTask = ui.newTask(false).apply { tabbedDisplay["Summary"] = placeholder }
+                val summaryTask = this.task.ui.newTask(false).apply { tabbedDisplay["Summary"] = placeholder }
                 summaryTask.add(
                     renderMarkdown(
                         "Auto Plan Chat completed. Final thinking status:\n${
@@ -340,7 +339,7 @@ ${JsonUtil.toJson(taskConfig)}
         )
 
 
-        val executor = ui.pool
+        val executor = this.task.ui.pool
             ?: throw IllegalStateException("SocketManager or its pool is null for expansion processing")
         val processor = FixedConcurrencyProcessor(executor, 4)
 
@@ -412,7 +411,7 @@ ${JsonUtil.toJson(taskConfig)}
             val tabs = TabbedDisplay(task)
             val futures = options.map { option ->
                 processor.submit {
-                    val subTask = ui.newTask(false).apply { tabs[option] = placeholder }
+                    val subTask = this.task.ui.newTask(false).apply { tabs[option] = placeholder }
                     val nextText = currentText.replaceFirst(match.value, option)
                     processTaskExpansionRecursive(nextText, subTask, parsedActor, processor)
                 }
@@ -701,10 +700,10 @@ ${JsonUtil.toJson(taskConfig)}
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: SocketManager,
+            task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?
-        ) = AdaptivePlanningMode(ui, orchestrationConfig, session, user)
+        ) = AdaptivePlanningMode(task, orchestrationConfig, session, user)
     }
 }

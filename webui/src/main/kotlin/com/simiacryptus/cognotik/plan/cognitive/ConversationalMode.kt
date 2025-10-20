@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference
  * A cognitive mode that executes tasks based on user input while maintaining conversation history.
  */
 open class ConversationalMode(
-  override val ui: SocketManager,
+  override val task: SessionTask,
   override val orchestrationConfig: OrchestrationConfig,
   override val session: Session,
   override val user: User?,
@@ -79,12 +79,12 @@ open class ConversationalMode(
     }
 
     task.echo(userMessage.renderMarkdown())
-    ui.pool.submit {
+    this.task.ui.pool.submit {
       try {
         while (!Thread.interrupted()) {
           sleep(100) // Brief pause to allow batching of messages
           val userMessage = messageBuffer.poll() ?: continue
-          val task = ui.newTask()
+          val task = this.task.ui.newTask()
           execute(task, userMessage)
         }
       } finally {
@@ -213,12 +213,12 @@ open class ConversationalMode(
     val resultSemaphore = Semaphore(0)
     val resultRef = AtomicReference<String>()
     val tabs = TabbedDisplay(task)
-    ui.newTask(false).apply {
+    this.task.ui.newTask(false).apply {
       tabs["Plan"] = placeholder
       add(answer.text.renderMarkdown())
       complete("Executing task:\n```json\n${JsonUtil.toJson(chosenTasks)}\n```".renderMarkdown())
     }
-    ui.newTask(false).apply {
+    this.task.ui.newTask(false).apply {
       tabs["Run"] = placeholder
       TaskType.getImpl(orchestrationConfig, chosenTasks).run(
         agent = TaskOrchestrator(
@@ -251,7 +251,7 @@ open class ConversationalMode(
    * Executes a list of functions, each appending to the target StringBuilder, potentially in parallel.
    */
   private fun runAll(function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
-    val fixedConcurrencyProcessor = com.simiacryptus.cognotik.util.FixedConcurrencyProcessor(ui.pool, 4)
+    val fixedConcurrencyProcessor = com.simiacryptus.cognotik.util.FixedConcurrencyProcessor(task.ui.pool, 4)
     function1s.map { function1 ->
       fixedConcurrencyProcessor.submit {
         function1(target)
@@ -287,7 +287,7 @@ open class ConversationalMode(
     val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
     return match.groupValues[1].split('|', ',').flatMap { option ->
       recursiveFn(
-        currentMessage.replaceFirst(match.value, option), ui.newTask(false).apply { tabs[option] = placeholder })
+        currentMessage.replaceFirst(match.value, option), this.task.ui.newTask(false).apply { tabs[option] = placeholder })
     }.apply {
       tabs.update()
     }
@@ -301,7 +301,7 @@ open class ConversationalMode(
     for (item in items) {
       val newMessage = currentMessage.replaceFirst(expression, item)
       val subTaskFunctions = processMsgRecursive(
-        currentMessage = newMessage, task = ui.newTask(false).apply { tabs[item] = placeholder })
+        currentMessage = newMessage, task = this.task.ui.newTask(false).apply { tabs[item] = placeholder })
       val subAggregate = StringBuilder()
       runAll(subTaskFunctions, subAggregate)
       aggregatedResponse.append("[").append(item).append("]\n").append(subAggregate.toString()).append("\n")
@@ -369,8 +369,8 @@ open class ConversationalMode(
 
     override val inputCnt = 1
     override fun getCognitiveMode(
-      ui: SocketManager, orchestrationConfig: OrchestrationConfig, session: Session, user: User?
-    ) = ConversationalMode(ui, orchestrationConfig, session, user, useExpansionSyntax = true)
+      task: SessionTask, orchestrationConfig: OrchestrationConfig, session: Session, user: User?
+    ) = ConversationalMode(task, orchestrationConfig, session, user, useExpansionSyntax = true)
 
     private val messageMaps = ConcurrentHashMap<Session, ConcurrentLinkedQueue<ModelSchema.ChatMessage>>()
     private val log = LoggerFactory.getLogger(ConversationalMode::class.java)
