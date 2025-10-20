@@ -1,47 +1,37 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 
 class AbstractionLadderTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: AbstractionLadderTaskExecutionConfigData?
+  orchestrationConfig: OrchestrationConfig, planTask: AbstractionLadderTaskExecutionConfigData?
 ) : AbstractTask<AbstractionLadderTask.AbstractionLadderTaskExecutionConfigData, TaskTypeConfig>(
-    orchestrationConfig,
-    planTask
+  orchestrationConfig, planTask
 ) {
 
-    class AbstractionLadderTaskExecutionConfigData(
-        @Description("The concrete concept, problem, or code pattern to analyze")
-        val concrete_concept: String? = null,
-        @Description("Direction to traverse: 'up' for abstraction (generalizations), 'down' for concretization (specific implementations), 'both' for bidirectional analysis")
-        val direction: String = "both",
-        @Description("Number of abstraction levels to traverse in each direction (1-5 recommended)")
-        val levels: Int = 3,
-        @Description("Whether to identify design patterns, anti-patterns, and refactoring opportunities at each level")
-        val identify_patterns: Boolean = true,
-        @Description("Additional files for context (e.g., existing code, related implementations)")
-        val related_files: List<String>? = null,
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
-    ) : TaskExecutionConfig(
-        task_type = AbstractionLadder.name,
-        task_description = task_description,
-        task_dependencies = task_dependencies?.toMutableList(),
-        state = state
-    )
+  class AbstractionLadderTaskExecutionConfigData(
+    @Description("The concrete concept, problem, or code pattern to analyze") val concrete_concept: String? = null,
+    @Description("Direction to traverse: 'up' for abstraction (generalizations), 'down' for concretization (specific implementations), 'both' for bidirectional analysis") val direction: String = "both",
+    @Description("Number of abstraction levels to traverse in each direction (1-5 recommended)") val levels: Int = 3,
+    @Description("Whether to identify design patterns, anti-patterns, and refactoring opportunities at each level") val identify_patterns: Boolean = true,
+    @Description("Additional files for context (e.g., existing code, related implementations)") val related_files: List<String>? = null,
+    task_description: String? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = TaskState.Pending,
+  ) : TaskExecutionConfig(
+    task_type = AbstractionLadder.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
+  )
 
-    override fun promptSegment(): String {
-        return """
+  override fun promptSegment(): String {
+    return """
 AbstractionLadder - Traverse abstraction levels to find patterns and design insights
   ** Specify the concrete concept or problem to analyze
   ** Choose direction: 'up' (generalize), 'down' (concretize), or 'both'
@@ -58,115 +48,176 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
      - Concrete examples and generalizations
      - Refactoring recommendations
         """.trimIndent()
+  }
+
+  override fun run(
+    agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig
+  ) {
+    val startTime = System.currentTimeMillis()
+    log.info("Starting Abstraction Ladder Analysis - Concept: ${executionConfig?.concrete_concept}, Direction: ${executionConfig?.direction}, Levels: ${executionConfig?.levels}")
+
+    val concept = executionConfig?.concrete_concept
+    if (concept.isNullOrBlank()) {
+      log.error("Configuration error: No concrete concept specified")
+      task.complete("CONFIGURATION ERROR: No concrete concept specified")
+      resultFn("CONFIGURATION ERROR: No concrete concept specified")
+      return
     }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val concept = executionConfig?.concrete_concept
-        if (concept.isNullOrBlank()) {
-            resultFn("CONFIGURATION ERROR: No concrete concept specified")
-            return
-        }
+    val direction = executionConfig.direction.lowercase()
+    if (direction !in listOf("up", "down", "both")) {
+      log.error("Configuration error: Invalid direction '$direction'")
+      task.complete("CONFIGURATION ERROR: Invalid direction")
+      resultFn("CONFIGURATION ERROR: Direction must be 'up', 'down', or 'both'")
+      return
+    }
 
-        val direction = executionConfig.direction.lowercase()
-        if (direction !in listOf("up", "down", "both")) {
-            resultFn("CONFIGURATION ERROR: Direction must be 'up', 'down', or 'both'")
-            return
-        }
+    val levels = executionConfig.levels.coerceIn(1, 5)
+    val identifyPatterns = executionConfig.identify_patterns
 
-        val levels = executionConfig.levels.coerceIn(1, 5)
-        val identifyPatterns = executionConfig.identify_patterns
+    val api = orchestrationConfig.defaultChatter ?: run {
+      log.error("No default chatter available")
+      task.complete("ERROR: No API available")
+      resultFn("ERROR: No API available")
+      return
+    }
 
-        val newTask = task.ui.newTask(false)
-        val ui = task.ui
-        val api = orchestrationConfig.defaultChatter
+    // Initialize UI with tabbed display for better organization
+    val tabbedDisplay = TabbedDisplay(task)
 
-        newTask.add(
-            MarkdownUtil.renderMarkdown(
-                "## Abstraction Ladder Analysis: `$concept`\n\n" +
-                        "Direction: **$direction** | Levels: **$levels** | Pattern Analysis: **${if (identifyPatterns) "Enabled" else "Disabled"}**",
-                ui = ui
-            )
+    // Overview tab
+    val overviewTask = task.ui.newTask(false).apply {
+      tabbedDisplay["Overview"] = placeholder
+      add(
+        MarkdownUtil.renderMarkdown(
+          """
+          ## Abstraction Ladder Analysis: `$concept`
+          
+          **Direction:** $direction | **Levels:** $levels | **Pattern Analysis:** ${if (identifyPatterns) "Enabled" else "Disabled"}
+          
+          Starting analysis...
+          """.trimIndent(), ui = task.ui
         )
-
-        val contextFiles = getContextFiles()
-        val priorCode = getPriorCode(agent.executionState)
-
-        val result = StringBuilder()
-
-        try {
-            if (direction == "up" || direction == "both") {
-                val upwardAnalysis = analyzeUpward(
-                    concept = concept,
-                    levels = levels,
-                    identifyPatterns = identifyPatterns,
-                    contextFiles = contextFiles,
-                    priorCode = priorCode,
-                    api = api,
-                    newTask = newTask,
-                    ui = ui
-                )
-                result.append("## Upward Abstraction (Generalizations)\n\n")
-                result.append(upwardAnalysis)
-                result.append("\n\n")
-            }
-
-            if (direction == "down" || direction == "both") {
-                val downwardAnalysis = analyzeDownward(
-                    concept = concept,
-                    levels = levels,
-                    identifyPatterns = identifyPatterns,
-                    contextFiles = contextFiles,
-                    priorCode = priorCode,
-                    api = api,
-                    newTask = newTask,
-                    ui = ui
-                )
-                result.append("## Downward Concretization (Specific Implementations)\n\n")
-                result.append(downwardAnalysis)
-                result.append("\n\n")
-            }
-
-            if (identifyPatterns) {
-                val patternSummary = generatePatternSummary(
-                    concept = concept,
-                    upwardAnalysis = if (direction == "up" || direction == "both") result.toString() else "",
-                    downwardAnalysis = if (direction == "down" || direction == "both") result.toString() else "",
-                    api = api,
-                    newTask = newTask,
-                    ui = ui
-                )
-                result.append("## Pattern Analysis & Recommendations\n\n")
-                result.append(patternSummary)
-            }
-
-            newTask.add(MarkdownUtil.renderMarkdown(result.toString(), ui = ui))
-            newTask.complete()
-            resultFn(result.toString())
-
-        } catch (e: Exception) {
-            log.error("Error in abstraction ladder analysis", e)
-            newTask.error(e)
-            resultFn("ERROR: ${e.message}")
-        }
+      )
     }
 
-    private fun analyzeUpward(
-        concept: String,
-        levels: Int,
-        identifyPatterns: Boolean,
-        contextFiles: String,
-        priorCode: String,
-        api: ChatInterface,
-        newTask: SessionTask,
-        ui: SocketManager
-    ): String {
-        val prompt = """
+
+    val contextFiles = getContextFiles()
+    val priorCode = getPriorCode(agent.executionState)
+
+    val result = StringBuilder()
+
+    try {
+      if (direction == "up" || direction == "both") {
+        log.info("Performing upward abstraction analysis")
+        val upwardTab = task.ui.newTask(false)
+        tabbedDisplay["Upward Analysis"] = upwardTab.placeholder
+        val upwardAnalysis = analyzeUpward(
+          concept = concept,
+          levels = levels,
+          identifyPatterns = identifyPatterns,
+          contextFiles = contextFiles,
+          priorCode = priorCode,
+          api = api,
+          task = upwardTab
+        )
+        result.append("## Upward Abstraction (Generalizations)\n\n")
+        result.append(upwardAnalysis)
+        result.append("\n\n")
+        upwardTab.add(MarkdownUtil.renderMarkdown("✅ Upward analysis complete", ui = task.ui))
+        upwardTab.complete()
+      }
+
+      if (direction == "down" || direction == "both") {
+        log.info("Performing downward concretization analysis")
+        val downwardTab = task.ui.newTask(false)
+        tabbedDisplay["Downward Analysis"] = downwardTab.placeholder
+        val downwardAnalysis = analyzeDownward(
+          concept = concept,
+          levels = levels,
+          identifyPatterns = identifyPatterns,
+          contextFiles = contextFiles,
+          priorCode = priorCode,
+          api = api,
+          task = downwardTab
+        )
+        result.append("## Downward Concretization (Specific Implementations)\n\n")
+        result.append(downwardAnalysis)
+        result.append("\n\n")
+        downwardTab.add(MarkdownUtil.renderMarkdown("✅ Downward analysis complete", ui = task.ui))
+        downwardTab.complete()
+      }
+
+      if (identifyPatterns) {
+        log.info("Generating pattern summary and recommendations")
+        val patternTab = task.ui.newTask(false)
+        tabbedDisplay["Pattern Analysis"] = patternTab.placeholder
+        val patternSummary = generatePatternSummary(
+          concept = concept,
+          upwardAnalysis = if (direction == "up" || direction == "both") result.toString() else "",
+          downwardAnalysis = if (direction == "down" || direction == "both") result.toString() else "",
+          api = api,
+          task = patternTab
+        )
+        result.append("## Pattern Analysis & Recommendations\n\n")
+        result.append(patternSummary)
+        patternTab.add(MarkdownUtil.renderMarkdown("✅ Pattern analysis complete", ui = task.ui))
+        patternTab.complete()
+      }
+
+      // Update overview with completion status
+      overviewTask.add(
+        MarkdownUtil.renderMarkdown(
+          """
+          
+          ---
+          
+          ## ✅ Analysis Complete
+          
+          **Total Levels Analyzed:** $levels  
+          **Directions Covered:** $direction  
+          **Pattern Analysis:** ${if (identifyPatterns) "Included" else "Skipped"}
+          
+          See individual tabs for detailed results.
+          """.trimIndent(), ui = task.ui
+        )
+      )
+
+      val duration = System.currentTimeMillis() - startTime
+      log.info("Abstraction Ladder Analysis completed successfully - Concept: $concept, Levels: $levels")
+      task.complete("Abstraction ladder analysis complete for '$concept' with $levels levels in $direction direction(s) (${duration}ms)")
+      resultFn(result.toString())
+
+    } catch (e: Exception) {
+      val duration = System.currentTimeMillis() - startTime
+      log.error("Error in abstraction ladder analysis after ${duration}ms", e)
+      task.error(e)
+      task.add(
+        MarkdownUtil.renderMarkdown(
+          """
+          ## ❌ Error During Analysis
+          An error occurred while performing the abstraction ladder analysis:
+          ```
+          ${e.message}
+          ```
+          Please check the logs for more details.
+          """.trimIndent(), ui = task.ui
+        )
+      )
+      resultFn("ERROR: ${e.message}")
+    }
+  }
+
+  private fun analyzeUpward(
+    concept: String,
+    levels: Int,
+    identifyPatterns: Boolean,
+    contextFiles: String,
+    priorCode: String,
+    api: ChatInterface,
+    task: SessionTask
+  ): String {
+    val prompt = """
  Analyze the following concept by moving UP the abstraction ladder.
  Start with the concrete concept and identify increasingly general abstractions.
 
@@ -202,28 +253,30 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
  Generate the upward abstraction analysis now:
         """.trimIndent()
 
-        val chatAgent = ChatAgent(
-            prompt = promptSegment(),
-            model = api,
-        )
+    val chatAgent = ChatAgent(
+      prompt = """
+        You are an expert software architect analyzing code abstractions and design patterns.
+        Your role is to identify generalizations and patterns as you move up the abstraction ladder.
+      """.trimIndent(),
+      model = api,
+    )
+    task.add(MarkdownUtil.renderMarkdown("Analyzing upward abstractions...", ui = task.ui))
 
-        return Retryable(newTask, newTask.ui) { sb ->
-            sb.append(chatAgent.answer(listOf(prompt)))
-            sb.toString()
-        }.toString()
+    return chatAgent.answer(listOf(prompt)).apply {
+      task.add(this.renderMarkdown)
     }
+  }
 
-    private fun analyzeDownward(
-        concept: String,
-        levels: Int,
-        identifyPatterns: Boolean,
-        contextFiles: String,
-        priorCode: String,
-        api: ChatInterface,
-        newTask: SessionTask,
-        ui: SocketManager
-    ): String {
-        val prompt = """
+  private fun analyzeDownward(
+    concept: String,
+    levels: Int,
+    identifyPatterns: Boolean,
+    contextFiles: String,
+    priorCode: String,
+    api: ChatInterface,
+    task: SessionTask
+  ): String {
+    val prompt = """
  Analyze the following concept by moving DOWN the abstraction ladder.
  Start with the concept and identify increasingly specific/concrete implementations.
 
@@ -260,26 +313,24 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
  Generate the downward concretization analysis now:
         """.trimIndent()
 
-        val chatAgent = ChatAgent(
-            prompt = promptSegment(),
-            model = api,
-        )
+    val chatAgent = ChatAgent(
+      prompt = """
+        You are an expert software architect analyzing code implementations and concrete patterns.
+        Your role is to identify specific implementations as you move down the abstraction ladder.
+      """.trimIndent(),
+      model = api,
+    )
+    task.add(MarkdownUtil.renderMarkdown("Analyzing downward concretizations...", ui = task.ui))
 
-        return Retryable(newTask, newTask.ui) { sb ->
-            sb.append(chatAgent.answer(listOf(prompt)))
-            sb.toString()
-        }.toString()
+    return chatAgent.answer(listOf(prompt)).apply {
+      task.add(this.renderMarkdown)
     }
+  }
 
-    private fun generatePatternSummary(
-        concept: String,
-        upwardAnalysis: String,
-        downwardAnalysis: String,
-        api: ChatInterface,
-        newTask: SessionTask,
-        ui: SocketManager
-    ): String {
-        val prompt = """
+  private fun generatePatternSummary(
+    concept: String, upwardAnalysis: String, downwardAnalysis: String, api: ChatInterface, task: SessionTask
+  ): String {
+    val prompt = """
  Based on the abstraction ladder analysis, provide a comprehensive pattern summary and recommendations.
 
  ## Original Concept:
@@ -306,43 +357,46 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
  Generate the pattern summary now:
         """.trimIndent()
 
-        val chatAgent = ChatAgent(
-            prompt = promptSegment(),
-            model = api,
-        )
-        return Retryable(newTask, newTask.ui) { sb ->
-            sb.append(chatAgent.answer(listOf(prompt)))
-            sb.toString()
-        }.toString()
+    val chatAgent = ChatAgent(
+      prompt = """
+        You are an expert software architect specializing in design patterns and code quality.
+        Your role is to synthesize abstraction analysis into actionable recommendations.
+      """.trimIndent(),
+      model = api,
+    )
+    task.add(MarkdownUtil.renderMarkdown("Generating pattern summary and recommendations...", ui = task.ui))
+    return chatAgent.answer(listOf(prompt)).apply {
+      task.add(this.renderMarkdown)
     }
+  }
 
-    private fun getContextFiles(): String {
-        val relatedFiles = executionConfig?.related_files ?: emptyList()
-        if (relatedFiles.isEmpty()) return "No related files provided."
+  private fun getContextFiles(): String {
+    val relatedFiles = executionConfig?.related_files ?: emptyList()
+    if (relatedFiles.isEmpty()) return "No related files provided."
 
-        return relatedFiles.joinToString("\n\n") { pattern ->
-            try {
-                val file = root.resolve(pattern).toFile()
-                if (file.exists() && file.isFile) {
-                    "# $pattern\n\n```\n${file.readText()}\n```"
-                } else {
-                    "# $pattern\n\nFile not found or is a directory"
-                }
-            } catch (e: Exception) {
-                log.warn("Error reading file: $pattern", e)
-                "# $pattern\n\nError reading file: ${e.message}"
-            }
+    return relatedFiles.joinToString("\n\n") { pattern ->
+      try {
+        val file = root.resolve(pattern).toFile()
+        if (file.exists() && file.isFile) {
+          "# $pattern\n\n```\n${file.readText()}\n```"
+        } else {
+          "# $pattern\n\nFile not found or is a directory"
         }
+      } catch (e: Exception) {
+        log.warn("Error reading file: $pattern", e)
+        "# $pattern\n\nError reading file: ${e.message}"
+      }
     }
+  }
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(AbstractionLadderTask::class.java)
-        val AbstractionLadder = TaskType(
-            "AbstractionLadder",
-            AbstractionLadderTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Traverse abstraction levels to identify patterns and design insights",
-            """
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(AbstractionLadderTask::class.java)
+    val AbstractionLadder = TaskType(
+      "AbstractionLadder",
+      AbstractionLadderTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Traverse abstraction levels to identify patterns and design insights",
+      """
               Analyzes concepts by moving up and down abstraction levels.
               <ul>
                 <li>Move up to find generalizations and patterns</li>
@@ -354,6 +408,6 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
                 <li>Generate actionable recommendations</li>
               </ul>
             """
-        )
-    }
+    )
+  }
 }

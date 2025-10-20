@@ -36,7 +36,7 @@ class CrawlerAgentTask(
 ) {
 
     class CrawlerTaskTypeConfig(
-        @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleSearch,
+        @Description("Method to seed the crawler (optional)") val seed_method: SeedMethod? = SeedMethod.GoogleProxy,
         @Description("Method used to fetch content from  URLs (optional)") val fetch_method: FetchMethod? = FetchMethod.HttpClient,
         @Description("Whitespace-separated list of allowed domains/URL prefixes to restrict crawling (optional)") val allowed_domains: String? = null,
         @Description("Respect robots.txt rules when crawling (default: true)") val respect_robots_txt: Boolean? = true,
@@ -183,10 +183,10 @@ class CrawlerAgentTask(
             }
             val tabs = TabbedDisplay(task)
 
-
-            val seedMethod = typeConfig.seed_method ?: when {
-                !executionConfig?.search_query.isNullOrBlank() -> SeedMethod.GoogleSearch
+            val seedMethod = when {
                 !executionConfig?.direct_urls.isNullOrEmpty() -> SeedMethod.DirectUrls
+                typeConfig.seed_method != null -> typeConfig.seed_method!!
+                !executionConfig?.search_query.isNullOrBlank() -> SeedMethod.GoogleProxy
                 else -> {
                     log.error("No seed method specified and no search query or direct URLs provided")
                     return "Error: No seed method specified and no search query or direct URLs provided"
@@ -1054,7 +1054,7 @@ class CrawlerAgentTask(
             resultClass = ParsedPage::class.java,
             model = model,
             describer = describer,
-            parsingModel = model,
+            parsingChatter = model,
         ).answer(listOf(content))
     } catch (e: Exception) {
         log.error("Error during content transformation", e)

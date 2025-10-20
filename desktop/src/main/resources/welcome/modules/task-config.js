@@ -130,8 +130,8 @@ class TaskConfigManager {
                         id: 'seed_method',
                         label: 'Seed Method',
                         type: 'select',
-                        options: ['GoogleSearch', 'DirectUrls', 'SearchIO_Google_Search', 'SearchIO_Google_Scholar', 'SearchIO_Google_Patents', 'SearchIO_Google_Maps'],
-                        default: 'GoogleSearch',
+                        options: ['GoogleProxy', 'GoogleSearch', 'DirectUrls', 'SearchIO_Google_Search', 'SearchIO_Google_Scholar', 'SearchIO_Google_Patents', 'SearchIO_Google_Maps'],
+                        default: 'GoogleProxy',
                         tooltip: 'Method to seed the crawler'
                     },
                     {

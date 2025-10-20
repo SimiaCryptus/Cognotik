@@ -135,7 +135,7 @@ class DataTableCompilationTask(
                 2. Provide a detailed description of what the column represents
             """.trimIndent(),
             model = chatter,
-            parsingModel = orchestrationConfig.parsingChatter,
+            parsingChatter = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
             describer = TaskContextYamlDescriber(orchestrationConfig),
         ).answer(
@@ -178,7 +178,7 @@ class DataTableCompilationTask(
                 2. List the source files that contain data for this row
             """.trimIndent(),
             model = chatter,
-            parsingModel = orchestrationConfig.parsingChatter,
+            parsingChatter = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
             describer = TaskContextYamlDescriber(orchestrationConfig),
         ).answer(
@@ -220,7 +220,7 @@ class DataTableCompilationTask(
                         "Special Instructions:\n${executionConfig?.cell_extraction_instructions}\n\n" +
                         "IMPORTANT: Respond with ONLY the single JSON object for the row `${row.id}`. Do NOT return a JSON array.",
                 model = chatter,
-                parsingModel = orchestrationConfig.parsingChatter,
+                parsingChatter = orchestrationConfig.parsingChatter,
                 temperature = orchestrationConfig.temperature,
                 describer = TaskContextYamlDescriber(orchestrationConfig),
             ).answer(

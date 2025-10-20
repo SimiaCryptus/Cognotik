@@ -1,0 +1,5 @@
+# application.yml or environment variable
+google:
+  search:
+    proxy:
+      endpoint: ${GOOGLE_SEARCH_PROXY_ENDPOINT:https://your-api-id.execute-api.us-east-1.amazonaws.com/search}

@@ -204,7 +204,7 @@ class TestResultAutofixAction : BaseAction() {
                            2) predict related files that may be needed to debug the issue
                         """.trimIndent(),
                         model = AppSettingsState.instance.smartChatClient,
-                        parsingModel = AppSettingsState.instance.fastChatClient,
+                        parsingChatter = AppSettingsState.instance.fastChatClient,
                     ).answer(listOf(testInfo), )
                     if (plan.obj.errors.isNullOrEmpty()) {
                         task.add("No errors identified in test result")

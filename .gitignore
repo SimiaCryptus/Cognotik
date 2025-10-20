@@ -11,7 +11,7 @@ android/local.properties
 .gradle/
 .idea/
 openai.key
-*.log
+*.log*
 # Cypress
 cypress/videos/
 cypress/screenshots/
@@ -34,3 +34,4 @@ node_modules/
 metadata.*
 .DS_Store
 test_config.json
+/experiment/search_lambda/terraform/.terraform/

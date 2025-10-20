@@ -120,7 +120,7 @@ open class DependencyGraphMode(
                     Ensure all suggested task IDs exist in the current plan.
                 """.trimIndent(),
                 model = orchestrationConfig.defaultChatter.getChildClient(task),
-                parsingModel = orchestrationConfig.parsingChatter,
+                parsingChatter = orchestrationConfig.parsingChatter,
             ).answer(
                 contextData() +
                         listOf(

@@ -1,0 +1,774 @@
+package com.simiacryptus.cognotik.plan.tools.reasoning
+
+import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.Logger
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+class AbductiveReasoningTask(
+  orchestrationConfig: OrchestrationConfig,
+  planTask: AbductiveReasoningTaskExecutionConfigData?
+) : AbstractTask<AbductiveReasoningTask.AbductiveReasoningTaskExecutionConfigData, TaskTypeConfig>(
+  orchestrationConfig,
+  planTask
+) {
+  val maxOutputSize = 5000
+
+  data class Hypothesis(
+    val id: Int = 0,
+    val description: String = "",
+    val explanation: String = "",
+    val explanatory_power: Double = 0.0,
+    val simplicity: Double = 0.0,
+    val testability: Double = 0.0,
+    val prior_probability: Double = 0.0,
+    val overall_score: Double = 0.0,
+    val supporting_evidence: List<String> = emptyList(),
+    val contradicting_evidence: List<String> = emptyList(),
+    val testable_predictions: List<String> = emptyList()
+  )
+
+  data class HypothesesResponse(
+    val hypotheses: List<Hypothesis> = emptyList(),
+    val reasoning: String = ""
+  )
+
+  class AbductiveReasoningTaskExecutionConfigData(
+    @Description("List of observations that need explanation")
+    val observations: List<String>? = null,
+    @Description("Whether to generate new hypotheses (vs only evaluate provided ones)")
+    val generate_hypotheses: Boolean = true,
+    @Description("Maximum number of hypotheses to generate")
+    val max_hypotheses: Int = 5,
+    @Description("Criteria for evaluating hypotheses: explanatory_power, simplicity, testability, prior_probability")
+    val evaluate_criteria: List<String>? = listOf(
+      "explanatory_power",
+      "simplicity",
+      "testability",
+      "prior_probability"
+    ),
+    @Description("Whether to suggest tests to validate hypotheses")
+    val suggest_tests: Boolean = true,
+    @Description("Pre-existing hypotheses to evaluate (optional)")
+    val existing_hypotheses: List<String>? = null,
+    @Description("Domain context or constraints")
+    val domain_context: String? = null,
+    task_description: String? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = TaskState.Pending,
+  ) : TaskExecutionConfig(
+    task_type = AbductiveReasoning.name,
+    task_description = task_description
+      ?: "Generate and evaluate explanatory hypotheses for ${observations?.size ?: 0} observations",
+    task_dependencies = task_dependencies?.toMutableList(),
+    state = state
+  )
+
+  override fun promptSegment(): String {
+    return """
+AbductiveReasoning - Generate and evaluate explanatory hypotheses
+  ** Specify observations that need explanation
+  ** Configure hypothesis generation (max_hypotheses: ${executionConfig?.max_hypotheses ?: 5})
+  ** Select evaluation criteria: ${executionConfig?.evaluate_criteria?.joinToString(", ") ?: "all"}
+  ** Optionally provide existing hypotheses to evaluate
+  ** Optionally suggest tests to validate hypotheses
+  ** Useful for:
+     - Root cause analysis
+     - Bug investigation
+     - Understanding anomalies
+     - Scientific reasoning
+     - Inference to best explanation
+        """.trimIndent()
+  }
+
+  override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    val startTime = System.currentTimeMillis()
+    log.info("Starting AbductiveReasoningTask with ${executionConfig?.observations?.size ?: 0} observations")
+
+    val observations = executionConfig?.observations
+    if (observations.isNullOrEmpty()) {
+      val errorMsg = "CONFIGURATION ERROR: No observations specified"
+      log.error(errorMsg)
+      task.complete(errorMsg)
+      resultFn(errorMsg)
+      return
+    }
+
+    val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+
+    val ui = task.ui
+    val tabs = TabbedDisplay(task)
+
+    // Overview tab
+    val overviewTask = ui.newTask(false)
+    tabs["Overview"] = overviewTask.placeholder
+
+    val maxHypotheses = executionConfig.max_hypotheses.coerceIn(1, 10)
+    val evaluateCriteria = executionConfig.evaluate_criteria ?: listOf(
+      "explanatory_power",
+      "simplicity",
+      "testability",
+      "prior_probability"
+    )
+    val suggestTests = executionConfig.suggest_tests
+    val domainContext = executionConfig.domain_context ?: "general software system"
+
+    log.info("Configuration: maxHypotheses=$maxHypotheses, criteria=$evaluateCriteria, suggestTests=$suggestTests")
+
+    overviewTask.add(
+      buildString {
+        appendLine("# Abductive Reasoning Analysis")
+        appendLine()
+        appendLine("**Purpose:** Generate and evaluate explanatory hypotheses")
+        appendLine()
+        appendLine("**Observations to Explain:** ${observations.size}")
+        appendLine()
+        appendLine("**Max Hypotheses:** $maxHypotheses")
+        appendLine()
+        appendLine("**Evaluation Criteria:** ${evaluateCriteria.joinToString(", ")}")
+        appendLine()
+        appendLine("**Domain Context:** $domainContext")
+        appendLine()
+        appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine("## Progress")
+        appendLine()
+        appendLine("*Analyzing observations...*")
+      }.renderMarkdown
+    )
+    task.update()
+
+    try {
+      // Observations tab
+      val observationsTask = ui.newTask(false)
+      tabs["Observations"] = observationsTask.placeholder
+      observationsTask.add(
+        buildString {
+          appendLine("# Observations")
+          appendLine()
+          appendLine("The following observations need explanation:")
+          appendLine()
+          observations.forEachIndexed { index, obs ->
+            appendLine("${index + 1}. $obs")
+          }
+          appendLine()
+          appendLine("---")
+          appendLine()
+          appendLine("**Status:** ✅ Observations documented")
+        }.renderMarkdown
+      )
+      task.update()
+
+      // Gather context
+      val priorContext = getPriorCode(agent.executionState)
+      if (priorContext.isNotBlank()) {
+        log.debug("Found prior context: ${priorContext.length} characters")
+        val contextTask = ui.newTask(false)
+        tabs["Context"] = contextTask.placeholder
+        contextTask.add(
+          buildString {
+            appendLine("# Context from Previous Tasks")
+            appendLine()
+            appendLine(priorContext.truncateForDisplay())
+          }.renderMarkdown
+        )
+        task.update()
+      }
+
+      // Update overview
+      overviewTask.add(
+        buildString {
+          appendLine()
+          appendLine("✅ Observations documented")
+          appendLine()
+          appendLine("*Generating hypotheses...*")
+        }.renderMarkdown
+      )
+      task.update()
+
+      // Generate or use existing hypotheses
+      val hypothesesTask = ui.newTask(false)
+      tabs["Hypotheses"] = hypothesesTask.placeholder
+      hypothesesTask.add(
+        buildString {
+          appendLine("# Hypothesis Generation")
+          appendLine()
+          appendLine("**Status:** 🔄 Generating explanatory hypotheses...")
+        }.renderMarkdown
+      )
+      task.update()
+
+      val hypotheses = if (executionConfig.generate_hypotheses) {
+        log.debug("Generating hypotheses using LLM")
+        generateHypotheses(
+          observations,
+          maxHypotheses,
+          evaluateCriteria,
+          domainContext,
+          priorContext,
+          api
+        )
+      } else {
+        log.debug("Using existing hypotheses")
+        val existing = executionConfig.existing_hypotheses ?: emptyList()
+        evaluateExistingHypotheses(
+          observations,
+          existing,
+          evaluateCriteria,
+          domainContext,
+          priorContext,
+          api
+        )
+      }
+
+      log.info("Generated/evaluated ${hypotheses.size} hypotheses")
+
+      // Display hypotheses
+      hypothesesTask.add(
+        buildString {
+          appendLine()
+          appendLine("## Generated Hypotheses")
+          appendLine()
+          appendLine("**Count:** ${hypotheses.size}")
+          appendLine()
+          appendLine("---")
+          appendLine()
+          hypotheses.sortedByDescending { it.overall_score }.forEachIndexed { index, hyp ->
+            appendLine("### Hypothesis ${index + 1}: ${hyp.description}")
+            appendLine()
+            appendLine("**Overall Score:** ${String.format("%.2f", hyp.overall_score)}")
+            appendLine()
+            appendLine("**Explanation:**")
+            appendLine()
+            appendLine(hyp.explanation)
+            appendLine()
+            appendLine("**Evaluation Metrics:**")
+            appendLine("- Explanatory Power: ${String.format("%.2f", hyp.explanatory_power)}")
+            appendLine("- Simplicity: ${String.format("%.2f", hyp.simplicity)}")
+            appendLine("- Testability: ${String.format("%.2f", hyp.testability)}")
+            appendLine("- Prior Probability: ${String.format("%.2f", hyp.prior_probability)}")
+            appendLine()
+            if (hyp.supporting_evidence.isNotEmpty()) {
+              appendLine("**Supporting Evidence:**")
+              hyp.supporting_evidence.forEach { appendLine("- $it") }
+              appendLine()
+            }
+            if (hyp.contradicting_evidence.isNotEmpty()) {
+              appendLine("**Contradicting Evidence:**")
+              hyp.contradicting_evidence.forEach { appendLine("- $it") }
+              appendLine()
+            }
+            if (hyp.testable_predictions.isNotEmpty()) {
+              appendLine("**Testable Predictions:**")
+              hyp.testable_predictions.forEach { appendLine("- $it") }
+              appendLine()
+            }
+            appendLine("---")
+            appendLine()
+          }
+          appendLine("**Status:** ✅ Hypotheses generated and evaluated")
+        }.renderMarkdown
+      )
+      task.update()
+
+      // Update overview
+      overviewTask.add(
+        buildString {
+          appendLine()
+          appendLine("✅ Hypotheses generated: ${hypotheses.size}")
+          appendLine()
+          appendLine("*Performing comparative analysis...*")
+        }.renderMarkdown
+      )
+      task.update()
+
+      // Comparative analysis
+      val analysisTask = ui.newTask(false)
+      tabs["Analysis"] = analysisTask.placeholder
+      analysisTask.add(
+        buildString {
+          appendLine("# Comparative Analysis")
+          appendLine()
+          appendLine("**Status:** 🔄 Analyzing hypotheses...")
+        }.renderMarkdown
+      )
+      task.update()
+
+      val analysis = performComparativeAnalysis(
+        observations,
+        hypotheses,
+        evaluateCriteria,
+        api
+      )
+
+      log.debug("Comparative analysis completed: ${analysis.length} characters")
+
+      analysisTask.add(
+        buildString {
+          appendLine()
+          appendLine("## Comparative Analysis Results")
+          appendLine()
+          appendLine(analysis)
+          appendLine()
+          appendLine("---")
+          appendLine()
+          appendLine("**Status:** ✅ Analysis complete")
+        }.renderMarkdown
+      )
+      task.update()
+
+      // Update overview
+      overviewTask.add(
+        buildString {
+          appendLine()
+          appendLine("✅ Comparative analysis complete")
+          if (suggestTests) {
+            appendLine()
+            appendLine("*Generating validation tests...*")
+          }
+        }.renderMarkdown
+      )
+      task.update()
+
+      // Generate validation tests if requested
+      var testSuggestions: String
+      if (suggestTests) {
+        val testsTask = ui.newTask(false)
+        tabs["Validation Tests"] = testsTask.placeholder
+        testsTask.add(
+          buildString {
+            appendLine("# Validation Tests")
+            appendLine()
+            appendLine("**Status:** 🔄 Generating test suggestions...")
+          }.renderMarkdown
+        )
+        task.update()
+
+        testSuggestions = generateValidationTests(
+          observations,
+          hypotheses.take(3), // Top 3 hypotheses
+          domainContext,
+          api
+        )
+
+        log.debug("Validation tests generated: ${testSuggestions.length} characters")
+
+        testsTask.add(
+          buildString {
+            appendLine()
+            appendLine("## Suggested Validation Tests")
+            appendLine()
+            appendLine(testSuggestions)
+            appendLine()
+            appendLine("---")
+            appendLine()
+            appendLine("**Status:** ✅ Test suggestions complete")
+          }.renderMarkdown
+        )
+        task.update()
+
+        overviewTask.add(
+          buildString {
+            appendLine()
+            appendLine("✅ Validation tests generated")
+          }.renderMarkdown
+        )
+        task.update()
+      }
+
+      // Best explanation summary
+      val bestHypothesis = hypotheses.maxByOrNull { it.overall_score }
+      val summaryTask = ui.newTask(false)
+      tabs["Best Explanation"] = summaryTask.placeholder
+      summaryTask.add(
+        buildString {
+          appendLine("# Best Explanation (Inference to Best Explanation)")
+          appendLine()
+          if (bestHypothesis != null) {
+            appendLine("## ${bestHypothesis.description}")
+            appendLine()
+            appendLine("**Overall Score:** ${String.format("%.2f", bestHypothesis.overall_score)}")
+            appendLine()
+            appendLine("### Why This is the Best Explanation")
+            appendLine()
+            appendLine(bestHypothesis.explanation)
+            appendLine()
+            appendLine("### Key Strengths")
+            appendLine()
+            appendLine("- **Explanatory Power:** ${String.format("%.2f", bestHypothesis.explanatory_power)} - ${getStrengthDescription(bestHypothesis.explanatory_power)}")
+            appendLine("- **Simplicity:** ${String.format("%.2f", bestHypothesis.simplicity)} - ${getSimplicityDescription(bestHypothesis.simplicity)}")
+            appendLine("- **Testability:** ${String.format("%.2f", bestHypothesis.testability)} - ${getTestabilityDescription(bestHypothesis.testability)}")
+            appendLine("- **Prior Probability:** ${String.format("%.2f", bestHypothesis.prior_probability)} - ${getProbabilityDescription(bestHypothesis.prior_probability)}")
+            appendLine()
+            if (bestHypothesis.testable_predictions.isNotEmpty()) {
+              appendLine("### Next Steps: Validate This Hypothesis")
+              appendLine()
+              bestHypothesis.testable_predictions.forEach { pred ->
+                appendLine("- [ ] $pred")
+              }
+              appendLine()
+            }
+          } else {
+            appendLine("No hypotheses were generated.")
+          }
+          appendLine("---")
+          appendLine()
+          appendLine("**Status:** ✅ Best explanation identified")
+        }.renderMarkdown
+      )
+      task.update()
+
+      // Final summary
+      val totalTime = System.currentTimeMillis() - startTime
+      val finalSummary = buildString {
+        appendLine("# Abductive Reasoning Summary")
+        appendLine()
+        appendLine("**Observations Analyzed:** ${observations.size}")
+        appendLine("**Hypotheses Generated:** ${hypotheses.size}")
+        appendLine("**Best Explanation:** ${bestHypothesis?.description ?: "None"}")
+        appendLine("**Best Score:** ${bestHypothesis?.let { String.format("%.2f", it.overall_score) } ?: "N/A"}")
+        appendLine()
+        appendLine("## Key Findings")
+        appendLine()
+        appendLine(analysis.take(maxOutputSize))
+        if (analysis.length > maxOutputSize) appendLine("...")
+      }
+
+      log.info("AbductiveReasoningTask completed: total_time=${totalTime}ms, observations=${observations.size}, hypotheses=${hypotheses.size}, best_score=${bestHypothesis?.overall_score}")
+
+      overviewTask.add(
+        buildString {
+          appendLine()
+          appendLine("---")
+          appendLine()
+          appendLine("## ✅ Analysis Complete")
+          appendLine()
+          appendLine("**Total Time:** ${totalTime / 1000.0}s")
+          appendLine()
+          appendLine("**Hypotheses Evaluated:** ${hypotheses.size}")
+          appendLine()
+          appendLine("**Best Explanation:** ${bestHypothesis?.description ?: "None"}")
+          appendLine()
+          appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+        }.renderMarkdown
+      )
+      task.update()
+
+      task.safeComplete("Completed abductive reasoning analysis: ${hypotheses.size} hypotheses evaluated in ${totalTime / 1000}s", log)
+      resultFn(finalSummary.toString())
+
+    } catch (e: Exception) {
+      val duration = System.currentTimeMillis() - startTime
+      log.error("AbductiveReasoningTask failed after ${duration}ms", e)
+      task.error(e)
+
+      overviewTask.add(
+        buildString {
+          appendLine()
+          appendLine("---")
+          appendLine()
+          appendLine("## ❌ Error Occurred")
+          appendLine()
+          appendLine("**Error:** ${e.message}")
+          appendLine()
+          appendLine("**Type:** ${e.javaClass.simpleName}")
+        }.renderMarkdown
+      )
+      task.update()
+
+      val errorOutput = buildString {
+        appendLine("# Error in Abductive Reasoning")
+        appendLine()
+        appendLine("**Observations:** ${observations?.size ?: 0}")
+        appendLine()
+        appendLine("**Error:** ${e.message}")
+      }
+      resultFn(errorOutput)
+    }
+  }
+
+  private fun generateHypotheses(
+    observations: List<String>,
+    maxHypotheses: Int,
+    evaluateCriteria: List<String>,
+    domainContext: String,
+    priorContext: String,
+    api: ChatInterface
+  ): List<Hypothesis> {
+    val prompt = buildString {
+      appendLine("You are an expert in abductive reasoning and scientific inference.")
+      appendLine()
+      appendLine("## Task")
+      appendLine("Generate explanatory hypotheses for the following observations.")
+      appendLine()
+      appendLine("## Observations")
+      observations.forEachIndexed { index, obs ->
+        appendLine("${index + 1}. $obs")
+      }
+      appendLine()
+      appendLine("## Domain Context")
+      appendLine(domainContext)
+      appendLine()
+      if (priorContext.isNotBlank()) {
+        appendLine("## Additional Context")
+        appendLine(priorContext.truncateForDisplay(2000))
+        appendLine()
+      }
+      appendLine("## Instructions")
+      appendLine("Generate $maxHypotheses distinct explanatory hypotheses that could explain ALL the observations.")
+      appendLine()
+      appendLine("For each hypothesis, provide:")
+      appendLine("1. A clear, concise description (one sentence)")
+      appendLine("2. A detailed explanation of HOW it explains the observations")
+      appendLine("3. Evaluation scores (0.0 to 1.0) for:")
+      evaluateCriteria.forEach { criterion ->
+        appendLine("   - $criterion")
+      }
+      appendLine("4. Supporting evidence from the observations")
+      appendLine("5. Any contradicting evidence")
+      appendLine("6. Testable predictions that would validate/falsify the hypothesis")
+      appendLine()
+      appendLine("Apply these principles:")
+      appendLine("- **Explanatory Power**: How well does it explain ALL observations?")
+      appendLine("- **Simplicity (Occam's Razor)**: Prefer simpler explanations with fewer assumptions")
+      appendLine("- **Testability**: Can we design experiments to test this?")
+      appendLine("- **Prior Probability**: How likely is this given our background knowledge?")
+      appendLine()
+      appendLine("Generate diverse hypotheses ranging from simple to complex, common to rare.")
+    }
+
+    val parsedAgent = ParsedAgent(
+      resultClass = HypothesesResponse::class.java,
+      prompt = prompt.toString(),
+      model = api,
+      temperature = 0.7,
+      parsingChatter = orchestrationConfig.parsingChatter
+    )
+
+    val response = parsedAgent.answer(listOf(prompt.toString())).obj
+    return response.hypotheses
+  }
+
+  private fun evaluateExistingHypotheses(
+    observations: List<String>,
+    existingHypotheses: List<String>,
+    evaluateCriteria: List<String>,
+    domainContext: String,
+    priorContext: String,
+    api: ChatInterface
+  ): List<Hypothesis> {
+    val prompt = buildString {
+      appendLine("You are an expert in abductive reasoning and hypothesis evaluation.")
+      appendLine()
+      appendLine("## Task")
+      appendLine("Evaluate the following pre-existing hypotheses against the observations.")
+      appendLine()
+      appendLine("## Observations")
+      observations.forEachIndexed { index, obs ->
+        appendLine("${index + 1}. $obs")
+      }
+      appendLine()
+      appendLine("## Hypotheses to Evaluate")
+      existingHypotheses.forEachIndexed { index, hyp ->
+        appendLine("${index + 1}. $hyp")
+      }
+      appendLine()
+      appendLine("## Domain Context")
+      appendLine(domainContext)
+      appendLine()
+      if (priorContext.isNotBlank()) {
+        appendLine("## Additional Context")
+        appendLine(priorContext.truncateForDisplay(2000))
+        appendLine()
+      }
+      appendLine("## Instructions")
+      appendLine("For each hypothesis, provide:")
+      appendLine("1. The original hypothesis description")
+      appendLine("2. A detailed explanation of HOW it explains the observations")
+      appendLine("3. Evaluation scores (0.0 to 1.0) for:")
+      evaluateCriteria.forEach { criterion ->
+        appendLine("   - $criterion")
+      }
+      appendLine("4. Supporting evidence from the observations")
+      appendLine("5. Any contradicting evidence")
+      appendLine("6. Testable predictions")
+    }
+
+    val parsedAgent = ParsedAgent(
+      resultClass = HypothesesResponse::class.java,
+      prompt = prompt.toString(),
+      model = api,
+      temperature = 0.5,
+      parsingChatter = orchestrationConfig.parsingChatter
+    )
+
+    val response = parsedAgent.answer(listOf(prompt.toString())).obj
+    return response.hypotheses
+  }
+
+  private fun performComparativeAnalysis(
+    observations: List<String>,
+    hypotheses: List<Hypothesis>,
+    evaluateCriteria: List<String>,
+    api: ChatInterface
+  ): String {
+    val prompt = buildString {
+      appendLine("Perform a comparative analysis of the following hypotheses.")
+      appendLine()
+      appendLine("## Observations")
+      observations.forEachIndexed { index, obs ->
+        appendLine("${index + 1}. $obs")
+      }
+      appendLine()
+      appendLine("## Hypotheses (ranked by overall score)")
+      hypotheses.sortedByDescending { it.overall_score }.forEachIndexed { index, hyp ->
+        appendLine()
+        appendLine("### Hypothesis ${index + 1}: ${hyp.description}")
+        appendLine("**Score:** ${String.format("%.2f", hyp.overall_score)}")
+        appendLine("- Explanatory Power: ${String.format("%.2f", hyp.explanatory_power)}")
+        appendLine("- Simplicity: ${String.format("%.2f", hyp.simplicity)}")
+        appendLine("- Testability: ${String.format("%.2f", hyp.testability)}")
+        appendLine("- Prior Probability: ${String.format("%.2f", hyp.prior_probability)}")
+      }
+      appendLine()
+      appendLine("## Analysis Instructions")
+      appendLine("Provide a comparative analysis that:")
+      appendLine("1. Identifies the best explanation and why (inference to best explanation)")
+      appendLine("2. Compares trade-offs between hypotheses")
+      appendLine("3. Discusses which observations are best explained by which hypotheses")
+      appendLine("4. Identifies any observations that remain poorly explained")
+      appendLine("5. Suggests which hypothesis should be tested first and why")
+      appendLine("6. Discusses the role of Occam's Razor in this case")
+      appendLine()
+      appendLine("Be specific and reference the evaluation criteria: ${evaluateCriteria.joinToString(", ")}")
+    }
+
+    val chatAgent = ChatAgent(
+      prompt = prompt.toString(),
+      model = api,
+      temperature = 0.6
+    )
+
+    return chatAgent.answer(listOf(prompt.toString()))
+  }
+
+  private fun generateValidationTests(
+    observations: List<String>,
+    topHypotheses: List<Hypothesis>,
+    domainContext: String,
+    api: ChatInterface
+  ): String {
+    val prompt = buildString {
+      appendLine("Generate concrete validation tests for the top hypotheses.")
+      appendLine()
+      appendLine("## Observations")
+      observations.forEachIndexed { index, obs ->
+        appendLine("${index + 1}. $obs")
+      }
+      appendLine()
+      appendLine("## Top Hypotheses to Test")
+      topHypotheses.forEachIndexed { index, hyp ->
+        appendLine()
+        appendLine("### Hypothesis ${index + 1}: ${hyp.description}")
+        appendLine(hyp.explanation)
+        if (hyp.testable_predictions.isNotEmpty()) {
+          appendLine()
+          appendLine("**Predictions:**")
+          hyp.testable_predictions.forEach { pred ->
+            appendLine("- $pred")
+          }
+        }
+      }
+      appendLine()
+      appendLine("## Domain Context")
+      appendLine(domainContext)
+      appendLine()
+      appendLine("## Instructions")
+      appendLine("For each hypothesis, provide:")
+      appendLine("1. **Confirmatory Tests**: Experiments/observations that would support the hypothesis")
+      appendLine("2. **Falsification Tests**: Experiments/observations that would disprove the hypothesis")
+      appendLine("3. **Discriminating Tests**: Tests that would distinguish between competing hypotheses")
+      appendLine("4. **Implementation Details**: Specific steps to conduct each test")
+      appendLine("5. **Expected Results**: What results would confirm/falsify each hypothesis")
+      appendLine()
+      appendLine("Make tests concrete, actionable, and specific to the domain context.")
+      appendLine("Prioritize tests that are:")
+      appendLine("- Easy to implement")
+      appendLine("- Likely to provide clear results")
+      appendLine("- Able to discriminate between multiple hypotheses")
+    }
+
+    val chatAgent = ChatAgent(
+      prompt = prompt.toString(),
+      model = api,
+      temperature = 0.5
+    )
+
+    return chatAgent.answer(listOf(prompt.toString()))
+  }
+
+  private fun getStrengthDescription(score: Double): String = when {
+    score >= 0.8 -> "Excellent - explains all observations comprehensively"
+    score >= 0.6 -> "Good - explains most observations well"
+    score >= 0.4 -> "Moderate - explains some observations"
+    else -> "Weak - limited explanatory power"
+  }
+
+  private fun getSimplicityDescription(score: Double): String = when {
+    score >= 0.8 -> "Very simple - few assumptions, elegant explanation"
+    score >= 0.6 -> "Reasonably simple - moderate complexity"
+    score >= 0.4 -> "Complex - multiple assumptions required"
+    else -> "Very complex - many assumptions and moving parts"
+  }
+
+  private fun getTestabilityDescription(score: Double): String = when {
+    score >= 0.8 -> "Highly testable - clear predictions, easy to validate"
+    score >= 0.6 -> "Testable - can design experiments to validate"
+    score >= 0.4 -> "Somewhat testable - difficult but possible to test"
+    else -> "Hard to test - unclear how to validate"
+  }
+
+  private fun getProbabilityDescription(score: Double): String = when {
+    score >= 0.8 -> "Very likely - consistent with known patterns"
+    score >= 0.6 -> "Plausible - reasonable given background knowledge"
+    score >= 0.4 -> "Possible - not impossible but less common"
+    else -> "Unlikely - requires unusual circumstances"
+  }
+
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(AbductiveReasoningTask::class.java)
+    val AbductiveReasoning = TaskType(
+      "AbductiveReasoning",
+      AbductiveReasoningTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Generate and evaluate explanatory hypotheses",
+      """
+              Performs abductive reasoning (inference to best explanation) to generate and evaluate hypotheses.
+              <ul>
+                <li>Generates multiple explanatory hypotheses for observations</li>
+                <li>Evaluates explanatory power, simplicity, testability, and prior probability</li>
+                <li>Applies Occam's Razor to prefer simpler explanations</li>
+                <li>Ranks hypotheses by overall quality</li>
+                <li>Suggests validation tests for top hypotheses</li>
+                <li>Useful for root cause analysis, bug investigation, and scientific reasoning</li>
+              </ul>
+            """
+    )
+  }
+}

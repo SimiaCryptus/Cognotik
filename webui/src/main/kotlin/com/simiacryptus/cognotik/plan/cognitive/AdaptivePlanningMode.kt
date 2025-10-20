@@ -319,7 +319,7 @@ ${JsonUtil.toJson(taskConfig)}
                 }
             },
             model = orchestrationConfig.defaultChatter.getChildClient(task),
-            parsingModel = orchestrationConfig.parsingChatter,
+            parsingChatter = orchestrationConfig.parsingChatter,
             temperature = orchestrationConfig.temperature,
             describer = describer,
             parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(orchestrationConfig)
@@ -464,7 +464,7 @@ ${JsonUtil.toJson(taskConfig)}
         * Ensure scalability and maintainability of the approach
       """.trimIndent(),
             model = orchestrationConfig.defaultChatter.getChildClient(task),
-            parsingModel = orchestrationConfig.parsingChatter.getChildClient(task),
+            parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task),
             temperature = orchestrationConfig.temperature,
             describer = TaskContextYamlDescriber(orchestrationConfig)
         ).answer(listOf(userMessage) + contextData()).obj
@@ -534,7 +534,7 @@ ${JsonUtil.toJson(taskConfig)}
       If error patterns are recurring or progress slows, trigger a reflection loop by adding a 'reflect' task.
     """.trimIndent(),
         model = orchestrationConfig.defaultChatter.getChildClient(task),
-        parsingModel = orchestrationConfig.parsingChatter,
+        parsingChatter = orchestrationConfig.parsingChatter,
         temperature = orchestrationConfig.temperature,
         describer = TaskContextYamlDescriber(orchestrationConfig)
     ).answer(

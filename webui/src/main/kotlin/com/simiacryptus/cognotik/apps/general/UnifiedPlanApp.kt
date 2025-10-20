@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -27,10 +28,10 @@ import java.util.concurrent.Executors
  * This allows for switching between different planning and execution strategies.
  */
 abstract class UnifiedPlanApp(
-    path: String,
-    applicationName: String = "Unified Planning App",
-    showMenubar: Boolean = true,
-    val useExpansionSyntax: Boolean = true,
+  path: String,
+  applicationName: String = "Unified Planning App",
+  showMenubar: Boolean = true,
+  var useExpansionSyntax: Boolean = true,
 ) : ApplicationServer(
     applicationName = applicationName,
     path = path,
@@ -76,6 +77,10 @@ abstract class UnifiedPlanApp(
     ): SocketManager {
         val socketManager = super.newSession(user, session)
         val settings = getSettings(session, user, OrchestrationConfig::class.java)
+        useExpansionSyntax = when (settings?.cognitiveMode) {
+          CognitiveModeStrategies.Chat -> true
+          else -> false
+        }
         if (useExpansionSyntax) {
             socketManager.newTask(cancelable = false, root = true).expandable(
                 "Query Expansion Syntax Guide", """
@@ -101,13 +106,22 @@ abstract class UnifiedPlanApp(
 
         socketManager.newTask(cancelable = false, root = true).expandable(
             "Session Info", """
-                Session ID: `${session}`
-                Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
-                Root: `${settings?.absoluteWorkingDir}`
-                Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
-                Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
-                Expansion Syntax: `${if (useExpansionSyntax) "Enabled" else "Disabled"}`
-            """.trimIndent().renderMarkdown()
+Session ID: `${session}`
+
+Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
+
+Root: `${settings?.absoluteWorkingDir}`
+
+Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
+
+Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+
+Expansion Syntax: `${if (useExpansionSyntax) "Enabled" else "Disabled"}`
+
+```json
+${settings?.toJson()}
+```
+            """.renderMarkdown()
         )
         return socketManager
     }
@@ -139,16 +153,16 @@ abstract class UnifiedPlanApp(
 
             val expandedMessage = if (useExpansionSyntax) expandTopics(userMessage) else userMessage
 
-            if (useExpansionSyntax && hasExpansionSyntax(expandedMessage)) {
-                processMessageWithExpansions(
-                    session,
-                    user,
-                    expandedMessage,
-                    ui,
-                    settings
-                )
-                return
-            }
+//            if (useExpansionSyntax && hasExpansionSyntax(expandedMessage)) {
+//                processMessageWithExpansions(
+//                    session,
+//                    user,
+//                    expandedMessage,
+//                    ui,
+//                    settings
+//                )
+//                return
+//            }
 
             cognitiveMode.apply { initialize() }.handleUserMessage(expandedMessage, ui.newTask(true))
 

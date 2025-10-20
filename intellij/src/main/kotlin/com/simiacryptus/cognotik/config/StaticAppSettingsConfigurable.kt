@@ -171,6 +171,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                         add(component.suppressErrors)
                     })
                     add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                        add(JLabel("Use System Path for Scratches (instead of Config Path):"))
+                        add(component.useScratchesSystemPath)
+                    })
+                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         add(JLabel("Show Welcome Screen:"))
                         add(component.showWelcomeScreen)
                     }, BorderLayout.NORTH)

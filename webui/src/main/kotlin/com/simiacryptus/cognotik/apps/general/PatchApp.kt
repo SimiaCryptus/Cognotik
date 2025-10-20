@@ -439,7 +439,7 @@ abstract class PatchApp(
                 )
             ) else recentErrors(),
             model = model,
-            parsingModel = parsingModel,
+            parsingChatter = parsingModel,
             prompt = ("""
           You are a helpful AI that helps people with coding.
 

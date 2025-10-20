@@ -48,7 +48,7 @@ class KnowledgeIndexingAction : BaseAction() {
             wrapStyleWord = true
             toolTipText = "Enter file or directory paths, one per line. You can also drag and drop files here."
         }
-        
+
         val splitRegexField = JBTextArea(2, 40).apply {
             text = SplitPatterns.DEFAULT
             lineWrap = true
@@ -63,7 +63,7 @@ class KnowledgeIndexingAction : BaseAction() {
 
             return IndexingSettings(
                 filePaths = paths,
-                splitRegex = splitRegexField.text.trim().takeIf { it.isNotEmpty() } 
+                splitRegex = splitRegexField.text.trim().takeIf { it.isNotEmpty() }
                     ?: SplitPatterns.DEFAULT
             )
         }
@@ -75,8 +75,8 @@ class KnowledgeIndexingAction : BaseAction() {
         val settingsUI = SettingsUI()
 
         if (selectedFiles.isNotEmpty()) {
-            settingsUI.filePathsArea.text = selectedFiles.joinToString("\n") { 
-                it.toFile.absolutePath 
+            settingsUI.filePathsArea.text = selectedFiles.joinToString("\n") {
+                it.toFile.absolutePath
             }
         }
 
@@ -106,7 +106,7 @@ class KnowledgeIndexingAction : BaseAction() {
                             add(headerPanel, BorderLayout.NORTH)
                             add(JBScrollPane(settingsUI.filePathsArea), BorderLayout.CENTER)
                         }
-                        
+
                         val regexPanel = JPanel(BorderLayout()).apply {
                             border = JBUI.Borders.empty(10, 0, 10, 0)
                             val regexHeaderPanel = JPanel(BorderLayout()).apply {
@@ -123,11 +123,13 @@ class KnowledgeIndexingAction : BaseAction() {
 
                         JPanel(BorderLayout()).apply {
                             border = JBUI.Borders.empty(10, 0, 0, 0)
-                            val descText = JLabel("<html><b>Knowledge Indexing</b><br/>" +
-                                "This will create searchable embeddings of your files for semantic search and AI assistance.<br/>" +
-                                "Supported formats: text files, code, markdown, PDF, HTML<br/>" +
-                                "<br/><b>Split Regex:</b> Defines how text is divided into searchable segments. " +
-                                "Default splits on newlines and sentence endings.</html>").apply {
+                            val descText = JLabel(
+                                "<html><b>Knowledge Indexing</b><br/>" +
+                                        "This will create searchable embeddings of your files for semantic search and AI assistance.<br/>" +
+                                        "Supported formats: text files, code, markdown, PDF, HTML<br/>" +
+                                        "<br/><b>Split Regex:</b> Defines how text is divided into searchable segments. " +
+                                        "Default splits on newlines and sentence endings.</html>"
+                            ).apply {
                                 verticalAlignment = SwingConstants.TOP
                             }
                             add(descText, BorderLayout.NORTH)
@@ -140,11 +142,13 @@ class KnowledgeIndexingAction : BaseAction() {
                     add(mainPanel, BorderLayout.CENTER)
                     val descPanel = JPanel(BorderLayout()).apply {
                         border = JBUI.Borders.empty(10, 0, 0, 0)
-                        val descText = JLabel("<html><b>Knowledge Indexing</b><br/>" +
-                            "This will create searchable embeddings of your files for semantic search and AI assistance.<br/>" +
-                            "Supported formats: text files, code, markdown, PDF, HTML<br/>" +
-                            "<br/><b>Split Regex:</b> Defines how text is divided into searchable segments. " +
-                            "Default splits on newlines and sentence endings.</html>").apply {
+                        val descText = JLabel(
+                            "<html><b>Knowledge Indexing</b><br/>" +
+                                    "This will create searchable embeddings of your files for semantic search and AI assistance.<br/>" +
+                                    "Supported formats: text files, code, markdown, PDF, HTML<br/>" +
+                                    "<br/><b>Split Regex:</b> Defines how text is divided into searchable segments. " +
+                                    "Default splits on newlines and sentence endings.</html>"
+                        ).apply {
                             verticalAlignment = SwingConstants.TOP
                         }
                         add(descText, BorderLayout.NORTH)
@@ -160,15 +164,15 @@ class KnowledgeIndexingAction : BaseAction() {
                     Messages.showErrorDialog(
                         project,
                         "Please specify at least one file or directory path to index.\n\n" +
-                        "You can:\n" +
-                        "• Type file paths manually (one per line)\n" +
-                        "• Select files/folders in the project tree first\n" +
-                        "• Drag and drop files into the text area",
+                                "You can:\n" +
+                                "• Type file paths manually (one per line)\n" +
+                                "• Select files/folders in the project tree first\n" +
+                                "• Drag and drop files into the text area",
                         "Validation Error"
                     )
                     return
                 }
-                
+
                 // Validate regex pattern
                 try {
                     Regex(settings.splitRegex)
@@ -176,12 +180,12 @@ class KnowledgeIndexingAction : BaseAction() {
                     Messages.showErrorDialog(
                         project,
                         "Invalid regex pattern: ${e.message}\n\n" +
-                        "Please enter a valid regular expression for text splitting.",
+                                "Please enter a valid regular expression for text splitting.",
                         "Invalid Regex"
                     )
                     return
                 }
-                
+
                 // Validate file paths with progress
                 ProgressManager.getInstance().run(object : Task.Modal(project, "Validating Paths", true) {
                     override fun run(indicator: ProgressIndicator) {
@@ -190,11 +194,11 @@ class KnowledgeIndexingAction : BaseAction() {
                         val largePaths = mutableListOf<String>()
                         var totalSizeMB = 0L
                         val validPaths = mutableListOf<String>()
-                        
+
                         settings.filePaths.forEachIndexed { index, path ->
                             indicator.fraction = index.toDouble() / settings.filePaths.size
                             indicator.text = "Checking: ${File(path).name}"
-                            
+
                             val file = File(path)
                             if (!file.exists()) {
                                 invalidPaths.add(path)
@@ -218,12 +222,12 @@ class KnowledgeIndexingAction : BaseAction() {
                                 validPaths.add(path)
                             }
                         }
-                        
+
                         if (invalidPaths.isNotEmpty()) {
                             val result = Messages.showYesNoDialog(
                                 project,
                                 "The following paths do not exist:\n${invalidPaths.joinToString("\n")}\n\n" +
-                                "Do you want to continue with the remaining files?",
+                                        "Do you want to continue with the remaining files?",
                                 "Invalid Paths Found",
                                 Messages.getWarningIcon()
                             )
@@ -232,7 +236,7 @@ class KnowledgeIndexingAction : BaseAction() {
                             }
                             settings.filePaths = validPaths
                         }
-                        
+
                         if (validPaths.isEmpty()) {
                             Messages.showErrorDialog(
                                 project,
@@ -241,13 +245,13 @@ class KnowledgeIndexingAction : BaseAction() {
                             )
                             return
                         }
-                        
+
                         if (largePaths.isNotEmpty()) {
                             val result = Messages.showYesNoDialog(
                                 project,
                                 "The following files are quite large:\n${largePaths.joinToString("\n")}\n\n" +
-                                "Total size: ${totalSizeMB}MB\n" +
-                                "Large files may take significant time to process. Continue?",
+                                        "Total size: ${totalSizeMB}MB\n" +
+                                        "Large files may take significant time to process. Continue?",
                                 "Large Files Detected",
                                 Messages.getWarningIcon()
                             )
@@ -263,52 +267,56 @@ class KnowledgeIndexingAction : BaseAction() {
             }
 
             private fun executeIndexing(settings: IndexingSettings, project: com.intellij.openapi.project.Project) {
-                ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Starting Knowledge Indexing", false) {
-                    override fun run(indicator: ProgressIndicator) {
-                        indicator.text = "Initializing indexing session..."
-                        try {
-                            val session = Session.newGlobalID()
-                            SessionProxyServer.metadataStorage.setSessionName(
-                                null,
-                                session,
-                                "Knowledge Indexing @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-                            )
+                ProgressManager.getInstance()
+                    .run(object : Task.Backgroundable(project, "Starting Knowledge Indexing", false) {
+                        override fun run(indicator: ProgressIndicator) {
+                            indicator.text = "Initializing indexing session..."
+                            try {
+                                val session = Session.newGlobalID()
+                                SessionProxyServer.metadataStorage.setSessionName(
+                                    null,
+                                    session,
+                                    "Knowledge Indexing @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+                                )
 
-                            indicator.text = "Creating indexing server..."
-                            SessionProxyServer.chats[session] = KnowledgeIndexingServer(
-                                settings = settings,
-                                model = settings.embeddingModel ?: throw IllegalStateException("No embedding model selected")
-                            )
+                                indicator.text = "Creating indexing server..."
+                                SessionProxyServer.chats[session] = KnowledgeIndexingServer(
+                                    settings = settings,
+                                    model = settings.embeddingModel
+                                        ?: throw IllegalStateException("No embedding model selected")
+                                )
 
-                            ApplicationServer.appInfoMap[session] = AppInfoData(
-                                applicationName = "Knowledge Indexing",
-                                inputCnt = 0,
-                                stickyInput = false,
-                                loadImages = false,
-                                showMenubar = false
-                            )
+                                ApplicationServer.appInfoMap[session] = AppInfoData(
+                                    applicationName = "Knowledge Indexing",
+                                    inputCnt = 0,
+                                    stickyInput = false,
+                                    loadImages = false,
+                                    showMenubar = false
+                                )
 
-                            indicator.text = "Opening browser..."
-                            CompletableFuture.runAsync({
-                                Thread.sleep(500)
-                                try {
-                                    val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
-                                    log.info("Opening browser to $uri")
-                                    browse(uri)
-                                } catch (e: Throwable) {
-                                    log.warn("Error opening browser", e)
-                                }
-                            }, Executors.newSingleThreadExecutor())
-                        } catch (e: Exception) {
-                            log.error("Failed to execute indexing", e)
-                            Messages.showErrorDialog(
-                                project,
-                                "Failed to start indexing: ${e.message}",
-                                "Error"
-                            )
+                                indicator.text = "Opening browser..."
+                                CompletableFuture.runAsync({
+                                    Thread.sleep(500)
+                                    try {
+                                        val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                                        log.info("Opening browser to $uri")
+                                        browse(uri)
+                                    } catch (e: Throwable) {
+                                        log.warn("Error opening browser", e)
+                                    }
+                                }, Executors.newSingleThreadExecutor())
+                            } catch (e: Exception) {
+                                log.error("Failed to execute indexing", e)
+                                CompletableFuture.runAsync({
+                                    Messages.showErrorDialog(
+                                        project,
+                                        "Failed to start indexing: ${e.message}",
+                                        "Error"
+                                    )
+                                }, Executors.newSingleThreadExecutor())
+                            }
                         }
-                    }
-                })
+                    })
             }
         }
 

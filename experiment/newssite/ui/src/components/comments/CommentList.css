@@ -1,0 +1,13 @@
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.comment-list__error {
+  padding: var(--spacing-lg);
+  background-color: var(--color-error-light);
+  color: var(--color-error);
+  border-radius: var(--border-radius-md);
+  text-align: center;
+}

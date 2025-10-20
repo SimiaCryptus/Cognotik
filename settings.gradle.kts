@@ -24,6 +24,8 @@ include(":groovy")
 include(":kotlin")
 include(":webui")
 include(":desktop")
+include(":experiment:newssite")
+
 if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {
 //    include(":android")
 }

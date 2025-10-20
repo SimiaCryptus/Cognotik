@@ -30,7 +30,7 @@ class LogPatternGenerator(
             resultClass = PatternResponse::class.java,
             exampleInstance = PatternResponse(),
             prompt = "",
-            parsingModel = parsingModel,
+            parsingChatter = parsingModel,
             temperature = temperature,
             model = parsingModel,
         ).getParser(promptSuffix = promptSuffix)
