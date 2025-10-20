@@ -559,6 +559,12 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           task
         )
       }
+        registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
+            GeneticOptimizationTask(
+            settings,
+            task
+            )
+        }
     }
 
     fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(

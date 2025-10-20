@@ -1104,6 +1104,100 @@ The prompts cover common software engineering challenges:
 
 ---
 
+## 10. GeneticOptimization
+
+### Prompt 1: Optimize API Error Message
+
+"I have this error message that users find confusing: 'Request failed with status code 422: Unprocessable Entity. The server understood the request but was unable to process the contained instructions.' I want to optimize it for clarity and helpfulness. Run 4 generations with population size 6, using strategies: rephrase, simplify, elaborate. Evaluate based on: clarity (40%), helpfulness (35%), conciseness (25%). Constraint: must remain under 100 characters."
+
+**Configuration hints:**
+- initial_text: "Request failed with status code 422: Unprocessable Entity. The server understood the request but was unable to process the contained instructions."
+- optimization_goal: "Make error message clear, helpful, and actionable for end users"
+- num_generations: 4
+- population_size: 6
+- selection_size: 2
+- mutation_strategies: ["rephrase", "simplify", "elaborate"]
+- enable_crossover: true
+- evaluation_weights: {"clarity": 0.4, "helpfulness": 0.35, "conciseness": 0.25}
+- constraints: ["Must be under 100 characters", "Must indicate what user should do next"]
+
+### Prompt 2: Perfect Marketing Tagline
+
+"Optimize this product tagline: 'Our software helps teams collaborate better and get more done faster with less effort.' Goal is maximum impact and memorability. Run 5 generations with population 8. Use strategies: rephrase, simplify, emphasize. Evaluate on: impact (40%), memorability (30%), clarity (20%), brevity (10%). Enable crossover. Constraints: under 60 characters, no jargon, must mention 'teams'."
+
+**Configuration hints:**
+- initial_text: "Our software helps teams collaborate better and get more done faster with less effort."
+- optimization_goal: "Create a punchy, memorable tagline that captures the product value proposition"
+- num_generations: 5
+- population_size: 8
+- selection_size: 3
+- mutation_strategies: ["rephrase", "simplify", "emphasize"]
+- enable_crossover: true
+- evaluation_weights: {"impact": 0.4, "memorability": 0.3, "clarity": 0.2, "brevity": 0.1}
+- constraints: ["Under 60 characters", "No technical jargon", "Must mention 'teams'", "Should evoke emotion"]
+
+### Prompt 3: Refine Technical Documentation
+
+"Improve this API documentation intro: 'This endpoint allows you to retrieve user data. You need to provide authentication credentials in the header. The response will contain user information in JSON format. Rate limits apply.' Optimize for technical accuracy and developer experience. Run 6 generations, population 6. Strategies: elaborate, restructure, simplify. Evaluate: accuracy (35%), clarity (30%), completeness (20%), developer-friendliness (15%). Constraints: must mention authentication, rate limits, and response format."
+
+**Configuration hints:**
+- initial_text: "This endpoint allows you to retrieve user data. You need to provide authentication credentials in the header. The response will contain user information in JSON format. Rate limits apply."
+- optimization_goal: "Create clear, accurate, developer-friendly API documentation that covers all essential information"
+- num_generations: 6
+- population_size: 6
+- selection_size: 2
+- mutation_strategies: ["elaborate", "restructure", "simplify"]
+- enable_crossover: true
+- evaluation_weights: {"technical_accuracy": 0.35, "clarity": 0.3, "completeness": 0.2, "developer_friendliness": 0.15}
+- constraints: ["Must mention authentication method", "Must mention rate limits", "Must describe response format", "Should include example or next steps"]
+
+### Prompt 4: Optimize Prompt Engineering
+
+"Evolve this AI prompt: 'Write a summary of the following text. Make it concise but include all important points. Use clear language.' Goal is to get better, more consistent AI outputs. Run 5 generations with population 8. Use all strategies: rephrase, simplify, elaborate, restructure, emphasize. Evaluate: effectiveness (40%), clarity (25%), specificity (20%), consistency (15%). Enable crossover. Constraint: must specify output format."
+
+**Configuration hints:**
+- initial_text: "Write a summary of the following text. Make it concise but include all important points. Use clear language."
+- optimization_goal: "Create a prompt that produces high-quality, consistent summaries from AI models"
+- num_generations: 5
+- population_size: 8
+- selection_size: 3
+- mutation_strategies: ["rephrase", "simplify", "elaborate", "restructure", "emphasize"]
+- enable_crossover: true
+- evaluation_weights: {"effectiveness": 0.4, "clarity": 0.25, "specificity": 0.2, "consistency": 0.15}
+- constraints: ["Must specify desired output format", "Should include length guidance", "Should define 'important points'"]
+
+### Prompt 5: Improve Email Subject Line
+
+"Optimize this email subject: 'Important: Please review and approve the Q4 budget proposal by end of week.' Goal is to maximize open rate and urgency while remaining professional. Run 4 generations, population 6. Strategies: rephrase, emphasize, simplify. Evaluate: urgency (35%), professionalism (30%), clarity (20%), open-rate-potential (15%). Constraints: under 60 characters, must mention Q4 and deadline."
+
+**Configuration hints:**
+- initial_text: "Important: Please review and approve the Q4 budget proposal by end of week."
+- optimization_goal: "Create compelling email subject line that drives opens and action while maintaining professionalism"
+- num_generations: 4
+- population_size: 6
+- selection_size: 2
+- mutation_strategies: ["rephrase", "emphasize", "simplify"]
+- enable_crossover: true
+- evaluation_weights: {"urgency": 0.35, "professionalism": 0.3, "clarity": 0.2, "open_rate_potential": 0.15}
+- constraints: ["Under 60 characters", "Must mention Q4", "Must mention deadline", "Professional tone"]
+
+### Prompt 6: Refine Code Comment
+
+"Evolve this code comment: '// This function processes the input data and returns the result.' Goal is maximum clarity and usefulness for developers. Run 3 generations, population 6. Strategies: elaborate, restructure, simplify. Evaluate: clarity (40%), usefulness (35%), conciseness (25%). Constraints: single line comment, under 120 characters, must describe what and why."
+
+**Configuration hints:**
+- initial_text: "// This function processes the input data and returns the result."
+- optimization_goal: "Create informative code comment that helps developers understand purpose and usage"
+- num_generations: 3
+- population_size: 6
+- selection_size: 2
+- mutation_strategies: ["elaborate", "restructure", "simplify"]
+- enable_crossover: false
+- evaluation_weights: {"clarity": 0.4, "usefulness": 0.35, "conciseness": 0.25}
+- constraints: ["Single line comment", "Under 120 characters", "Must describe what function does", "Should hint at why it exists"]
+
+---
+
 ## Additional Usage Notes for New Tools
 
 ### Brainstorming Tool
