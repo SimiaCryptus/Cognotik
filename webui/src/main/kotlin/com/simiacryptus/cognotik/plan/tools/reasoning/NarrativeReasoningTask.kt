@@ -14,17 +14,17 @@ import java.time.format.DateTimeFormatter
 
 private const val i = 100
 
-class NarrativeReasoningTask(
+open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningTaskExecutionConfigData, U : TaskTypeConfig>(
   orchestrationConfig: OrchestrationConfig,
-  planTask: NarrativeReasoningTaskExecutionConfigData?
-) : AbstractTask<NarrativeReasoningTask.NarrativeReasoningTaskExecutionConfigData, TaskTypeConfig>(
+  planTask: T?
+) : AbstractTask<T, U>(
   orchestrationConfig,
   planTask
 ) {
 
   val maxDescriptionLength = 100
 
-  class NarrativeReasoningTaskExecutionConfigData(
+  open class NarrativeReasoningTaskExecutionConfigData(
     @Description("The subject or scenario to analyze through narrative reasoning")
     val subject: String? = null,
 
@@ -94,6 +94,10 @@ class NarrativeReasoningTask(
     val conflicts: List<String> = emptyList(),
     val arc: String = ""
   )
+  data class CharacterAnalyses(
+    val characters: List<CharacterAnalysis> = emptyList()
+  )
+
 
   data class NarrativeOutcome(
     val scenario: String = "",
@@ -102,6 +106,10 @@ class NarrativeReasoningTask(
     val consequences: List<String> = emptyList(),
     val resolution_path: String = ""
   )
+  data class NarrativeOutcomes(
+    val outcomes: List<NarrativeOutcome> = emptyList()
+  )
+
 
   data class NarrativeInconsistency(
     val type: String = "",
@@ -110,6 +118,10 @@ class NarrativeReasoningTask(
     val severity: String = "",
     val suggested_resolution: String = ""
   )
+  data class NarrativeInconsistencies(
+    val inconsistencies: List<NarrativeInconsistency> = emptyList()
+  )
+
 
   override fun promptSegment(): String {
     return """
@@ -423,7 +435,7 @@ Be specific and concrete.
 
         val characters = (narrativeElements["characters"] as? List<*>) ?: emptyList<String>()
         val characterAgent = ParsedAgent(
-          resultClass = Array<CharacterAnalysis>::class.java,
+          resultClass = CharacterAnalyses::class.java,
           prompt = """
 You are a character psychology expert. Analyze the motivations and arcs of the characters in this narrative.
 
@@ -450,7 +462,7 @@ Consider stakeholder perspectives if analyzing organizational scenarios.
           parsingChatter = orchestrationConfig.parsingChatter
         )
 
-        val characterAnalyses = characterAgent.answer(listOf("Analyze characters")).obj
+        val characterAnalyses = characterAgent.answer(listOf("Analyze characters")).obj.characters
         log.debug("Analyzed ${characterAnalyses.size} characters")
 
         val charactersContent = buildString {
@@ -516,7 +528,7 @@ Consider stakeholder perspectives if analyzing organizational scenarios.
         task.update()
 
         val outcomeAgent = ParsedAgent(
-          resultClass = Array<NarrativeOutcome>::class.java,
+          resultClass = NarrativeOutcomes::class.java,
           prompt = """
 You are a strategic foresight expert. Predict possible outcomes for this narrative.
 
@@ -545,7 +557,7 @@ Be realistic and consider multiple perspectives.
           parsingChatter = orchestrationConfig.parsingChatter
         )
 
-        val outcomes = outcomeAgent.answer(listOf("Predict outcomes")).obj
+        val outcomes = outcomeAgent.answer(listOf("Predict outcomes")).obj.outcomes
         log.debug("Predicted ${outcomes.size} outcomes")
 
         val outcomesContent = buildString {
@@ -609,7 +621,7 @@ Be realistic and consider multiple perspectives.
         task.update()
 
         val inconsistencyAgent = ParsedAgent(
-          resultClass = Array<NarrativeInconsistency>::class.java,
+          resultClass = NarrativeInconsistencies::class.java,
           prompt = """
 You are a narrative consistency expert. Identify any inconsistencies, gaps, or contradictions in this narrative.
 
@@ -633,14 +645,14 @@ For each inconsistency, provide:
 - Severity (Critical/Major/Minor)
 - Suggested resolution
 
-Be thorough but fair. If the narrative is consistent, say so.
+ Be thorough but fair. If the narrative is consistent, say so.
           """.trimIndent(),
           model = api,
           temperature = 0.5,
           parsingChatter = orchestrationConfig.parsingChatter
         )
 
-        val inconsistencies = inconsistencyAgent.answer(listOf("Find inconsistencies")).obj
+        val inconsistencies = inconsistencyAgent.answer(listOf("Find inconsistencies")).obj.inconsistencies
         log.debug("Found ${inconsistencies.size} inconsistencies")
 
         val inconsistenciesContent = buildString {

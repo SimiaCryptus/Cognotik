@@ -130,14 +130,14 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
     return when {
       taskType.name.contains("Reasoning") ||
           taskType.name in listOf(
-        "ChainOfThought", "MetaCognitiveReflection",
         "MultiPerspectiveAnalysis", "SocraticDialogue", "AnalogicalReasoning",
         "CounterfactualAnalysis", "AbstractionLadder", "ConstraintSatisfaction",
-        "GameTheory", "FiniteStateMachine", "Brainstorming",
-        "CausalInference", "DecompositionSynthesis",
+        "CausalInference", "DecompositionSynthesis", "NarrativeGeneration",
         "AbductiveReasoning", "AdversarialReasoning", "ConstraintRelaxation",
         "DialecticalReasoning", "LateralThinking", "NarrativeReasoning",
-        "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning"
+        "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
+        "GameTheory", "FiniteStateMachine", "Brainstorming",
+        "ChainOfThought", "MetaCognitiveReflection",
       ) -> "Reasoning"
 
       taskType.name in listOf(

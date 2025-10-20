@@ -10,13 +10,13 @@ import com.simiacryptus.cognotik.describe.Description
 @JsonTypeIdResolver(TaskExecutionConfig.PlanTaskTypeIdResolver::class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "task_type")
 open class TaskExecutionConfig(
-    @Description("An enumeration indicating the type of task to be executed. Must be a single value from the TaskType enum.")
-    val task_type: String? = null,
-    @Description("A brief user-facing description of the task")
-    var task_description: String? = null,
-    @Description("A list of IDs of tasks that must be completed before this task can be executed. This defines upstream dependencies ensuring proper task order and information flow.")
+  @Description("An enumeration indicating the type of task to be executed. Must be a single value from the TaskType enum.")
+  open val task_type: String? = null,
+  @Description("A brief user-facing description of the task")
+  open var task_description: String? = null,
+  @Description("A list of IDs of tasks that must be completed before this task can be executed. This defines upstream dependencies ensuring proper task order and information flow.")
     var task_dependencies: MutableList<String>? = null,
-    @Description("Ignore.")
+  @Description("Ignore.")
     var state: AbstractTask.TaskState? = null
 ) {
 
@@ -33,9 +33,7 @@ open class TaskExecutionConfig(
             }
         }
 
-        override fun idFromValueAndType(value: Any, suggestedType: Class<*>): String {
-            return idFromValue(value)
-        }
+        override fun idFromValueAndType(value: Any, suggestedType: Class<*>) = idFromValue(value)
 
         override fun typeFromId(context: DatabindContext, id: String): JavaType {
             val taskType = TaskType.valueOf(id.replace(" ", ""))

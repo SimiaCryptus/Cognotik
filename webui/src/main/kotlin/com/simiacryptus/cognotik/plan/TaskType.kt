@@ -529,12 +529,6 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
           task
         )
       }
-      registerConstructor(NarrativeReasoningTask.NarrativeReasoning) { settings, task ->
-        NarrativeReasoningTask(
-          settings,
-          task
-        )
-      }
       registerConstructor(ProbabilisticReasoningTask.ProbabilisticReasoning) { settings, task ->
         ProbabilisticReasoningTask(
           settings,
@@ -549,6 +543,18 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
       }
       registerConstructor(TemporalReasoningTask.TemporalReasoning) { settings, task ->
         TemporalReasoningTask(
+          settings,
+          task
+        )
+      }
+      registerConstructor(NarrativeReasoningTask.NarrativeReasoning) { settings, task ->
+        NarrativeReasoningTask(
+          settings,
+          task
+        )
+      }
+      registerConstructor(NarrativeGenerationTask.NarrativeGeneration) { settings, task ->
+        NarrativeGenerationTask(
           settings,
           task
         )
