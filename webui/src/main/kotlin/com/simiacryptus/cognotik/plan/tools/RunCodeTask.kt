@@ -63,6 +63,7 @@ class RunCodeTask(
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
+        val typeConfig = typeConfig ?: throw RuntimeException()
         val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
             ?: orchestrationConfig.defaultChatter).getChildClient(task)
 

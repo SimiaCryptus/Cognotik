@@ -116,6 +116,7 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         val completionNotes = mutableListOf<String>()
         Retryable(task = task) {
             val task = task.ui.newTask(false)
+            val typeConfig = typeConfig ?: throw RuntimeException()
             task.ui.pool.submit {
                 val chatInterface = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                     ?: this.orchestrationConfig.defaultChatter).getChildClient(task)

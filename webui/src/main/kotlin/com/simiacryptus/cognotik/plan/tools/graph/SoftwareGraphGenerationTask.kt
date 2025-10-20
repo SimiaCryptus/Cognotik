@@ -72,6 +72,7 @@ class SoftwareGraphGenerationTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+        val typeConfig = typeConfig ?: throw RuntimeException()
         val graphGenerationActor = ParsedAgent<SoftwareNodeType.SoftwareGraph>(
             name = "SoftwareGraphGenerator",
             resultClass = SoftwareNodeType.SoftwareGraph::class.java,

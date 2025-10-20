@@ -79,6 +79,7 @@ import java.util.concurrent.TimeoutException
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+        val typeConfig = typeConfig ?: throw RuntimeException()
         val config = executionConfig ?: throw IllegalStateException("Execution config is required")
         val serverName = config.server_name ?: typeConfig.default_server
             ?: throw IllegalStateException("MCP server name must be specified")
@@ -196,11 +197,13 @@ import java.util.concurrent.TimeoutException
     ) {
         var retryCount = 0
         var lastException = lastError
-        
+
+        val typeConfig = typeConfig ?: throw RuntimeException()
         while (retryCount < typeConfig.max_retries) {
             retryCount++
             task.add("Retry attempt $retryCount of ${typeConfig.max_retries}")
-            
+
+            val typeConfig = typeConfig ?: throw RuntimeException()
             try {
                 val delay = if (typeConfig.exponential_backoff) {
                     typeConfig.retry_delay_ms * (1 shl (retryCount - 1)) // 2^(n-1) exponential backoff

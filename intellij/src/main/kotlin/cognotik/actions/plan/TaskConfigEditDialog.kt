@@ -164,8 +164,20 @@ class TaskConfigEditDialog(
         }
     }
 
-    private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: SubPlanningTask.SubPlanningTaskTypeConfig) {
+private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: SubPlanningTask.SubPlanningTaskTypeConfig) {
         group("Sub-Planning Settings") {
+            row("Purpose:") {
+                val textArea = JBTextArea(3, 40)
+                textArea.text = config.purpose
+                textArea.toolTipText = "Supplemental description of the purpose of this configuration"
+                textArea.lineWrap = true
+                textArea.wrapStyleWord = true
+                val scrollPane = JScrollPane(textArea)
+                cell(scrollPane)
+                    .align(Align.FILL)
+                    .comment("Describe the specific purpose or use case for this sub-planning configuration")
+                configFields["purpose"] = textArea
+            }
             row("Cognitive Mode:") {
                 val modes = CognitiveModeStrategies.entries.map { it.name }.toTypedArray()
                 val combo = ComboBox(modes)
@@ -659,11 +671,12 @@ class TaskConfigEditDialog(
                 )
             }
 
-            is SubPlanningTask.SubPlanningTaskTypeConfig -> {
+is SubPlanningTask.SubPlanningTaskTypeConfig -> {
                 SubPlanningTask.SubPlanningTaskTypeConfig(
                     task_type = baseConfig.task_type!!,
                     name = baseConfig.name,
                     model = baseConfig.model,
+                    purpose = (configFields["purpose"] as? JBTextArea)?.text?.trim() ?: "",
                     cognitiveMode = CognitiveModeStrategies.valueOf(
                         (configFields["cognitiveMode"] as? ComboBox<*>)?.selectedItem as? String ?: "Waterfall"
                     ),

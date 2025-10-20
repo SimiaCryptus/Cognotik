@@ -52,6 +52,7 @@ class RunShellCommandTask(
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
+        val typeConfig = typeConfig ?: throw RuntimeException()
         val chatter = (typeConfig.model?.let { this.orchestrationConfig.instance(it) }
             ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
         val planTask = this.executionConfig
