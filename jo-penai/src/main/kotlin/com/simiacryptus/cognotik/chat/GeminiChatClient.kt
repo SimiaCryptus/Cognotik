@@ -48,6 +48,7 @@ import java.util.concurrent.ConcurrentHashMap
                     it.modelName == baseModelId || it.modelName == model.name
                 } ?: run {
                     // If not found in predefined models, create a dynamic one
+                    log.debug("Creating basic ChatModel for unknown Gemini model: ${baseModelId}")
                     ChatModel(
                         name = model.displayName ?: baseModelId,
                         modelName = baseModelId,
