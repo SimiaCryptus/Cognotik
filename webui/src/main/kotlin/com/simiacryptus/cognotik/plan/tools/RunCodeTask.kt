@@ -23,7 +23,7 @@ class RunCodeTask(
 ) : AbstractTask<RunCodeTask.RunCodeTaskExecutionConfigData, RunCodeTask.RunCodeTaskTypeConfig>(orchestrationConfig, planTask) {
 
     class RunCodeTaskTypeConfig(
-        task_type : String = TaskType.RunCode.name,
+        task_type : String = RunCode.name,
         val codeRuntime: CodeRuntimes? = null,
         model: ApiChatModel? = null,
         name: String? = task_type,
@@ -42,7 +42,7 @@ class RunCodeTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskExecutionConfig(
-        task_type = TaskType.RunCode.name,
+        task_type = RunCode.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -166,5 +166,22 @@ class RunCodeTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(RunCodeTask::class.java)
+        val RunCode = TaskType(
+            "RunCode",
+            RunCodeTaskExecutionConfigData::class.java,
+            RunCodeTaskTypeConfig::class.java,
+            "Execute code snippets safely",
+            """
+          Executes code snippets in a controlled environment.
+          <ul>
+            <li>Safe code execution handling</li>
+            <li>Working directory configuration</li>
+            <li>Output capture and formatting</li>
+            <li>Error handling and reporting</li>
+            <li>Interactive result review</li>
+          </ul>
+        """
+        )
+
     }
 }

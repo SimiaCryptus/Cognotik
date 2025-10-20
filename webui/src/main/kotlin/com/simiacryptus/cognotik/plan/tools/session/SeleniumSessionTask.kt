@@ -26,6 +26,24 @@ class SeleniumSessionTask(
 
         private const val MAX_SESSIONS = 10
 
+        val SeleniumSession = TaskType(
+            "SeleniumSession",
+            SeleniumSessionTask.SeleniumSessionTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Automate browser interactions with Selenium",
+            """
+          Automates browser interactions using Selenium WebDriver.
+          <ul>
+            <li>Headless Chrome browser automation</li>
+            <li>JavaScript command execution</li>
+            <li>Session management capabilities</li>
+            <li>Configurable timeouts</li>
+            <li>Detailed execution results</li>
+          </ul>
+        """
+        )
+
+
     }
 
     private fun cleanupInactiveSessions() {
@@ -71,7 +89,7 @@ class SeleniumSessionTask(
         @Description("Whether to preserve whitespace in text nodes")
         val preserveWhitespace: Boolean = false,
     ) : TaskExecutionConfig(
-        task_type = TaskType.SeleniumSession.name,
+        task_type = SeleniumSession.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state

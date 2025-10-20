@@ -66,7 +66,7 @@ class CrawlerAgentTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = TaskType.CrawlerAgent.name,
+        task_type = CrawlerAgent.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -1108,5 +1108,21 @@ class CrawlerAgentTask(
         private val log = LoggerFactory.getLogger(CrawlerAgentTask::class.java)
         private val LINK_PATTERN = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
         private val VALID_URL_PATTERN = Pattern.compile("^(http|https)://.*")
+        val CrawlerAgent = TaskType(
+            "CrawlerAgent",
+            CrawlerAgentTask.CrawlerTaskExecutionConfigData::class.java,
+            CrawlerAgentTask.CrawlerTaskTypeConfig::class.java,
+            "Search Google, fetch top results, and analyze content",
+            """
+          Searches Google for specified queries and analyzes the top results.
+          <ul>
+            <li>Performs Google searches</li>
+            <li>Fetches top search results</li>
+            <li>Analyzes content for specific goals</li>
+            <li>Generates detailed analysis reports</li>
+</ul>
+        """
+        )
+
     }
 }

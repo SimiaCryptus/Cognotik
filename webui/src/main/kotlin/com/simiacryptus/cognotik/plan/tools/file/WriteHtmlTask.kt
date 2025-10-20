@@ -305,7 +305,19 @@ Provide only the CSS code within a code block:
         val WriteHtml = TaskType(
             "WriteHtml",
             WriteHtmlTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java
+            TaskTypeConfig::class.java,
+            "Create complete HTML files with embedded CSS and JavaScript",
+            """
+              Creates standalone HTML files with embedded CSS and JavaScript.
+              <ul>
+                <li>Generates complete, self-contained HTML documents</li>
+                <li>Embeds CSS styles within &lt;style&gt; tags</li>
+                <li>Embeds JavaScript within &lt;script&gt; tags</li>
+                <li>Supports modern HTML5 features</li>
+                <li>Interactive approval or auto-apply mode</li>
+                <li>Proper HTML structure and formatting</li>
+              </ul>
+            """
         )
     }
 }

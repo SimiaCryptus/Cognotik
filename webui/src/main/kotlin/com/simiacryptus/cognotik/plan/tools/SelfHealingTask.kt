@@ -29,7 +29,7 @@ class SelfHealingTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskExecutionConfig(
-        task_type = TaskType.SelfHealing.name,
+        task_type = SelfHealing.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -126,5 +126,21 @@ class SelfHealingTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(SelfHealingTask::class.java)
+        val SelfHealing = TaskType(
+            "SelfHealing",
+            SelfHealingTask.SelfHealingTaskExecutionConfigData::class.java,
+            SelfHealingTask.SelfHealingTaskTypeConfig::class.java,
+            "Run a command and automatically fix any issues that arise",
+            """
+          Executes a command and automatically fixes any issues that arise.
+          <ul>
+            <li>Specify commands and working directories</li>
+            <li>Supports multiple commands and directories</li>
+            <li>Interactive approval mode</li>
+            <li>Output diff formatting</li>
+          </ul>
+        """
+        )
+
     }
 }

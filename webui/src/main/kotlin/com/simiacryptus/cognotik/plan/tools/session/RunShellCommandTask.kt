@@ -30,7 +30,7 @@ class RunShellCommandTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : TaskExecutionConfig(
-        task_type = TaskType.RunShellCommand.name,
+        task_type = RunShellCommand.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -183,5 +183,22 @@ class RunShellCommandTask(
 
     companion object {
         private val log = LoggerFactory.getLogger(RunShellCommandTask::class.java)
+        val RunShellCommand = TaskType(
+            "RunShellCommand",
+            RunShellCommandTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Execute shell commands safely",
+            """
+          Executes shell commands in a controlled environment.
+          <ul>
+            <li>Safe command execution handling</li>
+            <li>Working directory configuration</li>
+            <li>Output capture and formatting</li>
+            <li>Error handling and reporting</li>
+            <li>Interactive result review</li>
+          </ul>
+        """
+        )
+
     }
 }

@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
+import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
@@ -12,17 +13,18 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.plan.newSettings
 import com.simiacryptus.cognotik.plan.tools.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
+import com.simiacryptus.cognotik.plan.tools.SubPlanningTask
 import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
 import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
+import java.awt.Component
 import java.awt.Dimension
-import javax.swing.JCheckBox
-import javax.swing.JComponent
-import javax.swing.JScrollPane
+import javax.swing.*
 
 class TaskConfigEditDialog(
     project: Project?,
@@ -45,6 +47,10 @@ class TaskConfigEditDialog(
         toolTipText = "AI model to use for this task type"
     }
     private val configFields = mutableMapOf<String, JComponent>()
+
+    // For SubPlanning task settings
+    private val subTaskConfigListModel = DefaultListModel<SubTaskConfigEntry>()
+    private val subTaskConfigList = JBList(subTaskConfigListModel)
 
     init {
         init()
@@ -83,6 +89,7 @@ class TaskConfigEditDialog(
             is SelfHealingTask.SelfHealingTaskTypeConfig -> createSelfHealingFields(config)
             is CrawlerAgentTask.CrawlerTaskTypeConfig -> createCrawlerFields(config)
             is MCPToolTask.MCPToolTaskTypeConfig -> createMCPToolFields(config)
+            is SubPlanningTask.SubPlanningTaskTypeConfig -> createSubPlanningFields(config)
             // Add more task types as needed
         }
     }
@@ -156,6 +163,158 @@ class TaskConfigEditDialog(
             }
         }
     }
+
+    private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: SubPlanningTask.SubPlanningTaskTypeConfig) {
+        group("Sub-Planning Settings") {
+            row("Cognitive Mode:") {
+                val modes = CognitiveModeStrategies.entries.map { it.name }.toTypedArray()
+                val combo = ComboBox(modes)
+                combo.selectedItem = config.cognitiveMode?.name ?: "Adaptive"
+                combo.toolTipText = "Cognitive strategy to use for sub-planning"
+                cell(combo)
+                    .comment("Select the cognitive mode for executing the sub-plan")
+                configFields["cognitiveMode"] = combo
+            }
+        }
+        group("Sub-Task Configurations") {
+            row {
+                text(
+                    """
+                    <html>
+                    <body style='width: 500px;'>
+                    <p>Configure which task types are available within sub-plans. 
+                    Each task type can have its own configuration that will be used 
+                    when executing within a sub-plan context.</p>
+                    </body>
+                    </html>
+                """.trimIndent()
+                )
+            }
+            // Load existing sub-task configurations
+            config.taskSettings.forEach { (key, taskConfig) ->
+                val taskTypeName = if (key.contains("_")) key.substringBefore("_") else key
+                val taskType = TaskType.values().find { it.name == taskTypeName }
+                if (taskType != null) {
+                    subTaskConfigListModel.addElement(SubTaskConfigEntry(taskType, taskConfig, key))
+                }
+            }
+            subTaskConfigList.cellRenderer = object : DefaultListCellRenderer() {
+                override fun getListCellRendererComponent(
+                    list: JList<*>?,
+                    value: Any?,
+                    index: Int,
+                    isSelected: Boolean,
+                    cellHasFocus: Boolean
+                ): Component {
+                    val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+                    if (component is JLabel && value is SubTaskConfigEntry) {
+                        text = "${value.taskType.name} - ${value.config.name ?: "Default"}"
+                        toolTipText = value.taskType.description
+                    }
+                    return component
+                }
+            }
+            subTaskConfigList.addMouseListener(object : java.awt.event.MouseAdapter() {
+                override fun mouseClicked(e: java.awt.event.MouseEvent) {
+                    if (e.clickCount == 2) {
+                        val selected = subTaskConfigList.selectedValue
+                        if (selected != null) {
+                            editSubTaskConfig(selected, config)
+                        }
+                    }
+                }
+            })
+            row {
+                scrollCell(subTaskConfigList)
+                    .align(Align.FILL)
+                    .comment("Double-click to edit a sub-task configuration")
+                    .resizableColumn()
+            }.resizableRow()
+            row {
+                button("Add Sub-Task") {
+                    addSubTaskConfig(config)
+                }
+                button("Edit") {
+                    val selected = subTaskConfigList.selectedValue
+                    if (selected != null) {
+                        editSubTaskConfig(selected, config)
+                    } else {
+                        Messages.showWarningDialog(
+                            "Please select a sub-task configuration to edit",
+                            "No Selection"
+                        )
+                    }
+                }
+                button("Delete") {
+                    val selected = subTaskConfigList.selectedValue
+                    if (selected != null) {
+                        deleteSubTaskConfig(selected, config)
+                    } else {
+                        Messages.showWarningDialog(
+                            "Please select a sub-task configuration to delete",
+                            "No Selection"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun addSubTaskConfig(parentConfig: SubPlanningTask.SubPlanningTaskTypeConfig) {
+        val dialog = TaskTypeSelectionDialog(null)
+        if (dialog.showAndGet()) {
+            val taskType = dialog.getSelectedTaskType() ?: return
+            val newConfig = taskType.newSettings() ?: run {
+                Messages.showErrorDialog(
+                    "Failed to create default configuration for ${taskType.name}",
+                    "Error"
+                )
+                return
+            }
+            val configDialog = TaskConfigEditDialog(null, taskType, newConfig, availableModels)
+            if (configDialog.showAndGet()) {
+                val config = configDialog.getConfig()
+                val key = if (config.name != null) "${taskType.name}_${config.name}" else taskType.name
+                parentConfig.taskSettings[key] = config
+                subTaskConfigListModel.addElement(SubTaskConfigEntry(taskType, config, key))
+            }
+        }
+    }
+
+    private fun editSubTaskConfig(entry: SubTaskConfigEntry, parentConfig: SubPlanningTask.SubPlanningTaskTypeConfig) {
+        val dialog = TaskConfigEditDialog(null, entry.taskType, entry.config, availableModels)
+        if (dialog.showAndGet()) {
+            val updatedConfig = dialog.getConfig()
+            val newKey =
+                if (updatedConfig.name != null) "${entry.taskType.name}_${updatedConfig.name}" else entry.taskType.name
+            // Remove old key if it changed
+            if (entry.key != newKey) {
+                parentConfig.taskSettings.remove(entry.key)
+            }
+            parentConfig.taskSettings[newKey] = updatedConfig
+            val index = subTaskConfigListModel.indexOf(entry)
+            subTaskConfigListModel.removeElement(entry)
+            subTaskConfigListModel.add(index, SubTaskConfigEntry(entry.taskType, updatedConfig, newKey))
+            subTaskConfigList.selectedIndex = index
+        }
+    }
+
+    private fun deleteSubTaskConfig(
+        entry: SubTaskConfigEntry,
+        parentConfig: SubPlanningTask.SubPlanningTaskTypeConfig
+    ) {
+        val confirmResult = JOptionPane.showConfirmDialog(
+            null,
+            "Delete sub-task configuration '${entry.config.name ?: "Default"}' for ${entry.taskType.name}?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION
+        )
+        if (confirmResult == JOptionPane.YES_OPTION) {
+            parentConfig.taskSettings.remove(entry.key)
+            subTaskConfigListModel.removeElement(entry)
+        }
+    }
+
 
 
     private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: CrawlerAgentTask.CrawlerTaskTypeConfig) {
@@ -273,6 +432,22 @@ class TaskConfigEditDialog(
     }
 
     private fun validateTaskSpecificFields(): Boolean {
+        // Validate SubPlanning numeric fields
+        if (config is SubPlanningTask.SubPlanningTaskTypeConfig) {
+            val maxDepth = (configFields["max_recursion_depth"] as? JBTextField)?.text?.trim()
+            if (!maxDepth.isNullOrEmpty()) {
+                val value = maxDepth.toIntOrNull()
+                if (value == null || value !in 1..10) {
+                    Messages.showWarningDialog(
+                        "Max Recursion Depth must be between 1 and 10",
+                        "Invalid Value"
+                    )
+                    configFields["max_recursion_depth"]?.requestFocusInWindow()
+                    return false
+                }
+            }
+        }
+
         // Validate MCPTool numeric fields
         if (config is MCPToolTask.MCPToolTaskTypeConfig) {
             val timeout = (configFields["default_timeout"] as? JBTextField)?.text?.trim()
@@ -484,9 +659,28 @@ class TaskConfigEditDialog(
                 )
             }
 
+            is SubPlanningTask.SubPlanningTaskTypeConfig -> {
+                SubPlanningTask.SubPlanningTaskTypeConfig(
+                    task_type = baseConfig.task_type!!,
+                    name = baseConfig.name,
+                    model = baseConfig.model,
+                    cognitiveMode = CognitiveModeStrategies.valueOf(
+                        (configFields["cognitiveMode"] as? ComboBox<*>)?.selectedItem as? String ?: "Waterfall"
+                    ),
+                    taskSettings = (config as SubPlanningTask.SubPlanningTaskTypeConfig).taskSettings.toMutableMap()
+                )
+            }
+
+
             else -> baseConfig
         }
     }
+
+    private data class SubTaskConfigEntry(
+        val taskType: TaskType<*, *>,
+        val config: TaskTypeConfig,
+        val key: String
+    )
 
     companion object {
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_-]+$")

@@ -28,6 +28,10 @@ interface CognitiveMode {
      */
     fun handleUserMessage(userMessage: String, task: SessionTask)
 
+    /**
+     * Get the context data accumulated during execution.
+     * This is useful for sub-planning tasks to collect results.
+     */
     fun contextData(): List<String>
 }
 

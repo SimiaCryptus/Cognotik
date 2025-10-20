@@ -291,7 +291,20 @@ Provide a comprehensive synthesis that integrates all perspectives.
     val MultiPerspectiveAnalysis = TaskType(
       "MultiPerspectiveAnalysis",
       MultiPerspectiveAnalysisTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java
+      TaskTypeConfig::class.java,
+      "Analyze problems from multiple viewpoints with synthesis",
+      """
+              Analyzes topics from multiple perspectives and synthesizes findings.
+              <ul>
+                <li>Examines subject from specified viewpoints</li>
+                <li>Generates detailed analysis for each perspective</li>
+                <li>Identifies agreements and conflicts</li>
+                <li>Synthesizes perspectives into unified conclusion</li>
+                <li>Configurable consensus threshold</li>
+                <li>Useful for architectural decisions and code reviews</li>
+                <li>Supports context from related files</li>
+              </ul>
+            """
     )
   }
 }

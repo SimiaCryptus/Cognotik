@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -489,7 +490,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     maxDepth: Int,
     currentDepth: Int,
     context: String,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface
+    api: ChatInterface
   ): ProblemDecomposition {
     log.debug("Decomposing problem at depth $currentDepth/$maxDepth using $strategy strategy")
     val prompt = """
@@ -533,7 +534,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     decomposition: ProblemDecomposition,
     context: String,
     task: SessionTask,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface,
+    api: ChatInterface,
     progressCallback: (String, SubproblemSolution) -> Unit = { _, _ -> }
   ): List<SubproblemSolution> {
     log.debug("Starting to solve ${decomposition.subproblems.size} subproblems")
@@ -665,7 +666,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     decomposition: ProblemDecomposition,
     solutions: List<SubproblemSolution>,
     context: String,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface
+    api: ChatInterface
   ): SynthesizedSolution {
     log.debug("Synthesizing solution from ${solutions.size} subproblem solutions")
     val prompt = """
@@ -714,7 +715,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     problem: String,
     synthesized: SynthesizedSolution,
     solutions: List<SubproblemSolution>,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface
+    api: ChatInterface
   ): CoherenceValidation {
     log.debug("Validating coherence of synthesized solution")
     val prompt = """
@@ -755,7 +756,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(DecompositionSynthesisTask::class.java)
-    val DecompositionSynthesis = TaskType(
+    val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
       "DecompositionSynthesis",
       DecompositionSynthesisTaskExecutionConfigData::class.java,
       TaskTypeConfig::class.java,
