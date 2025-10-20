@@ -324,6 +324,104 @@ class TaskConfigManager {
                 description: 'Break down and recombine elements',
                 category: 'Reasoning',
                 configFields: []
+            },
+            {
+                id: 'Brainstorming',
+                name: 'Brainstorming',
+                description: 'Generate creative ideas and solutions',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'FiniteStateMachine',
+                name: 'Finite State Machine',
+                description: 'Model and analyze state-based systems',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'GameTheory',
+                name: 'Game Theory',
+                description: 'Analyze strategic interactions and decisions',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'AbductiveReasoning',
+                name: 'Abductive Reasoning',
+                description: 'Infer the best explanation for observations',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'AdversarialReasoning',
+                name: 'Adversarial Reasoning',
+                description: 'Anticipate and counter opposing strategies',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'ConstraintRelaxation',
+                name: 'Constraint Relaxation',
+                description: 'Systematically relax constraints to find solutions',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'DialecticalReasoning',
+                name: 'Dialectical Reasoning',
+                description: 'Resolve contradictions through thesis-antithesis-synthesis',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'LateralThinking',
+                name: 'Lateral Thinking',
+                description: 'Approach problems from unconventional angles',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'ProbabilisticReasoning',
+                name: 'Probabilistic Reasoning',
+                description: 'Reason under uncertainty with probabilities',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'SystemsThinking',
+                name: 'Systems Thinking',
+                description: 'Analyze complex systems and their interactions',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'TemporalReasoning',
+                name: 'Temporal Reasoning',
+                description: 'Reason about time-dependent relationships',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'NarrativeReasoning',
+                name: 'Narrative Reasoning',
+                description: 'Understand and analyze narrative structures',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'NarrativeGeneration',
+                name: 'Narrative Generation',
+                description: 'Generate coherent narrative content',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'GeneticOptimization',
+                name: 'Genetic Optimization',
+                description: 'Optimize solutions using evolutionary algorithms',
+                category: 'Reasoning',
+                configFields: []
             }
         ];
     }

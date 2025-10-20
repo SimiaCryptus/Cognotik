@@ -47,6 +47,7 @@ class SoftwareGraphModificationTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+        val typeConfig = typeConfig ?: throw RuntimeException()
         val graphModificationActor = ParsedAgent(
             name = "SoftwareGraphModification",
             resultClass = SoftwareNodeType.SoftwareGraph::class.java,

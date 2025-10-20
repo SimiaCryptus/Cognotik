@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 open class HierarchicalPlanningMode(
-    override val ui: SocketManager,
+    override val task: SessionTask,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?,
@@ -50,7 +50,7 @@ open class HierarchicalPlanningMode(
         sessionLogTask?.complete(message.renderMarkdown())
     }
 
-    val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(ui.pool, maxConcurrency)
+    val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(task.ui.pool, maxConcurrency)
 
     override fun initialize() {
         log.debug("Initializing GoalOrientedMode")
@@ -82,7 +82,7 @@ open class HierarchicalPlanningMode(
         task.echo("User: $userMessage".renderMarkdown())
 
         val stopLinkRef = AtomicReference<StringBuilder>()
-        val stopLink = task.add(ui.hrefLink("Stop Goal-Oriented Processing") {
+        val stopLink = task.add(this.task.ui.hrefLink("Stop Goal-Oriented Processing") {
             log.info("Stop requested by user.")
             stopRequested.set(true)
             stopLinkRef.get()?.set("Stop signal sent. Waiting for current iteration to finish...")
@@ -115,8 +115,8 @@ open class HierarchicalPlanningMode(
         val coordinator = TaskOrchestrator(
             user = user,
             session = session,
-            dataStorage = ui.dataStorage ?: throw IllegalStateException("SocketManager or its dataStorage is null"),
-            root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.dataStorage?.getSessionDir(
+            dataStorage = this.task.ui.dataStorage ?: throw IllegalStateException("SocketManager or its dataStorage is null"),
+            root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() } ?: this.task.ui.dataStorage?.getSessionDir(
                 user,
                 session
             )?.toPath() ?: File(".").toPath())
@@ -1172,8 +1172,8 @@ fun contextData(focusGoalId: String?, focusTaskId: String?): List<String> {
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: SocketManager, orchestrationConfig: OrchestrationConfig, session: Session, user: User?
-        ) = HierarchicalPlanningMode(ui, orchestrationConfig, session, user)
+            task: SessionTask, orchestrationConfig: OrchestrationConfig, session: Session, user: User?
+        ) = HierarchicalPlanningMode(task, orchestrationConfig, session, user)
 
         private val log = LoggerFactory.getLogger(HierarchicalPlanningMode::class.java)
 

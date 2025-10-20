@@ -18,10 +18,9 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         get() = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
             ?: throw IllegalStateException("Working directory not set")
 
-    open val typeConfig: U
+    open val typeConfig: U?
         get() = executionConfig?.task_type
             ?.let { task_type -> orchestrationConfig.taskSettings.values.firstOrNull { it.task_type == task_type } as? U }
-            ?: throw IllegalStateException("No task type config for ${executionConfig?.task_type}")
 
     enum class TaskState {
         Pending,

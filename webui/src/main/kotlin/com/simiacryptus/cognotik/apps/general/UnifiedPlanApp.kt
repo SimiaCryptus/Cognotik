@@ -143,7 +143,7 @@ ${settings?.toJson()}
             } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
             val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeStrategies.Chat).getCognitiveMode(
-                ui = ui,
+                task = ui.newTask(true),
                 orchestrationConfig = settings,
                 session = session,
                 user = user
@@ -258,7 +258,7 @@ ${settings?.toJson()}
             return
         }
         val cognitiveMode = orchestrationConfig.cognitiveMode?.getCognitiveMode(
-            ui = ui,
+            task = task,
             orchestrationConfig = orchestrationConfig,
             session = session,
             user = user

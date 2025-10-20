@@ -32,7 +32,7 @@ class GitHubSearchTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = TaskType.GitHubSearch.name,
+        task_type = GitHubSearch.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -168,5 +168,22 @@ GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or
     }
 
     companion object {
+        val GitHubSearch = TaskType(
+            "GitHubSearch",
+            GitHubSearchTask.GitHubSearchTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Search GitHub repositories, code, issues and users",
+            """
+          Performs comprehensive searches across GitHub's content.
+          <ul>
+            <li>Searches repositories, code, and issues</li>
+            <li>Supports advanced search queries</li>
+            <li>Filters results by various criteria</li>
+            <li>Formats results with relevant details</li>
+            <li>Handles API rate limiting</li>
+          </ul>
+        """
+        )
+
     }
 }

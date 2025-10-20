@@ -61,11 +61,6 @@ class GeneticOptimizationTask(
         val strategy: String = ""
     )
 
-    data class GenerationResult(
-        @Description("List of text variants in this generation")
-        val variants: List<TextVariant> = emptyList()
-    )
-
     data class EvaluationScore(
         @Description("Overall fitness score (0-100)")
         val overall_score: Double = 0.0,
@@ -149,12 +144,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             log.info("Configuration validated: generations=$numGenerations, population=$populationSize, selection=$selectionSize, crossover=$enableCrossover")
 
             val tabs = TabbedDisplay(task)
-            val api = orchestrationConfig.defaultChatter ?: run {
-                log.error("No default chatter available")
-                task.complete("ERROR: No API available")
-                resultFn("ERROR: No API available")
-                return
-            }
+            val api = orchestrationConfig.defaultChatter
 
             // Create overview tab
             val overviewTask = task.ui.newTask(false)
@@ -224,7 +214,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             // Evaluate initial text
             log.info("Evaluating initial text")
             val initialEvaluation =
-                evaluateVariant(initialText, optimizationGoal, evaluationWeights, constraints, priorContext, api)
+                evaluateVariant(initialText, optimizationGoal, evaluationWeights, constraints, api)
             currentPopulation = listOf(
                 currentPopulation[0].copy(score = initialEvaluation)
             )
@@ -305,7 +295,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                         survivors[1].text,
                         optimizationGoal,
                         constraints,
-                        priorContext,
                         api
                     )
                     if (crossoverVariant != null) {
@@ -332,7 +321,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                             optimizationGoal,
                             evaluationWeights,
                             constraints,
-                            priorContext,
                             api
                         )
                         variant.copy(score = evaluation)
@@ -439,7 +427,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 evolutionHistory.forEachIndexed { index, population ->
                     val scores = population.map { it.score.overall_score }
                     val improvement = if (index > 0) {
-                        scores.maxOrNull()!! - evolutionHistory[index - 1].map { it.score.overall_score }.maxOrNull()!!
+                        scores.maxOrNull()!! - evolutionHistory[index - 1].maxOf { it.score.overall_score }
                     } else {
                         0.0
                     }
@@ -691,7 +679,6 @@ Generate ONE variant that applies this strategy effectively.
         text2: String,
         goal: String,
         constraints: List<String>,
-        context: String,
         api: ChatInterface
     ): String? {
         try {
@@ -747,7 +734,6 @@ Generate the crossover variant now.
         goal: String,
         weights: Map<String, Double>,
         constraints: List<String>,
-        context: String,
         api: ChatInterface
     ): EvaluationScore {
         try {

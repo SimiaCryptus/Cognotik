@@ -54,9 +54,6 @@ class CrawlerAgentTask(
         name: String? = task_type,
     ) : TaskTypeConfig(task_type = task_type, name = name, model = model)
 
-    override val typeConfig: CrawlerTaskTypeConfig
-        get() = super.typeConfig.jsonCast<CrawlerTaskTypeConfig>()
-
     class CrawlerTaskExecutionConfigData(
         @Description("The search query to use for Google search") val search_query: String? = null,
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: List<String>? = null,
@@ -66,7 +63,7 @@ class CrawlerAgentTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = TaskType.CrawlerAgent.name,
+        task_type = CrawlerAgent.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -165,6 +162,7 @@ class CrawlerAgentTask(
         orchestrationConfig: OrchestrationConfig
     ): String {
         try {
+            val typeConfig = typeConfig ?: throw RuntimeException()
             val startTime = System.currentTimeMillis()
             log.info(
                 "Starting CrawlerAgentTask with config: search_query='${executionConfig?.search_query}', direct_urls='${
@@ -277,7 +275,7 @@ class CrawlerAgentTask(
             val errorCount = AtomicInteger(0)
             val maxErrors = maxPages / 2 // Stop if too many errors
             log.info("Starting crawling loop with maxErrors threshold: $maxErrors")
-            val fetchStrategy = (this@CrawlerAgentTask.typeConfig.fetch_method
+            val fetchStrategy = (this@CrawlerAgentTask.typeConfig?.fetch_method
                 ?: FetchMethod.HttpClient).createStrategy(
                 this@CrawlerAgentTask
             )
@@ -412,6 +410,7 @@ class CrawlerAgentTask(
         maxDepth: Int,
         maxQueueSize: Int
     ): Boolean = synchronized(pageQueueLock) {
+        val typeConfig = typeConfig ?: throw RuntimeException()
         if (newLink.link.isNullOrBlank()) {
             log.warn("Attempted to add invalid or empty URL to queue: $newLink")
             return false
@@ -566,6 +565,7 @@ class CrawlerAgentTask(
         task: SessionTask,
         analysisResultsMap: ConcurrentHashMap<Int, String>
     ) {
+        val typeConfig = typeConfig ?: throw RuntimeException()
         val pageStartTime = System.currentTimeMillis()
         log.info("Starting to process page ${processedCount.get() + 1}: url='${link}', title='${page.title}'")
         val currentIndex = processedCount.incrementAndGet()
@@ -769,6 +769,7 @@ class CrawlerAgentTask(
         )
         return try {
             val uri = URI.create(url)
+            val typeConfig = typeConfig ?: throw RuntimeException()
 
             // Check if URL is restricted by allowed_domains whitelist
             val allowedDomains =
@@ -816,6 +817,7 @@ class CrawlerAgentTask(
     private fun createFinalSummary(analysisResults: String, task: SessionTask): String {
         log.info("Creating final summary of analysis results (original size: ${analysisResults.length})")
 
+        val typeConfig = typeConfig ?: throw RuntimeException()
         if (analysisResults.length < (typeConfig.max_final_output_size ?: 15000) * 1.2) {
             log.info("Analysis results only slightly exceed max size, truncating instead of summarizing")
             return analysisResults.substring(
@@ -880,6 +882,7 @@ class CrawlerAgentTask(
     private fun fetchAndProcessUrl(
         url: String, webSearchDir: File, index: Int, pool: ExecutorService, fetchStrategy: FetchStrategy
     ): String {
+        val typeConfig = typeConfig ?: throw RuntimeException()
         if (url.isBlank()) {
             throw IllegalArgumentException("URL cannot be blank")
         }
@@ -1042,6 +1045,7 @@ class CrawlerAgentTask(
         describer: TypeDescriber,
         task: SessionTask
     ) = try {
+        val typeConfig = typeConfig ?: throw RuntimeException()
         val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
             ?: orchestrationConfig.parsingChatter).getChildClient(task)
         ParsedAgent(
@@ -1108,5 +1112,21 @@ class CrawlerAgentTask(
         private val log = LoggerFactory.getLogger(CrawlerAgentTask::class.java)
         private val LINK_PATTERN = Pattern.compile("""\[([^]]+)]\(([^)]+)\)""")
         private val VALID_URL_PATTERN = Pattern.compile("^(http|https)://.*")
+        val CrawlerAgent = TaskType(
+            "CrawlerAgent",
+            CrawlerAgentTask.CrawlerTaskExecutionConfigData::class.java,
+            CrawlerAgentTask.CrawlerTaskTypeConfig::class.java,
+            "Search Google, fetch top results, and analyze content",
+            """
+          Searches Google for specified queries and analyzes the top results.
+          <ul>
+            <li>Performs Google searches</li>
+            <li>Fetches top search results</li>
+            <li>Analyzes content for specific goals</li>
+            <li>Generates detailed analysis reports</li>
+</ul>
+        """
+        )
+
     }
 }

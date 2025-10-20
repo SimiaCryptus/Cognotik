@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
  * thought updates.
  */
 interface CognitiveMode {
-    val ui: SocketManager
+    val task: SessionTask
     val orchestrationConfig: OrchestrationConfig
     val session: Session
     val user: User?
@@ -28,6 +28,10 @@ interface CognitiveMode {
      */
     fun handleUserMessage(userMessage: String, task: SessionTask)
 
+    /**
+     * Get the context data accumulated during execution.
+     * This is useful for sub-planning tasks to collect results.
+     */
     fun contextData(): List<String>
 }
 
@@ -35,7 +39,7 @@ interface CognitiveModeStrategy {
     val inputCnt: Int
 
     fun getCognitiveMode(
-        ui: SocketManager,
+        task: SessionTask,
         orchestrationConfig: OrchestrationConfig,
         session: Session,
         user: User?
@@ -47,48 +51,48 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
         override val inputCnt: Int get() = ConversationalMode.inputCnt
 
         override fun getCognitiveMode(
-            ui: SocketManager,
+            task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?
         ): CognitiveMode {
-            return ConversationalMode(ui, orchestrationConfig, session, user)
+            return ConversationalMode(task, orchestrationConfig, session, user)
         }
     },
     Adaptive {
         override val inputCnt: Int get() = AdaptivePlanningMode.inputCnt
 
         override fun getCognitiveMode(
-            ui: SocketManager,
+            task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?
         ): CognitiveMode {
-            return AdaptivePlanningMode(ui, orchestrationConfig, session, user)
+            return AdaptivePlanningMode(task, orchestrationConfig, session, user)
         }
     },
     Waterfall {
         override val inputCnt: Int get() = WaterfallMode.inputCnt
 
         override fun getCognitiveMode(
-            ui: SocketManager,
+            task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?
         ): CognitiveMode {
-            return WaterfallMode(ui, orchestrationConfig, session, user)
+            return WaterfallMode(task, orchestrationConfig, session, user)
         }
     },
     Hierarchical {
         override val inputCnt: Int get() = HierarchicalPlanningMode.inputCnt
 
         override fun getCognitiveMode(
-            ui: SocketManager,
+            task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?
         ): CognitiveMode {
-            return HierarchicalPlanningMode(ui, orchestrationConfig, session, user)
+            return HierarchicalPlanningMode(task, orchestrationConfig, session, user)
         }
     },
     ;

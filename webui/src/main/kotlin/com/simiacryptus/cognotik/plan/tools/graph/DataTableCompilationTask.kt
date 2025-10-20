@@ -102,6 +102,7 @@ class DataTableCompilationTask(
             "### ${file.name}\n```\n${content.take(1000)}${if (content.length > 1000) "..." else ""}\n```"
         }
 
+        val typeConfig = typeConfig ?: throw RuntimeException()
         val chatter =
             (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultChatter).getChildClient(task)
         val columnsResponse = ParsedAgent(

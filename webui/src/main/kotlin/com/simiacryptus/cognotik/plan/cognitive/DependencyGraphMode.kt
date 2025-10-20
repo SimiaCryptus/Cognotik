@@ -24,7 +24,7 @@ import java.io.File
  * a plan task, and executes the resulting plan.
  */
 open class DependencyGraphMode(
-    override val ui: SocketManager,
+    override val task: SessionTask,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?,
@@ -70,9 +70,9 @@ open class DependencyGraphMode(
                     TaskOrchestrator(
                         user = user,
                         session = session,
-                        dataStorage = ui.dataStorage!!,
+                        dataStorage = this.task.ui.dataStorage!!,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: ui.dataStorage?.getSessionDir(
+                            ?: this.task.ui.dataStorage?.getSessionDir(
                                 user,
                                 session
                             )?.toPath() ?: File(".").toPath()
@@ -324,12 +324,12 @@ open class DependencyGraphMode(
         var graphFile: String = "software_graph.json"
 
         override fun getCognitiveMode(
-            ui: SocketManager,
+            task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?
         ): CognitiveMode {
-            return DependencyGraphMode(ui, orchestrationConfig, session, user, graphFile)
+            return DependencyGraphMode(task, orchestrationConfig, session, user, graphFile)
         }
     }
 }

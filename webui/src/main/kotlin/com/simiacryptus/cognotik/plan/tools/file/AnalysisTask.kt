@@ -88,6 +88,7 @@ import java.util.concurrent.atomic.AtomicReference
         }
 
         val taskConfig: AnalysisTaskExecutionConfigData? = this.executionConfig
+        val typeConfig = typeConfig ?: throw RuntimeException()
         val insightActor = ChatAgent(
             name = "Insight",
             prompt = """

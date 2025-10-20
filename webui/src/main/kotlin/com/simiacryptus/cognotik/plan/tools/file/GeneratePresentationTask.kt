@@ -332,7 +332,20 @@ Provide only the CSS code within a code block:
     val GeneratePresentation = TaskType(
       "GeneratePresentation",
       GeneratePresentationTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java
+      TaskTypeConfig::class.java,
+      "Create complete Reveal.js presentations with narration support",
+      """
+              Creates professional Reveal.js presentations with speaker notes.
+              <ul>
+                <li>Generates complete, self-contained HTML presentations</li>
+                <li>Includes Reveal.js framework integration</li>
+                <li>Adds speaker notes for each slide</li>
+                <li>Supports custom styling and themes</li>
+                <li>Interactive approval or auto-apply mode</li>
+                <li>Includes navigation and progress indicators</li>
+                <li>Optional audio narration support</li>
+              </ul>
+            """
     )
   }
 }

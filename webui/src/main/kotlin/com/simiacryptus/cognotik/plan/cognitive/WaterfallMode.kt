@@ -22,11 +22,12 @@ import java.nio.file.Path
  * A cognitive mode that implements the traditional plan-ahead strategy.
  */
 open class WaterfallMode(
-    override val ui: SocketManager,
+    override val task: SessionTask,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
     override val user: User?
 ) : CognitiveMode {
+
     private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
 
     override fun initialize() {
@@ -45,9 +46,9 @@ open class WaterfallMode(
             val coordinator = TaskOrchestrator(
                 user = user,
                 session = session,
-                dataStorage = ui.dataStorage!!,
+                dataStorage = this.task.ui.dataStorage!!,
                 root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                    ?: ui.dataStorage?.getSessionDir(
+                    ?: this.task.ui.dataStorage?.getSessionDir(
                         user,
                         session
                     )?.toPath() ?: File(".").toPath()
@@ -207,10 +208,10 @@ open class WaterfallMode(
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            ui: SocketManager,
+            task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
             user: User?
-        ) = WaterfallMode(ui, orchestrationConfig, session, user)
+        ) = WaterfallMode(task, orchestrationConfig, session, user)
     }
 }
