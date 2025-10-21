@@ -131,7 +131,20 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
     val priorContext = getPriorCode(agent.executionState)
     if (priorContext.isNotBlank()) {
       log.debug("Found prior context: ${priorContext.length} characters")
+      val contextTask = ui.newTask(false)
+      tabs["Context"] = contextTask.placeholder
+      contextTask.add(
+        """
+        # Prior Context
+        The following context was inherited from previous tasks:
+        ```
+        ${priorContext.truncateForDisplay()}
+        ```
+        """.trimIndent().renderMarkdown
+      )
+      task.update()
     }
+    val resultBuilder = StringBuilder()
 
     try {
       // Prior Probabilities tab
@@ -205,9 +218,12 @@ Consider both the strength of evidence and its reliability.
       )
 
       log.debug("Requesting Bayesian update from LLM")
+      var stepStartTime = System.currentTimeMillis()
       val updateResult = bayesianAgent.answer(listOf(updatePrompt))
-      log.debug("Bayesian update completed: ${updateResult.length} characters")
+      var stepTime = System.currentTimeMillis() - stepStartTime
+      log.debug("Bayesian update completed in ${stepTime}ms: ${updateResult.length} characters")
 
+      
       updateTask.add(
         buildString {
           appendLine("## Analysis Results")
@@ -224,14 +240,13 @@ Consider both the strength of evidence and its reliability.
       overviewTask.add(
         buildString {
           appendLine()
-          appendLine("✅ Bayesian update complete")
+          appendLine("✅ Bayesian update complete (${stepTime / 1000.0}s)")
           appendLine()
           appendLine("*Generating additional analyses...*")
         }.renderMarkdown
       )
       task.update()
 
-      val resultBuilder = StringBuilder()
       resultBuilder.append("# Probabilistic Reasoning Analysis\n\n")
       resultBuilder.append("**Context:** $decisionContext\n\n")
       resultBuilder.append("## Bayesian Update\n\n")
@@ -260,10 +275,13 @@ Consider both the strength of evidence and its reliability.
           updateResult,
           executionConfig.risk_tolerance
         )
+        stepStartTime = System.currentTimeMillis()
 
         val evResult = bayesianAgent.answer(listOf(evPrompt))
-        log.debug("Expected value analysis completed: ${evResult.length} characters")
+        stepTime = System.currentTimeMillis() - stepStartTime
+        log.debug("Expected value analysis completed in ${stepTime}ms: ${evResult.length} characters")
 
+        
         evTask.add(
           buildString {
             appendLine("## Expected Value & Risk Analysis")
@@ -285,7 +303,7 @@ Consider both the strength of evidence and its reliability.
         overviewTask.add(
           buildString {
             appendLine()
-            appendLine("✅ Expected value analysis complete")
+            appendLine("✅ Expected value analysis complete (${stepTime / 1000.0}s)")
           }.renderMarkdown
         )
         task.update()
@@ -312,10 +330,13 @@ Consider both the strength of evidence and its reliability.
           evidence,
           updateResult
         )
+        stepStartTime = System.currentTimeMillis()
 
         val uncertaintyResult = bayesianAgent.answer(listOf(uncertaintyPrompt))
-        log.debug("Uncertainty analysis completed: ${uncertaintyResult.length} characters")
+        stepTime = System.currentTimeMillis() - stepStartTime
+        log.debug("Uncertainty analysis completed in ${stepTime}ms: ${uncertaintyResult .length} characters")
 
+        
         uncertaintyTask.add(
           buildString {
             appendLine("## Critical Uncertainties")
@@ -337,7 +358,7 @@ Consider both the strength of evidence and its reliability.
         overviewTask.add(
           buildString {
             appendLine()
-            appendLine("✅ Key uncertainties identified")
+            appendLine("✅ Key uncertainties identified (${stepTime / 1000.0}s)")
           }.renderMarkdown
         )
         task.update()
@@ -364,10 +385,13 @@ Consider both the strength of evidence and its reliability.
           evidence,
           updateResult
         )
+        stepStartTime = System.currentTimeMillis()
 
         val experimentResult = bayesianAgent.answer(listOf(experimentPrompt))
-        log.debug("Experiment suggestions completed: ${experimentResult.length} characters")
+        stepTime = System.currentTimeMillis() - stepStartTime
+        log.debug("Experiment suggestions completed in ${stepTime}ms: ${experimentResult.length} characters")
 
+        
         experimentTask.add(
           buildString {
             appendLine("## Recommended Experiments")
@@ -389,7 +413,7 @@ Consider both the strength of evidence and its reliability.
         overviewTask.add(
           buildString {
             appendLine()
-            appendLine("✅ Experiment suggestions generated")
+            appendLine("✅ Experiment suggestions generated (${stepTime / 1000.0}s)")
           }.renderMarkdown
         )
         task.update()
@@ -418,7 +442,7 @@ Consider both the strength of evidence and its reliability.
       task.update()
 
       val finalResult = resultBuilder.toString()
-      task.safeComplete("Completed Bayesian analysis of ${hypotheses.size} hypotheses in ${totalTime / maxDescriptionLength}s", log)
+      task.safeComplete("Completed Bayesian analysis of ${hypotheses.size} hypotheses in ${totalTime / 1000.0}s", log)
       resultFn(finalResult)
 
     } catch (e: Exception) {
@@ -441,14 +465,16 @@ Consider both the strength of evidence and its reliability.
 
       val errorOutput = buildString {
         appendLine("# Error in Probabilistic Reasoning")
-        appendLine()
         appendLine("**Context:** $decisionContext")
-        appendLine()
         appendLine("**Error:** ${e.message}")
         appendLine()
-        appendLine("**Hypotheses:** ${hypotheses?.size ?: 0}")
         appendLine()
-        appendLine("**Evidence:** ${evidence.size}")
+        appendLine("\n---")
+        if (resultBuilder.isNotBlank()) {
+          appendLine("\n## Partial Results")
+          appendLine("The analysis failed, but the following partial results were generated before the error:")
+          appendLine(resultBuilder.toString())
+        }
       }
       resultFn(errorOutput)
     }

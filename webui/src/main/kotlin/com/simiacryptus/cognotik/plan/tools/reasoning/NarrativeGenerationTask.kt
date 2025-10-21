@@ -568,12 +568,18 @@ Provide the revised scene content only.
       )
       task.update()
 
-      resultBuilder.append("\n---\n\n")
-      resultBuilder.append("**Statistics:** ${generatedScenes.size} scenes | ")
-      resultBuilder.append("$cumulativeWordCount words | ")
-      resultBuilder.append("${totalTime / 1000}s\n")
 
-      val finalResult = resultBuilder.toString()
+      // Per best practices, the final result passed to resultFn should be a concise summary,
+      // not the full text which is available in the UI.
+      val finalResult = buildString {
+        appendLine("# Narrative Generation Summary: ${outline.title}")
+        appendLine()
+        appendLine("A complete narrative of **$cumulativeWordCount words** across **${generatedScenes.size} scenes** was generated in **${totalTime / 1000.0}s**.")
+        appendLine("> The full text is available in the UI for detailed review.")
+        appendLine()
+        appendLine(outlineContent.substringBeforeLast("\n**Status:**").trim())
+      }
+
       log.info("NarrativeGenerationTask completed: scenes=${generatedScenes.size}, words=$cumulativeWordCount, time=${totalTime}ms")
 
       task.safeComplete("Narrative generation complete: ${generatedScenes.size} scenes, $cumulativeWordCount words in ${totalTime / 1000}s", log)

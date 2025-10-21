@@ -167,6 +167,20 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
       log.debug("Building context from related files and dependencies")
       // Get context from related files and dependencies
       val context = buildContext(agent)
+      // Context tab
+      val contextTask = ui.newTask(false)
+      tabs["Context"] = contextTask.placeholder
+      contextTask.add(buildString {
+        appendLine("# Task Context")
+        appendLine()
+        appendLine("The following context, derived from previous tasks and related files, will be used to inform the analysis.")
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine(context)
+      }.renderMarkdown)
+      task.update()
+
       // Update overview with context info
       overviewTask.add(buildString {
         appendLine()
@@ -494,7 +508,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
   ): ProblemDecomposition {
     log.debug("Decomposing problem at depth $currentDepth/$maxDepth using $strategy strategy")
     val prompt = """
-            |Decompose the following complex problem using a $strategy decomposition strategy.
+            |You are an expert systems analyst. Your task is to decompose the following complex problem using a $strategy decomposition strategy.
             |
             |**Problem**: $problem
             |
@@ -569,7 +583,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         ?: emptyList()
 
       val prompt = """
-                |Solve the following subproblem:
+                |You are a meticulous and expert problem solver. Your task is to solve the following subproblem, considering all provided context and dependencies.
                 |
                 |**Subproblem ID**: ${subproblem.id}
                 |**Description**: ${subproblem.description}
@@ -670,7 +684,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
   ): SynthesizedSolution {
     log.debug("Synthesizing solution from ${solutions.size} subproblem solutions")
     val prompt = """
-            |Synthesize a complete solution to the original problem by integrating the subproblem solutions.
+            |You are a master synthesizer of information. Your task is to create a single, coherent solution to the original problem by integrating the provided subproblem solutions.
             |
             |**Original Problem**: $problem
             |
@@ -719,7 +733,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
   ): CoherenceValidation {
     log.debug("Validating coherence of synthesized solution")
     val prompt = """
-            |Validate the coherence of the synthesized solution.
+            |You are a critical reviewer and quality assurance specialist. Your task is to validate the coherence of the synthesized solution.
             |
             |**Original Problem**: $problem
             |
@@ -746,7 +760,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     val validationAgent = ParsedAgent(
       resultClass = CoherenceValidation::class.java,
       prompt = prompt,
-      model = api!!,
+      model = api,
       parsingChatter = orchestrationConfig.parsingChatter,
     )
 

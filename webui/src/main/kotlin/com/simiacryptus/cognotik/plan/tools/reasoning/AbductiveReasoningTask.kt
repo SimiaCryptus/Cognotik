@@ -97,6 +97,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
     orchestrationConfig: OrchestrationConfig
   ) {
     val startTime = System.currentTimeMillis()
+    var stepStartTime = System.currentTimeMillis()
     log.info("Starting AbductiveReasoningTask with ${executionConfig?.observations?.size ?: 0} observations")
 
     val observations = executionConfig?.observations
@@ -237,7 +238,9 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         )
       }
 
-      log.info("Generated/evaluated ${hypotheses.size} hypotheses")
+      val hypothesesTime = (System.currentTimeMillis() - stepStartTime) / 1000.0
+      stepStartTime = System.currentTimeMillis()
+      log.info("Generated/evaluated ${hypotheses.size} hypotheses in ${hypothesesTime}s")
 
       // Display hypotheses
       hypothesesTask.add(
@@ -291,7 +294,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       overviewTask.add(
         buildString {
           appendLine()
-          appendLine("✅ Hypotheses generated: ${hypotheses.size}")
+          appendLine("✅ Hypotheses generated: ${hypotheses.size} (${hypothesesTime}s)")
           appendLine()
           appendLine("*Performing comparative analysis...*")
         }.renderMarkdown
@@ -317,7 +320,9 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         api
       )
 
-      log.debug("Comparative analysis completed: ${analysis.length} characters")
+      val analysisTime = (System.currentTimeMillis() - stepStartTime) / 1000.0
+      stepStartTime = System.currentTimeMillis()
+      log.info("Comparative analysis completed in ${analysisTime}s (${analysis.length} chars)")
 
       analysisTask.add(
         buildString {
@@ -337,7 +342,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       overviewTask.add(
         buildString {
           appendLine()
-          appendLine("✅ Comparative analysis complete")
+          appendLine("✅ Comparative analysis complete (${analysisTime}s)")
           if (suggestTests) {
             appendLine()
             appendLine("*Generating validation tests...*")
@@ -367,7 +372,9 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
           api
         )
 
-        log.debug("Validation tests generated: ${testSuggestions.length} characters")
+        val testsTime = (System.currentTimeMillis() - stepStartTime) / 1000.0
+        stepStartTime = System.currentTimeMillis()
+        log.info("Validation tests generated in ${testsTime}s (${testSuggestions.length} chars)")
 
         testsTask.add(
           buildString {
@@ -386,7 +393,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         overviewTask.add(
           buildString {
             appendLine()
-            appendLine("✅ Validation tests generated")
+            appendLine("✅ Validation tests generated (${testsTime}s)")
           }.renderMarkdown
         )
         task.update()

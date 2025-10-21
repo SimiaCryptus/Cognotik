@@ -69,30 +69,20 @@ The `ConversationalMode` is an interactive, step-by-step execution model.
 * **When to use it:** Perfect for exploratory work, debugging, or problems where the next step is not obvious until the
   current one is complete. It excels at interactive sessions.
 
-##### Special Feature: Expansion Syntax
+#### 3.3 Adaptive Planning Mode
 
-`ConversationalMode` supports a powerful syntax to run multiple variations of a task in parallel or in sequence.
+The `AdaptivePlanningMode` is an autonomous agent that operates in a cyclical "think, act, reflect" loop.
 
-* **Alternatives `@[option1|option2|...]`**: Executes a task for each option in parallel.
-    * *Example:* `Analyze the performance of @[algorithm_A|algorithm_B|algorithm_C]` will run three separate analysis
-      tasks, one for each algorithm.
+* **How it works:** It starts with an initial understanding of the goal. In a loop, it chooses the best next actions, executes them, and then updates its internal "state of mind" based on the results. It repeats this process, adapting its plan as it learns more, until the goal is achieved.
+* **When to use it:** Best for complex, ambiguous, or poorly defined problems that require research, experimentation, and adaptation. It's ideal for long-running tasks where you want the agent to work autonomously.
 
-* **Sequence `@{step1 -> step2 -> ...}`**: Executes a series of tasks sequentially, feeding the context from one step to
-  the next.
-    * *Example:* `@{Generate a report -> Email it to the team -> Archive the report}` will perform these three actions
-      in order.
+#### 3.4 Hierarchical Planning Mode
 
-* **Range `@(start..end:step)`**: Expands a numerical range into a sequence.
-    * *Example:* `Run simulation for years @(2020..2023)` is equivalent to `@{2020 -> 2021 -> 2022 -> 2023}`.
+The `HierarchicalPlanningMode` employs a "divide and conquer" strategy.
 
-* **Topic Reference `@{TopicName}`**: References a list of items that were identified and aggregated in previous steps.
-    * *Example:* If a previous step identified a list of files (`file1.txt`, `file2.txt`) as belonging to the
-      `SourceFile` topic, you can later reference them with `Analyze all @{SourceFile}`.
+* **How it works:** It breaks down large, complex goals into a tree of smaller, manageable sub-goals and tasks. It then manages the dependencies between all items in the tree and executes them in parallel whenever possible.
+* **When to use it:** Excellent for large, complex projects that can be logically broken down into smaller parts (e.g., "build a web application"). It brings structure to massive tasks and is great at managing complex dependencies automatically.
 
-#### 3.3 Other Modes
-
-The framework also includes other advanced modes like `AdaptivePlanningMode` and `HierarchicalPlanningMode` for more
-complex, dynamic problem-solving scenarios.
 
 ### 4. Available Tasks (`TaskType`)
 
@@ -100,13 +90,13 @@ The framework is equipped with a wide array of tasks, which can be broadly categ
 
 | Category             | Example Tasks                                                                                       | Description                                                                                                  |
 |:---------------------|:----------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------|
-| **File Operations**  | `FileModificationTask`, `FileSearchTask`, `AnalysisTask`                                            | Create, read, update, delete, and search for files in the workspace.                                         |
-| **Code & Execution** | `RunCodeTask`, `RunShellCommandTask`, `SelfHealingTask`                                             | Execute code snippets, run terminal commands, and attempt to automatically fix failing scripts.              |
-| **Reasoning**        | `ChainOfThoughtTask`, `CausalInferenceTask`, `SocraticDialogueTask`, `MultiPerspectiveAnalysisTask` | Employ advanced reasoning techniques to analyze problems, explore causes, and consider different viewpoints. |
-| **Online & Web**     | `CrawlerAgentTask`, `GitHubSearchTask`, `SeleniumSessionTask`                                       | Scrape websites, search for code on GitHub, and perform automated browser actions.                           |
-| **Knowledge Base**   | `KnowledgeIndexingTask`, `VectorSearchTask`                                                         | Build and query a knowledge base from documents for semantic search and retrieval.                           |
-| **Planning**         | `SubPlanningTask`                                                                                   | A powerful meta-task that can invoke the entire planning framework recursively to solve a sub-problem.       |
-| **Content Gen.**     | `WriteHtmlTask`, `GeneratePresentationTask`, `NarrativeGenerationTask`                              | Create structured content like web pages, presentations, and stories.                                        |
+| **File Operations**      | `FileModificationTask`, `FileSearchTask`, `AnalysisTask`                                            | Create, read, update, delete, and search for files in the workspace.                                         |
+| **Code & Execution**     | `RunCodeTask`, `RunShellCommandTask`, `SelfHealingTask`                                             | Execute code snippets, run terminal commands, and attempt to automatically fix failing scripts.              |
+| **Reasoning**            | `ChainOfThoughtTask`, `DecompositionSynthesisTask`, `MultiPerspectiveAnalysisTask`, `SystemsThinkingTask` | Employ advanced reasoning techniques to analyze problems, explore causes, and consider different viewpoints. |
+| **Online & Web**         | `CrawlerAgentTask`, `GitHubSearchTask`, `SeleniumSessionTask`                                       | Scrape websites, search for code on GitHub, and perform automated browser actions.                           |
+| **Knowledge Base**       | `KnowledgeIndexingTask`, `VectorSearchTask`                                                         | Build and query a knowledge base from documents for semantic search and retrieval.                           |
+| **Planning**             | `SubPlanningTask`                                                                                   | A powerful meta-task that can invoke the entire planning framework recursively to solve a sub-problem.       |
+| **Content Generation**   | `WriteHtmlTask`, `GeneratePresentationTask`, `NarrativeGenerationTask`                              | Create structured content like web pages, presentations, and stories.                                        |
 
 ### 5. Advanced Usage: A Deep Dive into `SubPlanningTask`
 

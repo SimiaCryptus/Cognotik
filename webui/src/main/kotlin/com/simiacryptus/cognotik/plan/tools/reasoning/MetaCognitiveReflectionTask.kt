@@ -63,7 +63,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    System.currentTimeMillis()
+    val startTime = System.currentTimeMillis()
     log.info("Starting MetaCognitiveReflection task for subject_task_id: ${executionConfig?.subject_task_id}")
 
     val subjectTaskId = executionConfig?.subject_task_id
@@ -107,6 +107,23 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         ui = overviewTask.ui
       )
     )
+    val priorContext = getPriorCode(agent.executionState)
+    if (priorContext.isNotBlank()) {
+      val contextTask = task.ui.newTask()
+      tabbedDisplay["Context"] = contextTask.placeholder
+      contextTask.complete(
+        MarkdownUtil.renderMarkdown(
+          """
+          |### Prior Context
+          |
+          |```
+          |$priorContext
+          |```
+          """.trimMargin(), ui = contextTask.ui
+        )
+      )
+    }
+
 
     val reflectionAspects =
       executionConfig?.reflection_aspects ?: listOf("assumptions", "biases", "alternatives", "confidence")
@@ -116,6 +133,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     val prompt = buildReflectionPrompt(
       subjectTaskId = subjectTaskId,
       subjectTaskResult = subjectTaskResult,
+      priorContext = priorContext,
       reflectionAspects = reflectionAspects,
       suggestImprovements = executionConfig?.suggest_improvements ?: true,
       identifyGaps = executionConfig?.identify_gaps ?: true,
@@ -173,7 +191,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
       tabbedDisplay["Summary"] = summaryTask.placeholder
 
 
-      val summary = generateReflectionSummary(reflectionResult!!)
+      val summary = generateReflectionSummary(reflectionResult)
 
       summaryTask.complete(
         MarkdownUtil.renderMarkdown(
@@ -193,8 +211,9 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
       // Step 6: Complete main task
       task.complete("Meta-cognitive reflection completed for task: $subjectTaskId")
 
-      log.info("MetaCognitiveReflection task completed successfully for subject_task_id: $subjectTaskId")
-      resultFn(reflectionResult ?: "")
+      val duration = System.currentTimeMillis() - startTime
+      log.info("MetaCognitiveReflection task completed successfully for subject_task_id: $subjectTaskId in ${duration}ms. Summary length: ${summary.length}")
+      resultFn(summary)
 
     } catch (e: Exception) {
       log.error("Error during meta-cognitive reflection", e)
@@ -232,13 +251,21 @@ You are thorough, objective, and focused on enhancing the quality of thinking.
   private fun buildReflectionPrompt(
     subjectTaskId: String,
     subjectTaskResult: String,
+    priorContext: String,
     reflectionAspects: List<String>,
     suggestImprovements: Boolean,
     identifyGaps: Boolean,
     evaluateConfidence: Boolean
   ): String {
+    val contextBlock = if (priorContext.isNotBlank()) """
+## Overall Context from Prior Steps:
+The following context was available to the task being analyzed. Consider this when evaluating its reasoning.
+```
+$priorContext
+```""" else ""
+
     return """
-You are a meta-cognitive analyst tasked with reflecting on and critiquing a reasoning process.
+You are a meta-cognitive analyst tasked with reflecting on and critiquing a reasoning process.${contextBlock}
 
 ## Subject Task: $subjectTaskId
 

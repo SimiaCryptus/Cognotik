@@ -12,223 +12,196 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 
 class SubPlanningTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: SubPlanningTaskExecutionConfigData?
+  orchestrationConfig: OrchestrationConfig, planTask: SubPlanningTaskExecutionConfigData?
 ) : AbstractTask<SubPlanningTask.SubPlanningTaskExecutionConfigData, SubPlanningTask.SubPlanningTaskTypeConfig>(
-    orchestrationConfig,
-    planTask
+  orchestrationConfig, planTask
 ) {
 
-    class SubPlanningTaskTypeConfig(
-        @Description("Cognitive strategy to use for sub-planning (overrides default)")
-        var cognitiveMode: CognitiveModeStrategies? = null,
-        @Description("Task-specific configurations available within sub-plans")
-        val taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
-        @Description("Supplemental description of the purpose of this configuration")
-        val purpose: String = "",
-        task_type: String = "RecursiveToolDefinition",
-        model: ApiChatModel? = null,
-        name: String? = task_type,
-    ) : TaskTypeConfig(task_type = task_type, name = name, model = model)
+  class SubPlanningTaskTypeConfig(
+    @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveMode: CognitiveModeStrategies? = null,
+    @Description("Task-specific configurations available within sub-plans") val taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
+    @Description("Supplemental description of the purpose of this configuration") val purpose: String = "",
+    task_type: String = "RecursiveToolDefinition",
+    model: ApiChatModel? = null,
+    name: String? = task_type,
+  ) : TaskTypeConfig(task_type = task_type, name = name, model = model)
 
-    class SubPlanningTaskExecutionConfigData(
-        @Description("The goal or objective for the sub-planning task")
-        val planning_goal: String? = null,
-        @Description("Context information to provide to the sub-planner")
-        val context: List<String>? = null,
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = null,
-    ) : TaskExecutionConfig(
-        task_type = SubPlanning.name,
-        task_description = task_description,
-        task_dependencies = task_dependencies?.toMutableList(),
-        state = state
-    )
+  class SubPlanningTaskExecutionConfigData(
+    @Description("The goal or objective for the sub-planning task") val planning_goal: String? = null,
+    @Description("Context information to provide to the sub-planner") val context: List<String>? = null,
+    task_description: String? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = null,
+  ) : TaskExecutionConfig(
+    task_type = SubPlanning.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
+  )
 
-    override fun promptSegment() = """
-SubPlanningTask - Create and execute sub-plans using recursive planning with configurable cognitive modes.${
-        typeConfig?.purpose.let {
-            when {
-                null == it -> ""
-                it.isNotEmpty() -> "\n** Purpose: $it"
-                else -> ""
-            }
-        }
+  override fun promptSegment(): String {
+    val typeConfig = typeConfig
+    return buildString {
+      appendLine("SubPlanningTask - Create and execute sub-plans using recursive planning with configurable cognitive modes.")
+      typeConfig?.purpose?.takeIf { it.isNotEmpty() }?.let {
+        appendLine("** Purpose: $it")
+      }
+      typeConfig?.taskSettings?.values?.joinToString(", ") { it.task_type ?: "?" }?.let {
+        appendLine("** This SubPlanningTask can run the following tasks types: $it")
+      }
+      appendLine("** Specify a planning goal or objective")
+      appendLine("** Optionally provide context information")
+      appendLine("** Can override the cognitive mode for the sub-plan")
+      appendLine("** Supports multiple levels of recursion up to configured depth")
+      append("** Results are aggregated and optionally summarized")
     }
-** Specify a planning goal or objective
-** Optionally provide context information
-** Can override the cognitive mode for the sub-plan
-** Supports multiple levels of recursion up to configured depth
-** Results are aggregated and optionally summarized
-   """.trimIndent()
+  }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        log.info("Starting SubPlanningTask with goal: ${executionConfig?.planning_goal}")
+  override fun run(
+    agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig
+  ) {
+    log.info("Starting SubPlanningTask with goal: ${executionConfig?.planning_goal}")
 
-        val typeConfig = typeConfig ?: throw RuntimeException()
-        try {
-            val typeConfig = this.typeConfig ?: throw RuntimeException()
-            val subConfig = orchestrationConfig.copy(
-                cognitiveMode = typeConfig.cognitiveMode ?: orchestrationConfig.cognitiveMode,
-                taskSettings = (orchestrationConfig.taskSettings + typeConfig.taskSettings).toMutableMap(),
-                maxIterations = (orchestrationConfig.maxIterations * 0.7).toInt().coerceAtLeast(3),
-                maxTasksPerIteration = (orchestrationConfig.maxTasksPerIteration * 0.8).toInt().coerceAtLeast(2),
-            )
-            log.debug("Created sub-orchestration config with maxIterations=${subConfig.maxIterations}, maxTasksPerIteration=${subConfig.maxTasksPerIteration}")
-            val subOrchestrationConfig = subConfig
+    try {
+      val typeConfig = this.typeConfig ?: throw RuntimeException()
+      // Get the cognitive mode for sub-planning
+      val cognitiveMode = (typeConfig.cognitiveMode ?: orchestrationConfig.cognitiveMode ?: CognitiveModeStrategies.Adaptive)
 
-            // Get the cognitive mode for sub-planning
-            val cognitiveMode = (typeConfig.cognitiveMode
-                ?: orchestrationConfig.cognitiveMode
-                ?: CognitiveModeStrategies.Adaptive)
+      val subConfig = orchestrationConfig.copy(
+        cognitiveMode = cognitiveMode,
+        taskSettings = typeConfig.taskSettings,
+      )
+      log.debug("Created sub-orchestration config with maxIterations=${subConfig.maxIterations}, maxTasksPerIteration=${subConfig.maxTasksPerIteration}")
 
-            log.info("Using cognitive mode: ${cognitiveMode.name} for sub-planning")
+      log.info("Using cognitive mode: ${cognitiveMode.name} for sub-planning")
 
-            // Create tabs for displaying sub-plan execution
-            val tabs = TabbedDisplay(task)
+      // Create tabs for displaying sub-plan execution
+      val tabs = TabbedDisplay(task)
 
-            // Create planning context
-            val planningTask = task.ui.newTask(false)
-            tabs["Planning"] = planningTask.placeholder
+      // Create planning context
+      val planningTask = task.ui.newTask(false)
+      tabs["Planning"] = planningTask.placeholder
 
-            // Get the planning goal
-            var planningGoal = executionConfig?.planning_goal
-                ?: executionConfig?.task_description
-                ?: throw IllegalArgumentException("No planning goal specified for SubPlanningTask")
+      // Get the planning goal
+      var planningGoal =
+        executionConfig?.planning_goal ?: executionConfig?.task_description ?: throw IllegalArgumentException("No planning goal specified for SubPlanningTask")
 
-            // Append purpose if available
-            if(typeConfig.purpose.isNotEmpty()) planningGoal = planningGoal + """
+      // Append purpose if available
+      if (typeConfig.purpose.isNotEmpty()) planningGoal = planningGoal + """
                 Purpose: ${typeConfig.purpose}
             """.trimIndent()
 
-            // Build context for the sub-planner
-            val contextMessages = buildContextMessages(messages)
+      // Build context for the sub-planner
+      val contextMessages = buildContextMessages(messages)
 
-            // Append context to the planning goal
-            if (contextMessages.isNotEmpty()) {
-                planningGoal = planningGoal + "\n\nContext:\n" + contextMessages.joinToString("\n")
-            }
+      // Append context to the planning goal
+      if (contextMessages.isNotEmpty()) {
+        planningGoal = planningGoal + "\n\nContext:\n" + contextMessages.joinToString("\n")
+      }
 
-            log.debug("Planning goal: $planningGoal")
+      log.debug("Planning goal: $planningGoal")
 
-            // Initialize the cognitive mode
-            val cognitiveInstance = cognitiveMode.getCognitiveMode(
-                task = planningTask,
-                orchestrationConfig = subOrchestrationConfig,
-                session = agent.session,
-                user = agent.user
-            ).apply { initialize() }
+      // Initialize the cognitive mode
+      val cognitiveInstance = cognitiveMode.getCognitiveMode(
+        task = planningTask, orchestrationConfig = subConfig, session = agent.session, user = agent.user
+      ).apply { initialize() }
 
-            // Display planning information
-            val planningInfo = buildString {
-                appendLine("# Sub-Planning Task")
-                appendLine()
-                appendLine("**Goal:** $planningGoal")
-                appendLine()
-                appendLine("**Cognitive Mode:** ${cognitiveMode.name}")
-                appendLine()
-                if (typeConfig.purpose.isNotEmpty()) {
-                    appendLine("**Purpose:** ${typeConfig.purpose}")
-                    appendLine()
-                }
-                if (!executionConfig?.context.isNullOrEmpty()) {
-                    appendLine("**Context:**")
-                    executionConfig.context.forEach { ctx ->
-                        appendLine("- $ctx")
-                    }
-                    appendLine()
-                }
-                appendLine("---")
-                appendLine()
-            }
-            planningTask.add(planningInfo.renderMarkdown)
-
-            // Execute the sub-plan using the cognitive mode
-            val executionTask = task.ui.newTask(false)
-            tabs["Execution"] = executionTask.placeholder
-
-            log.debug("Executing sub-plan with ${contextMessages.size} context messages")
-
-            // Handle the user message through the cognitive mode
-            cognitiveInstance.handleUserMessage(planningGoal, executionTask)
-
-            // Collect results from the cognitive mode's context
-            val results = cognitiveInstance.contextData()
-
-            log.info("Sub-plan execution completed with ${results.size} results")
-
-            // Create summary if configured
-            val summaryTask = task.ui.newTask(false)
-            tabs["Summary"] = summaryTask.placeholder
-
-            val summary = createSummary(results, planningGoal, summaryTask, orchestrationConfig)
-            summaryTask.add(summary.renderMarkdown)
-            tabs.update()
-            resultFn(summary)
-
-        } catch (e: Exception) {
-            log.error("Error executing SubPlanningTask", e)
-            task.error(e)
-            resultFn("Error in sub-planning: ${e.message}")
+      // Display planning information
+      val planningInfo = buildString {
+        appendLine("# Sub-Planning Task")
+        appendLine()
+        appendLine("**Goal:** $planningGoal")
+        appendLine()
+        appendLine("**Cognitive Mode:** ${cognitiveMode.name}")
+        appendLine()
+        if (typeConfig.purpose.isNotEmpty()) {
+          appendLine("**Purpose:** ${typeConfig.purpose}")
+          appendLine()
         }
+        if (!executionConfig?.context.isNullOrEmpty()) {
+          appendLine("**Context:**")
+          executionConfig.context.forEach { ctx ->
+            appendLine("- $ctx")
+          }
+          appendLine()
+        }
+        appendLine("---")
+        appendLine()
+      }
+      planningTask.add(planningInfo.renderMarkdown)
+
+      // Execute the sub-plan using the cognitive mode
+      val executionTask = task.ui.newTask(false)
+      tabs["Execution"] = executionTask.placeholder
+
+      log.debug("Executing sub-plan with ${contextMessages.size} context messages")
+
+      // Handle the user message through the cognitive mode
+      cognitiveInstance.handleUserMessage(planningGoal, executionTask)
+
+      // Collect results from the cognitive mode's context
+      val results = cognitiveInstance.contextData()
+
+      log.info("Sub-plan execution completed with ${results.size} results")
+
+      // Create summary if configured
+      val summaryTask = task.ui.newTask(false)
+      tabs["Summary"] = summaryTask.placeholder
+
+      val summary = createSummary(results, planningGoal, summaryTask, orchestrationConfig)
+      summaryTask.add(summary.renderMarkdown)
+      tabs.update()
+      resultFn(summary)
+
+    } catch (e: Exception) {
+      log.error("Error executing SubPlanningTask", e)
+      task.error(e)
+      resultFn("Error in sub-planning: ${e.message}")
+    }
+  }
+
+  private fun buildContextMessages(messages: List<String>): List<String> {
+    val contextMessages = mutableListOf<String>()
+
+    // Add explicit context from execution config
+    executionConfig?.context?.let { contextMessages.addAll(it) }
+
+    // Add prior task results
+    val priorCode = getPriorCode(null)
+    if (priorCode.isNotBlank()) {
+      contextMessages.add("## Prior Task Results\n\n$priorCode")
     }
 
-    private fun buildContextMessages(messages: List<String>): List<String> {
-        val contextMessages = mutableListOf<String>()
+    // Add incoming messages
+    contextMessages.addAll(messages)
 
-        // Add explicit context from execution config
-        executionConfig?.context?.let { contextMessages.addAll(it) }
+    log.debug("Built ${contextMessages.size} context messages for sub-planning")
+    return contextMessages
+  }
 
-        // Add prior task results
-        val priorCode = getPriorCode(null)
-        if (priorCode.isNotBlank()) {
-            contextMessages.add("## Prior Task Results\n\n$priorCode")
-        }
+  private fun createSummary(
+    results: List<String>, goal: String, task: SessionTask, orchestrationConfig: OrchestrationConfig
+  ): String {
+    log.info("Creating summary of ${results.size} sub-plan results")
 
-        // Add incoming messages
-        contextMessages.addAll(messages)
+    val combinedResults = results.joinToString("\n\n---\n\n")
 
-        log.debug("Built ${contextMessages.size} context messages for sub-planning")
-        return contextMessages
+    if (combinedResults.length < 5000) {
+      log.debug("Results are short enough, returning without summarization")
+      return buildString {
+        appendLine("# Sub-Planning Results")
+        appendLine()
+        appendLine("**Goal:** $goal")
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine(combinedResults)
+      }
     }
 
-    private fun createSummary(
-        results: List<String>,
-        goal: String,
-        task: SessionTask,
-        orchestrationConfig: OrchestrationConfig
-    ): String {
-        log.info("Creating summary of ${results.size} sub-plan results")
+    // Use an agent to create a summary
+    val typeConfig = typeConfig ?: throw RuntimeException()
+    val model = (typeConfig.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultChatter).getChildClient(task)
 
-        val combinedResults = results.joinToString("\n\n---\n\n")
-
-        if (combinedResults.length < 5000) {
-            log.debug("Results are short enough, returning without summarization")
-            return buildString {
-                appendLine("# Sub-Planning Results")
-                appendLine()
-                appendLine("**Goal:** $goal")
-                appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine(combinedResults)
-            }
-        }
-
-        // Use an agent to create a summary
-        val typeConfig = typeConfig ?: throw RuntimeException()
-        val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
-            ?: orchestrationConfig.defaultChatter).getChildClient(task)
-
-        val summaryAgent = ChatAgent(
-            prompt = """
+    val summaryAgent = ChatAgent(
+      prompt = """
                Create a comprehensive summary of the sub-planning results below.
                
                Original Goal: $goal
@@ -240,43 +213,42 @@ SubPlanningTask - Create and execute sub-plans using recursive planning with con
                - Be concise but complete
                
                Use markdown formatting with headers and bullet points.
-           """.trimIndent(),
-            model = model
-        )
+           """.trimIndent(), model = model
+    )
 
-        val summary = summaryAgent.answer(listOf(combinedResults))
+    val summary = summaryAgent.answer(listOf(combinedResults))
 
-        log.debug("Generated summary of length: ${summary.length}")
+    log.debug("Generated summary of length: ${summary.length}")
 
-        return buildString {
-            appendLine("# Sub-Planning Summary")
-            appendLine()
-            appendLine("**Goal:** $goal")
-            appendLine()
-            appendLine("---")
-            appendLine()
-            appendLine(summary)
-            appendLine()
-            appendLine("---")
-            appendLine()
-            appendLine("<details>")
-            appendLine("<summary>Full Results (${results.size} items)</summary>")
-            appendLine()
-            appendLine(combinedResults)
-            appendLine()
-            appendLine("</details>")
-        }
+    return buildString {
+      appendLine("# Sub-Planning Summary")
+      appendLine()
+      appendLine("**Goal:** $goal")
+      appendLine()
+      appendLine("---")
+      appendLine()
+      appendLine(summary)
+      appendLine()
+      appendLine("---")
+      appendLine()
+      appendLine("<details>")
+      appendLine("<summary>Full Results (${results.size} items)</summary>")
+      appendLine()
+      appendLine(combinedResults)
+      appendLine()
+      appendLine("</details>")
     }
+  }
 
-    companion object {
-        private val log = LoggerFactory.getLogger(SubPlanningTask::class.java)
+  companion object {
+    private val log = LoggerFactory.getLogger(SubPlanningTask::class.java)
 
-        val SubPlanning = TaskType(
-            "SubPlanning",
-            SubPlanningTaskExecutionConfigData::class.java,
-            SubPlanningTaskTypeConfig::class.java,
-            "Create and execute sub-plans using recursive planning",
-            """
+    val SubPlanning = TaskType(
+      "SubPlanning",
+      SubPlanningTaskExecutionConfigData::class.java,
+      SubPlanningTaskTypeConfig::class.java,
+      "Create and execute sub-plans using recursive planning",
+      """
              Enables recursive planning and execution with configurable cognitive modes.
              <ul>
                <li>Create sub-plans with different cognitive strategies</li>
@@ -288,6 +260,6 @@ SubPlanningTask - Create and execute sub-plans using recursive planning with con
                <li>Useful for complex multi-stage problems</li>
              </ul>
            """
-        )
-    }
+    )
+  }
 }

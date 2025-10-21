@@ -19,7 +19,7 @@ class GameTheoryTask(
   orchestrationConfig,
   planTask
 ) {
-  val maxOutputLengthPerField = 5000
+  val maxOutputLengthPerField = 10000
 
   data class GameAnalysis(
     val game_type: String? = null,
@@ -123,14 +123,15 @@ GameTheory - Analyze strategic interactions using game theory
       resultFn("ERROR: No API available")
       return
     }
+    // Create tabbed display for organized output
+    val tabs = TabbedDisplay(task)
+    // Overview tab
+    val overviewTask = task.ui.newTask(false)
+    tabs["Overview"] = overviewTask.placeholder
+
 
     try {
-      // Create tabbed display for organized output
-      val tabs = TabbedDisplay(task)
 
-      // Overview tab
-      val overviewTask = task.ui.newTask(false)
-      tabs["Overview"] = overviewTask.placeholder
       var overviewTaskStatus = overviewTask.add(
         MarkdownUtil.renderMarkdown(
           """
@@ -141,7 +142,6 @@ GameTheory - Analyze strategic interactions using game theory
             |**Players:** ${players.joinToString(", ")}
             |
             |**Game Type:** ${executionConfig.game_type}
-            |
             |**Status:** 🔄 Initializing analysis...
         """.trimMargin(), ui = ui
         )
@@ -198,6 +198,7 @@ GameTheory - Analyze strategic interactions using game theory
       task.update()
 
       // Step 1: Analyze game structure and strategies
+      var stepStartTime = System.currentTimeMillis()
       log.debug("Analyzing game structure")
       val structureTask = task.ui.newTask(false)
       tabs["Game Structure"] = structureTask.placeholder
@@ -207,7 +208,6 @@ GameTheory - Analyze strategic interactions using game theory
       task.update()
 
       val structurePrompt = buildStructurePrompt(gameScenario, players, contextBuilder.toString())
-      log.debug("Initializing ChatAgent for structure analysis")
 
       val chatAgent = ChatAgent(
         prompt = structurePrompt,
@@ -216,7 +216,7 @@ GameTheory - Analyze strategic interactions using game theory
       )
 
       val structureAnalysis = chatAgent.answer(toInput(structurePrompt))
-      log.debug("Structure analysis completed: ${structureAnalysis.length} characters")
+      log.info("Structure analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${structureAnalysis.length} characters")
 
       structureLoading?.clear()
       structureTask.add(
@@ -235,6 +235,7 @@ GameTheory - Analyze strategic interactions using game theory
       // Step 2: Build payoff matrix if requested
       var payoffMatrix: String
       if (executionConfig.build_payoff_matrix) {
+        stepStartTime = System.currentTimeMillis()
         log.debug("Building payoff matrix")
         val payoffTask = task.ui.newTask(false)
         tabs["Payoff Matrix"] = payoffTask.placeholder
@@ -258,7 +259,7 @@ Generate the payoff matrix now:
         """.trimIndent()
 
         payoffMatrix = chatAgent.answer(toInput(payoffPrompt))
-        log.debug("Payoff matrix generated: ${payoffMatrix.length} characters")
+        log.info("Payoff matrix generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${payoffMatrix.length} characters")
 
         payoffLoading?.clear()
         payoffTask.add(
@@ -278,6 +279,7 @@ Generate the payoff matrix now:
       // Step 3: Find Nash equilibria if requested
       var nashEquilibria = ""
       if (executionConfig.find_nash_equilibria) {
+        stepStartTime = System.currentTimeMillis()
         log.debug("Finding Nash equilibria")
         val nashTask = task.ui.newTask(false)
         tabs["Nash Equilibria"] = nashTask.placeholder
@@ -304,7 +306,7 @@ Generate the Nash equilibrium analysis now:
         """.trimIndent()
 
         nashEquilibria = chatAgent.answer(toInput(nashPrompt))
-        log.debug("Nash equilibria analysis completed: ${nashEquilibria.length} characters")
+        log.info("Nash equilibria analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${nashEquilibria.length} characters")
 
         nashLoading?.clear()
         nashTask.add(
@@ -324,6 +326,7 @@ Generate the Nash equilibrium analysis now:
       // Step 4: Analyze dominant strategies if requested
       var dominantStrategies = ""
       if (executionConfig.analyze_dominant_strategies) {
+        stepStartTime = System.currentTimeMillis()
         log.debug("Analyzing dominant strategies")
         val dominantTask = task.ui.newTask(false)
         tabs["Dominant Strategies"] = dominantTask.placeholder
@@ -347,7 +350,7 @@ Generate the dominant strategy analysis now:
         """.trimIndent()
 
         dominantStrategies = chatAgent.answer(toInput(dominantPrompt))
-        log.debug("Dominant strategies analysis completed: ${dominantStrategies.length} characters")
+        log.info("Dominant strategies analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${dominantStrategies.length} characters")
 
         dominantLoading?.clear()
         dominantTask.add(
@@ -367,6 +370,7 @@ Generate the dominant strategy analysis now:
       // Step 5: Find Pareto optimal outcomes if requested
       var paretoOptimal: String
       if (executionConfig.find_pareto_optimal) {
+        stepStartTime = System.currentTimeMillis()
         log.debug("Finding Pareto optimal outcomes")
         val paretoTask = task.ui.newTask(false)
         tabs["Pareto Optimality"] = paretoTask.placeholder
@@ -390,7 +394,7 @@ Generate the Pareto optimality analysis now:
         """.trimIndent()
 
         paretoOptimal = chatAgent.answer(toInput(paretoPrompt))
-        log.debug("Pareto optimality analysis completed: ${paretoOptimal.length} characters")
+        log.info("Pareto optimality analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${paretoOptimal.length} characters")
 
         paretoLoading?.clear()
         paretoTask.add(
@@ -410,6 +414,7 @@ Generate the Pareto optimality analysis now:
       // Step 6: Repeated game analysis if requested
       var repeatedGameAnalysis: String
       if (executionConfig.repeated_game_analysis) {
+        stepStartTime = System.currentTimeMillis()
         log.debug("Analyzing repeated game dynamics")
         val repeatedTask = task.ui.newTask(false)
         tabs["Repeated Game"] = repeatedTask.placeholder
@@ -434,7 +439,7 @@ Generate the repeated game analysis now:
         """.trimIndent()
 
         repeatedGameAnalysis = chatAgent.answer(toInput(repeatedPrompt))
-        log.debug("Repeated game analysis completed: ${repeatedGameAnalysis.length} characters")
+        log.info("Repeated game analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${repeatedGameAnalysis.length} characters")
 
         repeatedLoading?.clear()
         repeatedTask.add(
@@ -454,6 +459,7 @@ Generate the repeated game analysis now:
       // Step 7: Provide strategic recommendations if requested
       var recommendations = ""
       if (executionConfig.provide_recommendations) {
+        stepStartTime = System.currentTimeMillis()
         log.debug("Generating strategic recommendations")
         val recommendTask = task.ui.newTask(false)
         tabs["Recommendations"] = recommendTask.placeholder
@@ -481,7 +487,7 @@ Generate the strategic recommendations now:
         """.trimIndent()
 
         recommendations = chatAgent.answer(toInput(recommendPrompt))
-        log.debug("Recommendations generated: ${recommendations.length} characters")
+        log.info("Recommendations generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${recommendations.length} characters")
 
         recommendLoading?.clear()
         recommendTask.add(
@@ -499,6 +505,7 @@ Generate the strategic recommendations now:
       }
 
       // Step 8: Generate comprehensive summary using ParsedAgent
+      stepStartTime = System.currentTimeMillis()
       log.debug("Generating structured summary")
       val summaryTask = task.ui.newTask(false)
       tabs["Summary"] = summaryTask.placeholder
@@ -531,7 +538,7 @@ Provide this in a clear, structured format.
       )
 
       val gameAnalysis = parsedAgent.answer(toInput(summaryPrompt)).obj
-      log.debug("Structured summary generated")
+      log.info("Structured summary generated in ${System.currentTimeMillis() - stepStartTime}ms")
 
       summaryLoading?.clear()
       summaryTask.add(
@@ -637,6 +644,18 @@ Provide this in a clear, structured format.
     } catch (e: Exception) {
       val duration = System.currentTimeMillis() - startTime
       log.error("GameTheory task failed after ${duration}ms for scenario: $gameScenario", e)
+      overviewTask.add(
+        MarkdownUtil.renderMarkdown(
+          """
+            |## Game Theory Analysis
+            |
+            |**Status:** ❌ Analysis Failed
+            |
+            |**Error:** ${e.message}
+            """.trimMargin(), ui = ui
+        )
+      )
+      task.update()
       task.error(e)
       task.complete("Analysis failed: ${e.message}")
       resultFn("ERROR: Game theory analysis failed - ${e.message}")
