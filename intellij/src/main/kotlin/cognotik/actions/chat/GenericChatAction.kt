@@ -68,8 +68,6 @@ class GenericChatAction : BaseAction() {
         }
     }
 
-    override fun isEnabled(event: AnActionEvent) = true
-
     companion object {
         private val log = LoggerFactory.getLogger(GenericChatAction::class.java)
     }

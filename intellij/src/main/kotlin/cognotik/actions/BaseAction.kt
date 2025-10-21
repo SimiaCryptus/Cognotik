@@ -62,7 +62,11 @@ abstract class BaseAction(
         }
     }
 
-    open fun isEnabled(event: AnActionEvent): Boolean = true
+    open fun isEnabled(event: AnActionEvent): Boolean {
+      if(AppSettingsState.instance.smartModel == null) return false
+      if(AppSettingsState.instance.fastModel == null) return false
+      return true
+    }
 
     companion object {
         val log by lazy { LoggerFactory.getLogger(javaClass) }

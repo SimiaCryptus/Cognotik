@@ -147,6 +147,7 @@ class CommandAutofixAction : BaseAction() {
    * Checks if the action should be enabled
    */
   override fun isEnabled(event: AnActionEvent): Boolean {
+    if (!super.isEnabled(event)) return false
     if (event.project == null) return false
     val folder = event.getSelectedFolder()
     val hasBasePath = event.project?.basePath != null

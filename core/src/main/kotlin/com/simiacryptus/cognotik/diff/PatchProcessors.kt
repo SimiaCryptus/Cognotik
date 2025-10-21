@@ -37,8 +37,7 @@ enum class PatchProcessors : PatchProcessor {
     override val matcher = FuzzyPatchMatcher()
   };
 
-  override val label: String
-    get() = matcher.label
+  override val label: String get() = matcher.label
 
   protected abstract val matcher: PatchProcessor
 

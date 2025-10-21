@@ -87,6 +87,7 @@ class ValidateCodeAction : BaseAction() {
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
+      if (!super.isEnabled(event)) return false
         if (event.project == null) return false
         val hasSelection = event.getSelectedFiles().isNotEmpty() ||
                 event.getSelectedFolders().isNotEmpty()

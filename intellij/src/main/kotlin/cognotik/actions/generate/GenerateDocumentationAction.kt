@@ -39,11 +39,6 @@ import javax.swing.*
 class GenerateDocumentationAction : FileContextAction<GenerateDocumentationAction.Settings>() {
   override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
-  override fun isEnabled(event: AnActionEvent): Boolean {
-    //if (event.getSelectedFile()?.isDirectory == false) return false
-    return super.isEnabled(event)
-  }
-
   class SettingsUI {
     @Name("Single Output File")
     val singleOutputFile = JCheckBox("Produce a single output file", true)
