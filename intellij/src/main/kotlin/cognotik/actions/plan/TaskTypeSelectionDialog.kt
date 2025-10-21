@@ -138,7 +138,7 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
                 "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
                 "GameTheory", "FiniteStateMachine", "Brainstorming",
                 "ChainOfThought", "MetaCognitiveReflection", "GeneticOptimization",
-
+                "EthicalReasoning"
                 ) -> "Reasoning"
 
             taskType.name in listOf(

@@ -104,7 +104,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
     if (observations.isNullOrEmpty()) {
       val errorMsg = "CONFIGURATION ERROR: No observations specified"
       log.error(errorMsg)
-      task.complete(errorMsg)
+      task.safeComplete(errorMsg, log)
       resultFn(errorMsg)
       return
     }
@@ -453,8 +453,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         appendLine()
         appendLine("## Key Findings")
         appendLine()
-        appendLine(analysis.take(maxOutputSize))
-        if (analysis.length > maxOutputSize) appendLine("...")
+        appendLine(analysis.truncateForDisplay(maxOutputSize))
       }
 
       log.info("AbductiveReasoningTask completed: total_time=${totalTime}ms, observations=${observations.size}, hypotheses=${hypotheses.size}, best_score=${bestHypothesis?.overall_score}")

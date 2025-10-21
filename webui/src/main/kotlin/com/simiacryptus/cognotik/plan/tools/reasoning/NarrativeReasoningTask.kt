@@ -150,7 +150,7 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
     val subject = executionConfig?.subject
     if (subject.isNullOrBlank()) {
       log.error("No subject specified for narrative reasoning")
-      task.complete("CONFIGURATION ERROR: No subject specified")
+      task.safeComplete("CONFIGURATION ERROR: No subject specified", log)
       resultFn("CONFIGURATION ERROR: No subject specified")
       return
     }
@@ -406,7 +406,7 @@ Be specific and concrete.
 
         resultBuilder.append("## Key Plot Points\n")
         plotPoints.take(3).forEach { point ->
-          resultBuilder.append("- **${point.type}:** ${point.description.take(maxDescriptionLength)}...\n")
+          resultBuilder.append("- **${point.type}:** ${point.description.truncateForDisplay(maxDescriptionLength)}\n")
         }
         resultBuilder.append("\n")
 
@@ -694,7 +694,7 @@ For each inconsistency, provide:
         if (inconsistencies.isNotEmpty()) {
           resultBuilder.append("## Narrative Inconsistencies\n")
           inconsistencies.take(3).forEach { inconsistency ->
-            resultBuilder.append("- **${inconsistency.type}:** ${inconsistency.description.take(maxDescriptionLength)}...\n")
+            resultBuilder.append("- **${inconsistency.type}:** ${inconsistency.description.truncateForDisplay(maxDescriptionLength)}\n")
           }
           resultBuilder.append("\n")
         }

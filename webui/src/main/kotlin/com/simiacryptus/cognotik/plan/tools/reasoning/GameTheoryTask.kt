@@ -101,7 +101,7 @@ GameTheory - Analyze strategic interactions using game theory
     if (gameScenario.isNullOrBlank()) {
       val errorMsg = "CONFIGURATION ERROR: No game scenario specified"
       log.error(errorMsg)
-      task.complete(errorMsg)
+      task.safeComplete(errorMsg, log)
       resultFn(errorMsg)
       return
     }
@@ -110,19 +110,14 @@ GameTheory - Analyze strategic interactions using game theory
     if (players.isNullOrEmpty()) {
       val errorMsg = "CONFIGURATION ERROR: No players specified"
       log.error(errorMsg)
-      task.complete(errorMsg)
+      task.safeComplete(errorMsg, log)
       resultFn(errorMsg)
       return
     }
 
     val toInput = { it: String -> listOf(it) }
     val ui = task.ui
-    val api = orchestrationConfig.defaultChatter ?: run {
-      log.error("No default chatter available")
-      task.complete("ERROR: No API available")
-      resultFn("ERROR: No API available")
-      return
-    }
+    val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
     // Create tabbed display for organized output
     val tabs = TabbedDisplay(task)
     // Overview tab
@@ -604,29 +599,25 @@ Provide this in a clear, structured format.
 
         if (structureAnalysis.isNotEmpty()) {
           appendLine("## Game Structure")
-          appendLine(structureAnalysis.take(maxOutputLengthPerField))
-          if (structureAnalysis.length > maxOutputLengthPerField) appendLine("... (see full analysis in UI)")
+          appendLine(structureAnalysis.truncateForDisplay(maxOutputLengthPerField))
           appendLine()
         }
 
         if (nashEquilibria.isNotEmpty()) {
           appendLine("## Nash Equilibria")
-          appendLine(nashEquilibria.take(maxOutputLengthPerField))
-          if (nashEquilibria.length > maxOutputLengthPerField) appendLine("... (see full analysis in UI)")
+          appendLine(nashEquilibria.truncateForDisplay(maxOutputLengthPerField))
           appendLine()
         }
 
         if (dominantStrategies.isNotEmpty()) {
           appendLine("## Dominant Strategies")
-          appendLine(dominantStrategies.take(maxOutputLengthPerField))
-          if (dominantStrategies.length > maxOutputLengthPerField) appendLine("... (see full analysis in UI)")
+          appendLine(dominantStrategies.truncateForDisplay(maxOutputLengthPerField))
           appendLine()
         }
 
         if (recommendations.isNotEmpty()) {
           appendLine("## Key Recommendations")
-          appendLine(recommendations.take(maxOutputLengthPerField))
-          if (recommendations.length > maxOutputLengthPerField) appendLine("... (see full analysis in UI)")
+          appendLine(recommendations.truncateForDisplay(maxOutputLengthPerField))
           appendLine()
         }
 
@@ -638,7 +629,7 @@ Provide this in a clear, structured format.
       val summary = "Game theory analysis completed for scenario: $gameScenario"
       log.info("$summary (duration: ${duration}ms, players: ${players.size}, game_type: ${executionConfig.game_type})")
 
-      task.complete(summary)
+      task.safeComplete(summary, log)
       resultFn(finalResult)
 
     } catch (e: Exception) {
@@ -657,7 +648,7 @@ Provide this in a clear, structured format.
       )
       task.update()
       task.error(e)
-      task.complete("Analysis failed: ${e.message}")
+      task.safeComplete("Analysis failed: ${e.message}", log)
       resultFn("ERROR: Game theory analysis failed - ${e.message}")
     }
   }

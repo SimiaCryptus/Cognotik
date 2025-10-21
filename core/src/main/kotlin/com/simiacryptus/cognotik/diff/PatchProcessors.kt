@@ -11,10 +11,6 @@ package com.simiacryptus.cognotik.diff
     CStyle {
         override val label = "CStyle"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = true,
-            bracketChars = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.first,
-            bracketPairs = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.second,
-            bracketWeights = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.third
         )
     },
 
@@ -22,11 +18,7 @@ package com.simiacryptus.cognotik.diff
     Indentation {
         override val label = "Indentation"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = true,
-            bracketChars = FuzzyPatchMatcher.INDENTATION_LANGUAGE_CONFIG.first,
-            bracketPairs = FuzzyPatchMatcher.INDENTATION_LANGUAGE_CONFIG.second,
-            bracketWeights = FuzzyPatchMatcher.INDENTATION_LANGUAGE_CONFIG.third,
-            contextSize = 4 // More context for indentation-sensitive languages
+          contextSize = 4 // More context for indentation-sensitive languages
         )
     },
 
@@ -34,11 +26,7 @@ package com.simiacryptus.cognotik.diff
     Markdown {
         override val label = "Markdown"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = false,
-            bracketChars = FuzzyPatchMatcher.NO_BRACKET_CONFIG.first,
-            bracketPairs = FuzzyPatchMatcher.NO_BRACKET_CONFIG.second,
-            bracketWeights = FuzzyPatchMatcher.NO_BRACKET_CONFIG.third,
-            enableFuzzyMatching = true,
+          enableFuzzyMatching = true,
             levenshteinThresholdDivisor = 3, // More lenient for prose
             minLineLengthForFuzzyMatch = 10 // Longer lines for prose
         )
@@ -48,11 +36,7 @@ package com.simiacryptus.cognotik.diff
     Markup {
         override val label = "Markup"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = true,
-            bracketChars = setOf('<', '>'),
-            bracketPairs = mapOf('<' to '>'),
-            bracketWeights = mapOf('<' to 2, '>' to 2),
-            contextSize = 2,
+          contextSize = 2,
             enableFuzzyMatching = true
         )
     },
@@ -61,10 +45,7 @@ package com.simiacryptus.cognotik.diff
     Lisp {
         override val label = "Lisp"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = true,
-            bracketChars = setOf('(', ')'),
-            bracketPairs = mapOf('(' to ')'),
-            bracketWeights = mapOf('(' to 3, ')' to 3), // Higher weight for parens
+          // Higher weight for parens
             contextSize = 2
         )
     },
@@ -73,15 +54,7 @@ package com.simiacryptus.cognotik.diff
     EndBased {
         override val label = "EndBased"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = true,
-            bracketChars = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.first,
-            bracketPairs = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.second,
-            bracketWeights = mapOf(
-                '(' to 1, ')' to 1,
-                '[' to 1, ']' to 1,
-                '{' to 1, '}' to 1 // Lower weight for optional braces
-            ),
-            contextSize = 4
+          contextSize = 4
         )
     },
 
@@ -89,11 +62,7 @@ package com.simiacryptus.cognotik.diff
     SQL {
         override val label = "SQL"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = true,
-            bracketChars = setOf('(', ')'),
-            bracketPairs = mapOf('(' to ')'),
-            bracketWeights = mapOf('(' to 1, ')' to 1),
-            enableFuzzyMatching = true,
+          enableFuzzyMatching = true,
             levenshteinThresholdDivisor = 5, // Stricter matching for SQL
             contextSize = 3
         )
@@ -103,14 +72,7 @@ package com.simiacryptus.cognotik.diff
     DataFormat {
         override val label = "DataFormat"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = true,
-            bracketChars = setOf('{', '}', '[', ']'),
-            bracketPairs = mapOf('{' to '}', '[' to ']'),
-            bracketWeights = mapOf(
-                '{' to 3, '}' to 3,
-                '[' to 2, ']' to 2
-            ),
-            contextSize = 2,
+          contextSize = 2,
             enableFuzzyMatching = false // Strict matching for data formats
         )
     },
@@ -119,11 +81,7 @@ package com.simiacryptus.cognotik.diff
     Shell {
         override val label = "Shell"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = true,
-            bracketChars = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.first,
-            bracketPairs = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.second,
-            bracketWeights = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.third,
-            enableFuzzyMatching = true,
+          enableFuzzyMatching = true,
             contextSize = 3
         )
     },
@@ -132,11 +90,7 @@ package com.simiacryptus.cognotik.diff
     Config {
         override val label = "Config"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = false,
-            bracketChars = FuzzyPatchMatcher.NO_BRACKET_CONFIG.first,
-            bracketPairs = FuzzyPatchMatcher.NO_BRACKET_CONFIG.second,
-            bracketWeights = FuzzyPatchMatcher.NO_BRACKET_CONFIG.third,
-            enableFuzzyMatching = true,
+          enableFuzzyMatching = true,
             contextSize = 2
         )
     },
@@ -145,11 +99,7 @@ package com.simiacryptus.cognotik.diff
     Strict {
         override val label = "Strict"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = false,
-            bracketChars = FuzzyPatchMatcher.NO_BRACKET_CONFIG.first,
-            bracketPairs = FuzzyPatchMatcher.NO_BRACKET_CONFIG.second,
-            bracketWeights = FuzzyPatchMatcher.NO_BRACKET_CONFIG.third,
-            enableFuzzyMatching = false,
+          enableFuzzyMatching = false,
             enableSnippetPatching = false,
             contextSize = 5
         )
@@ -159,11 +109,7 @@ package com.simiacryptus.cognotik.diff
     Lenient {
         override val label = "Lenient"
         override val matcher = FuzzyPatchMatcher(
-            enableBracketMatching = true,
-            bracketChars = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.first,
-            bracketPairs = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.second,
-            bracketWeights = FuzzyPatchMatcher.CURLY_BRACE_LANGUAGE_CONFIG.third,
-            enableFuzzyMatching = true,
+          enableFuzzyMatching = true,
             levenshteinThresholdDivisor = 2, // Very lenient
             minLineLengthForFuzzyMatch = 3,
             enableSnippetPatching = true,

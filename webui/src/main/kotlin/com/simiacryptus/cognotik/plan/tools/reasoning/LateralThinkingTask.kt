@@ -149,7 +149,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
       val problem = executionConfig?.problem
       if (problem.isNullOrBlank()) {
         log.error("Configuration error: problem is blank")
-        task.complete("CONFIGURATION ERROR: Problem must be specified")
+        task.safeComplete("CONFIGURATION ERROR: Problem must be specified", log)
         task.error(RuntimeException("Configuration error: problem is blank"))
         resultFn("CONFIGURATION ERROR: Problem must be specified")
         return
@@ -575,7 +575,7 @@ Provide a structured evaluation.
           .take(5)
           .forEachIndexed { idx, idea ->
             appendLine("${idx + 1}. **${idea.title}** (${idea.technique})")
-            appendLine("   ${idea.description.take(maxDescriptionLength)}${if (idea.description.length > maxDescriptionLength) "..." else ""}")
+            appendLine("   ${idea.description.truncateForDisplay(maxDescriptionLength)}")
             appendLine()
           }
         appendLine("## Recommended Approaches")
@@ -583,7 +583,7 @@ Provide a structured evaluation.
         appendLine()
         if (feasibilityEvaluation != null) {
           appendLine("## Feasibility Assessment")
-          appendLine(feasibilityEvaluation.overall_assessment.take(maxDescriptionLength))
+          appendLine(feasibilityEvaluation.overall_assessment.truncateForDisplay(maxDescriptionLength))
           appendLine()
         }
         appendLine("*See the Summary tab for complete analysis and all generated ideas*")
@@ -1056,7 +1056,7 @@ Generate $numAlternatives ideas using $technique.
         appendLine()
         app.ideas.sortedByDescending { it.novelty_score }.take(3).forEach { idea ->
           appendLine("- **${idea.title}** (Novelty: ${String.format("%.0f%%", idea.novelty_score * 100)})")
-          appendLine("  ${idea.description.take(maxDescriptionLength)}${if (idea.description.length > maxDescriptionLength) "..." else ""}")
+          appendLine("  ${idea.description.truncateForDisplay(maxDescriptionLength)}")
         }
         if (app.ideas.size > 3) {
           appendLine("  *...and ${app.ideas.size - 3} more ideas*")

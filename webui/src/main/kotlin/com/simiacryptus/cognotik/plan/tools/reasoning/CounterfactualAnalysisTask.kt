@@ -74,25 +74,21 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
 
     if (actualScenario.isNullOrBlank()) {
       log.error("No actual scenario specified")
-      task.complete("CONFIGURATION ERROR: No actual scenario specified")
+      task.safeComplete("CONFIGURATION ERROR: No actual scenario specified", log)
       resultFn("CONFIGURATION ERROR: No actual scenario specified")
       return
     }
 
     if (counterfactuals.isEmpty()) {
       log.error("No counterfactual scenarios specified")
-      task.complete("CONFIGURATION ERROR: No counterfactual scenarios specified")
+      task.safeComplete("CONFIGURATION ERROR: No counterfactual scenarios specified", log)
       resultFn("CONFIGURATION ERROR: No counterfactual scenarios specified")
       return
     }
 
     val toInput = { it: String -> listOf(it) }
-    val api = orchestrationConfig.defaultChatter ?: run {
-      log.error("No default chatter available")
-      task.complete("ERROR: No API available")
-      resultFn("ERROR: No API available")
       return
-    }
+    val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     try {
       val tabs = TabbedDisplay(task)
@@ -104,7 +100,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
           """
           |## Counterfactual Analysis
           |
-          |**Actual Scenario:** ${actualScenario.take(maxDescriptionLength)}${if (actualScenario.length > maxDescriptionLength) "..." else ""}
+          |**Actual Scenario:** ${actualScenario.truncateForDisplay(maxDescriptionLength)}
           |
           |**Counterfactuals:** ${counterfactuals.size}
           |
@@ -188,7 +184,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
     }
 
     task.add(MarkdownUtil.renderMarkdown(fullAnalysis, ui = task.ui))
-    task.complete()
+    task.safeComplete("Analysis complete", log)
     resultFn(fullAnalysis)
   }
 

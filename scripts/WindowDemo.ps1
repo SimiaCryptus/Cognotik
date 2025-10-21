@@ -62,7 +62,7 @@ $timer.add_Tick({
     $position.X += $velocity.X
     $position.Y += $velocity.Y
 
-    # Get the client area dimensions for collision detection
+# Get the client area dimensions for collision detection
     $clientWidth = $form.ClientSize.Width
     $clientHeight = $form.ClientSize.Height
 

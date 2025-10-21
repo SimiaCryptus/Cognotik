@@ -76,7 +76,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     val problem = executionConfig?.problem
     if (problem.isNullOrBlank()) {
       log.error("No problem description specified")
-      task.complete("CONFIGURATION ERROR: No problem description specified")
+      task.safeComplete("CONFIGURATION ERROR: No problem description specified", log)
       resultFn("CONFIGURATION ERROR: No problem description specified")
       return
     }
@@ -84,7 +84,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     val constraints = executionConfig.constraints
     if (constraints.isNullOrEmpty()) {
       log.error("No constraints specified")
-      task.complete("CONFIGURATION ERROR: No constraints specified")
+      task.safeComplete("CONFIGURATION ERROR: No constraints specified", log)
       resultFn("CONFIGURATION ERROR: No constraints specified")
       return
     }
@@ -270,8 +270,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
       solutionBuilder.append("## Initial Relaxed Solution\n\n")
       solutionBuilder.append("**Relaxed:** ${relaxedConstraints.joinToString(", ")}\n\n")
-      solutionBuilder.append(relaxedSolution.take(maxOutputSize))
-      if (relaxedSolution.length > maxOutputSize) solutionBuilder.append("...")
+      solutionBuilder.append(relaxedSolution.truncateForDisplay(maxOutputSize))
       solutionBuilder.append("\n\n")
 
       var currentSolution = relaxedSolution

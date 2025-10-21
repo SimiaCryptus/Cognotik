@@ -118,7 +118,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
 
       if (sourceDomain.isNullOrBlank() || targetProblem.isNullOrBlank()) {
         log.error("Configuration error: source_domain or target_problem is blank")
-        task.complete("CONFIGURATION ERROR: Both source_domain and target_problem must be specified")
+        task.safeComplete("CONFIGURATION ERROR: Both source_domain and target_problem must be specified", log)
         task.error(RuntimeException("Configuration error: source_domain or target_problem is blank"))
         resultFn("CONFIGURATION ERROR: Both source_domain and target_problem must be specified")
         return
@@ -127,12 +127,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
       log.info("Configuration validated successfully")
 
       val tabs = TabbedDisplay(task)
-      val api = orchestrationConfig.defaultChatter ?: run {
-        log.error("No default chatter available")
-        task.complete("ERROR: No API available")
-        resultFn("ERROR: No API available")
-        return
-      }
+      val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
       // Create overview tab
       val overviewTask = task.ui.newTask(false)
@@ -236,7 +231,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
           appendLine()
           appendLine("- ✗ Analogy generation failed")
         }.renderMarkdown)
-        task.complete("Failed to generate analogies")
+        task.safeComplete("Failed to generate analogies", log)
         task.update()
         resultFn("ERROR: Failed to generate analogies")
         return
@@ -358,7 +353,7 @@ Provide a brief validation assessment.
           appendLine()
           appendLine("**Status:** ✓ Complete")
           appendLine()
-          appendLine(validationResult)
+          appendLine(validationResult.truncateForDisplay())
         }.renderMarkdown)
         task.update()
         // Update overview
@@ -463,7 +458,7 @@ Provide a brief validation assessment.
           result.analogies.map { it.confidence }.average()
         }"
       )
-      task.complete("Completed in ${totalTime / 1000} seconds with ${result.analogies.size} analogies generated.")
+      task.safeComplete("Completed in ${totalTime / 1000} seconds with ${result.analogies.size} analogies generated.", log)
       resultFn(resultText)
 
     } catch (e: Exception) {
@@ -478,7 +473,7 @@ Provide a brief validation assessment.
         appendLine(e.message ?: "Unknown error")
         appendLine("```")
       }.renderMarkdown)
-      task.complete("Failed with error: ${e.message}")
+      task.safeComplete("Failed with error: ${e.message}", log)
       resultFn("ERROR: ${e.message}")
     }
   }
@@ -495,12 +490,12 @@ Provide a brief validation assessment.
       appendLine()
       appendLine("### Recommended Approach")
       appendLine()
-      appendLine(result.recommended_approach)
+      appendLine(result.recommended_approach.truncateForDisplay())
       appendLine()
       if (result.validation_notes != null) {
         appendLine("### Validation Assessment")
         appendLine()
-        appendLine(result.validation_notes)
+        appendLine(result.validation_notes.truncateForDisplay())
         appendLine()
       }
       appendLine("---")
@@ -514,10 +509,10 @@ Provide a brief validation assessment.
         appendLine("**Confidence:** ${String.format("%.1f%%", analogy.confidence * 100)}")
         appendLine()
         appendLine("#### Source Domain Concept")
-        appendLine(analogy.source_description)
+        appendLine(analogy.source_description.truncateForDisplay())
         appendLine()
         appendLine("#### Application to Target Problem")
-        appendLine(analogy.application)
+        appendLine(analogy.application.truncateForDisplay())
         appendLine()
 
         if (analogy.mappings.isNotEmpty()) {
@@ -526,7 +521,7 @@ Provide a brief validation assessment.
           appendLine("| Source Concept | Target Concept | Rationale |")
           appendLine("|----------------|----------------|-----------|")
           analogy.mappings.forEach { mapping ->
-            appendLine("| ${mapping.source_concept} | ${mapping.target_concept} | ${mapping.mapping_rationale} |")
+            appendLine("| ${mapping.source_concept} | ${mapping.target_concept} | ${mapping.mapping_rationale.truncateForDisplay()} |")
           }
           appendLine()
 
@@ -578,7 +573,7 @@ Provide a brief validation assessment.
             log.debug("Successfully loaded context file: $file")
             appendLine("### $file")
             appendLine("```")
-            appendLine(filePath.toFile().readText())
+            appendLine(filePath.toFile().readText().truncateForDisplay())
             appendLine("```")
             appendLine()
           } else {

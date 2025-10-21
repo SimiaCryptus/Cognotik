@@ -553,8 +553,7 @@ Generate the Mermaid timeline diagram now:
           val relativePath = root.relativize(file.toPath())
           try {
             val content = file.readText()
-            val truncated = content.take(maxFileSize)
-            "### $relativePath\n```\n$truncated${if (content.length > maxFileSize) "\n... (truncated)" else ""}\n```"
+            "### $relativePath\n```\n${content.truncateForDisplay(maxFileSize)}\n```"
           } catch (e: Exception) {
             log.warn("Error reading temporal data file: $relativePath", e)
             "### $relativePath\n(Error reading file: ${e.message})"

@@ -140,7 +140,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
 
     if (genConfig == null) {
       log.error("Invalid configuration type for NarrativeGenerationTask")
-      task.complete("CONFIGURATION ERROR: Invalid configuration type")
+      task.safeComplete("CONFIGURATION ERROR: Invalid configuration type", log)
       resultFn("CONFIGURATION ERROR: Invalid configuration type")
       return
     }
@@ -148,7 +148,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
     val subject = genConfig.subject
     if (subject.isNullOrBlank()) {
       log.error("No subject specified for narrative generation")
-      task.complete("CONFIGURATION ERROR: No subject specified")
+      task.safeComplete("CONFIGURATION ERROR: No subject specified", log)
       resultFn("CONFIGURATION ERROR: No subject specified")
       return
     }
@@ -230,7 +230,7 @@ You are a master story architect. Based on the narrative analysis, create a deta
 Subject: $subject
 
 Narrative Analysis:
-${analysisResult.toString().take(8000)}
+${analysisResult.toString().truncateForDisplay(8000)}
 
 Narrative Elements:
 ${genConfig.narrative_elements?.entries?.joinToString("\n") { (key, value) -> "- $key: $value" } ?: ""}

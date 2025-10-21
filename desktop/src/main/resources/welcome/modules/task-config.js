@@ -422,6 +422,13 @@ class TaskConfigManager {
                 description: 'Optimize solutions using evolutionary algorithms',
                 category: 'Reasoning',
                 configFields: []
+            },
+            {
+                id: 'EthicalReasoning',
+                name: 'Ethical Reasoning',
+                description: 'Evaluate moral implications and make ethical decisions',
+                category: 'Reasoning',
+                configFields: []
             }
         ];
     }

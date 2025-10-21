@@ -87,7 +87,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     val targetSystem = executionConfig?.target_system
     if (targetSystem.isNullOrBlank()) {
       log.error("Configuration error: No target_system specified")
-      task.complete("CONFIGURATION ERROR: No target_system specified")
+      task.safeComplete("CONFIGURATION ERROR: No target_system specified", log)
       resultFn("CONFIGURATION ERROR: No target_system specified for adversarial analysis")
       return
     }
@@ -434,7 +434,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             .take(5)
             .forEach { vuln ->
               appendLine("### ${vuln.severity.uppercase()}: ${vuln.category}")
-              appendLine(vuln.description.take(maxDescriptionLength) + if (vuln.description.length > maxDescriptionLength) "..." else "")
+              appendLine(vuln.description.truncateForDisplay(maxDescriptionLength))
               appendLine()
             }
         }
@@ -446,7 +446,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         appendLine("- Failure Modes: ${allFailureModes.size}")
       }
 
-      task.complete("Adversarial analysis completed: ${allVulnerabilities.size} vulnerabilities found across ${attackVectors.size} vectors in ${totalTime / 1000}s")
+      task.safeComplete(
+        "Adversarial analysis completed: ${allVulnerabilities.size} vulnerabilities found across ${attackVectors.size} vectors in ${totalTime / 1000}s",
+        log
+      )
 
       log.info(
         "AdversarialReasoningTask completed: total_time=${totalTime}ms, " +
@@ -849,7 +852,7 @@ Consider both immediate fixes and long-term architectural improvements.
           .take(3)
           .forEachIndexed { index, vuln ->
             appendLine("${index + 1}. **${vuln.category}** (${vuln.severity})")
-            appendLine("   - ${vuln.description.take(maxDescriptionLength)}${if (vuln.description.length > maxDescriptionLength) "..." else ""}")
+            appendLine("   - ${vuln.description.truncateForDisplay(maxDescriptionLength)}")
             appendLine()
           }
       }

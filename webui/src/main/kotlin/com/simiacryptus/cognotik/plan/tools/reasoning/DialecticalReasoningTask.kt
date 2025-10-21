@@ -74,7 +74,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
     
     if (thesis.isNullOrBlank() || antithesis.isNullOrBlank()) {
       log.error("Both thesis and antithesis must be specified")
-      task.complete("CONFIGURATION ERROR: Both thesis and antithesis must be specified")
+      task.safeComplete("CONFIGURATION ERROR: Both thesis and antithesis must be specified", log)
       resultFn("CONFIGURATION ERROR: Both thesis and antithesis must be specified")
       return
     }
@@ -86,7 +86,6 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
     log.info("Configuration: thesis='$thesis', antithesis='$antithesis', context='$context', levels=$synthesisLevels, preserveStrengths=$preserveStrengths")
 
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
-
     val ui = task.ui
     val tabs = TabbedDisplay(task)
     
@@ -468,7 +467,7 @@ Aim for progressively deeper insight and integration.
         // Add to concise result only for first and last levels
         if (level == 1 || level == synthesisLevels) {
           resultBuilder.append("### Synthesis Level $level\n\n")
-          resultBuilder.append("${synthesis.take(maxDescriptionLength)}${if (synthesis.length > maxDescriptionLength) "..." else ""}\n\n")
+          resultBuilder.append("${synthesis.truncateForDisplay(maxDescriptionLength)}\n\n")
         }
 
         synthesisTask.add(

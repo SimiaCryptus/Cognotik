@@ -1,2377 +1,2399 @@
-# AbductiveReasoningTask.kt
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\AbductiveReasoningTask.kt
+
 
 ## Abductive Reasoning
 
-### Overview
 
-The Abductive Reasoning task is designed to perform "inference to the best explanation." Given a set of observations, it generates and evaluates multiple
-potential hypotheses to determine the most plausible cause. This process mimics scientific reasoning and diagnostic investigation.
+#### **Overview**
 
-- **Primary Use Cases:**
-  - Root cause analysis for system failures or errors.
-  - Investigating and diagnosing complex software bugs.
-  - Understanding anomalous data or unexpected system behavior.
-  - Formulating and testing scientific hypotheses.
-  - Any scenario requiring inference from effects back to potential causes.
-- **Expected Outcomes:**
-  - A ranked list of explanatory hypotheses, each scored on multiple criteria.
-  - A detailed comparative analysis of the competing hypotheses.
-  - A clear identification of the "best explanation" based on the evidence.
-  - Actionable suggestions for tests to validate or falsify the top hypotheses.
+*   **One-Line Description:** Generate and evaluate explanatory hypotheses for a set of observations.
+*   **Detailed Description:** This task performs abductive reasoning, also known as "inference to the best explanation." Given a list of observations, it generates multiple potential hypotheses that could explain them. Each hypothesis is then rigorously evaluated against criteria such as explanatory power, simplicity (Occam's Razor), testability, and prior probability. The task ranks the hypotheses, identifies the most plausible explanation, and can even suggest concrete validation tests.
+*   **Key Use Cases:**
+    *   **Root Cause Analysis:** Determine the underlying cause of a system failure or unexpected behavior.
+    *   **Bug Investigation:** Formulate and evaluate potential reasons for a software bug based on reported symptoms.
+    *   **Understanding Anomalies:** Explain unusual patterns or outliers in data.
+    *   **Scientific Reasoning:** Develop and assess competing theories based on experimental evidence.
+    *   **Strategic Planning:** Evaluate potential explanations for market shifts or competitor actions.
 
-### When to Use
 
-This task excels in situations where you have a set of symptoms (observations) but the underlying cause is not obvious. It is ideal for open-ended
-investigations where multiple explanations are possible.
+#### **Configuration Parameters**
 
-- **Specific Scenarios:**
-  - A web application is experiencing intermittent timeouts, and you have logs showing various non-critical errors.
-  - A data pipeline produces incorrect output, and you have a series of observations about the data at different stages.
-  - A user reports a bug with a vague description, and you have a set of related system events.
-- **Comparison with Alternatives:**
-  - **Deductive Reasoning:** Starts with a known rule and applies it to a case (e.g., "All users in group X have this permission; John is in group X; therefore,
-    John has this permission"). Use this when rules are well-defined.
-  - **Inductive Reasoning:** Generalizes from specific examples to form a rule (e.g., "I've seen 100 white swans; therefore, all swans are white"). Use this for
-    pattern recognition.
-  - **Abductive Reasoning:** Finds the most likely explanation for an observation (e.g., "The ground is wet; it most likely rained"). Use this for diagnosis and
-    explanation-finding.
+| Parameter             | Type           | Description                                                                                             | Default Value                                                                                             |
+| --------------------- | -------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `observations`        | `List<String>` | A list of observations, facts, or symptoms that require an explanation.                                 | **Required**                                                                                              |
+| `generate_hypotheses` | `Boolean`      | If `true`, the task will generate new hypotheses. If `false`, it will only evaluate `existing_hypotheses`. | `true`                                                                                                    |
+| `max_hypotheses`      | `Int`          | The maximum number of distinct hypotheses to generate and evaluate.                                     | `5`                                                                                                       |
+| `evaluate_criteria`   | `List<String>` | The criteria used to score each hypothesis. Options include `explanatory_power`, `simplicity`, `testability`, and `prior_probability`. | `["explanatory_power", "simplicity", "testability", "prior_probability"]`                                 |
+| `suggest_tests`       | `Boolean`      | If `true`, the task will generate a set of suggested experiments or tests to validate the top hypotheses. | `true`                                                                                                    |
+| `existing_hypotheses` | `List<String>` | An optional list of pre-defined hypotheses to evaluate. Used when `generate_hypotheses` is `false`.     | `null`                                                                                                    |
+| `domain_context`      | `String`       | Optional background information or constraints about the domain (e.g., "This is a microservice architecture"). | `null`                                                                                                    |
 
-### Configuration
 
-The task's behavior is configured through the `AbductiveReasoningTaskExecutionConfigData` class.
+#### **Process Flow**
 
-#### Required Parameters
+1.  **Initialization:** The task begins by validating its configuration, ensuring that a list of `observations` has been provided.
+2.  **Hypothesis Generation/Evaluation:**
+    *   If `generate_hypotheses` is `true`, the task uses an LLM to generate up to `max_hypotheses` distinct explanations for the provided observations, taking the domain context into account.
+    *   If `generate_hypotheses` is `false`, the task evaluates the user-provided `existing_hypotheses` against the observations.
+3.  **Scoring:** Each hypothesis is scored from 0.0 to 1.0 based on the specified `evaluate_criteria`. An `overall_score` is calculated to rank them.
+4.  **Comparative Analysis:** The task performs a comparative analysis across all hypotheses. It identifies the strongest explanation, discusses the trade-offs between different options, and highlights any observations that remain poorly explained.
+5.  **Validation Test Generation (Optional):** If `suggest_tests` is `true`, the task generates concrete, actionable tests for the top-ranked hypotheses. This includes confirmatory tests (to prove), falsification tests (to disprove), and discriminating tests (to distinguish between similar hypotheses).
+6.  **Summary:** The task identifies the single best explanation and compiles a final summary of the entire analysis.
 
-| Parameter      | Type           | Description                                                       | Example                                                                    |
-|:---------------|:---------------|:------------------------------------------------------------------|:---------------------------------------------------------------------------|
-| `observations` | `List<String>` | A list of observed facts or symptoms that require an explanation. | `["User login fails with 500 error", "Database CPU usage spikes to 100%"]` |
 
-#### Optional Parameters
+#### **Output Structure**
 
-| Parameter             | Type           | Default                                                                   | Description                                                                                                                               | Example                                                                                             |
-|:----------------------|:---------------|:--------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------|
-| `generate_hypotheses` | `Boolean`      | `true`                                                                    | If `true`, the task will generate new hypotheses. If `false`, it will only evaluate the `existing_hypotheses`.                            | `false`                                                                                             |
-| `max_hypotheses`      | `Int`          | `5`                                                                       | The maximum number of distinct hypotheses to generate and evaluate.                                                                       | `3`                                                                                                 |
-| `evaluate_criteria`   | `List<String>` | `["explanatory_power", "simplicity", "testability", "prior_probability"]` | The criteria used to score each hypothesis.                                                                                               | `["explanatory_power", "simplicity"]`                                                               |
-| `suggest_tests`       | `Boolean`      | `true`                                                                    | If `true`, the task will generate a set of suggested tests to validate the top hypotheses.                                                | `false`                                                                                             |
-| `existing_hypotheses` | `List<String>` | `null`                                                                    | A list of pre-defined hypotheses to evaluate. Used when `generate_hypotheses` is `false`.                                                 | `["The database connection pool is exhausted", "A recent code change introduced an infinite loop"]` |
-| `domain_context`      | `String`       | `null`                                                                    | Provides background context or constraints about the domain (e.g., "This is a Java Spring Boot application using a PostgreSQL database"). | `"The system is a real-time bidding platform with high throughput."`                                |
+*   **Final Result:** The task's output is a concise Markdown summary of the analysis. It includes the number of hypotheses generated, identifies the best explanation and its score, and presents the key findings from the comparative analysis. This summary is designed to be passed as context to subsequent tasks in a plan.
 
-### How It Works
+*   **UI Breakdown:** The user interface provides a detailed, tabbed view of the entire process:
+    *   **Overview:** A real-time log of the task's progress, showing timings for each major step and the final outcome.
+    *   **Observations:** A list of the initial observations that the task was asked to explain.
+    *   **Context:** (If applicable) Displays relevant context inherited from previous tasks in the execution plan.
+    *   **Hypotheses:** A detailed breakdown of each generated hypothesis, including its description, a full explanation, its scores for each criterion, and any identified supporting or contradicting evidence.
+    *   **Analysis:** The complete text of the comparative analysis, offering a deep dive into the relative strengths and weaknesses of each hypothesis.
+    *   **Validation Tests:** (If enabled) A list of suggested experiments, including implementation steps and expected results, to validate the top hypotheses.
+    *   **Best Explanation:** A focused view of the single highest-scoring hypothesis, summarizing why it is the most likely explanation and outlining recommended next steps.
 
-#### Process Flow
 
-The task follows a structured, multi-step process to ensure a thorough analysis:
+#### **Example Usage**
 
-1. **Observation Logging:** The initial set of observations is documented.
-2. **Context Gathering:** The task gathers relevant context from the output of previous tasks in the plan.
-3. **Hypothesis Generation/Evaluation:**
-  - If `generate_hypotheses` is `true`, it prompts an LLM to generate a set of diverse, explanatory hypotheses based on the observations and context.
-  - If `false`, it uses the provided `existing_hypotheses`.
-  - Each hypothesis is evaluated and scored against the specified `evaluate_criteria`.
-4. **Comparative Analysis:** The LLM performs a comparative analysis of all hypotheses, discussing their trade-offs, strengths, and weaknesses. It identifies
-   which hypothesis best explains the full set of observations.
-5. **Test Suggestion (Optional):** If `suggest_tests` is `true`, the task generates concrete, actionable tests (confirmatory, falsification, and discriminating)
-   for the top-ranked hypotheses.
-6. **Best Explanation Summary:** The single best hypothesis is identified and presented in detail, explaining why it is the most plausible explanation.
-7. **Final Report:** A comprehensive summary of the entire process is generated, including key findings and the final conclusion.
+*   **Scenario:** A software team is investigating an intermittent bug. Users report that their profile data is occasionally corrupted, but only on Tuesdays and only for users who signed up in the last month. The application logs show no errors.
 
-#### Internal Mechanics
+*   **Configuration:**
+    ```kotlin
+    AbductiveReasoningTask.AbductiveReasoningTaskExecutionConfigData(
+        observations = listOf(
+            "Data corruption occurs in user profiles.",
+            "The issue is intermittent and happens only on Tuesdays.",
+            "It only affects users who signed up in the last month.",
+            "Application logs show no corresponding errors."
+        ),
+        max_hypotheses = 3,
+        domain_context = "A multi-tenant SaaS application with a weekly data processing batch job.",
+        suggest_tests = true
+    )
+    ```
 
-The task leverages a `ParsedAgent` to interact with the LLM, ensuring that the model's output conforms to the structured `Hypothesis` and `HypothesesResponse`
-data classes. This allows for reliable data extraction and scoring. For more open-ended steps like comparative analysis and test generation, a standard
-`ChatAgent` is used. The prompts are carefully engineered to guide the LLM through the principles of abductive reasoning, such as Occam's Razor (simplicity) and
-testability.
+*   **Expected Output Snippet:**
+    ```markdown
+    # Abductive Reasoning Summary
 
-#### Output Structure
+    **Observations Analyzed:** 4
+    **Hypotheses Generated:** 3
+    **Best Explanation:** A weekly batch job, scheduled for Tuesdays, has a logic error that incorrectly processes new user records, causing data corruption.
+    **Best Score:** 0.92
 
-The results are presented in a multi-tabbed user interface for clarity and easy navigation:
+    ## Key Findings
 
-- **Overview:** A high-level summary of the task's configuration, progress, and final results.
-- **Observations:** A list of the initial observations that the task is trying to explain.
-- **Context:** Relevant information gathered from previous tasks.
-- **Hypotheses:** A detailed breakdown of each generated hypothesis, including its description, explanation, and scores for each evaluation criterion.
-- **Analysis:** The full text of the comparative analysis, highlighting the trade-offs between different explanations.
-- **Validation Tests:** (If enabled) A list of suggested experiments to prove or disprove the top hypotheses.
-- **Best Explanation:** A focused summary of the most likely hypothesis and the reasoning behind its selection.
+    The leading hypothesis provides the most parsimonious explanation for all observations, particularly the "Tuesday" constraint, which strongly points to a scheduled task. While a database race condition was considered, it fails to explain the weekly recurrence. The recommended first step is to audit the code for the weekly user data processing job, specifically looking for date-based logic and edge cases related to new user accounts created within the last 30 days.
+    ```
 
-# AbstractionLadderTask.kt
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\AbstractionLadderTask.kt
 
-## AbstractionLadderTask
 
-### Overview
+## Abstraction Ladder
 
-The Abstraction Ladder task provides a structured method for analyzing a concept, problem, or piece of code by traversing different levels of abstraction. It
-helps uncover underlying principles, identify design patterns, and discover concrete implementation details by systematically moving from general to specific,
-and vice-versa.
 
-- **Primary Use Cases:**
-  - Understanding a complex system by breaking it down into more general components or more specific examples.
-  - Identifying reusable design patterns or architectural principles from a concrete piece of code.
-  - Brainstorming potential implementations or variations of a high-level concept.
-  - Discovering refactoring opportunities and code smells by examining code at different granularities.
-  - Improving system design by ensuring a clear and logical hierarchy of abstractions.
-- **Expected Outcomes:** A detailed report that visualizes the abstraction hierarchy, provides analysis at each level (including patterns and examples), and
-  offers actionable recommendations for refactoring or implementation.
+#### Overview
 
-### When to Use
+**One-Line Description:** Traverse abstraction levels to identify patterns and design insights.
 
-This task is particularly effective when you need to gain a deeper, multi-faceted understanding of a subject.
+**Detailed Description:** The Abstraction Ladder task provides a structured method for analyzing a concept, problem, or code pattern by moving both up and down a hierarchy of abstraction. By moving "up" the ladder, the task identifies generalizations, architectural principles, and high-level design patterns. By moving "down," it explores specific implementations, concrete use cases, and potential pitfalls. This bidirectional analysis helps uncover deep design insights, refactoring opportunities, and a clearer understanding of how a specific component fits into a larger system.
 
-- **Specific Scenarios:**
-  - **Code Refactoring:** When you have a complex class or function and want to identify opportunities to apply design patterns or simplify its structure.
-  - **System Design:** When starting with a high-level requirement and needing to explore concrete implementation strategies.
-  - **Learning and Exploration:** When encountering a new algorithm or programming paradigm and wanting to understand its core principles and practical
-    applications.
-- **Problem Types:**
-  - Analyzing existing codebases for architectural improvements.
-  - Generating documentation that explains a concept from first principles to specific examples.
-  - Bridging the gap between abstract requirements and concrete technical solutions.
-- **Comparison with Alternative Reasoning Types:**
-  - Unlike **Chain of Thought**, which focuses on a linear, step-by-step process to solve a problem, the Abstraction Ladder explores a topic's structure
-    vertically.
-  - It is more structured than a general **Analysis Task**, which might provide a flat summary. The ladder forces a hierarchical exploration, often yielding
-    deeper insights into relationships between components.
+**Key Use Cases:**
+*   **Architectural Analysis:** Understand how a concrete class or module fits into broader architectural patterns.
+*   **Refactoring:** Identify opportunities to generalize code, apply design patterns, or improve implementations.
+*   **Design Exploration:** Explore alternative, more specific implementations for an abstract concept.
+*   **Code Review:** Discover code smells, anti-patterns, and potential improvements by examining a component at multiple levels of abstraction.
+*   **Learning & Onboarding:** Help developers understand a complex piece of code by breaking it down into its abstract principles and concrete examples.
 
-### Configuration
 
-#### Required Parameters
+#### Configuration Parameters
 
-| Parameter          | Type   | Description                                       | Example                                |
-|--------------------|--------|---------------------------------------------------|----------------------------------------|
-| `concrete_concept` | String | The initial concept, problem, or code to analyze. | `"A singleton pattern implementation"` |
+The task's behavior is controlled by the following parameters:
 
-#### Optional Parameters
+| Parameter          | Type             | Description                                                                                                         | Default Value |
+|--------------------|------------------|---------------------------------------------------------------------------------------------------------------------|---------------|
+| `concrete_concept` | `String?`        | The concrete concept, problem, or code pattern to analyze.                                                          | **Required**  |
+| `direction`        | `String`         | Direction to traverse: 'up' for abstraction (generalizations), 'down' for concretization (specific implementations), 'both' for bidirectional analysis. | `"both"`      |
+| `levels`           | `Int`            | Number of abstraction levels to traverse in each direction (1-5 recommended).                                       | `3`           |
+| `identify_patterns`| `Boolean`        | Whether to identify design patterns, anti-patterns, and refactoring opportunities at each level.                    | `true`        |
+| `related_files`    | `List<String>?`  | Additional files for context (e.g., existing code, related implementations).                                        | `null`        |
+| `task_description` | `String?`        | A user-defined description of the task's purpose.                                                                   | `null`        |
+| `task_dependencies`| `List<String>?`  | A list of task IDs that must be completed before this task can start.                                               | `null`        |
+| `state`            | `TaskState?`     | The initial state of the task.                                                                                      | `Pending`     |
 
-| Parameter           | Type         | Default | Description                                                                                                   | Example                                    |
-|---------------------|--------------|---------|---------------------------------------------------------------------------------------------------------------|--------------------------------------------|
-| `direction`         | String       | "both"  | The direction to traverse the ladder: 'up' (generalize), 'down' (concretize), or 'both'.                      | `"up"`                                     |
-| `levels`            | Int          | 3       | The number of abstraction levels to traverse in each direction. A range of 1-5 is recommended.                | `2`                                        |
-| `identify_patterns` | Boolean      | true    | If true, the analysis will explicitly identify design patterns, anti-patterns, and refactoring opportunities. | `false`                                    |
-| `related_files`     | List<String> | null    | A list of file paths to provide additional context for the analysis (e.g., related code or documentation).    | `["src/main/MySingleton.kt"]`              |
-| `task_description`  | String       | null    | A custom description for the task instance.                                                                   | `"Analyze the user authentication module"` |
-| `task_dependencies` | List<String> | null    | A list of task IDs that must be completed before this task can run.                                           | `["task_123"]`                             |
-
-### How It Works
 
 #### Process Flow
 
-1. **Initialization:** The task starts with the user-provided `concrete_concept`. It sets up a multi-tabbed UI to organize the results for "Overview", "Upward
-   Analysis", "Downward Analysis", and "Pattern Analysis".
-2. **Context Gathering:** It reads the content of any `related_files` and incorporates results from previous tasks to build a comprehensive context.
-3. **Upward Analysis (Generalization):** If `direction` is 'up' or 'both', the task prompts an AI agent to move up the abstraction ladder from the starting
-   concept for the specified number of `levels`. For each level, it identifies a more general concept, explains what is being abstracted, and notes relevant
-   design or architectural patterns.
-4. **Downward Analysis (Concretization):** If `direction` is 'down' or 'both', the task prompts the AI to move down the ladder. For each level, it identifies
-   more specific implementations, explains what is being specialized, provides concrete examples (including code snippets), and notes implementation patterns or
-   anti-patterns.
-5. **Pattern Synthesis:** If `identify_patterns` is enabled, a final prompt is sent to the AI, asking it to synthesize the findings from both the upward and
-   downward analyses. This step generates a consolidated summary of all identified patterns, anti-patterns, architectural insights, and actionable refactoring
-   recommendations.
-6. **Completion:** The final, structured Markdown report is assembled from the results of each stage and presented to the user across the different UI tabs.
+1.  **Initialization:** The task begins by validating the configuration, ensuring a `concrete_concept` is provided and the `direction` is valid ('up', 'down', or 'both'). It sets up a tabbed display in the UI for organized output.
+2.  **Context Gathering:** It reads the content of any files specified in `related_files` and incorporates results from previous tasks to build a comprehensive context for the analysis.
+3.  **Upward Analysis (Optional):** If the `direction` is 'up' or 'both', the task performs a multi-level analysis moving from the concrete concept to more general abstractions. For each level, it identifies the generalized concept, explains the abstraction, and notes relevant design patterns or refactoring opportunities.
+4.  **Downward Analysis (Optional):** If the `direction` is 'down' or 'both', the task performs a multi-level analysis moving from the initial concept to more specific, concrete implementations. For each level, it identifies specializations, provides code examples, and notes implementation patterns or anti-patterns to avoid.
+5.  **Pattern Synthesis (Optional):** If `identify_patterns` is enabled, the task synthesizes the findings from both the upward and downward analyses into a final summary. This report includes identified design patterns, architectural insights, refactoring recommendations, and anti-patterns.
+6.  **Finalization:** The task concludes by updating the "Overview" tab with a summary of the analysis and passing the complete, structured Markdown report as its final result.
 
-#### Internal Mechanics
-
-The core of the task relies on a series of structured prompts sent to a `ChatAgent` configured with the persona of an "expert software architect." Each prompt
-is carefully crafted to guide the AI through a single stage of the process (generalization, concretization, or synthesis). By breaking the problem down and
-iterating through levels, the task elicits a more detailed and structured analysis than a single, monolithic prompt could achieve.
 
 #### Output Structure
 
-The final output is a comprehensive Markdown report organized into the following sections, each displayed in its own tab in the user interface:
+**Final Result:**
+The final output is a single, comprehensive Markdown string that concatenates the results of the upward analysis, downward analysis, and the pattern summary. This structured text is designed to be consumed by subsequent tasks or saved as a design document.
 
-- **Upward Abstraction (Generalizations):** A hierarchical list moving from the concrete concept to more abstract principles. Each level includes an explanation
-  of the generalization, examples of other concepts at that level, and identified patterns.
-- **Downward Concretization (Specific Implementations):** A hierarchical list moving from the starting concept to more specific examples. Each level includes an
-  explanation of the specialization, concrete code snippets, and relevant implementation patterns or anti-patterns.
-- **Pattern Analysis & Recommendations:** A synthesized summary that includes:
-  - A list of all identified design patterns.
-  - High-level architectural insights.
-  - Specific, actionable refactoring opportunities.
-  - A list of anti-patterns and code smells to address.
+**UI Breakdown:**
+The task's progress and detailed results are presented in a series of tabs in the user interface:
+*   **Overview:** Displays the initial configuration and a final summary upon completion, indicating which analyses were performed.
+*   **Upward Analysis:** Contains the detailed, level-by-level report of generalizations, moving from the concrete concept to abstract principles.
+*   **Downward Analysis:** Contains the detailed, level-by-level report of concretizations, showing specific implementations and examples derived from the initial concept.
+*   **Pattern Analysis:** If enabled, this tab presents a synthesized report summarizing all identified design patterns, anti-patterns, architectural insights, and actionable refactoring recommendations.
 
-# AdversarialReasoningTask.kt
 
-## AdversarialReasoning
+#### Example Usage
 
-### Overview
+**Scenario:**
+A developer wants to analyze a `FileLogger` class to understand its place in the system's architecture and explore potential improvements. They want to see both the abstract concepts it implements and alternative, more specialized logging mechanisms.
 
-Adversarial Reasoning, also known as Red Team Analysis, is a task designed to proactively identify vulnerabilities, weaknesses, and failure modes in a system,
-design, or argument. It simulates an attacker's mindset to stress-test the target from various perspectives.
+**Configuration:**
+```json
+{
+  "concrete_concept": "A FileLogger class that writes log messages to a local file, with methods for info, warn, and error levels. It handles file rotation based on size.",
+  "direction": "both",
+  "levels": 2,
+  "identify_patterns": true,
+  "related_files": ["src/main/java/com/mycorp/logging/FileLogger.java"]
+}
+```
 
-- **Primary Use Cases:**
-  - Performing security audits on software systems or infrastructure designs.
-  - Stress-testing the logic and robustness of a plan or argument.
-  - Identifying potential edge cases and failure modes before implementation.
-  - Proactively discovering business, privacy, or compliance risks.
-  - Simulating attack scenarios to understand potential impact.
+**Expected Output Snippet:**
+```markdown
 
-- **Expected Outcomes:**
-  - A structured list of identified vulnerabilities, each with a severity rating (Critical, High, Medium, Low).
-  - A comprehensive executive summary detailing the overall risk level and key concerns.
-  - (Optional) Detailed exploit scenarios for identified vulnerabilities.
-  - (Optional) Actionable mitigation strategies to address the findings.
-  - A list of discovered edge cases and potential failure modes.
+### Upward Abstraction (Generalizations)
 
-### When to Use
 
-This task is ideal for situations requiring a critical and skeptical evaluation of a target. It moves beyond simple analysis to actively probe for weaknesses.
+#### Level 0 (Concrete): FileLogger
+- Description: Writes log messages to a local file with size-based rotation.
+- Characteristics: File I/O, synchronous writes, specific log levels.
 
-- **Use this task when you need to:**
-  - Validate the security of a new feature or application.
-  - Prepare for a security audit or penetration test.
-  - Ensure a system design is robust against unexpected conditions.
-  - Critically evaluate a business plan or strategic proposal for hidden flaws.
-  - Understand the potential attack surface of a system.
 
-- **Comparison with other reasoning types:**
-  - Unlike a standard `AnalysisTask` which aims to understand and describe a system, `AdversarialReasoning` actively tries to break it.
-  - It is more focused and structured than a general `BrainstormingTask`, as it operates within specific attack vectors and follows a defined red team
-    methodology.
+#### Level 1: Local Appender
+- Generalization: The concept of a destination for log messages is abstracted from a specific file to any local destination.
+- Examples: ConsoleAppender, DatabaseAppender (local DB).
+- Patterns: Strategy Pattern (for different appending strategies).
+- Refactoring: Extract a common `Appender` interface.
 
-### Configuration
 
-The task is configured through the `AdversarialReasoningTaskExecutionConfigData` object.
+### Downward Concretization (Specific Implementations)
 
-#### Required Parameters
 
-| Parameter       | Type   | Description                                     | Example                                                  |
-|-----------------|--------|-------------------------------------------------|----------------------------------------------------------|
-| `target_system` | String | The system, design, or argument to be analyzed. | `"The user authentication flow for our new mobile app."` |
+#### Level 0 (Starting): FileLogger
+- Description: Writes log messages to a local file with size-based rotation.
+- Characteristics: File I/O, synchronous writes, specific log levels.
 
-#### Optional Parameters
 
-| Parameter                        | Type           | Default                 | Description                                                                                      | Example                                                                   |
-|----------------------------------|----------------|-------------------------|--------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
-| `attack_vectors`                 | List\<String\> | `["security", "logic"]` | The specific angles of attack to explore.                                                        | `["security", "privacy", "performance"]`                                  |
-| `adversary_capability`           | String         | `"intermediate"`        | The skill level of the simulated adversary.                                                      | `"advanced"`                                                              |
-| `generate_exploits`              | Boolean        | `false`                 | If true, the task will generate detailed, technical exploit scenarios. Use with caution.         | `true`                                                                    |
-| `suggest_mitigations`            | Boolean        | `true`                  | If true, the task will generate recommended strategies to fix the identified vulnerabilities.    | `false`                                                                   |
-| `related_files`                  | List\<String\> | `null`                  | Glob patterns for related files or code to include as context for the analysis.                  | `["src/main/kotlin/com/auth/**/*.kt"]`                                    |
-| `challenge_assumptions`          | List\<String\> | `null`                  | A list of specific assumptions about the system that the analysis should aggressively challenge. | `["The database is always available.", "User input is never malicious."]` |
-| `max_vulnerabilities_per_vector` | Int            | `5`                     | The maximum number of vulnerabilities to identify for each specified attack vector. Range: 1-20. | `10`                                                                      |
+#### Level -1: Asynchronous RollingFileLogger
+- Specialization: Introduces asynchronous writing to improve application performance.
+- Examples: A logger that uses a background thread and a queue to write log entries in batches.
+- Code: `// Example using a BlockingQueue and a dedicated writer thread...`
+- Patterns: Producer-Consumer Pattern.
+- Anti-patterns: Avoid losing log messages on application crash if the queue is not persisted.
+```
 
-#### Advanced Options
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\AdversarialReasoningTask.kt
 
-- **`attack_vectors`**: You can choose from a predefined list: `'security'`, `'performance'`, `'logic'`, `'business'`, `'privacy'`, `'compliance'`. Combining
-  multiple vectors provides a more comprehensive analysis.
-- **`adversary_capability`**: This setting significantly influences the depth and creativity of the analysis.
-  - `basic`: Simulates an attacker with common tools and basic skills.
-  - `intermediate`: A technically solid attacker who can chain common exploits.
-  - `advanced`: A skilled security researcher with deep knowledge and creative strategies.
-  - `nation-state`: An adversary with virtually unlimited resources, capable of developing zero-day exploits.
-- **`generate_exploits`**: Enabling this provides concrete, step-by-step instructions on how to exploit a vulnerability. This is useful for penetration testing
-  and validation but may generate sensitive or dangerous information.
 
-### How It Works
+## Adversarial Reasoning
 
-#### Process Flow
 
-1. **Initialization**: The task starts by validating its configuration and setting up a tabbed display in the user interface. An "Overview" tab is created to
-   track progress.
-2. **Context Gathering**: It gathers context from previous tasks and reads the content of any files specified in `related_files`.
-3. **Vector Analysis Loop**: The task iterates through each `attack_vector` provided in the configuration.
-  - For each vector, a new UI tab is created.
-  - A specialized **Adversarial Agent** is instantiated with a persona tailored to the specific vector and adversary capability level. Its AI model is set to a
-    higher temperature (0.8) to encourage creative and unconventional thinking.
-  - A detailed prompt is constructed, instructing the agent to analyze the `target_system` from the vector's perspective.
-  - The agent performs the analysis.
-  - The raw results are parsed to extract structured `VulnerabilityReport` objects, as well as lists of edge cases and failure modes.
-4. **Mitigation Generation**: If `suggest_mitigations` is enabled and vulnerabilities were found, a separate **Mitigation Agent** is created. This agent has a
-   more defensive persona and is tasked with proposing practical solutions for the identified issues.
-5. **Summary Generation**: An executive summary is created, providing a high-level overview of the findings, a risk assessment, and top-level recommendations.
-6. **Finalization**: The UI is updated with all generated reports, and a concise markdown summary is passed as the final output to the orchestrator.
+#### **Overview**
 
-#### Internal Mechanics
+*   **One-Line Description:** Red team analysis to identify vulnerabilities and weaknesses.
+*   **Detailed Description:** This task performs adversarial reasoning and red team analysis on systems, designs, or arguments. It simulates an attacker's mindset to proactively discover security vulnerabilities, logical flaws, edge cases, and potential failure modes. By challenging assumptions and exploring various attack vectors at different capability levels, it stress-tests systems and arguments to uncover hidden weaknesses before they can be exploited. The task generates structured vulnerability reports, complete with severity ratings, and can optionally suggest mitigation strategies.
+*   **Key Use Cases:**
+    *   **Security Audits:** Identifying security vulnerabilities and potential attack vectors in software or infrastructure.
+    *   **System Design Review:** Stress-testing a system design to find logical flaws, edge cases, and failure modes.
+    *   **Argument Deconstruction:** Analyzing a business plan, proposal, or argument to find weaknesses and counter-arguments.
+    *   **Threat Modeling:** Simulating adversarial scenarios to understand potential risks.
+    *   **Compliance & Privacy Analysis:** Evaluating a system for potential privacy violations or non-compliance with regulations.
 
-The task's effectiveness comes from its use of multiple, specialized AI agents. Instead of a single, monolithic analysis, it breaks the problem down:
 
-- **Adversarial Agent**: This agent is prompted to be aggressive, creative, and skeptical. Its persona changes based on the `attack_vector` and
-  `adversary_capability`, allowing it to adopt different mindsets (e.g., a security hacker vs. a lawyer looking for compliance loopholes).
-- **Mitigation Agent**: This agent has a "blue team" or defensive persona. It is prompted to be a security architect providing practical, actionable advice to
-  fix the problems found by the adversarial agent.
+#### **Configuration Parameters**
 
-This separation of concerns allows each agent to excel at its specific task, leading to a more robust and well-rounded analysis.
+| Parameter                       | Type           | Description                                                                                    | Default Value                      |
+| ------------------------------- | -------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `target_system`                 | `String?`      | The target system, design, or argument to analyze for weaknesses.                              | **Required**                       |
+| `attack_vectors`                | `List<String>?`| Attack vectors to explore: 'security', 'performance', 'logic', 'business', 'privacy', 'compliance'. | `["security", "logic"]`            |
+| `adversary_capability`          | `String`       | Adversary capability level: 'basic', 'intermediate', 'advanced', 'nation-state'.               | `"intermediate"`                   |
+| `generate_exploits`             | `Boolean`      | Whether to generate detailed exploit scenarios.                                                 | `false`                            |
+| `suggest_mitigations`           | `Boolean`      | Whether to suggest mitigation strategies.                                                      | `true`                             |
+| `related_files`                 | `List<String>?`| Related files or code to analyze (glob patterns).                                              | `null`                             |
+| `challenge_assumptions`         | `List<String>?`| Specific assumptions to challenge.                                                             | `null`                             |
+| `max_vulnerabilities_per_vector`| `Int`          | Maximum number of vulnerabilities to identify per vector.                                      | `5`                                |
+| `task_description`              | `String?`      | A custom description for the task.                                                             | Auto-generated from configuration. |
+| `task_dependencies`             | `List<String>?`| A list of task IDs that must be completed before this task can start.                          | `null`                             |
 
-#### Output Structure
 
-The task produces a rich, multi-tabbed output in the UI, typically including:
+#### **Process Flow**
 
-- **Overview**: A real-time log of the task's progress and a final summary of results.
-- **Vector Tabs**: A dedicated tab for each `attack_vector` (e.g., "Vector: Security"), containing the detailed analysis and findings for that area.
-- **Mitigations**: If enabled, a tab with recommended short-term and long-term fixes.
-- **Executive Summary**: A high-level report for stakeholders, including a risk matrix and top concerns.
+1.  **Initialization & Context Gathering:** The task begins by setting up the UI and gathering all relevant context. This includes results from previous tasks and the content of any files specified in the `related_files` parameter.
+2.  **Iterative Vector Analysis:** The task iterates through each specified `attack_vector`. For each vector:
+    *   A specialized "adversarial agent" is created with a persona matching the configured `adversary_capability` (e.g., a basic hacker vs. a nation-state actor).
+    *   A detailed analysis prompt is constructed, instructing the agent to focus on the current vector, challenge specific assumptions, and identify vulnerabilities.
+    *   The agent performs the analysis, and the results are parsed to extract structured vulnerability data, edge cases, and failure modes.
+3.  **Mitigation Generation (Optional):** If `suggest_mitigations` is enabled and vulnerabilities were found, a separate "security architect" agent is tasked with analyzing the findings and proposing practical, actionable mitigation strategies.
+4.  **Executive Summary Generation:** A final, high-level summary is created. It consolidates all findings, provides an overall risk assessment, highlights the most critical concerns, and offers strategic recommendations.
+5.  **Completion:** The task concludes, providing a detailed, tabbed report in the UI and a concise summary of the key findings for use in subsequent tasks.
 
-The final output returned to the plan orchestrator is a concise markdown string summarizing the key findings, total vulnerabilities, and overall risk level.
-Identified issues are structured internally as `VulnerabilityReport` objects.
 
-# AnalogicalReasoningTask.kt
+#### **Output Structure**
+
+*   **Final Result:** The final output is a concise Markdown-formatted string summarizing the entire analysis. It includes:
+    *   The total number of vulnerabilities found, broken down by severity.
+    *   A list of the top 3-5 most critical vulnerabilities with brief descriptions.
+    *   Key statistics, such as the number of edge cases and failure modes identified.
+    *   The overall risk level assessment.
+
+*   **UI Breakdown:** The task provides a rich, multi-tabbed interface for detailed exploration of the results:
+    *   **Overview:** Displays the initial configuration, real-time progress updates, and a final summary of the analysis upon completion.
+    *   **Context:** Shows the contextual data (from prior tasks or files) that was used as the basis for the analysis.
+    *   **Vector: \[Vector Name\]:** A dedicated tab is created for each analyzed attack vector (e.g., "Vector: Security"). This tab contains the raw, detailed output from the adversarial agent for that specific vector.
+    *   **Mitigations:** If enabled, this tab contains the detailed defensive recommendations and strategies proposed by the security architect agent.
+    *   **Executive Summary:** Presents the final, polished summary report, including risk assessment tables, top concerns, and strategic recommendations.
+
+
+#### **Example Usage**
+
+*   **Scenario:** A development team has just finished building a new user authentication service that uses JWTs. They want to perform a security and logic audit before deploying it to production.
+
+*   **Configuration:**
+    ```json
+    {
+      "target_system": "A new JWT-based user authentication service. It handles user registration, login, token issuance, and token validation. It uses a symmetric HS256 signing key stored in an environment variable.",
+      "attack_vectors": ["security", "logic", "privacy"],
+      "adversary_capability": "advanced",
+      "generate_exploits": false,
+      "suggest_mitigations": true,
+      "challenge_assumptions": [
+        "The JWT signing key will always remain secret.",
+        "Timestamps in the JWT payload cannot be manipulated."
+      ]
+    }
+    ```
+
+*   **Expected Output Snippet:**
+    ```markdown
+    # Adversarial Analysis: A new JWT-based user authentication service...
+
+    **Adversary Capability:** advanced
+
+    ## Key Findings
+
+    - **Total Vulnerabilities:** 8
+    - **Critical/High Severity:** 3
+    - **Attack Vectors:** security, logic, privacy
+
+    ## Top Vulnerabilities
+
+    ### CRITICAL: Insecure Token Validation
+    The system does not properly validate the 'alg' (algorithm) header in received JWTs. An attacker could forge a token by changing the algorithm to 'none' and submitting it, bypassing signature verification entirely to gain unauthorized access.
+
+    ### HIGH: Lack of Token Revocation Mechanism
+    There is no system in place to revoke issued JWTs. If a user's token is compromised or they are logged out, the token remains valid until its natural expiration, allowing an attacker to reuse it.
+    ```
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\AnalogicalReasoningTask.kt
+
 
 ## Analogical Reasoning
 
-### Overview
 
-The Analogical Reasoning task is a powerful tool for creative problem-solving. It works by identifying and applying structural similarities from a
-well-understood "source domain" to a complex "target problem." This process helps generate novel insights, overcome mental blocks, and develop innovative
-solutions that might not be apparent through conventional, linear thinking.
+#### **Overview**
 
-- **Primary Use Cases:**
-  - Generating creative solutions for complex or ill-defined problems.
-  - Simplifying and explaining complex topics by relating them to more familiar concepts.
-  - Developing new product features or business strategies by drawing inspiration from other industries.
-  - Overcoming creative blocks in design, writing, or strategic planning.
-  - Exploring a problem from multiple, unconventional perspectives.
+*   **One-Line Description:** Solve problems by finding and applying analogies from different domains.
+*   **Detailed Description:** This task performs creative problem-solving by drawing analogies from a specified source domain (e.g., biology, architecture) and applying them to a target problem. It maps structural relationships, generates multiple perspectives, and synthesizes findings to suggest novel solutions. The process can optionally include a validation step to ensure the coherence and consistency of the analogical mappings.
+*   **Key Use Cases:**
+    *   Breaking through creative blocks in design and engineering.
+    *   Developing novel strategies or business models.
+    *   Simplifying complex problems by reframing them in a more familiar context.
+    *   Enhancing design thinking and innovation workshops.
 
-- **Expected Outcomes:**
-  - A list of detailed analogies, each mapping concepts from the source domain to the target problem.
-  - A synthesis of key insights derived from across all generated analogies.
-  - A concrete, recommended approach or solution for the target problem.
-  - An optional validation report assessing the logical coherence of the analogies.
 
-### When to Use
+#### **Configuration Parameters**
 
-This task is ideal when you need to break away from traditional problem-solving methods and introduce a creative, non-linear approach.
+| Parameter | Type | Description | Default Value |
+| :--- | :--- | :--- | :--- |
+| `source_domain` | `String` | The source domain to draw analogies from (e.g., 'biological systems', 'urban planning', 'musical composition'). | **Required** |
+| `target_problem` | `String` | The target problem to solve using analogies. | **Required** |
+| `num_analogies` | `Int` | The number of distinct analogies to generate and explore. | `3` |
+| `validate_mappings` | `Boolean` | If true, the task will perform an additional step to validate the structural consistency and logical coherence of the generated analogies. | `true` |
+| `related_files` | `List<String>` | A list of file paths to provide additional context for the reasoning process. | `null` |
+| `task_description` | `String` | A user-defined description of the task's purpose. | `null` |
+| `task_dependencies` | `List<String>` | A list of other task IDs that must be completed before this one can run. | `null` |
 
-- **Specific Scenarios:**
-  - When you are "stuck" on a problem and need a fresh perspective.
-  - During brainstorming or ideation sessions to broaden the range of possible solutions.
-  - When designing a new system and looking for proven architectural patterns from other fields (e.g., applying principles of biological evolution to software
-    design).
-  - For strategic planning, to anticipate market shifts by drawing parallels with historical events or trends in other sectors.
 
-- **Comparison with Alternative Reasoning Types:**
-  - **vs. Chain of Thought:** Chain of Thought follows a linear, step-by-step logical progression. Analogical Reasoning is non-linear, making creative leaps
-    between different conceptual domains.
-  - **vs. Decomposition-Synthesis:** This method breaks a problem into smaller parts and solves them individually. Analogical Reasoning reframes the entire
-    problem by looking at it through a different lens.
+#### **Process Flow**
 
-### Configuration
+1.  **Context Gathering:** The task begins by collecting context from the overall execution plan and loading the content of any files specified in the `related_files` parameter.
+2.  **Analogy Generation:** It prompts an AI agent to generate the specified number of analogies. For each analogy, the agent identifies a relevant concept from the source domain, maps its structure to the target problem, and derives potential insights and solutions.
+3.  **Mapping Validation (Optional):** If `validate_mappings` is enabled, a separate AI agent reviews the generated analogies. It assesses them against criteria like structural parallelism, mapping consistency, and the absence of logical fallacies, providing a validation assessment.
+4.  **Synthesis and Reporting:** The task synthesizes the insights gathered from all analogies into a cohesive summary. It formulates a final recommended approach and formats the detailed results for display in the user interface.
 
-#### Required Parameters
 
-| Parameter        | Type   | Description                                   | Example                                    |
-|------------------|--------|-----------------------------------------------|--------------------------------------------|
-| `source_domain`  | String | The domain from which to draw analogies.      | "Biological systems" or "Urban planning"   |
-| `target_problem` | String | The specific problem you are trying to solve. | "How to improve user retention in our app" |
+#### **Output Structure**
 
-#### Optional Parameters
+*   **Final Result:** The task outputs a comprehensive Markdown-formatted string that is passed to subsequent tasks. This report includes a summary of the source domain and target problem, a list of the generated analogies with their applications and insights, a synthesis of key findings, and the final recommended approach.
+*   **UI Breakdown:** The user interface provides a detailed, tabbed view of the process:
+    *   **Overview:** Shows the initial configuration, live progress updates, and a final summary table with key metrics like the number of analogies generated, average confidence score, and total execution time.
+    *   **Analogy Generation:** Displays the AI's process of generating analogies, followed by a formatted list of the generated analogies, including their titles, confidence scores, and key insights.
+    *   **Validation:** (Only appears if `validate_mappings` is true) Details the validation criteria and presents the AI's assessment of the analogies' structural and logical coherence.
+    *   **Synthesis & Recommendations:** Contains the final, detailed report. This includes a cross-analogy synthesis, the final recommended approach, and a complete breakdown of each analogy with its conceptual mappings, structural similarities, limitations, and suggested solutions.
 
-| Parameter           | Type         | Default | Description                                                                                               | Example                                        |
-|---------------------|--------------|---------|-----------------------------------------------------------------------------------------------------------|------------------------------------------------|
-| `num_analogies`     | Int          | `3`     | The number of distinct analogies to generate and explore.                                                 | `5`                                            |
-| `validate_mappings` | Boolean      | `true`  | If enabled, a second AI agent will review the analogies for structural consistency and logical coherence. | `false`                                        |
-| `related_files`     | List<String> | `null`  | A list of file paths to provide additional context for the reasoning process.                             | `["./docs/user_feedback.md", "./src/main.py"]` |
-| `task_description`  | String       | `null`  | A custom description for this specific task instance.                                                     | "Analogies for improving app onboarding"       |
-| `task_dependencies` | List<String> | `null`  | A list of other task IDs that must be completed before this one can start.                                | `["task_123", "task_456"]`                     |
 
-### How It Works
+#### **Example Usage**
 
-#### Process Flow
+*   **Scenario:** A software development team is designing a new system for managing complex, interdependent data workflows. They want to ensure the system is robust, adaptable, and easy to understand. They decide to use an analogy from biology to inspire their design.
+*   **Configuration:**
+    ```json
+    {
+      "source_domain": "Biological ecosystems and cellular processes",
+      "target_problem": "Design a robust and adaptable system for managing complex data workflows.",
+      "num_analogies": 2,
+      "validate_mappings": true
+    }
+    ```
+*   **Expected Output Snippet:**
+    The final result might include an analogy like this:
 
-1. **Configuration & Context:** The task starts by validating the required `source_domain` and `target_problem`. It then gathers context from previous steps in
-   the plan and any files specified in `related_files`.
-2. **Analogy Generation:** An AI agent, prompted to be an expert in creative problem-solving, generates the requested number of analogies. For each analogy, it
-   identifies a source concept, explains how it applies to the target problem, details the conceptual mappings, and extracts key insights and potential
-   solutions.
-3. **Mapping Validation (Optional):** If `validate_mappings` is enabled, a separate, more critical AI agent reviews the generated analogies. It assesses the
-   structural parallelism, logical consistency, and overall coherence of the mappings, providing a validation assessment.
-4. **Synthesis & Recommendation:** The initial generation step also produces a high-level synthesis of insights gathered from all analogies and formulates a
-   final recommended approach to the target problem.
-5. **Output Formatting:** The task concludes by organizing all generated content—analogies, validation notes, synthesis, and recommendations—into a structured,
-   human-readable markdown report.
+    **Analogy: DNA Transcription and Protein Synthesis**
 
-#### Internal Mechanics
+    *   **Source Concept:** In a cell, DNA holds the master blueprint. RNA polymerase transcribes a specific gene (a workflow template) into messenger RNA (a workflow instance). Ribosomes then read the mRNA to assemble proteins (the final data product).
+    *   **Application:** Our system can use a "master template" (like DNA) to define workflow structures. When a new workflow is needed, the system "transcribes" it into an active instance (mRNA) with specific parameters. "Worker modules" (like ribosomes) then execute the steps to produce the final output.
+    *   **Key Insight:** This analogy suggests a clear separation between the workflow definition (template) and its execution (instance), preventing corruption of the master logic and allowing for many parallel, independent executions.
+    *   **Recommended Approach:** Implement a workflow engine where workflows are defined as immutable templates. Create a "Workflow Manager" service that instantiates these templates with runtime parameters and dispatches them to a pool of stateless "Execution Agents".
 
-The task leverages a Large Language Model's ability to recognize and articulate abstract patterns across different domains. The core of the process is a
-detailed prompt that instructs the model to focus on deep structural similarities rather than superficial resemblances. The optional validation step introduces
-a "second opinion" from another AI agent, adding a layer of logical rigor to the creative output.
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\BrainstormingTask.kt
 
-#### Output Structure
-
-The final output is a comprehensive report (`AnalogicalReasoningResult`) containing:
-
-- **A List of Analogies:** Each `Analogy` object includes:
-  - `title`: A descriptive title for the analogy.
-  - `source_description`: An explanation of the concept from the source domain.
-  - `application`: How the concept applies to the target problem.
-  - `mappings`: A detailed list of one-to-one mappings between source and target concepts.
-  - `insights`: Key takeaways and new perspectives gained from the analogy.
-  - `suggested_solutions`: Actionable ideas and solutions inspired by the analogy.
-  - `confidence`: An AI-generated score (0-1) indicating the perceived strength of the analogy.
-- **Synthesized Insights:** A list of the most important insights that emerge when considering all analogies together.
-- **Recommended Approach:** A final, consolidated recommendation for solving the target problem.
-- **Validation Notes:** (If enabled) A textual assessment of the logical soundness of the generated analogies.
-
-# BrainstormingTask.kt
 
 ## Brainstorming
 
-### Overview
 
-The Brainstorming task is a powerful tool for systematically generating and analyzing a diverse set of potential solutions or ideas for a given problem. It
-breaks down the complex process of creative problem-solving into distinct, manageable steps: generating options, analyzing each one independently, and then
-synthesizing the results into a comparative summary with actionable recommendations.
+#### Overview
 
-- **Primary use cases:**
-  - Exploring a wide range of solutions for a complex problem.
-  - Making informed decisions by comparing multiple well-analyzed options.
-  - Strategic planning and feature ideation.
-  - Creative problem-solving and "out-of-the-box" thinking.
-  - Identifying potential hybrid solutions by combining the best aspects of different ideas.
-- **Expected outcomes:** A structured report containing a list of generated ideas, a detailed pro/con analysis for each, and a final summary that compares the
-  options and provides recommendations for the best path forward.
+**One-Line Description:** Generate and analyze multiple solution options for a given problem.
 
-### When to Use
+**Detailed Description:** The Brainstorming task systematically generates a diverse set of potential solutions or ideas for a specified problem. It then analyzes each option independently, evaluating its pros, cons, feasibility, potential impact, and associated risks. Finally, it synthesizes these individual analyses into a comparative summary with actionable recommendations. This structured approach helps move from a broad problem statement to a well-vetted set of potential paths forward, supporting both creative and conventional approaches.
 
-This task is ideal for situations where a problem is open-ended and does not have a single, obvious solution. It encourages divergent thinking to explore the
-solution space broadly before converging on the most promising options.
+**Key Use Cases:**
+*   **Solution Exploration:** Exploring a wide range of solutions for a complex problem.
+*   **Decision Making:** Making informed decisions by comparing multiple well-analyzed options.
+*   **Strategic Planning:** Ideating new features, strategies, or project directions.
+*   **Problem Solving:** Breaking down a complex issue into manageable, actionable solution paths.
+*   **Identifying Synergies:** Discovering hybrid approaches by combining the best aspects of different ideas.
 
-- **Specific scenarios where this reasoning type excels:**
-  - Initial stages of project planning where multiple architectural approaches could be taken.
-  - Marketing strategy sessions to generate different campaign ideas.
-  - Product development meetings to brainstorm new features.
-  - Troubleshooting complex issues where the root cause is unknown and multiple hypotheses need to be explored.
-- **Problem types best suited for this approach:**
-  - "How can we improve...?"
-  - "What are the different ways to achieve...?"
-  - "Generate a list of potential solutions for..."
-- **Comparison with alternative reasoning types:** Unlike simpler tasks that might provide a single answer or code implementation, the Brainstorming task is
-  designed for exploration. It is more comprehensive than a simple chat interaction, as it enforces a structured process of generation, analysis, and synthesis,
-  leading to higher-quality, more reliable outputs.
+---
 
-### Configuration
 
-#### Required Parameters
+#### Configuration Parameters
 
-| Parameter           | Type   | Description                                 | Example                                             |
-|---------------------|--------|---------------------------------------------|-----------------------------------------------------|
-| `problem_statement` | String | The core problem or question to brainstorm. | "How can we reduce our application's startup time?" |
+The task's behavior is controlled by the following parameters in its `ExecutionConfigData` class.
 
-#### Optional Parameters
+| Parameter                  | Type          | Description                                                  | Default Value |
+| -------------------------- | ------------- | ------------------------------------------------------------ | ------------- |
+| `problem_statement`        | `String`      | The problem or question to brainstorm solutions for.          | **Required**  |
+| `target_option_count`      | `Int`         | The target number of distinct options to generate.           | `7`           |
+| `categories`               | `List<String>`| Optional list of categories or domains to guide the brainstorming process. | `null`        |
+| `constraints`              | `List<String>`| Optional list of constraints or requirements that solutions must adhere to. | `null`        |
+| `include_creative_options` | `Boolean`     | If true, the task will be encouraged to generate unconventional or "out-of-the-box" ideas. | `true`        |
+| `analysis_depth`           | `String`      | The level of detail for the analysis of each option. Accepts `brief`, `moderate`, or `detailed`. | `moderate`    |
 
-| Parameter                  | Type         | Default      | Description                                                                           | Example                               |
-|----------------------------|--------------|--------------|---------------------------------------------------------------------------------------|---------------------------------------|
-| `target_option_count`      | Int          | `7`          | The desired number of distinct options to generate.                                   | `10`                                  |
-| `categories`               | List<String> | `null`       | Specific domains or categories to guide the brainstorming process.                    | `["Frontend", "Backend", "Database"]` |
-| `constraints`              | List<String> | `null`       | Requirements or limitations that the solutions must adhere to.                        | `["Must not increase server costs"]`  |
-| `include_creative_options` | Boolean      | `true`       | If true, encourages the generation of unconventional or novel ideas.                  | `false`                               |
-| `analysis_depth`           | String       | `"moderate"` | Controls the level of detail in the analysis phase (`brief`, `moderate`, `detailed`). | `"detailed"`                          |
+---
 
-### How It Works
-
-The Brainstorming task employs a multi-agent, three-stage process to ensure both creativity and analytical rigor.
 
 #### Process Flow
 
-1. **Option Generation:** The task first constructs a detailed prompt based on the `problem_statement`, `target_option_count`, `categories`, and `constraints`.
-   It uses a `ParsedAgent` to call the LLM, which generates a structured list of diverse solution options. This step focuses on divergent thinking to cover a
-   wide range of possibilities.
-2. **Independent Analysis:** For each option generated in the previous step, the task initiates a separate, independent analysis. A new prompt is created for
-   each option, asking a `ParsedAgent` to evaluate its pros, cons, feasibility, potential impact, risks, and requirements. This parallel, isolated analysis
-   prevents bias and ensures each idea is evaluated on its own merits.
-3. **Comparative Summary & Synthesis:** Once all options have been analyzed, the task gathers all the generated data (options and their corresponding analyses).
-   It creates a final prompt for a `ChatAgent`, asking it to act as a strategic advisor. This agent synthesizes all the information to produce a comparative
-   analysis, identify top recommendations, suggest potential hybrid approaches, and outline the next steps. This final step focuses on convergent thinking to
-   produce an actionable conclusion.
+The task executes in a clear, three-step sequence to ensure a thorough and organized outcome:
 
-#### Internal Mechanics
+1.  **Option Generation:** The task begins by generating a set of distinct solution options based on the user-provided `problem_statement`, `categories`, and `constraints`. It uses a specialized agent to ensure the output is structured, diverse, and adheres to the target count.
+2.  **Independent Analysis:** Each generated option is then analyzed individually. For every option, the task evaluates its pros, cons, feasibility, potential impact, risks, and requirements. This isolated analysis prevents bias and ensures each idea is judged on its own merits.
+3.  **Synthesis and Summary:** After all options have been analyzed, the task generates a final comparative summary. This report synthesizes the findings, highlights the most promising options, discusses potential hybrid approaches, and provides actionable recommendations for next steps.
 
-The task leverages multiple specialized agents to break down the complex cognitive workload.
+---
 
-- A `ParsedAgent` is used for generation and analysis to ensure the output is in a structured, predictable JSON format, which can be programmatically processed.
-- A standard `ChatAgent` is used for the final summary, as this step benefits from the fluency and narrative capabilities of a less constrained model.
-- The temperature setting for the LLM is adjusted based on the `include_creative_options` flag—a higher temperature encourages more novel ideas, while a lower
-  one promotes more practical, grounded suggestions.
 
 #### Output Structure
 
-The results are presented in a user-friendly tabbed interface within the session:
+The task produces a detailed output in the UI and a concise summary for subsequent tasks.
 
-- **Overview:** A summary of the task configuration and real-time progress updates.
-- **Generated Options:** A list of the initial ideas generated by the first agent.
-- **Option X Analysis:** A dedicated tab for each option, containing its detailed analysis (pros, cons, feasibility, etc.).
-- **Summary & Recommendations:** The final synthesized report with comparative analysis and actionable advice.
+**Final Result:**
+The final output passed to other tasks is a single, concise Markdown-formatted string. It includes the original problem statement, a list of the generated option titles and their descriptions, and the key findings from the comparative summary. This output is intentionally truncated to a manageable length to serve as an effective input for other AI tasks.
 
-The final, concise output passed to subsequent tasks is a markdown-formatted summary of the key findings and recommendations.
+**UI Breakdown:**
+The user interface provides a detailed, multi-tab view of the entire process, allowing for in-depth review:
 
-# CausalInferenceTask.kt
+*   **Overview:** Displays the initial configuration, tracks the real-time progress of the task (generation, analysis, completion), and shows final summary statistics like total time taken.
+*   **Context:** If the task is part of a larger plan, this tab shows relevant information and code gathered from previous tasks that informed the brainstorming.
+*   **Generated Options:** Lists all the brainstormed options with their titles and full descriptions as soon as they are generated.
+*   **Option [N] Analysis:** A separate tab is created for each option, containing its detailed analysis, including pros, cons, feasibility, impact, risks, and requirements.
+*   **Summary & Recommendations:** Presents the full, unabridged comparative analysis, top recommendations, and suggested next steps.
 
-## CausalInference
+---
 
-### Overview
 
-The `CausalInference` task is designed to identify the true causal relationships and root causes behind an observed effect. It goes beyond simple correlation by
-applying causal reasoning principles to evidence provided from various sources, such as log files, metrics, or source code.
+#### Example Usage
 
-- **Primary Use Cases:**
-  - Performing root cause analysis for system failures or bugs.
-  - Debugging complex and intermittent issues.
-  - Understanding emergent system behavior.
-  - Distinguishing correlation from causation in data.
-  - Analyzing performance regressions.
-- **Expected Outcomes:**
-  - A structured report detailing the causal analysis, including identified root causes, causal chains, and confidence levels.
-  - An optional causal graph (Mermaid diagram) visualizing the relationships between causes and effects.
-  - Recommendations for actions to address the identified root causes.
+**Scenario:**
+A software development team needs to decide how to improve the performance of their application's main dashboard, which has become slow. They want to explore several technical approaches before committing to one.
 
-### When to Use
+**Configuration:**
+```json
+{
+  "problem_statement": "The main user dashboard is experiencing significant performance degradation, with load times exceeding 5 seconds. Brainstorm technical solutions to reduce the dashboard load time to under 2 seconds.",
+  "target_option_count": 5,
+  "categories": ["Frontend Optimization", "Backend Caching", "Database Tuning", "Architectural Changes"],
+  "constraints": [
+    "The solution must not require a complete rewrite of the frontend framework.",
+    "Any new infrastructure must be compatible with our existing AWS environment."
+  ],
+  "analysis_depth": "moderate"
+}
+```
 
-This task is ideal for situations where a simple analysis is insufficient to explain *why* an event occurred. Use it when you need to move from observing a
-symptom to understanding the fundamental driver of a problem.
+**Expected Output Snippet:**
+```markdown
 
-- **Specific Scenarios:**
-  - A critical production service is experiencing repeated crashes, and the immediate logs don't point to a single, obvious cause.
-  - After a new deployment, a key performance metric has degraded, but it's unclear which change is responsible.
-  - Analyzing security incidents to understand the attack vector and the sequence of events that led to a breach.
-- **Comparison with Alternative Reasoning Types:**
-  - **AnalysisTask:** While a general `AnalysisTask` can summarize the content of files, `CausalInference` uses that content as evidence to construct a logical
-    argument about cause and effect.
-  - **ChainOfThoughtTask:** `CausalInference` is a more specialized and structured form of reasoning. It follows a specific methodology for evaluating evidence
-    against causal principles, whereas `ChainOfThought` is a more general-purpose, step-by-step reasoning process.
+## Brainstorming Results: The main user dashboard is experiencing significant performance degradation...
 
-### Configuration
 
-#### Required Parameters
+### Options Generated: 5
 
-| Parameter         | Type   | Description                                | Example                                 |
-|-------------------|--------|--------------------------------------------|-----------------------------------------|
-| `observed_effect` | String | The observed effect or outcome to explain. | "Application latency increased by 50%." |
 
-#### Optional Parameters
+#### 1. Implement Frontend Pagination and Virtual Scrolling
+Redesign the dashboard to load only the visible data, fetching more as the user scrolls...
 
-| Parameter              | Type           | Default | Description                                                                                               | Example                                                       |
-|------------------------|----------------|---------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
-| `potential_causes`     | List\<String\> | `null`  | A list of potential causes to investigate.                                                                | `["Database query performance", "Network issue"]`             |
-| `build_causal_graph`   | Boolean        | `true`  | If true, the task will generate a Mermaid diagram of the causal relationships.                            | `false`                                                       |
-| `identify_confounders` | Boolean        | `true`  | If true, the task will attempt to identify confounding variables that could create spurious correlations. | `false`                                                       |
-| `evidence_sources`     | List\<String\> | `null`  | A list of file paths or glob patterns pointing to evidence.                                               | `["logs/**/*.log", "src/main/java/com/example/Service.java"]` |
-| `related_files`        | List\<String\> | `null`  | Additional files to provide context for the analysis.                                                     | `["config/production.yml"]`                                   |
 
-### How It Works
+#### 2. Introduce a Redis Caching Layer for Dashboard Widgets
+Cache the results of expensive backend queries in an in-memory Redis store...
+...
+
+
+### Key Findings
+
+The analysis recommends a two-pronged approach. The highest impact, lowest risk solution is to **Introduce a Redis Caching Layer (Option 2)**, which can be implemented quickly on the backend. For a long-term solution, **Refactor Data-Heavy Components to be Asynchronous (Option 4)** is recommended as a follow-up project to further improve user experience.
+```
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\CausalInferenceTask.kt
+
+
+## Causal Inference
+
+
+#### **Overview**
+
+*   **One-Line Description:** Identify causal relationships and root causes.
+*   **Detailed Description:** This task performs a causal inference analysis to uncover the true causal relationships behind an observed phenomenon. It goes beyond simple correlation by applying causal reasoning principles to evidence from various sources. The task can identify root causes, intermediate factors, and potential confounding variables that might otherwise lead to incorrect conclusions. It is designed to provide a structured, evidence-based explanation for complex events, making it invaluable for debugging, root cause analysis, and understanding system dynamics.
+*   **Key Use Cases:**
+    *   Root cause analysis of production incidents.
+    *   Debugging complex software issues where the cause is not obvious.
+    *   Understanding emergent system behavior.
+    *   Distinguishing correlation from causation in data analysis.
+
+
+#### **Configuration Parameters**
+
+This table details the configurable parameters for the Causal Inference task.
+
+| Parameter              | Type           | Description                                                                                                | Default Value |
+| ---------------------- | -------------- | ---------------------------------------------------------------------------------------------------------- | ------------- |
+| `observed_effect`      | `String?`      | The observed effect or outcome to explain.                                                                 | **Required**  |
+| `potential_causes`     | `List<String>?`| A list of potential causes to investigate.                                                                 | `null`        |
+| `build_causal_graph`   | `Boolean`      | If true, the task will attempt to generate a Mermaid diagram visualizing the causal relationships.         | `true`        |
+| `identify_confounders` | `Boolean`      | If true, the task will explicitly try to identify confounding factors that could create spurious correlations. | `true`        |
+| `evidence_sources`     | `List<String>?`| A list of file patterns (glob) or paths to use as evidence for the analysis.                               | `null`        |
+| `related_files`        | `List<String>?`| A list of additional files to provide context for the analysis.                                            | `null`        |
+| `task_description`     | `String?`      | A user-defined description of the task.                                                                    | `null`        |
+| `task_dependencies`    | `List<String>?`| A list of task IDs that must be completed before this task can run.                                        | `null`        |
+| `state`                | `TaskState?`   | The initial state of the task.                                                                             | `Pending`     |
+
+
+#### **Process Flow**
+
+1.  **Initialization:** The task starts and validates that an `observed_effect` has been provided.
+2.  **Evidence Gathering:** It searches for and reads the content of files matching the patterns in `evidence_sources` and `related_files`. This content is compiled into a single evidence context.
+3.  **Prompt Construction:** A detailed prompt is constructed for the LLM, including the observed effect, the list of potential causes, the gathered evidence, and instructions for performing a rigorous causal analysis.
+4.  **Causal Analysis:** The prompt is sent to the LLM, which analyzes the information and returns a structured textual breakdown of the causal relationships.
+5.  **Graph Generation (Optional):** If `build_causal_graph` is enabled, a follow-up prompt is sent to the LLM, asking it to create a Mermaid diagram based on its analysis.
+6.  **Result Presentation:** The complete analysis, including the evidence, textual breakdown, and optional graph, is presented in a multi-tabbed view in the UI.
+
+
+#### **Output Structure**
+
+*   **Final Result:** The primary output is a string containing the detailed causal analysis generated by the language model. This text includes a summary, a breakdown of each identified cause, root cause identification, and recommendations. This string is passed to subsequent tasks.
+*   **UI Breakdown:** The task provides a rich, interactive output in the UI, organized into the following tabs:
+    *   **Overview:** Displays the initial configuration (observed effect, potential causes) and the final status of the analysis.
+    *   **Evidence Sources:** Shows the content of all files that were read and used as evidence, allowing for easy verification.
+    *   **Causal Analysis:** Contains the full, formatted textual analysis from the LLM.
+    *   **Causal Graph:** If enabled, this tab displays the rendered Mermaid diagram, providing a visual map of the causal relationships.
+
+
+#### **Example Usage**
+
+*   **Scenario:** A DevOps engineer is investigating a sudden 50% increase in API response times for a critical microservice. The cause is unknown, but they suspect recent code changes, a database performance issue, or a surge in traffic.
+*   **Configuration:**
+    ```json
+    {
+      "observed_effect": "API response time for the 'user-service' has increased by 50% in the last 3 hours.",
+      "potential_causes": [
+        "Recent deployment of commit #a1b2c3d",
+        "Increased load on the primary PostgreSQL database",
+        "Unusual traffic patterns from a new client integration"
+      ],
+      "evidence_sources": [
+        "logs/user-service-*.log",
+        "metrics/database_cpu_*.csv",
+        "src/main/kotlin/com/example/UserService.kt"
+      ],
+      "build_causal_graph": true,
+      "identify_confounders": true
+    }
+    ```
+*   **Expected Output Snippet:**
+    > **Summary:** The root cause of the increased API latency is a new, inefficient database query introduced in commit #a1b2c3d. While the traffic surge was a contributing factor (intermediate cause), it only exacerbated the performance issue in the new code; it was not the root cause.
+    >
+    > **Root Cause Identification:** The fundamental cause is the introduction of a non-indexed query in `UserService.kt` during the latest deployment.
+    >
+    > **Causal Chain:** `Commit #a1b2c3d` -> `Inefficient DB Query` -> `High DB CPU Usage` -> `Increased API Latency`.
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\ChainOfThoughtTask.kt
+
+
+## ChainOfThought
+
+
+#### Overview
+
+*   **One-Line Description:** Break down complex problems into explicit reasoning steps.
+*   **Detailed Description:** This task performs a step-by-step reasoning process with built-in validation. It is designed to break down complex problems into a series of logical, sequential steps. A key feature is its ability to validate each step for logical consistency before moving to the next, providing a high degree of transparency in the reasoning process. If a step fails validation, the task can backtrack and attempt to correct its reasoning. The final output is a comprehensive chain of thought that documents the entire analytical journey from the initial problem to the final conclusion.
+*   **Key Use Cases:**
+    *   Solving multi-step mathematical or logical puzzles.
+    *   Debugging complex code by tracing the logic step-by-step.
+    *   Planning a sequence of actions where each step depends on the previous one.
+    *   Analyzing complex scenarios by breaking them into manageable parts.
+    *   Providing transparent, auditable explanations for a decision.
+
+
+#### Configuration Parameters
+
+| Parameter | Type | Description | Default Value |
+| :--- | :--- | :--- | :--- |
+| `problem_statement` | `String` | The complex problem requiring step-by-step reasoning. | `""` (Effectively **Required**) |
+| `reasoning_depth` | `Int` | Number of reasoning steps to generate. The process may stop earlier if a conclusion is reached. | `10` |
+| `validate_steps` | `Boolean` | Whether to validate each step for logical consistency before proceeding. | `true` |
+| `related_files` | `List<String>` | A list of file paths to provide additional context for the reasoning process. | `emptyList()` |
+| `task_dependencies` | `List<String>` | A list of task IDs that must be completed before this task can start. | `null` |
+
 
 #### Process Flow
 
-1. **Initialization:** The task begins by validating that an `observed_effect` has been specified.
-2. **Evidence Gathering:** It searches for and reads the content of files matching the patterns in `evidence_sources` and `related_files`. To manage context
-   size, it truncates large files and limits the total amount of evidence collected.
-3. **Prompt Construction:** A detailed prompt is constructed for the language model. This prompt includes the observed effect, the list of potential causes, the
-   gathered evidence, and specific instructions to perform a rigorous causal analysis (distinguishing causation from correlation, identifying root causes,
-   etc.).
-4. **Causal Analysis:** The prompt is sent to the AI, which performs the analysis and returns a structured, evidence-based report in Markdown format.
-5. **Graph Generation (Optional):** If `build_causal_graph` is enabled, a second request is sent to the AI, asking it to summarize its analysis as a Mermaid.js
-   graph diagram.
-6. **Output Display:** The results are presented in a tabbed interface, with separate tabs for the overall summary, the evidence used, the detailed causal
-   analysis, and the causal graph.
+1.  **Initialization:** The task begins by validating the `problem_statement` and gathering context from any completed dependency tasks and the contents of the files specified in `related_files`.
+2.  **Iterative Reasoning Loop:** The task enters a loop that continues until the maximum `reasoning_depth` is reached or a logical conclusion is found.
+3.  **Step Generation:** In each iteration, an AI agent generates a single `ReasoningStep`. This includes the thought process, a clear conclusion for that step, a confidence score (from 0.0 to 1.0), and a question to guide the next step.
+4.  **Step Validation (Optional):** If `validate_steps` is enabled, a separate AI agent evaluates the generated step for logical consistency against the conclusions of previous steps. If validation fails, the task attempts to regenerate the step using the validation feedback as guidance.
+5.  **Continuation or Termination:** The task checks if it should stop. It terminates if the AI indicates the reasoning is complete (e.g., no next question is posed and confidence is high) or if the maximum number of steps is reached. Otherwise, it uses the `next_question` from the current step to start the next iteration.
+6.  **Final Summary:** Once the loop concludes, the task directs an AI agent to generate a comprehensive summary that synthesizes the entire reasoning chain into a final, coherent answer.
 
-#### Internal Mechanics
-
-The core of the task is its sophisticated prompt engineering. It guides the AI to act as an expert in root cause analysis. The prompt explicitly instructs the
-model to apply causal reasoning principles such as:
-
-- **Temporal Precedence:** The cause must happen before the effect.
-- **Causal Mechanism:** Explaining *how* a cause leads to an effect.
-- **Counterfactual Reasoning:** Considering what would have happened if the cause had not occurred.
-- **Elimination of Alternatives:** Ruling out other possible explanations.
-
-This structured approach ensures the output is a well-reasoned analysis rather than a simple summary of the evidence.
 
 #### Output Structure
 
-The final output is a comprehensive report, typically including:
+*   **Final Result:** The final output passed to subsequent tasks is a detailed Markdown document. It contains a complete, step-by-step breakdown of the entire reasoning process, including the reasoning, conclusion, confidence, and next question for each step. This is followed by the comprehensive final summary that provides the ultimate answer to the problem.
+*   **UI Breakdown:** In the user interface, the task's execution is broken down into several tabs for clarity:
+    *   **Overview:** Displays the initial configuration, real-time progress updates (e.g., "Step 3 complete"), and final statistics upon completion (total time, steps completed, average step time, final confidence).
+    *   **Context:** If applicable, this tab shows the context gathered from previous tasks and the full content of any `related_files`.
+    *   **Step X:** A dedicated tab is created for each reasoning step, showing the question being addressed, the generated reasoning, the conclusion, the confidence score, and the validation status.
+    *   **Summary:** Contains the final, comprehensive summary of the entire reasoning process and the ultimate conclusion.
 
-- **Summary:** A high-level overview of the key findings.
-- **Causal Analysis:** A detailed breakdown for each identified cause, including the supporting evidence, strength of the causal link, and a confidence score.
-- **Root Cause Identification:** A clear statement of the most fundamental cause(s).
-- **Causal Chain:** A description of the sequence of events from the root cause to the observed effect.
-- **Confounders:** A list of any identified confounding variables.
-- **Recommendations:** Suggested actions to mitigate or resolve the root cause.
-- **Causal Graph:** A visual Mermaid diagram illustrating the causal relationships.
 
-# ChainOfThoughtTask.kt
+#### Example Usage
 
-## Chain of Thought Reasoning
+*   **Scenario:** We need to solve a classic logic puzzle: "You have a 5-gallon jug and a 3-gallon jug, and an unlimited supply of water. How can you measure out exactly 4 gallons of water?"
+*   **Configuration:**
+    *   `problem_statement`: "You have a 5-gallon jug and a 3-gallon jug, and an unlimited supply of water. How can you measure out exactly 4 gallons of water?"
+    *   `reasoning_depth`: `8`
+    *   `validate_steps`: `true`
+*   **Expected Output Snippet:**
+    ```markdown
+    ## Final Summary
 
-### Overview
+    The problem of measuring exactly 4 gallons of water using only 3-gallon and 5-gallon jugs is solved through a precise sequence of filling, pouring, and emptying actions. The key insight is to use the difference in volumes between the jugs to isolate specific quantities of water.
 
-The Chain of Thought (CoT) task breaks down a complex problem into a sequence of explicit, interconnected reasoning steps. It mimics the human process of
-thinking through a problem one step at a time, ensuring a logical and transparent path to a conclusion. Each step is generated, optionally validated for logical
-consistency, and then used as the foundation for the next step.
+    The successful procedure is as follows:
+    1. Fill the 5-gallon jug completely.
+    2. Pour water from the 5-gallon jug into the 3-gallon jug until it is full. This leaves exactly 2 gallons in the 5-gallon jug.
+    3. Empty the 3-gallon jug.
+    4. Pour the 2 gallons from the 5-gallon jug into the now-empty 3-gallon jug.
+    5. Refill the 5-gallon jug completely.
+    6. Carefully pour water from the 5-gallon jug to top off the 3-gallon jug, which already contains 2 gallons and thus only needs 1 more gallon.
 
-- **Primary Use Cases:**
-  - Solving complex logical puzzles or multi-step mathematical problems.
-  - Debugging intricate code flows or system interactions.
-  - Planning detailed, sequential projects where each step depends on the previous one.
-  - Analyzing complex scenarios that require a clear, traceable line of reasoning.
-  - Developing detailed arguments or explanations where the process is as important as the final answer.
-- **Expected Outcomes:** A comprehensive, step-by-step breakdown of the reasoning process, culminating in a final summary and a well-supported conclusion to the
-  initial problem.
+    After this final pour, exactly 4 gallons of water will remain in the 5-gallon jug, successfully solving the puzzle.
+    ```
 
-### When to Use
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\ConstraintRelaxationTask.kt
 
-This task is ideal when a problem is too complex for a single-shot answer and requires a methodical, verifiable approach.
-
-- **Use this task for:**
-  - Problems requiring sequential logic.
-  - Situations where transparency and auditability of the reasoning process are crucial.
-  - Tasks where self-correction is beneficial; the validation mechanism allows the model to identify and recover from logical errors.
-- **Comparison with other reasoning types:**
-  - Unlike **Brainstorming**, which is divergent and generates many independent ideas, Chain of Thought is linear and convergent, focusing on a single logical
-    path.
-  - Compared to **Decomposition-Synthesis**, which breaks a problem down and then rebuilds a solution, CoT focuses on a forward-moving, sequential narrative of
-    thought.
-
-### Configuration
-
-#### Required Parameters
-
-| Parameter           | Type   | Description                                           | Example                             |
-|---------------------|--------|-------------------------------------------------------|-------------------------------------|
-| `problem_statement` | String | The complex problem requiring step-by-step reasoning. | "Explain how to build a birdhouse." |
-
-#### Optional Parameters
-
-| Parameter         | Type         | Default       | Description                                                                                                 | Example                                        |
-|-------------------|--------------|---------------|-------------------------------------------------------------------------------------------------------------|------------------------------------------------|
-| `reasoning_depth` | Int          | `10`          | The maximum number of reasoning steps to generate. The process may conclude earlier if a solution is found. | `5`                                            |
-| `validate_steps`  | Boolean      | `true`        | If true, each reasoning step is validated for logical consistency before proceeding to the next.            | `false`                                        |
-| `related_files`   | List<String> | `emptyList()` | A list of file paths to provide additional context for the reasoning process.                               | `["docs/materials.txt", "plans/blueprint.md"]` |
-
-### How It Works
-
-#### Process Flow
-
-1. **Initialization:** The task begins with the user-provided `problem_statement`.
-2. **Iterative Reasoning Loop:** The task enters a loop that continues until the `reasoning_depth` is reached or the problem is solved.
-  - **Generate Step:** An AI agent generates a single `ReasoningStep`, which includes the reasoning process, a conclusion for that step, a confidence score, and
-    a `next_question` to guide the subsequent step.
-  - **Validate Step (Optional):** If `validate_steps` is enabled, a separate validation agent assesses the generated step for logical fallacies and consistency
-    with previous steps.
-  - **Self-Correction:** If validation fails, the task attempts to regenerate the step, providing the validation feedback to the AI to guide the correction.
-  - **Advance:** The `next_question` from the current step becomes the input for the next iteration of the loop.
-3. **Termination:** The loop concludes when:
-  - The model generates a step with high confidence and no `next_question`.
-  - The `reasoning_depth` limit is reached.
-4. **Summarization:** A final AI agent synthesizes the entire chain of conclusions into a comprehensive summary and final answer.
-
-#### Internal Mechanics
-
-The task orchestrates multiple AI agents. A primary `ParsedAgent` is responsible for generating structured `ReasoningStep` objects. An optional secondary
-`ParsedAgent` generates `StepValidation` objects to critique the output of the first. This agent-based system ensures that the output of one logical step
-correctly informs the input of the next, creating a robust and coherent "chain" of thought.
-
-#### Output Structure
-
-The final output is a detailed Markdown document containing:
-
-- **Reasoning Steps:** A numbered list of all steps taken. Each step includes:
-  - **Reasoning:** The detailed thought process for that step.
-  - **Conclusion:** The specific outcome or finding of the step.
-  - **Confidence:** The AI's confidence level in its conclusion for that step.
-  - **Next Question:** The question that prompted the following step.
-- **Final Summary:** A comprehensive summary that synthesizes the conclusions from all steps into a final, coherent answer to the original `problem_statement`.
-
-# ConstraintRelaxationTask.kt
 
 ## ConstraintRelaxation
 
-### Overview
-
-The Constraint Relaxation task is a sophisticated reasoning tool designed to solve complex, over-constrained problems. It works by strategically relaxing less
-critical constraints to find an initial, viable solution, and then progressively reintroducing them to refine the solution. This method helps navigate problems
-that might otherwise seem impossible due to conflicting requirements.
-
-- **Primary Use Cases:**
-  - Solving complex design or architectural problems with numerous, competing constraints.
-  - Developing algorithms or systems where requirements are in tension.
-  - Resource allocation and scheduling under tight limitations.
-  - Finding creative, "good enough" solutions when a perfect solution is unattainable.
-  - Understanding the relative importance and impact of different constraints on a final outcome.
-
-- **Expected Outcomes:**
-  - A final solution that satisfies the most critical constraints and attempts to accommodate as many lower-priority ones as possible.
-  - A detailed, step-by-step report showing how the solution evolved as each constraint was reintroduced.
-  - A final synthesis analyzing the trade-offs made, creative approaches discovered, and overall constraint satisfaction.
-
-### When to Use
-
-This task is ideal for situations where a direct approach to problem-solving fails due to the sheer number or conflicting nature of the requirements.
-
-- **Specific Scenarios:**
-  - When you have a long list of "must-have" features that are difficult to implement simultaneously.
-  - When initial attempts to solve a problem result in no viable solution.
-  - When you need to prioritize requirements and understand the consequences of dropping less important ones.
-
-- **Comparison with Alternative Reasoning Types:**
-  - Unlike a `ChainOfThoughtTask` which attempts to address all constraints at once, Constraint Relaxation simplifies the problem first, making intractable
-    problems approachable. It builds towards a complete solution incrementally, which is more robust for highly constrained scenarios.
-
-### Configuration
-
-#### Required Parameters
-
-| Parameter     | Type                | Description                                                              | Example                                                                   |
-|---------------|---------------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------|
-| `problem`     | String              | A clear and detailed description of the problem to be solved.            | `"Design a mobile app for a local delivery service."`                     |
-| `constraints` | Map<String, Double> | A map of constraint descriptions to their priority weights (0.0 to 1.0). | `{"Must work offline": 1.0, "UI must be blue": 0.5, "Fast loading": 0.8}` |
-
-#### Optional Parameters
-
-| Parameter                     | Type         | Default         | Description                                                                              | Example                                      |
-|-------------------------------|--------------|-----------------|------------------------------------------------------------------------------------------|----------------------------------------------|
-| `relaxation_strategy`         | String       | `"progressive"` | The strategy for initially relaxing constraints. See Advanced Options.                   | `"selective"`                                |
-| `reintroduction_order`        | String       | `"by_priority"` | The order in which to reintroduce relaxed constraints. See Advanced Options.             | `"by_difficulty"`                            |
-| `find_creative_satisfactions` | Boolean      | `true`          | If true, the AI will actively seek novel and unconventional ways to satisfy constraints. | `false`                                      |
-| `max_iterations`              | Int          | `5`             | The maximum number of relaxation/reintroduction cycles to perform.                       | `10`                                         |
-| `related_files`               | List<String> | `null`          | A list of file paths to provide additional context for the problem.                      | `["/path/to/specs.md", "/path/to/api.json"]` |
-
-#### Advanced Options
-
-- **`relaxation_strategy`**: Determines which constraints are initially ignored.
-  - `progressive`: Relaxes the bottom 50% of constraints, ordered by priority.
-  - `selective`: Relaxes all constraints with a priority weight less than 0.7.
-  - `hierarchical`: Relaxes all constraints except for the highest priority tier (those with a weight >= 0.9).
-
-- **`reintroduction_order`**: Controls the sequence for re-adding relaxed constraints.
-  - `by_priority`: Reintroduces constraints starting with the highest priority first.
-  - `by_difficulty`: Reintroduces constraints starting with the lowest priority first (as a proxy for "easiest").
-  - `by_dependency`: (Currently defaults to `by_priority`) Intended for future enhancement where constraint dependencies are analyzed.
-
-### How It Works
-
-#### Process Flow
-
-1. **Analysis**: The task begins by analyzing the provided constraints and ordering them based on the chosen `reintroduction_order`.
-2. **Initial Relaxation**: Using the selected `relaxation_strategy`, it identifies a subset of constraints to temporarily ignore.
-3. **Solve Relaxed Problem**: The AI generates an initial solution for the problem considering only the active (non-relaxed) constraints.
-4. **Iterative Reintroduction**: The task enters a loop, reintroducing one relaxed constraint at a time, up to `max_iterations`.
-5. **Adapt Solution**: In each iteration, the AI is given the current solution and the new constraint, and is instructed to adapt the solution to satisfy the
-   new requirement while maintaining satisfaction for all previously active constraints.
-6. **Final Synthesis**: After the loop completes, the AI generates a comprehensive final report that summarizes the process, analyzes the final solution's
-   adherence to all constraints, and discusses any trade-offs or creative insights discovered.
-
-#### Internal Mechanics
-
-The core of this task is an iterative refinement loop. It leverages an AI agent to first tackle a simplified version of the problem. The output of one step
-becomes the input for the next, with an added layer of complexity (a new constraint). This progressive approach allows the AI to navigate a complex solution
-space without being overwhelmed, building a robust solution piece by piece.
-
-#### Output Structure
-
-The final output is a detailed Markdown document that includes:
-
-- **Initial Relaxed Solution**: The first solution generated with the easiest set of constraints.
-- **Progressive Reintroduction Summary**: A log of each iteration, noting which constraint was reintroduced.
-- **Final Synthesis**: A comprehensive analysis containing:
-  - An overview of the final solution.
-  - A breakdown of how each original constraint was satisfied (or not).
-  - Key insights and discoveries made during the process.
-  - A discussion of trade-offs and compromises.
-  - Highlights of any creative or novel approaches used.
-
-# ConstraintSatisfactionTask.kt
-
-## ConstraintSatisfaction
 
 ### Overview
 
-The Constraint Satisfaction task is designed to solve complex problems that involve multiple, often competing, requirements. It systematically finds optimal or
-near-optimal solutions by balancing mandatory (hard) constraints with desirable (soft) constraints, each of which can be weighted by importance.
+**One-Line Description:** Solve over-constrained problems through progressive constraint relaxation.
 
-- **Primary use cases:**
-  - Making architectural decisions that balance performance, maintainability, and cost.
-  - Optimizing resource allocation with competing priorities.
-  - Finding the best configuration for a system with multiple objectives.
-  - Performing detailed trade-off analysis for design choices.
-  - Solving scheduling or planning problems with complex rules.
-- **Expected outcomes:** A detailed report that proposes a solution, verifies that all hard constraints are met, scores how well soft constraints are satisfied,
-  and provides clear reasoning for the trade-offs made.
+**Detailed Description:** This task solves complex problems by temporarily relaxing less critical constraints and then progressively reintroducing them. It begins by identifying which constraints to initially relax based on their assigned priority. It then solves a simplified version of the problem without these constraints to establish a baseline solution. Following this, it systematically reintroduces the relaxed constraints one by one, adapting the solution at each step to satisfy the newly added requirement while maintaining satisfaction for all previous ones. This iterative process allows for the discovery of creative solutions and trade-offs, making it ideal for problems where a direct solution is difficult due to conflicting requirements.
 
-### When to Use
+**Key Use Cases:**
+*   **System Architecture:** Designing complex systems (e.g., software, hardware) with conflicting goals like high performance, low cost, and small form factor.
+*   **Algorithm Design:** Developing algorithms that must balance competing factors such as speed, memory usage, and accuracy.
+*   **Product Design:** Creating a product specification that meets numerous, often contradictory, user requirements and business goals.
+*   **Logistics and Planning:** Finding workable solutions for scheduling or routing problems that are heavily constrained.
 
-This task is ideal for situations where a decision must adhere to strict rules while also optimizing for several weighted goals.
 
-- **Specific scenarios where this reasoning type excels:**
-  - You have a clear set of non-negotiable requirements (e.g., "The application must support 10,000 concurrent users").
-  - You also have a set of desirable goals with varying levels of importance (e.g., "Minimize latency" is more important than "Minimize infrastructure cost").
-  - The problem has too many variables and trade-offs to easily resolve manually.
-- **Problem types best suited for this approach:**
-  - System Design & Architecture
-  - Project Planning & Scheduling
-  - Resource Management
-  - Configuration Optimization
-- **Comparison with alternative reasoning types:**
-  - **Brainstorming:** Less structured. Use Brainstorming for open-ended idea generation, not for finding a specific solution that meets strict criteria.
-  - **Game Theory:** Use Game Theory for strategic decision-making in competitive or adversarial scenarios, not for single-agent optimization problems.
-  - **Genetic Optimization:** A more complex, evolutionary approach. Use Constraint Satisfaction for problems that can be modeled with discrete variables and
-    constraints, and Genetic Optimization for continuous or highly complex search spaces where an evolutionary algorithm is more suitable.
+### Configuration Parameters
 
-### Configuration
+This table details the configurable parameters for the Constraint Relaxation task.
 
-#### Required Parameters
+| Parameter                      | Type                  | Description                                                                          | Default Value     |
+| ------------------------------ | --------------------- | ------------------------------------------------------------------------------------ | ----------------- |
+| `problem`                      | `String`              | The problem description to solve.                                                    | **Required**      |
+| `constraints`                  | `Map<String, Double>` | A map of constraint descriptions to their priority weights (0.0-1.0, where 1.0 is critical). | **Required**      |
+| `relaxation_strategy`          | `String`              | The strategy for relaxing constraints: 'progressive', 'selective', or 'hierarchical'. | `progressive`     |
+| `reintroduction_order`         | `String`              | The order for reintroducing constraints: 'by_priority', 'by_difficulty', or 'by_dependency'. | `by_priority`     |
+| `find_creative_satisfactions`  | `Boolean`             | If true, the AI will actively seek creative and unconventional ways to satisfy constraints. | `true`            |
+| `max_iterations`               | `Int`                 | The maximum number of relaxation and reintroduction iterations to perform.           | `5`               |
+| `related_files`                | `List<String>`        | A list of additional file paths to provide as context for the task.                  | `null`            |
+| `task_dependencies`            | `List<String>`        | A list of task IDs that must be completed before this task can start.                | `null`            |
 
-| Parameter             | Type   | Description                                                              | Example                                                    |
-|-----------------------|--------|--------------------------------------------------------------------------|------------------------------------------------------------|
-| `problem_description` | String | A clear and detailed description of the problem that needs to be solved. | "Design a database schema for a social media application." |
 
-#### Optional Parameters
+### Process Flow
 
-| Parameter          | Type                | Default        | Description                                                                                                                          | Example                                                                         |
-|--------------------|---------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `hard_constraints` | List<String>        | `[]`           | A list of non-negotiable requirements that the final solution *must* satisfy.                                                        | `["User data must be encrypted at rest.", "The system must comply with GDPR."]` |
-| `soft_constraints` | Map<String, Double> | `{}`           | A map of desirable goals to their relative importance (weights from 0.0 to 1.0).                                                     | `{"Minimize query latency": 0.9, "Reduce monthly cost": 0.6}`                   |
-| `search_strategy`  | String              | `backtracking` | The conceptual search strategy for the AI to use. Options: `backtracking` (systematic), `forward` (greedy), `local` (hill-climbing). | `forward`                                                                       |
-| `max_iterations`   | Int                 | `100`          | The maximum number of conceptual search iterations to perform, controlling the trade-off between search depth and time.              | `200`                                                                           |
-| `related_files`    | List<String>        | `[]`           | A list of file paths to provide additional context for the problem.                                                                  | `["src/main/kotlin/com/example/User.kt"]`                                       |
+The task executes through a structured, multi-step process to find a viable solution:
 
-### How It Works
+1.  **Constraint Analysis:** The task first analyzes the provided constraints. It orders them according to the `reintroduction_order` and then selects a subset to temporarily relax based on the chosen `relaxation_strategy`.
+2.  **Initial Relaxed Solution:** It generates an initial solution to the problem, considering only the active (non-relaxed) constraints. This provides a feasible starting point.
+3.  **Progressive Reintroduction:** The task enters a loop, reintroducing the relaxed constraints one at a time. In each iteration, it adapts the current solution to satisfy the new constraint while ensuring all previously satisfied constraints remain met.
+4.  **Adaptation and Refinement:** During each reintroduction step, the AI refines the solution, potentially discovering novel ways to balance competing requirements. This process continues until all constraints are reintroduced or the `max_iterations` limit is reached.
+5.  **Final Synthesis:** Once the iterative process is complete, the task generates a comprehensive final report. This report summarizes the final solution, analyzes how each constraint was satisfied, and discusses key insights, trade-offs, and creative elements discovered during the process.
 
-#### Process Flow
 
-1. **Initialization:** The task starts by receiving the problem description, hard constraints, soft constraints, and search strategy.
-2. **Context Gathering:** It collects relevant information from the workspace and previous tasks to build a comprehensive context.
-3. **Prompt Construction:** A detailed prompt is formulated, instructing the AI to act as a constraint satisfaction expert. The prompt includes the problem, all
-   constraints, the chosen search strategy, and the gathered context. It also specifies the required output format.
-4. **Solution Generation:** The AI analyzes the problem, identifies decision variables, and applies the specified search strategy to find a solution that
-   satisfies all hard constraints while maximizing the weighted score of the soft constraints.
-5. **Output Formatting:** The AI generates a structured report detailing the solution, its reasoning, constraint satisfaction analysis, and potential
-   alternatives.
-6. **Review and Completion:** The final report is presented to the user for review and approval.
+### Output Structure
 
-#### Internal Mechanics
+The output is delivered in two forms: a concise string for subsequent tasks and a detailed breakdown in the user interface.
 
-The task leverages a powerful language model to perform the complex reasoning required for constraint satisfaction. By providing a highly structured prompt, the
-task guides the model to:
+**Final Result:**
+The final output is a Markdown-formatted string that includes:
+*   The initial problem statement.
+*   A summary of the initial solution when constraints were relaxed.
+*   A list of the reintroduction steps.
+*   The full text of the final synthesis, which provides a detailed overview of the final solution, constraint satisfaction analysis, key insights, and recommendations.
 
-- Deconstruct the problem into key variables and constraints.
-- Conceptually simulate a search algorithm (like backtracking or local search) to explore the solution space.
-- Evaluate potential solutions against the defined hard and soft constraints.
-- Articulate the trade-offs and justify the final proposed solution based on the weighted importance of the soft constraints.
+**UI Breakdown:**
+The user interface provides a tabbed view for a detailed exploration of the task's execution:
+*   **Overview:** Displays the initial configuration, a list of all constraints with their priorities, and a real-time log of the task's progress.
+*   **Constraint Analysis:** Shows the ordered list of constraints and clearly marks which ones were initially relaxed.
+*   **Relaxed Solution:** Contains the first solution generated by the AI, which only addresses the high-priority, non-relaxed constraints.
+*   **Iteration `[X]`:** A separate tab is created for each reintroduction step, showing the adapted solution after incorporating a new constraint.
+*   **Final Synthesis:** Presents the final, comprehensive report detailing the solution, trade-offs, and overall analysis.
 
-#### Output Structure
 
-The final output is a comprehensive markdown report with the following sections:
+### Example Usage
 
-- **Solution Overview:** A brief summary of the proposed solution.
-- **Decision Variables:** A list of the key decisions made to arrive at the solution.
-- **Hard Constraint Satisfaction:** A checklist verifying that each hard constraint has been met.
-- **Soft Constraint Optimization:** A breakdown of how well each soft constraint was satisfied, including a satisfaction score and an explanation of any
-  trade-offs.
-- **Overall Score:** A weighted sum representing the overall quality of the solution based on soft constraint satisfaction.
-- **Reasoning:** A detailed explanation of why the proposed solution is optimal or the best possible compromise.
-- **Alternative Solutions:** A discussion of other viable options and why they were not chosen, if applicable.
+**Scenario:**
+A startup is designing a new consumer drone. The goal is to create a product that is affordable, lightweight, has a long flight time, and includes a high-quality 4K camera. These requirements are conflicting and create an over-constrained design problem.
 
-# CounterfactualAnalysisTask.kt
+**Configuration:**
+```json
+{
+  "problem": "Design a consumer drone with the optimal balance of features and cost.",
+  "constraints": {
+    "Retail price under $400": 1.0,
+    "Flight time of at least 30 minutes": 0.9,
+    "Weight under 250g to avoid FAA registration": 0.8,
+    "Includes a 4K camera": 0.7,
+    "Has a range of at least 5km": 0.6,
+    "Uses premium carbon fiber materials": 0.4
+  },
+  "relaxation_strategy": "progressive",
+  "reintroduction_order": "by_priority",
+  "find_creative_satisfactions": true
+}
+```
+
+**Expected Output Snippet:**
+The final synthesis might contain a section like this:
+
+> **Key Insights:** The progressive relaxation process revealed that the constraint "Uses premium carbon fiber materials" was the most significant driver of cost. By relaxing this constraint initially, we were able to find a baseline design using a high-quality polymer composite that met the weight target. When the "4K camera" constraint was reintroduced, the solution adapted by slightly reducing battery size to offset the camera's weight, resulting in a flight time of 28 minutes. This trade-off was deemed acceptable to keep the price under the critical $400 threshold while still offering a key feature. The final recommendation is to proceed with the polymer composite frame and market the flight time as "up to 30 minutes."
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\ConstraintSatisfactionTask.kt
+
+
+## Constraint Satisfaction
+
+
+#### **Overview**
+
+*   **One-Line Description:** Solve problems with multiple competing constraints.
+*   **Detailed Description:** This task solves complex problems by balancing multiple, often competing, requirements. It systematically evaluates solutions against a set of 'hard' constraints (which must be met) and 'soft' constraints (which are desirable but can be traded off). By assigning weights to soft constraints and using various search strategies, the task can find an optimal or near-optimal solution that best satisfies all requirements. It provides detailed reasoning for its choices, making it ideal for complex decision-making processes.
+*   **Key Use Cases:**
+    *   Architectural decisions balancing performance, maintainability, and cost.
+    *   Resource allocation with competing priorities.
+    *   Configuration optimization with multiple objectives.
+    *   Design trade-off analysis.
+
+
+#### **Configuration Parameters**
+
+This table details every configurable parameter for the Constraint Satisfaction task.
+
+| Parameter             | Type                     | Description                                                                                      | Default Value        |
+| --------------------- | ------------------------ | ------------------------------------------------------------------------------------------------ | -------------------- |
+| `problem_description` | `String?`                | The problem requiring constraint satisfaction.                                                     | **Required**         |
+| `hard_constraints`    | `List<String>?`          | Hard constraints that must be satisfied (cannot be violated).                                    | `null` (empty list)  |
+| `soft_constraints`    | `Map<String, Double>?`   | Soft constraints to optimize with their relative weights (0.0-1.0).                              | `null` (empty map)   |
+| `search_strategy`     | `String`                 | Search strategy: 'backtracking' (systematic), 'forward' (greedy), 'local' (hill-climbing).       | `"backtracking"`     |
+| `max_iterations`      | `Int`                    | Maximum search iterations before returning best solution found.                                   | `100`                |
+| `related_files`       | `List<String>?`          | Additional files for context.                                                                    | `null`               |
+| `task_dependencies`   | `List<String>?`          | A list of task IDs that must be completed before this task can start.                            | `null`               |
+| `state`               | `TaskState?`             | The initial state of the task.                                                                   | `TaskState.Pending`  |
+
+
+#### **Process Flow**
+
+1.  **Problem Overview:** The task begins by displaying a summary of the problem description, hard and soft constraints, and the chosen search strategy in the UI.
+2.  **Context Gathering:** It collects the results and code generated from any preceding tasks to provide relevant context for the problem.
+3.  **Solution Generation:** The task constructs a detailed prompt for the AI, instructing it to act as a constraint satisfaction expert. It then sends this prompt to the language model to generate a solution that adheres to the hard constraints while optimizing for the weighted soft constraints.
+4.  **Display Solution:** The complete, structured solution from the AI is presented in the UI, including the proposed solution, analysis of constraint satisfaction, and reasoning.
+5.  **Acceptance:** The task waits for the user to accept the solution. Once accepted, the generated text is passed on as the result for subsequent tasks.
+
+
+#### **Output Structure**
+
+*   **Final Result:** The final output is a detailed string in Markdown format containing the AI's full analysis. This text follows a predefined structure, including sections for the solution overview, decision variables, constraint satisfaction analysis, overall score, reasoning, and alternative solutions.
+*   **UI Breakdown:** The user interface provides a step-by-step view of the process in the following tabs:
+    *   **Problem Overview:** Displays the initial problem statement and all configured constraints and parameters.
+    *   **Context:** Shows the status of gathering information from previous tasks.
+    *   **Solution Generation:** Indicates that the AI is currently processing the request.
+    *   **Final Solution:** Presents the complete, formatted solution generated by the AI for review and acceptance.
+
+
+#### **Example Usage**
+
+*   **Scenario:** A development team needs to choose a backend framework for a new e-commerce platform. They have several competing requirements.
+*   **Configuration:**
+    ```kotlin
+    problem_description = "Select the best backend framework for a new e-commerce platform."
+    hard_constraints = listOf(
+        "Must be based on the JVM ecosystem.",
+        "Must have strong support for RESTful APIs."
+    )
+    soft_constraints = mapOf(
+        "High performance and low latency" to 1.0,
+        "Rapid development and developer productivity" to 0.8,
+        "Large community and availability of third-party libraries" to 0.7,
+        "Low operational cost" to 0.5
+    )
+    search_strategy = "backtracking"
+    ```
+*   **Expected Output Snippet:**
+    ```markdown
+    ### Solution Overview
+    The recommended backend framework is Spring Boot with Kotlin. It fully satisfies all hard constraints and provides the best-balanced score across the desired soft constraints, excelling in community support and developer productivity.
+
+    ### Hard Constraint Satisfaction
+    - **JVM Ecosystem:** Verified. Spring Boot is a leading Java framework.
+    - **RESTful API Support:** Verified. Spring Web MVC provides excellent support for creating REST APIs.
+
+    ### Soft Constraint Optimization
+    - **High performance (weight: 1.0):** Score: 0.8/1.0. While fast, frameworks like Vert.x might offer lower latency.
+    - **Rapid development (weight: 0.8):** Score: 1.0/1.0. Spring Boot's convention-over-configuration approach is a major strength.
+    ...
+    ```
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\CounterfactualAnalysisTask.kt
+
 
 ## Counterfactual Analysis
 
-### Overview
 
-Counterfactual Analysis is a reasoning task designed to explore "what-if" scenarios. It systematically analyzes an actual, real-world event or decision against
-a set of hypothetical alternatives (counterfactuals) to understand causal relationships and the potential impacts of different choices.
+#### Overview
 
-- **Primary Use Cases:**
-  - **Retrospective Analysis:** Understanding what might have happened if a past decision had been made differently.
-  - **Strategic Planning:** Evaluating potential strategies by comparing their likely outcomes under various conditions.
-  - **Risk Assessment:** Exploring how changing certain variables could mitigate risks or lead to different failures.
-  - **Causal Inference:** Strengthening understanding of cause-and-effect by examining what would happen in the absence of a supposed cause.
-  - **Decision Validation:** Assessing the robustness of a decision by comparing it to viable alternatives.
-- **Expected Outcomes:** A detailed report that provides an in-depth analysis of the actual scenario, a similar analysis for each counterfactual, and a final
-  comparative analysis that highlights key differences, causal factors, and actionable insights.
+**One-Line Description:**
+Explore "what-if" scenarios to understand causal relationships and decision impacts.
 
-### When to Use
+**Detailed Description:**
+This task performs a counterfactual analysis to explore alternative scenarios and their potential outcomes. It systematically analyzes an actual, historical event or decision and compares it against one or more hypothetical "what-if" conditions (counterfactuals). The process helps identify key causal factors, supports controlled comparisons by holding certain variables constant, and provides valuable insights for risk analysis, decision validation, and strategic planning. It is particularly useful for retrospective analysis to understand why certain outcomes occurred and how different choices might have led to different results.
 
-This task is ideal when you need to move beyond simple prediction to understand the *why* behind an outcome. It is particularly effective for project
-post-mortems, strategic planning, policy impact assessments, and historical event analysis.
+**Key Use Cases:**
+*   **Risk Analysis:** Evaluating the potential impact of different risk mitigation strategies.
+*   **Decision Validation:** Assessing whether a past decision was optimal by comparing it to alternatives.
+*   **Retrospective Analysis:** Understanding the root causes of a project's success or failure.
+*   **Strategic Planning:** Exploring the potential outcomes of different strategic choices before committing resources.
+*   **Impact Assessment:** Determining the influence of a specific variable or event by imagining a scenario where it was absent or different.
 
-- **Problem Types:** Best suited for problems where you need to dissect causality, evaluate the significance of specific factors, and make more informed future
-  decisions by learning from hypothetical alternatives.
-- **Comparison with Alternatives:**
-  - vs. **Chain of Thought:** While Chain of Thought follows a single, linear reasoning path, Counterfactual Analysis explores multiple, parallel reasoning
-    paths branching from a common starting point.
-  - vs. **Brainstorming:** Brainstorming is generative and divergent, aiming for a wide range of ideas. Counterfactual Analysis is more analytical and focused,
-    examining the specific consequences of predefined alternative scenarios.
+---
 
-### Configuration
 
-#### Required Parameters
+#### Configuration Parameters
 
-| Parameter         | Type           | Description                                           | Example                                                                      |
-|-------------------|----------------|-------------------------------------------------------|------------------------------------------------------------------------------|
-| `actual_scenario` | String         | The real-world scenario or decision that occurred.    | "We launched the marketing campaign on a Monday."                            |
-| `counterfactuals` | List of String | A list of alternative "what-if" scenarios to explore. | `["What if we had launched on a Friday?", "What if we doubled the budget?"]` |
+The task's behavior is controlled by the following parameters:
 
-#### Optional Parameters
+| Parameter          | Type          | Description                                                              | Default Value |
+| ------------------ | ------------- | ------------------------------------------------------------------------ | ------------- |
+| `actual_scenario`  | `String`      | The actual scenario or decision that occurred and is to be analyzed.     | **Required**  |
+| `counterfactuals`  | `List<String>`| A list of alternative "what-if" scenarios to explore and compare against the actual one. | **Required**  |
+| `compare_outcomes` | `Boolean`     | If true, the task will generate a final section comparing the outcomes of the actual and counterfactual scenarios. | `true`        |
+| `control_factors`  | `List<String>`| A list of factors or variables to hold constant across all scenarios to ensure a controlled comparison. | `null`        |
+| `related_files`    | `List<String>`| Paths to additional files (e.g., historical data, related analyses) to provide context for the analysis. | `null`        |
+| `task_description` | `String`      | A detailed description of the specific analysis objectives for this task instance. | `null`        |
 
-| Parameter          | Type           | Default | Description                                                                   | Example                                                                      |
-|--------------------|----------------|---------|-------------------------------------------------------------------------------|------------------------------------------------------------------------------|
-| `compare_outcomes` | Boolean        | `true`  | If true, generates a final section comparing all scenarios.                   | `false`                                                                      |
-| `control_factors`  | List of String | `null`  | Factors to be held constant across all scenarios for a controlled comparison. | `["The target audience remains the same.", "The ad creative is unchanged."]` |
-| `related_files`    | List of String | `null`  | Paths to files providing additional context (e.g., historical data, reports). | `["reports/q1_performance.txt", "data/user_demographics.csv"]`               |
+---
 
-### How It Works
 
 #### Process Flow
 
-1. **Initialization:** The task begins with a defined `actual_scenario` and a list of `counterfactuals`.
-2. **Context Gathering:** It reads the content of any specified `related_files` and incorporates results from previous tasks to provide rich context for the
-   analysis.
-3. **Individual Analysis:** The task first sends the actual scenario to an LLM for a detailed breakdown of its elements, outcomes, risks, and causal links. It
-   then repeats this process independently for each counterfactual scenario.
-4. **Comparative Analysis:** If `compare_outcomes` is enabled, the task synthesizes the individual analyses. It prompts the LLM to compare the outcomes,
-   identify key differentiating factors, and extract lessons learned across all scenarios.
-5. **Report Generation:** All individual analyses and the final comparison are compiled into a single, structured Markdown report.
+The task executes in the following sequence:
 
-#### Internal Mechanics
+1.  **Validation:** The task first checks if the `actual_scenario` and `counterfactuals` list have been provided. If either is missing, it terminates with a configuration error.
+2.  **Context Gathering:** It reads the content of any files specified in `related_files` and incorporates results from previous dependent tasks to build a comprehensive context.
+3.  **Actual Scenario Analysis:** It performs a detailed analysis of the `actual_scenario`, identifying its key elements, actors, decisions, constraints, and potential outcomes.
+4.  **Counterfactual Scenarios Analysis:** It iterates through each hypothetical scenario in the `counterfactuals` list, performing the same detailed analysis for each one independently.
+5.  **Comparative Analysis:** If `compare_outcomes` is enabled, the task initiates a final step to compare the analysis of the actual scenario against all counterfactual scenarios. This step identifies key differences, assesses the impact of variable factors, and synthesizes lessons learned.
+6.  **Report Compilation:** All individual analyses and the final comparison are compiled into a single, structured Markdown report.
 
-The task uses a `ChatAgent` to interact with an LLM. It relies on two primary, carefully crafted prompts:
+---
 
-- **`analyzeScenario`:** This prompt focuses on a single case (either actual or counterfactual). It instructs the AI to identify key elements, potential
-  outcomes, risks, opportunities, and causal relationships within that specific scenario.
-- **`compareScenarios`:** This prompt provides the AI with all the individual analyses. It asks for a higher-level synthesis, focusing on the differences
-  between scenarios, the impact of key variables, and overall recommendations.
 
 #### Output Structure
 
-The final output is a comprehensive Markdown document with the following sections:
+**Final Result:**
+The final output is a single, comprehensive Markdown string that is passed to subsequent tasks. This report is structured with clear headings for the actual scenario, each counterfactual scenario, and a concluding comparative analysis (if enabled).
 
-- **Counterfactual Analysis Results:** The main title of the report.
-- **Actual Scenario:** A description of the baseline case, followed by its detailed analysis.
-- **Counterfactual Scenario [N]:** A separate, numbered section for each alternative scenario, containing its description and analysis.
-- **Comparative Analysis:** (If enabled) A concluding section that contrasts all scenarios, discusses the impact of key variables, and provides overall insights
-  and recommendations.
+**UI Breakdown:**
+In the user interface, the task's progress and results are displayed as follows:
+*   **Overview Tab:** An initial tab is created to show a summary of the configuration, including the actual scenario and the number of counterfactuals being analyzed, along with a status indicator.
+*   **Main Result View:** Upon completion, the main view is populated with the full, rendered Markdown report. This report includes:
+    *   A section detailing the analysis of the **Actual Scenario**.
+    *   A separate section for each **Counterfactual Scenario**, detailing its analysis.
+    *   A final **Comparative Analysis** section that synthesizes findings, compares outcomes, and provides strategic recommendations.
 
-# DecompositionSynthesisTask.kt
+---
 
-## Decomposition & Synthesis
 
-### Overview
+#### Example Usage
 
-The Decomposition & Synthesis task implements a "divide and conquer" reasoning strategy. It breaks down a large, complex problem into smaller, more manageable
-subproblems, solves each one individually, and then synthesizes the individual solutions into a coherent, comprehensive final answer.
+**Scenario:**
+A software company decided to build a new feature using Technology Stack A. The project was completed over budget and behind schedule. The project manager wants to analyze whether choosing Technology Stack B, which was the other finalist, would have resulted in a better outcome.
 
-- **Primary Use Cases:**
-  - Solving complex design or engineering problems (e.g., "Design a scalable microservices architecture for an e-commerce site").
-  - Planning multi-step projects with interdependent tasks.
-  - Performing detailed root cause analysis by breaking down a failure into its constituent parts.
-  - Answering broad, multifaceted questions that require exploring several sub-topics.
-  - Generating complex documents or reports by tackling each section as a subproblem.
+**Configuration:**
+```json
+{
+  "actual_scenario": "We developed the 'Analytics Dashboard' feature using React for the frontend and a Python/Flask monolith for the backend (Tech Stack A). The project took 6 months and cost $150,000.",
+  "counterfactuals": [
+    "What if we had developed the 'Analytics Dashboard' using a serverless architecture with AWS Lambda and a Vue.js frontend (Tech Stack B)?"
+  ],
+  "compare_outcomes": true,
+  "control_factors": [
+    "Team size: 4 developers",
+    "Core feature requirements remain the same"
+  ],
+  "related_files": [
+    "docs/project_postmortem_stack_A.txt"
+  ]
+}
+```
 
-- **Expected Outcomes:**
-  - A structured breakdown of the original problem, including subproblems and their dependencies.
-  - Individual, focused solutions for each identified subproblem.
-  - A final, integrated solution that combines the sub-solutions.
-  - A validation report assessing the coherence and completeness of the final solution.
+**Expected Output Snippet:**
+```markdown
 
-### When to Use
+## Counterfactual Analysis Results
 
-This task is ideal for problems that are too large or complex to be solved effectively in a single step. It excels when a problem can be logically segmented.
 
-- **Specific Scenarios:**
-  - Use when a direct approach fails to yield a satisfactory or complete answer.
-  - When the problem has distinct functional components, sequential stages, or a hierarchical structure.
-  - When you need to ensure all facets of a complex issue are addressed systematically.
+### Actual Scenario
+We developed the 'Analytics Dashboard' feature using React for the frontend and a Python/Flask monolith for the backend (Tech Stack A). The project took 6 months and cost $150,000.
 
-- **Comparison with Alternative Reasoning Types:**
-  - **Chain of Thought:** Solves problems linearly, step-by-step. Decomposition is better for problems with parallel or non-linear sub-components.
-  - **Brainstorming:** Generates a wide array of ideas without structure. Decomposition imposes a logical structure to guide the solution process.
-  - **Hierarchical Planning:** Focuses on creating a plan of tasks. Decomposition & Synthesis goes a step further by executing the sub-tasks (solving
-    subproblems) and integrating the results.
 
-### Configuration
+#### Analysis
+The monolithic architecture led to deployment complexities and tight coupling between components, increasing development time. While React is powerful, the team's limited experience with it contributed to schedule slips...
 
-#### Required Parameters
 
-| Parameter         | Type   | Description                                                                   | Example                                                           |
-|-------------------|--------|-------------------------------------------------------------------------------|-------------------------------------------------------------------|
-| `complex_problem` | String | The main complex problem or question that needs to be broken down and solved. | `"Create a comprehensive marketing plan for a new SaaS product."` |
+### Counterfactual Scenario 1
+What if we had developed the 'Analytics Dashboard' using a serverless architecture with AWS Lambda and a Vue.js frontend (Tech Stack B)?
 
-#### Optional Parameters
 
-| Parameter                | Type    | Default      | Description                                                                                                                           | Example                            |
-|--------------------------|---------|--------------|---------------------------------------------------------------------------------------------------------------------------------------|------------------------------------|
-| `decomposition_strategy` | String  | `functional` | The method used to break down the problem. Options: `functional`, `temporal`, `spatial`, `hierarchical`.                              | `temporal`                         |
-| `max_depth`              | Integer | `3`          | The maximum number of recursive levels for decomposition. Prevents excessively granular breakdowns.                                   | `2`                                |
-| `synthesize_solution`    | Boolean | `true`       | If true, the task will attempt to combine all subproblem solutions into a single, integrated final solution.                          | `false`                            |
-| `validate_coherence`     | Boolean | `true`       | If true, an additional step is run to check the final synthesized solution for logical consistency, completeness, and contradictions. | `false`                            |
-| `related_files`          | List    | `null`       | A list of file paths to provide additional context for solving the problem and its subproblems.                                       | `["/path/to/market_research.pdf"]` |
+#### Analysis
+A serverless approach would have eliminated server management overhead. The team's prior experience with Vue.js would likely have accelerated frontend development. The estimated timeline would be closer to 4 months with a potential cost reduction due to pay-per-use pricing...
 
-#### Advanced Options
 
-- **Decomposition Strategies:**
-  - `functional`: Breaks the problem down by its functions or capabilities. Best for system design or process analysis. (e.g., Decomposing an app into user
-    authentication, data processing, and UI).
-  - `temporal`: Breaks the problem down by time or sequence of events. Ideal for planning, scheduling, or historical analysis. (e.g., Decomposing a product
-    launch into pre-launch, launch day, and post-launch phases).
-  - `spatial`: Breaks the problem down by physical location or components. Useful for engineering or logistical problems. (e.g., Decomposing a network design by
-    datacenter, office, and remote locations).
-  - `hierarchical`: Breaks the problem down by levels of abstraction, from high-level concepts to low-level details. Good for organizational planning or
-    creating detailed documentation.
+### Comparative Analysis
+The analysis suggests that Technology Stack B would have been the preferable choice. The primary drivers for this conclusion are the reduction in operational overhead from serverless architecture and better alignment with the team's existing skills (Vue.js). The estimated savings of 2 months and potentially lower costs highlight the significant impact of the initial technology choice...
+```
 
-### How It Works
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\DecompositionSynthesisTask.kt
+
+
+## DecompositionSynthesis
+
+
+#### Overview
+
+**One-Line Description:** Decomposes complex problems into manageable subproblems, solves them, and synthesizes integrated solutions.
+
+**Detailed Description:** This task implements a "divide and conquer" reasoning strategy. It systematically breaks down a large, complex problem into smaller, more manageable subproblems. It can use various decomposition strategies, such as breaking the problem down by function, time, or hierarchy. After decomposing, it solves each subproblem individually, respecting any identified dependencies between them. Finally, it synthesizes these individual solutions into a single, coherent, and comprehensive solution to the original problem, optionally validating the final result for logical consistency.
+
+**Key Use Cases:**
+*   **System Design:** Breaking down the architecture of a new software system into components like API, database, frontend, and authentication.
+*   **Complex Bug Fixing:** Decomposing a bug report into potential causes (e.g., data corruption, race condition, UI error) to investigate each one systematically.
+*   **Project Planning:** Breaking a large project goal into a series of smaller, actionable tasks with clear dependencies.
+*   **Research and Analysis:** Structuring a complex research question into sub-questions, analyzing each, and synthesizing the findings into a final report.
+
+---
+
+
+#### Configuration Parameters
+
+| Parameter                | Type          | Description                                                              | Default Value |
+| ------------------------ | ------------- | ------------------------------------------------------------------------ | ------------- |
+| `complex_problem`        | `String`      | The complex problem to decompose.                                        | **Required**  |
+| `decomposition_strategy` | `String`      | The strategy to use: 'functional', 'temporal', 'spatial', 'hierarchical'. | `functional`  |
+| `max_depth`              | `Int`         | The maximum depth for recursive decomposition.                           | `3`           |
+| `synthesize_solution`    | `Boolean`     | If true, the task will integrate subproblem solutions into a single output. | `true`        |
+| `validate_coherence`     | `Boolean`     | If true, the synthesized solution is checked for consistency and completeness. | `true`        |
+| `related_files`          | `List<String>`| A list of file paths to provide additional context for the problem.      | `null`        |
+
+---
+
 
 #### Process Flow
 
-The task follows a systematic, multi-step process:
+1.  **Context Building:** The task first gathers all available context from previous tasks and any specified `related_files` to create a comprehensive understanding of the problem space.
+2.  **Problem Decomposition:** Using the selected `decomposition_strategy`, the AI agent breaks the `complex_problem` into a set of distinct subproblems. It also identifies any dependencies between these subproblems (e.g., Subproblem B depends on the solution of Subproblem A).
+3.  **Subproblem Solving:** The task performs a topological sort on the subproblems to create an efficient execution order that respects all dependencies. It then proceeds to solve each subproblem one by one, feeding the solutions of completed dependencies as context to the next ones.
+4.  **Solution Synthesis (Optional):** If `synthesize_solution` is enabled, the task takes all the individual subproblem solutions and integrates them into a single, unified solution that addresses the original problem.
+5.  **Coherence Validation (Optional):** If `validate_coherence` is enabled, a final review is conducted on the synthesized solution. The AI checks for logical consistency, completeness, and any internal contradictions, providing a list of issues and suggestions if any are found.
+6.  **Result Finalization:** The task outputs the final synthesized solution. If synthesis is disabled, it returns a concatenation of all the individual subproblem solutions.
 
-1. **Context Building:** Gathers information from any provided `related_files` and the results of previous tasks to create a contextual background.
-2. **Decomposition:** The AI analyzes the `complex_problem` using the specified `decomposition_strategy` and `max_depth`. It produces a list of subproblems and
-   identifies dependencies between them (i.e., which subproblems must be solved before others).
-3. **Subproblem Solving:** The task performs a topological sort on the subproblems to determine the correct execution order, automatically detecting and
-   resolving any circular dependencies. It then proceeds to solve each subproblem one by one, feeding the solutions of prerequisite tasks as context to
-   dependent tasks.
-4. **Synthesis (Optional):** If `synthesize_solution` is enabled, the AI takes all the individual subproblem solutions and integrates them into a single,
-   coherent final document. It explains the approach used for the synthesis.
-5. **Validation (Optional):** If `validate_coherence` is enabled, the AI reviews the synthesized solution for logical consistency, completeness, and internal
-   contradictions. It reports whether the solution is coherent and provides a list of issues and suggestions for improvement.
-6. **Final Output:** The task returns the synthesized solution. If synthesis is disabled, it returns a concatenation of all the individual subproblem solutions.
+---
 
-#### Internal Mechanics
-
-The core of this task is the iterative application of AI agents.
-
-- A `ParsedAgent` is first used to analyze the problem and generate a structured `ProblemDecomposition` object.
-- For each subproblem, another `ParsedAgent` is invoked to generate a `SubproblemSolution`.
-- Finally, separate agents are used for the synthesis and validation steps, again parsing the output into structured `SynthesizedSolution` and
-  `CoherenceValidation` objects. This structured approach ensures reliability and allows the system to manage the complex flow of information between steps.
 
 #### Output Structure
 
-The results are presented in a tabbed interface for clarity:
+**Final Result:**
+The final result is a single string containing the complete, synthesized solution to the original problem. If solution synthesis is disabled, this string will be a concatenation of all the individual subproblem solutions, each clearly marked with its subproblem ID.
 
-- **Overview:** A summary of the task configuration and a real-time log of the progress through the different stages.
-- **Decomposition:** Shows the rationale for the breakdown, the list of identified subproblems, their estimated complexity, and a map of their dependencies.
-- **Subproblem Solutions:** Displays the detailed solution for each subproblem as it is completed.
-- **Synthesis:** (If enabled) Contains the final, integrated solution and an explanation of how it was constructed.
-- **Validation:** (If enabled) Shows the results of the coherence check, including any issues found and suggestions for improvement.
+**UI Breakdown:**
+The task provides a detailed, multi-tab view in the user interface to track its progress and results:
+*   **Overview:** A summary tab showing the initial configuration, live progress updates (e.g., "Solving subproblem 3/5"), and a final report including total time, number of subproblems, and average solution confidence.
+*   **Context:** Displays the contextual information gathered from related files and previous tasks that was used to inform the analysis.
+*   **Decomposition:** Shows the results of the decomposition step, including the rationale, a list of all identified subproblems, their estimated complexity, and a map of their dependencies.
+*   **Subproblem Solutions:** Contains the detailed solution for each subproblem, along with the AI's confidence score for that specific solution.
+*   **Synthesis:** (If enabled) Presents the final integrated solution, explains the approach used to combine the sub-solutions, and gives an overall confidence score.
+*   **Validation:** (If enabled) Displays the results of the coherence check, stating whether the solution is coherent and listing any identified issues or suggestions for improvement.
 
-# DialecticalReasoningTask.kt
+---
 
-## DialecticalReasoningTask
 
-### Overview
+#### Example Usage
 
-The Dialectical Reasoning Task resolves contradictions between two opposing viewpoints (a thesis and an antithesis) by generating a higher-level synthesis. It
-systematically analyzes each position, identifies the core tensions between them, and then iteratively builds a more comprehensive understanding that
-incorporates the valid insights from both sides.
+**Scenario:**
+A software development team needs to design a scalable, real-time notification system for their social media application. The system must handle various notification types and deliver them through multiple channels.
 
-- **Primary Use Cases:**
-  - Resolving architectural debates or conflicting technical approaches.
-  - Reconciling contradictory stakeholder requirements.
-  - Exploring complex design philosophies or strategic decisions.
-  - Analyzing and synthesizing opposing arguments in a debate or policy analysis.
-  - Finding innovative solutions that transcend simple compromises.
-- **Expected Outcomes:** A structured report detailing the analysis of the thesis, antithesis, their contradictions, and a final, integrated synthesis that
-  offers a more nuanced and complete perspective.
+**Configuration:**
+```json
+{
+  "complex_problem": "Design a scalable, real-time notification system for a social media app. It must handle user mentions, new comments, and friend requests. The system should be efficient and deliver notifications via web sockets and push notifications.",
+  "decomposition_strategy": "functional",
+  "max_depth": 2,
+  "synthesize_solution": true,
+  "validate_coherence": true
+}
+```
 
-### When to Use
+**Expected Output Snippet:**
+```markdown
+**Synthesized Solution for Real-Time Notification System**
 
-This task is ideal for situations where you have two well-defined, opposing ideas that need to be reconciled rather than simply choosing one over the other.
+**1. System Architecture Overview**
+The proposed notification system is designed as a microservice-based architecture to ensure scalability and maintainability. It consists of three core services: the Notification Ingestion Service, the Fan-out & Delivery Service, and the User Preference Service.
 
-- **Specific Scenarios:** Use this task when a problem has inherent tensions and a simple "right" answer is unlikely. It's effective for moving beyond a
-  stalemate by creating a new frame of reference.
-- **Problem Types:** Best suited for complex, abstract, or strategic problems where understanding the relationship between opposing forces is key to finding a
-  robust solution.
-- **Comparison with Alternatives:**
-  - Unlike **Chain of Thought**, which follows a single, linear path of reasoning, Dialectical Reasoning explores a conflict between two paths to create a
-    third.
-  - Unlike **Brainstorming**, which is a divergent process to generate many ideas, this is a convergent process aimed at integrating two specific, conflicting
-    ideas into a single, more refined one.
+**2. Core Components**
+*   **Notification Ingestion Service (Subproblem SP1):** This service provides a REST API endpoint (`/api/v1/notifications`) to receive events from other microservices (e.g., comments, mentions). It validates incoming events, formats them into a standard notification payload, and publishes them to a Kafka topic named `notification-events`.
 
-### Configuration
+*   **Fan-out & Delivery Service (Subproblem SP2 & SP3):** This is the core processing engine. It consumes events from the `notification-events` topic. For each event, it determines the recipient list and fans out the notification. It then dispatches the notification to the appropriate delivery channels:
+    *   **Web Sockets (SP3.1):** Pushes the notification to active user sessions via a dedicated WebSocket gateway.
+    *   **Push Notifications (SP3.2):** Integrates with Firebase Cloud Messaging (FCM) and Apple Push Notification Service (APNS) to send mobile push notifications.
 
-The task's behavior is configured through the `DialecticalReasoningTaskExecutionConfigData` class.
+*   **User Preference Service (Subproblem SP4):** This service manages user settings for notifications, allowing users to enable or disable specific types of alerts. The Delivery Service queries this service before sending a notification to respect user preferences.
 
-#### Required Parameters
+**3. Data Model**
+The primary data store will be a NoSQL database (e.g., MongoDB) to store notification history for each user, with fields for `notificationId`, `userId`, `type`, `content`, `isRead`, and `timestamp`.
+...
+```
 
-| Parameter    | Type   | Description                                    | Example                                        |
-|--------------|--------|------------------------------------------------|------------------------------------------------|
-| `thesis`     | String | The first statement, position, or argument.    | "All services should be microservices."        |
-| `antithesis` | String | The opposing statement, position, or argument. | "A monolithic architecture is more efficient." |
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\DialecticalReasoningTask.kt
 
-#### Optional Parameters
 
-| Parameter            | Type         | Default          | Description                                                                                               | Example                                                            |
-|----------------------|--------------|------------------|-----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
-| `context`            | String       | "general domain" | Provides background or domain information to ground the analysis.                                         | "We are designing a new e-commerce platform for a small business." |
-| `synthesis_levels`   | Int          | 3                | The number of iterative synthesis rounds to perform. Must be between 1 and 5.                             | `2`                                                                |
-| `preserve_strengths` | Boolean      | true             | If true, the synthesis process is instructed to explicitly retain the valuable aspects of both positions. | `false`                                                            |
-| `related_files`      | List<String> | null             | A list of file glob patterns. The content of matching files will be included as additional context.       | `["src/main/docs/architecture.md", "requirements/*.txt"]`          |
-| `task_dependencies`  | List<String> | null             | A list of task IDs that must be completed before this task can run.                                       | `["task_123", "task_456"]`                                         |
+## Dialectical Reasoning
 
-#### Advanced Options
 
-- **`synthesis_levels`**: This is a powerful parameter that controls the depth of the analysis.
-  - `1`: A single synthesis is generated, providing a direct resolution.
-  - `3-5`: The task treats each new synthesis as a new thesis, considers its potential limitations, and generates an even higher-level synthesis. This allows
-    for a progressively deeper and more abstract understanding of the core problem.
-- **`preserve_strengths`**: Setting this to `false` encourages the AI to move beyond both original positions entirely, potentially leading to a more radical or
-  unexpected synthesis, but with the risk of losing valuable insights from the original arguments.
+#### Overview
 
-### How It Works
+**One-Line Description:** Resolve contradictions through thesis-antithesis-synthesis.
+
+**Detailed Description:** This task applies the principles of dialectical reasoning to explore and resolve conflicts between two opposing viewpoints (a thesis and an antithesis). It systematically analyzes each position, identifies the core contradictions and tensions, and then generates a series of higher-level "syntheses" that aim to transcend the original opposition. By iterating through multiple levels of synthesis, the task facilitates a deeper, more nuanced understanding of the problem, often leading to innovative solutions that incorporate the valid insights from both sides. It is particularly effective for tackling complex problems where there is no single, obvious right answer.
+
+**Key Use Cases:**
+*   **Architectural Debates:** Resolving conflicts between different software architecture patterns (e.g., Monolith vs. Microservices).
+*   **Requirement Conflicts:** Finding a resolution for contradictory stakeholder requirements.
+*   **Strategic Planning:** Evaluating two opposing business strategies to form a more robust, integrated plan.
+*   **Design Philosophy:** Reconciling conflicting design principles or user experience goals.
+*   **Policy Analysis:** Examining the pros and cons of opposing policies to create a more comprehensive third option.
+
+---
+
+
+#### Configuration Parameters
+
+| Parameter          | Type          | Description                                                  | Default Value |
+| ------------------ | ------------- | ------------------------------------------------------------ | ------------- |
+| `thesis`           | `String`      | The thesis statement or position to analyze.                 | **Required**  |
+| `antithesis`       | `String`      | The antithesis statement or opposing position.               | **Required**  |
+| `context`          | `String`      | Context or domain for the dialectical analysis.              | `null`        |
+| `synthesis_levels` | `Int`         | Number of synthesis levels to iterate through (1-5).         | `3`           |
+| `preserve_strengths`| `Boolean`     | Whether to preserve strengths from both sides in synthesis.  | `true`        |
+| `related_files`    | `List<String>`| Additional files to provide context for the analysis.        | `null`        |
+
+---
+
 
 #### Process Flow
 
-The task follows a structured, multi-step process modeled on the classical dialectical method.
+The task executes in a structured, multi-step process to ensure a thorough dialectical analysis:
 
-1. **Context Gathering**: The task collects all provided context, including the `context` parameter, the content of `related_files`, and the results from any
-   dependent tasks.
-2. **Thesis Analysis**: An AI agent performs a thorough analysis of the `thesis`, identifying its core claims, assumptions, strengths, and potential
-   limitations.
-3. **Antithesis Analysis**: A second AI agent analyzes the `antithesis` in the same manner, paying special attention to how it directly challenges or
-   contradicts the thesis.
-4. **Contradiction Exploration**: A third agent examines both analyses to identify the direct contradictions, underlying tensions, areas of partial agreement,
-   and the root cause of the opposition.
-5. **Iterative Synthesis**: This is the core reasoning loop, which runs for the number of `synthesis_levels` specified:
-  - **Level 1**: An AI agent uses the thesis, antithesis, and contradiction analyses to generate a new, higher-level synthesis that attempts to resolve the
-    conflict.
-  - **Level 2+**: The synthesis from the previous level is treated as a new thesis. The AI considers its implicit limitations or a potential new antithesis to
-    generate an even more refined synthesis.
-6. **Final Integration**: A final AI agent reviews the entire journey—from the initial opposition to the final synthesis—and produces a comprehensive summary.
-   This summary explains how the final synthesis resolves the original conflict and provides practical implications or actionable recommendations.
+1.  **Thesis Analysis:** The agent performs an in-depth analysis of the `thesis` statement, identifying its core claims, assumptions, strengths, and potential limitations.
+2.  **Antithesis Analysis:** The agent conducts a similar analysis of the `antithesis`, focusing on how it directly challenges or contradicts the thesis.
+3.  **Contradiction Exploration:** The agent identifies the primary points of conflict, underlying tensions, areas of partial agreement, and the root causes of the opposition between the thesis and antithesis.
+4.  **Iterative Synthesis:** This is the core of the reasoning process. The task iterates for the configured number of `synthesis_levels`:
+    *   **Level 1:** It generates an initial synthesis that attempts to resolve the primary conflict by creating a new, higher-level perspective that incorporates valid points from both the thesis and antithesis.
+    *   **Subsequent Levels:** For each new level, the synthesis from the previous level is treated as a new thesis. The agent then implicitly considers its limitations or a new antithesis to generate an even more refined and comprehensive synthesis.
+5.  **Final Integration:** After all synthesis levels are complete, the agent generates a final summary. This report outlines the entire "dialectical journey" from the initial conflict to the final resolution, highlighting key insights, practical implications, and actionable recommendations based on the final synthesis.
 
-#### Internal Mechanics
+---
 
-The task orchestrates a series of `ChatAgent` instances, each with a highly specialized prompt tailored to a specific step in the dialectical process. By
-breaking the problem down into these distinct stages (analysis, contradiction, synthesis), the task can achieve a more rigorous and insightful result than a
-single, monolithic prompt. The iterative nature of the synthesis step allows the model to build upon its own reasoning, leading to progressively deeper
-understanding.
 
 #### Output Structure
 
-The final output is a comprehensive markdown document that includes:
+**Final Result:**
+The final output passed to subsequent tasks is a concise Markdown-formatted string. It includes the analysis context, the results of the first and final synthesis levels, and the complete final integration report. This provides a summary of the most critical outcomes of the dialectical process.
 
-- A summary of the initial context.
-- The detailed analysis of the **Thesis**.
-- The detailed analysis of the **Antithesis**.
-- A report on the **Contradictions & Tensions** between them.
-- The full text of the synthesis generated at **each level**.
-- A **Final Integration** section that summarizes the entire process and provides a concluding perspective with actionable insights.
+**UI Breakdown:**
+In the user interface, the task provides a detailed, tabbed view of the entire process, allowing for a comprehensive review:
+*   **Overview:** Displays the initial configuration, a real-time log of the task's progress, and final summary statistics like total time and output size.
+*   **Context:** Shows the content of any provided `related_files` and context from prior tasks.
+*   **Thesis:** Contains the full, detailed analysis of the thesis statement.
+*   **Antithesis:** Contains the full, detailed analysis of the antithesis statement.
+*   **Contradictions:** Presents the complete exploration of tensions, conflicts, and overlaps between the two positions.
+*   **Synthesis L[n]:** A dedicated tab is created for each synthesis level (e.g., "Synthesis L1", "Synthesis L2"), showing the full text of the synthesis generated at that stage.
+*   **Final Integration:** Displays the final, comprehensive report summarizing the entire process and its conclusions.
 
-# FiniteStateMachineTask.kt
+---
+
+
+#### Example Usage
+
+**Scenario:**
+A startup is deciding on the architecture for its new e-commerce platform. The development team is small, but the company anticipates rapid growth. There's a debate between starting with a simple monolith for speed or a scalable microservices architecture for long-term growth.
+
+**Configuration:**
+*   **`thesis`**: `"Our new e-commerce platform should be built using a monolithic architecture for simplicity and rapid initial development."`
+*   **`antithesis`**: `"Our new e-commerce platform must be built with a microservices architecture to ensure scalability, team autonomy, and long-term maintainability."`
+*   **`context`**: `"We are a startup with a 5-person development team but expect rapid user growth within two years. The platform needs to handle high traffic during seasonal peaks and allow for easy addition of new features like a recommendation engine and a loyalty program."`
+*   **`synthesis_levels`**: `2`
+
+**Expected Output Snippet:**
+```markdown
+
+#### Synthesis Level 2
+
+The optimal approach is a "Modular Monolith" with a well-defined evolutionary path toward microservices. This synthesis transcends the initial dichotomy by prioritizing immediate development speed while embedding long-term scalability.
+
+**Integration:**
+- **Initial Phase:** Develop the platform as a single, deployable unit but with strict logical boundaries between modules (e.g., Product Catalog, Orders, Payments). These modules communicate via internal APIs, not direct code calls. This preserves the simplicity and speed of the monolith (Thesis).
+- **Evolutionary Path:** As the team and traffic grow, these well-encapsulated modules can be extracted and deployed as independent microservices with minimal refactoring. This addresses the long-term scalability and maintainability concerns (Antithesis).
+
+This strategy provides the best of both worlds: rapid market entry without accumulating prohibitive technical debt, ensuring the architecture can evolve with the business.
+```
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\FiniteStateMachineTask.kt
+
 
 ## FiniteStateMachine
 
-### Overview
 
-The Finite State Machine (FSM) task models a concept, system, or process by analyzing its states and the transitions between them. It provides a formal and
-structured way to understand and validate complex, event-driven behaviors.
+#### **Overview**
 
-- **Primary use cases:**
-  - Designing and validating complex systems (e.g., user authentication, order processing).
-  - Understanding and documenting intricate workflows or protocols.
-  - Automatically generating comprehensive test cases for state-based behavior.
-  - Identifying missing requirements, edge cases, and potential error states.
-  - Analyzing network protocols or communication systems.
-- **Expected outcomes:**
-  - A detailed list of all identified states and their properties.
-  - A comprehensive transition table mapping events to state changes.
-  - A visual Mermaid state diagram.
-  - An analysis of edge cases, error states, and recovery paths.
-  - A validation report on FSM properties like determinism and completeness.
-  - A set of generated test scenarios covering various paths and conditions.
+**One-Line Description:**
+Model concepts using finite state machine analysis.
 
-### When to Use
+**Detailed Description:**
+This task analyzes a concept, system, or process by modeling it as a finite state machine (FSM). It systematically identifies all possible states, the events that trigger transitions between them, and the properties of the overall system. The task generates a visual state diagram, identifies potential edge cases and error conditions, validates formal properties like determinism and completeness, and can even generate test scenarios. This structured approach is invaluable for system design, protocol analysis, and validating complex workflows.
 
-This task is ideal for problems that can be broken down into a finite number of distinct states and the events that trigger transitions between them.
+**Key Use Cases:**
+*   **System Design and Validation:** Formalize and verify the behavior of software or hardware systems before implementation.
+*   **Understanding Complex Workflows:** Deconstruct and visualize intricate business processes or user flows.
+*   **Identifying Missing Requirements:** Uncover gaps in logic, unhandled states, or missing transitions.
+*   **Test Case Generation:** Automatically create a comprehensive suite of tests to ensure full state and transition coverage.
+*   **Protocol Analysis:** Model and validate communication protocols to ensure they are robust and error-free.
 
-- **Specific scenarios where this reasoning type excels:**
-  - Modeling the lifecycle of an object or entity in a system (e.g., a support ticket from "Open" to "Closed").
-  - Defining the behavior of a user interface component in response to user actions.
-  - Validating the logic of a business process before implementation.
-- **Problem types best suited for this approach:**
-  - Event-driven systems.
-  - Protocol design and analysis.
-  - Workflow and process modeling.
-  - Systems where behavior is highly dependent on the current state.
-- **Comparison with alternative reasoning types:**
-  - Compared to **Chain of Thought**, which follows a single line of reasoning, FSM explores the entire state space of a system.
-  - It is more structured and formal than **Brainstorming**, providing a concrete model rather than a collection of ideas.
+---
 
-### Configuration
 
-#### Required Parameters
+#### **Configuration Parameters**
 
-| Parameter          | Type   | Description                                         | Example                            |
-|--------------------|--------|-----------------------------------------------------|------------------------------------|
-| `concept_to_model` | String | The concept, system, or process to model as an FSM. | "A user authentication login flow" |
+| Parameter                 | Type          | Description                                                                          | Default Value |
+| ------------------------- | ------------- | ------------------------------------------------------------------------------------ | ------------- |
+| `concept_to_model`        | `String`      | The concept, system, or process to model as a finite state machine.                  | **Required**  |
+| `initial_states`          | `List<String>`| A list of initial state(s) to consider at the start of the analysis.                 | `null`        |
+| `known_events`            | `List<String>`| A list of known events or triggers that are expected to cause state transitions.      | `null`        |
+| `identify_edge_cases`     | `Boolean`     | If true, the task will actively identify edge cases and potential error states.       | `true`        |
+| `validate_properties`     | `Boolean`     | If true, the task will validate formal FSM properties like determinism and completeness. | `true`        |
+| `generate_test_scenarios` | `Boolean`     | If true, the task will generate a set of test scenarios for the state transitions.   | `true`        |
+| `domain_context`          | `String`      | The specific domain or context for the FSM (e.g., 'authentication system').        | `null`        |
 
-#### Optional Parameters
+---
 
-| Parameter                 | Type         | Default | Description                                                                        | Example                            |
-|---------------------------|--------------|---------|------------------------------------------------------------------------------------|------------------------------------|
-| `initial_states`          | List<String> | `[]`    | A list of known starting states for the FSM.                                       | `["Logged Out"]`                   |
-| `known_events`            | List<String> | `[]`    | A list of known events or triggers that cause state transitions.                   | `["submit_credentials", "logout"]` |
-| `identify_edge_cases`     | Boolean      | `true`  | If enabled, the task will analyze the FSM for edge cases and error states.         | `false`                            |
-| `validate_properties`     | Boolean      | `true`  | If enabled, validates properties like determinism, completeness, and reachability. | `false`                            |
-| `generate_test_scenarios` | Boolean      | `true`  | If enabled, generates test scenarios for state and transition coverage.            | `true`                             |
-| `domain_context`          | String       | `null`  | The specific domain or context for the FSM to provide better focus.                | "E-commerce website"               |
 
-### How It Works
+#### **Process Flow**
 
-#### Process Flow
+1.  **State Identification:** The task begins by analyzing the provided concept to identify all possible states. For each state, it determines its name, description, type (e.g., Initial, Normal, Error), and entry/exit conditions.
+2.  **Transition Identification:** Based on the identified states, the task determines the events and triggers that cause transitions between them. It creates a comprehensive transition table, including guard conditions and actions for each transition.
+3.  **State Diagram Generation:** A visual state diagram is generated in Mermaid format, providing a clear graphical representation of the states and their relationships.
+4.  **Edge Case Analysis (Optional):** If `identify_edge_cases` is enabled, the task analyzes the FSM for invalid transitions, missing logic, error states, and potential race conditions.
+5.  **Property Validation (Optional):** If `validate_properties` is enabled, the task formally validates key FSM properties, including determinism, completeness, reachability, and liveness.
+6.  **Test Scenario Generation (Optional):** If `generate_test_scenarios` is enabled, the task creates a diverse set of test scenarios covering happy paths, error conditions, and boundary cases to ensure full state and transition coverage.
+7.  **Summary Generation:** The task concludes by producing a comprehensive summary of the analysis, highlighting key findings, critical transitions, and actionable recommendations.
 
-The task executes a structured, multi-step process to build and analyze the finite state machine.
+---
 
-1. **State Identification:** The agent first analyzes the core concept to identify all possible states, including normal, error, initial, and terminal states.
-2. **Transition Identification:** Based on the identified states, the agent determines the events that trigger transitions between them, creating a
-   comprehensive transition table.
-3. **Diagram Generation:** The agent generates a Mermaid state diagram to provide a clear visual representation of the FSM.
-4. **Edge Case Analysis (Optional):** If enabled, the agent probes the FSM for invalid transitions, missing logic, error conditions, and recovery paths.
-5. **Property Validation (Optional):** If enabled, the agent formally validates key FSM properties such as determinism (is the next state always predictable?),
-   completeness (are all events handled?), and reachability (are all states accessible?).
-6. **Test Scenario Generation (Optional):** If enabled, the agent creates a suite of test scenarios, including "happy path," error cases, and boundary
-   conditions, to ensure full state and transition coverage.
-7. **Summary:** Finally, the agent compiles all findings into a comprehensive summary with key insights and actionable recommendations.
 
-#### Internal Mechanics
+#### **Output Structure**
 
-The task orchestrates a series of calls to a chat-based LLM. Each step in the process flow is guided by a detailed, specialized prompt that instructs the LLM to
-perform a specific part of the analysis (e.g., "Identify all possible states," "Create a Mermaid state diagram"). The output from one step is used as context
-for the next, creating a chain of analysis that builds the complete FSM model.
+**Final Result:**
+The final output passed to subsequent tasks is a concise markdown-formatted string. It includes a summary of the FSM analysis, its key findings, and a checklist of the components that were generated (e.g., states, transitions, diagram, test scenarios). This provides essential context without overwhelming the next step in a plan.
 
-#### Output Structure
+**UI Breakdown:**
+In the user interface, the detailed analysis is presented in a series of tabs for easy navigation:
+*   **Overview:** A summary card showing the concept being modeled, its domain, status, and a final report of the analysis components.
+*   **States:** A detailed list of all identified states, including their names, descriptions, types, and invariants.
+*   **Transitions:** A comprehensive table or list detailing all state transitions, including source/target states, triggers, and guard conditions.
+*   **State Diagram:** A rendered Mermaid diagram visually representing the finite state machine.
+*   **Edge Cases:** (If enabled) A structured analysis of potential edge cases, error conditions, and recovery paths.
+*   **Validation:** (If enabled) A report on the validation of FSM properties, indicating whether each property passed or failed and why.
+*   **Test Scenarios:** (If enabled) A list of generated test scenarios, each with a name, event sequence, and expected outcome.
+*   **Summary:** A high-level summary of the entire analysis, including key insights and actionable recommendations.
 
-The results are presented in a user-friendly tabbed interface, with each tab dedicated to a specific part of the analysis:
+---
 
-- **Overview:** A summary of the task configuration and final status.
-- **States:** A detailed list of all identified states and their descriptions.
-- **Transitions:** The complete state transition table.
-- **State Diagram:** The visual Mermaid diagram of the FSM.
-- **Edge Cases:** (If enabled) Analysis of potential issues and error conditions.
-- **Validation:** (If enabled) The FSM property validation report.
-- **Test Scenarios:** (If enabled) The generated list of test cases.
-- **Summary:** A high-level summary of the analysis, including key findings and recommendations.
 
-# GameTheoryTask.kt
+#### **Example Usage**
 
-## GameTheory Task
+**Scenario:**
+A developer needs to design and validate the user authentication flow for a new web application. They want to ensure all states (e.g., logged out, pending, logged in, locked) and transitions (e.g., login success, login failure, password reset) are correctly handled.
 
-### Overview
+**Configuration:**
+```json
+{
+  "concept_to_model": "User login process for a web application",
+  "initial_states": ["Logged Out"],
+  "known_events": [
+    "Enter Credentials",
+    "Submit",
+    "Successful Login",
+    "Failed Login",
+    "Request Password Reset"
+  ],
+  "domain_context": "Web application security",
+  "identify_edge_cases": true,
+  "validate_properties": true,
+  "generate_test_scenarios": true
+}
+```
 
-The GameTheory Task provides a comprehensive analysis of strategic interactions by applying principles of game theory. It systematically breaks down a
-competitive or cooperative scenario, identifies optimal strategies, and predicts potential outcomes.
+**Expected Output Snippet:**
+```markdown
 
-- **Primary use cases:**
-  - Strategic decision-making in business and economics.
-  - Competitive analysis and market strategy formulation.
-  - Planning and preparation for negotiations.
-  - Modeling and resolving conflicts.
-  - Understanding complex multi-agent systems.
-- **Expected outcomes:** A detailed, multi-faceted report including the game's structure, payoff matrix, equilibrium analysis (Nash, Dominant Strategies, Pareto
-  Optimality), and actionable strategic recommendations for each player involved.
+## FSM Analysis: User login process for a web application
 
-### When to Use
 
-This task is ideal for situations where the outcome of a decision is dependent on the choices made by other rational actors.
+### Summary
+The analysis modeled the user login process, identifying key states such as Logged Out, Awaiting Credentials, Authenticating, Logged In, and Account Locked. The critical transition is from Authenticating to Logged In, guarded by valid credential verification. Key findings include a potential race condition if a user attempts multiple logins simultaneously and a recommendation to add a 'Password Reset Pending' state for improved security.
 
-- **Specific scenarios where this reasoning type excels:**
-  - Analyzing pricing strategies in an oligopoly market.
-  - Modeling arms races or political standoffs.
-  - Determining bidding strategies in an auction.
-  - Evaluating choices in social dilemmas like the Prisoner's Dilemma.
-- **Problem types best suited for this approach:**
-  - Problems with clearly defined players, actions, and outcomes.
-  - Situations requiring the prediction of others' behavior to inform one's own strategy.
-  - Scenarios where finding a stable "equilibrium" state is crucial.
-- **Comparison with alternative reasoning types:**
-  - Unlike **Brainstorming**, which generates a wide range of ideas, Game Theory provides a structured, analytical framework to find optimal strategies within
-    defined constraints.
-  - Compared to **Systems Thinking**, which focuses on the interconnectedness and feedback loops of a whole system, Game Theory hones in on the strategic
-    choices and payoffs of individual, rational agents.
 
-### Configuration
+### Key Components
+- States identified and analyzed
+- Transitions mapped
+- State diagram generated
+- Edge cases identified
+- Properties validated
+- Test scenarios generated
+```
 
-#### Required Parameters
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\GameTheoryTask.kt
 
-| Parameter       | Type           | Description                                  | Example                                                                       |
-|:----------------|:---------------|:---------------------------------------------|:------------------------------------------------------------------------------|
-| `game_scenario` | String         | The strategic situation or game to analyze.  | "Two coffee shops on the same street deciding whether to lower their prices." |
-| `players`       | List\<String\> | A list of the players or agents in the game. | `["Shop A", "Shop B"]`                                                        |
 
-#### Optional Parameters
+## Game Theory
 
-| Parameter                     | Type                         | Default           | Description                                                                                                       | Example                                         |
-|:------------------------------|:-----------------------------|:------------------|:------------------------------------------------------------------------------------------------------------------|:------------------------------------------------|
-| `player_strategies`           | Map\<String, List\<String\>> | `null`            | Pre-defined strategies for each player. If omitted, they will be inferred.                                        | `{"Shop A": ["Lower Price", "Maintain Price"]}` |
-| `game_type`                   | String                       | "non-cooperative" | The type of game: cooperative, non-cooperative, zero-sum, repeated, sequential.                                   | "zero-sum"                                      |
-| `build_payoff_matrix`         | Boolean                      | `true`            | Whether to construct a payoff matrix showing outcomes for all strategy combinations.                              | `false`                                         |
-| `find_nash_equilibria`        | Boolean                      | `true`            | Whether to identify Nash equilibria, where no player benefits by changing strategy alone.                         | `false`                                         |
-| `analyze_dominant_strategies` | Boolean                      | `true`            | Whether to analyze for dominant strategies that are optimal regardless of others' actions.                        | `false`                                         |
-| `find_pareto_optimal`         | Boolean                      | `true`            | Whether to identify Pareto optimal outcomes where no one can be better off without making someone else worse off. | `false`                                         |
-| `provide_recommendations`     | Boolean                      | `true`            | Whether to provide strategic recommendations for each player.                                                     | `false`                                         |
-| `additional_context`          | String                       | `null`            | Any extra context, constraints, or information relevant to the scenario.                                          | "Shop A has a larger marketing budget."         |
-
-#### Advanced Options
-
-| Parameter                | Type    | Default | Description                                                                  | Example |
-|:-------------------------|:--------|:--------|:-----------------------------------------------------------------------------|:--------|
-| `repeated_game_analysis` | Boolean | `false` | If true, analyzes the scenario as a game played over multiple rounds.        | `true`  |
-| `iterations`             | Int     | `10`    | The number of iterations to consider if `repeated_game_analysis` is enabled. | `5`     |
-
-### How It Works
-
-#### Process Flow
-
-The task executes a sequential chain of analytical steps, where each step builds upon the output of the previous ones.
-
-1. **Initialization**: The task validates the required inputs (`game_scenario`, `players`) and sets up a tabbed user interface for organized output.
-2. **Context Gathering**: It compiles context from previous tasks and the `additional_context` parameter.
-3. **Game Structure Analysis**: An AI agent analyzes the scenario to define the game's fundamental properties: type, players, strategy spaces, and payoff
-   characteristics.
-4. **Payoff Matrix Construction**: If enabled, the agent constructs a payoff matrix (typically a table) that quantifies or describes the outcome for each player
-   for every possible combination of strategies.
-5. **Equilibrium Analysis**: The task runs a series of analyses if enabled:
-  - **Nash Equilibria**: Identifies stable strategy profiles.
-  - **Dominant Strategies**: Finds strategies that are always optimal for a player.
-  - **Pareto Optimality**: Determines the most efficient outcomes for the group.
-6. **Repeated Game Analysis**: If enabled, it analyzes how strategies might change over multiple iterations, considering factors like reputation and
-   punishment (e.g., trigger strategies).
-7. **Strategic Recommendations**: The agent synthesizes all prior analysis to generate concrete, actionable advice for each player.
-8. **Structured Summary**: A `ParsedAgent` reviews the entire analysis to extract key findings into a structured `GameAnalysis` object.
-9. **Final Report**: The task compiles all generated sections into a final markdown report, which is returned as the task's output.
-
-#### Internal Mechanics
-
-The core of the task is a `ChatAgent` that is prompted sequentially. It maintains a continuous conversation, allowing each analytical step to leverage the full
-context of the preceding steps. This chained-prompting approach ensures a deep and coherent analysis. For the final summary, it switches to a `ParsedAgent` to
-ensure the output is structured and reliable, fitting neatly into the `GameAnalysis` data class.
-
-#### Output Structure
-
-The results are presented in two ways:
-
-1. **Interactive UI**: A multi-tabbed display where each tab corresponds to a specific step of the analysis (e.g., "Game Structure", "Payoff Matrix", "
-   Recommendations", "Summary"). This allows for a detailed, step-by-step review.
-2. **Final Output String**: A consolidated markdown document that summarizes the most critical findings from the analysis, including the game type, players, key
-   equilibria, and recommendations. This serves as the final, portable result of the task.
-
-# GeneticOptimizationTask.kt
-
-## Genetic Optimization
 
 ### Overview
 
-The Genetic Optimization task uses a genetic algorithm to iteratively evolve and refine a piece of text to better meet a specified optimization goal. It
-simulates natural selection by generating variations (mutations and crossovers), evaluating their fitness against defined criteria, and promoting the
-best-performing variants over multiple generations.
-
-- **Primary Use Cases:**
-  - Perfecting LLM prompts for better and more consistent outputs.
-  - Refining marketing copy to improve clarity, persuasiveness, and impact.
-  - Optimizing technical documentation for accuracy and readability.
-  - Improving the overall quality and effectiveness of any piece of text.
-  - Brainstorming creative variations of a core idea.
-- **Expected Outcomes:** A highly optimized version of the initial text that scores significantly better against the defined criteria, along with a detailed
-  analysis of the evolutionary process, strategy effectiveness, and fitness progression.
-
-### When to Use
-
-This task is ideal when you have a good starting point for a piece of text but believe it can be significantly improved through structured, iterative
-refinement. It excels in scenarios with complex optimization goals that involve multiple, sometimes competing, criteria (e.g., being both concise and
-comprehensive).
-
-- **Problem Types Best Suited:**
-  - Creative text refinement.
-  - Multi-objective optimization of text.
-  - Exploring a wide solution space of potential improvements.
-- **Comparison with Alternatives:**
-  - Compared to a simple "improve this text" prompt, Genetic Optimization is more systematic and robust. It explores a wider range of possibilities by
-    maintaining a diverse population of candidates, making it less likely to get stuck in a local optimum and more likely to produce novel and effective
-    results.
-
-### Configuration
-
-#### Required Parameters
-
-| Parameter           | Type   | Description                                                                                           | Example                                     |
-|---------------------|--------|-------------------------------------------------------------------------------------------------------|---------------------------------------------|
-| `initial_text`      | String | The initial text to be optimized. This serves as the seed for the first generation of the algorithm.  | "Our new software helps teams collaborate." |
-| `optimization_goal` | String | The primary goal or criteria for optimization. This defines the "fitness function" for the evolution. | "Make the text more persuasive and urgent." |
-
-#### Optional Parameters
-
-| Parameter             | Type                 | Default                                 | Description                                                                                                             | Example                                                              |
-|-----------------------|----------------------|-----------------------------------------|-------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| `num_generations`     | Int                  | `5`                                     | The number of evolutionary cycles to run.                                                                               | `10`                                                                 |
-| `population_size`     | Int                  | `6`                                     | The number of text variants to create and evaluate in each generation.                                                  | `10`                                                                 |
-| `selection_size`      | Int                  | `2`                                     | The number of top-performing candidates from one generation that are kept to "breed" the next generation.               | `3`                                                                  |
-| `mutation_strategies` | List\<String>        | `["rephrase", "simplify", "elaborate"]` | The list of mutation techniques to apply. Common strategies include 'rephrase', 'simplify', 'elaborate', 'restructure'. | `["rephrase", "emphasize", "soften"]`                                |
-| `enable_crossover`    | Boolean              | `true`                                  | If true, the task will combine the best traits from the top two candidates to create a new "offspring" variant.         | `false`                                                              |
-| `evaluation_weights`  | Map\<String, Double> | `{"clarity": 0.35, ...}`                | A map defining the criteria and their weights for scoring each variant. The sum of weights should ideally be 1.0.       | `{"persuasiveness": 0.6, "clarity": 0.4}`                            |
-| `constraints`         | List\<String>        | `null`                                  | A list of additional constraints or rules that all text variants must adhere to.                                        | `["Must be under 280 characters.", "Avoid using technical jargon."]` |
-
-### How It Works
-
-#### Process Flow
-
-1. **Initialization:** The process begins with the `initial_text`, which forms the entire population of Generation 0. This text is evaluated against the
-   `optimization_goal` to establish a baseline fitness score.
-2. **Evolution Loop (per generation):**
-   a.  **Selection:** The top-performing variants from the previous generation (the "survivors") are selected to pass on their traits. The number of survivors
-   is determined by `selection_size`.
-   b.  **Mutation:** New variants are created by applying random `mutation_strategies` (e.g., 'rephrase', 'simplify') to the selected survivors.
-   c.  **Crossover (Optional):** If `enable_crossover` is true, the best traits from the top two survivors are combined to create a new "offspring" variant,
-   adding more diversity to the population.
-   d.  **Evaluation:** All new variants, along with the survivors from the previous generation, are evaluated and scored against the `optimization_goal` and
-   `evaluation_weights`.
-3. **Termination:** The evolution loop continues for the specified `num_generations`.
-4. **Result:** The single best-performing variant found across all generations is presented as the final, optimized output.
-
-#### Internal Mechanics
-
-The task relies on two core LLM-driven agents that work in tandem:
-
-- **Mutation Agent:** This agent is responsible for creating new text variants. It takes a parent text and a specific strategy (e.g., "simplify") and generates
-  a new, mutated version that adheres to that strategy.
-- **Evaluation Agent:** This agent acts as an objective judge. It takes a text variant and scores it against the defined criteria and weights, providing a
-  detailed fitness report that includes an overall score, strengths, and weaknesses. This feedback is crucial for guiding the selection process in the next
-  generation.
-
-#### Output Structure
-
-The task's output is a comprehensive report delivered across multiple UI tabs, allowing for a deep dive into the optimization process:
-
-- **Overview:** A summary of the initial configuration and a high-level log of the process, showing the best score from each generation.
-- **Generation [N]:** A dedicated tab for each generation, providing a detailed breakdown of the population, including the top variants, their scores,
-  strengths, weaknesses, and the strategies that created them.
-- **Evolution Analysis:** A final summary tab that visualizes the entire process. It includes:
-  - A table showing fitness progression (best and average scores) over time.
-  - An analysis of the effectiveness of different mutation and crossover strategies.
-  - A direct comparison of the initial text and the final optimized text, with a detailed breakdown of the improvements.
-- The primary result is the final, best-performing text variant, which is presented clearly in the final report.
-
-# LateralThinkingTask.kt
-
-## Lateral Thinking
-
-### Overview
-
-The Lateral Thinking task is a structured process designed to break conventional thinking patterns and generate innovative, unconventional solutions to a given
-problem. It systematically applies a variety of creative techniques to reframe the problem, challenge assumptions, and explore novel perspectives that would be
-missed by traditional, linear analysis.
-
-- **Primary use cases:**
-  - Overcoming creative blocks or design impasses.
-  - Generating novel ideas for product development or innovation.
-  - Developing unconventional business or marketing strategies.
-  - Solving complex, ill-defined problems where standard solutions fail.
-  - Challenging and validating core assumptions in a project or plan.
-- **Expected outcomes:**
-  - A diverse set of creative and unconventional ideas.
-  - A detailed analysis of each idea, including its novelty, feasibility, benefits, and challenges.
-  - Synthesized insights that reveal common themes and patterns across different creative approaches.
-  - A list of recommended, actionable, and unconventional strategies.
-  - An optional, detailed feasibility analysis of the most promising ideas.
-
-### When to Use
-
-This task is ideal when you need to move beyond incremental improvements and discover breakthrough solutions.
-
-- **Specific scenarios where this reasoning type excels:**
-  - When a team is stuck and keeps generating the same types of ideas.
-  - During the initial stages of a project to explore the entire solution space.
-  - When a disruptive change in the market requires a fundamental rethinking of strategy.
-- **Problem types best suited for this approach:**
-  - Problems that are not well-defined and have no clear "right" answer.
-  - Challenges that require a paradigm shift rather than optimization.
-  - Strategic questions like "What business should we be in?" or "How can we create a new market?"
-- **Comparison with alternative reasoning types:**
-  - **vs. Chain of Thought:** Chain of Thought follows a logical, step-by-step path. Lateral Thinking deliberately breaks logical sequences to jump to new
-    patterns. Use CoT for deduction, Lateral Thinking for invention.
-  - **vs. Brainstorming:** Standard brainstorming is often unstructured. Lateral Thinking provides a structured framework with specific techniques (like
-    Reversal or Random Stimulus) to force the mind out of its usual ruts.
-  - **vs. Decomposition/Synthesis:** Decomposition breaks a problem into smaller, manageable parts. Lateral Thinking reframes the entire problem from multiple,
-    often illogical, angles.
-
-### Configuration
-
-#### Required Parameters
-
-| Parameter | Type   | Description                                      | Example                                    |
-|:----------|:-------|:-------------------------------------------------|:-------------------------------------------|
-| `problem` | String | The problem or challenge to approach creatively. | "How can we reduce customer churn by 50%?" |
-
-#### Optional Parameters
-
-| Parameter              | Type           | Default                                                                              | Description                                                                                                       | Example                                                                    |
-|:-----------------------|:---------------|:-------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------|
-| `techniques`           | List\<String\> | `["reversal", "random_stimulus", "challenge_assumptions", "exaggeration", "escape"]` | The specific lateral thinking techniques to apply. See Advanced Options for a full list.                          | `["reversal", "metaphor"]`                                                 |
-| `num_alternatives`     | Int            | `5`                                                                                  | The number of alternative solutions to generate for each selected technique.                                      | `3`                                                                        |
-| `evaluate_feasibility` | Boolean        | `true`                                                                               | If true, the task will perform a final, detailed evaluation of the generated ideas' practical feasibility.        | `false`                                                                    |
-| `domain_context`       | String         | `null`                                                                               | Provides specific domain knowledge or context to constrain the thinking process, making the ideas more relevant.  | "We are a B2B SaaS company in the logistics industry."                     |
-| `constraints`          | List\<String\> | `null`                                                                               | A list of additional constraints or requirements to consider, which can also be challenged by certain techniques. | `["The solution must not require new hardware.", "Budget is under $50k."]` |
-
-#### Advanced Options
-
-The `techniques` parameter allows you to control the creative process. Each technique forces a different kind of mental leap:
-
-- **`reversal`**: Reverses the problem statement (e.g., "How can we *increase* churn?") to uncover hidden assumptions and then transforms the insights back into
-  positive solutions.
-- **`random_stimulus`**: Introduces a completely unrelated word or concept (e.g., "jazz music") and forces connections back to the problem to spark novel ideas.
-- **`challenge_assumptions`**: Explicitly lists the core assumptions about the problem (e.g., "We assume customers leave due to price") and then generates
-  solutions based on those assumptions being false.
-- **`exaggeration`**: Takes a parameter of the problem to an extreme (e.g., "What if we had 10 million customers?" or "What if we had only 10?") to reveal
-  solutions at different scales.
-- **`escape`**: Temporarily ignores a major constraint (e.g., "What if the budget was unlimited?") to ideate freely, then adapts those ideas back to the real
-  world.
-- **`metaphor`**: Applies the logic and structure of a metaphor from a different domain (e.g., "How is our customer support like a hospital emergency room?") to
-  find new approaches.
-- **`provocation`**: Uses a deliberately absurd or provocative statement (e.g., "What if customers paid *us* to report bugs?") to shock the thinking process
-  onto a new track.
-
-### How It Works
-
-#### Process Flow
-
-The task executes a multi-step, multi-agent workflow to ensure both creativity and analytical rigor.
-
-1. **Initialization**: The task starts by creating an "Overview" tab that summarizes the problem statement and the selected configuration.
-2. **Technique Application**: The task iterates through each selected `technique`. For each one:
-   a. A specialized prompt is constructed to guide an AI agent in applying that specific technique.
-   b. The agent generates a set of `LateralIdea` objects, each containing a title, description, breakthrough aspect, benefits, challenges, and initial scores
-   for novelty and feasibility.
-   c. The results are displayed in a new, dedicated tab for that technique.
-3. **Cross-Technique Synthesis**: After all techniques have been applied, a new agent analyzes the complete set of generated ideas. It identifies common themes,
-   highlights the most powerful insights, and formulates a list of recommended unconventional approaches.
-4. **Feasibility Evaluation (Optional)**: If `evaluate_feasibility` is true, a final agent performs a practical assessment of the most promising ideas. It ranks
-   them, suggests hybrid approaches, and identifies which ideas require further exploration or prototyping.
-5. **Final Summary**: The task concludes by generating a comprehensive summary report that consolidates the top ideas, synthesized insights, and the feasibility
-   assessment into a single, actionable document.
-
-#### Internal Mechanics
-
-The task leverages a "multi-agent" system. It uses `ParsedAgent` instances, which are specialized to return structured data (like a list of ideas), for the
-technique application and feasibility steps. For the more analytical synthesis step, it uses a standard `ChatAgent` to produce a narrative report. This
-combination ensures that the creative, idea-generation phases are captured in a structured way, while the synthesis phase allows for more nuanced, high-level
-reasoning.
-
-#### Output Structure
-
-The final output is a `LateralThinkingResult` object containing all generated data, which is presented to the user in a multi-tabbed interface:
-
-- **Overview Tab**: Tracks the overall progress and final metrics (total ideas, time taken, etc.).
-- **Technique Tabs**: One tab for each technique applied, showing the specific ideas and insights generated.
-- **Synthesis Tab**: Contains the cross-technique analysis and recommended approaches.
-- **Feasibility Tab**: (If enabled) Shows the detailed feasibility report.
-- **Summary Tab**: A final, clean report that presents the most important findings, including the top-ranked breakthrough ideas, synthesized insights, and
-  executive summary.
-
-# MetaCognitiveReflectionTask.kt
-
-## MetaCognitiveReflection
-
-### Overview
-
-The `MetaCognitiveReflectionTask` performs a critical analysis of the reasoning process and output of a previously executed task. It's a form of "thinking about
-thinking," designed to improve the quality, robustness, and reliability of AI-generated solutions by identifying weaknesses, biases, and unexamined assumptions.
-
-- **Primary use cases:**
-  - Critically reviewing the solution or analysis from another task.
-  - Identifying underlying assumptions, potential cognitive biases, and logical fallacies.
-  - Evaluating the confidence level and completeness of a conclusion.
-  - Surfacing knowledge gaps and suggesting areas for further investigation.
-  - Recommending specific, actionable improvements to a reasoning process.
-- **Expected outcomes:** A structured, detailed report that critiques a specified task's output, highlighting strengths, weaknesses, and providing suggestions
-  for enhancement.
-
-### When to Use
-
-This task is ideal for situations where the quality and justification of a result are as important as the result itself.
-
-- **Specific scenarios where this reasoning type excels:**
-  - As a quality assurance step in a multi-task plan before finalizing a complex solution.
-  - When debugging a plan where a previous task produced a flawed or unexpected result.
-  - To increase the robustness of a solution by challenging its underlying assumptions.
-  - When you need to understand the certainty and potential blind spots of an AI's conclusion.
-- **Problem types best suited for this approach:**
-  - Complex analysis, strategic planning, or decision-making tasks where hidden biases can lead to poor outcomes.
-  - Any task where the output will be used for critical applications and requires a high degree of trust.
-- **Comparison with alternative reasoning types:** Unlike tasks that directly solve a problem (e.g., `RunCodeTask`, `FileModificationTask`), this is a
-  meta-task. It doesn't produce a new solution but rather evaluates an existing one. It complements other reasoning tasks by adding a layer of critical
-  self-assessment and refinement to the overall process.
-
-### Configuration
-
-#### Required Parameters
-
-| Parameter         | Type   | Description                                                                                    | Example                    |
-|:------------------|:-------|:-----------------------------------------------------------------------------------------------|:---------------------------|
-| `subject_task_id` | String | The unique identifier of the task whose reasoning process and result should be reflected upon. | `"code_generation_task_1"` |
-
-#### Optional Parameters
-
-| Parameter              | Type         | Default                                                   | Description                                                                                                                                                   | Example                                    |
-|:-----------------------|:-------------|:----------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------------|
-| `reflection_aspects`   | List<String> | `["assumptions", "biases", "alternatives", "confidence"]` | A list of specific areas to focus the critique on. Available aspects include: `assumptions`, `biases`, `alternatives`, `confidence`, `completeness`, `logic`. | `["logic", "completeness", "assumptions"]` |
-| `suggest_improvements` | Boolean      | `true`                                                    | If true, the analysis will include actionable recommendations to improve the reasoning process.                                                               | `false`                                    |
-| `identify_gaps`        | Boolean      | `true`                                                    | If true, the analysis will identify knowledge gaps, missing information, or areas of uncertainty.                                                             | `false`                                    |
-| `evaluate_confidence`  | Boolean      | `true`                                                    | If true, the analysis will include an assessment of the confidence level of the subject task's conclusions.                                                   | `false`                                    |
-
-#### Advanced Options
-
-The combination of different `reflection_aspects` allows for a highly tailored critique. For example, focusing solely on `['logic', 'assumptions']` can be used
-for a rigorous logical audit, while `['alternatives', 'biases']` is better for creative problem-solving and avoiding groupthink.
-
-### How It Works
-
-#### Process Flow
-
-1. **Identify Subject:** The task starts by reading the `subject_task_id` from its configuration.
-2. **Retrieve Context:** It fetches the final result and reasoning log of the specified subject task from the orchestrator's execution state.
-3. **Construct Prompt:** A detailed prompt is dynamically constructed, instructing the LLM to act as a meta-cognitive analyst. This prompt includes the subject
-   task's full output.
-4. **Incorporate Aspects:** The prompt is customized with specific instructions based on the configured `reflection_aspects`, `suggest_improvements`,
-   `identify_gaps`, and `evaluate_confidence` settings.
-5. **Execute Analysis:** The prompt is sent to a `ChatAgent`, which queries the LLM to perform the critical reflection.
-6. **Receive and Format:** The LLM returns a structured analysis in markdown format.
-7. **Present Results:** The task displays the formatted analysis in the UI, often creating a summary of key insights for quick review.
-
-#### Internal Mechanics
-
-The core of this task is leveraging an LLM's ability to reason about reasoning itself. By providing the complete context of a previous operation and a clear set
-of critical evaluation criteria, the task prompts the model to step outside the role of a "solver" and into the role of a "critic." This allows it to identify
-logical fallacies, unstated assumptions, and cognitive biases that may have influenced the original output.
-
-#### Output Structure
-
-The final output is a comprehensive markdown document. It is typically organized into clear sections with headers corresponding to each requested reflection
-aspect (e.g., "Underlying Assumptions," "Cognitive Biases"). If enabled, these are followed by sections for "Improvement Suggestions," "Knowledge Gaps," and a "
-Confidence Assessment." The report uses formatting like bullet points and bold text to be easily scannable and actionable.
-
-# MultiPerspectiveAnalysisTask.kt
-
-## MultiPerspectiveAnalysis
-
-### Overview
-
-The `MultiPerspectiveAnalysis` task provides a structured framework for examining a problem or topic from several distinct viewpoints. It generates a detailed
-analysis for each perspective and then, if configured, synthesizes these individual analyses into a single, coherent conclusion.
-
-- **Primary Use Cases:**
-  - Making complex architectural or design decisions.
-  - Conducting thorough code reviews from multiple angles (e.g., security, performance, maintainability).
-  - Developing strategic plans by considering business, technical, and user impacts.
-  - Performing comprehensive risk assessments.
-  - Evaluating new features from different stakeholder viewpoints.
-
-- **Expected Outcomes:** A well-structured report that includes a detailed breakdown of the subject from each requested perspective, followed by a synthesized
-  summary that highlights agreements, conflicts, and provides a balanced, unified recommendation.
-
-### When to Use
-
-This task is ideal for situations that require a holistic and balanced understanding of a complex issue, especially when different stakeholders have competing
-interests or priorities.
-
-- **Specific Scenarios:**
-  - When a decision has significant downstream consequences across different domains (e.g., choosing a new database technology).
-  - To ensure all facets of a problem are considered before committing to a solution.
-  - To facilitate consensus-building by explicitly laying out the pros and cons from various viewpoints.
-  - When you need to uncover hidden risks or opportunities that a single-track analysis might miss.
-
-- **Comparison with Alternative Reasoning Types:**
-  - Compared to a simple `ChainOfThoughtTask`, which follows a linear reasoning path, `MultiPerspectiveAnalysis` is better for "fan-out/fan-in" problems where
-    multiple independent lines of inquiry must be explored and then integrated. It is more structured and less prone to a single line of reasoning dominating
-    the outcome.
-
-### Configuration
-
-#### Required Parameters
-
-| Parameter          | Type           | Description                                                      | Example                                                             |
-|--------------------|----------------|------------------------------------------------------------------|---------------------------------------------------------------------|
-| `analysis_subject` | String         | The central topic, question, or problem to be analyzed.          | `"Should we migrate our backend from a monolith to microservices?"` |
-| `perspectives`     | List of String | A list of distinct viewpoints from which to analyze the subject. | `["technical", "business", "ethical", "user experience"]`           |
-
-#### Optional Parameters
-
-| Parameter             | Type           | Default | Description                                                                                                  | Example                                      |
-|-----------------------|----------------|---------|--------------------------------------------------------------------------------------------------------------|----------------------------------------------|
-| `synthesize`          | Boolean        | `true`  | If true, the task will generate a final section that synthesizes all perspectives into a unified conclusion. | `false`                                      |
-| `consensus_threshold` | Double         | `0.7`   | The minimum confidence threshold (0.0-1.0) for the synthesis agent to consider when assessing agreement.     | `0.8`                                        |
-| `related_files`       | List of String | `null`  | A list of file paths or glob patterns to provide additional context for the analysis.                        | `["src/main/kotlin/**/*.kt", "docs/api.md"]` |
-| `task_dependencies`   | List of String | `null`  | A list of other task IDs that must be completed before this one can start.                                   | `["task_123"]`                               |
-
-### How It Works
-
-#### Process Flow
-
-1. **Initialization**: The task starts with the `analysis_subject` and the list of `perspectives`.
-2. **Context Gathering**: It reads the content of any files specified in `related_files` to build a contextual understanding.
-3. **Parallel Analysis**: For each perspective in the list, the task initiates a separate analysis. An AI agent, prompted to be an expert in that specific
-   domain (e.g., a "technical expert," a "business analyst"), examines the subject.
-4. **Individual Reporting**: Each agent produces a detailed report containing its findings, risks, opportunities, and recommendations from its assigned
-   viewpoint. The UI displays each of these reports in a separate tab.
-5. **Synthesis (Optional)**: If `synthesize` is enabled, a final "synthesis" agent is invoked. This agent receives all the individual perspective reports as
-   input.
-6. **Unified Conclusion**: The synthesis agent's goal is to identify common themes, highlight conflicts, and formulate a balanced, overarching recommendation
-   based on the combined insights.
-7. **Final Output**: The task concludes by assembling all the individual reports and the final synthesis into a single, comprehensive Markdown document.
-
-#### Internal Mechanics
-
-The core principle of this task is "divide and conquer." By assigning specialized agents to each perspective, it avoids the biases or blind spots that a single,
-generalist agent might have. This structured parallelism ensures that each viewpoint is given a full and independent evaluation. The final synthesis step acts
-as an integrator, transforming the specialized inputs into a holistic and actionable strategy.
-
-#### Output Structure
-
-The final output is a structured Markdown document with the following format:
+**One-Line Description:** Analyze strategic interactions using game theory.
+
+**Detailed Description:** This task performs a comprehensive game theory analysis of strategic situations. It models interactions between rational decision-makers (players) to predict outcomes and identify optimal strategies. The process involves analyzing the game's structure, constructing payoff matrices, identifying equilibria and dominant strategies, and finding efficient outcomes. It supports various game types, including cooperative, non-cooperative, zero-sum, and repeated games, making it a powerful tool for competitive analysis, negotiation, and strategic planning.
+
+**Key Use Cases:**
+*   Strategic decision making
+*   Competitive analysis
+*   Negotiation planning
+*   Market strategy
+*   Conflict resolution
+
+
+### Configuration Parameters
+
+This table details the configurable parameters for the Game Theory task.
+
+| Parameter                     | Type                          | Description                                                              | Default Value       |
+| ----------------------------- | ----------------------------- | ------------------------------------------------------------------------ | ------------------- |
+| `game_scenario`               | `String`                      | The strategic situation or game to analyze.                              | **Required**        |
+| `players`                     | `List<String>`                | List of players/agents in the game.                                      | **Required**        |
+| `player_strategies`           | `Map<String, List<String>>`   | Available strategies for each player (optional, can be inferred).        | `null`              |
+| `game_type`                   | `String`                      | Type of game: cooperative, non-cooperative, zero-sum, repeated, sequential. | `"non-cooperative"` |
+| `build_payoff_matrix`         | `Boolean`                     | Whether to construct a payoff matrix.                                    | `true`              |
+| `find_nash_equilibria`        | `Boolean`                     | Whether to identify Nash equilibria.                                     | `true`              |
+| `analyze_dominant_strategies` | `Boolean`                     | Whether to analyze dominant strategies.                                  | `true`              |
+| `find_pareto_optimal`         | `Boolean`                     | Whether to identify Pareto optimal outcomes.                             | `true`              |
+| `provide_recommendations`     | `Boolean`                     | Whether to provide strategic recommendations for each player.            | `true`              |
+| `repeated_game_analysis`      | `Boolean`                     | Whether to analyze the game as a repeated game.                          | `false`             |
+| `iterations`                  | `Int`                         | Number of iterations for repeated game analysis.                         | `10`                |
+| `additional_context`          | `String`                      | Additional context or constraints.                                       | `null`              |
+
+
+### Process Flow
+
+The task executes the following steps to perform its analysis:
+
+1.  **Initialization:** The task starts by validating that a game scenario and players have been specified. It sets up the UI with an "Overview" tab to track progress.
+2.  **Context Gathering:** It compiles context from previous tasks and any `additional_context` provided in the configuration to inform the analysis.
+3.  **Game Structure Analysis:** The task first analyzes the fundamental structure of the game, identifying the game type, strategy spaces for each player, and the nature of the payoffs.
+4.  **Payoff Matrix Construction (Optional):** If `build_payoff_matrix` is true, it constructs a payoff matrix, detailing the outcomes for each player for every possible combination of strategies.
+5.  **Nash Equilibria Identification (Optional):** If `find_nash_equilibria` is true, it analyzes the payoff matrix to find all Nash equilibria, where no player can benefit by unilaterally changing their strategy.
+6.  **Dominant Strategy Analysis (Optional):** If `analyze_dominant_strategies` is true, it identifies any strategies that are always optimal for a player, regardless of what other players do.
+7.  **Pareto Optimality Analysis (Optional):** If `find_pareto_optimal` is true, it identifies outcomes where no player can be made better off without making another player worse off, highlighting the efficiency of different outcomes.
+8.  **Repeated Game Analysis (Optional):** If `repeated_game_analysis` is true, it analyzes the scenario as a repeated interaction, considering factors like reputation, trigger strategies, and the folk theorem.
+9.  **Strategic Recommendations (Optional):** If `provide_recommendations` is true, it synthesizes all prior analysis to provide actionable strategic advice for each player.
+10. **Structured Summary:** Finally, the task generates a structured summary of the entire analysis, extracting key findings like game type, equilibria, and recommendations.
+
+
+### Output Structure
+
+
+#### Final Result
+
+The final output is a concise Markdown-formatted string summarizing the entire analysis. It includes the game scenario, players, game type, and truncated sections for the game structure, Nash equilibria, dominant strategies, and key recommendations. This summary is designed to be passed as context to subsequent tasks.
+
+
+#### UI Breakdown
+
+The task provides a detailed, multi-tab view in the user interface for a comprehensive understanding of the analysis:
+
+*   **Overview:** Displays the initial configuration, current status, and a final completion summary.
+*   **Context:** Shows any context provided from previous tasks or the configuration.
+*   **Game Structure:** Contains the detailed analysis of the game's fundamental components.
+*   **Payoff Matrix:** Presents the constructed payoff matrix.
+*   **Nash Equilibria:** Details the identified Nash equilibria and why they are stable.
+*   **Dominant Strategies:** Explains any dominant or dominated strategies found.
+*   **Pareto Optimality:** Lists the Pareto optimal outcomes and discusses their efficiency.
+*   **Repeated Game:** (If enabled) Provides the analysis of the game in a repeated context.
+*   **Recommendations:** Offers detailed, actionable advice for each player.
+*   **Summary:** Shows the final structured summary of key findings.
+
+
+### Example Usage
+
+
+#### Scenario
+
+Two competing coffee shops, "BrewBeans" and "CafeDrift," are deciding whether to set a "High Price" or a "Low Price" for their lattes. A low price attracts more customers but yields lower margins. If both set a low price, they split the market at a lower profit. If both set a high price, they maintain high margins. If one sets a low price and the other high, the low-price shop captures most of the market. This is a classic "Prisoner's Dilemma" scenario.
+
+
+#### Configuration
+
+```json
+{
+  "game_scenario": "Two coffee shops, BrewBeans and CafeDrift, must simultaneously decide on a pricing strategy: High Price or Low Price. If both choose High, they each make $500 profit. If both choose Low, they each make $300 profit. If one chooses Low and the other High, the Low-price shop makes $700 and the High-price shop makes $100.",
+  "players": ["BrewBeans", "CafeDrift"],
+  "game_type": "non-cooperative",
+  "find_nash_equilibria": true,
+  "analyze_dominant_strategies": true,
+  "provide_recommendations": true
+}
+```
+
+
+#### Expected Output Snippet
 
 ```markdown
 
-## Multi-Perspective Analysis: [Your Analysis Subject]
+## Game Theory Analysis: Two coffee shops...
 
-### [Perspective 1] Perspective
 
-[Detailed analysis, risks, and recommendations from the first perspective...]
+### Dominant Strategies
+For both BrewBeans and CafeDrift, setting a "Low Price" is a strictly dominant strategy. Regardless of what the competitor does, each shop earns a higher payoff by choosing "Low Price".
 
-### [Perspective 2] Perspective
 
-[Detailed analysis, risks, and recommendations from the second perspective...]
+### Nash Equilibria
+The single Nash Equilibrium is (Low Price, Low Price). In this state, neither shop can improve its outcome by unilaterally changing its price. While (High Price, High Price) is a better outcome for both, it is not a stable equilibrium.
 
-...
 
-### Synthesis
-
-[An integrated summary, highlighting agreements, conflicts, and providing a unified recommendation and next steps. This section only appears if
-`synthesize` is true.]
+### Key Recommendations
+- **BrewBeans**: Play the dominant strategy: "Low Price". Be aware that this will likely lead to a lower-profit equilibrium for both shops.
+- **CafeDrift**: Play the dominant strategy: "Low Price".
 ```
 
-# NarrativeGenerationTask.kt
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\GeneticOptimizationTask.kt
+
+
+## GeneticOptimization
+
+
+### Overview
+
+**One-Line Description:** Iteratively evolve and perfect text through genetic algorithms.
+
+**Detailed Description:** This task uses genetic algorithms to optimize a piece of text through iterative evolution. It generates variations using configurable mutation strategies, evaluates these variants against defined optimization criteria, and selects the top performers to create the next generation. It can also apply crossover to combine successful traits from different variants. The task tracks the fitness progression across all generations and provides a detailed analysis of the evolution, including which strategies were most effective. It supports custom evaluation criteria and weights, making it a powerful tool for refining prompts, marketing copy, technical documentation, or any form of messaging.
+
+**Key Use Cases:**
+*   Perfecting prompts and instructions for LLMs.
+*   Refining marketing copy for better engagement.
+*   Optimizing technical documentation for clarity and accuracy.
+*   Improving the overall clarity and impact of any message.
+
+
+### Configuration Parameters
+
+| Parameter             | Type                  | Description                                                                                    | Default Value                                      |
+| --------------------- | --------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `initial_text`        | `String`              | The initial text to optimize (seed for genetic algorithm).                                     | **Required**                                       |
+| `optimization_goal`   | `String`              | The optimization goal or criteria (e.g., 'clarity and conciseness', 'persuasiveness').         | **Required**                                       |
+| `num_generations`     | `Int`                 | Number of generations to evolve.                                                               | `5`                                                |
+| `population_size`     | `Int`                 | Population size per generation.                                                                | `6`                                                |
+| `selection_size`      | `Int`                 | Number of top candidates to keep each generation.                                              | `2`                                                |
+| `mutation_strategies` | `List<String>`        | Mutation strategies to use (e.g., 'rephrase', 'simplify', 'elaborate', 'restructure').         | `["rephrase", "simplify", "elaborate"]`            |
+| `enable_crossover`    | `Boolean`             | Whether to enable crossover (combining traits from multiple candidates).                       | `true`                                             |
+| `evaluation_weights`  | `Map<String, Double>` | Evaluation criteria weights (e.g., `{'clarity': 0.4, 'conciseness': 0.3, 'impact': 0.3}`).      | `{"clarity": 0.35, "conciseness": 0.25, ...}`      |
+| `constraints`         | `List<String>`        | Additional context or constraints for optimization.                                            | `null`                                             |
+| `task_description`    | `String`              | A description of the task's purpose.                                                           | `null`                                             |
+| `task_dependencies`   | `List<String>`        | A list of task IDs that must be completed before this one can start.                           | `null`                                             |
+
+
+### Process Flow
+
+1.  **Initialization:** The task starts by validating the configuration, ensuring that `initial_text` and `optimization_goal` are provided.
+2.  **Initial Evaluation:** The provided `initial_text` is evaluated against the defined criteria to establish a baseline fitness score.
+3.  **Evolutionary Loop:** The task iterates through the specified number of generations. In each generation:
+    a. **Selection:** The best-performing variants (survivors) from the previous generation are selected to continue.
+    b. **Mutation:** New variants are created by applying random mutation strategies (e.g., rephrase, simplify, elaborate) to the survivors.
+    c. **Crossover (Optional):** If enabled, new variants are created by combining the traits of the top two survivors.
+    d. **Evaluation:** All new and surviving variants in the current generation's population are evaluated and assigned a fitness score.
+4.  **Tracking:** The best variant found across all generations is continuously tracked and updated.
+5.  **Analysis & Reporting:** After the final generation, the task compiles a comprehensive analysis, including the fitness progression over time, the effectiveness of different mutation strategies, and a detailed breakdown of the best variant found.
+
+
+### Output Structure
+
+**Final Result:**
+The final output is a Markdown-formatted summary containing the final optimized text, key performance metrics (initial score, final score, and total improvement), and a list of the key improvements identified in the best variant. This concise summary is passed to subsequent tasks.
+
+**UI Breakdown:**
+The task provides a detailed, multi-tab view in the UI for in-depth analysis:
+*   **Overview:** Displays the task configuration, evaluation criteria, initial text, and a live-updating log of the generation-by-generation progress and final summary metrics.
+*   **Generation [N]:** A separate tab is created for each generation, showing detailed results, population statistics (best, average, worst scores), and a breakdown of the top-performing variants from that generation, including their text, scores, strengths, and weaknesses.
+*   **Evolution Analysis:** A final summary tab that visualizes the entire evolutionary process. It includes a table of fitness progression across all generations, an analysis of the effectiveness of each mutation strategy, and a side-by-side comparison of the initial and final optimized text with a detailed breakdown of the improvements.
+
+
+### Example Usage
+
+**Scenario:**
+A marketing team wants to optimize the subject line for an email campaign promoting a new productivity app. The goal is to make it more engaging and persuasive to increase open rates.
+
+**Configuration:**
+*   **`initial_text`**: `"New App to Help You Manage Your Tasks"`
+*   **`optimization_goal`**: `"Maximize persuasiveness and create a sense of urgency for a tech-savvy audience."`
+*   **`num_generations`**: `5`
+*   **`population_size`**: `10`
+*   **`evaluation_weights`**: `{"persuasiveness": 0.5, "clarity": 0.3, "urgency": 0.2}`
+
+**Expected Output Snippet:**
+```markdown
+
+## Genetic Optimization Results
+
+**Optimization Goal:** Maximize persuasiveness and create a sense of urgency for a tech-savvy audience.
+
+
+### Final Optimized Text
+
+```
+Stop Juggling Tasks. Your New Productivity Command Center is Here.
+```
+
+
+### Performance Metrics
+
+- **Initial Score:** 45.2/100
+- **Final Score:** 88.7/100
+- **Improvement:** +43.5 points
+- **Generations:** 5
+```
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\LateralThinkingTask.kt
+
+
+## Lateral Thinking
+
+
+#### **Overview**
+
+**One-Line Description:**
+Break conventional thinking patterns to find innovative solutions.
+
+**Detailed Description:**
+The Lateral Thinking task applies a structured set of creative techniques to generate unconventional solutions for a given problem. It systematically moves through methods like reversing the problem, introducing random stimuli, challenging core assumptions, and exaggerating constraints to break free from traditional thought patterns. The task generates numerous alternatives, evaluates their novelty and feasibility, synthesizes insights across all techniques, and provides a ranked list of breakthrough ideas. It is an ideal tool for innovation, overcoming design impasses, and fostering creative problem-solving.
+
+**Key Use Cases:**
+*   **Innovation:** Generating novel product features or business models.
+*   **Problem-Solving:** Finding creative solutions when standard approaches have failed.
+*   **Design:** Breaking through creative blocks in user experience, product, or system design.
+*   **Strategy:** Developing unconventional strategies to gain a competitive advantage.
+
+---
+
+
+#### **Configuration Parameters**
+
+| Parameter                | Type             | Description                                                                                                        | Default Value                                                                                             |
+| ------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `problem`                | `String?`        | The problem or challenge to approach with lateral thinking.                                                        | **Required**                                                                                              |
+| `techniques`             | `List<String>?`  | Lateral thinking techniques to apply: `reversal`, `random_stimulus`, `challenge_assumptions`, `exaggeration`, `escape`, `metaphor`, `provocation`. | `["reversal", "random_stimulus", "challenge_assumptions", "exaggeration", "escape"]`                      |
+| `num_alternatives`       | `Int`            | Number of alternative solutions to generate per technique.                                                         | `5`                                                                                                       |
+| `evaluate_feasibility`   | `Boolean`        | Whether to perform a detailed evaluation of the feasibility of generated ideas.                                    | `true`                                                                                                    |
+| `domain_context`         | `String?`        | The specific domain or context to constrain the thinking (e.g., "mobile app development", "aerospace engineering").  | `null`                                                                                                    |
+| `constraints`            | `List<String>?`  | A list of additional constraints or requirements to consider during idea generation.                               | `null`                                                                                                    |
+| `task_description`       | `String?`        | A custom description for the task instance.                                                                        | Automatically generated from the problem statement.                                                       |
+| `task_dependencies`      | `List<String>?`  | A list of other task IDs that must be completed before this one can run.                                           | `null`                                                                                                    |
+
+---
+
+
+#### **Process Flow**
+
+1.  **Initialization:** The task starts by setting up an "Overview" tab that displays the problem statement, configuration, and real-time progress.
+2.  **Technique Application:** The task iterates through each selected lateral thinking technique. For each technique, it:
+    *   Creates a dedicated UI tab.
+    *   Prompts an AI agent with instructions specific to that technique (e.g., "Reverse the problem" or "Introduce a random stimulus").
+    *   Generates a set of unconventional ideas, each with a title, description, novelty score, and feasibility score.
+    *   Displays the results in the technique's dedicated tab.
+3.  **Cross-Technique Synthesis:** After all techniques have been applied, a new "Synthesis" tab is created. An AI agent analyzes the ideas and insights from all techniques to identify common themes, patterns, and potential hybrid solutions, providing a high-level summary of the creative session.
+4.  **Feasibility Evaluation (Optional):** If `evaluate_feasibility` is enabled, a "Feasibility" tab is added. A specialized AI agent assesses the most promising ideas against practical constraints like implementation complexity, resource requirements, and risk, providing a ranked list of the most viable options.
+5.  **Final Summary:** The task compiles all generated ideas, synthesized insights, and feasibility evaluations into a comprehensive report in a final "Summary" tab. A concise version of this report is prepared as the final text output.
+
+---
+
+
+#### **Output Structure**
+
+**Final Result:**
+The final output is a concise Markdown-formatted string summarizing the entire process. It includes:
+*   The original problem statement.
+*   A list of the techniques that were applied.
+*   Key statistics, such as the total number of ideas generated and the average novelty/feasibility scores.
+*   A list of the top 3-5 "breakthrough" ideas, with brief descriptions.
+*   A summary of the recommended unconventional approaches derived from the synthesis step.
+*   A brief overview of the feasibility assessment, if it was performed.
+
+**UI Breakdown:**
+The task provides a rich, tabbed interface for detailed analysis:
+*   **Overview:** Displays the initial configuration and a live log of the task's progress.
+*   **[Technique Name] (e.g., "1. Reversal"):** A separate tab is created for each technique. It contains the specific provocation used, a description of how the technique was applied, and a detailed breakdown of every idea generated.
+*   **Synthesis:** Shows the full text of the cross-technique analysis, highlighting common themes, patterns, and breakthrough insights.
+*   **Feasibility:** (If enabled) Presents the detailed feasibility report, including an overall assessment, a ranked list of top ideas, and suggestions for hybrid approaches.
+*   **Summary:** A comprehensive, well-formatted report containing the executive summary, a detailed list of the top 10 breakthrough ideas, synthesized insights, and the full feasibility evaluation.
+
+---
+
+
+#### **Example Usage**
+
+**Scenario:**
+A team is tasked with designing a more engaging way for users to learn a new language on a mobile app, but they are stuck on traditional flashcard and quiz-based ideas. They decide to use the Lateral Thinking task to generate fresh concepts.
+
+**Configuration:**
+```json
+{
+  "problem": "Design a radically more engaging and effective mobile app experience for learning a new language, moving beyond simple flashcards and quizzes.",
+  "techniques": [
+    "reversal",
+
+    "random_stimulus",
+    "metaphor"
+  ],
+  "num_alternatives": 3,
+  "evaluate_feasibility": true,
+  "domain_context": "Mobile application for casual learners (iOS and Android)"
+}
+```
+
+**Expected Output Snippet:**
+```markdown
+
+## Lateral Thinking Results
+
+**Problem:** Design a radically more engaging and effective mobile app experience for learning a new language, moving beyond simple flashcards and quizzes.
+
+
+### Techniques Applied
+- Reversal
+- Random_stimulus
+- Metaphor
+
+
+### Key Statistics
+- **Total Ideas Generated:** 9
+- **Average Novelty:** 78.5%
+- **Average Feasibility:** 62.0%
+
+
+### Top Breakthrough Ideas
+1. **The Anti-Goal App** (reversal)
+   Instead of learning a language, users try to *forget* it by identifying and flagging words they already know. This gamifies vocabulary assessment in a novel way.
+2. **Language DJ** (random_stimulus)
+   Inspired by "jazz music," the app generates personalized language lessons as audio "mixes" that match the user's mood, activity, or musical taste.
+3. **Vocabulary Garden** (metaphor)
+   Users plant "seed words" and "water" them with practice. Words grow into plants and eventually form a vibrant garden, visualizing their vocabulary growth.
+
+
+### Recommended Approaches
+- Gamify progress through tangible, visual metaphors rather than points and badges.
+- Integrate learning into passive activities like listening to music or podcasts.
+- Reframe "testing" as a creative or discovery-oriented activity.
+```
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\MetaCognitiveReflectionTask.kt
+
+
+## MetaCognitiveReflection
+
+
+### Overview
+
+**One-Line Description:** Reflects on and critiques the reasoning processes of other tasks.
+
+**Detailed Description:** This task performs a "thinking about thinking" analysis on the output of a previously executed task. It critically examines the reasoning, solution, or analysis provided by another task to identify underlying assumptions, potential cognitive biases, and logical inconsistencies. By evaluating aspects like confidence, completeness, and alternative approaches, it helps improve the overall quality and robustness of a plan's execution. It can suggest improvements, identify knowledge gaps, and provide a structured critique to enhance decision-making.
+
+**Key Use Cases:**
+*   **Quality Assurance:** Critiquing the output of a code generation or modification task to catch logical flaws or unhandled edge cases.
+*   **Strategy Validation:** Evaluating the reasoning behind a planning task (e.g., `HierarchicalPlanningMode`) to ensure the proposed strategy is sound.
+*   **Debugging Failed Tasks:** Analyzing the output of a failed task to understand why its reasoning was flawed.
+*   **Improving AI Reliability:** Systematically checking for common AI pitfalls like making unstated assumptions or exhibiting confirmation bias.
+
+
+### Configuration Parameters
+
+| Parameter            | Type             | Description                                                                                             | Default Value                                                              |
+| -------------------- | ---------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `subject_task_id`    | `String`         | The ID of the task whose reasoning process should be reflected upon.                                      | **Required**                                                               |
+| `reflection_aspects` | `List<String>`   | Aspects to evaluate. Valid options: 'assumptions', 'biases', 'alternatives', 'confidence', 'completeness', 'logic'. | `["assumptions", "biases", "alternatives", "confidence"]`                  |
+| `suggest_improvements` | `Boolean`        | Whether to suggest improvements to the reasoning process.                                               | `true`                                                                     |
+| `identify_gaps`      | `Boolean`        | Whether to identify knowledge gaps and uncertainties.                                                   | `true`                                                                     |
+| `evaluate_confidence`| `Boolean`        | Whether to evaluate the confidence level of the subject task's conclusions.                             | `true`                                                                     |
+| `task_description`   | `String`         | A user-defined description of the task's purpose.                                                       | `null`                                                                     |
+| `task_dependencies`  | `List<String>`   | A list of task IDs that must be completed before this task can run.                                     | `[]`                                                                       |
+
+
+### Process Flow
+
+1.  **Target Identification:** The task begins by identifying the `subject_task_id` provided in the configuration. It retrieves the final result and any relevant prior context associated with this target task from the overall execution state.
+2.  **Prompt Construction:** It constructs a detailed, structured prompt for the AI. This prompt includes the full result of the subject task, the prior context it operated on, and specific instructions based on the configured `reflection_aspects`.
+3.  **AI-Powered Analysis:** A specialized `ChatAgent`, acting as a meta-cognitive analyst, processes the prompt. It performs a critical evaluation based on the requested aspects (e.g., checking for assumptions, evaluating logical consistency).
+4.  **Structured Output Generation:** The AI generates a detailed, structured report in Markdown format, with separate sections for each analyzed aspect, improvement suggestions, knowledge gaps, and a confidence assessment.
+5.  **Summary Extraction:** The task parses the detailed AI report to extract the most critical findings and generates a concise summary.
+6.  **UI Presentation:** The results are displayed in a comprehensive, tabbed format in the user interface for easy review.
+
+
+### Output Structure
+
+**Final Result:** The final output passed to subsequent tasks is a concise summary string. This summary typically contains the key insights and most critical points identified during the reflection, often presented as a bulleted list.
+
+**UI Breakdown:**
+*   **Overview:** Displays the configuration parameters used for the reflection, including the subject task ID and the aspects being analyzed.
+*   **Context:** (If applicable) Shows the prior context and data that the original subject task had access to, providing a basis for the critique.
+*   **Reflection Analysis:** Contains the full, detailed critique generated by the AI, with sections for each reflection aspect, suggestions, and identified gaps.
+*   **Summary:** Presents the final, condensed summary of the reflection's key findings.
+
+
+### Example Usage
+
+**Scenario:** A `FileModificationTask` (ID: `task_abc123`) was used to refactor a complex function. We want to ensure the reasoning behind the refactor is sound and doesn't introduce new bugs before proceeding.
+
+**Configuration:**
+```json
+{
+  "subject_task_id": "task_abc123",
+  "reflection_aspects": ["assumptions", "logic", "completeness"],
+  "suggest_improvements": true,
+  "identify_gaps": false,
+  "evaluate_confidence": true
+}
+```
+
+**Expected Output Snippet:**
+```markdown
+**Key Insights:**
+- The refactor assumes the input array will never be empty, which could lead to a null pointer exception.
+- The logic for the primary loop is sound and more efficient than the original implementation.
+- Completeness check: The refactor does not account for negative integer values in the input, which was an implicit requirement.
+- Confidence in the core logic is high, but low for edge case handling.
+```
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\MultiPerspectiveAnalysisTask.kt
+
+
+## Multi-Perspective Analysis
+
+
+### Overview
+
+**One-Line Description:** Analyze problems from multiple viewpoints with synthesis.
+
+**Detailed Description:** This task provides a structured framework for analyzing a topic or problem from several distinct perspectives. It examines the subject from each specified viewpoint, generating a detailed analysis that identifies key considerations, risks, and opportunities. The task can then synthesize these individual analyses to identify common themes, highlight conflicts, and produce a balanced, unified conclusion. This methodology is crucial for making well-rounded decisions by ensuring that a problem is considered from all relevant angles.
+
+**Key Use Cases:**
+*   **Architectural Decision Making:** Evaluating a new technology from technical, financial, and operational perspectives.
+*   **Code Review:** Assessing code changes from the angles of performance, maintainability, security, and user impact.
+*   **Strategic Planning:** Analyzing a business strategy by considering market, competitor, and internal capability viewpoints.
+*   **Risk Assessment:** Identifying potential risks by looking at a project through financial, legal, and reputational lenses.
+*   **Feature Evaluation:** Deciding on a new product feature by analyzing it from user experience, business value, and technical feasibility perspectives.
+
+
+### Configuration Parameters
+
+The task's behavior is controlled by the following parameters:
+
+| Parameter             | Type          | Description                                                              | Default Value |
+| --------------------- | ------------- | ------------------------------------------------------------------------ | ------------- |
+| `analysis_subject`    | `String`      | The topic or problem to analyze from multiple viewpoints.                  | **Required**  |
+| `perspectives`        | `List<String>`| A list of perspectives to consider (e.g., "technical", "business", "ethical", "user"). | **Required**  |
+| `synthesize`          | `Boolean`     | If true, the task will synthesize the individual perspectives into a unified conclusion. | `true`        |
+| `consensus_threshold` | `Double`      | The minimum confidence threshold (0.0-1.0) for perspective agreement during synthesis. | `0.7`         |
+| `related_files`       | `List<String>`| A list of file paths or glob patterns to provide additional context for the analysis. | `null`        |
+| `task_dependencies`   | `List<String>`| A list of task IDs that must be completed before this task can run.      | `null`        |
+| `state`               | `TaskState`   | The initial state of the task.                                           | `Pending`     |
+
+
+### Process Flow
+
+1.  **Initialization:** The task begins by validating that an `analysis_subject` and a list of `perspectives` have been provided. It then sets up an "Overview" tab in the UI to display the initial configuration.
+2.  **Context Gathering:** It reads the content from any files specified in `related_files` and gathers results from any preceding tasks to build a comprehensive context.
+3.  **Independent Perspective Analysis:** The task iterates through each string in the `perspectives` list. For each one:
+    *   A dedicated UI tab is created for that perspective.
+    *   A prompt is constructed, instructing an AI agent to analyze the `analysis_subject` from that specific viewpoint, using the gathered context.
+    *   The agent's analysis is captured and displayed in the corresponding tab.
+4.  **Synthesis (Conditional):** If the `synthesize` parameter is `true`, the task proceeds to this step after all individual analyses are complete.
+    *   A "Synthesis" tab is created in the UI.
+    *   A new prompt is generated that includes the original subject and all the individual perspective analyses.
+    *   An AI agent is tasked with synthesizing these viewpoints, identifying common themes, highlighting conflicts, and forming a balanced, unified recommendation.
+    *   The resulting synthesis is displayed in its tab.
+5.  **Final Output Generation:** The task compiles all the individual analyses and the final synthesis (if generated) into a single, comprehensive Markdown report.
+
+
+### Output Structure
+
+**Final Result:**
+The final output passed to subsequent tasks is a single Markdown string. This string contains the complete analysis, with each perspective's findings presented under a distinct heading (e.g., `## Technical Perspective`). If synthesis was enabled, a final `## Synthesis` section is appended, containing the integrated conclusion.
+
+**UI Breakdown:**
+The user interface provides a detailed, tabbed view of the process:
+*   **Overview:** Displays the initial analysis subject and the list of perspectives being considered.
+*   **[Perspective Name] (e.g., "Technical"):** A separate tab is generated for each perspective, containing the detailed analysis from that specific viewpoint.
+*   **Synthesis:** If enabled, this tab contains the unified conclusion, recommendations, and a summary of agreements and conflicts between the different perspectives.
+
+
+### Example Usage
+
+**Scenario:**
+A software team is considering migrating their application's primary database from a traditional SQL database to a NoSQL alternative to improve scalability. They need to evaluate this significant architectural change from multiple angles before making a decision.
+
+**Configuration:**
+```json
+{
+  "analysis_subject": "Evaluate the proposal to migrate our primary user database from PostgreSQL to MongoDB to improve performance and scalability for our rapidly growing user base.",
+  "perspectives": [
+    "Technical Feasibility",
+    "Business Impact",
+    "Operational Readiness"
+  ],
+  "synthesize": true,
+  "consensus_threshold": 0.7,
+  "related_files": [
+    "docs/current_architecture.md",
+    "reports/performance_bottlenecks.csv"
+  ]
+}
+```
+
+**Expected Output Snippet:**
+```markdown
+
+## Multi-Perspective Analysis: Evaluate the proposal to migrate...
+
+
+### Technical Feasibility Perspective
+Migrating to MongoDB offers significant advantages in horizontal scaling and flexible schema management, which directly addresses our current performance bottlenecks. However, the migration process will be complex, requiring a data transformation strategy to handle the shift from a relational to a document-based model. Key risks include potential data loss during migration and the learning curve for the development team...
+
+
+### Business Impact Perspective
+...
+
+
+### Operational Readiness Perspective
+...
+
+
+### Synthesis
+The analysis reveals a strong consensus across all perspectives that a database migration is necessary to support future growth. The primary tension exists between the long-term technical benefits and the short-term operational costs and risks. The unified recommendation is to proceed with a phased migration, starting with a non-critical service as a pilot project. This approach will allow the team to build expertise and validate the migration strategy while minimizing risk to the core business.
+```
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\NarrativeGenerationTask.kt
+
 
 ## NarrativeGeneration
 
-### Overview
 
-The `NarrativeGeneration` task is a powerful tool for creating complete, structured narratives from a high-level concept. It extends the analytical capabilities
-of `NarrativeReasoning` by adding a multi-phase generative process that takes a subject from initial analysis to a fully written story, complete with acts,
-scenes, and consistent styling.
+#### **Overview**
 
-- **Primary Use Cases:**
-  - Creative writing and automated story generation.
-  - Developing detailed scenarios for simulations or strategic planning.
-  - Creating compelling user journey narratives for product design and UX.
-  - Generating narrative content for games, marketing materials, or interactive experiences.
-  - Prototyping plot structures and character arcs quickly.
-- **Expected Outcomes:** A fully-formed narrative in markdown format, structured into acts and scenes. The output also includes a detailed breakdown of the
-  generation process, including the initial analysis, the generated outline, and statistics like word count and generation time.
+*   **One-Line Description:** Generate complete narratives from analysis and outlines.
+*   **Detailed Description:** This task extends the foundational `NarrativeReasoning` task to produce complete, publication-ready narratives. It begins by performing a comprehensive analysis of a given subject or scenario. Based on this analysis, it constructs a detailed, scene-by-scene outline. The task then iteratively generates the content for each scene, feeding the context from previously written scenes into the generation of the next one to ensure consistency in plot, character, and tone. It is highly configurable, allowing control over structure, style, point of view, and specific narrative elements.
+*   **Key Use Cases:**
+    *   **Creative Writing:** Generating complete short stories, novellas, or chapters from a simple premise.
+    *   **Scenario Planning:** Developing detailed narratives for business or strategic scenarios to explore potential outcomes.
+    *   **Content Creation:** Authoring scripts, marketing copy, or user journey narratives.
+    *   **Game Development:** Creating quest lines, character backstories, and in-game lore.
 
-### When to Use
 
-This task is ideal when you need to generate a complete, long-form piece of creative or descriptive writing.
+#### **Configuration Parameters**
 
-- **Use this task when:**
-  - You have a story idea or scenario and want to see it fully fleshed out.
-  - You need to create a coherent narrative that follows a specific structure (e.g., a three-act structure).
-  - You want to control the writing style, point of view, and tone of the generated text.
-  - The goal is content creation, not just analysis.
-- **Comparison with `NarrativeReasoningTask`:**
-  - `NarrativeReasoningTask` is primarily **analytical**. It takes existing information and identifies plot points, character motivations, and potential
-    outcomes.
-  - `NarrativeGenerationTask` is **generative**. It performs the initial analysis and then uses that foundation to *write* the story from scratch. Choose
-    `NarrativeGeneration` when the end goal is a finished piece of writing.
+| Parameter               | Type                    | Description                                                                                    | Default Value          |
+| ----------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- | ---------------------- |
+| `subject`               | `String`                | The subject or scenario to develop into a full narrative.                                      | **Required**           |
+| `narrative_elements`    | `Map<String, Any>`      | Narrative elements to consider (characters, setting, conflict, timeline, etc.).                | `null`                 |
+| `target_word_count`     | `Int`                   | Target word count for the complete narrative.                                                  | `5000`                 |
+| `number_of_acts`        | `Int`                   | Number of acts in the narrative structure (typically 3 or 5).                                  | `3`                    |
+| `scenes_per_act`        | `Int`                   | Average number of scenes per act.                                                              | `3`                    |
+| `writing_style`         | `String`                | The writing style (e.g., 'literary', 'thriller', 'technical', 'conversational').               | `"literary"`           |
+| `point_of_view`         | `String`                | The point of view (e.g., 'first person', 'third person limited', 'third person omniscient').   | `"third person limited"` |
+| `tone`                  | `String`                | The tone (e.g., 'dramatic', 'humorous', 'suspenseful', 'reflective').                          | `"dramatic"`           |
+| `detailed_descriptions` | `Boolean`               | Whether to include detailed scene descriptions.                                                | `true`                 |
+| `include_dialogue`      | `Boolean`               | Whether to include character dialogue.                                                         | `true`                 |
+| `show_internal_thoughts`| `Boolean`               | Whether to show internal character thoughts.                                                   | `true`                 |
+| `revision_passes`       | `Int`                   | The number of revision passes to perform on each generated scene for quality improvement.      | `1`                    |
+| `task_dependencies`     | `List<String>`          | A list of task IDs that must be completed before this task can start.                          | `null`                 |
 
-### Configuration
 
-#### Required Parameters
+#### **Process Flow**
 
-| Parameter | Type   | Description                                            | Example                                                     |
-|:----------|:-------|:-------------------------------------------------------|:------------------------------------------------------------|
-| `subject` | String | The core subject, theme, or scenario for the narrative | "A detective investigating a missing artist in 1920s Paris" |
+The task executes in a structured, multi-phase process:
 
-#### Optional Parameters
+1.  **Phase 1: Narrative Analysis:** The task first runs the base `NarrativeReasoning` analysis on the subject and provided elements. This initial step identifies key plot points, character motivations, and potential inconsistencies to form a solid foundation for the story.
+2.  **Phase 2: Outline Generation:** Using the results of the analysis, the task generates a detailed, scene-by-scene outline for the entire narrative. This outline includes a title, premise, and a breakdown of acts and scenes, with each scene specifying its purpose, setting, characters, key events, and emotional arc.
+3.  **Phase 3: Scene Generation:** The task proceeds to write each scene iteratively. For each scene, it constructs a context that includes the overall premise and details from the last one or two previously generated scenes. This ensures a coherent flow and consistent character development. Optional revision passes are performed on each scene to refine the prose and enhance its impact.
+4.  **Phase 4: Final Assembly:** Once all scenes are generated, the task compiles them into a single, complete narrative document, structured by acts and scenes. It concludes by calculating final statistics like total word count and execution time.
 
-| Parameter                | Type    | Default                | Description                                                                  | Example                                                              |
-|:-------------------------|:--------|:-----------------------|:-----------------------------------------------------------------------------|:---------------------------------------------------------------------|
-| `narrative_elements`     | Map     | `null`                 | Key-value pairs defining characters, setting, conflict, etc.                 | `{"protagonist": "Detective Dubois", "setting": "Montmartre, 1925"}` |
-| `target_word_count`      | Int     | 5000                   | The desired total word count for the final narrative.                        | `10000`                                                              |
-| `number_of_acts`         | Int     | 3                      | The number of acts to structure the story into (e.g., 3 or 5).               | `5`                                                                  |
-| `scenes_per_act`         | Int     | 3                      | The average number of scenes to generate for each act.                       | `5`                                                                  |
-| `writing_style`          | String  | "literary"             | The desired writing style (e.g., 'thriller', 'technical', 'humorous').       | `"thriller"`                                                         |
-| `point_of_view`          | String  | "third person limited" | The narrative perspective (e.g., 'first person', 'third person omniscient'). | `"first person"`                                                     |
-| `tone`                   | String  | "dramatic"             | The emotional tone of the narrative (e.g., 'suspenseful', 'reflective').     | `"suspenseful"`                                                      |
-| `detailed_descriptions`  | Boolean | `true`                 | If `true`, the AI will include vivid, sensory descriptions.                  | `false`                                                              |
-| `include_dialogue`       | Boolean | `true`                 | If `true`, the narrative will include character dialogue.                    | `false`                                                              |
-| `show_internal_thoughts` | Boolean | `true`                 | If `true`, the AI will include the internal monologue of characters.         | `false`                                                              |
-| `revision_passes`        | Int     | 1                      | The number of editing/revision passes to perform on each generated scene.    | `2`                                                                  |
 
-### How It Works
+#### **Output Structure**
 
-The task employs a sophisticated, multi-phase pipeline to ensure a coherent and high-quality final product. It breaks down the complex process of creative
-writing into a series of manageable steps, each handled by a specialized AI agent.
+*   **Final Result:** The final output passed to subsequent tasks is a concise Markdown summary. It includes the narrative's title, total word count, scene count, and total generation time, along with a high-level view of the story's outline. It explicitly notes that the full text is available in the UI.
 
-#### Process Flow
+*   **UI Breakdown:** The user interface provides a comprehensive, tabbed view of the entire generation process:
+    *   **Overview:** A central hub showing the initial configuration, a real-time progress log of the generation phases, and final statistics (total words, scenes, time).
+    *   **Outline:** Displays the complete, detailed narrative outline generated in Phase 2.
+    *   **Scene `[Number]`:** A dedicated tab is created for each generated scene. This tab contains the full text of the scene, its word count, a summary of key moments, and the emotional/physical state of characters at the scene's conclusion.
+    *   **Complete Narrative:** A final tab that presents the fully assembled narrative, combining all generated scenes into a single, readable document.
 
-1. **Phase 1: Narrative Analysis:** The task begins by running the base `NarrativeReasoningTask`. This analyzes the `subject` and `narrative_elements` to
-   identify key plot points, character motivations, and potential story arcs. This forms the logical foundation for the story.
-2. **Phase 2: Outline Generation:** A story architect AI agent takes the analysis from Phase 1 and creates a detailed, scene-by-scene outline. This outline maps
-   out the entire story structure, including the purpose, key events, and emotional arc for each scene within each act.
-3. **Phase 3: Iterative Scene Writing:** A creative writer AI agent writes each scene from the outline one by one. To maintain continuity, the agent is given
-   the context of the previously written scenes (e.g., the ending of the last scene, the emotional state of characters). This ensures a smooth flow and logical
-   progression.
-4. **Phase 4: Revision and Assembly:** After a scene is written, an editor AI agent can perform one or more revision passes to improve prose, pacing, and
-   emotional impact. Once all scenes are generated and revised, they are compiled into a single, complete narrative document.
 
-#### Internal Mechanics
+#### **Example Usage**
 
-The task uses a chain of `ParsedAgent` and `ChatAgent` instances.
+*   **Scenario:** A writer wants to create a short, suspenseful sci-fi story about a lone astronaut who discovers a mysterious, humming artifact buried beneath the Martian soil.
 
-- An **analyst agent** performs the initial reasoning.
-- An **architect agent** is prompted to structure the story and output a `NarrativeOutline` object.
-- A **writer agent** is prompted for each scene, receiving the outline details and recent context, and is expected to output a `GeneratedScene` object.
-- An optional **editor agent** refines the output of the writer agent.
+*   **Configuration:**
+    ```json
+    {
+      "subject": "A lone astronaut on Mars discovers a mysterious, humming artifact.",
+      "narrative_elements": {
+        "character": "Dr. Aris Thorne, a cautious but curious geologist",
+        "setting": "A remote, desolate crater on Mars, near a deep-drilling site"
+      },
+      "target_word_count": 2500,
+      "number_of_acts": 3,
+      "scenes_per_act": 2,
+      "writing_style": "thriller",
+      "tone": "suspenseful"
+    }
+    ```
 
-This multi-agent, phased approach transforms a complex creative endeavor into a structured, repeatable process, significantly improving the coherence and
-quality of the final narrative compared to a single, monolithic prompt.
+*   **Expected Output Snippet:**
+    ```markdown
+    # Narrative Generation Summary: The Crimson Humming
 
-#### Output Structure
+    A complete narrative of **2580 words** across **6 scenes** was generated in **124.5s**.
+    > The full text is available in the UI for detailed review.
 
-The user is presented with a tabbed interface that documents the entire process:
+    ## The Crimson Humming
 
-- **Overview Tab:** Shows the initial configuration, real-time progress through the phases, and final statistics (total word count, generation time, etc.).
-- **Outline Tab:** Displays the complete, detailed outline generated in Phase 2.
-- **Scene [X] Tabs:** Each scene gets its own tab, showing the generated text, word count, key moments, and character states at the end of that scene.
-- **Complete Narrative Tab:** Presents the final, assembled story in a clean, readable markdown format.
+    **Premise:** A lone astronaut on Mars, Dr. Aris Thorne, discovers a mysterious, humming artifact that challenges his scientific understanding and threatens his sanity.
 
-The final result returned by the task is the complete narrative markdown file.
+    ---
 
-# NarrativeReasoningTask.kt
+    ### Act 1: The Discovery
+    **Purpose:** Introduce Aris, his isolation, and the initial discovery of the strange object.
+    #### Scene 1: The Anomaly
+    - **Setting:** Dr. Thorne's rover, analyzing seismic data.
+    - **Purpose:** Establish the routine and the first hint of something unusual.
+    #### Scene 2: First Contact
+    - **Setting:** The excavation site in the crater.
+    - **Purpose:** Aris unearths the artifact and experiences its strange properties for the first time.
+    ```
 
-## NarrativeReasoningTask
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\NarrativeReasoningTask.kt
 
-### Overview
 
-The `NarrativeReasoningTask` analyzes complex subjects or scenarios by framing them as stories. It uses narrative structures and storytelling principles to
-uncover underlying dynamics, motivations, and potential outcomes that might be missed by purely logical analysis.
+## Narrative Reasoning
 
-- **Primary Use Cases:**
-  - Analyzing user journeys to understand customer experiences and pain points.
-  - Mapping the evolution of a system or project to identify critical moments.
-  - Planning for change management by understanding stakeholder perspectives and potential story arcs.
-  - Conducting strategic foresight by exploring alternative future scenarios as different narratives.
-  - Performing root cause analysis on complex failures by constructing a coherent timeline of events.
 
-- **Expected Outcomes:** A comprehensive, multi-part report that breaks down the subject into narrative components. This includes a constructed central story,
-  key plot points, character/stakeholder analysis, predicted outcomes, identified inconsistencies, and a final synthesis of insights.
+#### **Overview**
 
-### When to Use
+*   **One-Line Description:** Understand scenarios through narrative structures and storytelling.
+*   **Detailed Description:** This task analyzes complex situations by framing them as stories. It constructs coherent narratives from given elements, identifies key plot points and character arcs, analyzes motivations, predicts potential outcomes, and finds inconsistencies. This storytelling approach helps to understand the dynamics of a scenario, such as a user's journey, a project's evolution, or the impact of a strategic change.
+*   **Key Use Cases:**
+    *   Analyzing user journeys to understand customer experience.
+    *   Mapping the potential evolution of a system or product.
+    *   Planning and communicating change management initiatives.
+    *   Strategic foresight and scenario planning.
+    *   Analyzing competitive landscapes by framing them as strategic narratives.
+    *   Deconstructing project failures or successes to learn from them.
 
-This task is ideal when you need to understand the "why" and "how" behind a situation, especially those involving human factors, complex interactions over time,
-and ambiguity.
 
-- **Specific Scenarios:**
-  - When you have a collection of events, facts, and actors but need to weave them into a coherent explanation.
-  - To explore potential futures for a product, company, or project in a qualitative, story-driven way.
-  - When analyzing qualitative data like interview transcripts, user feedback, or historical documents.
+#### **Configuration Parameters**
 
-- **Problem Types:**
-  - Problems where context, sequence of events, and motivations are critical.
-  - Strategic planning and scenario analysis.
-  - Qualitative analysis that requires deep interpretation rather than just data aggregation.
+| Parameter                | Type                  | Description                                                                    | Default Value         |
+| ------------------------ | --------------------- | ------------------------------------------------------------------------------ | --------------------- |
+| `subject`                | `String?`             | The subject or scenario to analyze through narrative reasoning.                  | **Required**          |
+| `narrative_elements`     | `Map<String, Any>?`   | Narrative elements to consider (characters, setting, conflict, timeline, etc.). | `null`                |
+| `construct_narrative`    | `Boolean`             | Whether to construct a coherent narrative from the elements.                    | `true`                |
+| `identify_plot_points`   | `Boolean`             | Whether to identify key plot points and story arcs.                            | `true`                |
+| `predict_outcomes`       | `Boolean`             | Whether to predict narrative outcomes and resolutions.                         | `true`                |
+| `alternative_narratives` | `Int`                 | Number of alternative narrative paths to explore.                              | `3`                   |
+| `analyze_motivations`    | `Boolean`             | Whether to analyze character motivations and stakeholder perspectives.          | `true`                |
+| `find_inconsistencies`   | `Boolean`             | Whether to identify narrative inconsistencies or gaps.                          | `true`                |
+| `task_dependencies`      | `List<String>?`       | A list of task IDs that must be completed before this task can start.          | `null`                |
+| `state`                  | `TaskState?`          | The initial state of the task.                                                 | `TaskState.Pending`   |
 
-- **Comparison with Alternative Reasoning Types:**
-  - **vs. Causal Inference:** Narrative Reasoning focuses on the story and motivations, which is good for understanding human-driven systems. Causal Inference
-    is better for identifying statistically significant cause-and-effect relationships in more quantifiable systems.
-  - **vs. Systems Thinking:** Systems Thinking maps the components and feedback loops of a system. Narrative Reasoning tells the story of how that system
-    behaves over time, focusing on the temporal and motivational aspects. They can be highly complementary.
 
-### Configuration
+#### **Process Flow**
 
-#### Required Parameters
+1.  **Initialization:** The task starts by setting up the user interface and displaying an "Overview" tab with the subject and configuration parameters.
+2.  **Narrative Construction:** If enabled, it constructs a primary, coherent narrative based on the provided `subject` and `narrative_elements`. This story is structured into acts, including a summary, themes, and tone.
+3.  **Plot Point Identification:** If enabled, the task analyzes the narrative to identify critical plot points, such as the inciting incident, rising action, climax, and resolution.
+4.  **Character Analysis:** If enabled, it performs a deep dive into the specified characters (or stakeholders), analyzing their roles, motivations, goals, conflicts, and character arcs.
+5.  **Outcome Prediction:** If enabled, the task generates a set of potential future outcomes based on the narrative, including the most likely, best-case, and worst-case scenarios.
+6.  **Inconsistency Check:** If enabled, it scrutinizes the narrative for logical contradictions, timeline gaps, or behaviors that conflict with character motivations, suggesting resolutions for any issues found.
+7.  **Synthesis:** Finally, the task generates a comprehensive synthesis of all preceding analyses, summarizing the core narrative, key insights, critical decision points, and recommended actions.
 
-| Parameter | Type   | Description                                           | Example                              |
-|:----------|:-------|:------------------------------------------------------|:-------------------------------------|
-| `subject` | String | The central topic, event, or scenario to be analyzed. | `"The launch of our new mobile app"` |
 
-#### Optional Parameters
+#### **Output Structure**
 
-| Parameter                | Type             | Default | Description                                                                                          | Example                                                                                  |
-|:-------------------------|:-----------------|:--------|:-----------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------|
-| `narrative_elements`     | Map<String, Any> | `null`  | Key components of the story, such as characters, setting, conflict, etc.                             | `{"characters": ["dev team", "users"], "conflict": "balancing features with stability"}` |
-| `construct_narrative`    | Boolean          | `true`  | If true, the task will construct a coherent narrative from the elements.                             | `true`                                                                                   |
-| `identify_plot_points`   | Boolean          | `true`  | If true, the task will identify key moments like the inciting incident, climax, and resolution.      | `true`                                                                                   |
-| `predict_outcomes`       | Boolean          | `true`  | If true, the task will generate several potential outcomes or resolutions for the narrative.         | `true`                                                                                   |
-| `alternative_narratives` | Int              | `3`     | The number of different outcomes or alternative story paths to explore.                              | `5`                                                                                      |
-| `analyze_motivations`    | Boolean          | `true`  | If true, the task will analyze the motivations, goals, and conflicts of the characters/stakeholders. | `true`                                                                                   |
-| `find_inconsistencies`   | Boolean          | `true`  | If true, the task will scan the narrative for logical gaps, contradictions, or timeline issues.      | `false`                                                                                  |
+*   **Final Result:** The final output is a concise Markdown-formatted string that summarizes the entire analysis. It includes the main narrative's title and summary, highlights of key plot points and character motivations, a list of predicted outcomes, a summary of any inconsistencies, and the final synthesis. This condensed report is designed to be passed to subsequent tasks.
+*   **UI Breakdown:** The task provides a detailed, multi-tab view in the user interface for in-depth exploration:
+    *   **Overview:** Displays the initial configuration, progress updates, and a final summary of the analysis duration.
+    *   **Context:** (If applicable) Shows context inherited from previous tasks.
+    *   **Main Narrative:** Presents the fully constructed story, broken down by acts, including themes and tone.
+    *   **Plot Points:** Details each identified plot point with its description, significance, timing, and affected characters.
+    *   **Characters:** Provides a detailed analysis for each character, covering their role, motivations, goals, conflicts, and arc.
+    *   **Predicted Outcomes:** Lists each potential outcome with its probability, key contributing factors, consequences, and resolution path.
+    *   **Inconsistencies:** Details any identified narrative gaps or contradictions, including their severity and suggested resolutions. If none are found, it confirms the narrative's coherence.
+    *   **Synthesis:** Contains the full text of the final synthesis, offering actionable insights and an overall assessment.
 
-### How It Works
 
-#### Process Flow
+#### **Example Usage**
 
-The `NarrativeReasoningTask` executes a series of steps, each building upon the last. The user can enable or disable most steps via the configuration.
+*   **Scenario:** A product manager wants to analyze the potential impact of introducing a new, disruptive feature ("Project Phoenix") into their existing software. They want to understand how different user personas will react and what the likely long-term outcomes are.
+*   **Configuration:**
+    ```json
+    {
+      "subject": "Introduction of 'Project Phoenix' feature",
+      "narrative_elements": {
+        "characters": ["Power User Paula", "New User Nick", "Lead Developer Dave"],
+        "setting": "A mature B2B SaaS platform with a loyal user base",
+        "conflict": "The new feature simplifies workflows for new users but requires existing power users to change their habits."
+      },
+      "alternative_narratives": 3,
+      "analyze_motivations": true,
+      "predict_outcomes": true
+    }
+    ```
+*   **Expected Output Snippet:**
+    ```markdown
+    # Narrative Reasoning Analysis: Introduction of 'Project Phoenix' feature
 
-1. **Initialization:** The task sets up an overview tab displaying the subject and configuration.
-2. **Narrative Construction:** If enabled, it uses a specialized AI agent to act as a storyteller, weaving the provided `narrative_elements` into a structured
-   story with a title, summary, acts, and themes.
-3. **Plot Point Identification:** If enabled, another agent analyzes the narrative to identify and describe critical plot points (e.g., inciting incident,
-   climax, resolution).
-4. **Character Analysis:** If enabled, an agent with expertise in psychology analyzes each character or stakeholder, detailing their motivations, goals,
-   conflicts, and character arc.
-5. **Outcome Prediction:** If enabled, a foresight agent predicts a configured number of possible outcomes (e.g., best-case, worst-case, most likely), outlining
-   the factors and consequences for each.
-6. **Inconsistency Check:** If enabled, a consistency-checking agent scrutinizes the narrative for logical contradictions, timeline gaps, or unmotivated
-   character actions, suggesting potential resolutions.
-7. **Synthesis:** Finally, a synthesis agent reviews all the generated analysis to produce a high-level summary, highlighting key insights, critical decision
-   points, and recommended actions.
+    ## Main Narrative: The Phoenix Rises
+    The introduction of 'Project Phoenix' creates a schism in the user base. While New User Nick champions the intuitive design, Power User Paula struggles with the new workflows, leading to initial friction. Lead Developer Dave must balance supporting legacy users with pushing the new paradigm.
 
-#### Internal Mechanics
+    ## Predicted Outcomes
+    - **Successful Adoption (High):** After an initial dip, power users adapt and overall productivity increases.
+    - **User Base Fork (Medium):** A significant portion of power users remain on a legacy version, creating a support burden.
+    - **Feature Rollback (Low):** Negative feedback from high-value power users forces the company to retract the feature.
 
-The task orchestrates multiple calls to the language model, using the `ParsedAgent` for most steps. Each agent is given a specific role (storyteller, plot
-analyst, psychologist) and a prompt tailored to its sub-task. It is instructed to return a structured object (e.g., `ParsedNarrative`, `PlotPoints`,
-`CharacterAnalyses`), which ensures the output is consistent, machine-readable, and easily formatted for the user interface. This modular, step-by-step approach
-breaks down the complex cognitive process of narrative analysis into manageable and verifiable stages.
+    ## Synthesis
+    The core challenge is managing the transition for the existing power user base. The analysis suggests a phased rollout with dedicated training for power users is critical to mitigate risks and achieve the 'Successful Adoption' scenario. Key insights point to the need for better communication from Lead Developer Dave to bridge the gap between user expectations and technical implementation.
+    ```
 
-#### Output Structure
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\ProbabilisticReasoningTask.kt
 
-The final output is presented in a multi-tabbed user interface, with each tab dedicated to a specific part of the analysis:
 
-- **Overview:** Shows the initial configuration and a live progress log.
-- **Main Narrative:** The full story constructed by the AI.
-- **Plot Points:** A list of key narrative moments and their significance.
-- **Characters:** Detailed profiles for each character or stakeholder.
-- **Predicted Outcomes:** A breakdown of potential future scenarios.
-- **Inconsistencies:** A report on any identified gaps or contradictions.
-- **Synthesis:** A high-level summary with actionable insights.
+## ProbabilisticReasoning
 
-The task also returns a single, consolidated Markdown document containing all of these sections, suitable for saving or sharing.
-
-# ProbabilisticReasoningTask.kt
-
-## Probabilistic Reasoning
 
 ### Overview
 
-The Probabilistic Reasoning task performs a formal Bayesian analysis to reason under uncertainty. It updates initial beliefs (prior probabilities) about a set
-of hypotheses based on observed evidence, resulting in updated beliefs (posterior probabilities). This task is designed to bring mathematical rigor to
-decision-making in complex, uncertain environments.
+**One-Line Description:** Reason under uncertainty using Bayesian analysis.
 
-- **Primary Use Cases:**
-  - **Risk Assessment:** Quantifying the likelihood and impact of various risks.
-  - **Diagnostic Reasoning:** Systematically identifying the root cause of a problem (e.g., bug hunting, medical diagnosis).
-  - **A/B Test Analysis:** Determining the statistical significance of experimental results.
-  - **Strategic Decision-Making:** Evaluating options like technology adoption or market entry where outcomes are uncertain.
-  - **Resource Allocation:** Deciding how to allocate limited resources for the best expected return.
+**Detailed Description:** This task performs probabilistic reasoning and Bayesian analysis to make decisions under uncertainty. It systematically updates beliefs by incorporating new evidence according to Bayes' theorem. The task can calculate expected values, quantify risks, identify key information gaps, and suggest targeted experiments to reduce uncertainty. It provides a structured framework for risk assessment, diagnostic reasoning, and data-driven decision-making.
 
-- **Expected Outcomes:**
-  - A detailed report showing how the probability of each hypothesis changes in light of new evidence.
-  - Calculation of expected values and risk profiles for different scenarios.
-  - Identification of the most critical uncertainties that impact the decision.
-  - Actionable suggestions for experiments or data collection to reduce key uncertainties.
+**Key Use Cases:**
+*   **Risk Assessment and Management:** Evaluating the likelihood and impact of potential risks.
+*   **Diagnostic Reasoning:** Pinpointing the most likely cause of a problem, such as a software bug or system failure.
+*   **A/B Test Analysis:** Determining which version of a product is statistically superior.
+*   **Resource Allocation:** Deciding how to allocate limited resources for maximum expected return.
+*   **Technology Adoption:** Assessing whether to invest in a new, unproven technology.
 
-### When to Use
 
-This task is ideal for situations where you have:
+### Configuration Parameters
 
-- **Multiple Competing Hypotheses:** You can formulate several mutually exclusive explanations for a situation.
-- **Quantifiable Beliefs:** You can assign an initial probability (even if it's a rough estimate) to each hypothesis.
-- **Observable Evidence:** You have or can gather data/observations that help differentiate between the hypotheses.
+| Parameter | Type | Description | Default Value |
+| :--- | :--- | :--- | :--- |
+| `hypotheses` | `Map<String, Double>` | A map of hypotheses to their prior probabilities. The probabilities must sum to 1.0. | `null` (**Required**) |
+| `evidence` | `List<String>` | A list of observed evidence or data points used to update beliefs. | `null` |
+| `calculate_expected_value` | `Boolean` | If true, the task will calculate expected values and assess risks for the hypotheses. | `true` |
+| `identify_key_uncertainties` | `Boolean` | If true, the task will identify the assumptions and estimates that have the most significant impact on the conclusion. | `true` |
+| `suggest_experiments` | `Boolean` | If true, the task will suggest experiments or data collection methods to reduce key uncertainties. | `true` |
+| `risk_tolerance` | `String` | The risk tolerance level to use for decision recommendations. Accepts "low", "medium", or "high". | `"medium"` |
+| `decision_context` | `String` | A description of the problem or decision being made to provide context for the analysis. | `null` (**Required**) |
+| `task_description` | `String` | A user-defined description of the task instance. | Auto-generated based on hypothesis and evidence count. |
+| `task_dependencies` | `List<String>` | A list of other task IDs that must be completed before this one can start. | `null` |
+| `state` | `TaskState` | The initial execution state of the task. | `Pending` |
 
-Compared to other reasoning types, Probabilistic Reasoning is more structured and quantitative than `Brainstorming` or `Chain of Thought`. It excels at
-systematically reducing uncertainty and is preferable when you need to justify a decision with a formal, data-driven analysis rather than a purely qualitative
-one.
 
-### Configuration
+### Process Flow
 
-#### Required Parameters
+1.  **Initialization and Validation:** The task begins by validating the configuration. It checks that hypotheses have been provided and that their prior probabilities sum to approximately 1.0.
+2.  **Prior Probability Analysis:** It displays the initial belief distribution based on the provided prior probabilities before any evidence is considered.
+3.  **Bayesian Update:** The core of the task. It uses a specialized AI agent to evaluate each piece of evidence against each hypothesis. It calculates the likelihood of observing the evidence given each hypothesis and applies Bayes' theorem to compute the updated (posterior) probabilities.
+4.  **Expected Value Analysis (Optional):** If `calculate_expected_value` is enabled, the task estimates potential outcomes (costs and benefits) for each hypothesis and calculates the overall expected value. It also assesses downside risks and worst-case scenarios.
+5.  **Key Uncertainty Identification (Optional):** If `identify_key_uncertainties` is enabled, the task analyzes the model to find which assumptions or probability estimates have the largest impact on the final conclusions.
+6.  **Experiment Suggestion (Optional):** If `suggest_experiments` is enabled, the task recommends specific tests, A/B experiments, or data collection strategies that would most effectively reduce the key uncertainties identified in the previous step.
+7.  **Summary Generation:** The results from all enabled steps are compiled into a comprehensive final report.
 
-| Parameter          | Type                | Description                                                                                                                   | Example                                                           |
-|--------------------|---------------------|-------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------|
-| `hypotheses`       | Map<String, Double> | A map where keys are the hypotheses (as strings) and values are their prior probabilities. The probabilities must sum to 1.0. | `{"Hypothesis A": 0.6, "Hypothesis B": 0.3, "Hypothesis C": 0.1}` |
-| `decision_context` | String              | A clear statement of the problem or decision that the analysis is intended to support.                                        | `"Determine the most likely cause of the recent server outage."`  |
 
-#### Optional Parameters
+### Output Structure
 
-| Parameter                    | Type         | Default                                                                                         | Description                                                                                                                     | Example |
-|------------------------------|--------------|-------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|---------|
-| `evidence`                   | List<String> | A list of observed facts or pieces of evidence to be used for updating the prior probabilities. | `["Log files show a spike in memory usage.", "A recent software patch was deployed."]`                                          |
-| `calculate_expected_value`   | Boolean      | `true`                                                                                          | If true, the task will perform an expected value and risk analysis based on the posterior probabilities.                        | `false` |
-| `identify_key_uncertainties` | Boolean      | `true`                                                                                          | If true, the task will identify the assumptions and probability estimates that have the largest impact on the final conclusion. | `false` |
-| `suggest_experiments`        | Boolean      | `true`                                                                                          | If true, the task will recommend specific tests or data collection efforts to reduce the most critical uncertainties.           | `false` |
-| `risk_tolerance`             | String       | `"medium"`                                                                                      | Sets the risk tolerance level for decision recommendations. Can be "low", "medium", or "high".                                  | `"low"` |
+**Final Result:**
+The final output is a concise Markdown-formatted string that summarizes the entire analysis. It includes the key findings from the Bayesian update, expected value calculation, uncertainty analysis, and experiment suggestions. This summary is designed to be passed as context to subsequent tasks.
 
-### How It Works
+**UI Breakdown:**
+In the user interface, the task's output is broken down into several tabs for detailed inspection:
+*   **Overview:** A summary of the task's configuration, progress, and final results, including total execution time.
+*   **Context:** Displays any contextual information inherited from previous tasks.
+*   **Prior Probabilities:** A table showing the initial hypotheses and their assigned prior probabilities.
+*   **Bayesian Update:** The detailed analysis of how evidence impacted beliefs, showing the reasoning for likelihood assessments and the final posterior probabilities.
+*   **Expected Value:** (If enabled) A report on the expected value calculations, risk metrics, and decision recommendations based on the specified risk tolerance.
+*   **Key Uncertainties:** (If enabled) A ranked list of the most critical uncertainties affecting the analysis and an assessment of their impact.
+*   **Suggested Experiments:** (If enabled) A prioritized list of recommended experiments, including their rationale and expected information gain.
 
-#### Process Flow
 
-The task executes a structured, multi-step analysis by sequentially prompting a specialized AI agent.
+### Example Usage
 
-1. **Input Validation:** The task first validates the configuration, ensuring that a set of hypotheses is provided and that their prior probabilities sum to
-   approximately 1.0.
-2. **Prior Probability Analysis:** It begins by laying out the initial state of belief, presenting the provided hypotheses and their assigned prior
-   probabilities.
-3. **Bayesian Update:** The core of the task. It instructs an AI agent, acting as a Bayesian expert, to evaluate each piece of evidence. The agent assesses the
-   likelihood of observing the evidence under each hypothesis and uses this to calculate the updated (posterior) probabilities via Bayes' theorem.
-4. **Expected Value & Risk Analysis (Optional):** If enabled, the task uses the newly calculated posterior probabilities to analyze potential outcomes. It
-   prompts the agent to calculate expected values, identify worst-case scenarios, and make a decision recommendation based on the specified risk tolerance.
-5. **Uncertainty Identification (Optional):** If enabled, the agent is asked to perform a sensitivity analysis to identify which assumptions or probability
-   estimates are most critical to the final conclusion.
-6. **Experiment Suggestion (Optional):** If enabled, the agent uses the uncertainty analysis to propose concrete, high-value experiments or data-gathering
-   actions that would most effectively reduce uncertainty and clarify the decision.
-7. **Report Generation:** All analyses are compiled into a comprehensive final report, which is also rendered in a tabbed user interface for easy navigation.
+**Scenario:**
+A software company is deciding whether to refactor a legacy monolithic application into a microservices architecture. The project is risky, but the potential payoff is high. They want to use probabilistic reasoning to guide their decision.
 
-#### Internal Mechanics
-
-The task orchestrates a series of targeted calls to a `ChatAgent` that is primed with a persona of an expert in Bayesian reasoning and probabilistic analysis.
-It does not perform the raw mathematical calculations itself but instead structures the problem in a way that allows the LLM to apply probabilistic reasoning
-rigorously. Each step builds on the output of the previous one, creating a coherent and logical chain of analysis from prior beliefs to actionable
-recommendations.
-
-#### Output Structure
-
-The final output is a detailed markdown document that includes the following sections, depending on the configuration:
-
-- **Likelihood Assessment:** An explanation of how each piece of evidence impacts the beliefs.
-- **Posterior Probabilities:** A table showing the updated probabilities for each hypothesis.
-- **Expected Value Summary:** The calculated expected value for key decisions or scenarios.
-- **Risk Metrics:** An analysis of downside risk and worst-case scenarios.
-- **Top Uncertainties:** A ranked list of the most critical unknowns affecting the analysis.
-- **Recommended Experiments:** A prioritized list of actions to gather more information.
-
-# ReasoningTaskUtils.kt
-
-## Reasoning Task Utilities
-
-### Overview
-
-The `ReasoningTaskUtils.kt` file provides a collection of essential helper functions and extensions used across various reasoning tasks. These utilities are
-designed to streamline common operations, enhance robustness by handling potential errors gracefully, and reduce code duplication.
-
-- **Primary use cases**:
-  * Validating the availability of a default chat API before use.
-  * Truncating long strings for cleaner display in logs and user interfaces.
-  * Safely completing tasks without crashing due to unexpected exceptions.
-- **Expected outcomes**: More reliable, maintainable, and cleaner execution of reasoning tasks.
-
-### When to Use
-
-These utility functions are not a standalone task but are intended for internal use within other reasoning tasks. They should be used whenever a task needs to:
-
-- Interact with the default chat API.
-- Handle or display large blocks of text.
-- Mark a `SessionTask` as complete, especially in complex scenarios where exceptions might occur.
-
-### How It Works
-
-#### `validateAndGetApi`
-
-This function acts as a crucial precondition check to ensure a valid chat API is configured and available before a task attempts to use it. It centralizes error
-handling for this common requirement.
-
-**Process Flow:**
-
-1. It attempts to retrieve the `defaultChatter` from the provided `OrchestrationConfig`.
-2. If the API is not available (`null`), it logs an error and immediately completes the associated `SessionTask` with an error message.
-3. If the API is available, it returns the `ChatInterface` instance for the calling task to use.
-
+**Configuration:**
 ```kotlin
-fun validateAndGetApi(
-  orchestrationConfig: OrchestrationConfig,
-  task: SessionTask,
-  log: Logger,
-  resultFn: (String) -> Unit
-): ChatInterface?
+val config = ProbabilisticReasoningTask.ProbabilisticReasoningTaskExecutionConfigData(
+    decision_context = "Decide whether to refactor our legacy monolith to microservices.",
+    hypotheses = mapOf(
+        "Refactor leads to >20% improvement in developer velocity and system scalability" to 0.4,
+        "Refactor has marginal impact (0-20% improvement)" to 0.5,
+        "Refactor negatively impacts performance and increases operational complexity" to 0.1
+    ),
+    evidence = listOf(
+        "A small-scale pilot refactor of one module showed a 15% performance gain.",
+        "Two senior engineers have left the company in the last quarter, citing frustration with the monolith.",
+        "A competitor who undertook a similar refactor reported a 30% increase in deployment frequency after 18 months."
+    ),
+    risk_tolerance = "medium"
+)
 ```
 
-#### `String.truncateForDisplay`
+**Expected Output Snippet:**
+```markdown
 
-This is a `String` extension function that shortens text to a specified maximum length, adding an ellipsis to indicate that the content has been cut.
+## Probabilistic Reasoning Analysis
 
-**Internal Mechanics:**
+**Context:** Decide whether to refactor our legacy monolith to microservices.
 
-- It checks if the string's length is greater than the `maxLength` parameter (which defaults to 10,000).
-- If the string is longer, it returns a new string containing the initial `maxLength` characters followed by a note explaining that the text was truncated.
-- If the string is within the length limit, it is returned unmodified.
 
-```kotlin
-fun String.truncateForDisplay(maxLength: Int = 10000): String
+### Bayesian Update
+
+The evidence provided moderately increases the probability of a successful refactor. The competitor's success and engineer feedback were the most impactful pieces of evidence.
+
+**Posterior Probabilities:**
+- Refactor leads to >20% improvement: 55% (up from 40%)
+- Refactor has marginal impact: 38% (down from 50%)
+- Refactor has negative impact: 7% (down from 10%)
+
+
+### Expected Value Analysis
+
+Given the updated probabilities, the expected value of the refactor is positive, though with significant variance. The optimal decision under a 'medium' risk tolerance is to proceed with a phased refactor, starting with non-critical services.
+
+
+### Key Uncertainties
+
+The primary uncertainty is the actual cost and timeline of the full refactor, as the pilot was limited in scope. The impact on operational complexity is also a significant unknown.
+
+
+### Suggested Experiments
+
+Recommend a second, larger pilot on a more complex service to better estimate costs and performance implications before committing to a full-scale project.
 ```
 
-#### `SessionTask.safeComplete`
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\SocraticDialogueTask.kt
 
-This `SessionTask` extension function provides a robust way to complete a task by wrapping the `complete()` method in error-handling logic.
-
-**Internal Mechanics:**
-
-- It calls the `complete()` method on the `SessionTask` instance within a `try-catch` block.
-- If any exception occurs during the completion process, it is caught, and a warning is logged. This prevents the exception from propagating and potentially
-  crashing the execution thread.
-
-```kotlin
-fun SessionTask.safeComplete(message: String, log: Logger)
-```
-
-# SocraticDialogueTask.kt
 
 ## Socratic Dialogue
 
-### Overview
-
-The Socratic Dialogue task uses a structured, conversational questioning method to deeply explore a topic, idea, or hypothesis. It simulates a dialogue between
-a probing "questioner" agent and a thoughtful "responder" agent to uncover underlying assumptions, explore implications, and refine understanding.
-
-- **Primary Use Cases:**
-  - Deeply analyzing a complex problem or question.
-  - Uncovering hidden assumptions and biases in an argument.
-  - Exploring the logical consequences and implications of a belief or proposal.
-  - Clarifying definitions and understanding fundamental principles.
-  - Stress-testing an idea by examining it from multiple angles.
-- **Expected Outcomes:**
-  - A detailed transcript of the dialogue between the questioner and responder.
-  - A final synthesis that summarizes key insights, challenged assumptions, and areas for further exploration.
-
-### When to Use
-
-This task is ideal for situations that require critical thinking and deep exploration rather than a direct, simple answer.
-
-- **Specific Scenarios:**
-  - Use it when you have a foundational question (e.g., "Is our current marketing strategy effective?") and want to explore it thoroughly before making
-    decisions.
-  - Employ it to challenge your own thinking or the premises of a project.
-  - Helpful for refining a vague idea into a more concrete and well-understood concept.
-- **Problem Types:**
-  - Ill-defined or ambiguous problems.
-  - Philosophical, ethical, or strategic questions.
-  - Problems where the underlying assumptions are as important as the final answer.
-- **Comparison with Alternative Reasoning Types:**
-  - **Chain of Thought:** More linear and focused on reaching a specific conclusion. Socratic Dialogue is more exploratory and may not lead to a single answer.
-  - **Brainstorming:** Aims for a wide breadth of ideas. Socratic Dialogue aims for depth and critical examination of a single idea.
-  - **Multi-Perspective Analysis:** Gathers different viewpoints. Socratic Dialogue actively challenges and deconstructs a single line of reasoning through
-    questioning.
-
-### Configuration
-
-#### Required Parameters
-
-| Parameter          | Type   | Description                                     | Example                                                                      |
-|--------------------|--------|-------------------------------------------------|------------------------------------------------------------------------------|
-| `initial_question` | String | The starting question or hypothesis to explore. | "Is decentralization always the best approach for organizational structure?" |
-
-#### Optional Parameters
-
-| Parameter               | Type         | Default | Description                                                               | Example                                 |
-|-------------------------|--------------|---------|---------------------------------------------------------------------------|-----------------------------------------|
-| `max_depth`             | Integer      | `5`     | The maximum number of question-and-answer exchanges in the dialogue.      | `10`                                    |
-| `challenge_assumptions` | Boolean      | `true`  | If true, the questioner agent will actively try to challenge assumptions. | `false`                                 |
-| `domain_constraints`    | List<String> | `null`  | A list of topics or domains to keep the dialogue focused on.              | `["business management", "technology"]` |
-| `task_dependencies`     | List<String> | `null`  | A list of task IDs that must be completed before this task can run.       | `["task_123", "task_456"]`              |
-
-### How It Works
-
-#### Process Flow
-
-1. **Initialization:** The task sets up two distinct AI agents: a "Socratic Questioner" and a "Thoughtful Responder," each with specific instructions based on
-   the task configuration.
-2. **Dialogue Loop:** The task enters a loop that runs for the configured `max_depth`.
-  - **Response:** The Responder agent answers the current question. For the first exchange, this is the `initial_question`.
-  - **Question:** The Questioner agent analyzes the Responder's answer and formulates a new, probing follow-up question designed to challenge, clarify, or
-    explore implications.
-  - **Iteration:** The new question becomes the input for the next cycle of the loop.
-3. **Synthesis:** After the dialogue loop is complete, the entire conversation is fed to an agent to generate a final synthesis. This summary highlights key
-   insights, identified assumptions, and potential contradictions.
-4. **Output:** The task presents the results in a structured format, including an overview, the full dialogue transcript broken down by exchange, and the final
-   synthesis.
-
-#### Internal Mechanics
-
-The core of this task is the dynamic between the two specialized agents:
-
-- **The Questioner:** Is prompted to ask questions that challenge definitions, explore consequences, and identify inconsistencies. Its goal is not to answer,
-  but to guide the dialogue towards deeper understanding. If `challenge_assumptions` is true, its instructions are more adversarial.
-- **The Responder:** Is prompted to answer honestly, provide clear reasoning, and be open to revising its understanding based on the questioning. Its role is to
-  provide the substance that the Questioner can then examine.
-
-This structured interaction ensures a focused and critical exploration of the topic.
-
-#### Output Structure
-
-The output is organized into a tabbed display for clarity:
-
-- **Overview:** A summary of the task configuration and real-time progress, concluding with performance statistics (e.g., total time, average exchange time).
-- **Context:** If the task has dependencies, this tab shows the relevant information passed from previous tasks.
-- **Exchange [N]:** Each question-answer pair gets its own tab, showing the question asked, the response given, and the next question generated.
-- **Synthesis:** A dedicated tab containing the final summary, which identifies key insights, challenged assumptions, and conclusions drawn from the dialogue.
-
-The final result returned by the task is a concise markdown document containing the initial question, highlights from the dialogue, and the full synthesis.
-
-# SystemsThinkingTask.kt
-
-## Systems Thinking Task
 
 ### Overview
 
-The Systems Thinking Task analyzes complex systems by examining their underlying structures, feedback loops, and dynamic behaviors over time. Instead of linear
-cause-and-effect, it focuses on circular causality to uncover non-obvious patterns and high-impact intervention points.
+**One-Line Description:** Explore ideas through Socratic questioning.
 
-- **Primary Use Cases:**
-  - Understanding the behavior of complex technical systems (e.g., CI/CD pipelines, microservice architectures).
-  - Optimizing team workflows and organizational processes.
-  - Identifying and mitigating unintended consequences of changes.
-  - Analyzing the dynamics of technical debt or market evolution.
-  - Finding the most effective places to intervene in a system for lasting improvement.
-- **Expected Outcomes:** A comprehensive, multi-part report that includes a structural analysis of the system, identification of key feedback loops (visualized
-  with a diagram), a list of system archetypes at play, an analysis of emergent behaviors, and a prioritized list of leverage points for intervention.
+**Detailed Description:** This task uses the Socratic questioning methodology to deeply explore a concept, hypothesis, or question. It simulates a dialogue between two AI agents: a 'Questioner' that probes for deeper meaning and a 'Responder' that provides thoughtful answers. The process is designed to challenge assumptions, explore implications, identify contradictions, and ultimately lead to a more robust understanding of the topic. It is a powerful tool for critical thinking and conceptual analysis.
 
-### When to Use
+**Key Use Cases:**
+*   Exploring the fundamental principles of a complex topic.
+*   Testing the validity and robustness of a hypothesis or argument.
+*   Uncovering hidden assumptions in a plan or strategy.
+*   Clarifying definitions and understanding the implications of a concept.
+*   Generating a structured, critical analysis of an idea for reports or research.
 
-This task is ideal for problems that are persistent, complex, and where previous solutions have led to unexpected side effects.
 
-- **Specific Scenarios:**
-  - A team's productivity is declining despite efforts to improve it.
-  - A software system is becoming increasingly brittle and hard to maintain.
-  - A new policy has created unforeseen negative consequences elsewhere in the organization.
-  - You need to plan a large-scale change and want to anticipate its full range of effects.
-- **Problem Types:** Use this for diagnostic challenges where the "why" is more important than the "what." It excels at untangling interconnected issues rather
-  than solving isolated, well-defined problems.
-- **Comparison with Alternatives:** Unlike tasks that perform direct code modification or linear planning, Systems Thinking provides a holistic understanding
-  *before* action is taken. It's a strategic analysis tool used to inform subsequent, more tactical tasks.
+### Configuration Parameters
 
-### Configuration
+| Parameter               | Type            | Description                                                                                             | Default Value         |
+| ----------------------- | --------------- | ------------------------------------------------------------------------------------------------------- | --------------------- |
+| `initial_question`      | `String?`       | The initial question or hypothesis to explore.                                                          | **Required**          |
+| `max_depth`             | `Int`           | Maximum dialogue depth (number of question-answer exchanges).                                           | `5`                   |
+| `challenge_assumptions` | `Boolean`       | Whether to explicitly instruct the questioner agent to challenge assumptions at each level.             | `true`                |
+| `domain_constraints`    | `List<String>?` | A list of topics or domains to constrain the dialogue, helping to keep the conversation focused.        | `null` (any domain)   |
+| `task_dependencies`     | `List<String>?` | A list of task IDs that must be completed before this task can run.                                     | `null`                |
+| `state`                 | `TaskState?`    | The initial state of the task.                                                                          | `Pending`             |
 
-#### Required Parameters
 
-| Parameter            | Type   | Description                                       | Example                                                |
-|----------------------|--------|---------------------------------------------------|--------------------------------------------------------|
-| `system_description` | String | A clear description of the system to be analyzed. | "Our team's software development and release process." |
+### Process Flow
 
-#### Optional Parameters
+1.  **Initialization:** The task starts by validating the configuration and initializing two distinct AI agents: a Socratic Questioner and a thoughtful Responder, each with specific instructions based on the task parameters.
+2.  **Dialogue Loop:** The task enters a loop that runs for the configured `max_depth`. In each iteration (or "exchange"):
+    a. The Responder agent answers the current question.
+    b. The Questioner agent analyzes the response and formulates a new, probing follow-up question designed to challenge assumptions, explore implications, or seek clarification.
+3.  **Synthesis Generation:** After all dialogue exchanges are complete, the entire conversation is provided to an agent to generate a final synthesis. This summary highlights key insights, challenged assumptions, identified contradictions, and potential areas for further exploration.
+4.  **Output Compilation:** The task compiles the final result, which includes a concise version of the dialogue and the full synthesis.
 
-| Parameter                   | Type         | Default      | Description                                                                 | Example                                                               |
-|-----------------------------|--------------|--------------|-----------------------------------------------------------------------------|-----------------------------------------------------------------------|
-| `identify_feedback_loops`   | Boolean      | `true`       | If true, identifies and analyzes reinforcing and balancing feedback loops.  | `true`                                                                |
-| `map_delays`                | Boolean      | `true`       | If true, maps out time delays and accumulations (stocks) in the system.     | `true`                                                                |
-| `find_leverage_points`      | Boolean      | `true`       | If true, identifies high-impact points for intervention.                    | `true`                                                                |
-| `identify_archetypes`       | Boolean      | `true`       | If true, identifies common system archetypes (e.g., "Shifting the Burden"). | `true`                                                                |
-| `analyze_emergent_behavior` | Boolean      | `true`       | If true, analyzes system-level behaviors that emerge from interactions.     | `true`                                                                |
-| `time_horizon`              | String       | `"6 months"` | The time frame over which to analyze the system's behavior.                 | `"1 year"`                                                            |
-| `simulate_interventions`    | List<String> | `null`       | A list of potential interventions to simulate and analyze.                  | `["Introduce weekly code freezes", "Hire two more senior engineers"]` |
-| `related_files`             | List<String> | `null`       | A list of file paths or glob patterns to provide additional context.        | `["docs/process/*.md", "Jenkinsfile"]`                                |
 
-### How It Works
+### Output Structure
+
+**Final Result:** The final output passed to subsequent tasks is a Markdown-formatted string containing a concise analysis. It includes the initial question, the first and last question-answer exchanges to provide context, and the complete final synthesis. This summary is designed to be a self-contained, high-level overview of the dialogue's findings.
+
+**UI Breakdown:** In the user interface, the task provides a detailed, tabbed breakdown of the entire process for easy navigation and review:
+*   **Overview:** Displays the initial configuration, real-time progress updates, and final summary statistics (e.g., total time, exchanges completed).
+*   **Context:** (If applicable) Shows any contextual information passed from previous tasks that was used to inform the dialogue.
+*   **Exchange \[N]:** A separate tab is created for each question-answer exchange, showing the question asked, the full response generated, and the next question formulated.
+*   **Synthesis:** Contains the complete, detailed synthesis of the entire dialogue, including key insights and conclusions.
+
+
+### Example Usage
+
+**Scenario:** A product team wants to critically evaluate their new feature idea: "An AI-powered personal finance advisor for young adults." They use the Socratic Dialogue task to uncover potential ethical issues and user assumptions before development begins.
+
+**Configuration:**
+```json
+{
+  "initial_question": "Is an AI-powered personal finance advisor inherently beneficial for young adults?",
+  "max_depth": 5,
+  "challenge_assumptions": true,
+  "domain_constraints": ["ethics", "finance", "user psychology", "AI safety"]
+}
+```
+
+**Expected Output Snippet:**
+```markdown
+
+## Socratic Dialogue Analysis
+
+**Question:** Is an AI-powered personal finance advisor inherently beneficial for young adults?
+
+
+#### Exchange 1
+**Q:** What does 'beneficial' mean in the context of personal finance for a young adult?
+**A:** 'Beneficial' means helping them achieve financial goals like saving for a down payment, paying off debt, and investing, while also improving their financial literacy.
+
+...
+
+
+#### Exchange 5
+**Q:** If the AI's advice, while mathematically optimal, leads to extreme frugality that negatively impacts a user's mental health, can it still be considered 'beneficial'?
+**A:** No, it cannot. This reveals a critical tension. The definition of 'beneficial' must be expanded to include not just financial outcomes but also the user's overall well-being. The system must have safeguards to avoid promoting harmful financial habits.
+
+
+### Key Insights
+
+The dialogue revealed that the term 'beneficial' is more complex than initially assumed. A key assumption that 'optimal financial advice is always good' was challenged. The primary insight is that a successful AI advisor must balance quantitative financial optimization with qualitative user well-being, potentially by incorporating user-defined lifestyle constraints and mental health check-ins...
+```
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\SystemsThinkingTask.kt
+
+
+## SystemsThinking
+
+
+#### Overview
+
+*   **One-Line Description:** Analyze complex systems through feedback loops and dynamics.
+*   **Detailed Description:** This task performs a systems thinking analysis to understand complex system behavior. It deconstructs a system into its core components, identifies the feedback loops (both reinforcing and balancing) that govern its dynamics, and maps out delays and accumulations that can lead to unexpected outcomes. By identifying common system archetypes (e.g., "Limits to Growth," "Shifting the Burden"), it predicts emergent behavior and finds high-leverage points where small interventions can produce significant, lasting change. The task can also simulate potential interventions to forecast their impact over time, making it a powerful tool for strategic planning, optimization, and organizational change.
+*   **Key Use Cases:**
+    *   Understanding the root causes of persistent problems in a complex system.
+    *   Optimizing performance in areas like CI/CD pipelines, team workflows, or market dynamics.
+    *   Identifying and mitigating unintended consequences of proposed changes.
+    *   Analyzing organizational dynamics and communication flows.
+    *   Managing technical debt by understanding its feedback loops and long-term impact.
+
+---
+
+
+#### Configuration Parameters
+
+The following table details the configuration parameters for the SystemsThinking task.
+
+| Parameter                 | Type           | Description                                                        | Default Value      |
+| ------------------------- | -------------- | ------------------------------------------------------------------ | ------------------ |
+| `system_description`      | `String?`      | A detailed description of the system to be analyzed.               | **Required**       |
+| `identify_feedback_loops` | `Boolean`      | If true, the task will identify reinforcing and balancing loops.     | `true`             |
+| `map_delays`              | `Boolean`      | If true, the task will map delays and accumulations in the system.   | `true`             |
+| `find_leverage_points`    | `Boolean`      | If true, the task will find leverage points for intervention.        | `true`             |
+| `simulate_interventions`  | `List<String>?`| A list of potential interventions to simulate and analyze.           | `null`             |
+| `time_horizon`            | `String?`      | The time horizon for the analysis (e.g., "6 months", "1 year").    | `"6 months"`       |
+| `identify_archetypes`     | `Boolean`      | If true, the task will identify common system archetypes.            | `true`             |
+| `analyze_emergent_behavior`| `Boolean`      | If true, the task will analyze potential emergent behavior.          | `true`             |
+| `related_files`           | `List<String>?`| A list of file paths or glob patterns for additional context.      | `null`             |
+| `task_dependencies`       | `List<String>?`| A list of task IDs that must be completed before this task can run.  | `null`             |
+
+---
+
 
 #### Process Flow
 
-1. **Context Gathering:** The task begins by collecting context from previous tasks and reading the contents of any specified `related_files`.
-2. **Agent Initialization:** It initializes a specialized AI agent with a detailed prompt that primes it to think in terms of systems thinking principles (
-   feedback loops, delays, non-linearity, etc.).
-3. **Sequential Analysis:** The agent performs a series of structured analyses, each focusing on a different aspect of the system. This includes:
-  - Mapping the system's structure, components, and relationships.
-  - Identifying reinforcing and balancing feedback loops, and generating a Mermaid diagram to visualize them.
-  - Analyzing delays and accumulations.
-  - Identifying common system archetypes.
-  - Predicting emergent behaviors and unintended consequences.
-  - Ranking potential leverage points according to Donella Meadows' hierarchy.
-4. **Intervention Simulation (Optional):** If interventions are provided, the agent simulates the likely short, medium, and long-term effects of each one.
-5. **Synthesis:** The agent generates a final synthesis that summarizes the key insights, critical dynamics, and provides a prioritized, actionable set of
-   recommendations.
-6. **Output Generation:** The entire analysis is rendered as a detailed, tabbed Markdown report.
+The task executes the following steps to perform its analysis:
 
-#### Internal Mechanics
+1.  **Context Gathering:** The task begins by gathering all available context. This includes results from any prerequisite tasks and the content of files specified in the `related_files` parameter.
+2.  **System Structure Analysis:** It performs an initial analysis to identify the system's key components, variables, relationships, accumulations (stocks), and information flows.
+3.  **Feedback Loop Identification:** If enabled, it identifies and classifies reinforcing (virtuous/vicious cycles) and balancing (stabilizing) feedback loops. It describes the causal chain for each loop and generates a Mermaid diagram to visualize the system's structure.
+4.  **Delay & Accumulation Mapping:** If enabled, it analyzes time lags between cause and effect (e.g., information, physical, or decision delays) and identifies what accumulates over time (e.g., technical debt, customer trust).
+5.  **System Archetype Identification:** If enabled, it identifies common, recurring patterns of behavior (archetypes) like "Limits to Growth" or "Shifting the Burden" to explain the system's dynamics.
+6.  **Emergent Behavior Analysis:** If enabled, it analyzes system-level behaviors that arise from component interactions, predicts potential unintended consequences, and identifies possible tipping points.
+7.  **Leverage Point Identification:** If enabled, it identifies the most effective places to intervene in the system, ranked according to Donella Meadows' hierarchy of leverage points.
+8.  **Intervention Simulation:** If a list of `simulate_interventions` is provided, the task runs a thought experiment for each one, analyzing its immediate, short-term, and long-term effects, its impact on feedback loops, and potential side effects.
+9.  **Synthesis & Recommendations:** Finally, the task synthesizes all findings into a comprehensive report that summarizes key insights, critical feedback loops, and provides an actionable, prioritized roadmap for intervention.
 
-The core of the task is an AI agent that is guided through a structured, multi-step reasoning process. Rather than asking a single, broad question, the task
-breaks the complex analysis into a sequence of focused sub-problems. Each step builds on the previous ones, allowing the agent to develop a deep, contextual
-understanding of the system's dynamics. This mimics the methodical approach of a human systems thinking expert.
+---
+
 
 #### Output Structure
 
-The final output is a comprehensive report presented in a tabbed interface, with each tab dedicated to a specific part of the analysis:
+*   **Final Result:** The final output passed to subsequent tasks is a concise Markdown-formatted string. It includes the system description, the analysis time horizon, and a summary of the key findings and recommendations, truncated to a maximum length. This provides a high-level overview of the analysis results.
 
-- **Overview:** A summary of the analysis parameters and final status.
-- **Context:** The contextual information gathered from files and prior tasks.
-- **System Structure:** A breakdown of the system's components, stocks, and flows.
-- **Feedback Loops:** A detailed description of the identified loops and a Mermaid diagram.
-- **Delays & Accumulations:** Analysis of time lags and their impact.
-- **System Archetypes:** Identification and explanation of patterns like "Limits to Growth."
-- **Emergent Behavior:** Predictions of system-level behavior and potential unintended consequences.
-- **Leverage Points:** A ranked list of the most effective places to intervene.
-- **Intervention Simulation:** (If configured) A scenario analysis for each proposed intervention.
-- **Synthesis:** A final summary with key insights and actionable recommendations.
+*   **UI Breakdown:** In the user interface, the task provides a detailed, multi-tabbed view of the entire analysis process:
+    *   **Overview:** Displays the initial configuration, live status updates, and a final summary of the analysis run, including total time and components analyzed.
+    *   **Context:** Shows the contextual data gathered from prior tasks and related files.
+    *   **System Structure:** Presents the detailed breakdown of the system's components and relationships.
+    *   **Feedback Loops:** Contains the analysis of reinforcing and balancing loops, including the generated Mermaid diagram.
+    *   **Delays & Accumulations:** Details the identified time lags and their impact on system behavior.
+    *   **System Archetypes:** Lists and explains the common system patterns found within the system.
+    *   **Emergent Behavior:** Describes the predicted system-level behaviors and potential unintended consequences.
+    *   **Leverage Points:** Presents the identified high-impact intervention points, ranked by effectiveness.
+    *   **Intervention Simulation:** If configured, this tab shows the detailed simulation results for each proposed intervention scenario.
+    *   **Synthesis:** Contains the final, comprehensive synthesis, key insights, and actionable recommendations.
 
-# TemporalReasoningTask.kt
+---
+
+
+#### Example Usage
+
+*   **Scenario:** A software development team is struggling with a CI/CD pipeline that has become increasingly slow and unreliable. They want to understand the underlying dynamics and find effective ways to improve it without introducing new problems.
+
+*   **Configuration:**
+    ```json
+    {
+      "system_description": "Our team's CI/CD pipeline for the main web application. It involves stages for code checkout, dependency installation, unit testing, integration testing, container building, and deployment to a staging environment. Developers complain about long wait times for feedback, and flaky tests frequently cause the entire pipeline to fail, blocking deployments.",
+      "time_horizon": "3 months",
+      "find_leverage_points": true,
+      "identify_archetypes": true,
+      "simulate_interventions": [
+        "Add more parallel runners to the testing stage.",
+        "Implement a 'quarantine' system for flaky tests.",
+        "Invest in optimizing the dependency installation process."
+      ]
+    }
+    ```
+
+*   **Expected Output Snippet:**
+    ```markdown
+    # Systems Thinking Analysis: Our team's CI/CD pipeline...
+
+    **Time Horizon:** 3 months
+
+    ## Key Findings
+
+    The analysis reveals a classic "Shifting the Burden" archetype where developers, frustrated by long test runs (the fundamental problem), resort to temporarily disabling or ignoring flaky tests (the symptomatic solution). This erodes test quality, leading to more bugs in staging, which in turn requires more hotfixes and disrupts planned work, reinforcing the pressure to take shortcuts.
+
+    The highest-impact leverage point is improving the feedback loop for test failures. The most promising intervention is quarantining flaky tests, as it immediately unblocks the pipeline while creating a clear backlog for addressing test instability, thus tackling the root cause without stopping development. Adding more runners provides only temporary relief and will be undermined by the eroding test quality.
+    ... (see full analysis in task output)
+
+    ---
+
+    **Analysis Components:** Feedback Loops, Delays, Leverage Points, Archetypes, Emergent Behavior, Intervention Simulation (3)
+    ```
+
+# webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\reasoning\TemporalReasoningTask.kt
+
 
 ## TemporalReasoning
 
+
 ### Overview
 
-The `TemporalReasoningTask` analyzes how systems, codebases, or situations evolve over time. It constructs chronological timelines, identifies recurring
-patterns and trends, analyzes the rate of change, and predicts future states based on historical data.
+**One-Line Description:** Analyze how systems evolve over time and predict future states.
 
-- **Primary use cases:**
-  - Analyzing technical debt accumulation.
-  - Tracking system evolution and architecture drift.
-  - Investigating performance degradation over time.
-  - Analyzing bug introduction timelines from commit histories or logs.
-  - Understanding feature adoption and usage patterns from metrics files.
-- **Expected outcomes:** A comprehensive report including a chronological timeline, identified patterns, rate of change analysis, critical transition points,
-  future predictions, and a visual Mermaid diagram summarizing the timeline.
+**Detailed Description:** This task performs a comprehensive temporal analysis to understand the evolution of a system, project, or situation. It constructs a chronological timeline of significant events by processing provided data sources like logs, metrics, or commit histories. The task can identify recurring patterns, analyze the rate of change, pinpoint critical transition points, and extrapolate trends to predict future states. It is designed to uncover insights from time-series data, helping to diagnose issues like performance degradation, understand architectural drift, or track feature adoption.
 
-### When to Use
+**Key Use Cases:**
+*   Analyzing the accumulation of technical debt over a project's lifecycle.
+*   Tracking system evolution and architectural drift.
+*   Investigating performance degradation over time by correlating events.
+*   Creating a timeline of bug introductions and resolutions.
+*   Understanding feature adoption and usage patterns after release.
 
-Use Temporal Reasoning when you need to understand the history of a system to make informed decisions about its future. It excels in scenarios that require
-identifying trends, understanding cause-and-effect relationships over a period, or forecasting based on past events.
 
-This task is ideal for:
+### Configuration Parameters
 
-- Conducting post-mortems on incidents by analyzing logs and metrics leading up to an event.
-- Long-term strategic planning by understanding how a product or feature has evolved.
-- Identifying hidden or slowly developing problems, like gradual performance degradation.
+The following table details the configuration parameters for the Temporal Reasoning task.
 
-Compared to static analysis tasks, which provide a snapshot at a single point in time, Temporal Reasoning focuses on the dynamics and evolution between multiple
-points.
+| Parameter                | Type           | Description                                                              | Default Value      |
+| ------------------------ | -------------- | ------------------------------------------------------------------------ | ------------------ |
+| `subject`                | `String?`      | The subject or system to analyze over time.                              | **Required**       |
+| `time_range`             | `String?`      | The time range to analyze (e.g., '2023-01-01 to 2024-01-01').             | **Required**       |
+| `granularity`            | `String`       | The granularity of analysis: daily, weekly, monthly, quarterly, yearly.  | `"weekly"`         |
+| `identify_patterns`      | `Boolean`      | Whether to identify temporal patterns and cycles.                        | `true`             |
+| `predict_future`         | `Boolean`      | Whether to predict future states based on trends.                        | `true`             |
+| `prediction_horizon`     | `String?`      | How far into the future to predict (e.g., '3 months', '6 weeks').        | `"3 months"`       |
+| `critical_events`        | `List<String>?`| A list of critical event types to specifically highlight in the timeline.  | `null`             |
+| `related_files`          | `List<String>?`| A list of file paths or glob patterns containing temporal data (logs, metrics, etc.). | `null`             |
+| `analyze_rate_of_change` | `Boolean`      | Whether to analyze the rate of change and acceleration.                  | `true`             |
+| `identify_transitions`   | `Boolean`      | Whether to identify critical transition points in the timeline.          | `true`             |
+| `task_description`       | `String?`      | A custom description for this specific task instance.                    | `null`             |
+| `task_dependencies`      | `List<String>?`| A list of task IDs that must be completed before this task can run.      | `null`             |
 
-### Configuration
 
-#### Required Parameters
+### Process Flow
 
-| Parameter    | Type   | Description                                 | Example                         |
-|--------------|--------|---------------------------------------------|---------------------------------|
-| `subject`    | String | The subject or system to analyze over time. | `"User authentication service"` |
-| `time_range` | String | The time period to analyze.                 | `"2023-01-01 to 2024-01-01"`    |
+1.  **Data Gathering:** The task begins by searching for and reading the content of files matching the glob patterns specified in `related_files`. This content serves as the raw temporal data for the analysis.
+2.  **Timeline Construction:** The core of the task involves sending the subject, time range, and gathered data to an AI agent. The agent analyzes this information to construct a detailed, chronological timeline of significant events.
+3.  **Pattern Identification:** If `identify_patterns` is enabled, the task analyzes the constructed timeline to identify recurring patterns, cycles, and periodic trends.
+4.  **Rate of Change Analysis:** If `analyze_rate_of_change` is enabled, the task examines the timeline to determine the velocity of change, identifying periods of stability versus rapid evolution.
+5.  **Transition Point Identification:** If `identify_transitions` is enabled, the task pinpoints critical inflection points or phase transitions where the system's behavior or state changed significantly.
+6.  **Future Prediction:** If `predict_future` is enabled, the task extrapolates from historical trends and patterns to generate predictions about the system's future state within the specified `prediction_horizon`.
+7.  **Visualization Generation:** A Mermaid timeline diagram is generated to provide a clear visual representation of the key events and periods identified during the analysis.
+8.  **Summary Generation:** The task compiles all findings into a final, comprehensive summary.
 
-#### Optional Parameters
 
-| Parameter                | Type         | Default      | Description                                                                                    | Example                              |
-|--------------------------|--------------|--------------|------------------------------------------------------------------------------------------------|--------------------------------------|
-| `granularity`            | String       | `"weekly"`   | The time interval for analysis. Can be `daily`, `weekly`, `monthly`, `quarterly`, or `yearly`. | `"monthly"`                          |
-| `identify_patterns`      | Boolean      | `true`       | If true, the task will attempt to identify recurring patterns and cycles.                      | `false`                              |
-| `predict_future`         | Boolean      | `true`       | If true, the task will predict future states based on historical trends.                       | `false`                              |
-| `prediction_horizon`     | String       | `"3 months"` | The timeframe for future predictions.                                                          | `"6 weeks"`                          |
-| `critical_events`        | List<String> | `null`       | A list of specific, known events to highlight in the timeline.                                 | `["v2.0 release", "Major outage"]`   |
-| `related_files`          | List<String> | `null`       | Glob patterns for files containing temporal data (e.g., logs, metrics, CSVs).                  | `["logs/**/*.log", "metrics/*.csv"]` |
-| `analyze_rate_of_change` | Boolean      | `true`       | If true, the task will analyze the velocity and acceleration of change.                        | `false`                              |
-| `identify_transitions`   | Boolean      | `true`       | If true, the task will identify critical inflection points or phase shifts.                    | `false`                              |
+### Output Structure
 
-### How It Works
+**Final Result:**
+The final output passed to subsequent tasks is a concise Markdown-formatted summary of the analysis. It includes the subject, time range, and key statistics such as the number of events analyzed, patterns identified, and critical transitions found. This summary provides a high-level overview of how the subject evolved during the specified period.
 
-#### Process Flow
+**UI Breakdown:**
+The task's detailed results are presented in a multi-tabbed view in the user interface:
+*   **Overview:** Displays the initial configuration and the final summary of the analysis upon completion.
+*   **Temporal Data:** Shows the raw, aggregated content gathered from the `related_files`.
+*   **Timeline:** Presents the detailed, chronological list of all events identified by the AI, including their timestamp, type, description, and significance.
+*   **Patterns:** (Conditional) If enabled, this tab details the recurring patterns, their frequency, and confidence levels.
+*   **Rate of Change:** (Conditional) If enabled, this tab contains the textual analysis of the system's rate of change over time.
+*   **Transition Points:** (Conditional) If enabled, this tab lists and describes the critical transition points that were identified.
+*   **Future Predictions:** (Conditional) If enabled, this tab outlines the predictions for the system's future state.
+*   **Visualization:** Renders the generated Mermaid timeline diagram for a visual overview of the analysis.
 
-1. **Data Gathering:** The task begins by collecting temporal data from files specified in the `related_files` parameter, using glob patterns to find relevant
-   sources like logs or metrics.
-2. **Timeline Construction:** An AI agent analyzes the gathered data to construct a chronological timeline of significant events, categorizing them and
-   assessing their importance.
-3. **Detailed Analysis (Optional):** Based on the configuration, the agent performs deeper analysis:
-  - **Pattern Identification:** Looks for recurring cycles and trends.
-  - **Rate of Change Analysis:** Calculates the velocity and acceleration of changes.
-  - **Transition Point Identification:** Finds critical inflection points where system behavior shifted.
-  - **Future Prediction:** Extrapolates from historical data to forecast future states.
-4. **Visualization:** A separate AI call generates a Mermaid.js timeline diagram to provide a clear visual representation of the events.
-5. **Reporting:** The results are organized into a tabbed display, and a final summary is generated.
 
-#### Internal Mechanics
+### Example Usage
 
-The task leverages a `ParsedAgent` to instruct an LLM to perform the analysis and return a structured JSON object (`TimelineAnalysis`). This structured data
-contains the timeline events, patterns, predictions, and other analytical components. A subsequent call to a `ChatAgent` uses this structured data to generate a
-concise Mermaid diagram for visualization.
+**Scenario:**
+A project manager wants to understand how the complexity of their main application's codebase has evolved over the last year. They suspect that a major library upgrade six months ago led to a spike in bugs and want to visualize the timeline of events.
 
-#### Output Structure
+**Configuration:**
+```json
+{
+  "subject": "Codebase complexity and bug introduction for 'WebApp-Main'",
+  "time_range": "2023-05-01 to 2024-05-01",
+  "granularity": "monthly",
+  "related_files": [
+    "project/logs/git_log.txt",
+    "project/metrics/complexity_scores.csv"
+  ],
+  "critical_events": [
+    "Major library upgrade",
+    "v2.0 Release",
+    "v2.1 Release"
+  ],
+  "predict_future": true,
+  "prediction_horizon": "6 months"
+}
+```
 
-The output is presented in a multi-tabbed user interface for easy navigation:
+**Expected Output Snippet:**
+```markdown
+**Subject:** Codebase complexity and bug introduction for 'WebApp-Main'
+**Time Range:** 2023-05-01 to 2024-05-01
+**Events Analyzed:** 42
+**Patterns Identified:** 3
+**Critical Transitions:** 1
 
-- **Overview:** A high-level summary of the analysis, including the subject, time range, and key findings.
-- **Temporal Data:** A list of the data sources that were processed.
-- **Timeline:** A detailed, chronological list of all identified events with descriptions and significance.
-- **Patterns:** (If enabled) A breakdown of identified temporal patterns, their frequency, and confidence levels.
-- **Rate of Change:** (If enabled) A textual analysis of the system's rate of change over time.
-- **Transition Points:** (If enabled) A list and description of critical transitions.
-- **Future Predictions:** (If enabled) A set of predictions about the system's future state.
-- **Visualization:** A rendered Mermaid timeline diagram for a quick visual overview.
+The temporal analysis reveals how WebApp-Main evolved over the last year, identifying key events, patterns, and trends that shaped its development. A significant transition point was identified around the 'Major library upgrade', correlating with a subsequent increase in bug reports.
+```

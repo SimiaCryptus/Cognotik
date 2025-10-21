@@ -1,7 +1,6 @@
 package cognotik.actions.generate
 
 import cognotik.actions.FileContextAction
-import cognotik.actions.test.TestResultAutofixAction
 import cognotik.actions.test.TestResultAutofixAction.Companion.getProjectStructure
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -74,11 +73,13 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
   )
 
   class Settings(
-    val settings: UserSettings? = null, val project: Project? = null
+    val settings: UserSettings? = null,
+    val project: Project? = null,
+    val root: Path? = null
   )
 
   override fun getConfig(project: Project?, e: AnActionEvent): Settings? {
-    val root = e.getSelectedFolder()?.toNioPath()
+    var root = e.getSelectedFolder()?.toNioPath()
     val files = if (root == null) {
       e.getSelectedFiles().map { it.toNioPath() }.toTypedArray()
     } else {
@@ -115,7 +116,7 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
     if (settings.filesToProcess.isEmpty()) return null
     mruDocumentationInstructions.addInstructionToHistory("${settings.outputFilename} ${settings.transformationMessage}")
 
-    return Settings(settings, project)
+    return Settings(settings, project, root)
   }
 
   private fun updateUIFromSelection(settingsUI: SettingsUI) {
@@ -144,86 +145,85 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
     }
     progress.text = "Initializing documentation generation..."
 
-    val selectedFolder = state.selectedFile.toPath()
-    val gitRoot = TestResultAutofixAction.findGitRoot(selectedFolder) ?: selectedFolder
+    val projectRoot = state.projectRoot.toPath()
     val outputDirectory = config.settings.outputDirectory
-    var outputPath = selectedFolder.resolve(config.settings.outputFilename)
-    val relativePath = gitRoot.relativize(outputPath)
-    outputPath = gitRoot.resolve(outputDirectory).resolve(relativePath)
+    var outputPath = (config.root ?: state.projectRoot.toPath()).resolve(config.settings.outputFilename)
+    val relativePath = (config.root ?: state.projectRoot.toPath())?.relativize(outputPath) ?: outputPath
+    outputPath = state.projectRoot.toPath().resolve(outputDirectory).resolve(relativePath)
+
     if (outputPath.toFile().exists()) {
       val extension = outputPath.toString().split(".").last()
       val name = outputPath.toString().split(".").dropLast(1).joinToString(".")
       val fileIndex = (1..Int.MAX_VALUE).find {
-        !selectedFolder.resolve("$name.$it.$extension").toFile().exists()
+        !projectRoot.resolve("$name.$it.$extension").toFile().exists()
       }
-      outputPath = selectedFolder.resolve("$name.$fileIndex.$extension")
+      outputPath = projectRoot.resolve("$name.$fileIndex.$extension") ?: outputPath
     }
+
     val executorService = Executors.newFixedThreadPool(4)
     val transformationMessage = config.settings.transformationMessage
     val markdownContent = TreeMap<String, String>()
     try {
       val selectedPaths = config.settings.filesToProcess.sortedBy { it.toString() }
-      val partitionedPaths = Files.walk(selectedFolder).filter { Files.isRegularFile(it) && !Files.isDirectory(it) }.toList().sortedBy { it.toString() }
-        .groupBy { selectedPaths.contains(it) }
+      val partitionedPaths = if(null != projectRoot) Files.walk(projectRoot).filter { Files.isRegularFile(it) && !Files.isDirectory(it) }.toList().sortedBy { it.toString() }
+        .groupBy { selectedPaths.contains(it) } else selectedPaths.groupBy { true }
       val totalFiles = partitionedPaths[true]?.size ?: 0
       var processedFiles = 0
-      val pathList = partitionedPaths[true]?.toList()?.filterNotNull()?.map<Path, Future<Path>> { path ->
-          executorService.submit<Path?> {
-            var retries = 0
-            val maxRetries = 3
-            while (retries < maxRetries) {
-              try {
-                val fileContent = IOUtils.toString(FileInputStream(path.toFile()), "UTF-8") ?: return@submit null
-                val transformContent = transformContent(
-                  path, fileContent, transformationMessage, AppSettingsState.instance.smartChatClient
-                )
-                processTransformedContent(
-                  path, transformContent, config, selectedFolder, gitRoot, outputDirectory, outputPath, markdownContent
-                )
-                synchronized(progress) {
-                  processedFiles++
-                  progress.fraction = processedFiles.toDouble() / totalFiles
-                  progress.text = "Processing file ${processedFiles} of ${totalFiles}"
-                }
-                return@submit path
-              } catch (e: Exception) {
-                retries++
-                if (retries >= maxRetries) {
-                  log.error("Failed to process file after $maxRetries attempts: $path", e)
-                  return@submit null
-                }
-                log.warn("Error processing file: $path. Retrying (attempt $retries)", e)
-                Thread.sleep(1000L * retries)
-
+      val pathList = partitionedPaths[true]?.toList()?.filterNotNull()?.map<Path, Future<Path?>> { path ->
+        executorService.submit<Path?> {
+          var retries = 0
+          val maxRetries = 3
+          while (retries < maxRetries) {
+            try {
+              val fileContent = IOUtils.toString(FileInputStream(path.toFile()), "UTF-8") ?: return@submit null
+              val transformContent = transformContent(
+                path, fileContent, transformationMessage, AppSettingsState.instance.smartChatClient, projectRoot
+              )
+              processTransformedContent(
+                path, transformContent, config, projectRoot, outputDirectory, outputPath, markdownContent
+              )
+              synchronized(progress) {
+                processedFiles++
+                progress.fraction = processedFiles.toDouble() / totalFiles
+                progress.text = "Processing file ${processedFiles} of ${totalFiles}"
               }
+              return@submit path
+            } catch (e: Exception) {
+              retries++
+              if (retries >= maxRetries) {
+                log.error("Failed to process file after $maxRetries attempts: $path", e)
+                return@submit null
+              }
+              log.warn("Error processing file: $path. Retrying (attempt $retries)", e)
+              Thread.sleep(1000L * retries)
             }
-            null
           }
-        }?.toTypedArray()?.map { future ->
-          try {
-            future.get(2, TimeUnit.MINUTES)
+          null
+        }
+      }?.toTypedArray()?.mapNotNull { future ->
+        try {
+          future.get(2, TimeUnit.MINUTES)
 
-          } catch (e: Exception) {
-            when (e) {
-              is TimeoutException -> log.error("File processing timed out", e)
-              else -> log.error("Error processing file", e)
-            }
-            null
+        } catch (e: Exception) {
+          when (e) {
+            is TimeoutException -> log.error("File processing timed out", e)
+            else -> log.error("Error processing file", e)
           }
-        }?.filterNotNull() ?: listOf()
+          null
+        }
+      } ?: listOf()
       if (config.settings.singleOutputFile == true) {
         val sortedContent = markdownContent.entries.joinToString("\n\n") { (path, content) ->
           "# $path\n\n$content"
         }
         outputPath.parent.toFile().mkdirs()
-        outputPath.parent.toFile().mkdirs()
         Files.write(outputPath, sortedContent.toByteArray())
         open(config.project!!, outputPath)
         return arrayOf(outputPath.toFile())
       } else {
-        val outputDir = selectedFolder.resolve(outputDirectory)
+        val outputDir = projectRoot.resolve(outputDirectory) ?: File(outputDirectory).toPath()
         outputDir.toFile().mkdirs()
-        open(config.project!!, selectedFolder.resolve(outputDirectory))
+        open(config.project!!, projectRoot.resolve(outputDirectory) ?: outputDir)
         return pathList.map { it.toFile() }.toTypedArray()
       }
     } finally {
@@ -235,30 +235,29 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
     path: Path,
     transformContent: String,
     config: Settings?,
-    selectedFolder: Path,
-    gitRoot: Path,
+    projectRoot: Path,
     outputDirectory: String,
     outputPath: Path,
     markdownContent: TreeMap<String, String>
   ) {
     if (config?.settings?.singleOutputFile == true) {
-      markdownContent[selectedFolder.relativize(path).toString()] = transformContent.replace("(?s)(?<![^\\n])#".toRegex(), "\n##")
+      markdownContent[projectRoot.relativize(path).toString()] = transformContent.replace("(?s)(?<![^\\n])#".toRegex(), "\n##")
     } else {
-      var individualOutputPath = /*selectedFolder*/ selectedFolder.relativize(
+      var individualOutputPath = /*selectedFolder*/ projectRoot.relativize(
         path.parent.resolve(
           path.fileName.toString().split('.').dropLast(1).joinToString(".") + "." + outputPath.fileName
         )
       )
-      individualOutputPath = selectedFolder.resolve(individualOutputPath)
-      individualOutputPath = gitRoot.relativize(individualOutputPath)
-      individualOutputPath = gitRoot.resolve(outputDirectory).resolve(individualOutputPath)
-      individualOutputPath.parent.toFile().mkdirs()
+      individualOutputPath = projectRoot.resolve(individualOutputPath) ?: individualOutputPath
+      individualOutputPath = projectRoot.relativize(individualOutputPath) ?: individualOutputPath
+      individualOutputPath = projectRoot.resolve(outputDirectory).resolve(individualOutputPath) ?: individualOutputPath
+      individualOutputPath.parent?.toFile()?.mkdirs()
       Files.write(individualOutputPath, transformContent.toByteArray())
     }
   }
 
   private fun transformContent(
-    path: Path, fileContent: String, transformationMessage: String, model: ChatInterface
+    path: Path, fileContent: String, transformationMessage: String, model: ChatInterface, projectRoot: Path
   ) = run {
     model.chat(
       listOf(
@@ -269,50 +268,39 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
         ),
         ModelSchema.ChatMessage(
           ModelSchema.Role.user,
-          "## Project:\n${findGitRoot(path)?.let { getProjectStructure(it) }}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
+          "## Project:\n${getProjectStructure(projectRoot)}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
         ),
       )
     ).choices.first().message?.content?.trim()
   } ?: fileContent
 
-  fun findGitRoot(path: Path?): Path? {
-    var current: Path? = path
-    while (current != null) {
-      if (current.resolve(".git").toFile().exists()) {
-        return current
-      }
-      current = current.parent
-    }
-    return null
-  }
-
   companion object {
     private val scheduledPool = Executors.newScheduledThreadPool(1)
-    fun open(project: Project, outputPath: Path) {
-      lateinit var function: () -> Unit
-      function = {
-        val file = outputPath.toFile()
-        if (file.exists()) {
+  }
+  fun open(project: Project, outputPath: Path) {
+    lateinit var function: () -> Unit
+    function = {
+      val file = outputPath.toFile()
+      if (file.exists()) {
 
-          ApplicationManager.getApplication().invokeLater {
-            val ioFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
-            if (false == (ioFile?.let { FileEditorManager.getInstance(project).isFileOpen(it) })) {
-              val localFileSystem = LocalFileSystem.getInstance()
+        ApplicationManager.getApplication().invokeLater {
+          val ioFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
+          if (false == (ioFile?.let { FileEditorManager.getInstance(project).isFileOpen(it) })) {
+            val localFileSystem = LocalFileSystem.getInstance()
 
-              val virtualFile = localFileSystem.refreshAndFindFileByIoFile(file)
-              virtualFile?.let {
-                FileEditorManager.getInstance(project).openFile(it, true)
-              } ?: scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
-            } else {
-              scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
-            }
+            val virtualFile = localFileSystem.refreshAndFindFileByIoFile(file)
+            virtualFile?.let {
+              FileEditorManager.getInstance(project).openFile(it, true)
+            } ?: scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
+          } else {
+            scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
           }
-        } else {
-          scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
         }
+      } else {
+        scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
       }
-      scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
     }
+    scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
   }
 
   inner class DocumentationCompilerDialog(project: Project?, private val settingsUI: SettingsUI) : DialogWrapper(project) {

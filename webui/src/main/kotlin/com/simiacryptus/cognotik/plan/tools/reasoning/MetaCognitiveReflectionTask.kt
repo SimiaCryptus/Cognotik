@@ -69,7 +69,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     val subjectTaskId = executionConfig?.subject_task_id
     if (subjectTaskId.isNullOrBlank()) {
       log.error("Configuration error: No subject_task_id specified")
-      task.complete("CONFIGURATION ERROR: No subject_task_id specified")
+      task.safeComplete("CONFIGURATION ERROR: No subject_task_id specified", log)
       resultFn("CONFIGURATION ERROR: No subject_task_id specified for reflection")
       return
     }
@@ -77,7 +77,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     val executionState = agent.executionState
     if (executionState == null) {
       log.error("Execution state not available")
-      task.complete("ERROR: Execution state not available")
+      task.safeComplete("ERROR: Execution state not available", log)
       resultFn("ERROR: Execution state not available")
       return
     }
@@ -85,17 +85,12 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     val subjectTaskResult = executionState.taskResult[subjectTaskId]
     if (subjectTaskResult.isNullOrBlank()) {
       log.error("No result found for task: $subjectTaskId")
-      task.complete("ERROR: No result found for task '$subjectTaskId'")
+      task.safeComplete("ERROR: No result found for task '$subjectTaskId'", log)
       resultFn("ERROR: No result found for task '$subjectTaskId'")
       return
     }
 
-    val api = orchestrationConfig.defaultChatter ?: run {
-      log.error("No default chatter available")
-      task.complete("ERROR: No API available")
-      resultFn("ERROR: No API available")
-      return
-    }
+    val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     val tabbedDisplay = TabbedDisplay(task)
     val overviewTask = task.ui.newTask()
@@ -111,16 +106,16 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     if (priorContext.isNotBlank()) {
       val contextTask = task.ui.newTask()
       tabbedDisplay["Context"] = contextTask.placeholder
-      contextTask.complete(
+      contextTask.safeComplete(
         MarkdownUtil.renderMarkdown(
           """
           |### Prior Context
           |
           |```
-          |$priorContext
+          |${priorContext.truncateForDisplay()}
           |```
           """.trimMargin(), ui = contextTask.ui
-        )
+        ), log
       )
     }
 
@@ -158,7 +153,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         ui = overviewTask.ui
       )
     )
-    overviewTask.complete()
+    overviewTask.safeComplete("", log)
     // Step 4: Create agent and perform reflection
     val reflectionTask = task.ui.newTask()
     tabbedDisplay["Reflection Analysis"] = reflectionTask.placeholder
@@ -180,12 +175,12 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
           """
                     |### Reflection Analysis
                     |
-                    |$reflectionResult
+                    |${reflectionResult.truncateForDisplay()}
                     """.trimMargin(),
           ui = reflectionTask.ui
         )
       )
-      reflectionTask.complete("✅ Reflection analysis complete")
+      reflectionTask.safeComplete("✅ Reflection analysis complete", log)
       // Step 5: Generate and display summary
       val summaryTask = task.ui.newTask()
       tabbedDisplay["Summary"] = summaryTask.placeholder
@@ -193,7 +188,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
       val summary = generateReflectionSummary(reflectionResult)
 
-      summaryTask.complete(
+      summaryTask.safeComplete(
         MarkdownUtil.renderMarkdown(
           """
                     |### Summary
@@ -205,11 +200,11 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
                     |**Meta-cognitive reflection completed successfully.**
                     """.trimMargin(),
           ui = summaryTask.ui
-        )
+        ), log
       )
 
       // Step 6: Complete main task
-      task.complete("Meta-cognitive reflection completed for task: $subjectTaskId")
+      task.safeComplete("Meta-cognitive reflection completed for task: $subjectTaskId", log)
 
       val duration = System.currentTimeMillis() - startTime
       log.info("MetaCognitiveReflection task completed successfully for subject_task_id: $subjectTaskId in ${duration}ms. Summary length: ${summary.length}")

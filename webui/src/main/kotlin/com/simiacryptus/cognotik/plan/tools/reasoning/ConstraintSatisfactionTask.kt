@@ -70,7 +70,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       val problemDescription = executionConfig?.problem_description
       if (problemDescription.isNullOrBlank()) {
         log.error("No problem description provided")
-        task.complete("CONFIGURATION ERROR: No problem description provided")
+        task.safeComplete("CONFIGURATION ERROR: No problem description provided", log)
         resultFn("CONFIGURATION ERROR: No problem description provided")
         return
       }
@@ -81,12 +81,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       val maxIterations = executionConfig.max_iterations
 
       val toInput = { it: String -> listOf(it) }
-      val api = orchestrationConfig.defaultChatter ?: run {
-        log.error("No default chatter available")
-        task.complete("ERROR: No API available")
-        resultFn("ERROR: No API available")
-        return
-      }
+      val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
       log.info(
         """
         |Starting Constraint Satisfaction Task:
@@ -105,7 +100,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
             """
                 |## Constraint Satisfaction Problem
                 |
-                |**Problem**: $problemDescription
+                |**Problem**: ${problemDescription.truncateForDisplay()}
                 |
                 |**Hard Constraints** (${hardConstraints.size}):
                 |${hardConstraints.joinToString("\n") { "- $it" }}
@@ -199,7 +194,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
             """
                 |## Solution
                 |
-                |$solution
+                |${solution?.truncateForDisplay() ?: "No solution generated."}
                 """.trimMargin(),
             ui = task.ui
           )
@@ -211,8 +206,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
 
 
       if (orchestrationConfig.autoFix) {
-        task.complete("Constraint satisfaction solution generated and auto-applied")
-        task.complete("Constraint satisfaction solution generated")
+        task.safeComplete("Constraint satisfaction solution generated and auto-applied", log)
         resultFn(answer ?: "No solution generated")
       } else {
         task.add(
