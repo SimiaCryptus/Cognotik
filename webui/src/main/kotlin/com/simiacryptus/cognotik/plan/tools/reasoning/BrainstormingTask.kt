@@ -101,7 +101,7 @@ Brainstorming - Generate and analyze multiple solution options
     if (problemStatement.isNullOrBlank()) {
       val errorMsg = "CONFIGURATION ERROR: No problem statement specified"
       log.error(errorMsg)
-      task.complete(errorMsg)
+      task.safeComplete(errorMsg, log)
       resultFn(errorMsg)
       return
     }
@@ -164,7 +164,7 @@ Brainstorming - Generate and analyze multiple solution options
             """
             |# Context from Previous Tasks
             |
-            |${priorContext.take(maxSummaryLength)}${if (priorContext.length > maxSummaryLength) "\n... (truncated for display)" else ""}
+            |${priorContext.truncateForDisplay()}
             """.trimMargin(), ui = ui
           )
         )
@@ -187,8 +187,9 @@ Brainstorming - Generate and analyze multiple solution options
         priorContext
       )
 
-      val defaultChatter = orchestrationConfig.defaultChatter.getChildClient(task)
+      val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
       val parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task)
+      val defaultChatter = api.getChildClient(task)
       val brainstormAgent = ParsedAgent(
         resultClass = BrainstormResult::class.java,
         prompt = brainstormPrompt,
@@ -375,12 +376,12 @@ Brainstorming - Generate and analyze multiple solution options
         appendLine()
         options.forEachIndexed { index, option ->
           appendLine("### ${index + 1}. ${option.title}")
-          appendLine(option.description.take(maxSummaryLength) + if (option.description.length > maxSummaryLength) "..." else "")
+          appendLine(option.description.truncateForDisplay())
           appendLine()
         }
         appendLine("## Key Findings")
         appendLine()
-        appendLine(summary.take(maxSummaryLength) + if (summary.length > maxSummaryLength) "..." else "")
+        appendLine(summary.truncateForDisplay())
         appendLine()
         appendLine("---")
         appendLine("**Options:** ${options.size} | **Analysis Depth:** $analysisDepth | **Time:** ${(System.currentTimeMillis() - startTime) / 1000}s")
@@ -410,7 +411,7 @@ Brainstorming - Generate and analyze multiple solution options
       )
       task.update()
 
-      task.complete("Generated and analyzed ${options.size} options in ${totalTime / 1000}s")
+      task.safeComplete("Generated and analyzed ${options.size} options in ${totalTime / 1000}s", log)
       resultFn(finalOutput)
 
     } catch (e: Exception) {
@@ -428,7 +429,7 @@ Brainstorming - Generate and analyze multiple solution options
         appendLine("**Type:** ${e.javaClass.simpleName}")
       }
 
-      task.complete("Brainstorming failed: ${e.message}")
+      task.safeComplete("Brainstorming failed: ${e.message}", log)
       resultFn(errorOutput)
     }
   }

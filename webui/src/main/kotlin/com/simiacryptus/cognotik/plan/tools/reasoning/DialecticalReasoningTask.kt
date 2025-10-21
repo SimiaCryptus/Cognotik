@@ -66,6 +66,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
     orchestrationConfig: OrchestrationConfig
   ) {
     val startTime = System.currentTimeMillis()
+    var stepStartTime = startTime
     log.info("Starting DialecticalReasoningTask")
 
     val thesis = executionConfig?.thesis
@@ -73,7 +74,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
     
     if (thesis.isNullOrBlank() || antithesis.isNullOrBlank()) {
       log.error("Both thesis and antithesis must be specified")
-      task.complete("CONFIGURATION ERROR: Both thesis and antithesis must be specified")
+      task.safeComplete("CONFIGURATION ERROR: Both thesis and antithesis must be specified", log)
       resultFn("CONFIGURATION ERROR: Both thesis and antithesis must be specified")
       return
     }
@@ -85,7 +86,6 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
     log.info("Configuration: thesis='$thesis', antithesis='$antithesis', context='$context', levels=$synthesisLevels, preserveStrengths=$preserveStrengths")
 
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
-
     val ui = task.ui
     val tabs = TabbedDisplay(task)
     
@@ -144,11 +144,6 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
     resultBuilder.append("# Dialectical Analysis\n\n")
     resultBuilder.append("**Context:** $context\n\n")
     
-    // Full output for UI
-    val fullOutputBuilder = StringBuilder()
-    fullOutputBuilder.append("# Dialectical Reasoning\n\n")
-    fullOutputBuilder.append("## Context\n\n")
-    fullOutputBuilder.append("$context\n\n")
 
     try {
       // Step 1: Analyze Thesis
@@ -193,12 +188,10 @@ Be thorough and objective in your analysis.
       )
 
       val thesisAnalysis = thesisAgent.answer(listOf("Analyze the thesis statement."))
-      log.debug("Thesis analysis completed: ${thesisAnalysis.length} characters")
       
-      fullOutputBuilder.append("## Thesis\n\n")
-      fullOutputBuilder.append("**Statement:** $thesis\n\n")
-      fullOutputBuilder.append("### Analysis\n\n")
-      fullOutputBuilder.append("$thesisAnalysis\n\n")
+      val thesisTime = System.currentTimeMillis() - stepStartTime
+      log.info("Thesis analysis completed in ${thesisTime}ms: ${thesisAnalysis.length} characters")
+      stepStartTime = System.currentTimeMillis()
 
       thesisTask.add(
         buildString {
@@ -209,7 +202,7 @@ Be thorough and objective in your analysis.
           appendLine()
           appendLine("---")
           appendLine()
-          appendLine("**Status:** ✅ Complete")
+          appendLine("**Status:** ✅ Complete (${thesisTime / 1000.0}s)")
         }.renderMarkdown
       )
       task.update()
@@ -270,12 +263,10 @@ Be thorough and objective in your analysis.
       )
 
       val antithesisAnalysis = antithesisAgent.answer(listOf("Analyze the antithesis statement."))
-      log.debug("Antithesis analysis completed: ${antithesisAnalysis.length} characters")
       
-      fullOutputBuilder.append("## Antithesis\n\n")
-      fullOutputBuilder.append("**Statement:** $antithesis\n\n")
-      fullOutputBuilder.append("### Analysis\n\n")
-      fullOutputBuilder.append("$antithesisAnalysis\n\n")
+      val antithesisTime = System.currentTimeMillis() - stepStartTime
+      log.info("Antithesis analysis completed in ${antithesisTime}ms: ${antithesisAnalysis.length} characters")
+      stepStartTime = System.currentTimeMillis()
 
       antithesisTask.add(
         buildString {
@@ -286,7 +277,7 @@ Be thorough and objective in your analysis.
           appendLine()
           appendLine("---")
           appendLine()
-          appendLine("**Status:** ✅ Complete")
+          appendLine("**Status:** ✅ Complete (${antithesisTime / 1000.0}s)")
         }.renderMarkdown
       )
       task.update()
@@ -344,10 +335,10 @@ Be thorough in exploring the dialectical tension.
       )
 
       val contradictionsAnalysis = contradictionsAgent.answer(listOf("Explore the contradictions and tensions."))
-      log.debug("Contradictions analysis completed: ${contradictionsAnalysis.length} characters")
       
-      fullOutputBuilder.append("## Contradictions & Tensions\n\n")
-      fullOutputBuilder.append("$contradictionsAnalysis\n\n")
+      val contradictionsTime = System.currentTimeMillis() - stepStartTime
+      log.info("Contradictions analysis completed in ${contradictionsTime}ms: ${contradictionsAnalysis.length} characters")
+      stepStartTime = System.currentTimeMillis()
 
       contradictionsTask.add(
         buildString {
@@ -358,7 +349,7 @@ Be thorough in exploring the dialectical tension.
           appendLine()
           appendLine("---")
           appendLine()
-          appendLine("**Status:** ✅ Complete")
+          appendLine("**Status:** ✅ Complete (${contradictionsTime / 1000.0}s)")
         }.renderMarkdown
       )
       task.update()
@@ -465,18 +456,18 @@ Aim for progressively deeper insight and integration.
         )
 
         val synthesis = synthesisAgent.answer(listOf("Generate the synthesis."))
-        log.debug("Synthesis level $level completed: ${synthesis.length} characters")
+        val synthesisTime = System.currentTimeMillis() - stepStartTime
+        log.info("Synthesis level $level completed in ${synthesisTime}ms: ${synthesis.length} characters")
+        stepStartTime = System.currentTimeMillis()
         
         synthesisResults.add(synthesis)
         previousSynthesis = synthesis
         
-        fullOutputBuilder.append("## Synthesis - Level $level\n\n")
-        fullOutputBuilder.append("$synthesis\n\n")
 
         // Add to concise result only for first and last levels
         if (level == 1 || level == synthesisLevels) {
           resultBuilder.append("### Synthesis Level $level\n\n")
-          resultBuilder.append("${synthesis.take(maxDescriptionLength)}${if (synthesis.length > maxDescriptionLength) "..." else ""}\n\n")
+          resultBuilder.append("${synthesis.truncateForDisplay(maxDescriptionLength)}\n\n")
         }
 
         synthesisTask.add(
@@ -488,7 +479,7 @@ Aim for progressively deeper insight and integration.
             appendLine()
             appendLine("---")
             appendLine()
-            appendLine("**Status:** ✅ Complete")
+            appendLine("**Status:** ✅ Complete (${synthesisTime / 1000.0}s)")
           }.renderMarkdown
         )
         task.update()
@@ -547,10 +538,10 @@ Be comprehensive yet concise in your final integration.
       )
 
       val finalIntegration = integrationAgent.answer(listOf("Provide the final integration."))
-      log.debug("Final integration completed: ${finalIntegration.length} characters")
       
-      fullOutputBuilder.append("## Final Integration\n\n")
-      fullOutputBuilder.append("$finalIntegration\n\n")
+      val integrationTime = System.currentTimeMillis() - stepStartTime
+      log.info("Final integration completed in ${integrationTime}ms: ${finalIntegration.length} characters")
+      // stepStartTime = System.currentTimeMillis() // Not needed for the last step
 
       resultBuilder.append("## Final Integration\n\n")
       resultBuilder.append(finalIntegration)
@@ -564,7 +555,7 @@ Be comprehensive yet concise in your final integration.
           appendLine()
           appendLine("---")
           appendLine()
-          appendLine("**Status:** ✅ Complete")
+          appendLine("**Status:** ✅ Complete (${integrationTime / 1000.0}s)")
         }.renderMarkdown
       )
       task.update()

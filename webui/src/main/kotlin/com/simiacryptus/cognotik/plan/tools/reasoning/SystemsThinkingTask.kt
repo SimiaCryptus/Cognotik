@@ -539,8 +539,7 @@ $simulationAnalysis
         appendLine()
         appendLine("## Key Findings")
         appendLine()
-        appendLine(synthesis.take(maxDescriptionLength))
-        if (synthesis.length > maxDescriptionLength) appendLine("\n... (see full analysis in task output)")
+        appendLine(synthesis.truncateForDisplay(maxDescriptionLength))
         appendLine()
         appendLine("---")
         appendLine()
@@ -686,9 +685,8 @@ Provide clear, actionable insights grounded in systems thinking principles.
           val relativePath = root.relativize(file.toPath())
           try {
             val content = file.readText()
-            val truncated = content.take(maxFileSize)
-            totalSize += truncated.length
-            "### $relativePath\n```\n$truncated${if (content.length > maxFileSize) "\n... (truncated)" else ""}\n```"
+            totalSize += content.length.coerceAtMost(maxFileSize)
+            "### $relativePath\n```\n${content.truncateForDisplay(maxFileSize)}\n```"
           } catch (e: Exception) {
             log.warn("Error reading file: $relativePath", e)
             null

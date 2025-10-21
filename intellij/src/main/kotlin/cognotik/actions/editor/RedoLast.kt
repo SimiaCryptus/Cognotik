@@ -20,6 +20,7 @@ class RedoLast : BaseAction() {
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
+      if (!super.isEnabled(event)) return false
         val editor = event.getData(CommonDataKeys.EDITOR) ?: return false
         return retry[editor.document] != null
     }

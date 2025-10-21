@@ -47,11 +47,10 @@ import java.util.concurrent.ConcurrentHashMap
         return try {
             val modelsResponse = fetchAllModels()
             val models = modelsResponse.mapNotNull { modelInfo ->
-                // Map known Anthropic model IDs to our predefined ChatModel instances
-                when (modelInfo.id) {
-                    "claude-opus-4-1-20250805" -> AnthropicModels.Claude41Opus
-                    "claude-sonnet-4-20250514" -> AnthropicModels.Claude4Sonnet
-                    "claude-3-5-haiku-latest", "claude-3-5-haiku-20241022" -> AnthropicModels.Claude35Haiku
+                val models = AnthropicModels.values.values
+                    .filter { it.name == modelInfo.id || it.modelName == modelInfo.id }
+                when {
+                    models.size == 1 -> models.first()
                     else -> {
                         log.debug("Unknown Anthropic model: ${modelInfo.id}")
                         ChatModel(

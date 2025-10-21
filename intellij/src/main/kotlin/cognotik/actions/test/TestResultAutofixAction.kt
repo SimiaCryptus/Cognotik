@@ -109,6 +109,7 @@ class TestResultAutofixAction : BaseAction() {
     }
 
     override fun isEnabled(e: AnActionEvent): Boolean {
+      if (!super.isEnabled(e)) return false
         val testProxy = e.getData(AbstractTestProxy.DATA_KEY)
         return testProxy != null
     }

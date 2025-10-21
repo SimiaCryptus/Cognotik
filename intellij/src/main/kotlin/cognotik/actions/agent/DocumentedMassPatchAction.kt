@@ -21,11 +21,13 @@ import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import java.awt.BorderLayout
-import java.awt.Dimension
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
+ import java.awt.BorderLayout
+ import java.awt.Dimension
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+ import java.io.File
+ import java.nio.file.Files
+ import java.nio.file.Path
 import java.text.SimpleDateFormat
 import javax.swing.*
 
@@ -184,10 +186,25 @@ class DocumentedMassPatchAction : BaseAction() {
                         add(Box.createHorizontalGlue())
                     }
                     
-                    val centerPanel = JPanel(BorderLayout()).apply {
-                        add(docPanel, BorderLayout.NORTH)
-                        add(buttonPanel, BorderLayout.CENTER)
-                        add(codePanel, BorderLayout.SOUTH)
+                    val centerPanel = JPanel(GridBagLayout()).apply {
+                        val c = GridBagConstraints()
+                        c.gridx = 0
+                        c.weightx = 1.0
+
+                        c.gridy = 0
+                        c.weighty = 1.0
+                        c.fill = GridBagConstraints.BOTH
+                        add(docPanel, c)
+
+                        c.gridy = 1
+                        c.weighty = 0.0
+                        c.fill = GridBagConstraints.HORIZONTAL
+                        add(buttonPanel, c)
+
+                        c.gridy = 2
+                        c.weighty = 1.0
+                        c.fill = GridBagConstraints.BOTH
+                        add(codePanel, c)
                     }
                     
                     add(centerPanel, BorderLayout.CENTER)

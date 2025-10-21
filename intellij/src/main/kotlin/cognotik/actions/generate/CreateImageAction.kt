@@ -197,6 +197,7 @@ class CreateImageAction : BaseAction() {
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
+      if (!super.isEnabled(event)) return false
         event.getSelectedFile() ?: return false
         return true
     }

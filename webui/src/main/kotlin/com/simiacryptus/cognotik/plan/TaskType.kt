@@ -155,6 +155,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(SubPlanning) { settings, task ->
                 SubPlanningTask(settings, task)
             }
+            registerConstructor(EthicalReasoningTask.EthicalReasoning) { settings, task ->
+                EthicalReasoningTask(settings, task)
+            }
         }
 
         fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(

@@ -70,7 +70,7 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
     val subject = executionConfig?.analysis_subject
     if (subject.isNullOrBlank()) {
       log.error("No analysis subject specified")
-      task.complete("CONFIGURATION ERROR: No analysis subject specified")
+      task.safeComplete("CONFIGURATION ERROR: No analysis subject specified", log)
       resultFn("CONFIGURATION ERROR: No analysis subject specified")
       return
     }
@@ -78,7 +78,7 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
     val perspectives = executionConfig.perspectives
     if (perspectives.isNullOrEmpty()) {
       log.error("No perspectives specified")
-      task.complete("CONFIGURATION ERROR: No perspectives specified")
+      task.safeComplete("CONFIGURATION ERROR: No perspectives specified", log)
       resultFn("CONFIGURATION ERROR: No perspectives specified")
       return
     }
@@ -99,8 +99,7 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
         MarkdownUtil.renderMarkdown(
           """
                     |## Multi-Perspective Analysis
-                    |
-                    |**Subject:** ${subject.take(maxDescriptionLength)}${if (subject.length > maxDescriptionLength) "..." else ""}
+                    |**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}
                     |
                     |**Perspectives:** ${perspectives.joinToString(", ")}
                     |
@@ -261,7 +260,7 @@ Provide a comprehensive synthesis that integrates all perspectives.
       }
     }
 
-    task.complete()
+    task.safeComplete("Multi-perspective analysis complete.", log)
     resultFn(finalResult)
   }
 

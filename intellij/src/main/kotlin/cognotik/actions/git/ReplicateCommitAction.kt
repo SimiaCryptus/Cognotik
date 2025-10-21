@@ -129,7 +129,6 @@ class ReplicateCommitAction : BaseAction() {
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
-        val project = event.project ?: return false
         val changes = event.getData(VcsDataKeys.CHANGES)
         return changes != null && changes.isNotEmpty()
     }

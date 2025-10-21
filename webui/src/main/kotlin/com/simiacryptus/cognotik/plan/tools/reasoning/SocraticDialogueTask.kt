@@ -66,7 +66,7 @@ SocraticDialogue - Explore ideas through Socratic questioning
     val initialQuestion = executionConfig?.initial_question
     if (initialQuestion.isNullOrBlank()) {
       log.error("No initial question specified")
-      task.complete("CONFIGURATION ERROR: No initial question specified")
+      task.safeComplete("CONFIGURATION ERROR: No initial question specified", log)
       resultFn("CONFIGURATION ERROR: No initial question specified")
       return
     }
@@ -77,12 +77,7 @@ SocraticDialogue - Explore ideas through Socratic questioning
     log.info("Configuration: maxDepth=$maxDepth, challengeAssumptions=$challengeAssumptions, domainConstraints=$domainConstraints")
 
     val ui = task.ui
-    val api = orchestrationConfig.defaultChatter ?: run {
-      log.error("No default chatter available")
-      task.complete("ERROR: No API available")
-      resultFn("ERROR: No API available")
-      return
-    }
+    val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
     // Create tabbed display for organized output
     val tabs = TabbedDisplay(task)
     // Overview tab
@@ -259,8 +254,8 @@ Provide substantive, well-reasoned responses that advance the dialogue.
         // Store only key points in concise output
         if (depth == 1 || depth == maxDepth) {
           dialogueBuilder.append("### Exchange $depth\n")
-          dialogueBuilder.append("**Q:** ${currentQuestion.take(maxDescriptionLength)}${if (currentQuestion.length > maxDescriptionLength) "..." else ""}\n")
-          dialogueBuilder.append("**A:** ${currentResponse.take(maxDescriptionLength)}${if (currentResponse.length > maxDescriptionLength) "..." else ""}\n\n")
+          dialogueBuilder.append("**Q:** ${currentQuestion.truncateForDisplay(maxDescriptionLength)}\n")
+          dialogueBuilder.append("**A:** ${currentResponse.truncateForDisplay(maxDescriptionLength)}\n\n")
         }
 
         MarkdownUtil.renderMarkdown(

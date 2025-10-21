@@ -1,52 +1,93 @@
-# Plaintext Actions
+# Cognotik Actions
 
-Plaintext actions provide text processing features for any language. The following actions are available for plaintext
-in the AI Coder plugin:
+This document outlines the various actions provided by the Cognotik plugin, organized by the context in which they
+appear.
 
-| Text             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Chat Append Text | The `Chat Append Text` action allows you to quickly append text to the end of the current selection.                                                                                                                                                                                                                                                                                                                                                                     |
-| Dictation        | The `Dictation` action allows you to speak into the microphone and have the text automatically inserted into the document. This uses OpenAI's Whisper API.                                                                                                                                                                                                                                                                                                               |
-| Redo Last        | The `Redo Last` action allows you to quickly redo the last action you performed. This is useful for getting variations from the generative AI. For example, if you generate something and want to see an alternate, you can use the `Redo Last` action to quickly retry without having to start from scratch.                                                                                                                                                            |
-| Replace Options  | The `Replace Options` action allows you to quickly replace selected text with one of a set of suggested options. This also captures some preceding and following context, but uses a different prompting method to suggest the options. For example, if you type ‘I had a day’ and place the cursor after 'a' and then use the `Replace Options` action, the plugin will **_provide an interactive selection UI_** to suggest words like ‘great’, ‘bad’, or ‘delicious’. |
+## Tools Menu
 
-# Code Actions
+Actions available from the main "Tools" menu under the "Cognotik" submenu.
 
-The following actions are available for coding in the AI Coder plugin:
+| Text             | Description                                                                                                                                      |
+|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| 💬 Cognotik Chat | Initiate a general-purpose chat session to discuss coding concepts, get assistance with programming tasks, or explore software development ideas |
+| 🧠 Task Planning | Choose from multiple planning strategies in a unified interface with customizable task settings                                                  |
 
-| Text                              | Description                                                                                                                                                                                                                                                                                                  |
-|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Add Code Comments                 | The `Add Code Comments` action allows you to quickly add comments to selected code. It will generally add a comment for each line with a description. This is useful for quickly documenting your code and making it easier to understand.                                                                   |
-| Convert To...                     | The `Convert To...` action allows you to quickly convert a file to a specific language. This is useful for quickly converting larger amounts of code between languages. For example, if you have a Java file and want to convert it to Kotlin, you can use the `Convert To...` action to quickly convert it. |
-| Edit Code...                      | The `Edit Code...` action allows you to quickly edit your code based on a user-supplied directive. This is useful for quickly performing ad-hoc code transformations. For example, you can use this action to add logging statements or to quickly refactor your code.                                       |
-| Describe Code and Prepend Comment | The `Describe Code and Prepend Comment` action allows you to quickly add a comment to your code that describes the current selection. This is useful for quickly documenting your code and making it easier to understand.                                                                                   |
-| Add Doc Comments                  | The `Add Doc Comments` action allows you to quickly add comments to your code that are formatted for documentation. In contrast to existing code tools that can generate doc comments, this action is based on the full code and can generate more accurate comments.                                        |
-| Implement Stub                    | The `Implement Stub` action allows you to quickly implement a stub of a method. This is useful for quickly implementing a new method.                                                                                                                                                                        |
-| Insert Implementation             | The `Insert Implementation` action allows you to quickly insert the implementation of a comment. It attempts to process the code context and provide details about this generation context within the API call.                                                                                              |
-| Paste                             | The `Paste` action allows you to quickly paste code into your project. This text will be translated into the current language. This is useful for quickly pasting code into your project.                                                                                                                    |
-| Ask a question about the code     | The `Ask a question about the code` action allows you to quickly ask a question about the code. This is useful for quickly getting help with understanding the code. The question and response are prepended to the selected code.                                                                           |
-| Recent Code Edits                 | The `Recent Code Edits` group allows you to quickly access your most recent code edits. This is useful for quickly accessing your most recent edits.                                                                                                                                                         |
-| Rename Variables                  | The `Rename Variables` action allows you to quickly rename variables in your code. An interactive dialog is provided to select any/all/none of the rename suggestions. This is useful for quickly refactoring your code and making it easier to understand.                                                  |
+## Editor Context Menu
 
-# Markdown Actions
+Actions available when right-clicking within the code editor, under the "Cognotik" submenu.
 
-Markdown Actions allow you to quickly and easily add list items, table columns, and more to your Markdown documents.
+| Text             | Description                                                                                                               |
+|------------------|---------------------------------------------------------------------------------------------------------------------------|
+| 💬 Code Chat     | Start an interactive dialogue about your selected code, offering insights, explanations, and suggestions for improvements |
+| 🛠️ Patch Chat   | Initiate an interactive session to discuss and apply patches to your code, with intelligent suggestions for modifications |
+| ⚡ _Paste         | Paste with transformations to match the current file's programming language                                               |
+| ✏️ _Edit Code... | Edit code...                                                                                                              |
 
-| Text            | Description                                                                                                                                                                                                                                                                                                                          |
-|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Implement As... | The `Implement As...` action allows you to quickly implement a markdown prompt in a specific language. This is useful for quickly implementing code in a specific language. For example, if select "find the largest file in the current directory" you can use the `Implement As...` action to quickly implement this idea in Bash. |
-| Add List Items  | The `Add List Items` action allows you to quickly add list items to your Markdown document. It supports both ordered and unordered lists, and nested lists.                                                                                                                                                                          |
+## Project View Context Menu
 
-# Developer-Mode Actions
+Actions available when right-clicking on files or folders in the Project view, under the "Cognotik" submenu.
 
-Some actions are only available when the plugin is running in developer mode. These may be useful for debugging or
-development, but also contain experimental features that may not be fully functional.
+| Text                           | Description                                                                                                                          |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| 💬 Code Chat                   | Initiate an interactive dialogue session to discuss and analyze multiple code files simultaneously                                   |
+| 📝 Modify Files                | Analyze and generate patches for multiple files simultaneously, considering the broader project context                              |
+| 🔧 Apply Patch                 | Intelligently apply a provided patch to the selected file, with automatic conflict resolution and error handling                     |
+| 📄 Generate Related File       | Intelligently create a new file related to the selected one, suggesting appropriate content and file location                        |
+| ✨ Create File from Description | Create a new file with appropriate content based on a natural language description, intelligently determining file type and location |
 
-| Text             | Description                                                                                                                                                                                                                                         |
-|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Open Code Chat   | The `Open Code Chat` action opens a chat window in a browser, allowing the user to discuss the code with ChatGPT.                                                                                                                                   |
-| Generate Project | The `Generate Project` action allows you to quickly generate a new software project from a description.                                                                                                                                             |
-| Write a Story    | The `Generate Story` action allows you to quickly generate a new story!                                                                                                                                                                             |
-| Launch Cognotik  | The `Launch Cognotik` action opens the Cognotik interactive auto-scritping interface.                                                                                                                                                               |
-| Print PSI Tree   | The `Print PSI Tree` action allows you to print the PSI tree for the current file. This is useful for debugging and understanding the PSI tree for a file. This is a developer tool and is only visible if the `Developer Mode` setting is enabled. |
+### Macros Submenu
 
+| Text                      | Description                                                                                                               |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| 🔨 Review Files           | Analyze and patch multiple code files while considering markdown documentation files for context and standards            |
+| 📚 Generate Documentation | Automatically generate comprehensive documentation for selected files or entire project, with customizable output formats |
+| 🔨 Process Filesets       | Analyze and patch multiple code files while considering markdown documentation files for context and standards            |
+
+### Agents Submenu
+
+| Text               | Description                                                                                              |
+|--------------------|----------------------------------------------------------------------------------------------------------|
+| 🧠 Task Planning   | Choose from multiple planning strategies in a unified interface with customizable task settings          |
+| 🔄 Run ... and Fix | Intelligent analysis and automatic resolution of build or test errors, with customizable fix suggestions |
+
+### Knowledge Submenu
+
+| Text                 | Description                                                                                    |
+|----------------------|------------------------------------------------------------------------------------------------|
+| 📚 Index Files       | Index files for semantic search and knowledge retrieval                                        |
+| 🔍 Search Embeddings | Search through indexed files using semantic similarity                                         |
+| 📽️ Index Projector  | Create a visual representation of the knowledge index for easier exploration and understanding |
+
+## VCS Log Context Menu
+
+Actions available when right-clicking on a commit in the Git log, under the "Cognotik" submenu.
+
+| Text                           | Description                                                         |
+|--------------------------------|---------------------------------------------------------------------|
+| 💬 Chat with Commit            | Chat with Commit                                                    |
+| 🔄 Chat with Diff (x..HEAD)    | Chat with Commit Diff                                               |
+| 📝 Chat with Working Copy Diff | Open a chat session with the diff between HEAD and the working copy |
+| 🔄 Replicate Commit            | Replicate Commit                                                    |
+
+## Other Contextual Actions
+
+### Find Usages Popup Menu
+
+Actions available from the "Find Usages" results popup, under the "Cognotik" submenu.
+
+| Text                    | Description                          |
+|-------------------------|--------------------------------------|
+| Modify Find Results     | Modify files based on find results   |
+| Chat About Find Results | Start a code chat about find results |
+
+### Test Runner Context Menu
+
+| Text                            | Description                                             |
+|---------------------------------|---------------------------------------------------------|
+| 🔍 Cognotik Analyze Test Result | Open a chat session to analyze the selected test result |
+
+### Problems View Context Menu
+
+| Text                        | Description                                                             |
+|-----------------------------|-------------------------------------------------------------------------|
+| 🔧 Cognotik Analyze Problem | Open a chat session to analyze and potentially fix the selected problem |
