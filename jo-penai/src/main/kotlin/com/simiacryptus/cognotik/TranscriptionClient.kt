@@ -18,7 +18,6 @@ import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
 import java.util.concurrent.ExecutorService
-import kotlin.text.get
 
 open class TranscriptionClient(
     protected var key: String,

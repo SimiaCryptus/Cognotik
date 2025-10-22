@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MultiExeption
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.toContentList
 import java.util.function.Function
 
@@ -19,6 +20,7 @@ open class ParsedAgent<T : Any>(
   temperature: Double = 0.3,
   val parsingChatter: ChatInterface,
   val deserializerRetries: Int = 2,
+  val validation : Boolean = true,
   open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "aicoder.actions"
     ) {
@@ -72,7 +74,10 @@ open class ParsedAgent<T : Any>(
         }\n```\n\nThis is an example output:\n```json\n${JsonUtil.toJson(exampleInstance!!)}\n```${promptSuffix?.let { "\n$it" } ?: ""}"
         for (i in 0 until deserializerRetries) {
             try {
-                val content = parsingChatter.copy(temperature = 0.0).chat(
+                val content = parsingChatter.copy(temperature = when(i) {
+                    0 -> 0.0
+                    else -> 0.1 + i * 0.05 // increase temperature on retries
+                }).chat(
                     listOf(
                         ModelSchema.ChatMessage(role = ModelSchema.Role.system, content = prompt.toContentList()),
                         ModelSchema.ChatMessage(
@@ -108,10 +113,19 @@ open class ParsedAgent<T : Any>(
 
                 contentUnwrapped.let {
                     try {
-                        return@Function JsonUtil.fromJson<T>(
-                            it, resultClass
-                                ?: throw RuntimeException("Result class undefined")
-                        )
+                      val fromJson = JsonUtil.fromJson<T>(
+                        it, resultClass
+                          ?: throw RuntimeException("Result class undefined")
+                      )
+                      if (validation) {
+                        if (fromJson is ValidatedObject) {
+                          val validate = fromJson.validate()
+                          if (null != validate) {
+                            throw RuntimeException("Validation failed: $validate")
+                          }
+                        }
+                      }
+                      return@Function fromJson
                     } catch (e: Exception) {
                         throw RuntimeException(
                             "Failed to parse response: ${

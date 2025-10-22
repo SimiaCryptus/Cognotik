@@ -22,9 +22,47 @@ open class YamlDescriber : TypeDescriber() {
         val log = LoggerFactory.getLogger(YamlDescriber::class.java)
     }
 
+
     init {
         log.info("YamlDescriber initialized with markupLanguage: $markupLanguage")
     }
+
+  // Map to track registered sub-implementations for each parent class
+  protected val subTypeRegistry: MutableMap<Class<*>, MutableList<Class<*>>> = mutableMapOf()
+
+  /**
+   * Register a sub-implementation for a parent class
+   * @param parentClass The parent/interface class
+   * @param subClass The sub-implementation class
+   */
+  override fun <T, U:T>  registerSubType(parentClass: Class<T>, subClass: Class<U>) {
+    subTypeRegistry.getOrPut(parentClass) { mutableListOf() }.add(subClass)
+    log.debug("Registered subtype ${subClass.name} for parent ${parentClass.name}")
+  }
+
+  /**
+   * Register multiple sub-implementations for a parent class
+   * @param parentClass The parent/interface class
+   * @param subClasses The sub-implementation classes
+   */
+  override fun <T, U:T>  registerSubTypes(parentClass: Class<T>, vararg subClasses: Class<U>) {
+    subClasses.forEach { registerSubType(parentClass, it) }
+  }
+
+  override fun <T, U:T> clearSubTypes(parentClass: Class<T>) {
+    subTypeRegistry.remove(parentClass)
+    log.debug("Cleared subtypes for parent ${parentClass.name}")
+  }
+
+  /**
+   * Get all registered sub-implementations for a parent class
+   * @param parentClass The parent/interface class
+   * @return List of registered sub-implementation classes
+   */
+  open fun getRegisteredSubTypes(parentClass: Class<*>): List<Class<*>> {
+    return subTypeRegistry[parentClass]?.toList() ?: emptyList()
+  }
+
 
     override val markupLanguage: String
         get() = "yaml"
@@ -43,6 +81,48 @@ open class YamlDescriber : TypeDescriber() {
         if (rawType.isEnum || DynamicEnum::class.java.isAssignableFrom(rawType)) {
             return "type: enumeration\nvalues:\n" + getEnumValues(rawType).joinToString("\n") { "  - $it" }
         }
+      // Check if there are registered sub-types for this class
+      val registeredSubTypes = getRegisteredSubTypes(rawType)
+      val subTypesYaml = if (registeredSubTypes.isNotEmpty()) {
+        val subTypeDescriptions = registeredSubTypes.map { subType ->
+          val subTypeDesc = describe(subType as Class<in Nothing>, stackMax - 1, describedTypes.toMutableSet())
+          "${subType.simpleName}:\n  ${
+            subTypeDesc.lineSequence()
+              .map {
+                when {
+                  it.isBlank() -> {
+                    when {
+                      it.length < "  ".length -> "  "
+                      else -> it
+                    }
+                  }
+
+                  else -> "  " + it
+                }
+              }
+              .joinToString("\n")
+          }"
+        }
+        "subtypes:\n  ${
+          subTypeDescriptions.joinToString("\n").lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "  ".length -> "  "
+                    else -> it
+                  }
+                }
+
+                else -> "  " + it
+              }
+            }
+            .joinToString("\n")
+        }"
+      } else {
+        ""
+      }
+
         val propertiesYaml = if (rawType.isKotlinClass()) {
             rawType.kotlin.memberProperties.filter { it.visibility == KVisibility.PUBLIC }.map {
                 val description =
@@ -136,7 +216,7 @@ open class YamlDescriber : TypeDescriber() {
                         && !it.isOperator && !it.isInfix && !it.isAbstract
             }.map {
                 """
-${it.name}:
+ ${it.name}:
   ${
                     describe(it, rawType.kotlin, stackMax - 1, false, describedTypes).lineSequence()
                         .map {
@@ -165,7 +245,7 @@ ${it.name}:
                     }
                     .map {
                         """
-${it.name}:
+ ${it.name}:
   ${
                             describe(it, rawType, stackMax - 1).lineSequence()
                                 .map {
@@ -189,39 +269,120 @@ ${it.name}:
             }
         }).toMutableList()
         if (!coverMethods) methodsYaml.clear()
-        if (propertiesYaml.isEmpty() && methodsYaml.isEmpty()) return "type: object\nclass: \"${rawType.name}\""
-        if (propertiesYaml.isEmpty()) return "type: object\nclass: ${rawType.name}\nmethods:\n  ${
-            methodsYaml.joinToString("\n").lineSequence()
-                .map {
-                    when {
-                        it.isBlank() -> {
-                            when {
-                                it.length < "  ".length -> "  "
-                                else -> it
-                            }
-                        }
 
-                        else -> "  " + it
-                    }
+      // Build the final YAML output with subtypes
+      if (propertiesYaml.isEmpty() && methodsYaml.isEmpty() && subTypesYaml.isEmpty()) {
+        return "type: object\nclass: \"${rawType.name}\""
+      }
+      if (propertiesYaml.isEmpty() && subTypesYaml.isEmpty()) {
+        return "type: object\nclass: ${rawType.name}\nmethods:\n  ${
+          methodsYaml.joinToString("\n").lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "  ".length -> "  "
+                    else -> it
+                  }
                 }
-                .joinToString("\n")
-        }"
-        if (methodsYaml.isEmpty()) return "type: object\nclass: ${rawType.name}\nproperties:\n  ${
-            propertiesYaml.joinToString("\n").lineSequence()
-                .map {
-                    when {
-                        it.isBlank() -> {
-                            when {
-                                it.length < "  ".length -> "  "
-                                else -> it
-                            }
-                        }
 
-                        else -> "  " + it
-                    }
-                }
-                .joinToString("\n")
+                else -> "  " + it
+              }
+            }
+            .joinToString("\n")
         }"
+      }
+      if (propertiesYaml.isEmpty() && methodsYaml.isEmpty()) {
+        return "type: object\nclass: ${rawType.name}\n${subTypesYaml}"
+      }
+      if (methodsYaml.isEmpty() && subTypesYaml.isEmpty()) {
+        return "type: object\nclass: ${rawType.name}\nproperties:\n  ${
+          propertiesYaml.joinToString("\n").lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "  ".length -> "  "
+                    else -> it
+                  }
+                }
+
+                else -> "  " + it
+              }
+            }
+            .joinToString("\n")
+        }"
+      }
+      if (propertiesYaml.isEmpty()) {
+        return "type: object\nclass: ${rawType.name}\nmethods:\n  ${
+          methodsYaml.joinToString("\n").lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "  ".length -> "  "
+                    else -> it
+                  }
+                }
+
+                else -> "  " + it
+              }
+            }
+            .joinToString("\n")
+        }\n${subTypesYaml}"
+      }
+      if (methodsYaml.isEmpty()) {
+        return "type: object\nclass: ${rawType.name}\nproperties:\n  ${
+          propertiesYaml.joinToString("\n").lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "  ".length -> "  "
+                    else -> it
+                  }
+                }
+
+                else -> "  " + it
+              }
+            }
+            .joinToString("\n")
+        }\n${subTypesYaml}"
+      }
+      if (subTypesYaml.isEmpty()) {
+        return "type: object\nclass: ${rawType.name}\nproperties:\n  ${
+          propertiesYaml.joinToString("\n").lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "  ".length -> "  "
+                    else -> it
+                  }
+                }
+
+                else -> "  " + it
+              }
+            }
+            .joinToString("\n")
+        }\nmethods:\n  ${
+          methodsYaml.joinToString("\n").lineSequence()
+            .map {
+              when {
+                it.isBlank() -> {
+                  when {
+                    it.length < "  ".length -> "  "
+                    else -> it
+                  }
+                }
+
+                else -> "  " + it
+              }
+            }
+            .joinToString("\n")
+        }"
+      }
+        
         return "type: object\nclass: ${rawType.name}\nproperties:\n  ${
             propertiesYaml.joinToString("\n").lineSequence()
                 .map {
@@ -232,7 +393,6 @@ ${it.name}:
                                 else -> it
                             }
                         }
-
                         else -> "  " + it
                     }
                 }
@@ -252,7 +412,7 @@ ${it.name}:
                     }
                 }
                 .joinToString("\n")
-        }"
+        }\n${subTypesYaml}"
     }
 
     open val includeMethods: Boolean = true

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.exceptions.ModerationException
 import com.simiacryptus.cognotik.models.*
 import com.simiacryptus.cognotik.models.ModelSchema.*
