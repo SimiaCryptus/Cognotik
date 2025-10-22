@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.file.FileSystems
@@ -37,7 +38,21 @@ class MultiPerspectiveAnalysisTask(
     task_description = "Analyze '${analysis_subject}' from perspectives: ${perspectives?.joinToString(", ")}",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (analysis_subject.isNullOrBlank()) {
+        return "analysis_subject cannot be null or blank"
+      }
+      if (perspectives.isNullOrEmpty()) {
+        return "perspectives list cannot be null or empty"
+      }
+      if (consensus_threshold < 0.0 || consensus_threshold > 1.0) {
+        return "consensus_threshold must be between 0.0 and 1.0, got: $consensus_threshold"
+      }
+      // Call parent validation for nested ValidatedObject fields
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """
@@ -68,6 +83,14 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
     log.info("Starting MultiPerspectiveAnalysis for subject: ${executionConfig?.analysis_subject}")
 
     val subject = executionConfig?.analysis_subject
+    // Validate configuration
+    executionConfig?.validate()?.let { error ->
+      log.error("Configuration validation failed: $error")
+      task.safeComplete("CONFIGURATION ERROR: $error", log)
+      resultFn("CONFIGURATION ERROR: $error")
+      return
+    }
+    
     if (subject.isNullOrBlank()) {
       log.error("No analysis subject specified")
       task.safeComplete("CONFIGURATION ERROR: No analysis subject specified", log)

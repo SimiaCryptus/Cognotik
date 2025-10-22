@@ -18,7 +18,7 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     planTask: T?
 ) : AbstractTask<T, TaskTypeConfig>(orchestrationConfig, planTask) {
 
-    open class FileTaskExecutionConfig(
+abstract class FileTaskExecutionConfig(
         task_type: String? = null,
         task_description: String? = null,
         @Description("REQUIRED: The files to be generated as output for the task (relative paths)") val files: List<String>? = null,

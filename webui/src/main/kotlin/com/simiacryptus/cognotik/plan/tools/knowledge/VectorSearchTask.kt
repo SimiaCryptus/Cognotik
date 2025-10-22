@@ -18,6 +18,7 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.nio.file.Files
@@ -47,12 +48,32 @@ class VectorSearchTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
-    ) : TaskExecutionConfig(
+    ) : ValidatedObject, TaskExecutionConfig(
         task_type = VectorSearch.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ) {
+        override fun validate(): String? {
+            if (positive_queries.isEmpty()) {
+                return "At least one positive query is required"
+            }
+            if (count <= 0) {
+                return "Count must be greater than 0"
+            }
+            if (min_length < 0) {
+                return "Minimum length cannot be negative"
+            }
+            required_regexes.forEach { regex ->
+                try {
+                    Pattern.compile(regex)
+                } catch (e: Exception) {
+                    return "Invalid regex pattern: $regex - ${e.message}"
+                }
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     override fun promptSegment() = """
 VectorSearch - Search for similar embeddings in index files and provide top results
@@ -93,9 +114,13 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
 
     private fun performEmbeddingSearch(): List<EmbeddingSearchResult> {
         // Validate queries first
-        if (executionConfig?.positive_queries?.isEmpty() != false) {
-            throw IllegalArgumentException("At least one positive query is required")
+        executionConfig?.validate()?.let { errorMessage ->
+            throw ValidatedObject.ValidationError(errorMessage, executionConfig)
         }
+        if (executionConfig?.positive_queries?.isEmpty() != false) {
+            throw ValidatedObject.ValidationError("At least one positive query is required", executionConfig!!)
+        }
+        
         // Create embeddings with retry logic
         fun createEmbeddingWithRetry(query: String, maxRetries: Int = 3): DoubleArray? {
             repeat(maxRetries) { attempt ->

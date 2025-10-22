@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.interpreter.ProcessCodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -29,12 +30,27 @@ class RunShellCommandTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : TaskExecutionConfig(
+    ) : ValidatedObject, TaskExecutionConfig(
         task_type = RunShellCommand.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ) {
+        override fun validate(): String? {
+            // Validate command is not null or blank
+            if (command.isNullOrBlank()) {
+                return "Command cannot be null or blank"
+            }
+            
+            // Validate timeout is positive if specified
+            if (timeoutMinutes != null && timeoutMinutes <= 0) {
+                return "Timeout must be a positive number of minutes"
+            }
+            
+            // Call parent validation
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     override fun promptSegment() = """
     RunShellCommand - Execute ${orchestrationConfig.language ?: "bash"} shell commands and provide the output

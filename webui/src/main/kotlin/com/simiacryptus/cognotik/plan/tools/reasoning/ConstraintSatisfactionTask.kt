@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
@@ -37,7 +38,36 @@ class ConstraintSatisfactionTask(
     task_description = problem_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    
+    override fun validate(): String? {
+      // Validate problem description
+      if (problem_description.isNullOrBlank()) {
+        return "problem_description cannot be null or blank"
+      }
+      
+      // Validate search strategy
+      val validStrategies = setOf("backtracking", "forward", "local")
+      if (search_strategy !in validStrategies) {
+        return "search_strategy must be one of: ${validStrategies.joinToString(", ")}"
+      }
+      
+      // Validate max iterations
+      if (max_iterations <= 0) {
+        return "max_iterations must be greater than 0"
+      }
+      
+      // Validate soft constraint weights
+      soft_constraints?.forEach { (constraint, weight) ->
+        if (weight < 0.0 || weight > 1.0) {
+          return "soft constraint '$constraint' has invalid weight $weight (must be between 0.0 and 1.0)"
+        }
+      }
+      
+      // Call parent validation
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """
@@ -65,6 +95,14 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
+    // Validate configuration before execution
+    executionConfig?.validate()?.let { error ->
+      log.error("Configuration validation failed: $error")
+      task.safeComplete("CONFIGURATION ERROR: $error", log)
+      resultFn("CONFIGURATION ERROR: $error")
+      return
+    }
+    
     val startTime = System.currentTimeMillis()
     try {
       val problemDescription = executionConfig?.problem_description

@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
@@ -26,14 +27,43 @@ class WriteHtmlTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
-    ) : FileTaskExecutionConfig(
+    ) : ValidatedObject, FileTaskExecutionConfig(
         task_type = WriteHtml.name,
         task_description = task_description,
         files = files,
         related_files = related_files,
         task_dependencies = task_dependencies,
         state = state
-    )
+    ) {
+        override fun validate(): String? {
+            // Validate that files list is not empty
+            if (files.isNullOrEmpty()) {
+                return "WriteHtmlTaskExecutionConfigData: files list cannot be null or empty"
+            }
+            
+            // Validate that the file has .html extension
+            val htmlFile = files.first()
+            if (!htmlFile.endsWith(".html", ignoreCase = true)) {
+                return "WriteHtmlTaskExecutionConfigData: file must have .html extension, got: $htmlFile"
+            }
+            
+            // Validate task description is provided
+            if (task_description.isNullOrBlank()) {
+                return "WriteHtmlTaskExecutionConfigData: task_description cannot be null or blank"
+            }
+            
+            // Call parent validation
+            return super.validate()
+        }
+    }
+
+    init {
+        // Validate the configuration on initialization
+        planTask?.validate()?.let { errorMessage ->
+            throw ValidatedObject.ValidationError(errorMessage, planTask)
+        }
+    }
+
 
     override fun promptSegment(): String {
         return """
@@ -62,6 +92,12 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+        // Validate configuration before execution
+        executionConfig?.validate()?.let { errorMessage ->
+            resultFn("VALIDATION ERROR: $errorMessage")
+            return
+        }
+        
         val htmlFiles = executionConfig?.files ?: emptyList()
         if (htmlFiles.isEmpty()) {
             resultFn("CONFIGURATION ERROR: No HTML file specified")

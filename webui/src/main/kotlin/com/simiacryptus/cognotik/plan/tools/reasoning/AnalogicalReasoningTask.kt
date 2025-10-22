@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.time.LocalDateTime
@@ -39,7 +40,17 @@ class AnalogicalReasoningTask(
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (source_domain.isNullOrBlank()) {
+        return "source_domain must not be blank"
+      }
+      if (target_problem.isNullOrBlank()) {
+        return "target_problem must not be blank"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class AnalogyMapping(
     @Description("The source concept from the source domain")
@@ -52,7 +63,7 @@ class AnalogicalReasoningTask(
     val structural_similarities: List<String> = emptyList(),
     @Description("Key differences or limitations of the analogy")
     val limitations: List<String> = emptyList()
-  )
+  ) : ValidatedObject
 
   data class Analogy(
     @Description("Title of the analogy")
@@ -69,7 +80,17 @@ class AnalogicalReasoningTask(
     val suggested_solutions: List<String> = emptyList(),
     @Description("Confidence score (0-1) in the validity of this analogy")
     val confidence: Double = 0.0
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (title.isBlank()) {
+        return "Analogy title must not be blank"
+      }
+      if (confidence < 0.0 || confidence > 1.0) {
+        return "Confidence must be between 0.0 and 1.0, got $confidence"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class AnalogicalReasoningResult(
     @Description("List of generated analogies")
@@ -80,7 +101,17 @@ class AnalogicalReasoningTask(
     val recommended_approach: String = "",
     @Description("Validation results if validation was requested")
     val validation_notes: String? = null
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (analogies.isEmpty()) {
+        return "At least one analogy must be generated"
+      }
+      if (recommended_approach.isBlank()) {
+        return "recommended_approach must not be blank"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """
@@ -110,6 +141,15 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
     try {
       val startTime = System.currentTimeMillis()
       log.info("Starting AnalogicalReasoningTask with source_domain='${executionConfig?.source_domain}', target_problem='${executionConfig?.target_problem}', num_analogies=${executionConfig?.num_analogies ?: 3}")
+      // Validate configuration
+      executionConfig?.validate()?.let { validationError ->
+        log.error("Configuration validation failed: $validationError")
+        task.safeComplete("CONFIGURATION ERROR: $validationError", log)
+        task.error(ValidatedObject.ValidationError(validationError, executionConfig))
+        resultFn("CONFIGURATION ERROR: $validationError")
+        return
+      }
+
 
       val sourceDomain = executionConfig?.source_domain
       val targetProblem = executionConfig?.target_problem
@@ -223,6 +263,13 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
       )
 
       var result: AnalogicalReasoningResult? = analogyParser.answer(listOf(analogiesPrompt)).obj
+      // Validate the result
+      result?.validate()?.let { validationError ->
+        log.error("Generated result validation failed: $validationError")
+        analogiesTask.error(ValidatedObject.ValidationError(validationError, result))
+        result = null
+      }
+
 
       if (result == null) {
         log.error("Failed to generate analogies after retries")

@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.file.FileSystems
@@ -41,7 +42,22 @@ class CausalInferenceTask(
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      // Validate observed_effect is not null or blank
+      if (observed_effect.isNullOrBlank()) {
+        return "observed_effect must not be null or blank"
+      }
+      // Validate potential_causes list if provided
+      potential_causes?.let { causes ->
+        if (causes.any { it.isBlank() }) {
+          return "potential_causes must not contain blank entries"
+        }
+      }
+      // Call parent validation
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """
@@ -72,6 +88,14 @@ CausalInference - Identify causal relationships and root causes
     val observedEffect = executionConfig?.observed_effect
     if (observedEffect.isNullOrBlank()) {
       val errorMsg = "CONFIGURATION ERROR: No observed effect specified"
+      log.error(errorMsg)
+      task.complete(errorMsg)
+      resultFn("CONFIGURATION ERROR: No observed effect specified")
+      return
+    }
+    // Validate configuration
+    executionConfig?.validate()?.let { validationError ->
+      val errorMsg = "CONFIGURATION ERROR: $validationError"
       log.error(errorMsg)
       task.complete(errorMsg)
       resultFn("CONFIGURATION ERROR: No observed effect specified")

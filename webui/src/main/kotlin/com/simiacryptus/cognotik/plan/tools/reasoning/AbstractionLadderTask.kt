@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
@@ -28,7 +29,20 @@ class AbstractionLadderTask(
     state: TaskState? = TaskState.Pending,
   ) : TaskExecutionConfig(
     task_type = AbstractionLadder.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (concrete_concept.isNullOrBlank()) {
+        return "concrete_concept must not be null or blank"
+      }
+      if (direction.lowercase() !in listOf("up", "down", "both")) {
+        return "direction must be 'up', 'down', or 'both', got: '$direction'"
+      }
+      if (levels !in 1..5) {
+        return "levels must be between 1 and 5, got: $levels"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """
@@ -55,6 +69,14 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting Abstraction Ladder Analysis - Concept: ${executionConfig?.concrete_concept?.truncateForDisplay(100)}, Direction: ${executionConfig?.direction}, Levels: ${executionConfig?.levels}")
+    // Validate configuration
+    executionConfig?.validate()?.let { error ->
+      log.error("Configuration validation failed: $error")
+      task.safeComplete("CONFIGURATION ERROR: $error", log)
+      resultFn("CONFIGURATION ERROR: $error")
+      return
+    }
+
 
     val concept = executionConfig?.concrete_concept
     if (concept.isNullOrBlank()) {

@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
@@ -36,7 +37,22 @@ class MetaCognitiveReflectionTask(
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (subject_task_id.isNullOrBlank()) {
+        return "subject_task_id must not be null or blank"
+      }
+      if (reflection_aspects.isNullOrEmpty()) {
+        return "reflection_aspects must not be null or empty"
+      }
+      val validAspects = setOf("assumptions", "biases", "alternatives", "confidence", "completeness", "logic")
+      val invalidAspects = reflection_aspects.filterNot { it in validAspects }
+      if (invalidAspects.isNotEmpty()) {
+        return "Invalid reflection_aspects: ${invalidAspects.joinToString(", ")}. Valid aspects are: ${validAspects.joinToString(", ")}"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """
@@ -65,6 +81,14 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting MetaCognitiveReflection task for subject_task_id: ${executionConfig?.subject_task_id}")
+    // Validate configuration
+    executionConfig?.validate()?.let { validationError ->
+      log.error("Configuration validation failed: $validationError")
+      task.safeComplete("CONFIGURATION ERROR: $validationError", log)
+      resultFn("CONFIGURATION ERROR: $validationError")
+      return
+    }
+
 
     val subjectTaskId = executionConfig?.subject_task_id
     if (subjectTaskId.isNullOrBlank()) {

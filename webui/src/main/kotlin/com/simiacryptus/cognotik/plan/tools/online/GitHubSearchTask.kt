@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.net.URI
 import java.net.http.HttpClient
@@ -31,14 +32,36 @@ class GitHubSearchTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
-    ) : TaskExecutionConfig(
+    ) : ValidatedObject, TaskExecutionConfig(
         task_type = GitHubSearch.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ) {
+        override fun validate(): String? {
+            if (search_query.isBlank()) {
+                return "GitHub search query cannot be blank"
+            }
+            
+            val validSearchTypes = setOf("code", "commits", "issues", "repositories", "topics", "users")
+            if (search_type !in validSearchTypes) {
+                return "Invalid search_type: $search_type. Must be one of: ${validSearchTypes.joinToString(", ")}"
+            }
+            
+            if (per_page < 1 || per_page > 100) {
+                return "per_page must be between 1 and 100, got: $per_page"
+            }
+            
+            order?.let { if (it !in setOf("asc", "desc")) return "Invalid order: $it. Must be 'asc' or 'desc'" }
+            
+            return null
+        }
+    }
 
     override fun promptSegment() = """
+        executionConfig?.validate()?.let { error ->
+            throw ValidatedObject.ValidationError(error, executionConfig!!)
+        }
 GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or users
     * Specify the search query
     * Specify the type of search (code, commits, issues, repositories, topics, users)
@@ -54,6 +77,7 @@ GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+        
         val searchResults = performGitHubSearch(
             agent.user
                 ?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }

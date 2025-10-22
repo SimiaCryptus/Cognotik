@@ -1,29 +1,30 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.actors.ChatAgent
-import com.simiacryptus.cognotik.chat.model.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.util.Retryable
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
-import java.io.File
-import java.util.concurrent.Semaphore
-import java.util.concurrent.TimeUnit
+ import com.simiacryptus.cognotik.actors.ChatAgent
+ import com.simiacryptus.cognotik.chat.model.ChatInterface
+ import com.simiacryptus.cognotik.describe.Description
+ import com.simiacryptus.cognotik.plan.OrchestrationConfig
+ import com.simiacryptus.cognotik.plan.TaskOrchestrator
+ import com.simiacryptus.cognotik.plan.TaskType
+ import com.simiacryptus.cognotik.plan.TaskTypeConfig
+ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
+ import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
+ import com.simiacryptus.cognotik.platform.model.ApiChatModel
+ import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+ import com.simiacryptus.cognotik.util.LoggerFactory
+ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
+ import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.ValidatedObject
+ import com.simiacryptus.cognotik.webui.session.SessionTask
+ import com.simiacryptus.cognotik.webui.session.getChildClient
+ import java.io.File
+ import java.util.concurrent.Semaphore
+ import java.util.concurrent.TimeUnit
 
-class FileModificationTask(
+ class FileModificationTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: FileModificationTaskExecutionConfigData?
-) : AbstractFileTask<FileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
+ ) : AbstractFileTask<FileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
     class FileModificationTaskExecutionConfigData(
         files: List<String>? = null,
         related_files: List<String>? = null,
@@ -43,7 +44,14 @@ class FileModificationTask(
         files = files,
         extractContent = extractContent,
         state = state
-    )
+    ), ValidatedObject {
+        override fun validate(): String? {
+            if (files.isNullOrEmpty() && related_files.isNullOrEmpty()) {
+                return "At least one file must be specified in either 'files' or 'related_files'"
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     private fun getGitDiff(filePath: String): String? {
         return try {

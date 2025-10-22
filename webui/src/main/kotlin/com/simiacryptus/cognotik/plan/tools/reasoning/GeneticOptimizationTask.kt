@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.time.LocalDateTime
@@ -50,7 +51,26 @@ class GeneticOptimizationTask(
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ), ValidatedObject {
+        override fun validate(): String? {
+            if (initial_text.isNullOrBlank()) {
+                return "initial_text must not be blank"
+            }
+            if (optimization_goal.isNullOrBlank()) {
+                return "optimization_goal must not be blank"
+            }
+            if (num_generations < 1) {
+                return "num_generations must be at least 1"
+            }
+            if (population_size < 2) {
+                return "population_size must be at least 2"
+            }
+            if (selection_size < 1 || selection_size >= population_size) {
+                return "selection_size must be between 1 and population_size-1"
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     data class TextVariant(
         @Description("The text variant")
@@ -72,7 +92,19 @@ class GeneticOptimizationTask(
         val weaknesses: List<String> = emptyList(),
         @Description("Brief justification for the score")
         val justification: String = ""
-    )
+    ): ValidatedObject {
+        override fun validate(): String? {
+            if (overall_score < 0.0 || overall_score > 100.0) {
+                return "overall_score must be between 0 and 100"
+            }
+            criteria_scores.forEach { (criterion, score) ->
+                if (score < 0.0 || score > 100.0) {
+                    return "criteria_scores[$criterion] must be between 0 and 100"
+                }
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     data class EvaluatedVariant(
         val text: String = "",
@@ -117,6 +149,15 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         try {
             val startTime = System.currentTimeMillis()
             log.info("Starting GeneticOptimizationTask with initial_text length=${executionConfig?.initial_text?.length}, goal='${executionConfig?.optimization_goal}'")
+            // Validate configuration
+            executionConfig?.validate()?.let { errorMessage ->
+                log.error("Configuration validation failed: $errorMessage")
+                task.complete("VALIDATION ERROR: $errorMessage")
+                task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
+                resultFn("VALIDATION ERROR: $errorMessage")
+                return
+            }
+
 
             val initialText = executionConfig?.initial_text
             val optimizationGoal = executionConfig?.optimization_goal

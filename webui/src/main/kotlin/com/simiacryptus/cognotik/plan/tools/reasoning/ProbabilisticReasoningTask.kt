@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.time.LocalDateTime
@@ -44,7 +45,47 @@ class ProbabilisticReasoningTask(
       ?: "Bayesian analysis of ${hypotheses?.size ?: 0} hypotheses with ${evidence?.size ?: 0} pieces of evidence",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      // Validate hypotheses
+      if (hypotheses.isNullOrEmpty()) {
+        return "Hypotheses map cannot be null or empty"
+      }
+      
+      // Validate that all probabilities are between 0 and 1
+      hypotheses.forEach { (hypothesis, probability) ->
+        if (probability < 0.0 || probability > 1.0) {
+          return "Probability for hypothesis '$hypothesis' must be between 0.0 and 1.0, got: $probability"
+        }
+      }
+      
+      // Validate that probabilities sum to approximately 1.0
+      val probabilitySum = hypotheses.values.sum()
+      if (probabilitySum < 0.99 || probabilitySum > 1.01) {
+        return "Prior probabilities must sum to 1.0 (current sum: $probabilitySum)"
+      }
+      
+      // Validate risk tolerance
+      if (risk_tolerance !in listOf("low", "medium", "high")) {
+        return "Risk tolerance must be one of: low, medium, high. Got: $risk_tolerance"
+      }
+      
+      // Validate evidence list if present
+      evidence?.forEach { evidenceItem ->
+        if (evidenceItem.isBlank()) {
+          return "Evidence items cannot be blank"
+        }
+      }
+      
+      // Validate decision context if present
+      if (decision_context?.isBlank() == true) {
+        return "Decision context cannot be blank if provided"
+      }
+      
+      // Call parent validation
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """
@@ -72,6 +113,14 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting ProbabilisticReasoningTask with ${executionConfig?.hypotheses?.size ?: 0} hypotheses")
+    // Validate configuration
+    executionConfig?.validate()?.let { errorMsg ->
+      log.error("Configuration validation failed: $errorMsg")
+      task.safeComplete(errorMsg, log)
+      resultFn(errorMsg)
+      return
+    }
+
 
     val hypotheses = executionConfig?.hypotheses
     if (hypotheses.isNullOrEmpty()) {
@@ -82,15 +131,6 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
       return
     }
 
-    // Validate that probabilities sum to approximately 1.0
-    val probabilitySum = hypotheses.values.sum()
-    if (probabilitySum < 0.99 || probabilitySum > 1.01) {
-      val errorMsg = "CONFIGURATION ERROR: Prior probabilities must sum to 1.0 (current sum: $probabilitySum)"
-      log.error(errorMsg)
-      task.safeComplete(errorMsg, log)
-      resultFn(errorMsg)
-      return
-    }
 
     val evidence = executionConfig.evidence ?: emptyList()
     val decisionContext = executionConfig.decision_context ?: "General probabilistic reasoning"
@@ -162,7 +202,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
           appendLine("| ${hypothesis.take(50)} | ${String.format("%.1f%%", prob * 100)} |")
         }
         appendLine()
-        appendLine("**Total:** ${String.format("%.3f", probabilitySum)}")
+        appendLine("**Total:** ${String.format("%.3f", hypotheses.values.sum())}")
       }
       priorTask.add(priorContent.renderMarkdown)
       task.update()

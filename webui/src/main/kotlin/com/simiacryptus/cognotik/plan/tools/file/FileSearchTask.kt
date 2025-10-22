@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.extr
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -16,7 +17,7 @@ import kotlin.math.max
 class FileSearchTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: SearchTaskExecutionConfigData?
-) : AbstractTask<FileSearchTask.SearchTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+ ) : AbstractTask<FileSearchTask.SearchTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
     // SearchTaskConfigData remains the same
     class SearchTaskExecutionConfigData(
         @Description("The search pattern (substring or regex) to look for in the files")
@@ -32,12 +33,23 @@ class FileSearchTask(
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
-    ) : TaskExecutionConfig(
+    ) : ValidatedObject, TaskExecutionConfig(
         task_type = FileSearch.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ) {
+        override fun validate(): String? {
+            if (search_pattern.isBlank()) {
+                return "search_pattern cannot be blank"
+            }
+            if (context_lines < 0) {
+                return "context_lines must be non-negative"
+            }
+            // Delegate to parent validation for nested objects
+            return ValidatedObject.validateFields(this)
+        }
+    }
     // promptSegment remains the same
 
     override fun promptSegment() = """

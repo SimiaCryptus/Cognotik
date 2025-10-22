@@ -27,10 +27,10 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.math.min
 
-class CrawlerAgentTask(
+ class CrawlerAgentTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: CrawlerTaskExecutionConfigData?,
- ) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(
+) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
@@ -52,7 +52,29 @@ class CrawlerAgentTask(
         task_type: String = "CrawlerAgent",
         model: ApiChatModel? = null,
         name: String? = task_type,
-    ) : TaskTypeConfig(task_type = task_type, name = name, model = model)
+    ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
+        override fun validate(): String? {
+            if (max_pages_per_task != null && max_pages_per_task!! <= 0) {
+                return "max_pages_per_task must be greater than 0"
+            }
+            if (max_depth != null && max_depth!! < 0) {
+                return "max_depth must be non-negative"
+            }
+            if (max_queue_size != null && max_queue_size!! <= 0) {
+                return "max_queue_size must be greater than 0"
+            }
+            if (concurrent_page_processing != null && concurrent_page_processing!! <= 0) {
+                return "concurrent_page_processing must be greater than 0"
+            }
+            if (max_final_output_size != null && max_final_output_size!! <= 0) {
+                return "max_final_output_size must be greater than 0"
+            }
+            if (min_content_length != null && min_content_length!! < 0) {
+                return "min_content_length must be non-negative"
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     class CrawlerTaskExecutionConfigData(
         @Description("The search query to use for Google search") val search_query: String? = null,
@@ -67,7 +89,27 @@ class CrawlerAgentTask(
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ), ValidatedObject {
+        override fun validate(): String? {
+            if (search_query.isNullOrBlank() && direct_urls.isNullOrEmpty()) {
+                return "Either search_query or direct_urls must be provided"
+            }
+            if (!direct_urls.isNullOrEmpty()) {
+                direct_urls.forEach { url ->
+                    if (!url.matches(Regex("^(http|https)://.*"))) {
+                        return "Invalid URL format in direct_urls: $url"
+                    }
+                }
+            }
+            if (!allowed_domains.isNullOrBlank()) {
+                val domains = allowed_domains.split(Regex("\\s+")).filter { it.isNotBlank() }
+                if (domains.isEmpty()) {
+                    return "allowed_domains must contain at least one valid domain when specified"
+                }
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     var selenium: Selenium2S3? = null
 
@@ -112,7 +154,7 @@ class CrawlerAgentTask(
         val title: String? = null,
         val tags: List<String>? = null,
         @Description("1-100") val relevance_score: Double = 100.0
-    ) {
+    ) : ValidatedObject {
         var started: Boolean = false
         var completed: Boolean = false
         var depth: Int = 0
@@ -121,6 +163,18 @@ class CrawlerAgentTask(
 
         // Priority calculation: higher relevance and lower depth = higher priority
         fun calculatePriority(): Double = relevance_score / (depth + 1.0)
+        override fun validate(): String? {
+            if (link.isNullOrBlank()) {
+                return "link cannot be null or blank"
+            }
+            if (!link.matches(Regex("^(http|https)://.*"))) {
+                return "link must be a valid HTTP/HTTPS URL"
+            }
+            if (relevance_score < 1.0 || relevance_score > 100.0) {
+                return "relevance_score must be between 1 and 100"
+            }
+            return ValidatedObject.validateFields(this)
+        }
     }
 
     enum class PageType {
@@ -134,7 +188,17 @@ class CrawlerAgentTask(
         val page_information: Any? = null,
         val tags: List<String>? = null,
         val link_data: List<LinkData>? = null,
-    )
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (page_type == PageType.OK && page_information == null) {
+                return "page_information is required when page_type is OK"
+            }
+            link_data?.forEach { linkData ->
+                linkData.validate()?.let { return it }
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     override fun run(
         agent: TaskOrchestrator,

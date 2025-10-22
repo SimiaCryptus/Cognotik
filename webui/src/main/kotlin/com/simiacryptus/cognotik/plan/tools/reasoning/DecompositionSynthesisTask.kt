@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.util.concurrent.atomic.AtomicInteger
@@ -50,7 +51,13 @@ class DecompositionSynthesisTask(
     val decomposition_rationale: String = "",
     @Description("Dependencies between subproblems")
     val dependencies: Map<String, List<String>> = emptyMap()
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (subproblems.isEmpty()) return "ProblemDecomposition must have at least one subproblem"
+      if (decomposition_rationale.isBlank()) return "ProblemDecomposition must have a decomposition_rationale"
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class Subproblem(
     @Description("Unique identifier for this subproblem")
@@ -61,7 +68,14 @@ class DecompositionSynthesisTask(
     val complexity: Int = 5,
     @Description("Whether this can be further decomposed")
     val can_decompose: Boolean = false
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (id.isBlank()) return "Subproblem must have an id"
+      if (description.isBlank()) return "Subproblem must have a description"
+      if (complexity !in 1..10) return "Subproblem complexity must be between 1 and 10, got $complexity"
+      return null
+    }
+  }
 
   data class SubproblemSolution(
     @Description("The subproblem ID being solved")
@@ -70,7 +84,14 @@ class DecompositionSynthesisTask(
     val solution: String = "",
     @Description("Confidence in this solution (0-1)")
     val confidence: Double = 0.0
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (subproblem_id.isBlank()) return "SubproblemSolution must have a subproblem_id"
+      if (solution.isBlank()) return "SubproblemSolution must have a solution"
+      if (confidence !in 0.0..1.0) return "SubproblemSolution confidence must be between 0 and 1, got $confidence"
+      return null
+    }
+  }
 
   data class SynthesizedSolution(
     @Description("The complete synthesized solution")
@@ -79,7 +100,14 @@ class DecompositionSynthesisTask(
     val synthesis_approach: String = "",
     @Description("Overall confidence in the solution (0-1)")
     val confidence: Double = 0.0
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (solution.isBlank()) return "SynthesizedSolution must have a solution"
+      if (synthesis_approach.isBlank()) return "SynthesizedSolution must have a synthesis_approach"
+      if (confidence !in 0.0..1.0) return "SynthesizedSolution confidence must be between 0 and 1, got $confidence"
+      return null
+    }
+  }
 
   data class CoherenceValidation(
     @Description("Whether the solution is coherent")
@@ -88,7 +116,11 @@ class DecompositionSynthesisTask(
     val issues: List<String> = emptyList(),
     @Description("Suggestions for improvement")
     val suggestions: List<String> = emptyList()
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """
@@ -541,6 +573,11 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     )
 
     val decomposition = decompositionAgent.answer(listOf(problem)).obj
+    // Validate the decomposition
+    decomposition.validate()?.let { error ->
+      throw ValidatedObject.ValidationError(error, decomposition)
+    }
+    
     return decomposition
   }
 
@@ -617,6 +654,10 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
       )
 
       val solution = solutionAgent.answer(listOf(subproblem.description)).obj
+      // Validate the solution
+      solution.validate()?.let { error ->
+        throw ValidatedObject.ValidationError(error, solution)
+      }
 
       val finalSolution = solution.copy(subproblem_id = subproblem.id)
       solutions.add(finalSolution)
@@ -722,6 +763,11 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     )
 
     val synthesized: SynthesizedSolution = synthesisAgent.answer(listOf(problem)).obj
+    // Validate the synthesized solution
+    synthesized.validate()?.let { error ->
+      throw ValidatedObject.ValidationError(error, synthesized)
+    }
+    
     return synthesized!!
   }
 
@@ -765,6 +811,11 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     )
 
     val validation: CoherenceValidation = validationAgent.answer(listOf(synthesized.solution)).obj
+    // Validate the validation result
+    validation.validate()?.let { error ->
+      throw ValidatedObject.ValidationError(error, validation)
+    }
+    
     return validation!!
   }
 

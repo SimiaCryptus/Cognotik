@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.file.FileSystems
@@ -52,7 +53,20 @@ class TemporalReasoningTask(
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (subject.isNullOrBlank()) {
+        return "subject must not be null or blank"
+      }
+      if (time_range.isNullOrBlank()) {
+        return "time_range must not be null or blank"
+      }
+      if (granularity.isBlank()) {
+        return "granularity must not be blank"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class TimelineEvent(
     val timestamp: String = LocalDate.now().format(DateTimeFormatter.ISO_DATE),

@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference
     ) : TaskTypeConfig(
         task_type = task_type,
         name = name
-    )
+    ), ValidatedObject
     
     class AnalysisTaskExecutionConfigData(
         @Description("The specific questions or topics to be addressed in the inquiry")
@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicReference
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ), ValidatedObject
 
     override fun promptSegment(): String {
         val availableFiles = getAvailableFiles(root)
