@@ -268,10 +268,7 @@ ${JsonUtil.toJson(taskConfig)}
     reasoningState: ReasoningState,
     task: SessionTask
   ): List<TaskData>? {
-    describer.clearSubTypes(TaskExecutionConfig::class.java)
-    TaskType.getAvailableTaskTypes(orchestrationConfig).forEach { taskType ->
-      describer.registerSubType(TaskExecutionConfig::class.java, taskType.executionConfigClass)
-    }
+    initDescriber(this.orchestrationConfig, this.describer)
     val parsedActor = ParsedAgent(
       name = "TaskChooser",
       resultClass = Tasks::class.java,
@@ -700,5 +697,12 @@ ${JsonUtil.toJson(taskConfig)}
       session: Session,
       user: User?
     ) = AdaptivePlanningMode(task, orchestrationConfig, session, user)
+
+    fun initDescriber(orchestrationConfig: OrchestrationConfig, describer: TaskContextYamlDescriber) {
+      describer.clearSubTypes(TaskExecutionConfig::class.java)
+      TaskType.getAvailableTaskTypes(orchestrationConfig).forEach { taskType ->
+        describer.registerSubType(TaskExecutionConfig::class.java, taskType.executionConfigClass)
+      }
+    }
   }
 }

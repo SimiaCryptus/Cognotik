@@ -50,7 +50,7 @@ class OrchestrationConfig(
     val workingDir: String? = ".",
     val language: String? = if (isWindows) "powershell" else "bash",
     var maxTaskHistoryChars: Int = 10000,
-    var maxTasksPerIteration: Int = 3,
+    var maxTasksPerIteration: Int = 1,
     var maxIterations: Int = 10,
 ) {
 

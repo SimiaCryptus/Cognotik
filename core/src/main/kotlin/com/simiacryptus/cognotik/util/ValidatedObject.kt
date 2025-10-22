@@ -50,8 +50,10 @@ interface ValidatedObject {
             log.debug("Validating list element: {}", it)
             if (it is ValidatedObject) {
               val validate = it.validate()
-              log.warn("Validation failed for list element with message: $validate")
-              if (null != validate) return validate
+              if (null != validate) {
+                log.warn("Validation failed for list element with message: $validate")
+                return validate
+              }
             }
           }
         }

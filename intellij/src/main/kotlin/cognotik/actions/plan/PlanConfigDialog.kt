@@ -352,7 +352,7 @@ class PlanConfigDialog(
 
                 else -> value
             }
-        } catch (e: NumberFormatException) {
+        } catch (_: NumberFormatException) {
             Messages.showWarningDialog(
                 "$fieldName must be a valid number", "Invalid Value"
             )

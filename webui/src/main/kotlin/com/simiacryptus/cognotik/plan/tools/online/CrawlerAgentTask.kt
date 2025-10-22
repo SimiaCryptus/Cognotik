@@ -150,10 +150,13 @@ import kotlin.math.min
     }
 
     data class LinkData(
-        val link: String? = null,
-        val title: String? = null,
-        val tags: List<String>? = null,
-        @Description("1-100") val relevance_score: Double = 100.0
+      @Description("The URL of the link to crawl")
+      val url: String? = null,
+      @Description("The title of the link (optional)")
+      val title: String? = null,
+      @Description("Tags associated with the link (optional)")
+      val tags: List<String>? = null,
+      @Description("1-100") val relevance_score: Double = 100.0
     ) : ValidatedObject {
         var started: Boolean = false
         var completed: Boolean = false
@@ -164,11 +167,11 @@ import kotlin.math.min
         // Priority calculation: higher relevance and lower depth = higher priority
         fun calculatePriority(): Double = relevance_score / (depth + 1.0)
         override fun validate(): String? {
-            if (link.isNullOrBlank()) {
+            if (url.isNullOrBlank()) {
                 return "link cannot be null or blank"
             }
-            if (!link.matches(Regex("^(http|https)://.*"))) {
-                return "link must be a valid HTTP/HTTPS URL"
+            if (!url.matches(Regex("^(http|https)://.*"))) {
+                return "link must be a valid HTTP/HTTPS URL: $url"
             }
             if (relevance_score < 1.0 || relevance_score > 100.0) {
                 return "relevance_score must be between 1 and 100"
@@ -304,7 +307,7 @@ import kotlin.math.min
                         return@forEach
                     }
                     LinkData(
-                        link = item.link,
+                        url = item.link,
                         title = item.title,
                         tags = item.tags,
                         relevance_score = item.relevance_score
@@ -475,12 +478,12 @@ import kotlin.math.min
         maxQueueSize: Int
     ): Boolean = synchronized(pageQueueLock) {
         val typeConfig = typeConfig ?: throw RuntimeException()
-        if (newLink.link.isNullOrBlank()) {
+        if (newLink.url.isNullOrBlank()) {
             log.warn("Attempted to add invalid or empty URL to queue: $newLink")
             return false
         }
-        if (typeConfig.respect_robots_txt == true && !robotsTxtParser.isAllowed(newLink.link)) {
-            log.debug("Skipping URL disallowed by robots.txt: ${newLink.link}")
+        if (typeConfig.respect_robots_txt == true && !robotsTxtParser.isAllowed(newLink.url)) {
+            log.debug("Skipping URL disallowed by robots.txt: ${newLink.url}")
             return false
         }
         if (pageQueue.size >= maxQueueSize) {
@@ -488,16 +491,16 @@ import kotlin.math.min
             return false
         }
         if (newLink.depth > maxDepth) {
-            log.debug("Skipping link due to depth limit (depth=${newLink.depth} > maxDepth=$maxDepth): ${newLink.link}")
+            log.debug("Skipping link due to depth limit (depth=${newLink.depth} > maxDepth=$maxDepth): ${newLink.url}")
             return false
         }
-        if (seenUrls.contains(newLink.link)) {
-            log.debug("Skipping duplicate link already in queue: ${newLink.link}")
+        if (seenUrls.contains(newLink.url)) {
+            log.debug("Skipping duplicate link already in queue: ${newLink.url}")
             return false
         }
-        seenUrls.add(newLink.link)
+        seenUrls.add(newLink.url)
         pageQueue.add(newLink)
-        log.debug("Added new link to queue: ${newLink.link} (depth=${newLink.depth}, priority=${newLink.calculatePriority()})")
+        log.debug("Added new link to queue: ${newLink.url} (depth=${newLink.depth}, priority=${newLink.calculatePriority()})")
         true
     }
 
@@ -506,7 +509,7 @@ import kotlin.math.min
         val nextPage = pageQueue.poll()
         nextPage?.let {
             it.started = true
-            log.debug("Retrieved next page from queue: ${it.link} (priority=${it.calculatePriority()}, remaining=${pageQueue.size})")
+            log.debug("Retrieved next page from queue: ${it.url} (priority=${it.calculatePriority()}, remaining=${pageQueue.size})")
         }
         nextPage
     }
@@ -558,7 +561,7 @@ import kotlin.math.min
     ): Boolean {
         log.info("Status before queuing next page: $queueStats, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
         val page = getNextPage() ?: return true
-        if (page.link.isNullOrBlank()) {
+        if (page.url.isNullOrBlank()) {
             log.error("Invalid page link encountered: $page")
             errorCount.incrementAndGet()
             page.completed = true
@@ -566,17 +569,17 @@ import kotlin.math.min
             page.error = "Invalid or empty URL"
             return false
         }
-        activeTasks.add(page.link)
+        activeTasks.add(page.url)
 
-        log.info("Queuing page for processing: url='${page.link}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
+        log.info("Queuing page for processing: url='${page.url}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
 
         val subTask = try {
             task.ui.newTask(false).apply {
-                tabs[page.link] = placeholder
+                tabs[page.url] = placeholder
                 task.update()
             }
         } catch (e: Exception) {
-            log.error("Failed to create subtask for URL: ${page.link}", e)
+            log.error("Failed to create subtask for URL: ${page.url}", e)
             errorCount.incrementAndGet()
             page.completed = true
             page.completed = true
@@ -588,7 +591,7 @@ import kotlin.math.min
             try {
                 crawlPage(
                     processedCount,
-                    page.link,
+                    page.url,
                     page,
                     maxPages,
                     maxDepth,
@@ -602,13 +605,13 @@ import kotlin.math.min
                     analysisResultsMap
                 )
             } catch (e: Exception) {
-                log.error("Uncaught exception in page processing task for: ${page.link}", e)
+                log.error("Uncaught exception in page processing task for: ${page.url}", e)
                 errorCount.incrementAndGet()
                 page.completed = true
                 page.completed = true
                 page.error = "Uncaught exception: ${e.message}"
             } finally {
-                activeTasks.remove(page.link)
+                activeTasks.remove(page.url)
             }
         })
         return false
@@ -746,11 +749,11 @@ import kotlin.math.min
                                 linkData
                                     .take(10) // Limit links per page to prevent explosion
                                     .filter { link ->
-                                        val isValid = VALID_URL_PATTERN.matcher(link.link!!).matches()
-                                        val isNotBlacklisted = !isBlacklistedDomain(link.link)
-                                        val isNotDuplicate = allowRevisit || !seenUrls.contains(link.link)
+                                        val isValid = VALID_URL_PATTERN.matcher(link.url!!).matches()
+                                        val isNotBlacklisted = !isBlacklistedDomain(link.url)
+                                        val isNotDuplicate = allowRevisit || !seenUrls.contains(link.url)
                                         val isAllowedByRobots = typeConfig.respect_robots_txt != true ||
-                                                robotsTxtParser.isAllowed(link.link)
+                                                robotsTxtParser.isAllowed(link.url)
 
                                         if (!isValid) {
                                             skippedLinks.add(link to "Invalid URL format")
@@ -768,7 +771,7 @@ import kotlin.math.min
                                         val newLink = link.apply { depth = page.depth + 1 }
                                         if (addToQueue(newLink, maxDepth, maxQueueSize)) {
                                             addedCount++
-                                            this.appendLine("- ✅ **[${link.title ?: "Untitled"}](${link.link})** (depth: ${newLink.depth}, relevance: ${link.relevance_score})")
+                                            this.appendLine("- ✅ **[${link.title ?: "Untitled"}](${link.url})** (depth: ${newLink.depth}, relevance: ${link.relevance_score})")
                                         } else {
                                             skippedLinks.add(link to "Queue limit reached or max depth exceeded")
                                         }
@@ -780,7 +783,7 @@ import kotlin.math.min
                                     this.appendLine("<summary>Skipped Links (${skippedLinks.size})</summary>")
                                     this.appendLine()
                                     skippedLinks.forEach { (link, reason) ->
-                                        this.appendLine("- ⏭️ **[${link.title ?: "Untitled"}](${link.link})** - *${reason}*")
+                                        this.appendLine("- ⏭️ **[${link.title ?: "Untitled"}](${link.url})** - *${reason}*")
                                     }
                                     this.appendLine()
                                     this.appendLine("</details>")
@@ -1003,7 +1006,7 @@ import kotlin.math.min
         log.debug("Extracted ${links.size} valid links from markdown")
         return links.map { (linkText, linkUrl) ->
             LinkData(
-                link = linkUrl,
+                url = linkUrl,
                 title = linkText,
                 relevance_score = 50.0
             )
