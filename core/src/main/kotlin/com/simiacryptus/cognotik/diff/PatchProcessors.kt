@@ -16,7 +16,7 @@ enum class PatchProcessors : PatchProcessor {
       entropyPenalty = 1.0
     )
   },
-  
+
   // Strict mode - exact matching only, no fuzzy logic
   Strict {
     override val label = "Strict"

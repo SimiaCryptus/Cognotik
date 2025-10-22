@@ -80,8 +80,10 @@ data class AppSettingsState(
   var devActions: Boolean = false,
   var disableAutoOpenUrls: Boolean = false,
   var showWelcomeScreen: Boolean = true,
-  var greetedVersion: String = "",
+var greetedVersion: String = "",
   var shellCommand: String = getDefaultShell(),
+  var feedbackRequested: Boolean = false,
+  var feedbackOptOut: Boolean = false,
 
   /* Recent Activity Helpers */
   var savedPlanConfigs: MutableMap<String, String>? = mutableMapOf(),
