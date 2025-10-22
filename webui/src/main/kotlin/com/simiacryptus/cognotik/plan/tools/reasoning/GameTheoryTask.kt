@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.time.LocalDateTime
@@ -65,7 +66,33 @@ class GameTheoryTask(
     task_description = task_description ?: "Analyze game theory scenario: ${game_scenario?.take(1000)}",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (game_scenario.isNullOrBlank()) {
+        return "game_scenario must not be null or blank"
+      }
+      if (players.isNullOrEmpty()) {
+        return "players list must not be null or empty"
+      }
+      if (players.any { it.isBlank() }) {
+        return "players list must not contain blank entries"
+      }
+      if (game_type.isNullOrBlank()) {
+        return "game_type must not be null or blank"
+      }
+      val validGameTypes = setOf("cooperative", "non-cooperative", "zero-sum", "repeated", "sequential")
+      if (game_type !in validGameTypes) {
+        return "game_type must be one of: ${validGameTypes.joinToString(", ")}"
+      }
+      if (iterations < 1) {
+        return "iterations must be at least 1"
+      }
+      if (repeated_game_analysis && iterations < 2) {
+        return "repeated_game_analysis requires at least 2 iterations"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """

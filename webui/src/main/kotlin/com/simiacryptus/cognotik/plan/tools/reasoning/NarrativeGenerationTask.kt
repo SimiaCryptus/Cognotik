@@ -76,6 +76,27 @@ class NarrativeGenerationTask(
   ) {
     override val task_type: String = NarrativeGeneration.name
     override var task_description: String? = "Generate full narrative for '$subject'"
+    override fun validate(): String? {
+      // First validate parent class
+      super.validate()?.let { return it }
+      // Validate target_word_count
+      if (target_word_count <= 0) {
+        return "target_word_count must be positive, got: $target_word_count"
+      }
+      // Validate number_of_acts
+      if (number_of_acts <= 0) {
+        return "number_of_acts must be positive, got: $number_of_acts"
+      }
+      // Validate scenes_per_act
+      if (scenes_per_act <= 0) {
+        return "scenes_per_act must be positive, got: $scenes_per_act"
+      }
+      // Validate revision_passes
+      if (revision_passes < 0) {
+        return "revision_passes cannot be negative, got: $revision_passes"
+      }
+      return null
+    }
   }
 
   data class NarrativeOutline(

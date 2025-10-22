@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.time.LocalDateTime
@@ -38,7 +39,17 @@ class SocraticDialogueTask(
     task_description = "Explore '$initial_question' through Socratic dialogue",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (initial_question.isNullOrBlank()) {
+        return "initial_question cannot be null or blank"
+      }
+      if (max_depth < 1 || max_depth > 20) {
+        return "max_depth must be between 1 and 20, got: $max_depth"
+      }
+      return null
+    }
+  }
 
   override fun promptSegment(): String {
     return """
@@ -62,6 +73,14 @@ SocraticDialogue - Explore ideas through Socratic questioning
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting SocraticDialogueTask with initial question: '${executionConfig?.initial_question}'")
+    // Validate configuration
+    executionConfig?.validate()?.let { error ->
+      log.error("Configuration validation failed: $error")
+      task.safeComplete("CONFIGURATION ERROR: $error", log)
+      resultFn("CONFIGURATION ERROR: $error")
+      return
+    }
+
 
     val initialQuestion = executionConfig?.initial_question
     if (initialQuestion.isNullOrBlank()) {

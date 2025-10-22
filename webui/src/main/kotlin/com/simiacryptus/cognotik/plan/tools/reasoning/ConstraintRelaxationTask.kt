@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.time.LocalDateTime
@@ -42,7 +43,28 @@ class ConstraintRelaxationTask(
     task_description = "Solve '$problem' through progressive constraint relaxation",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (problem.isNullOrBlank()) {
+        return "Problem description cannot be null or blank"
+      }
+      if (constraints.isNullOrEmpty()) {
+        return "Constraints map cannot be null or empty"
+      }
+      constraints.forEach { (constraint, priority) ->
+        if (constraint.isBlank()) {
+          return "Constraint name cannot be blank"
+        }
+        if (priority < 0.0 || priority > 1.0) {
+          return "Constraint priority must be between 0.0 and 1.0, got $priority for constraint '$constraint'"
+        }
+      }
+      if (max_iterations < 1 || max_iterations > 10) {
+        return "Max iterations must be between 1 and 10, got $max_iterations"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """

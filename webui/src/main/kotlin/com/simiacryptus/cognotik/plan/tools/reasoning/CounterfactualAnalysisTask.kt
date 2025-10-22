@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
@@ -39,7 +40,17 @@ class CounterfactualAnalysisTask(
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (actual_scenario.isNullOrBlank()) {
+        return "actual_scenario must not be null or blank"
+      }
+      if (counterfactuals.isNullOrEmpty()) {
+        return "counterfactuals must contain at least one scenario"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """

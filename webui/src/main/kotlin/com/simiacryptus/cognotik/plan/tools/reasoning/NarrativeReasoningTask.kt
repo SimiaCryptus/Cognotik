@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.time.LocalDateTime
@@ -56,7 +57,17 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
     task_description = "Analyze '$subject' through narrative reasoning",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (subject.isNullOrBlank()) {
+        return "Subject must not be null or blank"
+      }
+      if (alternative_narratives < 1 || alternative_narratives > 10) {
+        return "Alternative narratives must be between 1 and 10, got: $alternative_narratives"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class ParsedNarrative(
     val title: String = "",
@@ -64,7 +75,20 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
     val acts: List<NarrativeAct> = emptyList(),
     val themes: List<String> = emptyList(),
     val tone: String = ""
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (title.isBlank()) {
+        return "Narrative title must not be blank"
+      }
+      if (summary.isBlank()) {
+        return "Narrative summary must not be blank"
+      }
+      if (acts.isEmpty()) {
+        return "Narrative must have at least one act"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class NarrativeAct(
     val act_number: Int = 1,
@@ -72,7 +96,20 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
     val description: String = "",
     val key_events: List<String> = emptyList(),
     val character_developments: Map<String, String> = emptyMap()
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (act_number < 1) {
+        return "Act number must be positive, got: $act_number"
+      }
+      if (title.isBlank()) {
+        return "Act title must not be blank"
+      }
+      if (description.isBlank()) {
+        return "Act description must not be blank"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class PlotPoint(
     val type: String = "",
@@ -80,11 +117,21 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
     val significance: String = "",
     val timing: String = "",
     val affected_characters: List<String> = emptyList()
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (type.isBlank()) {
+        return "Plot point type must not be blank"
+      }
+      if (description.isBlank()) {
+        return "Plot point description must not be blank"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class PlotPoints(
     val points: List<PlotPoint> = emptyList()
-  )
+  ) : ValidatedObject
 
   data class CharacterAnalysis(
     val name: String = "",
@@ -93,10 +140,21 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
     val goals: List<String> = emptyList(),
     val conflicts: List<String> = emptyList(),
     val arc: String = ""
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (name.isBlank()) {
+        return "Character name must not be blank"
+      }
+      if (role.isBlank()) {
+        return "Character role must not be blank"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
+  
   data class CharacterAnalyses(
     val characters: List<CharacterAnalysis> = emptyList()
-  )
+  ) : ValidatedObject
 
 
   data class NarrativeOutcome(
@@ -105,10 +163,21 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
     val key_factors: List<String> = emptyList(),
     val consequences: List<String> = emptyList(),
     val resolution_path: String = ""
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (scenario.isBlank()) {
+        return "Outcome scenario must not be blank"
+      }
+      if (probability.isBlank()) {
+        return "Outcome probability must not be blank"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
+  
   data class NarrativeOutcomes(
     val outcomes: List<NarrativeOutcome> = emptyList()
-  )
+  ) : ValidatedObject
 
 
   data class NarrativeInconsistency(
@@ -117,10 +186,25 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
     val location: String = "",
     val severity: String = "",
     val suggested_resolution: String = ""
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (type.isBlank()) {
+        return "Inconsistency type must not be blank"
+      }
+      if (description.isBlank()) {
+        return "Inconsistency description must not be blank"
+      }
+      val validSeverities = setOf("critical", "major", "minor")
+      if (severity.isNotBlank() && severity.lowercase() !in validSeverities) {
+        return "Severity must be one of: ${validSeverities.joinToString(", ")}, got: $severity"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
+  
   data class NarrativeInconsistencies(
     val inconsistencies: List<NarrativeInconsistency> = emptyList()
-  )
+  ) : ValidatedObject
 
 
   override fun promptSegment(): String {

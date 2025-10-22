@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
@@ -26,14 +27,29 @@ class GeneratePresentationTask(
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
-  ) : FileTaskExecutionConfig(
+  ) : ValidatedObject, FileTaskExecutionConfig(
     task_type = GeneratePresentation.name,
     task_description = task_description,
     files = files,
     related_files = related_files,
     task_dependencies = task_dependencies,
     state = state
-  )
+  ) {
+    override fun validate(): String? {
+      // Validate that at least one file is specified
+      if (files.isNullOrEmpty()) {
+        return "GeneratePresentationTask requires at least one file to be specified"
+      }
+      
+      // Validate that the file has .html extension
+      val htmlFile = files.first()
+      if (!htmlFile.endsWith(".html", ignoreCase = true)) {
+        return "GeneratePresentationTask file must have .html extension: $htmlFile"
+      }
+      
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """

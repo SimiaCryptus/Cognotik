@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
@@ -27,11 +28,25 @@ class BrainstormingTask(
     val title: String = "",
     val description: String = "",
     val category: String? = null
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (title.isBlank()) return "BrainstormedOption title cannot be blank"
+      if (description.isBlank()) return "BrainstormedOption description cannot be blank"
+      return null
+    }
+  }
 
   data class BrainstormResult(
     val options: List<BrainstormedOption> = emptyList()
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (options.isEmpty()) return "BrainstormResult must contain at least one option"
+      options.forEach { option ->
+        option.validate()?.let { return it }
+      }
+      return null
+    }
+  }
 
   data class OptionAnalysis(
     val pros: List<String> = emptyList(),
@@ -40,7 +55,13 @@ class BrainstormingTask(
     val impact: String = "",
     val risks: List<String> = emptyList(),
     val requirements: List<String> = emptyList()
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (feasibility.isBlank()) return "OptionAnalysis feasibility cannot be blank"
+      if (impact.isBlank()) return "OptionAnalysis impact cannot be blank"
+      return null
+    }
+  }
 
 
   class BrainstormingTaskExecutionConfigData(
@@ -65,7 +86,17 @@ class BrainstormingTask(
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ) , ValidatedObject {
+    override fun validate(): String? {
+      if (problem_statement.isNullOrBlank()) {
+        return "BrainstormingTaskExecutionConfigData problem_statement cannot be null or blank"
+      }
+      if (target_option_count < 3 || target_option_count > 20) {
+        return "BrainstormingTaskExecutionConfigData target_option_count must be between 3 and 20"
+      }
+      return super.validate()
+    }
+  }
 
   override fun promptSegment(): String {
     return """

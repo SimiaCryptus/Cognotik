@@ -1,21 +1,22 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.actors.ChatAgent
-import com.simiacryptus.cognotik.actors.ParsedAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+ import com.simiacryptus.cognotik.actors.ChatAgent
+ import com.simiacryptus.cognotik.actors.ParsedAgent
+ import com.simiacryptus.cognotik.apps.general.renderMarkdown
+ import com.simiacryptus.cognotik.describe.Description
+ import com.simiacryptus.cognotik.plan.*
+ import com.simiacryptus.cognotik.util.LoggerFactory
+ import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+ import com.simiacryptus.cognotik.webui.session.SessionTask
+ import org.slf4j.Logger
+ import java.time.LocalDateTime
+ import java.time.format.DateTimeFormatter
 
-class LateralThinkingTask(
+ class LateralThinkingTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: LateralThinkingTaskExecutionConfigData?
-) : AbstractTask<LateralThinkingTask.LateralThinkingTaskExecutionConfigData, TaskTypeConfig>(
+ ) : AbstractTask<LateralThinkingTask.LateralThinkingTaskExecutionConfigData, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
@@ -49,7 +50,26 @@ class LateralThinkingTask(
       ?: "Apply lateral thinking to: ${problem?.take(100)}${if (problem?.length ?: 0 > 100) "..." else ""}",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (problem.isNullOrBlank()) {
+        return "Problem must be specified and cannot be blank"
+      }
+      if (num_alternatives < 1 || num_alternatives > 10) {
+        return "Number of alternatives must be between 1 and 10, got: $num_alternatives"
+      }
+      techniques?.forEach { technique ->
+        val validTechniques = listOf(
+          "reversal", "random_stimulus", "challenge_assumptions", 
+          "exaggeration", "escape", "metaphor", "provocation"
+        )
+        if (technique !in validTechniques) {
+          return "Invalid technique '$technique'. Valid techniques are: ${validTechniques.joinToString(", ")}"
+        }
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class LateralIdea(
     @Description("Title of the idea")
@@ -72,7 +92,26 @@ class LateralThinkingTask(
     val novelty_score: Double = 0.0,
     @Description("Feasibility score (0-1)")
     val feasibility_score: Double = 0.0
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (title.isBlank()) {
+        return "LateralIdea title cannot be blank"
+      }
+      if (technique.isBlank()) {
+        return "LateralIdea technique cannot be blank"
+      }
+      if (description.isBlank()) {
+        return "LateralIdea description cannot be blank"
+      }
+      if (novelty_score < 0.0 || novelty_score > 1.0) {
+        return "LateralIdea novelty_score must be between 0.0 and 1.0, got: $novelty_score"
+      }
+      if (feasibility_score < 0.0 || feasibility_score > 1.0) {
+        return "LateralIdea feasibility_score must be between 0.0 and 1.0, got: $feasibility_score"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class TechniqueApplication(
     @Description("The technique name")
@@ -85,7 +124,17 @@ class LateralThinkingTask(
     val ideas: List<LateralIdea> = emptyList(),
     @Description("Key insights from applying this technique")
     val insights: List<String> = emptyList()
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (technique.isBlank()) {
+        return "TechniqueApplication technique cannot be blank"
+      }
+      if (application_description.isBlank()) {
+        return "TechniqueApplication application_description cannot be blank"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class FeasibilityEvaluation(
     @Description("Overall feasibility assessment")
@@ -96,7 +145,14 @@ class LateralThinkingTask(
     val ideas_for_exploration: List<String> = emptyList(),
     @Description("Hybrid approaches combining multiple ideas")
     val hybrid_approaches: List<String> = emptyList()
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (overall_assessment.isBlank()) {
+        return "FeasibilityEvaluation overall_assessment cannot be blank"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class LateralThinkingResult(
     @Description("Applications of each technique")
@@ -109,7 +165,17 @@ class LateralThinkingTask(
     val recommended_approaches: List<String> = emptyList(),
     @Description("Feasibility evaluation if requested")
     val feasibility_evaluation: FeasibilityEvaluation? = null
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (technique_applications.isEmpty()) {
+        return "LateralThinkingResult must have at least one technique application"
+      }
+      if (all_ideas.isEmpty()) {
+        return "LateralThinkingResult must have at least one idea"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """

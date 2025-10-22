@@ -10,6 +10,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.simiacryptus.cognotik.PluginStartupActivity"/>
+    <notificationGroup id="Cognotik Feedback" displayType="BALLOON" isLogByDefault="false"/>
         <applicationService serviceImplementation="com.simiacryptus.cognotik.config.AppSettingsState"/>
         <applicationConfigurable
                 parentId="tools"

@@ -27,10 +27,10 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.math.min
 
-class CrawlerAgentTask(
+ class CrawlerAgentTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: CrawlerTaskExecutionConfigData?,
- ) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(
+) : AbstractTask<CrawlerAgentTask.CrawlerTaskExecutionConfigData, CrawlerAgentTask.CrawlerTaskTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
@@ -52,7 +52,29 @@ class CrawlerAgentTask(
         task_type: String = "CrawlerAgent",
         model: ApiChatModel? = null,
         name: String? = task_type,
-    ) : TaskTypeConfig(task_type = task_type, name = name, model = model)
+    ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
+        override fun validate(): String? {
+            if (max_pages_per_task != null && max_pages_per_task!! <= 0) {
+                return "max_pages_per_task must be greater than 0"
+            }
+            if (max_depth != null && max_depth!! < 0) {
+                return "max_depth must be non-negative"
+            }
+            if (max_queue_size != null && max_queue_size!! <= 0) {
+                return "max_queue_size must be greater than 0"
+            }
+            if (concurrent_page_processing != null && concurrent_page_processing!! <= 0) {
+                return "concurrent_page_processing must be greater than 0"
+            }
+            if (max_final_output_size != null && max_final_output_size!! <= 0) {
+                return "max_final_output_size must be greater than 0"
+            }
+            if (min_content_length != null && min_content_length!! < 0) {
+                return "min_content_length must be non-negative"
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     class CrawlerTaskExecutionConfigData(
         @Description("The search query to use for Google search") val search_query: String? = null,
@@ -67,7 +89,27 @@ class CrawlerAgentTask(
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ), ValidatedObject {
+        override fun validate(): String? {
+            if (search_query.isNullOrBlank() && direct_urls.isNullOrEmpty()) {
+                return "Either search_query or direct_urls must be provided"
+            }
+            if (!direct_urls.isNullOrEmpty()) {
+                direct_urls.forEach { url ->
+                    if (!url.matches(Regex("^(http|https)://.*"))) {
+                        return "Invalid URL format in direct_urls: $url"
+                    }
+                }
+            }
+            if (!allowed_domains.isNullOrBlank()) {
+                val domains = allowed_domains.split(Regex("\\s+")).filter { it.isNotBlank() }
+                if (domains.isEmpty()) {
+                    return "allowed_domains must contain at least one valid domain when specified"
+                }
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     var selenium: Selenium2S3? = null
 
@@ -108,11 +150,14 @@ class CrawlerAgentTask(
     }
 
     data class LinkData(
-        val link: String? = null,
-        val title: String? = null,
-        val tags: List<String>? = null,
-        @Description("1-100") val relevance_score: Double = 100.0
-    ) {
+      @Description("The URL of the link to crawl")
+      val url: String? = null,
+      @Description("The title of the link (optional)")
+      val title: String? = null,
+      @Description("Tags associated with the link (optional)")
+      val tags: List<String>? = null,
+      @Description("1-100") val relevance_score: Double = 100.0
+    ) : ValidatedObject {
         var started: Boolean = false
         var completed: Boolean = false
         var depth: Int = 0
@@ -121,6 +166,18 @@ class CrawlerAgentTask(
 
         // Priority calculation: higher relevance and lower depth = higher priority
         fun calculatePriority(): Double = relevance_score / (depth + 1.0)
+        override fun validate(): String? {
+            if (url.isNullOrBlank()) {
+                return "link cannot be null or blank"
+            }
+            if (!url.matches(Regex("^(http|https)://.*"))) {
+                return "link must be a valid HTTP/HTTPS URL: $url"
+            }
+            if (relevance_score < 1.0 || relevance_score > 100.0) {
+                return "relevance_score must be between 1 and 100"
+            }
+            return ValidatedObject.validateFields(this)
+        }
     }
 
     enum class PageType {
@@ -134,7 +191,17 @@ class CrawlerAgentTask(
         val page_information: Any? = null,
         val tags: List<String>? = null,
         val link_data: List<LinkData>? = null,
-    )
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (page_type == PageType.OK && page_information == null) {
+                return "page_information is required when page_type is OK"
+            }
+            link_data?.forEach { linkData ->
+                linkData.validate()?.let { return it }
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     override fun run(
         agent: TaskOrchestrator,
@@ -240,7 +307,7 @@ class CrawlerAgentTask(
                         return@forEach
                     }
                     LinkData(
-                        link = item.link,
+                        url = item.link,
                         title = item.title,
                         tags = item.tags,
                         relevance_score = item.relevance_score
@@ -411,12 +478,12 @@ class CrawlerAgentTask(
         maxQueueSize: Int
     ): Boolean = synchronized(pageQueueLock) {
         val typeConfig = typeConfig ?: throw RuntimeException()
-        if (newLink.link.isNullOrBlank()) {
+        if (newLink.url.isNullOrBlank()) {
             log.warn("Attempted to add invalid or empty URL to queue: $newLink")
             return false
         }
-        if (typeConfig.respect_robots_txt == true && !robotsTxtParser.isAllowed(newLink.link)) {
-            log.debug("Skipping URL disallowed by robots.txt: ${newLink.link}")
+        if (typeConfig.respect_robots_txt == true && !robotsTxtParser.isAllowed(newLink.url)) {
+            log.debug("Skipping URL disallowed by robots.txt: ${newLink.url}")
             return false
         }
         if (pageQueue.size >= maxQueueSize) {
@@ -424,16 +491,16 @@ class CrawlerAgentTask(
             return false
         }
         if (newLink.depth > maxDepth) {
-            log.debug("Skipping link due to depth limit (depth=${newLink.depth} > maxDepth=$maxDepth): ${newLink.link}")
+            log.debug("Skipping link due to depth limit (depth=${newLink.depth} > maxDepth=$maxDepth): ${newLink.url}")
             return false
         }
-        if (seenUrls.contains(newLink.link)) {
-            log.debug("Skipping duplicate link already in queue: ${newLink.link}")
+        if (seenUrls.contains(newLink.url)) {
+            log.debug("Skipping duplicate link already in queue: ${newLink.url}")
             return false
         }
-        seenUrls.add(newLink.link)
+        seenUrls.add(newLink.url)
         pageQueue.add(newLink)
-        log.debug("Added new link to queue: ${newLink.link} (depth=${newLink.depth}, priority=${newLink.calculatePriority()})")
+        log.debug("Added new link to queue: ${newLink.url} (depth=${newLink.depth}, priority=${newLink.calculatePriority()})")
         true
     }
 
@@ -442,7 +509,7 @@ class CrawlerAgentTask(
         val nextPage = pageQueue.poll()
         nextPage?.let {
             it.started = true
-            log.debug("Retrieved next page from queue: ${it.link} (priority=${it.calculatePriority()}, remaining=${pageQueue.size})")
+            log.debug("Retrieved next page from queue: ${it.url} (priority=${it.calculatePriority()}, remaining=${pageQueue.size})")
         }
         nextPage
     }
@@ -494,7 +561,7 @@ class CrawlerAgentTask(
     ): Boolean {
         log.info("Status before queuing next page: $queueStats, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
         val page = getNextPage() ?: return true
-        if (page.link.isNullOrBlank()) {
+        if (page.url.isNullOrBlank()) {
             log.error("Invalid page link encountered: $page")
             errorCount.incrementAndGet()
             page.completed = true
@@ -502,17 +569,17 @@ class CrawlerAgentTask(
             page.error = "Invalid or empty URL"
             return false
         }
-        activeTasks.add(page.link)
+        activeTasks.add(page.url)
 
-        log.info("Queuing page for processing: url='${page.link}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
+        log.info("Queuing page for processing: url='${page.url}', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
 
         val subTask = try {
             task.ui.newTask(false).apply {
-                tabs[page.link] = placeholder
+                tabs[page.url] = placeholder
                 task.update()
             }
         } catch (e: Exception) {
-            log.error("Failed to create subtask for URL: ${page.link}", e)
+            log.error("Failed to create subtask for URL: ${page.url}", e)
             errorCount.incrementAndGet()
             page.completed = true
             page.completed = true
@@ -524,7 +591,7 @@ class CrawlerAgentTask(
             try {
                 crawlPage(
                     processedCount,
-                    page.link,
+                    page.url,
                     page,
                     maxPages,
                     maxDepth,
@@ -538,13 +605,13 @@ class CrawlerAgentTask(
                     analysisResultsMap
                 )
             } catch (e: Exception) {
-                log.error("Uncaught exception in page processing task for: ${page.link}", e)
+                log.error("Uncaught exception in page processing task for: ${page.url}", e)
                 errorCount.incrementAndGet()
                 page.completed = true
                 page.completed = true
                 page.error = "Uncaught exception: ${e.message}"
             } finally {
-                activeTasks.remove(page.link)
+                activeTasks.remove(page.url)
             }
         })
         return false
@@ -682,11 +749,11 @@ class CrawlerAgentTask(
                                 linkData
                                     .take(10) // Limit links per page to prevent explosion
                                     .filter { link ->
-                                        val isValid = VALID_URL_PATTERN.matcher(link.link!!).matches()
-                                        val isNotBlacklisted = !isBlacklistedDomain(link.link)
-                                        val isNotDuplicate = allowRevisit || !seenUrls.contains(link.link)
+                                        val isValid = VALID_URL_PATTERN.matcher(link.url!!).matches()
+                                        val isNotBlacklisted = !isBlacklistedDomain(link.url)
+                                        val isNotDuplicate = allowRevisit || !seenUrls.contains(link.url)
                                         val isAllowedByRobots = typeConfig.respect_robots_txt != true ||
-                                                robotsTxtParser.isAllowed(link.link)
+                                                robotsTxtParser.isAllowed(link.url)
 
                                         if (!isValid) {
                                             skippedLinks.add(link to "Invalid URL format")
@@ -704,7 +771,7 @@ class CrawlerAgentTask(
                                         val newLink = link.apply { depth = page.depth + 1 }
                                         if (addToQueue(newLink, maxDepth, maxQueueSize)) {
                                             addedCount++
-                                            this.appendLine("- ✅ **[${link.title ?: "Untitled"}](${link.link})** (depth: ${newLink.depth}, relevance: ${link.relevance_score})")
+                                            this.appendLine("- ✅ **[${link.title ?: "Untitled"}](${link.url})** (depth: ${newLink.depth}, relevance: ${link.relevance_score})")
                                         } else {
                                             skippedLinks.add(link to "Queue limit reached or max depth exceeded")
                                         }
@@ -716,7 +783,7 @@ class CrawlerAgentTask(
                                     this.appendLine("<summary>Skipped Links (${skippedLinks.size})</summary>")
                                     this.appendLine()
                                     skippedLinks.forEach { (link, reason) ->
-                                        this.appendLine("- ⏭️ **[${link.title ?: "Untitled"}](${link.link})** - *${reason}*")
+                                        this.appendLine("- ⏭️ **[${link.title ?: "Untitled"}](${link.url})** - *${reason}*")
                                     }
                                     this.appendLine()
                                     this.appendLine("</details>")
@@ -939,7 +1006,7 @@ class CrawlerAgentTask(
         log.debug("Extracted ${links.size} valid links from markdown")
         return links.map { (linkText, linkUrl) ->
             LinkData(
-                link = linkUrl,
+                url = linkUrl,
                 title = linkText,
                 relevance_score = 50.0
             )

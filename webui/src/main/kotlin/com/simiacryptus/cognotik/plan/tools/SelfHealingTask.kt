@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -15,30 +16,51 @@ import kotlin.io.path.exists
 
 class SelfHealingTask(
     orchestrationConfig: OrchestrationConfig, planTask: SelfHealingTaskExecutionConfigData?
-) : AbstractTask<SelfHealingTask.SelfHealingTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+ ) : AbstractTask<SelfHealingTask.SelfHealingTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
     class SelfHealingTaskTypeConfig(
         task_type: String? = null,
         model: ApiChatModel? = null,
         @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf(),
         name: String? = task_type,
-    ) : TaskTypeConfig(task_type, name, model)
+    ) : TaskTypeConfig(task_type, name, model), ValidatedObject {
+        override fun validate(): String? {
+            if (commandAutoFixCommands.isNullOrEmpty()) {
+                return "commandAutoFixCommands must not be null or empty"
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     class SelfHealingTaskExecutionConfigData(
         @Description("The commands to be executed with their respective working directories") val commands: List<CommandWithWorkingDir>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
-    ) : TaskExecutionConfig(
+    ) : ValidatedObject, TaskExecutionConfig(
         task_type = SelfHealing.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ) {
+        override fun validate(): String? {
+            if (commands.isNullOrEmpty()) {
+                return "commands must not be null or empty"
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     data class CommandWithWorkingDir(
         @Description("The command to be executed") val command: List<String> = emptyList(),
         @Description("The relative path of the working directory") val workingDir: String? = null
-    )
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (command.isEmpty()) {
+                return "command must not be empty"
+            }
+            return null
+        }
+    }
 
     override fun promptSegment() = ("""
   SelfHealing - Run a command and automatically fix any issues that arise

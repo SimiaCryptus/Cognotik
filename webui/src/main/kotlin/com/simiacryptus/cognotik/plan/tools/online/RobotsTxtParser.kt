@@ -171,7 +171,7 @@ class RobotsTxtParser {
         return try {
             Regex("^$regexPattern").matches(path)
         } catch (e: Exception) {
-            log.warn("Invalid robots.txt pattern: $pattern", e)
+            log.info("Invalid robots.txt pattern: $pattern", e)
             false
         }
     }

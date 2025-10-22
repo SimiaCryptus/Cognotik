@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.time.LocalDateTime
@@ -28,7 +29,17 @@ class AdversarialReasoningTask(
     val potential_impact: String = "",
     val exploit_steps: List<String> = emptyList(),
     val mitigation_strategies: List<String> = emptyList()
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (category.isBlank()) return "VulnerabilityReport: category cannot be blank"
+      if (severity.isBlank()) return "VulnerabilityReport: severity cannot be blank"
+      if (severity.lowercase() !in listOf("critical", "high", "medium", "low")) {
+        return "VulnerabilityReport: severity must be one of: critical, high, medium, low"
+      }
+      if (description.isBlank()) return "VulnerabilityReport: description cannot be blank"
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   class AdversarialReasoningTaskExecutionConfigData(
     @Description("The target system, design, or argument to analyze for weaknesses")
@@ -56,7 +67,31 @@ class AdversarialReasoningTask(
       ?: "Red team analysis of '$target_system' with ${attack_vectors?.size ?: 0} attack vectors",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ) , ValidatedObject {
+    override fun validate(): String? {
+      if (target_system.isNullOrBlank()) {
+        return "AdversarialReasoningTaskExecutionConfigData: target_system is required"
+      }
+      
+      val validVectors = setOf("security", "performance", "logic", "business", "privacy", "compliance")
+      attack_vectors?.forEach { vector ->
+        if (vector.lowercase() !in validVectors) {
+          return "AdversarialReasoningTaskExecutionConfigData: invalid attack_vector '$vector'. Must be one of: ${validVectors.joinToString(", ")}"
+        }
+      }
+      
+      val validCapabilities = setOf("basic", "intermediate", "advanced", "nation-state")
+      if (adversary_capability.lowercase() !in validCapabilities) {
+        return "AdversarialReasoningTaskExecutionConfigData: invalid adversary_capability '$adversary_capability'. Must be one of: ${validCapabilities.joinToString(", ")}"
+      }
+      
+      if (max_vulnerabilities_per_vector !in 1..20) {
+        return "AdversarialReasoningTaskExecutionConfigData: max_vulnerabilities_per_vector must be between 1 and 20"
+      }
+      
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """

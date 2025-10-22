@@ -93,7 +93,20 @@ class SeleniumSessionTask(
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
-    )
+    ), ValidatedObject {
+        override fun validate(): String? {
+            if (url.isBlank() && sessionId == null) {
+                return "Either 'url' must be provided or 'sessionId' must be specified to reuse an existing session"
+            }
+            if (timeout <= 0) {
+                return "Timeout must be greater than 0"
+            }
+            if (commands.isEmpty() && url.isBlank() && sessionId == null) {
+                return "At least one command must be provided, or a URL/sessionId must be specified"
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     override fun promptSegment() = """
       SeleniumSession - Create and manage a stateful Selenium browser session

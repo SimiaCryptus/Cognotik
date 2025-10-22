@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
@@ -34,7 +35,17 @@ class ChainOfThoughtTask(
     task_description = problem_statement,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (problem_statement.isBlank()) {
+        return "problem_statement cannot be blank"
+      }
+      if (reasoning_depth < 1 || reasoning_depth > 20) {
+        return "reasoning_depth must be between 1 and 20, got: $reasoning_depth"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class ReasoningStep(
     val step_number: Int = 0,
@@ -42,13 +53,33 @@ class ChainOfThoughtTask(
     val conclusion: String = "",
     val confidence: Double = 0.0,
     val next_question: String? = null
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (step_number < 1) {
+        return "step_number must be positive, got: $step_number"
+      }
+      if (reasoning.isBlank()) {
+        return "reasoning cannot be blank"
+      }
+      if (conclusion.isBlank()) {
+        return "conclusion cannot be blank"
+      }
+      if (confidence < 0.0 || confidence > 1.0) {
+        return "confidence must be between 0.0 and 1.0, got: $confidence"
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   data class StepValidation(
     val is_valid: Boolean = true,
     val issues: List<String>? = null,
     val suggestions: String? = null
-  )
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """

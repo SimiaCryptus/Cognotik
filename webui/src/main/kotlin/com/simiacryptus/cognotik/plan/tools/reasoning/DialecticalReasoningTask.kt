@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.file.FileSystems
@@ -41,7 +42,18 @@ class DialecticalReasoningTask(
     task_description = "Dialectical analysis: '$thesis' vs '$antithesis'",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (thesis.isNullOrBlank()) return "Thesis must not be blank"
+      if (antithesis.isNullOrBlank()) return "Antithesis must not be blank"
+      if (synthesis_levels !in 1..5) return "Synthesis levels must be between 1 and 5, got: $synthesis_levels"
+      if (thesis == antithesis) return "Thesis and antithesis must be different"
+      if (thesis.length > 5000) return "Thesis is too long (max 5000 characters)"
+      if (antithesis.length > 5000) return "Antithesis is too long (max 5000 characters)"
+      if (context != null && context.length > 10000) return "Context is too long (max 10000 characters)"
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     return """

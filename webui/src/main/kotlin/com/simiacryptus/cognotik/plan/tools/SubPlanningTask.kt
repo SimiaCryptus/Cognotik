@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 
@@ -24,7 +25,17 @@ class SubPlanningTask(
     task_type: String = "RecursiveToolDefinition",
     model: ApiChatModel? = null,
     name: String? = task_type,
-  ) : TaskTypeConfig(task_type = task_type, name = name, model = model)
+  ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
+    override fun validate(): String? {
+      // Validate that taskSettings don't contain invalid configurations
+      taskSettings.forEach { (key, config) ->
+        if (config is ValidatedObject) {
+          config.validate()?.let { return "Invalid task setting '$key': $it" }
+        }
+      }
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   class SubPlanningTaskExecutionConfigData(
     @Description("The goal or objective for the sub-planning task") val planning_goal: String? = null,
@@ -34,7 +45,23 @@ class SubPlanningTask(
     state: TaskState? = null,
   ) : TaskExecutionConfig(
     task_type = SubPlanning.name, task_description = task_description, task_dependencies = task_dependencies?.toMutableList(), state = state
-  )
+  ), ValidatedObject {
+    override fun validate(): String? {
+      // Validate that either planning_goal or task_description is provided
+      if (planning_goal.isNullOrBlank() && task_description.isNullOrBlank()) {
+        return "Either planning_goal or task_description must be specified for SubPlanningTask"
+      }
+      
+      // Validate context items if present
+      context?.forEachIndexed { index, ctx ->
+        if (ctx.isBlank()) {
+          return "Context item at index $index is blank"
+        }
+      }
+      
+      return ValidatedObject.validateFields(this)
+    }
+  }
 
   override fun promptSegment(): String {
     val typeConfig = typeConfig
