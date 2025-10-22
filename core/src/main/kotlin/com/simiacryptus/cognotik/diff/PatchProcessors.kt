@@ -7,6 +7,16 @@ enum class PatchProcessors : PatchProcessor {
     override val matcher = FullReplacementProcessor()
   },
 
+  // Thermodynamic mode - DNA-like binding energy approach
+  Thermodynamic {
+    override val label = "Thermodynamic"
+    override val matcher = ThermodynamicPatchMatcher(
+      temperature = 1.0,
+      cooperativityBonus = 2.0,
+      entropyPenalty = 1.0
+    )
+  },
+  
   // Strict mode - exact matching only, no fuzzy logic
   Strict {
     override val label = "Strict"
