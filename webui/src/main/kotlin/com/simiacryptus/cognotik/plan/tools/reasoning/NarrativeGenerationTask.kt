@@ -108,9 +108,9 @@ class NarrativeGenerationTask(
 
   data class ActOutline(
     val act_number: Int = 1,
-    val title: String = "",
-    val purpose: String = "",
-    val scenes: List<SceneOutline> = emptyList()
+    val title: String? = "",
+    val purpose: String? = "",
+    val scenes: List<SceneOutline>? = emptyList()
   )
 
   data class SceneOutline(
@@ -283,7 +283,7 @@ Ensure the outline:
       )
 
       val outline = outlineAgent.answer(listOf("Generate outline")).obj
-      log.info("Generated outline: ${outline.acts.size} acts, ${outline.acts.sumOf { it.scenes.size }} scenes")
+      log.info("Generated outline: ${outline.acts.size} acts, ${outline.acts.sumOf { it.scenes?.size ?: 0 }} scenes")
 
       val outlineContent = buildString {
         appendLine("## ${outline.title}")
@@ -299,7 +299,7 @@ Ensure the outline:
           appendLine()
           appendLine("**Purpose:** ${act.purpose}")
           appendLine()
-          act.scenes.forEach { scene ->
+          act.scenes?.forEach { scene ->
             appendLine("#### Scene ${scene.scene_number}: ${scene.title}")
             appendLine()
             appendLine("- **Setting:** ${scene.setting}")
@@ -326,20 +326,20 @@ Ensure the outline:
       resultBuilder.append("${outline.premise}\n\n")
       resultBuilder.append("---\n\n")
 
-      overviewTask.add("✅ Phase 2 Complete: Outline created (${outline.acts.sumOf { it.scenes.size }} scenes)\n".renderMarkdown)
+      overviewTask.add("✅ Phase 2 Complete: Outline created (${outline.acts.sumOf { it.scenes?.size ?: 0 }} scenes)\n".renderMarkdown)
       overviewTask.add("\n### Phase 3: Scene Generation\n*Writing scenes iteratively with context...*\n".renderMarkdown)
       task.update()
 
       // Phase 3: Generate each scene iteratively
       log.info("Phase 3: Generating scenes")
-      val allScenes = outline.acts.flatMap { it.scenes }
+      val allScenes = outline.acts.flatMap { it.scenes ?: emptyList() } ?: emptyList()
       val generatedScenes = mutableListOf<GeneratedScene>()
       var cumulativeWordCount = 0
 
       allScenes.forEachIndexed { index, sceneOutline ->
-        log.info("Generating scene ${index + 1}/${allScenes.size}: ${sceneOutline.title}")
+        log.info("Generating scene ${index + 1}/${allScenes.size}: ${sceneOutline?.title}")
 
-        overviewTask.add("- Scene ${sceneOutline.scene_number}: ${sceneOutline.title} ".renderMarkdown)
+        overviewTask.add("- Scene ${sceneOutline?.scene_number}: ${sceneOutline?.title} ".renderMarkdown)
         task.update()
 
         val sceneTask = task.ui.newTask(false)
@@ -541,7 +541,7 @@ Provide the revised scene content only.
           appendLine()
 
           val actScenes = generatedScenes.filter { scene ->
-            act.scenes.any { it.scene_number == scene.scene_number }
+            act.scenes?.any { it.scene_number == scene.scene_number } == true
           }
 
           actScenes.forEach { scene ->
