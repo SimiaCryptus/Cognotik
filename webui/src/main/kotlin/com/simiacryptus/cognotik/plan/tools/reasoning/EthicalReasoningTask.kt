@@ -44,10 +44,9 @@ class EthicalReasoningTask(
       if (stakeholders.isNullOrEmpty()) {
         return "stakeholders must not be null or empty"
       }
-      val validFrameworks = setOf("utilitarianism", "deontology", "virtue_ethics", "care_ethics", "rights_based")
       ethical_frameworks?.forEach { framework ->
-        if (framework !in validFrameworks) {
-          return "Invalid ethical framework: $framework. Valid options are: ${validFrameworks.joinToString(", ")}"
+        if (framework.isBlank()){
+          return "Invalid ethical_frameworks entry: must not be blank"
         }
       }
       return ValidatedObject.validateFields(this)

@@ -42,35 +42,38 @@ open class WaterfallMode(
 
     private fun execute(userMessage: String, task: SessionTask) {
         try {
-            val coordinator = TaskOrchestrator(
-                user = user,
-                session = session,
-                dataStorage = this.task.ui.dataStorage!!,
-                root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                    ?: this.task.ui.dataStorage?.getSessionDir(
-                        user,
-                        session
-                    )?.toPath() ?: File(".").toPath()
-            )
+          val coordinator = TaskOrchestrator(
+            user = user,
+            session = session,
+            dataStorage = this.task.ui.dataStorage!!,
+            root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+              ?: this.task.ui.dataStorage?.getSessionDir(
+                user,
+                session
+              )?.toPath() ?: File(".").toPath()
+          )
 
-            val plan = initialPlan(
-                codeFiles = coordinator.codeFiles,
-                files = coordinator.files,
-                root = coordinator.root,
-                task = task,
-                userMessage = userMessage,
-                orchestrationConfig = orchestrationConfig,
-                contextFn = { contextData() },
-                describer = TaskContextYamlDescriber(orchestrationConfig)
-            )
 
-            coordinator.executePlan(
-                plan = plan.plan,
-                task = task,
-                userMessage = userMessage,
-                orchestrationConfig = orchestrationConfig,
-                // Use the budgeted and task-specific client
-            )
+          val describer = TaskContextYamlDescriber(orchestrationConfig)
+          Tasks.initDescriber(orchestrationConfig, describer)
+          val plan = initialPlan(
+            codeFiles = coordinator.codeFiles,
+            files = coordinator.files,
+            root = coordinator.root,
+            task = task,
+            userMessage = userMessage,
+            orchestrationConfig = orchestrationConfig,
+            contextFn = { contextData() },
+            describer = describer
+          )
+
+          coordinator.executePlan(
+            plan = plan.plan,
+            task = task,
+            userMessage = userMessage,
+            orchestrationConfig = orchestrationConfig,
+            // Use the budgeted and task-specific client
+          )
         } catch (e: Throwable) {
             task.error(e) // Report error on the current task
             log.error("Error in execute", e)

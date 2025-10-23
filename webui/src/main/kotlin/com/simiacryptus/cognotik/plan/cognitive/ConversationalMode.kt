@@ -171,13 +171,15 @@ open class ConversationalMode(
   private fun executeTask(userMessage: String, task: SessionTask, aggregateResponse: StringBuilder) {
     val describer = TaskContextYamlDescriber(orchestrationConfig)
     val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
+    Tasks.initDescriber(orchestrationConfig, describer)
     val parsedActor = ParsedAgent(
       name = "TaskChooser",
-      resultClass = AdaptivePlanningMode.Tasks::class.java,
-      exampleInstance = AdaptivePlanningMode.Tasks(
+      resultClass = Tasks::class.java,
+      exampleInstance = Tasks(
         listOfNotNull(availableTaskTypes.firstOrNull()?.let {
-        TaskType.getImpl(orchestrationConfig, it).executionConfig
-      }).toMutableList()),
+          TaskType.getImpl(orchestrationConfig, it).executionConfig
+        }).toMutableList()
+      ),
       prompt = buildString {
         append(systemPrompt)
         append("Available task types:\n")
@@ -198,10 +200,10 @@ open class ConversationalMode(
       temperature = orchestrationConfig.temperature,
       describer = describer,
       parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
-          "${taskType.name}:\n  ${
-            describer.describe(taskType.executionConfigClass).trim().trimIndent().indent("  ")
-          }".trim()
-        })
+        "${taskType.name}:\n  ${
+          describer.describe(taskType.executionConfigClass).trim().trimIndent().indent("  ")
+        }".trim()
+      })
     )
     // Use the expanded userMessage for task selection
     val input = getConversationContext() + listOf(

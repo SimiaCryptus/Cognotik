@@ -128,20 +128,27 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
 
     private fun getPackageGroup(taskType: TaskType<*, *>): String {
         return when {
-            taskType.name.contains("Reasoning") ||
-                    taskType.name in listOf(
-                "MultiPerspectiveAnalysis", "SocraticDialogue", "AnalogicalReasoning",
-                "CounterfactualAnalysis", "AbstractionLadder", "ConstraintSatisfaction",
-                "CausalInference", "DecompositionSynthesis", "NarrativeGeneration",
-                "AbductiveReasoning", "AdversarialReasoning", "ConstraintRelaxation",
-                "DialecticalReasoning", "LateralThinking", "NarrativeReasoning",
-                "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
-                "GameTheory", "FiniteStateMachine", "Brainstorming",
-                "ChainOfThought", "MetaCognitiveReflection", "GeneticOptimization",
-                "EthicalReasoning"
-                ) -> "Reasoning"
+          taskType.name.contains("Reasoning") ||
+              taskType.name in listOf(
+            "MultiPerspectiveAnalysis", "SocraticDialogue", "AnalogicalReasoning",
+            "CounterfactualAnalysis", "AbstractionLadder", "ConstraintSatisfaction",
+            "CausalInference", "DecompositionSynthesis",
+            "AbductiveReasoning", "AdversarialReasoning", "ConstraintRelaxation",
+            "DialecticalReasoning", "LateralThinking",
+            "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
+            "GameTheory", "FiniteStateMachine", "Brainstorming",
+            "ChainOfThought", "MetaCognitiveReflection", "GeneticOptimization",
+            "EthicalReasoning"
+          ) -> "Reasoning"
 
-            taskType.name in listOf(
+          taskType.name in listOf(
+            "NarrativeGeneration", "NarrativeReasoning", "ArticleGeneration",
+            "PersuasiveEssay", "TechnicalExplanation", "TutorialGeneration",
+            "BusinessProposal", "EmailCampaign", "InteractiveStory",
+            "ReportGeneration", "Scriptwriting", "JournalismReasoning"
+          ) -> "Writing"
+
+          taskType.name in listOf(
                 "Analysis", "FileModification", "FileSearch",
                 "WriteHtml", "GeneratePresentation"
             ) -> "File Operations"

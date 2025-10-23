@@ -9,8 +9,6 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningMode.Companion.initDescriber
-import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningMode.Tasks
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -542,7 +540,7 @@ open class HierarchicalPlanningMode(
     task: Task, chatInterface: ChatInterface
   ): ParsedAgent<Tasks> {
     val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
-    initDescriber(this.orchestrationConfig, this.describer)
+    Tasks.initDescriber(orchestrationConfig, describer)
     return ParsedAgent(
       name = "TaskTypeChooser",
       resultClass = Tasks::class.java, // Parse directly into TaskConfigBase

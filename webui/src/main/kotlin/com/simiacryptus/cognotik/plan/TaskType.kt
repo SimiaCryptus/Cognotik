@@ -21,6 +21,18 @@ import com.simiacryptus.cognotik.plan.tools.reasoning.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
+import com.simiacryptus.cognotik.plan.tools.writing.ArticleGenerationTask
+import com.simiacryptus.cognotik.plan.tools.writing.BusinessProposalTask
+import com.simiacryptus.cognotik.plan.tools.writing.EmailCampaignTask
+import com.simiacryptus.cognotik.plan.tools.writing.InteractiveStoryTask
+import com.simiacryptus.cognotik.plan.tools.writing.JournalismReasoningTask
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeReasoningTask
+import com.simiacryptus.cognotik.plan.tools.writing.PersuasiveEssayTask
+import com.simiacryptus.cognotik.plan.tools.writing.ReportGenerationTask
+import com.simiacryptus.cognotik.plan.tools.writing.ScriptwritingTask
+import com.simiacryptus.cognotik.plan.tools.writing.TechnicalExplanationTask
+import com.simiacryptus.cognotik.plan.tools.writing.TutorialGenerationTask
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -144,10 +156,10 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 TemporalReasoningTask(settings, task)
             }
             registerConstructor(NarrativeReasoningTask.NarrativeReasoning) { settings, task ->
-                NarrativeReasoningTask(settings, task)
+              NarrativeReasoningTask(settings, task)
             }
             registerConstructor(NarrativeGenerationTask.NarrativeGeneration) { settings, task ->
-                NarrativeGenerationTask(settings, task)
+              NarrativeGenerationTask(settings, task)
             }
             registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
                 GeneticOptimizationTask(settings, task)
@@ -158,6 +170,42 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(EthicalReasoningTask.EthicalReasoning) { settings, task ->
                 EthicalReasoningTask(settings, task)
             }
+          registerConstructor(ArticleGenerationTask.ArticleGeneration) { settings, task ->
+              ArticleGenerationTask(settings, task)
+          }
+          registerConstructor(JournalismReasoningTask.JournalismReasoning) { settings, task ->
+            JournalismReasoningTask(settings, task)
+          }
+          registerConstructor(PersuasiveEssayTask.PersuasiveEssay) { settings, task ->
+            PersuasiveEssayTask(settings, task)
+          }
+          registerConstructor(BusinessProposalTask.BusinessProposal) { settings, task ->
+            BusinessProposalTask(settings, task)
+          }
+          registerConstructor(EmailCampaignTask.EmailCampaign) { settings, task ->
+            EmailCampaignTask(settings, task)
+          }
+          registerConstructor(InteractiveStoryTask.InteractiveStory) { settings, task ->
+            InteractiveStoryTask(settings, task)
+          }
+          registerConstructor(JournalismReasoningTask.JournalismReasoning) { settings, task ->
+            JournalismReasoningTask(settings, task)
+          }
+          registerConstructor(TechnicalExplanationTask.TechnicalExplanation) { settings, task ->
+            TechnicalExplanationTask(settings, task)
+          }
+          registerConstructor(TutorialGenerationTask.TutorialGeneration) { settings, task ->
+            TutorialGenerationTask(settings, task)
+          }
+          registerConstructor(Analysis) { settings, task ->
+            AnalysisTask(settings, task)
+          }
+          registerConstructor(ReportGenerationTask.ReportGeneration) { settings, task ->
+            ReportGenerationTask(settings, task)
+          }
+          registerConstructor(ScriptwritingTask.Scriptwriting) { settings, task ->
+            ScriptwritingTask(settings, task)
+          }
         }
 
         fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(

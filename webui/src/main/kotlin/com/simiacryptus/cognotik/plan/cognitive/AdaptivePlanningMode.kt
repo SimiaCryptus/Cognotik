@@ -268,7 +268,7 @@ ${JsonUtil.toJson(taskConfig)}
     reasoningState: ReasoningState,
     task: SessionTask
   ): List<TaskData>? {
-    initDescriber(this.orchestrationConfig, this.describer)
+    Tasks.initDescriber(orchestrationConfig, describer)
     val parsedActor = ParsedAgent(
       name = "TaskChooser",
       resultClass = Tasks::class.java,
@@ -685,10 +685,6 @@ ${JsonUtil.toJson(taskConfig)}
     val description: String? = null
   )
 
-  data class Tasks(
-    val tasks: MutableList<TaskExecutionConfig>? = null
-  )
-
   companion object : CognitiveModeStrategy {
     override val inputCnt = 1
     override fun getCognitiveMode(
@@ -698,11 +694,6 @@ ${JsonUtil.toJson(taskConfig)}
       user: User?
     ) = AdaptivePlanningMode(task, orchestrationConfig, session, user)
 
-    fun initDescriber(orchestrationConfig: OrchestrationConfig, describer: TaskContextYamlDescriber) {
-      describer.clearSubTypes(TaskExecutionConfig::class.java)
-      TaskType.getAvailableTaskTypes(orchestrationConfig).forEach { taskType ->
-        describer.registerSubType(TaskExecutionConfig::class.java, taskType.executionConfigClass)
-      }
-    }
   }
 }
+

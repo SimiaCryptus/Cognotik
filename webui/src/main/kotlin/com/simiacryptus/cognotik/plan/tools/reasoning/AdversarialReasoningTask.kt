@@ -73,16 +73,14 @@ class AdversarialReasoningTask(
         return "AdversarialReasoningTaskExecutionConfigData: target_system is required"
       }
       
-      val validVectors = setOf("security", "performance", "logic", "business", "privacy", "compliance")
       attack_vectors?.forEach { vector ->
-        if (vector.lowercase() !in validVectors) {
-          return "AdversarialReasoningTaskExecutionConfigData: invalid attack_vector '$vector'. Must be one of: ${validVectors.joinToString(", ")}"
+        if (vector.isBlank()){
+          return "AdversarialReasoningTaskExecutionConfigData: invalid attack_vector '$vector'.}"
         }
       }
       
-      val validCapabilities = setOf("basic", "intermediate", "advanced", "nation-state")
-      if (adversary_capability.lowercase() !in validCapabilities) {
-        return "AdversarialReasoningTaskExecutionConfigData: invalid adversary_capability '$adversary_capability'. Must be one of: ${validCapabilities.joinToString(", ")}"
+      if (adversary_capability.isBlank()){
+        return "AdversarialReasoningTaskExecutionConfigData: adversary_capability cannot be blank"
       }
       
       if (max_vulnerabilities_per_vector !in 1..20) {

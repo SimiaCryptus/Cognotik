@@ -80,9 +80,8 @@ class GameTheoryTask(
       if (game_type.isNullOrBlank()) {
         return "game_type must not be null or blank"
       }
-      val validGameTypes = setOf("cooperative", "non-cooperative", "zero-sum", "repeated", "sequential")
-      if (game_type !in validGameTypes) {
-        return "game_type must be one of: ${validGameTypes.joinToString(", ")}"
+      if (game_type.isBlank()) {
+        return "game_type must not be blank"
       }
       if (iterations < 1) {
         return "iterations must be at least 1"
