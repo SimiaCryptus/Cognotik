@@ -170,7 +170,7 @@ private val clearButton by lazy {
     val totalTokens = rowData.dropLast(1).sumOf {
       (it[1].toIntOrNull() ?: 0) + (it[2].toIntOrNull() ?: 0)
     }
-    if (totalTokens >= 10000) {
+    if (totalTokens >= 1000000) {
       settings.feedbackRequested = true
       showFeedbackNotification()
     }
