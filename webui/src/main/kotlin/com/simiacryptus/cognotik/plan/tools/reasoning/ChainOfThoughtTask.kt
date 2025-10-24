@@ -4,19 +4,13 @@ import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
- import com.simiacryptus.cognotik.webui.session.SessionTask
- import org.slf4j.Logger
- import java.io.FileOutputStream
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.webui.session.SessionTask
+import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
-import java.nio.file.Path
-import java.nio.charset.StandardCharsets
 
- class ChainOfThoughtTask(
+class ChainOfThoughtTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: ChainOfThoughtTaskExecutionConfigData?
 ) : AbstractTask<ChainOfThoughtTask.ChainOfThoughtTaskExecutionConfigData, TaskTypeConfig>(
@@ -148,7 +142,7 @@ import java.nio.charset.StandardCharsets
     if (inputFileContent.isNotBlank()) {
       overviewContent += "\n## Input Files\n\n$inputFileContent\n\n"
     }
-    
+
     // Write to transcript
     transcript?.write(overviewContent.toByteArray())
     transcript?.flush()
@@ -732,6 +726,7 @@ import java.nio.charset.StandardCharsets
       }
     }
   }
+
   private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")

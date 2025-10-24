@@ -41,13 +41,13 @@ class GeneratePresentationTask(
       if (files.isNullOrEmpty()) {
         return "GeneratePresentationTask requires at least one file to be specified"
       }
-      
+
       // Validate that the file has .html extension
       val htmlFile = files.first()
       if (!htmlFile.endsWith(".html", ignoreCase = true)) {
         return "GeneratePresentationTask file must have .html extension: $htmlFile"
       }
-      
+
       return ValidatedObject.validateFields(this)
     }
   }
@@ -334,6 +334,7 @@ Provide only the CSS code within a code block:
 
     return ""
   }
+
   private fun transcript(task: SessionTask, slideContent: String, presentationTitle: String): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

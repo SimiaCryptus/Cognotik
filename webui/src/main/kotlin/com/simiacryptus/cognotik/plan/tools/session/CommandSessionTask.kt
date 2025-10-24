@@ -192,6 +192,7 @@ class CommandSessionTask(
     }
     return outputBuffer.toString()
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

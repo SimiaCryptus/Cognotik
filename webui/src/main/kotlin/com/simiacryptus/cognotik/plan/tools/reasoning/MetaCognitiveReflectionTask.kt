@@ -3,18 +3,13 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
- import org.slf4j.Logger
- import java.io.FileOutputStream
+import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
-import java.nio.file.Path
 
- class MetaCognitiveReflectionTask(
+class MetaCognitiveReflectionTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: MetaCognitiveReflectionTaskExecutionConfigData?
 ) : AbstractTask<MetaCognitiveReflectionTask.MetaCognitiveReflectionTaskExecutionConfigData, TaskTypeConfig>(
@@ -133,7 +128,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
     // Create transcript file
     val (transcriptLink, transcript) = initializeTranscript(task)
-    transcript?.use { stream ->
+    transcript?.let { stream ->
       stream.write("# Meta-Cognitive Reflection Transcript\n\n".toByteArray())
       stream.write("## Subject Task: `$subjectTaskId`\n\n".toByteArray())
       stream.write("**Timestamp**: ${java.time.Instant.now()}\n\n".toByteArray())
@@ -182,7 +177,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     } else {
       ""
     }
-    transcript?.use { stream ->
+    transcript?.let { stream ->
       writeToTranscript(stream, "## Input Context\n\n$fileContext\n\n$messagesContext\n\n$questionsContext\n\n")
     }
 
@@ -229,7 +224,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         ui = overviewTask.ui
       )
     )
-    transcript?.use { stream ->
+    transcript?.let { stream ->
       stream.write("\n## Reflection Parameters\n\n".toByteArray())
       stream.write("- **Subject Task**: `$subjectTaskId`\n".toByteArray())
       stream.write("- **Reflection Aspects**: $aspectsText\n".toByteArray())
@@ -257,7 +252,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
     try {
       val reflectionResult: String = chatAgent.answer(listOf(prompt))
-      transcript?.use { stream ->
+      transcript?.let { stream ->
         writeToTranscript(stream, "\n## Reflection Analysis\n\n")
         stream.write(reflectionResult.toByteArray())
         stream.write("\n\n".toByteArray())
@@ -281,7 +276,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
 
       val summary = generateReflectionSummary(reflectionResult)
-      transcript?.use { stream ->
+      transcript?.let { stream ->
         writeToTranscript(stream, "\n## Summary\n\n")
         stream.write(summary.toByteArray())
         stream.write("\n\n---\n\n".toByteArray())
@@ -310,14 +305,16 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
       val duration = System.currentTimeMillis() - startTime
       log.info("MetaCognitiveReflection task completed successfully for subject_task_id: $subjectTaskId in ${duration}ms. Summary length: ${summary.length}")
-      val finalOutput = "Meta-cognitive reflection completed. View detailed analysis: <a href='$transcriptLink' target='_blank'>transcript.md</a> <a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>\n\n$summary"
+      val finalOutput = "Meta-cognitive reflection completed. View detailed analysis: <a href='$transcriptLink' target='_blank'>transcript.md</a> <a href='${
+        transcriptLink.removeSuffix(".md")
+      }.html' target='_blank'>html</a> <a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>\n\n$summary"
       resultFn(finalOutput)
       transcript?.close()
 
 
     } catch (e: Exception) {
       log.error("Error during meta-cognitive reflection", e)
-      transcript?.use { stream ->
+      transcript?.let { stream ->
         stream.write("\n## ❌ Error\n\n".toByteArray())
         stream.write("```\n${e.message}\n```\n".toByteArray())
       }
@@ -367,6 +364,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
       log.error("Failed to write to transcript", e)
     }
   }
+
   private fun getInputFileContext(inputFiles: List<String>): String {
     if (inputFiles.isEmpty()) return ""
     return inputFiles.flatMap { pattern: String ->
@@ -417,17 +415,17 @@ You are thorough, objective, and focused on enhancing the quality of thinking.
     evaluateConfidence: Boolean
   ): String {
 
-    val fileContextBlock = if (fileContext.isNotBlank()) """
+    if (fileContext.isNotBlank()) """
 ## File Context:
 The following files provide additional context for the reflection:
 $fileContext
 """ else ""
-    val messagesContextBlock = if (messagesContext.isNotBlank()) """
+    if (messagesContext.isNotBlank()) """
 ## Messages Context:
 The following messages were provided as input:
 $messagesContext
 """ else ""
-    val questionsContextBlock = if (questionsContext.isNotBlank()) """
+    if (questionsContext.isNotBlank()) """
 $questionsContext
 """ else ""
 

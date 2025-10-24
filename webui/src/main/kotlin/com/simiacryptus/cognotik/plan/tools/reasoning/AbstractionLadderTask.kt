@@ -232,7 +232,10 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
       val duration = System.currentTimeMillis() - startTime
       log.info("Abstraction Ladder Analysis completed successfully - Concept: ${concept.truncateForDisplay(100)}, Levels: $levels")
       detailedOutputFile?.close()
-      task.safeComplete("Abstraction ladder analysis complete for '${concept.truncateForDisplay(100)}' with $levels levels in $direction direction(s) (${duration}ms)", log)
+      task.safeComplete(
+        "Abstraction ladder analysis complete for '${concept.truncateForDisplay(100)}' with $levels levels in $direction direction(s) (${duration}ms)",
+        log
+      )
       val summaryMessage = generateSummaryMessage(task, duration, concept, levels, direction)
       resultFn(summaryMessage)
 
@@ -445,6 +448,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
       }
     }
   }
+
   private fun getInputFileContent(): String {
     val inputFiles = executionConfig?.input_files ?: emptyList()
     if (inputFiles.isEmpty()) return "No input files provided."
@@ -474,6 +478,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         }
       }
   }
+
   private fun initializeDetailedOutput(task: SessionTask): FileOutputStream? {
     return try {
       val (link, file) = task.createFile("abstraction_ladder_analysis.md")
@@ -490,6 +495,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
       null
     }
   }
+
   private fun generateSummaryMessage(task: SessionTask, duration: Long, concept: String, levels: Int, direction: String): String {
     val (link, _) = task.createFile("abstraction_ladder_analysis.md")
     return """

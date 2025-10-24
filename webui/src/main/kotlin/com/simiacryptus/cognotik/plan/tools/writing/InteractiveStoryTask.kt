@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
@@ -10,26 +9,27 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
- import org.slf4j.Logger
- import java.io.FileOutputStream
- import java.time.LocalDateTime
- import java.time.format.DateTimeFormatter
+import org.slf4j.Logger
+import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
- class InteractiveStoryTask(
+class InteractiveStoryTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: InteractiveStoryTaskExecutionConfigData?
- ) : AbstractTask<InteractiveStoryTask.InteractiveStoryTaskExecutionConfigData, TaskTypeConfig>(
+) : AbstractTask<InteractiveStoryTask.InteractiveStoryTaskExecutionConfigData, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
-   protected val codeFiles = mutableMapOf<Path, String>()
+  protected val codeFiles = mutableMapOf<Path, String>()
 
   class InteractiveStoryTaskExecutionConfigData(
     @Description("The premise or starting scenario for the interactive story")
@@ -231,6 +231,7 @@ import java.io.File
   ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         """.trimIndent()
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()
@@ -257,8 +258,8 @@ import java.io.File
     val transcriptStream = transcript(task)
     val transcriptWriter = transcriptStream?.bufferedWriter()
     // Gather input context from files and messages
-    val inputContext = getInputFileCode() + 
-      if (messages.isNotEmpty()) "\n\n## User Input\n\n${messages.joinToString("\n\n")}" else ""
+    val inputContext = getInputFileCode() +
+        if (messages.isNotEmpty()) "\n\n## User Input\n\n${messages.joinToString("\n\n")}" else ""
 
 
     log.info("Starting InteractiveStoryTask for premise: '${executionConfig?.premise}'")
@@ -351,7 +352,7 @@ import java.io.File
       // Gather context from input files and messages
       val priorContext = getPriorCode(agent.executionState)
       val combinedContext = (if (inputContext.isNotBlank()) inputContext else "") +
-        (if (priorContext.isNotBlank()) "\n\n## Prior Context\n\n$priorContext" else "")
+          (if (priorContext.isNotBlank()) "\n\n## Prior Context\n\n$priorContext" else "")
 
       // Gather context
       if (priorContext.isNotBlank()) {
@@ -394,7 +395,7 @@ import java.io.File
       )
       task.update()
 
-val stateVars = if (executionConfig.track_state_variables) {
+      val stateVars = if (executionConfig.track_state_variables) {
         executionConfig.state_variables ?: listOf("health", "reputation", "resources")
       } else {
         emptyList()
@@ -769,9 +770,11 @@ Write a narrative segment (~${executionConfig.segment_word_count} words) that:
 5. Maintains the ${executionConfig.tone} tone
 6. Ends with the decision prompt clearly presented
 
-${if (executionConfig.track_state_variables && decisionPoint.state_snapshot.isNotEmpty()) {
-  "Current State: ${decisionPoint.state_snapshot.entries.joinToString(", ") { "${it.key}: ${it.value}" }}"
-} else ""}
+${
+            if (executionConfig.track_state_variables && decisionPoint.state_snapshot.isNotEmpty()) {
+              "Current State: ${decisionPoint.state_snapshot.entries.joinToString(", ") { "${it.key}: ${it.value}" }}"
+            } else ""
+          }
 
 Make the reader feel the weight of their choice. Each option should feel viable but lead to different outcomes.
           """.trimIndent(),
@@ -879,13 +882,17 @@ Ending Type: ${ending.ending_type}
 
 Ending Outline: ${ending.narrative}
 
-${if (ending.required_conditions.isNotEmpty()) {
-  "This ending is reached when: ${ending.required_conditions.entries.joinToString(", ") { "${it.key} ${it.value}" }}"
-} else ""}
+${
+            if (ending.required_conditions.isNotEmpty()) {
+              "This ending is reached when: ${ending.required_conditions.entries.joinToString(", ") { "${it.key} ${it.value}" }}"
+            } else ""
+          }
 
-${if (ending.path_summary.isNotEmpty()) {
-  "Key choices that led here:\n${ending.path_summary.joinToString("\n") { "- $it" }}"
-} else ""}
+${
+            if (ending.path_summary.isNotEmpty()) {
+              "Key choices that led here:\n${ending.path_summary.joinToString("\n") { "- $it" }}"
+            } else ""
+          }
 
 Story Parameters:
 - Genre: ${executionConfig.genre}
@@ -1100,7 +1107,10 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
 
       log.info("InteractiveStoryTask completed: words=$cumulativeWordCount, decisions=${structure.decision_points.size}, endings=${structure.endings.size}, time=${totalTime}ms")
 
-      task.safeComplete("Interactive story generation complete: $cumulativeWordCount words, ${structure.decision_points.size} decisions, ${structure.endings.size} endings in ${totalTime / 1000}s", log)
+      task.safeComplete(
+        "Interactive story generation complete: $cumulativeWordCount words, ${structure.decision_points.size} decisions, ${structure.endings.size} endings in ${totalTime / 1000}s",
+        log
+      )
       resultFn(buildFinalResultWithLinks(task, finalResult, storyMap, cumulativeWordCount, structure, totalTime))
 
     } catch (e: Exception) {
@@ -1138,6 +1148,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
       resultFn(errorOutput)
     }
   }
+
   private fun buildFinalResultWithLinks(
     task: SessionTask,
     summary: String,
@@ -1165,12 +1176,12 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
         appendLine("## Output Files")
         appendLine()
         appendLine("- [Story Map (Interactive)]($mapLink) - Complete playable story with all paths")
-        appendLine("  - [HTML](${ mapLink.removeSuffix(".md")}.html)")
-        appendLine("  - [PDF](${ mapLink.removeSuffix(".md")}.pdf)")
+        appendLine("  - [HTML](${mapLink.removeSuffix(".md")}.html)")
+        appendLine("  - [PDF](${mapLink.removeSuffix(".md")}.pdf)")
         appendLine()
         appendLine("- [Story Summary]($summaryLink) - Generation summary and statistics")
-        appendLine("  - [HTML](${ summaryLink.removeSuffix(".md")}.html)")
-        appendLine("  - [PDF](${ summaryLink.removeSuffix(".md")}.pdf)")
+        appendLine("  - [HTML](${summaryLink.removeSuffix(".md")}.html)")
+        appendLine("  - [PDF](${summaryLink.removeSuffix(".md")}.pdf)")
         appendLine()
         appendLine("## Quick Stats")
         appendLine()
@@ -1193,6 +1204,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
       }
     }
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -1228,7 +1240,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
     return if (choicesPerDecision.isEmpty()) {
       1
     } else {
-      choicesPerDecision.fold(1) { acc, choices -> 
+      choicesPerDecision.fold(1) { acc, choices ->
         (acc * choices).coerceAtMost(1000) // Cap at 1000 to avoid overflow
       }
     }
@@ -1257,6 +1269,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
               </ul>
             """
     )
+
     fun getAvailableFiles(
       path: Path,
       treatDocumentsAsText: Boolean = false,
@@ -1268,10 +1281,12 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
         listOf("Error listing files: ${e.message}")
       }
     }
+
     private val textExtensions = setOf(
       "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
       "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
     )
+
     fun isTextFile(file: File): Boolean {
       return textExtensions.contains(file.extension.lowercase())
     }

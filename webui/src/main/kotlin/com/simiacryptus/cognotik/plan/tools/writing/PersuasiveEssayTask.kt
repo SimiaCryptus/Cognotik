@@ -8,19 +8,17 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
-import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class PersuasiveEssayTask(
   orchestrationConfig: OrchestrationConfig,
@@ -196,7 +194,7 @@ class PersuasiveEssayTask(
     log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}', input_files: ${executionConfig?.input_files?.size ?: 0}")
     // Create transcript file
     val transcript = transcript(task)
-    transcript?.use { stream ->
+    transcript?.let { stream ->
       stream.write("# Persuasive Essay Generation Transcript\n\n".toByteArray())
       stream.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
       stream.write("**Thesis:** ${executionConfig?.thesis}\n\n".toByteArray())
@@ -257,7 +255,7 @@ class PersuasiveEssayTask(
     }
     overviewTask.add(overviewContent.renderMarkdown)
     task.update()
-    transcript?.use { stream ->
+    transcript?.let { stream ->
       stream.write("## Configuration\n\n".toByteArray())
       stream.write(overviewContent.toByteArray())
       stream.write("\n\n".toByteArray())
@@ -429,7 +427,7 @@ Ensure the outline:
       }
       outlineTask.add(outlineContent.renderMarkdown)
       task.update()
-      transcript?.use { stream ->
+      transcript?.let { stream ->
         stream.write("## Essay Outline\n\n".toByteArray())
         stream.write(outlineContent.toByteArray())
         stream.write("\n\n".toByteArray())
@@ -505,7 +503,7 @@ Speak directly to the ${executionConfig.target_audience}.
         }.renderMarkdown
       )
       task.update()
-      transcript?.use { stream ->
+      transcript?.let { stream ->
         stream.write("## Introduction\n\n".toByteArray())
         stream.write(introduction.content.toByteArray())
         stream.write("\n\n**Word Count:** ${introduction.word_count}\n\n".toByteArray())
@@ -619,7 +617,7 @@ Aim for approximately ${argOutline.estimated_word_count} words.
           }.renderMarkdown
         )
         task.update()
-        transcript?.use { stream ->
+        transcript?.let { stream ->
           stream.write("## Argument ${index + 1}: ${argOutline.claim}\n\n".toByteArray())
           stream.write(argumentSection.content.toByteArray())
           stream.write("\n\n**Word Count:** ${argumentSection.word_count}\n\n".toByteArray())
@@ -700,7 +698,7 @@ Aim for approximately $counterargumentWords words.
           }.renderMarkdown
         )
         task.update()
-        transcript?.use { stream ->
+        transcript?.let { stream ->
           stream.write("## Counterarguments & Rebuttals\n\n".toByteArray())
           stream.write(counterSection.content.toByteArray())
           stream.write("\n\n**Word Count:** ${counterSection.word_count}\n\n".toByteArray())
@@ -752,12 +750,14 @@ Write a conclusion (200-250 words) that:
 2. Synthesizes the main arguments
 3. Emphasizes the significance and implications
 4. Leaves a lasting impression
-${when (executionConfig.call_to_action.lowercase()) {
-  "strong" -> "5. Includes a powerful, specific call to action"
-  "moderate" -> "5. Suggests concrete next steps or considerations"
-  "reflective" -> "5. Invites thoughtful reflection on the topic"
-  else -> ""
-}}
+${
+          when (executionConfig.call_to_action.lowercase()) {
+            "strong" -> "5. Includes a powerful, specific call to action"
+            "moderate" -> "5. Suggests concrete next steps or considerations"
+            "reflective" -> "5. Invites thoughtful reflection on the topic"
+            else -> ""
+          }
+        }
 ${if (executionConfig.use_rhetorical_devices) "6. Uses rhetorical devices for emotional impact (pathos)" else ""}
 
 Make it memorable and motivating.
@@ -789,7 +789,7 @@ End on a strong note that reinforces your position.
         }.renderMarkdown
       )
       task.update()
-      transcript?.use { stream ->
+      transcript?.let { stream ->
         stream.write("## Conclusion\n\n".toByteArray())
         stream.write(conclusion.content.toByteArray())
         stream.write("\n\n**Word Count:** ${conclusion.word_count}\n\n".toByteArray())
@@ -867,7 +867,7 @@ Provide the complete revised essay.
             }.renderMarkdown
           )
           task.update()
-          transcript?.use { stream ->
+          transcript?.let { stream ->
             stream.write("### Revision Pass ${passNum + 1}\n\n".toByteArray())
             stream.write("Completed revision pass ${passNum + 1} of ${executionConfig.revision_passes}\n\n".toByteArray())
             stream.flush()
@@ -907,7 +907,7 @@ Provide the complete revised essay.
       finalTask.add(finalEssay.renderMarkdown)
       task.update()
       // Update transcript with final essay
-      transcript?.use { stream ->
+      transcript?.let { stream ->
         stream.write("## Complete Essay\n\n".toByteArray())
         stream.write(finalEssay.toByteArray())
         stream.write("\n\n".toByteArray())
@@ -938,7 +938,7 @@ Provide the complete revised essay.
         }.renderMarkdown
       )
       task.update()
-      transcript?.use { stream ->
+      transcript?.let { stream ->
         stream.write("---\n\n".toByteArray())
         stream.write("## Generation Complete\n\n".toByteArray())
         stream.write("**Total Word Count:** $cumulativeWordCount\n\n".toByteArray())
@@ -1001,7 +1001,7 @@ Provide the complete revised essay.
         }.renderMarkdown
       )
       task.update()
-      transcript?.use { stream ->
+      transcript?.let { stream ->
         stream.write("---\n\n".toByteArray())
         stream.write("## Error Occurred\n\n".toByteArray())
         stream.write("**Error:** ${e.message}\n\n".toByteArray())
@@ -1026,6 +1026,7 @@ Provide the complete revised essay.
       resultFn(errorOutput)
     }
   }
+
   private fun getInputFileContent(): String {
     val inputFiles = executionConfig?.input_files ?: return ""
     if (inputFiles.isEmpty()) return ""
@@ -1087,6 +1088,7 @@ Provide the complete revised essay.
       }
     }
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

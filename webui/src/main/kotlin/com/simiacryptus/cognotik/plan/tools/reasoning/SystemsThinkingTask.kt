@@ -9,13 +9,11 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
- import java.io.FileOutputStream
- import java.time.LocalDateTime
- import java.time.format.DateTimeFormatter
-import java.nio.charset.StandardCharsets
-import java.nio.file.Path
+import java.io.FileOutputStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
- class SystemsThinkingTask(
+class SystemsThinkingTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: SystemsThinkingTaskExecutionConfigData?
 ) : AbstractTask<SystemsThinkingTask.SystemsThinkingTaskExecutionConfigData, TaskTypeConfig>(
@@ -572,16 +570,18 @@ $simulationAnalysis
         appendLine()
         appendLine("---")
         appendLine()
-        appendLine("**Analysis Components:** ${
-          listOfNotNull(
-            if (executionConfig.identify_feedback_loops) "Feedback Loops" else null,
-            if (executionConfig.map_delays) "Delays" else null,
-            if (executionConfig.find_leverage_points) "Leverage Points" else null,
-            if (executionConfig.identify_archetypes) "Archetypes" else null,
-            if (executionConfig.analyze_emergent_behavior) "Emergent Behavior" else null,
-            if (interventions.isNotEmpty()) "Intervention Simulation (${interventions.size})" else null
-          ).joinToString(", ")
-        }")
+        appendLine(
+          "**Analysis Components:** ${
+            listOfNotNull(
+              if (executionConfig.identify_feedback_loops) "Feedback Loops" else null,
+              if (executionConfig.map_delays) "Delays" else null,
+              if (executionConfig.find_leverage_points) "Leverage Points" else null,
+              if (executionConfig.identify_archetypes) "Archetypes" else null,
+              if (executionConfig.analyze_emergent_behavior) "Emergent Behavior" else null,
+              if (interventions.isNotEmpty()) "Intervention Simulation (${interventions.size})" else null
+            ).joinToString(", ")
+          }"
+        )
       }
 
       val duration = System.currentTimeMillis() - startTime
@@ -600,16 +600,18 @@ $simulationAnalysis
           appendLine()
           appendLine("**Total Time:** ${duration / 1000.0}s")
           appendLine()
-          appendLine("**Components Analyzed:** ${
-            listOfNotNull(
-              if (executionConfig.identify_feedback_loops) "Feedback Loops" else null,
-              if (executionConfig.map_delays) "Delays & Accumulations" else null,
-              if (executionConfig.find_leverage_points) "Leverage Points" else null,
-              if (executionConfig.identify_archetypes) "System Archetypes" else null,
-              if (executionConfig.analyze_emergent_behavior) "Emergent Behavior" else null,
-              if (interventions.isNotEmpty()) "Intervention Simulation" else null
-            ).size
-          }")
+          appendLine(
+            "**Components Analyzed:** ${
+              listOfNotNull(
+                if (executionConfig.identify_feedback_loops) "Feedback Loops" else null,
+                if (executionConfig.map_delays) "Delays & Accumulations" else null,
+                if (executionConfig.find_leverage_points) "Leverage Points" else null,
+                if (executionConfig.identify_archetypes) "System Archetypes" else null,
+                if (executionConfig.analyze_emergent_behavior) "Emergent Behavior" else null,
+                if (interventions.isNotEmpty()) "Intervention Simulation" else null
+              ).size
+            }"
+          )
           appendLine()
           if (interventions.isNotEmpty()) {
             appendLine("**Interventions Simulated:** ${interventions.size}")
@@ -740,6 +742,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
         .joinToString("\n\n")
     }.joinToString("\n\n")
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -773,6 +776,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
     val match = mermaidBlockRegex.find(response)
     return match?.groupValues?.get(1)?.trim() ?: ""
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()
@@ -783,6 +787,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
     )
     return markdownTranscript
   }
+
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
       val (link, file) = task.createFile("systems_thinking_transcript.md")

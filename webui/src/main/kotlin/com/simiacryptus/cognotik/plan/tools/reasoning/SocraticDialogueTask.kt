@@ -4,20 +4,16 @@ import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
- import org.slf4j.Logger
- import java.io.FileOutputStream
- import java.time.LocalDateTime
- import java.time.format.DateTimeFormatter
+import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
- class SocraticDialogueTask(
+class SocraticDialogueTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: SocraticDialogueTaskExecutionConfigData?
 ) : AbstractTask<SocraticDialogueTask.SocraticDialogueTaskExecutionConfigData, TaskTypeConfig>(
@@ -79,6 +75,7 @@ import java.nio.file.Path
   ** Produces a structured dialogue transcript with insights
         """.trimIndent()
   }
+
   private fun getInputFileContext(): String = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -549,7 +546,13 @@ Provide a structured synthesis.
       val summaryMessage = buildString {
         appendLine(finalResult)
         appendLine("\n---\n")
-        appendLine("Full dialogue transcript: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>")
+        appendLine(
+          "Full dialogue transcript: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+            transcriptLink.removeSuffix(
+              ".md"
+            )
+          }.pdf' target='_blank'>pdf</a>"
+        )
       }
       resultFn(summaryMessage)
 
@@ -608,6 +611,7 @@ Provide a structured synthesis.
     )
     return Pair(link, markdownTranscript)
   }
+
   private fun getAvailableFiles(
     path: Path,
     treatDocumentsAsText: Boolean = false,

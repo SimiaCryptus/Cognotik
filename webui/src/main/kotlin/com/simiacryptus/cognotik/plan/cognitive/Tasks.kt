@@ -15,15 +15,16 @@ data class Tasks(
       errors.add("Tasks list cannot be null or empty.")
     } else {
       tasks.forEachIndexed { index, task ->
-        if(task is ValidatedObject) task.validate()?.let { errors.add(it) }
+        if (task is ValidatedObject) task.validate()?.let { errors.add(it) }
       }
     }
     return errors.ifEmpty { null }?.joinToString("; ")
   }
+
   companion object {
     fun initDescriber(orchestrationConfig: OrchestrationConfig, describer: TaskContextYamlDescriber) {
       describer.clearSubTypes(TaskExecutionConfig::class.java)
-      TaskType.Companion.getAvailableTaskTypes(orchestrationConfig).forEach { taskType ->
+      TaskType.getAvailableTaskTypes(orchestrationConfig).forEach { taskType ->
         describer.registerSubType(TaskExecutionConfig::class.java, taskType.executionConfigClass)
       }
     }

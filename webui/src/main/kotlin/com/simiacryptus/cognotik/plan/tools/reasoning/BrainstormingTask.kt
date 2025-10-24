@@ -6,24 +6,20 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import java.io.FileOutputStream
- import java.time.LocalDateTime
- import java.time.format.DateTimeFormatter
 import java.io.File
+import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.nio.charset.StandardCharsets
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
- class BrainstormingTask(
+class BrainstormingTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: BrainstormingTaskExecutionConfigData?
 ) : AbstractTask<BrainstormingTask.BrainstormingTaskExecutionConfigData, TaskTypeConfig>(
@@ -99,7 +95,7 @@ import java.nio.charset.StandardCharsets
     task_description = task_description,
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  ) , ValidatedObject {
+  ), ValidatedObject {
     override fun validate(): String? {
       if (problem_statement.isNullOrBlank()) {
         return "BrainstormingTaskExecutionConfigData problem_statement cannot be null or blank"
@@ -585,7 +581,6 @@ Brainstorming - Generate and analyze multiple solution options
   }
 
 
-
   private fun buildBrainstormPrompt(
     problemStatement: String,
     targetCount: Int,
@@ -757,6 +752,7 @@ Provide a comprehensive summary that includes:
 Provide a well-structured, actionable summary now.
         """.trimIndent()
   }
+
   private fun buildDetailedResults(
     problemStatement: String,
     options: List<BrainstormedOption>,
@@ -818,6 +814,7 @@ Provide a well-structured, actionable summary now.
       appendLine()
     }
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -848,6 +845,7 @@ Provide a well-structured, actionable summary now.
         ""
       }
     }
+
   private fun isTextFile(file: File): Boolean {
     val textExtensions = setOf(
       "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp",
@@ -855,6 +853,7 @@ Provide a well-structured, actionable summary now.
     )
     return textExtensions.contains(file.extension.lowercase())
   }
+
   private fun extractDocumentContent(file: File) = try {
     file.getReader().use { reader ->
       when (reader) {

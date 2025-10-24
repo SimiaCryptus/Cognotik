@@ -1,23 +1,23 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 
-import com.simiacryptus.cognotik.actors.ParsedAgent
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import java.nio.charset.StandardCharsets
-import java.nio.file.FileSystems
 import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
+import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -86,7 +86,7 @@ class TechnicalExplanationTask(
         return "topic must not be null or blank"
       }
       val validAudiences = setOf(
-        "layperson", "beginner", "intermediate", "expert", 
+        "layperson", "beginner", "intermediate", "expert",
         "manager", "software_engineer", "data_scientist", "student"
       )
       if (target_audience.lowercase() !in validAudiences) {
@@ -576,15 +576,15 @@ Ensure the outline:
         }
 
         // Find relevant analogies for this concept
-        val relevantAnalogies = outline.analogies.filter { 
+        val relevantAnalogies = outline.analogies.filter {
           it.technical_concept.contains(conceptOutline.concept, ignoreCase = true) ||
-          conceptOutline.concept.contains(it.technical_concept, ignoreCase = true)
+              conceptOutline.concept.contains(it.technical_concept, ignoreCase = true)
         }
 
         // Find relevant code examples
         val relevantCodeExamples = outline.code_examples.filter {
           it.purpose.contains(conceptOutline.concept, ignoreCase = true) ||
-          conceptOutline.concept.contains(it.purpose, ignoreCase = true)
+              conceptOutline.concept.contains(it.purpose, ignoreCase = true)
         }
 
         val sectionAgent = ParsedAgent(
@@ -603,13 +603,17 @@ Complexity: ${conceptOutline.complexity}
 
 $previousContext
 
-${if (relevantAnalogies.isNotEmpty()) {
-  "Analogies to Use:\n${relevantAnalogies.joinToString("\n") { "- ${it.analogy}: ${it.mapping_explanation}" }}\n"
-} else ""}
+${
+            if (relevantAnalogies.isNotEmpty()) {
+              "Analogies to Use:\n${relevantAnalogies.joinToString("\n") { "- ${it.analogy}: ${it.mapping_explanation}" }}\n"
+            } else ""
+          }
 
-${if (executionConfig.include_code_examples && relevantCodeExamples.isNotEmpty()) {
-  "Code Examples to Include:\n${relevantCodeExamples.joinToString("\n") { "- ${it.purpose} (${it.language})" }}\n"
-} else ""}
+${
+            if (executionConfig.include_code_examples && relevantCodeExamples.isNotEmpty()) {
+              "Code Examples to Include:\n${relevantCodeExamples.joinToString("\n") { "- ${it.purpose} (${it.language})" }}\n"
+            } else ""
+          }
 
 Write a section that:
 1. Opens with a clear introduction to the concept
@@ -627,9 +631,11 @@ Make it:
 - Approximately ${conceptOutline.estimated_paragraphs} paragraphs
 - Following ${executionConfig.explanation_format} format
 
-${if (executionConfig.include_code_examples) {
-  "For code snippets, provide:\n- The code in ${executionConfig.code_language ?: "appropriate language"}\n- Line-by-line or block explanation\n- Key points to highlight\n"
-} else ""}
+${
+            if (executionConfig.include_code_examples) {
+              "For code snippets, provide:\n- The code in ${executionConfig.code_language ?: "appropriate language"}\n- Line-by-line or block explanation\n- Key points to highlight\n"
+            } else ""
+          }
           """.trimIndent(),
           model = api,
           temperature = 0.7,
@@ -683,7 +689,7 @@ ${if (executionConfig.include_code_examples) {
         resultBuilder.append("## ${section.title}\n\n")
         resultBuilder.append(section.content)
         resultBuilder.append("\n\n")
-        
+
         if (section.code_snippets.isNotEmpty()) {
           section.code_snippets.forEach { snippet ->
             resultBuilder.append("```${snippet.language}\n")
@@ -716,8 +722,8 @@ ${if (executionConfig.include_code_examples) {
             appendLine()
           }.renderMarkdown
         )
-      markdownTranscript?.write("\n# Comparisons\n\n".toByteArray(StandardCharsets.UTF_8))
-      markdownTranscript?.write("**Status:** Comparing with related concepts...\n\n".toByteArray(StandardCharsets.UTF_8))
+        markdownTranscript?.write("\n# Comparisons\n\n".toByteArray(StandardCharsets.UTF_8))
+        markdownTranscript?.write("**Status:** Comparing with related concepts...\n\n".toByteArray(StandardCharsets.UTF_8))
         task.update()
 
         val comparisonAgent = ChatAgent(
@@ -755,7 +761,7 @@ Make comparisons clear and helpful for ${executionConfig.target_audience}.
           }.renderMarkdown
         )
         task.update()
-      markdownTranscript?.write("\n## Related Concepts\n\n${comparisons}\n\n".toByteArray(StandardCharsets.UTF_8))
+        markdownTranscript?.write("\n## Related Concepts\n\n${comparisons}\n\n".toByteArray(StandardCharsets.UTF_8))
 
         resultBuilder.append("## Comparisons with Related Concepts\n\n")
         resultBuilder.append(comparisons)
@@ -781,8 +787,8 @@ Make comparisons clear and helpful for ${executionConfig.target_audience}.
             appendLine()
           }.renderMarkdown
         )
-      markdownTranscript?.write("\n# Revision Process\n\n".toByteArray(StandardCharsets.UTF_8))
-      markdownTranscript?.write("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...\n\n".toByteArray(StandardCharsets.UTF_8))
+        markdownTranscript?.write("\n# Revision Process\n\n".toByteArray(StandardCharsets.UTF_8))
+        markdownTranscript?.write("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...\n\n".toByteArray(StandardCharsets.UTF_8))
         task.update()
 
         val fullExplanation = resultBuilder.toString()
@@ -977,6 +983,7 @@ Provide the complete revised explanation.
       resultFn(errorOutput)
     }
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -1032,6 +1039,7 @@ Provide the complete revised explanation.
       }
     }
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

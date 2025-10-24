@@ -10,14 +10,12 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
- import org.slf4j.Logger
- import java.io.FileOutputStream
- import java.time.LocalDateTime
- import java.time.format.DateTimeFormatter
+import org.slf4j.Logger
 import java.nio.file.FileSystems
-import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
- class ConstraintRelaxationTask(
+class ConstraintRelaxationTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: ConstraintRelaxationTaskExecutionConfigData?
 ) : AbstractTask<ConstraintRelaxationTask.ConstraintRelaxationTaskExecutionConfigData, TaskTypeConfig>(
@@ -517,7 +515,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         appendLine()
         appendLine("📄 [View Detailed Results]($detailedLink)")
       }
-      
+
       task.safeComplete(
         summaryMessage,
         log
@@ -573,10 +571,12 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         // For now, treat lower priority as potentially easier to satisfy
         constraints.entries.sortedBy { it.value }.map { it.key to it.value }
       }
+
       "by_dependency" -> {
         // Simple heuristic: reintroduce in priority order (could be enhanced with dependency analysis)
         constraints.entries.sortedByDescending { it.value }.map { it.key to it.value }
       }
+
       else -> constraints.entries.sortedByDescending { it.value }.map { it.key to it.value }
     }
   }
@@ -591,14 +591,17 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         val relaxCount = (orderedConstraints.size * 0.5).toInt().coerceAtLeast(1)
         orderedConstraints.takeLast(relaxCount).map { it.first }.toSet()
       }
+
       "selective" -> {
         // Relax constraints with priority < 0.7
         orderedConstraints.filter { it.second < 0.7 }.map { it.first }.toSet()
       }
+
       "hierarchical" -> {
         // Relax all but the top priority tier (>= 0.9)
         orderedConstraints.filter { it.second < 0.9 }.map { it.first }.toSet()
       }
+
       else -> {
         // Default to progressive
         val relaxCount = (orderedConstraints.size * 0.5).toInt().coerceAtLeast(1)
@@ -767,6 +770,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
     return agent.answer(listOf(""))
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")

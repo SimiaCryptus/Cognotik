@@ -456,10 +456,24 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             appendLine()
             appendLine("### Key Strengths")
             appendLine()
-            appendLine("- **Explanatory Power:** ${String.format("%.2f", bestHypothesis.explanatory_power)} - ${getStrengthDescription(bestHypothesis.explanatory_power)}")
+            appendLine(
+              "- **Explanatory Power:** ${
+                String.format(
+                  "%.2f",
+                  bestHypothesis.explanatory_power
+                )
+              } - ${getStrengthDescription(bestHypothesis.explanatory_power)}"
+            )
             appendLine("- **Simplicity:** ${String.format("%.2f", bestHypothesis.simplicity)} - ${getSimplicityDescription(bestHypothesis.simplicity)}")
             appendLine("- **Testability:** ${String.format("%.2f", bestHypothesis.testability)} - ${getTestabilityDescription(bestHypothesis.testability)}")
-            appendLine("- **Prior Probability:** ${String.format("%.2f", bestHypothesis.prior_probability)} - ${getProbabilityDescription(bestHypothesis.prior_probability)}")
+            appendLine(
+              "- **Prior Probability:** ${
+                String.format(
+                  "%.2f",
+                  bestHypothesis.prior_probability
+                )
+              } - ${getProbabilityDescription(bestHypothesis.prior_probability)}"
+            )
             appendLine()
             if (bestHypothesis.testable_predictions.isNotEmpty()) {
               appendLine("### Next Steps: Validate This Hypothesis")
@@ -864,6 +878,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
     score >= 0.4 -> "Possible - not impossible but less common"
     else -> "Unlikely - requires unusual circumstances"
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

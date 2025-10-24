@@ -13,10 +13,10 @@ import org.slf4j.Logger
 import java.io.File
 import java.io.FileOutputStream
 
- class CounterfactualAnalysisTask(
+class CounterfactualAnalysisTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: CounterfactualAnalysisTaskExecutionConfigData?
- ) : AbstractTask<CounterfactualAnalysisTask.CounterfactualAnalysisTaskExecutionConfigData, TaskTypeConfig>(
+) : AbstractTask<CounterfactualAnalysisTask.CounterfactualAnalysisTaskExecutionConfigData, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
@@ -198,7 +198,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
       ""
     }
 
-    val fullAnalysis = buildString {
+    buildString {
       appendLine("# Counterfactual Analysis Results")
       appendLine()
       appendLine("## Actual Scenario")
@@ -227,8 +227,9 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
 
     val (link, _) = task.createFile("analysis_results.md")
     task.complete("Analysis complete. Full results written to <a href='$link' target='_blank'>$link</a>")
-    
-    val summaryMessage = "Counterfactual analysis completed in ${(System.currentTimeMillis() - startTime) / 1000}s. Results: $actualScenario with ${counterfactuals.size} counterfactual scenarios analyzed."
+
+    val summaryMessage =
+      "Counterfactual analysis completed in ${(System.currentTimeMillis() - startTime) / 1000}s. Results: $actualScenario with ${counterfactuals.size} counterfactual scenarios analyzed."
     task.safeComplete("Analysis complete", log)
     resultFn(summaryMessage)
   }
@@ -369,6 +370,7 @@ $priorCode
       }
     }
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -399,6 +401,7 @@ $priorCode
         ""
       }
     }
+
   private fun isTextFile(file: File): Boolean {
     val textExtensions = setOf(
       "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
@@ -406,6 +409,7 @@ $priorCode
     )
     return textExtensions.contains(file.extension.lowercase())
   }
+
   private fun extractDocumentContent(file: File) = try {
     file.readText()
   } catch (e: Exception) {

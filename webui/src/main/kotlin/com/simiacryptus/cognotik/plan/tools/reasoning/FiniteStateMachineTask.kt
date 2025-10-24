@@ -597,9 +597,9 @@ Keep the summary concise but informative.
       val (link, _) = task.createFile("fsm_analysis.md")
       task.complete(
         "FSM analysis completed for: $conceptToModel. " +
-        "Full analysis written to <a href='$link' target='_blank'>$link</a> " +
-        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-        "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+            "Full analysis written to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
       )
       resultFn(conciseResult)
 
@@ -725,6 +725,7 @@ Create a comprehensive transition table covering:
 Format as a clear table or structured list.
     """.trimIndent()
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -755,6 +756,7 @@ Format as a clear table or structured list.
         ""
       }
     }
+
   private fun isTextFile(file: File): Boolean {
     val textExtensions = setOf(
       "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp",
@@ -762,6 +764,7 @@ Format as a clear table or structured list.
     )
     return textExtensions.contains(file.extension.lowercase())
   }
+
   private fun extractDocumentContent(file: File) = try {
     file.getReader().use { reader ->
       when (reader) {

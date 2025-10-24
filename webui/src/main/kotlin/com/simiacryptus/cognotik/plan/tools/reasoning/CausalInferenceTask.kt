@@ -3,25 +3,21 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
- import org.slf4j.Logger
- import java.io.FileOutputStream
- import java.nio.file.FileSystems
+import org.slf4j.Logger
+import java.io.FileOutputStream
+import java.nio.file.FileSystems
 import java.nio.file.Path
 
- class CausalInferenceTask(
+class CausalInferenceTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: CausalInferenceTaskExecutionConfigData?
 ) : AbstractTask<CausalInferenceTask.CausalInferenceTaskExecutionConfigData, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
-   protected val codeFiles = mutableMapOf<Path, String>()
+  protected val codeFiles = mutableMapOf<Path, String>()
 
   val maxOutputLength: Int = 20000
 
@@ -104,7 +100,7 @@ CausalInference - Identify causal relationships and root causes
       return
     }
     markdownTranscript = transcript(task)
-    
+
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
       val errorMsg = "CONFIGURATION ERROR: $validationError"
@@ -517,6 +513,7 @@ Provide a structured analysis with:
 Generate the causal analysis now:
         """.trimIndent()
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -543,6 +540,7 @@ Generate the causal analysis now:
         ""
       }
     }.let { if (it.isBlank()) "No input files specified" else it }
+
   private fun formatResultMessage(task: SessionTask, transcript: FileOutputStream?, summary: String): String {
     return try {
       val (link, _) = task.createFile("analysis_results.md")

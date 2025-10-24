@@ -642,6 +642,7 @@ Provide a brief validation assessment.
 
     }
   }
+
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
       val (link, file) = task.createFile("reasoning_transcript.md")
@@ -658,6 +659,7 @@ Provide a brief validation assessment.
       null
     }
   }
+
   private fun writeTranscriptHeader(
     stream: FileOutputStream,
     sourceDomain: String,
@@ -687,6 +689,7 @@ Provide a brief validation assessment.
       log.error("Failed to write transcript header", e)
     }
   }
+
   private fun writeToTranscript(stream: FileOutputStream, content: String) {
     try {
       stream.write(content.toByteArray(StandardCharsets.UTF_8))
@@ -695,6 +698,7 @@ Provide a brief validation assessment.
       log.error("Failed to write to transcript", e)
     }
   }
+
   private fun writeTranscriptFooter(stream: FileOutputStream, totalTime: Long, analogyCount: Int) {
     try {
       val footer = buildString {
@@ -739,6 +743,7 @@ Provide a brief validation assessment.
       }
     }
   }
+
   private fun getInputFileContent(): String {
     val inputFiles = executionConfig?.input_files ?: return ""
     if (inputFiles.isEmpty()) return ""
@@ -777,6 +782,7 @@ Provide a brief validation assessment.
       }
     }
   }
+
   private fun String.truncateForDisplay(maxLength: Int = 1000): String {
     return if (this.length > maxLength) this.substring(0, maxLength) + "\n...(truncated)" else this
   }

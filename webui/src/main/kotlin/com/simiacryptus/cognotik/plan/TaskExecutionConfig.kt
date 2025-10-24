@@ -15,34 +15,34 @@ open class TaskExecutionConfig(
   @Description("A brief user-facing description of the task")
   open var task_description: String? = null,
   @Description("A list of IDs of tasks that must be completed before this task can be executed. This defines upstream dependencies ensuring proper task order and information flow.")
-    var task_dependencies: MutableList<String>? = null,
+  var task_dependencies: MutableList<String>? = null,
   @Description("Ignore.")
-    var state: AbstractTask.TaskState? = null
+  var state: AbstractTask.TaskState? = null
 ) {
 
-    class PlanTaskTypeIdResolver : TypeIdResolverBase() {
-        override fun idFromValue(value: Any) = when (value) {
-            is TaskExecutionConfig -> if (value.task_type != null) {
-                value.task_type
-            } else {
-                throw IllegalArgumentException("Unknown task type")
-            }
+  class PlanTaskTypeIdResolver : TypeIdResolverBase() {
+    override fun idFromValue(value: Any) = when (value) {
+      is TaskExecutionConfig -> if (value.task_type != null) {
+        value.task_type
+      } else {
+        throw IllegalArgumentException("Unknown task type")
+      }
 
-            else -> {
-                throw IllegalArgumentException("Unexpected value type: ${value.javaClass}")
-            }
-        }
-
-        override fun idFromValueAndType(value: Any, suggestedType: Class<*>) = idFromValue(value)
-
-        override fun typeFromId(context: DatabindContext, id: String): JavaType {
-            val taskType = TaskType.valueOf(id.replace(" ", ""))
-            val subType = context.constructType(taskType.executionConfigClass)
-            return subType
-        }
-
-        override fun getMechanism(): JsonTypeInfo.Id {
-            return JsonTypeInfo.Id.CUSTOM
-        }
+      else -> {
+        throw IllegalArgumentException("Unexpected value type: ${value.javaClass}")
+      }
     }
+
+    override fun idFromValueAndType(value: Any, suggestedType: Class<*>) = idFromValue(value)
+
+    override fun typeFromId(context: DatabindContext, id: String): JavaType {
+      val taskType = TaskType.valueOf(id.replace(" ", ""))
+      val subType = context.constructType(taskType.executionConfigClass)
+      return subType
+    }
+
+    override fun getMechanism(): JsonTypeInfo.Id {
+      return JsonTypeInfo.Id.CUSTOM
+    }
+  }
 }

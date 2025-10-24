@@ -95,7 +95,7 @@ class MultiPerspectiveAnalysisTask(
       resultFn("CONFIGURATION ERROR: $error")
       return
     }
-    
+
     if (subject.isNullOrBlank()) {
       log.error("No analysis subject specified")
       task.safeComplete("CONFIGURATION ERROR: No analysis subject specified", log)

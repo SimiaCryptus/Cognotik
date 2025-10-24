@@ -52,14 +52,14 @@ class SubPlanningTask(
       if (planning_goal.isNullOrBlank() && task_description.isNullOrBlank()) {
         return "Either planning_goal or task_description must be specified for SubPlanningTask"
       }
-      
+
       // Validate context items if present
       context?.forEachIndexed { index, ctx ->
         if (ctx.isBlank()) {
           return "Context item at index $index is blank"
         }
       }
-      
+
       return ValidatedObject.validateFields(this)
     }
   }
@@ -281,6 +281,7 @@ class SubPlanningTask(
       appendLine("</details>")
     }
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

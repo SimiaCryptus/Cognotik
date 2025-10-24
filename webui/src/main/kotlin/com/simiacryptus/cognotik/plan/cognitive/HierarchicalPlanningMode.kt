@@ -984,7 +984,7 @@ open class HierarchicalPlanningMode(
             else -> "Deps: $it"
           }
         }
-      nodeSb.append("- " + ("""$statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let { it ->
+      nodeSb.append("- " + ("""$statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let {
         goalTasks[goal.id]?.ui?.linkToSession(
           it
         ) ?: it

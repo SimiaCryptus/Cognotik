@@ -22,207 +22,207 @@ import java.nio.file.Path
  * A cognitive mode that implements the traditional plan-ahead strategy.
  */
 open class WaterfallMode(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User?
+  override val task: SessionTask,
+  override val orchestrationConfig: OrchestrationConfig,
+  override val session: Session,
+  override val user: User?
 ) : CognitiveMode {
 
-    private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
+  private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
   private var transcriptStream: FileOutputStream? = null
 
-    override fun initialize() {
-        log.debug("Initializing PlanAheadMode")
-      transcriptStream = transcript(task)
+  override fun initialize() {
+    log.debug("Initializing PlanAheadMode")
+    transcriptStream = transcript(task)
+  }
+
+  override fun contextData(): List<String> = emptyList()
+
+  override fun handleUserMessage(userMessage: String, task: SessionTask) {
+    log.debug("Handling user message: $userMessage")
+    transcriptStream?.let { stream ->
+      stream.write("## User Message\n\n$userMessage\n\n".toByteArray())
+      stream.flush()
     }
+    execute(userMessage, task)
+  }
 
-    override fun contextData(): List<String> = emptyList()
+  private fun execute(userMessage: String, task: SessionTask) {
+    try {
+      val coordinator = TaskOrchestrator(
+        user = user,
+        session = session,
+        dataStorage = this.task.ui.dataStorage!!,
+        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+          ?: this.task.ui.dataStorage?.getSessionDir(
+            user,
+            session
+          )?.toPath() ?: File(".").toPath()
+      )
 
-    override fun handleUserMessage(userMessage: String, task: SessionTask) {
-        log.debug("Handling user message: $userMessage")
+
+      val describer = TaskContextYamlDescriber(orchestrationConfig)
+      Tasks.initDescriber(orchestrationConfig, describer)
+      val plan = initialPlan(
+        codeFiles = coordinator.codeFiles,
+        files = coordinator.files,
+        root = coordinator.root,
+        task = task,
+        userMessage = userMessage,
+        orchestrationConfig = orchestrationConfig,
+        contextFn = { contextData() },
+        describer = describer
+      )
       transcriptStream?.let { stream ->
-        stream.write("## User Message\n\n$userMessage\n\n".toByteArray())
+        stream.write("## Generated Plan\n\n${plan.planText}\n\n".toByteArray())
         stream.flush()
       }
-        execute(userMessage, task)
+
+      coordinator.executePlan(
+        plan = plan.plan,
+        task = task,
+        userMessage = userMessage,
+        orchestrationConfig = orchestrationConfig,
+        // Use the budgeted and task-specific client
+      )
+    } catch (e: Throwable) {
+      task.error(e) // Report error on the current task
+      log.error("Error in execute", e)
+      transcriptStream?.let { stream ->
+        stream.write("## Error\n\n```\n${e.message}\n${e.stackTraceToString()}\n```\n\n".toByteArray())
+        stream.flush()
+      }
+    } finally {
+      transcriptStream?.close()
     }
+  }
 
-    private fun execute(userMessage: String, task: SessionTask) {
-        try {
-          val coordinator = TaskOrchestrator(
-            user = user,
-            session = session,
-            dataStorage = this.task.ui.dataStorage!!,
-            root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: this.task.ui.dataStorage?.getSessionDir(
-                user,
-                session
-              )?.toPath() ?: File(".").toPath()
+  open fun initialPlan(
+    codeFiles: Map<Path, String>,
+    files: Array<File>,
+    root: Path,
+    task: SessionTask,
+    userMessage: String,
+    orchestrationConfig: OrchestrationConfig,
+    contextFn: () -> List<String> = { emptyList() },
+    describer: TypeDescriber
+  ): TaskBreakdownWithPrompt {
+    val toInput = inputFn(codeFiles, files, root)
+    task.echo(userMessage.renderMarkdown())
+    return if (!orchestrationConfig.autoFix)
+      Discussable(
+        task = task,
+        heading = "",
+        userMessage = { userMessage },
+        initialResponse = {
+          newPlan(
+            orchestrationConfig,
+            toInput(userMessage) + contextFn(),
+            describer,
+            task
           )
-
-
-          val describer = TaskContextYamlDescriber(orchestrationConfig)
-          Tasks.initDescriber(orchestrationConfig, describer)
-          val plan = initialPlan(
-            codeFiles = coordinator.codeFiles,
-            files = coordinator.files,
-            root = coordinator.root,
-            task = task,
-            userMessage = userMessage,
-            orchestrationConfig = orchestrationConfig,
-            contextFn = { contextData() },
-            describer = describer
-          )
-          transcriptStream?.let { stream ->
-            stream.write("## Generated Plan\n\n${plan.planText}\n\n".toByteArray())
-            stream.flush()
+        },
+        outputFn = {
+          try {
+            render(
+              withPrompt = TaskBreakdownWithPrompt(
+                prompt = userMessage,
+                plan = it.obj,
+                planText = it.text
+              )
+            )
+          } catch (e: Throwable) {
+            log.warn("Error rendering task breakdown", e)
+            task.error(e)
+            e.message ?: e.javaClass.simpleName
           }
-
-          coordinator.executePlan(
-            plan = plan.plan,
-            task = task,
-            userMessage = userMessage,
-            orchestrationConfig = orchestrationConfig,
-            // Use the budgeted and task-specific client
+        },
+        reviseResponse = { userMessages: List<Pair<String, ModelSchema.Role>> ->
+          newPlan(
+            orchestrationConfig,
+            userMessages.map { it.first },
+            describer,
+            task
           )
-        } catch (e: Throwable) {
-            task.error(e) // Report error on the current task
-            log.error("Error in execute", e)
-          transcriptStream?.let { stream ->
-            stream.write("## Error\n\n```\n${e.message}\n${e.stackTraceToString()}\n```\n\n".toByteArray())
-            stream.flush()
-          }
-        } finally {
-          transcriptStream?.close()
-        }
-    }
-
-    open fun initialPlan(
-        codeFiles: Map<Path, String>,
-        files: Array<File>,
-        root: Path,
-        task: SessionTask,
-        userMessage: String,
-        orchestrationConfig: OrchestrationConfig,
-        contextFn: () -> List<String> = { emptyList() },
-        describer: TypeDescriber
-    ): TaskBreakdownWithPrompt {
-        val toInput = inputFn(codeFiles, files, root)
-        task.echo(userMessage.renderMarkdown())
-        return if (!orchestrationConfig.autoFix)
-            Discussable(
-                task = task,
-                heading = "",
-                userMessage = { userMessage },
-                initialResponse = {
-                    newPlan(
-                        orchestrationConfig,
-                        toInput(userMessage) + contextFn(),
-                        describer,
-                        task
-                    )
-                },
-                outputFn = {
-                    try {
-                        render(
-                            withPrompt = TaskBreakdownWithPrompt(
-                                prompt = userMessage,
-                                plan = it.obj,
-                                planText = it.text
-                            )
-                        )
-                    } catch (e: Throwable) {
-                        log.warn("Error rendering task breakdown", e)
-                        task.error(e)
-                        e.message ?: e.javaClass.simpleName
-                    }
-                },
-                reviseResponse = { userMessages: List<Pair<String, ModelSchema.Role>> ->
-                    newPlan(
-                        orchestrationConfig,
-                        userMessages.map { it.first },
-                        describer,
-                        task
-                    )
-                },
-            ).call().let {
-                TaskBreakdownWithPrompt(
-                    prompt = userMessage,
-                    plan = filterPlan { it?.obj } ?: emptyMap(),
-                    planText = it?.text ?: "(no plan generated)"
-                )
-            }
-        else {
-            newPlan(
-                orchestrationConfig,
-                toInput(userMessage) + contextFn(),
-                describer,
-                task
-            ).let {
-                TaskBreakdownWithPrompt(
-                    prompt = userMessage,
-                    plan = filterPlan { it.obj } ?: emptyMap(),
-                    planText = it.text
-                )
-            }
-        }
-    }
-
-    data class TaskBreakdownWithPrompt(
-        val prompt: String,
-        val plan: Map<String, TaskExecutionConfig>,
-        val planText: String
-    )
-
-    fun render(
-        withPrompt: TaskBreakdownWithPrompt
-    ) = AgentPatterns.displayMapInTabs(
-        mapOf(
-            "Text" to withPrompt.planText.renderMarkdown(),
-            "JSON" to "${TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${TRIPLE_TILDE}".renderMarkdown(),
-            "Diagram" to (("```mermaid\n" + buildMermaidGraph(
-                (filterPlan {
-                    withPrompt.plan
-                } ?: emptyMap()).toMutableMap()
-            ) + "\n```\n").renderMarkdown())
+        },
+      ).call().let {
+        TaskBreakdownWithPrompt(
+          prompt = userMessage,
+          plan = filterPlan { it?.obj } ?: emptyMap(),
+          planText = it?.text ?: "(no plan generated)"
         )
-    )
-
-    open fun newPlan(
-        orchestrationConfig: OrchestrationConfig,
-        inStrings: List<String>,
-        describer: TypeDescriber,
-        task: SessionTask
-    ): ParsedResponse<Map<String, TaskExecutionConfig>> {
-        orchestrationConfig.absoluteWorkingDir?.apply { File(this).mkdirs() }
-        val planningActor = orchestrationConfig.planningActor(describer, task)
-        return planningActor.respond(
-            messages = planningActor.chatMessages(inStrings),
-            input = inStrings,
-        ).map(Map::class.java) {
-            it.tasksByID ?: emptyMap<String, TaskExecutionConfig>()
-        } as ParsedResponse<Map<String, TaskExecutionConfig>>
-    }
-
-    open fun inputFn(
-        codeFiles: Map<Path, String>,
-        files: Array<File>,
-        root: Path
-    ) = { str: String ->
-        listOf(
-            if (!codeFiles.all { it.key.toFile().isFile } || codeFiles.size > 2) "Files:\n${
-                codeFiles.keys.joinToString(
-                    "\n"
-                ) { "* $it" }
-            }  " else {
-                files.joinToString("\n\n") {
-                    val path = root.relativize(it.toPath())
-                    "## $path\n\n${(codeFiles[path] ?: "").let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
-                }
-            },
-            str
+      }
+    else {
+      newPlan(
+        orchestrationConfig,
+        toInput(userMessage) + contextFn(),
+        describer,
+        task
+      ).let {
+        TaskBreakdownWithPrompt(
+          prompt = userMessage,
+          plan = filterPlan { it.obj } ?: emptyMap(),
+          planText = it.text
         )
+      }
     }
+  }
+
+  data class TaskBreakdownWithPrompt(
+    val prompt: String,
+    val plan: Map<String, TaskExecutionConfig>,
+    val planText: String
+  )
+
+  fun render(
+    withPrompt: TaskBreakdownWithPrompt
+  ) = AgentPatterns.displayMapInTabs(
+    mapOf(
+      "Text" to withPrompt.planText.renderMarkdown(),
+      "JSON" to "${TRIPLE_TILDE}json\n${JsonUtil.toJson(withPrompt)}\n${TRIPLE_TILDE}".renderMarkdown(),
+      "Diagram" to (("```mermaid\n" + buildMermaidGraph(
+        (filterPlan {
+          withPrompt.plan
+        } ?: emptyMap()).toMutableMap()
+      ) + "\n```\n").renderMarkdown())
+    )
+  )
+
+  open fun newPlan(
+    orchestrationConfig: OrchestrationConfig,
+    inStrings: List<String>,
+    describer: TypeDescriber,
+    task: SessionTask
+  ): ParsedResponse<Map<String, TaskExecutionConfig>> {
+    orchestrationConfig.absoluteWorkingDir?.apply { File(this).mkdirs() }
+    val planningActor = orchestrationConfig.planningActor(describer, task)
+    return planningActor.respond(
+      messages = planningActor.chatMessages(inStrings),
+      input = inStrings,
+    ).map(Map::class.java) {
+      it.tasksByID ?: emptyMap<String, TaskExecutionConfig>()
+    } as ParsedResponse<Map<String, TaskExecutionConfig>>
+  }
+
+  open fun inputFn(
+    codeFiles: Map<Path, String>,
+    files: Array<File>,
+    root: Path
+  ) = { str: String ->
+    listOf(
+      if (!codeFiles.all { it.key.toFile().isFile } || codeFiles.size > 2) "Files:\n${
+        codeFiles.keys.joinToString(
+          "\n"
+        ) { "* $it" }
+      }  " else {
+        files.joinToString("\n\n") {
+          val path = root.relativize(it.toPath())
+          "## $path\n\n${(codeFiles[path] ?: "").let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
+        }
+      },
+      str
+    )
+  }
 
   /**
    * Creates a transcript file for logging the session's interactions.
@@ -244,13 +244,13 @@ open class WaterfallMode(
     return markdownTranscript
   }
 
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask,
-            orchestrationConfig: OrchestrationConfig,
-            session: Session,
-            user: User?
-        ) = WaterfallMode(task, orchestrationConfig, session, user)
-    }
+  companion object : CognitiveModeStrategy {
+    override val inputCnt = 1
+    override fun getCognitiveMode(
+      task: SessionTask,
+      orchestrationConfig: OrchestrationConfig,
+      session: Session,
+      user: User?
+    ) = WaterfallMode(task, orchestrationConfig, session, user)
+  }
 }

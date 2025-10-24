@@ -87,7 +87,7 @@ class ArticleGenerationTask(
     assess_newsworthiness = true,
     task_dependencies = task_dependencies,
     state = state,
-    input_files=input_files
+    input_files = input_files
   ) {
     override val task_type: String = ArticleGeneration.name
     override var task_description: String? = "Generate $article_format article about '$story_topic'"
@@ -194,7 +194,7 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
     val tabs = TabbedDisplay(task)
     // Create transcript file
     val transcript = transcript(task)
-    transcript?.use { out ->
+    transcript?.let { out ->
       out.write("# Article Generation Transcript\n\n".toByteArray())
       out.write("**Story Topic:** $storyTopic\n\n".toByteArray())
       out.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
@@ -708,6 +708,7 @@ Make each snippet:
       resultFn(errorOutput)
     }
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -738,6 +739,7 @@ Make each snippet:
         ""
       }
     }
+
   private fun isTextFile(file: File): Boolean {
     return textExtensions.contains(file.extension.lowercase())
   }

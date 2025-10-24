@@ -22,7 +22,7 @@ class GoogleProxy : SeedMethodFactory {
     override fun getSeedItems(
       taskConfig: CrawlerAgentTask.CrawlerTaskExecutionConfigData?,
       orchestrationConfig: OrchestrationConfig
-    ): List<SeedItem>? {
+    ): List<SeedItem> {
       SeedMethod.log.info("Starting Google Search via proxy with query: ${taskConfig?.search_query}")
 
       if (taskConfig?.search_query.isNullOrBlank()) {

@@ -9,14 +9,14 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
- import org.slf4j.Logger
- import java.io.FileOutputStream
- import java.time.LocalDateTime
- import java.time.format.DateTimeFormatter
+import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
- class ProbabilisticReasoningTask(
+class ProbabilisticReasoningTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: ProbabilisticReasoningTaskExecutionConfigData?
 ) : AbstractTask<ProbabilisticReasoningTask.ProbabilisticReasoningTaskExecutionConfigData, TaskTypeConfig>(
@@ -59,37 +59,37 @@ import java.nio.file.Path
       if (hypotheses.isNullOrEmpty()) {
         return "Hypotheses map cannot be null or empty"
       }
-      
+
       // Validate that all probabilities are between 0 and 1
       hypotheses.forEach { (hypothesis, probability) ->
         if (probability < 0.0 || probability > 1.0) {
           return "Probability for hypothesis '$hypothesis' must be between 0.0 and 1.0, got: $probability"
         }
       }
-      
+
       // Validate that probabilities sum to approximately 1.0
       val probabilitySum = hypotheses.values.sum()
       if (probabilitySum < 0.99 || probabilitySum > 1.01) {
         return "Prior probabilities must sum to 1.0 (current sum: $probabilitySum)"
       }
-      
+
       // Validate risk tolerance
       if (risk_tolerance !in listOf("low", "medium", "high")) {
         return "Risk tolerance must be one of: low, medium, high. Got: $risk_tolerance"
       }
-      
+
       // Validate evidence list if present
       evidence?.forEach { evidenceItem ->
         if (evidenceItem.isBlank()) {
           return "Evidence items cannot be blank"
         }
       }
-      
+
       // Validate decision context if present
       if (decision_context?.isBlank() == true) {
         return "Decision context cannot be blank if provided"
       }
-      
+
       // Call parent validation
       return ValidatedObject.validateFields(this)
     }
@@ -150,8 +150,8 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
     val ui = task.ui
     val tabs = TabbedDisplay(task)
     // Create transcript file
-    val transcriptStream = initializeTranscript(task)
-    transcriptStream?.use { stream ->
+    val transcript = initializeTranscript(task)
+    transcript?.let { stream ->
       stream.write("# Probabilistic Reasoning Analysis Transcript\n\n".toByteArray())
       stream.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
       stream.write("**Decision Context:** $decisionContext\n\n".toByteArray())
@@ -215,7 +215,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
       task.update()
     }
     val resultBuilder = StringBuilder()
-    var transcriptStreamRef = transcriptStream
+    transcript
 
     try {
       // Prior Probabilities tab
@@ -294,12 +294,12 @@ Consider both the strength of evidence and its reliability.
       var stepTime = System.currentTimeMillis() - stepStartTime
       log.debug("Bayesian update completed in ${stepTime}ms: ${updateResult.length} characters")
       // Write to transcript
-      transcriptStream?.write("\n## Bayesian Update\n\n".toByteArray())
-      transcriptStream?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
-      transcriptStream?.write(updateResult.toByteArray())
-      transcriptStream?.write("\n\n".toByteArray())
+      transcript?.write("\n## Bayesian Update\n\n".toByteArray())
+      transcript?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
+      transcript?.write(updateResult.toByteArray())
+      transcript?.write("\n\n".toByteArray())
 
-      
+
 
       updateTask.add(
         buildString {
@@ -358,12 +358,12 @@ Consider both the strength of evidence and its reliability.
         stepTime = System.currentTimeMillis() - stepStartTime
         log.debug("Expected value analysis completed in ${stepTime}ms: ${evResult.length} characters")
         // Write to transcript
-        transcriptStream?.write("\n## Expected Value Analysis\n\n".toByteArray())
-        transcriptStream?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
-        transcriptStream?.write(evResult.toByteArray())
-        transcriptStream?.write("\n\n".toByteArray())
+        transcript?.write("\n## Expected Value Analysis\n\n".toByteArray())
+        transcript?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
+        transcript?.write(evResult.toByteArray())
+        transcript?.write("\n\n".toByteArray())
 
-        
+
 
         evTask.add(
           buildString {
@@ -417,14 +417,14 @@ Consider both the strength of evidence and its reliability.
 
         val uncertaintyResult = bayesianAgent.answer(listOf(uncertaintyPrompt))
         stepTime = System.currentTimeMillis() - stepStartTime
-        log.debug("Uncertainty analysis completed in ${stepTime}ms: ${uncertaintyResult .length} characters")
+        log.debug("Uncertainty analysis completed in ${stepTime}ms: ${uncertaintyResult.length} characters")
         // Write to transcript
-        transcriptStream?.write("\n## Key Uncertainties\n\n".toByteArray())
-        transcriptStream?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
-        transcriptStream?.write(uncertaintyResult.toByteArray())
-        transcriptStream?.write("\n\n".toByteArray())
+        transcript?.write("\n## Key Uncertainties\n\n".toByteArray())
+        transcript?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
+        transcript?.write(uncertaintyResult.toByteArray())
+        transcript?.write("\n\n".toByteArray())
 
-        
+
 
         uncertaintyTask.add(
           buildString {
@@ -480,12 +480,12 @@ Consider both the strength of evidence and its reliability.
         stepTime = System.currentTimeMillis() - stepStartTime
         log.debug("Experiment suggestions completed in ${stepTime}ms: ${experimentResult.length} characters")
         // Write to transcript
-        transcriptStream?.write("\n## Suggested Experiments\n\n".toByteArray())
-        transcriptStream?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
-        transcriptStream?.write(experimentResult.toByteArray())
-        transcriptStream?.write("\n\n".toByteArray())
+        transcript?.write("\n## Suggested Experiments\n\n".toByteArray())
+        transcript?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
+        transcript?.write(experimentResult.toByteArray())
+        transcript?.write("\n\n".toByteArray())
 
-        
+
 
         experimentTask.add(
           buildString {
@@ -517,12 +517,12 @@ Consider both the strength of evidence and its reliability.
       val totalTime = System.currentTimeMillis() - startTime
       log.info("ProbabilisticReasoningTask completed: total_time=${totalTime}ms, hypotheses=${hypotheses.size}, evidence=${evidence.size}")
       // Write final summary to transcript
-      transcriptStream?.write("\n---\n\n".toByteArray())
-      transcriptStream?.write("## Analysis Complete\n\n".toByteArray())
-      transcriptStream?.write("**Total Time:** ${totalTime / 1000.0}s\n\n".toByteArray())
-      transcriptStream?.write("**Hypotheses Analyzed:** ${hypotheses.size}\n\n".toByteArray())
-      transcriptStream?.write("**Evidence Processed:** ${evidence.size}\n\n".toByteArray())
-      transcriptStream?.write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
+      transcript?.write("\n---\n\n".toByteArray())
+      transcript?.write("## Analysis Complete\n\n".toByteArray())
+      transcript?.write("**Total Time:** ${totalTime / 1000.0}s\n\n".toByteArray())
+      transcript?.write("**Hypotheses Analyzed:** ${hypotheses.size}\n\n".toByteArray())
+      transcript?.write("**Evidence Processed:** ${evidence.size}\n\n".toByteArray())
+      transcript?.write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
 
       // Final overview update
       overviewTask.add(
@@ -546,17 +546,17 @@ Consider both the strength of evidence and its reliability.
       val finalResult = resultBuilder.toString()
       task.safeComplete("Completed Bayesian analysis of ${hypotheses.size} hypotheses in ${totalTime / 1000.0}s", log)
       resultFn(finalResult)
-      transcriptStream?.close()
+      transcript?.close()
 
     } catch (e: Exception) {
       log.error("Error during probabilistic reasoning", e)
       task.error(e)
       // Write error to transcript
-      transcriptStream?.write("\n---\n\n".toByteArray())
-      transcriptStream?.write("## Error Occurred\n\n".toByteArray())
-      transcriptStream?.write("**Error:** ${e.message}\n\n".toByteArray())
-      transcriptStream?.write("**Type:** ${e.javaClass.simpleName}\n\n".toByteArray())
-      transcriptStream?.close()
+      transcript?.write("\n---\n\n".toByteArray())
+      transcript?.write("## Error Occurred\n\n".toByteArray())
+      transcript?.write("**Error:** ${e.message}\n\n".toByteArray())
+      transcript?.write("**Type:** ${e.javaClass.simpleName}\n\n".toByteArray())
+      transcript?.close()
 
       overviewTask.add(
         buildString {
@@ -588,6 +588,7 @@ Consider both the strength of evidence and its reliability.
       resultFn(errorOutput)
     }
   }
+
   private fun getInputFileCode(agent: TaskOrchestrator): String {
     return (executionConfig?.input_files ?: listOf())
       .flatMap { pattern: String ->
@@ -616,6 +617,7 @@ Consider both the strength of evidence and its reliability.
         }
       }
   }
+
   private fun writeInputFilesSection(stream: FileOutputStream, agent: TaskOrchestrator) {
     try {
       val inputFileContent = getInputFileCode(agent)
@@ -629,6 +631,7 @@ Consider both the strength of evidence and its reliability.
       log.error("Failed to write input files section to transcript", e)
     }
   }
+
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
       val (link, file) = task.createFile("reasoning_transcript.md")
@@ -645,6 +648,7 @@ Consider both the strength of evidence and its reliability.
       null
     }
   }
+
   private fun writeToTranscript(stream: FileOutputStream, content: String) {
     try {
       stream.write(content.toByteArray(StandardCharsets.UTF_8))
@@ -653,6 +657,7 @@ Consider both the strength of evidence and its reliability.
       log.error("Failed to write to transcript", e)
     }
   }
+
   private fun buildBayesianUpdatePrompt(
     hypotheses: Map<String, Double>,
     evidence: List<String>,

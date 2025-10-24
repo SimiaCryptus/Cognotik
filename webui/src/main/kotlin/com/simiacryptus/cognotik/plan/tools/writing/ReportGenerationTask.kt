@@ -14,16 +14,16 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
- import org.slf4j.Logger
- import java.io.FileOutputStream
- import java.time.LocalDateTime
- import java.time.format.DateTimeFormatter
+import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
- class ReportGenerationTask(
+class ReportGenerationTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: ReportGenerationTaskExecutionConfigData?
- ) : AbstractTask<ReportGenerationTask.ReportGenerationTaskExecutionConfigData, TaskTypeConfig>(
+) : AbstractTask<ReportGenerationTask.ReportGenerationTaskExecutionConfigData, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
@@ -100,7 +100,7 @@ import java.nio.file.FileSystems
         return "revision_passes must be between 0 and 5, got: $revision_passes"
       }
       val validReportTypes = setOf(
-        "status_update", "quarterly_review", "incident_report", 
+        "status_update", "quarterly_review", "incident_report",
         "performance_analysis", "market_research", "post_mortem",
         "financial_report", "project_summary"
       )
@@ -250,9 +250,9 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         """.trimIndent()
   }
 
-   protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
+  protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
 
-   override fun run(
+  override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
     task: SessionTask,
@@ -518,13 +518,15 @@ For each section, specify:
 - Relevant metrics to include
 - Estimated word count
 
-${if (executionConfig.include_visualizations) {
-  """Also suggest 3-5 data visualizations:
+${
+          if (executionConfig.include_visualizations) {
+            """Also suggest 3-5 data visualizations:
 - Type of chart/graph (line chart, bar chart, pie chart, table, etc.)
 - What data to visualize
 - Purpose of the visualization
 - Where to place it in the report"""
-} else ""}
+          } else ""
+        }
 
 Structure should be appropriate for ${executionConfig.target_audience} with a ${executionConfig.tone} tone.
           """.trimIndent(),
@@ -629,7 +631,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
         val relevantAnalyses = dataAnalyses.filter { analysis ->
           sectionOutline.metrics.any { metric ->
             analysis.metric_name.contains(metric, ignoreCase = true) ||
-            metric.contains(analysis.metric_name, ignoreCase = true)
+                metric.contains(analysis.metric_name, ignoreCase = true)
           }
         }
 
@@ -660,9 +662,16 @@ Write a complete section that:
 1. Opens with a clear topic statement
 2. Presents data and findings clearly
 3. Uses specific numbers and metrics
-${if (executionConfig.include_visualizations && outline.visualization_suggestions.any { it.placement.contains(sectionOutline.title, ignoreCase = true) }) {
-  "4. References suggested visualizations with [Chart: description] placeholders"
-} else ""}
+${
+            if (executionConfig.include_visualizations && outline.visualization_suggestions.any {
+                it.placement.contains(
+                  sectionOutline.title,
+                  ignoreCase = true
+                )
+              }) {
+              "4. References suggested visualizations with [Chart: description] placeholders"
+            } else ""
+          }
 5. Provides interpretation and context
 6. Connects to the overall report narrative
 7. Maintains a ${executionConfig.tone} tone appropriate for ${executionConfig.target_audience}
@@ -780,7 +789,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
         val recommendationsContent = buildString {
           appendLine("## Actionable Recommendations")
           appendLine()
-          recommendations.sortedByDescending { 
+          recommendations.sortedByDescending {
             when (it.priority.lowercase()) {
               "high" -> 3
               "medium" -> 2
@@ -860,8 +869,10 @@ Key Findings:
 ${outline.key_findings.joinToString("\n") { "- $it" }}
 
 Data Analysis:
-${dataAnalyses.filter { it.significance.lowercase() in setOf("critical", "important") }
-  .joinToString("\n") { "- ${it.metric_name}: ${it.interpretation}" }}
+${
+            dataAnalyses.filter { it.significance.lowercase() in setOf("critical", "important") }
+              .joinToString("\n") { "- ${it.metric_name}: ${it.interpretation}" }
+          }
 
 Identify 3-5 key risks or challenges, including:
 - Operational risks
@@ -1084,7 +1095,14 @@ Provide the complete revised report.
       val finalResult = buildString {
         appendLine("# Report Generation Summary: ${outline.title}")
         appendLine()
-        appendLine("A complete ${executionConfig.report_type.replace("_", " ")} report of **$cumulativeWordCount words** was generated in **${totalTime / 1000.0}s**.")
+        appendLine(
+          "A complete ${
+            executionConfig.report_type.replace(
+              "_",
+              " "
+            )
+          } report of **$cumulativeWordCount words** was generated in **${totalTime / 1000.0}s**."
+        )
         appendLine()
         appendLine("**Key Highlights:**")
         appendLine("- ${dataAnalyses.size} metrics analyzed")
@@ -1201,6 +1219,7 @@ Provide the complete revised report.
       }
     }
   }
+
   private fun isTextFile(file: java.io.File): Boolean {
     val textExtensions = setOf(
       "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
@@ -1208,6 +1227,7 @@ Provide the complete revised report.
     )
     return textExtensions.contains(file.extension.lowercase())
   }
+
   private fun extractDocumentContent(file: java.io.File) = try {
     file.getReader().use { reader ->
       when (reader) {
@@ -1223,6 +1243,7 @@ Provide the complete revised report.
       "Error reading file: ${e2.message}"
     }
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

@@ -71,26 +71,26 @@ class AdversarialReasoningTask(
       ?: "Red team analysis of '$target_system' with ${attack_vectors?.size ?: 0} attack vectors",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  ) , ValidatedObject {
+  ), ValidatedObject {
     override fun validate(): String? {
       if (target_system.isNullOrBlank()) {
         return "AdversarialReasoningTaskExecutionConfigData: target_system is required"
       }
-      
+
       attack_vectors?.forEach { vector ->
-        if (vector.isBlank()){
+        if (vector.isBlank()) {
           return "AdversarialReasoningTaskExecutionConfigData: invalid attack_vector '$vector'.}"
         }
       }
-      
-      if (adversary_capability.isBlank()){
+
+      if (adversary_capability.isBlank()) {
         return "AdversarialReasoningTaskExecutionConfigData: adversary_capability cannot be blank"
       }
-      
+
       if (max_vulnerabilities_per_vector !in 1..20) {
         return "AdversarialReasoningTaskExecutionConfigData: max_vulnerabilities_per_vector must be between 1 and 20"
       }
-      
+
       return ValidatedObject.validateFields(this)
     }
   }
@@ -147,7 +147,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     }
     log.info(
       "Configuration: vectors=${attackVectors.size}, capability=$adversaryCapability, " +
-        "exploits=$generateExploits, mitigations=$suggestMitigations"
+          "exploits=$generateExploits, mitigations=$suggestMitigations"
     )
 
     val ui = task.ui
@@ -405,7 +405,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
           }.renderMarkdown
         )
         task.update()
-      transcriptStream?.let {
+        transcriptStream?.let {
           it.write("## 🛡️ Mitigation Strategies\n\n".toByteArray())
         }
 
@@ -540,7 +540,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         appendLine("- **Critical/High Severity:** ${allVulnerabilities.count { it.severity in listOf("critical", "high") }}")
         appendLine("- **Attack Vectors:** ${attackVectors.joinToString(", ")}")
         appendLine()
-        
+
         if (allVulnerabilities.isNotEmpty()) {
           appendLine("## Top Vulnerabilities")
           appendLine()
@@ -553,7 +553,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
               appendLine()
             }
         }
-        
+
         appendLine("## Statistics")
         appendLine("- Analysis Time: ${totalTime / 1000.0}s")
         appendLine("- Vectors Analyzed: ${attackVectors.size}")
@@ -568,8 +568,8 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
       log.info(
         "AdversarialReasoningTask completed: total_time=${totalTime}ms, " +
-          "vectors=${attackVectors.size}, vulnerabilities=${allVulnerabilities.size}, " +
-          "edge_cases=${allEdgeCases.size}, failure_modes=${allFailureModes.size}"
+            "vectors=${attackVectors.size}, vulnerabilities=${allVulnerabilities.size}, " +
+            "edge_cases=${allEdgeCases.size}, failure_modes=${allFailureModes.size}"
       )
 
       resultFn(conciseResult)
@@ -700,6 +700,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         ""
       }
     }
+
   private fun isTextFile(file: java.io.File): Boolean {
     val textExtensions = setOf(
       "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
@@ -707,6 +708,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     )
     return textExtensions.contains(file.extension.lowercase())
   }
+
   private fun extractDocumentContent(file: java.io.File): String = try {
     file.getReader().use { reader ->
       when (reader) {
@@ -804,24 +806,24 @@ Consider both immediate fixes and long-term architectural improvements.
       appendLine("## Target System")
       appendLine(targetSystem)
       appendLine()
-      
+
       if (priorContext.isNotBlank()) {
         appendLine("## System Context")
         appendLine(priorContext.truncateForDisplay(5000))
         appendLine()
       }
-      
+
       if (fileContext.isNotBlank()) {
         appendLine(fileContext)
         appendLine()
       }
-      
+
       appendLine("## Attack Vector Focus")
       appendLine("**Vector:** $vector")
       appendLine()
       appendLine("**Your Capability Level:** $adversaryCapability")
       appendLine()
-      
+
       if (!challengeAssumptions.isNullOrEmpty()) {
         appendLine("## Assumptions to Challenge")
         challengeAssumptions.forEach { assumption ->
@@ -829,7 +831,7 @@ Consider both immediate fixes and long-term architectural improvements.
         }
         appendLine()
       }
-      
+
       appendLine("## Analysis Requirements")
       appendLine()
       appendLine("Identify up to $maxVulnerabilities vulnerabilities in the '$vector' category.")
@@ -840,11 +842,11 @@ Consider both immediate fixes and long-term architectural improvements.
       appendLine("3. **Description**: Clear explanation of the weakness")
       appendLine("4. **Attack Scenario**: How an attacker would exploit this")
       appendLine("5. **Potential Impact**: What damage could be done")
-      
+
       if (generateExploits) {
         appendLine("6. **Exploit Steps**: Detailed technical steps to exploit")
       }
-      
+
       appendLine()
       appendLine("Also identify:")
       appendLine("- **Edge Cases**: Unusual inputs or conditions that could cause problems")
@@ -876,7 +878,7 @@ Consider both immediate fixes and long-term architectural improvements.
       appendLine()
       appendLine("## Identified Vulnerabilities")
       appendLine()
-      
+
       vulnerabilities
         .sortedByDescending { severityToInt(it.severity) }
         .forEach { vuln ->
@@ -884,7 +886,7 @@ Consider both immediate fixes and long-term architectural improvements.
           appendLine(vuln.description)
           appendLine()
         }
-      
+
       appendLine("## Required Mitigations")
       appendLine()
       appendLine("For each vulnerability category, provide:")
@@ -907,15 +909,15 @@ Consider both immediate fixes and long-term architectural improvements.
 
   private fun parseVulnerabilities(analysisResult: String, vector: String): List<VulnerabilityReport> {
     val vulnerabilities = mutableListOf<VulnerabilityReport>()
-    
+
     // Simple parsing - look for severity indicators and structure
     val lines = analysisResult.lines()
     var currentVuln: MutableMap<String, String>? = null
     var currentSection = ""
-    
+
     lines.forEach { line ->
       val trimmed = line.trim()
-      
+
       // Detect severity markers
       when {
         trimmed.matches(Regex(".*\\b(critical|high|medium|low)\\b.*", RegexOption.IGNORE_CASE)) -> {
@@ -931,7 +933,7 @@ Consider both immediate fixes and long-term architectural improvements.
               )
             )
           }
-          
+
           // Start new vulnerability
           currentVuln = mutableMapOf()
           val severityMatch = Regex("\\b(critical|high|medium|low)\\b", RegexOption.IGNORE_CASE)
@@ -939,12 +941,12 @@ Consider both immediate fixes and long-term architectural improvements.
           currentVuln["severity"] = severityMatch?.value?.lowercase() ?: "medium"
           currentVuln["category"] = trimmed.replace(Regex("\\*+|#+|severity:?|\\b(critical|high|medium|low)\\b", RegexOption.IGNORE_CASE), "").trim()
         }
-        
+
         trimmed.matches(Regex("\\*\\*?(description|attack|scenario|impact|exploit).*", RegexOption.IGNORE_CASE)) -> {
           currentSection = Regex("(description|attack|scenario|impact|exploit)", RegexOption.IGNORE_CASE)
             .find(trimmed)?.value?.lowercase() ?: ""
         }
-        
+
         currentVuln != null && trimmed.isNotEmpty() && !trimmed.startsWith("#") && !trimmed.startsWith("*") -> {
           when (currentSection) {
             "description" -> currentVuln["description"] = (currentVuln["description"] ?: "") + " " + trimmed
@@ -954,7 +956,7 @@ Consider both immediate fixes and long-term architectural improvements.
         }
       }
     }
-    
+
     // Save last vulnerability
     currentVuln?.let { vuln ->
       vulnerabilities.add(
@@ -967,7 +969,7 @@ Consider both immediate fixes and long-term architectural improvements.
         )
       )
     }
-    
+
     return vulnerabilities
   }
 
@@ -975,16 +977,18 @@ Consider both immediate fixes and long-term architectural improvements.
     val edgeCases = mutableListOf<String>()
     val lines = analysisResult.lines()
     var inEdgeCaseSection = false
-    
+
     lines.forEach { line ->
       val trimmed = line.trim()
       when {
         trimmed.matches(Regex(".*edge\\s*case.*", RegexOption.IGNORE_CASE)) -> {
           inEdgeCaseSection = true
         }
+
         trimmed.matches(Regex(".*failure\\s*mode.*", RegexOption.IGNORE_CASE)) -> {
           inEdgeCaseSection = false
         }
+
         inEdgeCaseSection && (trimmed.startsWith("-") || trimmed.startsWith("*") || trimmed.matches(Regex("^\\d+\\."))) -> {
           val cleaned = trimmed.removePrefix("-").removePrefix("*").replace(Regex("^\\d+\\."), "").trim()
           if (cleaned.length > 10) {
@@ -993,7 +997,7 @@ Consider both immediate fixes and long-term architectural improvements.
         }
       }
     }
-    
+
     return edgeCases
   }
 
@@ -1001,16 +1005,18 @@ Consider both immediate fixes and long-term architectural improvements.
     val failureModes = mutableListOf<String>()
     val lines = analysisResult.lines()
     var inFailureSection = false
-    
+
     lines.forEach { line ->
       val trimmed = line.trim()
       when {
         trimmed.matches(Regex(".*failure\\s*mode.*", RegexOption.IGNORE_CASE)) -> {
           inFailureSection = true
         }
+
         trimmed.startsWith("#") && inFailureSection -> {
           inFailureSection = false
         }
+
         inFailureSection && (trimmed.startsWith("-") || trimmed.startsWith("*") || trimmed.matches(Regex("^\\d+\\."))) -> {
           val cleaned = trimmed.removePrefix("-").removePrefix("*").replace(Regex("^\\d+\\."), "").trim()
           if (cleaned.length > 10) {
@@ -1019,7 +1025,7 @@ Consider both immediate fixes and long-term architectural improvements.
         }
       }
     }
-    
+
     return failureModes
   }
 
@@ -1036,7 +1042,7 @@ Consider both immediate fixes and long-term architectural improvements.
     val highCount = vulnerabilities.count { it.severity == "high" }
     val mediumCount = vulnerabilities.count { it.severity == "medium" }
     val lowCount = vulnerabilities.count { it.severity == "low" }
-    
+
     return buildString {
       appendLine("## Overview")
       appendLine()
@@ -1051,17 +1057,17 @@ Consider both immediate fixes and long-term architectural improvements.
       appendLine("| 🟡 Medium | $mediumCount |")
       appendLine("| 🟢 Low | $lowCount |")
       appendLine()
-      
+
       val overallRisk = when {
         criticalCount > 0 -> "🔴 **CRITICAL** - Immediate action required"
         highCount > 2 -> "🟠 **HIGH** - Urgent attention needed"
         highCount > 0 || mediumCount > 3 -> "🟡 **MEDIUM** - Should be addressed soon"
         else -> "🟢 **LOW** - Monitor and improve over time"
       }
-      
+
       appendLine("**Overall Risk Level:** $overallRisk")
       appendLine()
-      
+
       appendLine("## Attack Surface Analysis")
       appendLine()
       appendLine("**Vectors Analyzed:** ${attackVectors.joinToString(", ")}")
@@ -1070,7 +1076,7 @@ Consider both immediate fixes and long-term architectural improvements.
       appendLine()
       appendLine("**Failure Modes:** ${failureModes.size}")
       appendLine()
-      
+
       if (vulnerabilities.isNotEmpty()) {
         appendLine("## Top Concerns")
         appendLine()
@@ -1083,7 +1089,7 @@ Consider both immediate fixes and long-term architectural improvements.
             appendLine()
           }
       }
-      
+
       appendLine("## Recommendations")
       appendLine()
       when {
@@ -1092,18 +1098,20 @@ Consider both immediate fixes and long-term architectural improvements.
           appendLine("2. **Urgent:** Implement temporary mitigations for high-severity issues")
           appendLine("3. **Short-term:** Develop comprehensive remediation plan")
         }
+
         highCount > 0 -> {
           appendLine("1. **Priority:** Address high-severity vulnerabilities within 1-2 weeks")
           appendLine("2. **Planning:** Schedule remediation for medium-severity issues")
           appendLine("3. **Monitoring:** Implement detection for identified attack patterns")
         }
+
         else -> {
           appendLine("1. **Continuous Improvement:** Address identified issues in regular sprint cycles")
           appendLine("2. **Monitoring:** Implement logging and alerting for edge cases")
           appendLine("3. **Testing:** Add test coverage for identified failure modes")
         }
       }
-      
+
       appendLine()
       appendLine("---")
       appendLine()

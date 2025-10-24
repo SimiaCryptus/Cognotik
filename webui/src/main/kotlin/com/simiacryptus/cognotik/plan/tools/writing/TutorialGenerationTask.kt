@@ -16,9 +16,6 @@ import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
-import java.io.File
-
 
 class TutorialGenerationTask(
   orchestrationConfig: OrchestrationConfig,
@@ -334,7 +331,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
       val contextFiles = getContextFiles()
       val inputFileContent = getInputFileCode()
       // Combine all context
-      val allContext = buildString {
+      buildString {
         if (inputFileContent.isNotBlank()) appendLine(inputFileContent)
         if (contextFiles.isNotBlank()) appendLine(contextFiles)
       }
@@ -481,7 +478,7 @@ Ensure the outline:
         appendLine()
         val requiredPrereqs = outline.prerequisites.filter { it.required }
         val optionalPrereqs = outline.prerequisites.filter { !it.required }
-        
+
         if (requiredPrereqs.isNotEmpty()) {
           appendLine("#### Required")
           requiredPrereqs.forEach { prereq ->
@@ -495,7 +492,7 @@ Ensure the outline:
             appendLine()
           }
         }
-        
+
         if (optionalPrereqs.isNotEmpty()) {
           appendLine("#### Optional")
           optionalPrereqs.forEach { prereq ->
@@ -546,17 +543,17 @@ Ensure the outline:
       overviewTask.add("\n### Phase 2: Writing Steps\n*Developing detailed step-by-step instructions...*\n".renderMarkdown)
       task.update()
       transcript?.write("## Phase 2: Writing Steps\n\n".toByteArray())
-    transcript?.write("Input Context:\n".toByteArray())
-    if (messages.isNotEmpty()) {
-      transcript?.write("**Messages:** ${messages.size} items\n".toByteArray())
-      messages.forEach { msg ->
-        transcript?.write("- ${msg.truncateForDisplay(100)}\n".toByteArray())
+      transcript?.write("Input Context:\n".toByteArray())
+      if (messages.isNotEmpty()) {
+        transcript?.write("**Messages:** ${messages.size} items\n".toByteArray())
+        messages.forEach { msg ->
+          transcript?.write("- ${msg.truncateForDisplay(100)}\n".toByteArray())
+        }
+        transcript?.write("\n".toByteArray())
       }
-      transcript?.write("\n".toByteArray())
-    }
-    if (inputFileContent.isNotBlank()) {
-      transcript?.write("**Input Files Loaded:** ${inputFileContent.length} characters\n\n".toByteArray())
-    }
+      if (inputFileContent.isNotBlank()) {
+        transcript?.write("**Input Files Loaded:** ${inputFileContent.length} characters\n\n".toByteArray())
+      }
       transcript?.write("Developing detailed step-by-step instructions...\n\n".toByteArray())
 
 
@@ -653,7 +650,7 @@ Guidelines:
           appendLine()
           appendLine(tutorialStep.explanation)
           appendLine()
-          
+
           if (tutorialStep.code_blocks.isNotEmpty()) {
             appendLine("### Commands/Code")
             appendLine()
@@ -672,7 +669,7 @@ Guidelines:
               appendLine()
             }
           }
-          
+
           if (tutorialStep.screenshot_placeholders.isNotEmpty()) {
             appendLine("### Visual Checkpoints")
             tutorialStep.screenshot_placeholders.forEach { placeholder ->
@@ -680,11 +677,11 @@ Guidelines:
               appendLine()
             }
           }
-          
+
           appendLine("### Expected Outcome")
           appendLine(tutorialStep.expected_outcome)
           appendLine()
-          
+
           if (tutorialStep.validation_steps.isNotEmpty()) {
             appendLine("### Verify Success")
             tutorialStep.validation_steps.forEachIndexed { idx, validation ->
@@ -692,7 +689,7 @@ Guidelines:
             }
             appendLine()
           }
-          
+
           if (tutorialStep.common_issues.isNotEmpty()) {
             appendLine("### Common Issues")
             tutorialStep.common_issues.forEach { issue ->
@@ -700,7 +697,7 @@ Guidelines:
               appendLine()
             }
           }
-          
+
           appendLine("---")
           appendLine()
           appendLine("**Status:** ✅ Complete")
@@ -937,7 +934,7 @@ Make suggestions:
         appendLine()
         appendLine("---")
         appendLine()
-        
+
         if (outline.learning_objectives.isNotEmpty()) {
           appendLine("## What You'll Learn")
           appendLine()
@@ -948,12 +945,12 @@ Make suggestions:
           appendLine("---")
           appendLine()
         }
-        
+
         appendLine("## Prerequisites")
         appendLine()
         val requiredPrereqs = outline.prerequisites.filter { it.required }
         val optionalPrereqs = outline.prerequisites.filter { !it.required }
-        
+
         if (requiredPrereqs.isNotEmpty()) {
           appendLine("### Required")
           appendLine()
@@ -965,7 +962,7 @@ Make suggestions:
           }
           appendLine()
         }
-        
+
         if (optionalPrereqs.isNotEmpty()) {
           appendLine("### Optional")
           appendLine()
@@ -977,18 +974,18 @@ Make suggestions:
           }
           appendLine()
         }
-        
+
         appendLine("---")
         appendLine()
         appendLine("## Tutorial Steps")
         appendLine()
-        
+
         tutorialSteps.forEach { step ->
           appendLine("### Step ${step.step_number}: ${step.title}")
           appendLine()
           appendLine(step.explanation)
           appendLine()
-          
+
           if (step.code_blocks.isNotEmpty()) {
             step.code_blocks.forEach { codeBlock ->
               if (codeBlock.description.isNotBlank()) {
@@ -1005,17 +1002,17 @@ Make suggestions:
               appendLine()
             }
           }
-          
+
           if (step.screenshot_placeholders.isNotEmpty()) {
             step.screenshot_placeholders.forEach { placeholder ->
               appendLine("📸 $placeholder")
               appendLine()
             }
           }
-          
+
           appendLine("**Expected Outcome:** ${step.expected_outcome}")
           appendLine()
-          
+
           if (step.validation_steps.isNotEmpty()) {
             appendLine("**Verify Success:**")
             step.validation_steps.forEachIndexed { idx, validation ->
@@ -1023,7 +1020,7 @@ Make suggestions:
             }
             appendLine()
           }
-          
+
           if (step.common_issues.isNotEmpty()) {
             appendLine("**⚠️ Common Issues:**")
             step.common_issues.forEach { issue ->
@@ -1031,11 +1028,11 @@ Make suggestions:
             }
             appendLine()
           }
-          
+
           appendLine("---")
           appendLine()
         }
-        
+
         if (troubleshootingSection != null && troubleshootingSection.issues.isNotEmpty()) {
           appendLine("## Troubleshooting")
           appendLine()
@@ -1065,7 +1062,7 @@ Make suggestions:
           appendLine("---")
           appendLine()
         }
-        
+
         if (nextSteps != null) {
           appendLine("## Next Steps")
           appendLine()
@@ -1144,7 +1141,7 @@ Make suggestions:
       // Write final tutorial to file
       tutorialOutputFile?.flush()
       tutorialOutputFile?.close()
-      
+
       // Concise summary for resultFn
       val finalResult = buildString {
         appendLine("# ✅ Tutorial Generated: ${outline.title}")
@@ -1219,6 +1216,7 @@ Make suggestions:
       resultFn(errorOutput)
     }
   }
+
   private fun createTutorialOutputFile(task: SessionTask): FileOutputStream? {
     return try {
       val (link, file) = task.createFile("tutorial.md")
@@ -1258,6 +1256,7 @@ Make suggestions:
       }
     }
   }
+
   private fun getInputFileCode(): String {
     val inputFiles = executionConfig?.input_files ?: return ""
     if (inputFiles.isEmpty()) return ""
@@ -1284,6 +1283,7 @@ Make suggestions:
       }
     }
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

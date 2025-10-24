@@ -155,7 +155,7 @@ open class AdaptivePlanningMode(
             writeToTranscript("**Description:** $taskDescription\n\n```json\n${JsonUtil.toJson(taskConfig)}\n```\n\n")
             taskExecutionTask.verbose(
 
-                """
+              """
  Executing task: `$currentTaskId` - $taskDescription
 Full TaskData JSON:
 ```json

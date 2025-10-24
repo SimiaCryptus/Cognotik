@@ -334,7 +334,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
     // Create transcript file
     val transcriptStream = transcript(task)
     val proposalStream = proposalFile(task)
-    transcriptStream?.use { stream ->
+    transcriptStream?.let { stream ->
       stream.write("# Business Proposal Generation Transcript\n\n".toByteArray())
       stream.write("**Proposal:** ${executionConfig?.proposal_title}\n".toByteArray())
       stream.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
@@ -343,6 +343,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
     fun logToTranscript(message: String) {
       transcriptStream?.write("$message\n".toByteArray())
     }
+
     fun writeToProposal(message: String) {
       proposalStream?.write("$message\n".toByteArray())
     }
@@ -923,7 +924,6 @@ Ensure phases flow logically and dependencies are clear.
         val timelineContent = buildString {
           appendLine("## Project Phases")
           appendLine()
-          var cumulativeDuration = 0
           timelineMilestones.phases.forEachIndexed { index, phase ->
             appendLine("### Phase ${index + 1}: ${phase.name}")
             appendLine()
@@ -1199,6 +1199,7 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
               appendLine("Payback Period: ${roiAnalysis.payback_period}")
               appendLine()
             }
+
             sectionOutline.title.contains("Risk", ignoreCase = true) && riskAssessment != null -> {
               appendLine("## Risk Assessment to Incorporate")
               appendLine("Overall Risk Level: ${riskAssessment.overall_risk_level}")
@@ -1207,11 +1208,13 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
               }
               appendLine()
             }
+
             sectionOutline.title.contains("Competitive", ignoreCase = true) && competitiveAnalysis != null -> {
               appendLine("## Competitive Analysis to Incorporate")
               appendLine(competitiveAnalysis.superiority_statement.take(200))
               appendLine()
             }
+
             sectionOutline.title.contains("Timeline", ignoreCase = true) && timelineMilestones != null -> {
               appendLine("## Timeline to Incorporate")
               timelineMilestones.phases.take(3).forEach { phase ->
@@ -1623,6 +1626,7 @@ Provide the complete revised proposal.
       }
     }
   }
+
   private fun getInputFileContent(): String {
     val inputFiles = executionConfig?.input_files ?: return ""
     if (inputFiles.isEmpty()) return ""
@@ -1654,6 +1658,7 @@ Provide the complete revised proposal.
         }
       }
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()
@@ -1664,6 +1669,7 @@ Provide the complete revised proposal.
     )
     return markdownTranscript
   }
+
   private fun proposalFile(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("proposal.md")
     val proposalStream = file?.outputStream()

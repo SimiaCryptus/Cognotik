@@ -1,43 +1,43 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
- import com.simiacryptus.cognotik.actors.ChatAgent
- import com.simiacryptus.cognotik.actors.ParsedAgent
- import com.simiacryptus.cognotik.apps.general.renderMarkdown
- import com.simiacryptus.cognotik.describe.Description
- import com.simiacryptus.cognotik.plan.*
- import com.simiacryptus.cognotik.util.LoggerFactory
- import com.simiacryptus.cognotik.util.TabbedDisplay
- import com.simiacryptus.cognotik.util.ValidatedObject
- import com.simiacryptus.cognotik.webui.session.SessionTask
- import com.simiacryptus.cognotik.webui.session.getChildClient
- import org.slf4j.Logger
- import java.io.FileOutputStream
- import java.time.LocalDateTime
- import java.time.format.DateTimeFormatter
+import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getReader
- import com.simiacryptus.cognotik.platform.model.ApiChatModel
- import com.simiacryptus.cognotik.util.FileSelectionUtils
- import java.nio.file.FileSystems
-import java.nio.file.Path
+import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.Logger
 import java.io.File
+import java.io.FileOutputStream
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
- class LateralThinkingTask(
+class LateralThinkingTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: LateralThinkingTaskExecutionConfigData?
- ) : AbstractTask<LateralThinkingTask.LateralThinkingTaskExecutionConfigData, LateralThinkingTask.LateralThinkingTaskTypeConfig>(
+) : AbstractTask<LateralThinkingTask.LateralThinkingTaskExecutionConfigData, LateralThinkingTask.LateralThinkingTaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
-   companion object {
-     private val log: Logger = LoggerFactory.getLogger(LateralThinkingTask::class.java)
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(LateralThinkingTask::class.java)
 
-     val LateralThinking = TaskType(
-       "LateralThinking",
-       LateralThinkingTaskExecutionConfigData::class.java,
-       LateralThinkingTaskTypeConfig::class.java,
-       "Break conventional thinking patterns to find innovative solutions",
-       """
+    val LateralThinking = TaskType(
+      "LateralThinking",
+      LateralThinkingTaskExecutionConfigData::class.java,
+      LateralThinkingTaskTypeConfig::class.java,
+      "Break conventional thinking patterns to find innovative solutions",
+      """
               Applies lateral thinking techniques to generate unconventional solutions.
               <ul>
                 <li>Supports multiple techniques: reversal, random stimulus, challenge assumptions, exaggeration, escape, metaphor, provocation</li>
@@ -50,8 +50,8 @@ import java.io.File
                 <li>Ideal for innovation, breaking design impasses, and creative problem-solving</li>
               </ul>
             """
-     )
-   }
+    )
+  }
 
   val maxDescriptionLength = 1500
 
@@ -96,7 +96,7 @@ import java.io.File
       }
       techniques?.forEach { technique ->
         val validTechniques = listOf(
-          "reversal", "random_stimulus", "challenge_assumptions", 
+          "reversal", "random_stimulus", "challenge_assumptions",
           "exaggeration", "escape", "metaphor", "provocation"
         )
         if (technique !in validTechniques) {
@@ -106,15 +106,16 @@ import java.io.File
       return ValidatedObject.validateFields(this)
     }
   }
-   class LateralThinkingTaskTypeConfig(
-     task_type: String? = LateralThinking.name,
-     name: String? = null,
-     model: ApiChatModel? = null
-   ) : TaskTypeConfig(
-     task_type = task_type,
-     name = name,
-     model = model
-   ), ValidatedObject
+
+  class LateralThinkingTaskTypeConfig(
+    task_type: String? = LateralThinking.name,
+    name: String? = null,
+    model: ApiChatModel? = null
+  ) : TaskTypeConfig(
+    task_type = task_type,
+    name = name,
+    model = model
+  ), ValidatedObject
 
   data class LateralIdea(
     @Description("Title of the idea")
@@ -772,7 +773,13 @@ Provide a structured evaluation.
         appendLine()
         appendLine("---")
         appendLine()
-        appendLine("📄 **Full Analysis:** [View Transcript]($transcriptLink) | [HTML](${transcriptLink.removeSuffix(".md")}.html) | [PDF](${transcriptLink.removeSuffix(".md")}.pdf)")
+        appendLine(
+          "📄 **Full Analysis:** [View Transcript]($transcriptLink) | [HTML](${transcriptLink.removeSuffix(".md")}.html) | [PDF](${
+            transcriptLink.removeSuffix(
+              ".md"
+            )
+          }.pdf)"
+        )
       }
       resultFn(summaryMessage)
 
@@ -793,21 +800,21 @@ Provide a structured evaluation.
     }
   }
 
-   private fun transcript(task: SessionTask): FileOutputStream? {
-     val (link, file) = task.createFile("transcript.md")
-     val markdownTranscript = file?.outputStream()
-     task.complete(
-       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-         link.removeSuffix(
-           ".md"
-         )
-       }.pdf' target='_blank'>pdf</a>"
-     )
-     return markdownTranscript
-   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
 
 
-   private fun getTechniqueDescription(technique: String): String {
+  private fun getTechniqueDescription(technique: String): String {
     return when (technique.lowercase()) {
       "reversal" -> """
 ## Reversal Technique
@@ -1225,6 +1232,7 @@ Generate $numAlternatives ideas using $technique.
   private fun String.capitalize(): String {
     return this.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
   }
+
   private fun getInputFileCode(root: Path): String = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -1255,10 +1263,36 @@ Generate $numAlternatives ideas using $technique.
         ""
       }
     }
+
   private fun isTextFile(file: File): Boolean {
-    val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+    val textExtensions = setOf(
+      "txt",
+      "md",
+      "kt",
+      "java",
+      "js",
+      "ts",
+      "py",
+      "rb",
+      "go",
+      "rs",
+      "c",
+      "cpp",
+      "h",
+      "hpp",
+      "css",
+      "html",
+      "xml",
+      "json",
+      "yaml",
+      "yml",
+      "properties",
+      "gradle",
+      "maven"
+    )
     return textExtensions.contains(file.extension.lowercase())
   }
+
   private fun extractDocumentContent(file: File) = try {
     file.getReader().use { reader ->
       when (reader) {

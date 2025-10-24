@@ -26,6 +26,7 @@ class AnalysisTask(
 ) : AbstractTask<AnalysisTask.AnalysisTaskExecutionConfigData, AnalysisTask.AnalysisTaskTypeConfig>(orchestrationConfig, planTask) {
 
   protected val codeFiles = mutableMapOf<Path, String>()
+
   class AnalysisTaskTypeConfig(
     @Description("Enable non-interactive mode to skip user feedback and iteration")
     val non_interactive: Boolean = true,
@@ -254,9 +255,11 @@ class AnalysisTask(
       "gradle",
       "maven"
     )
+
     fun isTextFile(file: File): Boolean {
       return textExtensions.contains(file.extension.lowercase())
     }
+
     fun extractDocumentContent(file: File) = try {
       file.getReader().use { reader ->
         when (reader) {

@@ -3,21 +3,16 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
- import org.slf4j.Logger
- import java.io.FileOutputStream
-import java.nio.file.FileSystems
-import java.nio.file.Path
+import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
+import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
- class ConstraintSatisfactionTask(
+class ConstraintSatisfactionTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: ConstraintSatisfactionTaskExecutionConfigData?
 ) : AbstractTask<ConstraintSatisfactionTask.ConstraintSatisfactionTaskExecutionConfigData, TaskTypeConfig>(
@@ -48,24 +43,24 @@ import java.time.format.DateTimeFormatter
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
   ), ValidatedObject {
-    
+
     override fun validate(): String? {
       // Validate problem description
       if (problem_description.isNullOrBlank()) {
         return "problem_description cannot be null or blank"
       }
-      
+
       // Validate search strategy
       val validStrategies = setOf("backtracking", "forward", "local")
       if (search_strategy !in validStrategies) {
         return "search_strategy must be one of: ${validStrategies.joinToString(", ")}"
       }
-      
+
       // Validate max iterations
       if (max_iterations <= 0) {
         return "max_iterations must be greater than 0"
       }
-      
+
       // Validate soft constraint weights
       soft_constraints?.forEach { (constraint, weight) ->
         if (weight < 0.0 || weight > 1.0) {
@@ -78,7 +73,7 @@ import java.time.format.DateTimeFormatter
           return "input_files patterns cannot be blank"
         }
       }
-      
+
       // Call parent validation
       return ValidatedObject.validateFields(this)
     }
@@ -118,7 +113,7 @@ import java.time.format.DateTimeFormatter
       resultFn("CONFIGURATION ERROR: $error")
       return
     }
-    
+
     val startTime = System.currentTimeMillis()
     var transcriptStream: FileOutputStream? = null
     try {
@@ -315,9 +310,9 @@ import java.time.format.DateTimeFormatter
       if (orchestrationConfig.autoFix) {
         val (link, _) = task.createFile("constraint_solution_transcript.md")
         val summaryMessage = "Constraint satisfaction solution generated. " +
-          "View detailed transcript: <a href='$link' target='_blank'>markdown</a> " +
-          "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-          "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+            "View detailed transcript: <a href='$link' target='_blank'>markdown</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
         task.safeComplete(summaryMessage, log)
         resultFn(answer ?: "No solution generated")
       } else {
@@ -327,9 +322,9 @@ import java.time.format.DateTimeFormatter
               try {
                 val (link, _) = task.createFile("constraint_solution_transcript.md")
                 val summaryMessage = "Constraint satisfaction solution accepted. " +
-                  "View detailed transcript: <a href='$link' target='_blank'>markdown</a> " +
-                  "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                  "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+                    "View detailed transcript: <a href='$link' target='_blank'>markdown</a> " +
+                    "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+                    "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
                 task.complete(summaryMessage)
                 resultFn(answer ?: "No solution generated")
               } catch (e: Exception) {
@@ -378,6 +373,7 @@ import java.time.format.DateTimeFormatter
     )
     return markdownTranscript
   }
+
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
       val (link, file) = task.createFile("constraint_solution_transcript.md")
@@ -394,6 +390,7 @@ import java.time.format.DateTimeFormatter
       null
     }
   }
+
   private fun writeTranscriptHeader(
     stream: FileOutputStream,
     problemDescription: String,
@@ -423,6 +420,7 @@ import java.time.format.DateTimeFormatter
       log.error("Failed to write transcript header", e)
     }
   }
+
   private fun getInputFileContent(): String = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")

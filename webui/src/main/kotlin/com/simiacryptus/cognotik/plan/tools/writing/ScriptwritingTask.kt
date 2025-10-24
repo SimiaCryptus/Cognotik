@@ -1,17 +1,15 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 
-import com.simiacryptus.cognotik.actors.ParsedAgent
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import java.nio.file.FileSystems
-import java.nio.file.Path
 import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -19,6 +17,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -96,7 +96,7 @@ class ScriptwritingTask(
       if (target_duration_minutes <= 0 || target_duration_minutes > 180) {
         return "target_duration_minutes must be between 1 and 180, got: $target_duration_minutes"
       }
-      if (script_type.isBlank()){
+      if (script_type.isBlank()) {
         return "script_type must not be blank"
       }
       if (tone.isBlank()) {
@@ -433,7 +433,7 @@ Ensure the outline:
         appendLine("**Status:** ✅ Complete")
       }
       outlineTask.add(outlineContent.renderMarkdown)
-        markdownTranscript?.write(outlineContent.toByteArray())
+      markdownTranscript?.write(outlineContent.toByteArray())
       markdownTranscript?.write(outlineContent.toByteArray())
       markdownTranscript?.write("\n".toByteArray())
       task.update()
@@ -822,7 +822,7 @@ Provide the complete revised script with all formatting intact.
             temperature = 0.6
           )
 
-          val revisedScript = revisionAgent.answer(listOf("Revise the script"))
+          revisionAgent.answer(listOf("Revise the script"))
 
           revisionTask.add(
             buildString {
@@ -1088,6 +1088,7 @@ Provide the complete revised script with all formatting intact.
     )
     return markdownTranscript
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -1118,8 +1119,33 @@ Provide the complete revised script with all formatting intact.
         ""
       }
     }
+
   private fun isTextFile(file: File): Boolean {
-    val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+    val textExtensions = setOf(
+      "txt",
+      "md",
+      "kt",
+      "java",
+      "js",
+      "ts",
+      "py",
+      "rb",
+      "go",
+      "rs",
+      "c",
+      "cpp",
+      "h",
+      "hpp",
+      "css",
+      "html",
+      "xml",
+      "json",
+      "yaml",
+      "yml",
+      "properties",
+      "gradle",
+      "maven"
+    )
     return textExtensions.contains(file.extension.lowercase())
   }
 
@@ -1188,6 +1214,7 @@ Provide the complete revised script with all formatting intact.
         listOf("Error listing files: ${e.message}")
       }
     }
+
     fun extractDocumentContent(file: File) = try {
       file.readText()
     } catch (e: Exception) {

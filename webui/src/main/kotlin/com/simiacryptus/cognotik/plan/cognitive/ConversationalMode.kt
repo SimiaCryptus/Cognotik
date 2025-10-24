@@ -62,10 +62,10 @@ open class ConversationalMode(
     transcriptStream = transcript(task)
     log.debug(
       "Task configurations: ${
-      orchestrationConfig.taskSettings.values.joinToString(", ") {
-        "${it.task_type}${it.name?.let { name -> ":$name" } ?: ""}"
-      }
-    }")
+        orchestrationConfig.taskSettings.values.joinToString(", ") {
+          "${it.task_type}${it.name?.let { name -> ":$name" } ?: ""}"
+        }
+      }")
   }
 
   override fun handleUserMessage(userMessage: String, task: SessionTask) {
@@ -373,6 +373,7 @@ open class ConversationalMode(
     transcriptStream?.write(content.toByteArray())
     transcriptStream?.flush()
   }
+
   /**
    * Gets the current conversation context as a list of messages
    */

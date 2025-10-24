@@ -1,16 +1,15 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 
-import com.simiacryptus.cognotik.actors.ParsedAgent
-import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
-import java.io.File
 import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
@@ -18,6 +17,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -82,7 +82,7 @@ class NarrativeGenerationTask(
     find_inconsistencies = true,
     task_dependencies = task_dependencies,
     state = state,
-    input_files=input_files,
+    input_files = input_files,
   ) {
     override val task_type: String = NarrativeGeneration.name
     override var task_description: String? = "Generate full narrative for '$subject'"
@@ -687,6 +687,7 @@ Provide the revised scene content only.
     )
     return markdownTranscript
   }
+
   private fun getInputFileCode(rootFile: File): String {
     val executionConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData ?: return ""
     return (executionConfig.input_files ?: listOf())

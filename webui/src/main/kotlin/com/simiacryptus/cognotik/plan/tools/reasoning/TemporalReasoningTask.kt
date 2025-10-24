@@ -693,6 +693,7 @@ Generate the Mermaid timeline diagram now:
         .toList()
     }.joinToString("\n\n")
   }
+
   private fun getInputFileCode(): String {
     val patterns = (executionConfig?.input_files ?: listOf())
     if (patterns.isEmpty()) {

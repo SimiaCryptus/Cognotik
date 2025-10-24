@@ -14,59 +14,59 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 
 class WriteHtmlTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: WriteHtmlTaskExecutionConfigData?
+  orchestrationConfig: OrchestrationConfig,
+  planTask: WriteHtmlTaskExecutionConfigData?
 ) : AbstractFileTask<WriteHtmlTask.WriteHtmlTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
-    class WriteHtmlTaskExecutionConfigData(
-        @Description("The HTML file to be created (relative path, must end with .html)")
-        files: List<String>? = null,
-        @Description("Additional files for context (e.g., existing HTML templates, related files)")
-        related_files: List<String>? = null,
-        @Description("Detailed description of the HTML page to create, including layout, styling, and functionality requirements")
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
-    ) : ValidatedObject, FileTaskExecutionConfig(
-        task_type = WriteHtml.name,
-        task_description = task_description,
-        files = files,
-        related_files = related_files,
-        task_dependencies = task_dependencies,
-        state = state
-    ) {
-        override fun validate(): String? {
-            // Validate that files list is not empty
-            if (files.isNullOrEmpty()) {
-                return "WriteHtmlTaskExecutionConfigData: files list cannot be null or empty"
-            }
-            
-            // Validate that the file has .html extension
-            val htmlFile = files.first()
-            if (!htmlFile.endsWith(".html", ignoreCase = true)) {
-                return "WriteHtmlTaskExecutionConfigData: file must have .html extension, got: $htmlFile"
-            }
-            
-            // Validate task description is provided
-            if (task_description.isNullOrBlank()) {
-                return "WriteHtmlTaskExecutionConfigData: task_description cannot be null or blank"
-            }
-            
-            // Call parent validation
-            return super.validate()
-        }
+  class WriteHtmlTaskExecutionConfigData(
+    @Description("The HTML file to be created (relative path, must end with .html)")
+    files: List<String>? = null,
+    @Description("Additional files for context (e.g., existing HTML templates, related files)")
+    related_files: List<String>? = null,
+    @Description("Detailed description of the HTML page to create, including layout, styling, and functionality requirements")
+    task_description: String? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = TaskState.Pending,
+  ) : ValidatedObject, FileTaskExecutionConfig(
+    task_type = WriteHtml.name,
+    task_description = task_description,
+    files = files,
+    related_files = related_files,
+    task_dependencies = task_dependencies,
+    state = state
+  ) {
+    override fun validate(): String? {
+      // Validate that files list is not empty
+      if (files.isNullOrEmpty()) {
+        return "WriteHtmlTaskExecutionConfigData: files list cannot be null or empty"
+      }
+
+      // Validate that the file has .html extension
+      val htmlFile = files.first()
+      if (!htmlFile.endsWith(".html", ignoreCase = true)) {
+        return "WriteHtmlTaskExecutionConfigData: file must have .html extension, got: $htmlFile"
+      }
+
+      // Validate task description is provided
+      if (task_description.isNullOrBlank()) {
+        return "WriteHtmlTaskExecutionConfigData: task_description cannot be null or blank"
+      }
+
+      // Call parent validation
+      return super.validate()
     }
+  }
 
-    init {
-        // Validate the configuration on initialization
-        planTask?.validate()?.let { errorMessage ->
-            throw ValidatedObject.ValidationError(errorMessage, planTask)
-        }
+  init {
+    // Validate the configuration on initialization
+    planTask?.validate()?.let { errorMessage ->
+      throw ValidatedObject.ValidationError(errorMessage, planTask)
     }
+  }
 
 
-    override fun promptSegment(): String {
-        return """
+  override fun promptSegment(): String {
+    return """
 WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
   ** Specify the HTML file path in the files array (must end with .html)
   ** Provide a detailed description of the page requirements including:
@@ -83,51 +83,51 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
   ** Related files can include existing HTML templates or reference files
   ** Output will be presented for review before being written to disk
         """.trimIndent()
+  }
+
+
+  override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    // Validate configuration before execution
+    executionConfig?.validate()?.let { errorMessage ->
+      resultFn("VALIDATION ERROR: $errorMessage")
+      return
     }
 
+    val htmlFiles = executionConfig?.files ?: emptyList()
+    if (htmlFiles.isEmpty()) {
+      resultFn("CONFIGURATION ERROR: No HTML file specified")
+      return
+    }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        // Validate configuration before execution
-        executionConfig?.validate()?.let { errorMessage ->
-            resultFn("VALIDATION ERROR: $errorMessage")
-            return
-        }
-        
-        val htmlFiles = executionConfig?.files ?: emptyList()
-        if (htmlFiles.isEmpty()) {
-            resultFn("CONFIGURATION ERROR: No HTML file specified")
-            return
-        }
+    val htmlFile = htmlFiles.first()
+    if (!htmlFile.endsWith(".html", ignoreCase = true)) {
+      resultFn("CONFIGURATION ERROR: File must have .html extension: $htmlFile")
+      return
+    }
 
-        val htmlFile = htmlFiles.first()
-        if (!htmlFile.endsWith(".html", ignoreCase = true)) {
-            resultFn("CONFIGURATION ERROR: File must have .html extension: $htmlFile")
-            return
-        }
+    val newTask = task.ui.newTask(false)
+    val transcriptStream = transcript(newTask)
+    val transcriptWriter = transcriptStream?.bufferedWriter()
 
-        val newTask = task.ui.newTask(false)
-      val transcriptStream = transcript(newTask)
-      val transcriptWriter = transcriptStream?.bufferedWriter()
+    val toInput = { it: String -> listOf(it) }
+    val ui = task.ui
+    val api = orchestrationConfig.defaultChatter
 
-      val toInput = { it: String -> listOf(it) }
-        val ui = task.ui
-        val api = orchestrationConfig.defaultChatter
+    newTask.add(MarkdownUtil.renderMarkdown("## Creating HTML File: `$htmlFile`", ui = ui))
 
-        newTask.add(MarkdownUtil.renderMarkdown("## Creating HTML File: `$htmlFile`", ui = ui))
+    val contextFiles = getInputFileCode()
+    transcriptWriter?.write("# HTML Generation Transcript\n\n")
+    transcriptWriter?.write("## Creating HTML File: `$htmlFile`\n\n")
+    val priorCode = getPriorCode(agent.executionState)
 
-        val contextFiles = getInputFileCode()
-      transcriptWriter?.write("# HTML Generation Transcript\n\n")
-      transcriptWriter?.write("## Creating HTML File: `$htmlFile`\n\n")
-        val priorCode = getPriorCode(agent.executionState)
-
-        // Step 1: Generate HTML structure with classes
-        val htmlPrompt = """
+    // Step 1: Generate HTML structure with classes
+    val htmlPrompt = """
 You are an expert web developer tasked with creating a complete, self-contained HTML file.
 
 ## Requirements:
@@ -164,28 +164,28 @@ Provide the HTML structure within a code block:
 ```
         """.trimIndent()
 
-        val chatAgent = ChatAgent(
-            prompt = promptSegment(),
-            model = api,
-        )
+    val chatAgent = ChatAgent(
+      prompt = promptSegment(),
+      model = api,
+    )
 
-        newTask.add(MarkdownUtil.renderMarkdown("### Step 1: Generating HTML Structure", ui = ui))
-      transcriptWriter?.write("### Step 1: Generating HTML Structure\n\n")
-      transcriptWriter?.write("**Prompt:**\n```\n$htmlPrompt\n```\n\n")
+    newTask.add(MarkdownUtil.renderMarkdown("### Step 1: Generating HTML Structure", ui = ui))
+    transcriptWriter?.write("### Step 1: Generating HTML Structure\n\n")
+    transcriptWriter?.write("**Prompt:**\n```\n$htmlPrompt\n```\n\n")
 
-      val htmlResponse = chatAgent.answer(toInput(htmlPrompt))
-      transcriptWriter?.write("**Response:**\n$htmlResponse\n\n")
+    val htmlResponse = chatAgent.answer(toInput(htmlPrompt))
+    transcriptWriter?.write("**Response:**\n$htmlResponse\n\n")
 
-      val htmlStructure = extractCodeFromResponse(htmlResponse, "html")
+    val htmlStructure = extractCodeFromResponse(htmlResponse, "html")
 
-        if (htmlStructure.isEmpty()) {
-          transcriptWriter?.close()
-            resultFn("ERROR: Failed to generate HTML structure")
-            return
-        }
+    if (htmlStructure.isEmpty()) {
+      transcriptWriter?.close()
+      resultFn("ERROR: Failed to generate HTML structure")
+      return
+    }
 
-        // Step 2: Generate JavaScript
-        val jsPrompt = """
+    // Step 2: Generate JavaScript
+    val jsPrompt = """
 Based on the following HTML structure, generate the JavaScript code needed for interactivity.
 
 ## HTML Structure:
@@ -211,16 +211,16 @@ Provide only the JavaScript code within a code block:
 ```
         """.trimIndent()
 
-        newTask.add(MarkdownUtil.renderMarkdown("### Step 2: Generating JavaScript", ui = ui))
-      transcriptWriter?.write("### Step 2: Generating JavaScript\n\n")
-      transcriptWriter?.write("**Prompt:**\n```\n$jsPrompt\n```\n\n")
+    newTask.add(MarkdownUtil.renderMarkdown("### Step 2: Generating JavaScript", ui = ui))
+    transcriptWriter?.write("### Step 2: Generating JavaScript\n\n")
+    transcriptWriter?.write("**Prompt:**\n```\n$jsPrompt\n```\n\n")
 
-      val jsResponse = chatAgent.answer(toInput(jsPrompt))
-      transcriptWriter?.write("**Response:**\n$jsResponse\n\n")
-      val jsCode = extractCodeFromResponse(jsResponse, "javascript", "js")
+    val jsResponse = chatAgent.answer(toInput(jsPrompt))
+    transcriptWriter?.write("**Response:**\n$jsResponse\n\n")
+    val jsCode = extractCodeFromResponse(jsResponse, "javascript", "js")
 
-        // Step 3: Generate CSS
-        val cssPrompt = """
+    // Step 3: Generate CSS
+    val cssPrompt = """
 Based on the following HTML structure, generate the CSS styling.
 
 ## HTML Structure:
@@ -248,131 +248,131 @@ Provide only the CSS code within a code block:
 ```
         """.trimIndent()
 
-        newTask.add(MarkdownUtil.renderMarkdown("### Step 3: Generating CSS", ui = ui))
+    newTask.add(MarkdownUtil.renderMarkdown("### Step 3: Generating CSS", ui = ui))
 
-      transcriptWriter?.write("### Step 3: Generating CSS\n\n")
-      transcriptWriter?.write("**Prompt:**\n```\n$cssPrompt\n```\n\n")
+    transcriptWriter?.write("### Step 3: Generating CSS\n\n")
+    transcriptWriter?.write("**Prompt:**\n```\n$cssPrompt\n```\n\n")
 
-      val cssResponse = chatAgent.answer(toInput(cssPrompt))
-      transcriptWriter?.write("**Response:**\n$cssResponse\n\n")
-      val cssCode = extractCodeFromResponse(cssResponse, "css")
+    val cssResponse = chatAgent.answer(toInput(cssPrompt))
+    transcriptWriter?.write("**Response:**\n$cssResponse\n\n")
+    val cssCode = extractCodeFromResponse(cssResponse, "css")
 
-      // Step 4: Combine everything into a complete HTML file
-        val completeHtml = combineHtmlComponents(htmlStructure, cssCode, jsCode)
+    // Step 4: Combine everything into a complete HTML file
+    val completeHtml = combineHtmlComponents(htmlStructure, cssCode, jsCode)
 
-        if (completeHtml.isEmpty()) {
-          transcriptWriter?.close()
-            resultFn("ERROR: Failed to generate valid HTML content")
-            return
-        }
-
-      task.add("""<a href="${task.linkTo(htmlFile)}">${htmlFile}</a> created""")
-        val outputPath = root.resolve(htmlFile)
-      transcriptWriter?.write("### Step 4: Final HTML Output\n\n")
-      transcriptWriter?.write("```html\n$completeHtml\n```\n\n")
-
-
-        if (orchestrationConfig.autoFix) {
-            outputPath.toFile().parentFile?.mkdirs()
-            outputPath.toFile().writeText(completeHtml)
-          transcriptWriter?.write("**Result:** Successfully wrote $htmlFile (auto-applied)\n")
-          transcriptWriter?.close()
-            newTask.complete("Successfully wrote $htmlFile")
-            resultFn("Successfully wrote $htmlFile")
-        } else {
-            newTask.add(
-                MarkdownUtil.renderMarkdown(
-                    acceptButtonFooter(ui) {
-                        try {
-                            outputPath.toFile().parentFile?.mkdirs()
-                            outputPath.toFile().writeText(completeHtml)
-                          transcriptWriter?.write("**Result:** Successfully wrote $htmlFile (user accepted)\n")
-                          transcriptWriter?.close()
-                            newTask.complete("Successfully wrote $htmlFile")
-                            resultFn("Successfully wrote $htmlFile")
-                        } catch (e: Exception) {
-                            log.error("Error writing HTML file", e)
-                            newTask.error(e)
-                            resultFn("ERROR: ${e.message}")
-                        }
-                    },
-                    ui = ui
-                )
-            )
-        }
+    if (completeHtml.isEmpty()) {
+      transcriptWriter?.close()
+      resultFn("ERROR: Failed to generate valid HTML content")
+      return
     }
 
-    private fun extractCodeFromResponse(response: String, vararg languages: String): String {
-        // Try to extract code from code blocks with specified languages
-        for (lang in languages) {
-            val codeBlockRegex = "```$lang\\s*([\\s\\S]*?)```".toRegex()
-            val match = codeBlockRegex.find(response)
-            if (match != null) {
-                return match.groupValues[1].trim()
+    task.add("""<a href="${task.linkTo(htmlFile)}">${htmlFile}</a> created""")
+    val outputPath = root.resolve(htmlFile)
+    transcriptWriter?.write("### Step 4: Final HTML Output\n\n")
+    transcriptWriter?.write("```html\n$completeHtml\n```\n\n")
+
+
+    if (orchestrationConfig.autoFix) {
+      outputPath.toFile().parentFile?.mkdirs()
+      outputPath.toFile().writeText(completeHtml)
+      transcriptWriter?.write("**Result:** Successfully wrote $htmlFile (auto-applied)\n")
+      transcriptWriter?.close()
+      newTask.complete("Successfully wrote $htmlFile")
+      resultFn("Successfully wrote $htmlFile")
+    } else {
+      newTask.add(
+        MarkdownUtil.renderMarkdown(
+          acceptButtonFooter(ui) {
+            try {
+              outputPath.toFile().parentFile?.mkdirs()
+              outputPath.toFile().writeText(completeHtml)
+              transcriptWriter?.write("**Result:** Successfully wrote $htmlFile (user accepted)\n")
+              transcriptWriter?.close()
+              newTask.complete("Successfully wrote $htmlFile")
+              resultFn("Successfully wrote $htmlFile")
+            } catch (e: Exception) {
+              log.error("Error writing HTML file", e)
+              newTask.error(e)
+              resultFn("ERROR: ${e.message}")
             }
-        }
+          },
+          ui = ui
+        )
+      )
+    }
+  }
 
-        // Try generic code block
-        val genericBlockRegex = "```\\s*([\\s\\S]*?)```".toRegex()
-        val genericMatch = genericBlockRegex.find(response)
-        if (genericMatch != null) {
-            return genericMatch.groupValues[1].trim()
-        }
-
-        return ""
+  private fun extractCodeFromResponse(response: String, vararg languages: String): String {
+    // Try to extract code from code blocks with specified languages
+    for (lang in languages) {
+      val codeBlockRegex = "```$lang\\s*([\\s\\S]*?)```".toRegex()
+      val match = codeBlockRegex.find(response)
+      if (match != null) {
+        return match.groupValues[1].trim()
+      }
     }
 
-    private fun combineHtmlComponents(htmlStructure: String, cssCode: String, jsCode: String): String {
-        // Parse the HTML structure and insert CSS and JavaScript
-        val headEndIndex = htmlStructure.indexOf("</head>", ignoreCase = true)
-        val bodyEndIndex = htmlStructure.indexOf("</body>", ignoreCase = true)
-
-        if (headEndIndex == -1 || bodyEndIndex == -1) {
-            log.error("Invalid HTML structure: missing </head> or </body> tags")
-            return ""
-        }
-
-        val beforeHead = htmlStructure.substring(0, headEndIndex)
-        val afterHeadBeforeBody = htmlStructure.substring(headEndIndex, bodyEndIndex)
-        val afterBody = htmlStructure.substring(bodyEndIndex)
-
-        return buildString {
-            append(beforeHead)
-            if (cssCode.isNotEmpty()) {
-                append("\n    <style>\n")
-                append(cssCode.prependIndent("        "))
-                append("\n    </style>\n")
-            }
-            append(afterHeadBeforeBody)
-            if (jsCode.isNotEmpty()) {
-                append("\n    <script>\n")
-                append(jsCode.prependIndent("        "))
-                append("\n    </script>\n")
-            }
-            append(afterBody)
-        }
+    // Try generic code block
+    val genericBlockRegex = "```\\s*([\\s\\S]*?)```".toRegex()
+    val genericMatch = genericBlockRegex.find(response)
+    if (genericMatch != null) {
+      return genericMatch.groupValues[1].trim()
     }
 
-    override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
-        val acceptLink = ui.hrefLink("Accept and Write File") {
-            fn()
-        }
-        return """
+    return ""
+  }
+
+  private fun combineHtmlComponents(htmlStructure: String, cssCode: String, jsCode: String): String {
+    // Parse the HTML structure and insert CSS and JavaScript
+    val headEndIndex = htmlStructure.indexOf("</head>", ignoreCase = true)
+    val bodyEndIndex = htmlStructure.indexOf("</body>", ignoreCase = true)
+
+    if (headEndIndex == -1 || bodyEndIndex == -1) {
+      log.error("Invalid HTML structure: missing </head> or </body> tags")
+      return ""
+    }
+
+    val beforeHead = htmlStructure.substring(0, headEndIndex)
+    val afterHeadBeforeBody = htmlStructure.substring(headEndIndex, bodyEndIndex)
+    val afterBody = htmlStructure.substring(bodyEndIndex)
+
+    return buildString {
+      append(beforeHead)
+      if (cssCode.isNotEmpty()) {
+        append("\n    <style>\n")
+        append(cssCode.prependIndent("        "))
+        append("\n    </style>\n")
+      }
+      append(afterHeadBeforeBody)
+      if (jsCode.isNotEmpty()) {
+        append("\n    <script>\n")
+        append(jsCode.prependIndent("        "))
+        append("\n    </script>\n")
+      }
+      append(afterBody)
+    }
+  }
+
+  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+    val acceptLink = ui.hrefLink("Accept and Write File") {
+      fn()
+    }
+    return """
         |
         |---
         |
         |$acceptLink
         """.trimMargin()
-    }
+  }
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(WriteHtmlTask::class.java)
-        val WriteHtml = TaskType(
-            "WriteHtml",
-            WriteHtmlTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Create complete HTML files with embedded CSS and JavaScript",
-            """
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(WriteHtmlTask::class.java)
+    val WriteHtml = TaskType(
+      "WriteHtml",
+      WriteHtmlTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Create complete HTML files with embedded CSS and JavaScript",
+      """
               Creates standalone HTML files with embedded CSS and JavaScript.
               <ul>
                 <li>Generates complete, self-contained HTML documents</li>
@@ -383,7 +383,7 @@ Provide only the CSS code within a code block:
                 <li>Proper HTML structure and formatting</li>
               </ul>
             """
-        )
-    }
+    )
+  }
 }
 

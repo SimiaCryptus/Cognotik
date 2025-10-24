@@ -349,7 +349,7 @@ ${
 
     val FileSearch = TaskType(
       "FileSearch",
-      com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.SearchTaskExecutionConfigData::class.java,
+      SearchTaskExecutionConfigData::class.java,
       TaskTypeConfig::class.java,
       "Search project files using patterns with contextual results",
       """

@@ -5,11 +5,7 @@ import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
@@ -24,6 +20,7 @@ class GameTheoryTask(
   planTask
 ) {
   val maxOutputLengthPerField = 10000
+
   companion object {
     private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
     val GameTheory = TaskType(
@@ -51,14 +48,17 @@ class GameTheoryTask(
       "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml",
       "yml", "properties", "gradle", "maven"
     )
+
     fun isTextFile(file: java.io.File): Boolean {
       return textExtensions.contains(file.extension.lowercase())
     }
+
     fun extractDocumentContent(file: java.io.File) = try {
       file.getReader().use { reader ->
         when (reader) {
           is com.simiacryptus.cognotik.input.PaginatedDocumentReader ->
             reader.getText(0, reader.getPageCount())
+
           else -> reader.getText()
         }
       }
@@ -73,6 +73,7 @@ class GameTheoryTask(
 
 
   }
+
   data class GameAnalysis(
     val game_type: String? = null,
     val players: List<String>? = null,
@@ -83,9 +84,10 @@ class GameTheoryTask(
     val pareto_optimal_outcomes: List<String>? = null,
     val recommendations: Map<String, String>? = null
   )
+
   protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
 
- class GameTheoryTaskExecutionConfigData(
+  class GameTheoryTaskExecutionConfigData(
     @Description("The strategic situation or game to analyze")
     val game_scenario: String? = null,
     @Description("List of players/agents in the game")
@@ -849,6 +851,7 @@ Provide this in a clear, structured format.
       resultFn("ERROR: Game theory analysis failed - ${e.message}")
     }
   }
+
   private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")

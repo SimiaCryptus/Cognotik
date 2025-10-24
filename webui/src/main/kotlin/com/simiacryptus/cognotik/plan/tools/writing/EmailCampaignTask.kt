@@ -14,13 +14,12 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
- import java.io.FileOutputStream
- import java.time.LocalDateTime
- import java.time.format.DateTimeFormatter
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
-import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
- class EmailCampaignTask(
+class EmailCampaignTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: EmailCampaignTaskExecutionConfigData?
 ) : AbstractTask<EmailCampaignTask.EmailCampaignTaskExecutionConfigData, TaskTypeConfig>(
@@ -520,11 +519,13 @@ For Email $emailNum, specify:
 - Estimated word count (~$targetWordCount words)
 
 Email $emailNum should:
-${when (emailNum) {
-  1 -> "- Establish connection and set expectations\n- Introduce the value proposition\n- Build initial trust"
-  executionConfig.num_emails -> "- Reinforce key benefits\n- Create urgency or final push\n- Make the primary CTA compelling"
-  else -> "- Build on previous email's message\n- Deepen engagement\n- Move closer to conversion"
-}}
+${
+            when (emailNum) {
+              1 -> "- Establish connection and set expectations\n- Introduce the value proposition\n- Build initial trust"
+              executionConfig.num_emails -> "- Reinforce key benefits\n- Create urgency or final push\n- Make the primary CTA compelling"
+              else -> "- Build on previous email's message\n- Deepen engagement\n- Move closer to conversion"
+            }
+          }
 
 Maintain ${executionConfig.brand_voice} voice and address ${executionConfig.target_audience}.
           """.trimIndent(),
@@ -926,10 +927,10 @@ Provide the complete revised email body only.
 
         generatedEmails.forEachIndexed { index, email ->
           val daysSinceStart = if (index == 0) 0 else executionConfig.send_intervals?.take(index)?.sum() ?: 0
-          
+
           appendLine("## Email ${email.email_number} - Day $daysSinceStart")
           appendLine()
-          
+
           // Show all subject line variants
           val variants = allSubjectVariants[email.email_number] ?: emptyList()
           if (variants.size > 1) {
@@ -943,12 +944,12 @@ Provide the complete revised email body only.
             appendLine("**Subject:** ${email.subject_line}")
             appendLine()
           }
-          
+
           if (email.preview_text.isNotBlank()) {
             appendLine("**Preview:** ${email.preview_text}")
             appendLine()
           }
-          
+
           appendLine("---")
           appendLine()
           appendLine(email.body)
@@ -1013,7 +1014,11 @@ Provide the complete revised email body only.
           appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
         }.renderMarkdown
       )
-      transcript?.write(("\n\n---\n\n## Campaign Complete\n\n**Statistics:**\n- Emails: ${generatedEmails.size}\n- Words: $totalWords\n- Time: ${totalTime / 1000.0}s\n").toByteArray(Charsets.UTF_8))
+      transcript?.write(
+        ("\n\n---\n\n## Campaign Complete\n\n**Statistics:**\n- Emails: ${generatedEmails.size}\n- Words: $totalWords\n- Time: ${totalTime / 1000.0}s\n").toByteArray(
+          Charsets.UTF_8
+        )
+      )
       task.update()
 
       // Concise summary for resultFn
@@ -1037,7 +1042,10 @@ Provide the complete revised email body only.
       transcript?.close()
 
       val (transcriptLink, _) = task.createFile("campaign_summary.md")
-      task.safeComplete("Email campaign generation complete: ${generatedEmails.size} emails, $totalWords words in ${totalTime / 1000}s. Full details: <a href='$transcriptLink' target='_blank'>transcript</a>", log)
+      task.safeComplete(
+        "Email campaign generation complete: ${generatedEmails.size} emails, $totalWords words in ${totalTime / 1000}s. Full details: <a href='$transcriptLink' target='_blank'>transcript</a>",
+        log
+      )
       resultFn(finalResult)
 
     } catch (e: Exception) {
@@ -1075,6 +1083,7 @@ Provide the complete revised email body only.
       resultFn(errorOutput)
     }
   }
+
   private fun getInputFileCode(): String = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -1128,6 +1137,7 @@ Provide the complete revised email body only.
       }
     }
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

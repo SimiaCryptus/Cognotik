@@ -1,17 +1,15 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 
-import com.simiacryptus.cognotik.actors.ParsedAgent
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import java.nio.charset.StandardCharsets
-import java.nio.file.FileSystems
 import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -19,6 +17,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
+import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -164,7 +164,7 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
       return ValidatedObject.validateFields(this)
     }
   }
-  
+
   data class CharacterAnalyses(
     val characters: List<CharacterAnalysis> = emptyList()
   ) : ValidatedObject
@@ -187,7 +187,7 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
       return ValidatedObject.validateFields(this)
     }
   }
-  
+
   data class NarrativeOutcomes(
     val outcomes: List<NarrativeOutcome> = emptyList()
   ) : ValidatedObject
@@ -214,7 +214,7 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
       return ValidatedObject.validateFields(this)
     }
   }
-  
+
   data class NarrativeInconsistencies(
     val inconsistencies: List<NarrativeInconsistency> = emptyList()
   ) : ValidatedObject
@@ -233,6 +233,7 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
   ** Produces structured narrative analysis with insights
         """.trimIndent()
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("narrative_transcript.md")
     val markdownTranscript = file?.outputStream()
@@ -257,7 +258,7 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
     val startTime = System.currentTimeMillis()
     log.info("Starting NarrativeReasoningTask for subject: '${executionConfig?.subject}'")
     // Create output directory for detailed results
-    val narrativeDir = java.io.File(agent.root.toFile(), ".narrative_analysis")
+    val narrativeDir = File(agent.root.toFile(), ".narrative_analysis")
     if (!narrativeDir.exists()) {
       if (!narrativeDir.mkdirs()) {
         log.error("Failed to create narrative analysis directory: ${narrativeDir.absolutePath}")
@@ -302,13 +303,15 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
     val analyzeMotivations = executionConfig.analyze_motivations
     val findInconsistencies = executionConfig.find_inconsistencies
 
-    log.info("Configuration: constructNarrative=$constructNarrative, identifyPlotPoints=$identifyPlotPoints, " +
-            "predictOutcomes=$predictOutcomes, alternativeNarratives=$alternativeNarratives, " +
-            "analyzeMotivations=$analyzeMotivations, findInconsistencies=$findInconsistencies")
+    log.info(
+      "Configuration: constructNarrative=$constructNarrative, identifyPlotPoints=$identifyPlotPoints, " +
+          "predictOutcomes=$predictOutcomes, alternativeNarratives=$alternativeNarratives, " +
+          "analyzeMotivations=$analyzeMotivations, findInconsistencies=$findInconsistencies"
+    )
 
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
-    val ui = task.ui
+    task.ui
     val tabs = TabbedDisplay(task)
     // Initialize transcript
     val transcriptStream = transcript(task)
@@ -1105,6 +1108,7 @@ Be concise but insightful. Focus on actionable insights.
       transcriptWriter?.close()
     }
   }
+
   private fun getInputFileContent(): String = (executionConfig?.input_files ?: listOf())
     .flatMap { pattern: String ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
@@ -1131,6 +1135,7 @@ Be concise but insightful. Focus on actionable insights.
         ""
       }
     }
+
   private fun saveAnalysisToFile(
     outputDir: File,
     filename: String,
@@ -1144,8 +1149,33 @@ Be concise but insightful. Focus on actionable insights.
       log.error("Failed to save analysis to file: $filename", e)
     }
   }
+
   private fun isTextFile(file: File): Boolean {
-    val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+    val textExtensions = setOf(
+      "txt",
+      "md",
+      "kt",
+      "java",
+      "js",
+      "ts",
+      "py",
+      "rb",
+      "go",
+      "rs",
+      "c",
+      "cpp",
+      "h",
+      "hpp",
+      "css",
+      "html",
+      "xml",
+      "json",
+      "yaml",
+      "yml",
+      "properties",
+      "gradle",
+      "maven"
+    )
     return textExtensions.contains(file.extension.lowercase())
   }
 
