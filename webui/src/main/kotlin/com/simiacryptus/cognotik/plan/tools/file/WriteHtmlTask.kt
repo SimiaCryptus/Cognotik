@@ -85,6 +85,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
         """.trimIndent()
     }
 
+
     override fun run(
         agent: TaskOrchestrator,
         messages: List<String>,
@@ -111,13 +112,18 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
         }
 
         val newTask = task.ui.newTask(false)
-        val toInput = { it: String -> listOf(it) }
+      val transcriptStream = transcript(newTask)
+      val transcriptWriter = transcriptStream?.bufferedWriter()
+
+      val toInput = { it: String -> listOf(it) }
         val ui = task.ui
         val api = orchestrationConfig.defaultChatter
 
         newTask.add(MarkdownUtil.renderMarkdown("## Creating HTML File: `$htmlFile`", ui = ui))
 
         val contextFiles = getInputFileCode()
+      transcriptWriter?.write("# HTML Generation Transcript\n\n")
+      transcriptWriter?.write("## Creating HTML File: `$htmlFile`\n\n")
         val priorCode = getPriorCode(agent.executionState)
 
         // Step 1: Generate HTML structure with classes
@@ -164,10 +170,16 @@ Provide the HTML structure within a code block:
         )
 
         newTask.add(MarkdownUtil.renderMarkdown("### Step 1: Generating HTML Structure", ui = ui))
+      transcriptWriter?.write("### Step 1: Generating HTML Structure\n\n")
+      transcriptWriter?.write("**Prompt:**\n```\n$htmlPrompt\n```\n\n")
 
-      val htmlStructure = extractCodeFromResponse(chatAgent.answer(toInput(htmlPrompt)), "html")
+      val htmlResponse = chatAgent.answer(toInput(htmlPrompt))
+      transcriptWriter?.write("**Response:**\n$htmlResponse\n\n")
+
+      val htmlStructure = extractCodeFromResponse(htmlResponse, "html")
 
         if (htmlStructure.isEmpty()) {
+          transcriptWriter?.close()
             resultFn("ERROR: Failed to generate HTML structure")
             return
         }
@@ -200,8 +212,12 @@ Provide only the JavaScript code within a code block:
         """.trimIndent()
 
         newTask.add(MarkdownUtil.renderMarkdown("### Step 2: Generating JavaScript", ui = ui))
+      transcriptWriter?.write("### Step 2: Generating JavaScript\n\n")
+      transcriptWriter?.write("**Prompt:**\n```\n$jsPrompt\n```\n\n")
 
-      val jsCode = extractCodeFromResponse(chatAgent.answer(toInput(jsPrompt)), "javascript", "js")
+      val jsResponse = chatAgent.answer(toInput(jsPrompt))
+      transcriptWriter?.write("**Response:**\n$jsResponse\n\n")
+      val jsCode = extractCodeFromResponse(jsResponse, "javascript", "js")
 
         // Step 3: Generate CSS
         val cssPrompt = """
@@ -234,22 +250,33 @@ Provide only the CSS code within a code block:
 
         newTask.add(MarkdownUtil.renderMarkdown("### Step 3: Generating CSS", ui = ui))
 
-      val cssCode = extractCodeFromResponse(chatAgent.answer(toInput(cssPrompt)), "css")
-        // Step 4: Combine everything into a complete HTML file
+      transcriptWriter?.write("### Step 3: Generating CSS\n\n")
+      transcriptWriter?.write("**Prompt:**\n```\n$cssPrompt\n```\n\n")
+
+      val cssResponse = chatAgent.answer(toInput(cssPrompt))
+      transcriptWriter?.write("**Response:**\n$cssResponse\n\n")
+      val cssCode = extractCodeFromResponse(cssResponse, "css")
+
+      // Step 4: Combine everything into a complete HTML file
         val completeHtml = combineHtmlComponents(htmlStructure, cssCode, jsCode)
 
         if (completeHtml.isEmpty()) {
+          transcriptWriter?.close()
             resultFn("ERROR: Failed to generate valid HTML content")
             return
         }
 
       task.add("""<a href="${task.linkTo(htmlFile)}">${htmlFile}</a> created""")
         val outputPath = root.resolve(htmlFile)
+      transcriptWriter?.write("### Step 4: Final HTML Output\n\n")
+      transcriptWriter?.write("```html\n$completeHtml\n```\n\n")
 
 
         if (orchestrationConfig.autoFix) {
             outputPath.toFile().parentFile?.mkdirs()
             outputPath.toFile().writeText(completeHtml)
+          transcriptWriter?.write("**Result:** Successfully wrote $htmlFile (auto-applied)\n")
+          transcriptWriter?.close()
             newTask.complete("Successfully wrote $htmlFile")
             resultFn("Successfully wrote $htmlFile")
         } else {
@@ -259,6 +286,8 @@ Provide only the CSS code within a code block:
                         try {
                             outputPath.toFile().parentFile?.mkdirs()
                             outputPath.toFile().writeText(completeHtml)
+                          transcriptWriter?.write("**Result:** Successfully wrote $htmlFile (user accepted)\n")
+                          transcriptWriter?.close()
                             newTask.complete("Successfully wrote $htmlFile")
                             resultFn("Successfully wrote $htmlFile")
                         } catch (e: Exception) {
@@ -357,3 +386,4 @@ Provide only the CSS code within a code block:
         )
     }
 }
+

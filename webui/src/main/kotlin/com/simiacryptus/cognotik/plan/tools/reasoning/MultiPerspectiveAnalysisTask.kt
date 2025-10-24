@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
 
 class MultiPerspectiveAnalysisTask(
@@ -135,6 +136,8 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
     } catch (e: Exception) {
       log.warn("Failed to create tabbed display", e)
     }
+    val transcriptStream = transcript(task)
+
 
     val contextFiles = getContextFiles()
     val priorCode = getPriorCode(agent.executionState)
@@ -142,6 +145,14 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
     // Create tabs for each perspective
     val tabs = TabbedDisplay(task)
     val perspectiveResults = mutableMapOf<String, String>()
+    transcriptStream?.bufferedWriter()?.use { writer ->
+      writer.write("# Multi-Perspective Analysis Transcript\n\n")
+      writer.write("**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}\n\n")
+      writer.write("**Perspectives:** ${perspectives.joinToString(", ")}\n\n")
+      writer.write("**Consensus Threshold:** ${executionConfig.consensus_threshold}\n\n")
+      writer.write("---\n\n")
+    }
+
 
     // Analyze from each perspective
     perspectives.forEach { perspective ->
@@ -180,6 +191,12 @@ Provide a thorough analysis from the $perspective viewpoint.
         var analysis: String? = chatAgent.answer(listOf(prompt))
 
         perspectiveResults[perspective] = analysis ?: ""
+        transcriptStream?.bufferedWriter()?.use { writer ->
+          writer.write("## $perspective Perspective\n\n")
+          writer.write("$analysis\n\n")
+          writer.write("---\n\n")
+        }
+
         perspectiveTask.complete(
           MarkdownUtil.renderMarkdown(
             "### $perspective Perspective\n\n$analysis",
@@ -238,6 +255,11 @@ Provide a comprehensive synthesis that integrates all perspectives.
 
       try {
         val synthesis = synthesisAgent.answer(listOf(synthesisPrompt))
+        transcriptStream?.bufferedWriter()?.use { writer ->
+          writer.write("## Synthesis\n\n")
+          writer.write("$synthesis\n\n")
+        }
+
         synthesisTask.complete(
           MarkdownUtil.renderMarkdown(
             "## Synthesis\n\n$synthesis",
@@ -282,6 +304,8 @@ Provide a comprehensive synthesis that integrates all perspectives.
         }
       }
     }
+    transcriptStream?.close()
+
 
     task.safeComplete("Multi-perspective analysis complete.", log)
     resultFn(finalResult)
@@ -307,6 +331,19 @@ Provide a comprehensive synthesis that integrates all perspectives.
       files
     }.joinToString("\n\n")
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(MultiPerspectiveAnalysisTask::class.java)

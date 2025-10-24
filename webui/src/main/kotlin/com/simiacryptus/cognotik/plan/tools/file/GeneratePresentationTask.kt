@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
+import java.io.FileOutputStream
 
 class GeneratePresentationTask(
   orchestrationConfig: OrchestrationConfig,
@@ -267,6 +268,9 @@ Provide only the CSS code within a code block:
     newTask.add(MarkdownUtil.renderMarkdown("### Step 3: Generating Presentation JavaScript", ui = ui))
     filesToWrite.add(htmlFile to htmlStructure)
     filesToWrite.add("presentation.css" to (standardCss + "\n\n" + cssCode))
+    // Generate transcript
+    val transcriptStream = transcript(task, slideContent, presentationTitle)
+    transcriptStream?.close()
 
 
     // Display preview
@@ -330,6 +334,47 @@ Provide only the CSS code within a code block:
 
     return ""
   }
+  private fun transcript(task: SessionTask, slideContent: String, presentationTitle: String): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    if (markdownTranscript != null) {
+      try {
+        // Write transcript header
+        markdownTranscript.write("# $presentationTitle - Transcript\n\n".toByteArray())
+        markdownTranscript.write("Generated: ${java.time.LocalDateTime.now()}\n\n".toByteArray())
+        markdownTranscript.write("---\n\n".toByteArray())
+        // Extract content from slides
+        val sectionRegex = "<section[^>]*>(.*?)</section>".toRegex(RegexOption.DOT_MATCHES_ALL)
+        val sections = sectionRegex.findAll(slideContent)
+        var slideNumber = 0
+        sections.forEach { section ->
+          slideNumber++
+          val sectionContent = section.groupValues[1]
+          // Extract heading
+          val headingRegex = "<h[1-6][^>]*>(.*?)</h[1-6]>".toRegex(RegexOption.DOT_MATCHES_ALL)
+          val heading = headingRegex.find(sectionContent)?.groupValues?.get(1)?.replace(Regex("<[^>]+>"), "")?.trim()
+          // Extract speaker notes
+          val notesRegex = "<aside[^>]*class=\"notes\"[^>]*>(.*?)</aside>".toRegex(RegexOption.DOT_MATCHES_ALL)
+          val notes = notesRegex.find(sectionContent)?.groupValues?.get(1)?.replace(Regex("<[^>]+>"), "")?.trim()
+          markdownTranscript.write("## Slide $slideNumber${if (heading != null) ": $heading" else ""}\n\n".toByteArray())
+          if (notes != null && notes.isNotEmpty()) {
+            markdownTranscript.write("$notes\n\n".toByteArray())
+          }
+        }
+      } catch (e: Exception) {
+        log.error("Error writing transcript", e)
+      }
+      task.complete(
+        "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+          link.removeSuffix(
+            ".md"
+          )
+        }.pdf' target='_blank'>pdf</a>"
+      )
+    }
+    return markdownTranscript
+  }
+
 
   override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept and Write Files") {

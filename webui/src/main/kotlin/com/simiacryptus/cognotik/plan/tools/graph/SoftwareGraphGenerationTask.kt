@@ -7,8 +7,8 @@ import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.AbstractTask
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.io.FileOutputStream
 
 class SoftwareGraphGenerationTask(
     orchestrationConfig: OrchestrationConfig,
@@ -73,6 +74,7 @@ class SoftwareGraphGenerationTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         val typeConfig = typeConfig ?: throw RuntimeException()
+      val markdownTranscript = transcript(task)
         val graphGenerationActor = ParsedAgent<SoftwareNodeType.SoftwareGraph>(
             name = "SoftwareGraphGenerator",
             resultClass = SoftwareNodeType.SoftwareGraph::class.java,
@@ -111,10 +113,26 @@ class SoftwareGraphGenerationTask(
                 }"
             ).filter { it.isNotBlank() },
         )
-        val response = graphGenerationActor.respond(
+      // Write to transcript
+      markdownTranscript?.write("# Software Graph Generation\n\n".toByteArray())
+      markdownTranscript?.write("## Input Files\n\n".toByteArray())
+      markdownTranscript?.write(getInputFileCode().toByteArray())
+      markdownTranscript?.write("\n\n## Request\n\n".toByteArray())
+      markdownTranscript?.write(
+        "Generate a SoftwareGraph for the above code focusing on these node types: ${
+          executionConfig?.node_types?.joinToString(", ")
+        }\n\n".toByteArray()
+      )
+
+      val response = graphGenerationActor.respond(
             messages = chatMessages,
             input = messages,
         )
+      // Write response to transcript
+      markdownTranscript?.write("## Generated Graph\n\n".toByteArray())
+      markdownTranscript?.write("```json\n".toByteArray())
+      markdownTranscript?.write(JsonUtil.toJson(response.obj).toByteArray())
+      markdownTranscript?.write("\n```\n\n".toByteArray())
 
         val outputFile = File(orchestrationConfig.absoluteWorkingDir ?: ".").resolve(executionConfig?.output_file.let {
             when {
@@ -140,13 +158,30 @@ class SoftwareGraphGenerationTask(
             }
 
             task.add(MarkdownUtil.renderMarkdown(summary, ui = task.ui))
+          markdownTranscript?.write("## Summary\n\n".toByteArray())
+          markdownTranscript?.write(summary.toByteArray())
+          markdownTranscript?.close()
             resultFn(summary)
         } catch (e: Exception) {
             task.error(e)
+          markdownTranscript?.write("\n\n## Error\n\n".toByteArray())
+          markdownTranscript?.write("Failed to save graph: ${e.message}\n".toByteArray())
+          markdownTranscript?.close()
             resultFn("Failed to save graph to ${outputFile.absolutePath}: ${e.message}")
         }
     }
 
     companion object {
     }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(".md")
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
 }

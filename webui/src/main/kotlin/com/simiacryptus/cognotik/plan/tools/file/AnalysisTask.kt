@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
@@ -79,6 +80,7 @@ import java.util.concurrent.atomic.AtomicReference
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+      val transcript = transcript(task)
 
         val toInput = { it: String ->
             messages + listOf(
@@ -102,17 +104,16 @@ import java.util.concurrent.atomic.AtomicReference
                 ?: this.orchestrationConfig.defaultChatter).getChildClient(task),
             temperature = this.orchestrationConfig.temperature,
         )
-        val inquiryResult = if (orchestrationConfig.autoFix || typeConfig.non_interactive)
-            insightActor.answer(
-                toInput(
+        val inquiryResult = if (orchestrationConfig.autoFix || typeConfig.non_interactive) {
+          val input = toInput(
                     "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
                         taskConfig?.inquiry_questions?.joinToString(
                             "\n"
                         )
                     }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
-                ),
-            ).apply {
-                task.add(MarkdownUtil.renderMarkdown(this, ui = task.ui))
+          )
+          transcript?.write("# Analysis Request\n\n${input.joinToString("\n\n")}\n\n".toByteArray())
+          insightActor.answer(input)
             }
         else
             Discussable(
@@ -125,7 +126,12 @@ import java.util.concurrent.atomic.AtomicReference
                     }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
                 },
                 heading = "",
-                initialResponse = { it: String -> insightActor.answer(toInput(it)) },
+              initialResponse = { it: String ->
+                transcript?.write("# Initial Request\n\n$it\n\n".toByteArray())
+                insightActor.answer(toInput(it)).also { response ->
+                  transcript?.write("# Initial Response\n\n$response\n\n".toByteArray())
+                }
+              },
                 outputFn = { design: String ->
                     MarkdownUtil.renderMarkdown(design)
                 },
@@ -135,18 +141,36 @@ import java.util.concurrent.atomic.AtomicReference
                     }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
                     val messages = usermessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
                         .toTypedArray<ModelSchema.ChatMessage>()
+                  transcript?.write("# Revision Request\n\n${usermessages.joinToString("\n") { "${it.second}: ${it.first}" }}\n\n".toByteArray())
                     insightActor.respond(
                         messages = messages,
                         input = toInput(inStr),
-                    )
+                    ).also { response ->
+                      transcript?.write("# Revision Response\n\n$response\n\n".toByteArray())
+                    }
                 },
                 atomicRef = AtomicReference(),
                 semaphore = Semaphore(0),
             ).call()
+      transcript?.close()
         resultFn(inquiryResult ?: "(no response)")
     }
 
-    private fun getInputFileCode(): String {
+   private fun transcript(task: SessionTask): FileOutputStream? {
+     val (link, file) = task.createFile("transcript.md")
+     val markdownTranscript = file?.outputStream()
+     task.complete(
+       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+         link.removeSuffix(
+           ".md"
+         )
+       }.pdf' target='_blank'>pdf</a>"
+     )
+     return markdownTranscript
+   }
+
+
+   private fun getInputFileCode(): String {
         val strings = executionConfig?.input_files ?: listOf()
         val flatMap = strings
             .flatMap { pattern: String ->

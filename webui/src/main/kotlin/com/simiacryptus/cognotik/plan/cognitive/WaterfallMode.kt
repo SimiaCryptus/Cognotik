@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.Path
 
 /**
@@ -28,15 +29,21 @@ open class WaterfallMode(
 ) : CognitiveMode {
 
     private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
+  private var transcriptStream: FileOutputStream? = null
 
     override fun initialize() {
         log.debug("Initializing PlanAheadMode")
+      transcriptStream = transcript(task)
     }
 
     override fun contextData(): List<String> = emptyList()
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         log.debug("Handling user message: $userMessage")
+      transcriptStream?.let { stream ->
+        stream.write("## User Message\n\n$userMessage\n\n".toByteArray())
+        stream.flush()
+      }
         execute(userMessage, task)
     }
 
@@ -66,6 +73,10 @@ open class WaterfallMode(
             contextFn = { contextData() },
             describer = describer
           )
+          transcriptStream?.let { stream ->
+            stream.write("## Generated Plan\n\n${plan.planText}\n\n".toByteArray())
+            stream.flush()
+          }
 
           coordinator.executePlan(
             plan = plan.plan,
@@ -77,6 +88,12 @@ open class WaterfallMode(
         } catch (e: Throwable) {
             task.error(e) // Report error on the current task
             log.error("Error in execute", e)
+          transcriptStream?.let { stream ->
+            stream.write("## Error\n\n```\n${e.message}\n${e.stackTraceToString()}\n```\n\n".toByteArray())
+            stream.flush()
+          }
+        } finally {
+          transcriptStream?.close()
         }
     }
 
@@ -206,6 +223,26 @@ open class WaterfallMode(
             str
         )
     }
+
+  /**
+   * Creates a transcript file for logging the session's interactions.
+   * The transcript is written in Markdown format and includes links to HTML and PDF versions.
+   *
+   * @param task The session task used to create the file
+   * @return FileOutputStream for writing to the transcript, or null if creation failed
+   */
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
 
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1

@@ -18,6 +18,7 @@ import com.simiacryptus.cognotik.util.toContentList
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.io.FileOutputStream
 import java.lang.Thread.sleep
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -43,6 +44,7 @@ open class ConversationalMode(
   private val messagesLock = Any()
   private val messages get() = messageMaps.computeIfAbsent(session) { ConcurrentLinkedQueue() }
   private val messageBuffer = ConcurrentLinkedQueue<String>()
+  private var transcriptStream: FileOutputStream? = null
   private var isProcessing = false
   private val systemPrompt = "Given the following input, choose ONE task to execute and describe it in detail."
   private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
@@ -57,6 +59,7 @@ open class ConversationalMode(
     log.debug(
       "ConversationalMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}", RuntimeException()
     )
+    transcriptStream = transcript(task)
     log.debug(
       "Task configurations: ${
       orchestrationConfig.taskSettings.values.joinToString(", ") {
@@ -78,6 +81,7 @@ open class ConversationalMode(
     }
 
     task.echo(userMessage.renderMarkdown())
+    writeToTranscript("## User\n\n$userMessage\n\n")
     this.task.ui.pool.submit {
       try {
         while (!Thread.interrupted()) {
@@ -114,6 +118,7 @@ open class ConversationalMode(
       // Extract topics from the aggregated response
       if (useExpansionSyntax && aggregateResponse.isNotEmpty()) {
         try {
+          writeToTranscript("## Assistant\n\n${aggregateResponse}\n\n")
           val model = orchestrationConfig.defaultChatter.getChildClient(task)
           val topics = extractTopics(aggregateResponse.toString(), model)
           topics.topics?.forEach { (topicType, entities) ->
@@ -127,6 +132,7 @@ open class ConversationalMode(
               "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}"
             }
             task.complete(topicsText.renderMarkdown(), additionalClasses = "topics")
+            writeToTranscript("### Topics\n\n$topicsText\n\n")
           }
         } catch (e: Exception) {
           log.error("Error in topic extraction", e)
@@ -346,6 +352,27 @@ open class ConversationalMode(
   )
 
 
+  /**
+   * Creates and initializes a transcript file for the conversation
+   */
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(".md")
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
+  /**
+   * Writes content to the transcript file if available
+   */
+  private fun writeToTranscript(content: String) {
+    transcriptStream?.write(content.toByteArray())
+    transcriptStream?.flush()
+  }
   /**
    * Gets the current conversation context as a list of messages
    */

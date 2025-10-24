@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
@@ -68,6 +69,7 @@ class RunShellCommandTask(
     ) {
         val autoRunCounter = AtomicInteger(0)
         val semaphore = Semaphore(0)
+      val markdownTranscript = transcript(task)
         val typeConfig = typeConfig ?: throw RuntimeException()
         val chatter = (typeConfig.model?.let { this.orchestrationConfig.instance(it) }
             ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
@@ -113,6 +115,12 @@ class RunShellCommandTask(
                 val result = super.execute(task, response) // Runs the interpreter, updates response.result
                 if (orchestrationConfig.autoFix) {
                     val resultString =
+                      "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n" +
+                          "## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n" + // STDOUT
+                          "## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n" // STDERR
+                  markdownTranscript?.write(resultString.toByteArray())
+                  markdownTranscript?.flush()
+                  resultFn(resultString)
                         "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n" +
                                 "## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n" + // STDOUT
                                 "## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n" // STDERR
@@ -178,7 +186,11 @@ class RunShellCommandTask(
                         "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n" +
                                 "## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n" +
                                 "## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n"
-                    }.apply { resultFn(this) }
+                    }.apply {
+                      markdownTranscript?.write(this.toByteArray())
+                      markdownTranscript?.flush()
+                      resultFn(this)
+                    }
                     semaphore.release()
                 }
             }
@@ -195,10 +207,26 @@ class RunShellCommandTask(
             semaphore.acquire()
         } catch (e: Throwable) {
             log.warn("Error", e)
+        } finally {
+          markdownTranscript?.close()
         }
     }
 
-    companion object {
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
+
+  companion object {
         private val log = LoggerFactory.getLogger(RunShellCommandTask::class.java)
         val RunShellCommand = TaskType(
             "RunShellCommand",

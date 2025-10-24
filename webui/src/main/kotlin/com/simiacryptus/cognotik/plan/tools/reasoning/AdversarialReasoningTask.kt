@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -118,6 +119,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     log.info("Starting AdversarialReasoningTask for target: '${executionConfig?.target_system}'")
 
     val targetSystem = executionConfig?.target_system
+    val transcript = transcript(task)
     if (targetSystem.isNullOrBlank()) {
       log.error("Configuration error: No target_system specified")
       task.safeComplete("CONFIGURATION ERROR: No target_system specified", log)
@@ -146,6 +148,18 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     // Overview tab
     val overviewTask = ui.newTask(false)
     tabs["Overview"] = overviewTask.placeholder
+    transcript?.let {
+      it.write("# 🔴 Adversarial Reasoning / Red Team Analysis\n\n".toByteArray())
+      it.write("**Target System:** $targetSystem\n\n".toByteArray())
+      it.write("**Attack Vectors:** ${attackVectors.joinToString(", ")}\n\n".toByteArray())
+      it.write("**Adversary Capability:** $adversaryCapability\n\n".toByteArray())
+      it.write("**Generate Exploits:** ${if (generateExploits) "⚠️ Yes" else "No"}\n\n".toByteArray())
+      it.write("**Suggest Mitigations:** ${if (suggestMitigations) "Yes" else "No"}\n\n".toByteArray())
+      it.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+      it.write("---\n\n".toByteArray())
+      it.flush()
+    }
+
 
     val overviewContent = buildString {
       appendLine("# 🔴 Adversarial Reasoning / Red Team Analysis")
@@ -192,6 +206,13 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     if (priorContext.isNotBlank() || fileContext.isNotBlank()) {
       val contextTask = ui.newTask(false)
       tabs["Context"] = contextTask.placeholder
+      transcript?.let {
+        it.write("## Context for Analysis\n\n".toByteArray())
+        if (priorContext.isNotBlank()) {
+          it.write("### Prior Task Results\n\n".toByteArray())
+          it.write("${priorContext.truncateForDisplay()}\n\n".toByteArray())
+        }
+      }
       contextTask.add(
         buildString {
           appendLine("# Context for Analysis")
@@ -234,6 +255,12 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         val vectorTask = ui.newTask(false)
         tabs["Vector: ${vector.capitalize()}"] = vectorTask.placeholder
+        transcript?.let {
+          it.write("## Attack Vector: ${vector.capitalize()}\n\n".toByteArray())
+          it.write("**Adversary Capability:** $adversaryCapability\n\n".toByteArray())
+          it.write("---\n\n".toByteArray())
+        }
+
 
         vectorTask.add(
           buildString {
@@ -280,6 +307,11 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         // Perform analysis
         val analysisResult = adversarialAgent.answer(listOf(analysisPrompt))
+        transcript?.let {
+          it.write("### Analysis Results\n\n".toByteArray())
+          it.write("$analysisResult\n\n".toByteArray())
+        }
+
 
         vectorTask.add(
           buildString {
@@ -304,6 +336,12 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         val vectorTime = System.currentTimeMillis() - vectorStartTime
         vectorAnalysisTimes[vector] = vectorTime
+        transcript?.let {
+          it.write("**Vulnerabilities Found:** ${parsedVulnerabilities.size}\n\n".toByteArray())
+          it.write("**Analysis Time:** ${vectorTime / 1000.0}s\n\n".toByteArray())
+          it.write("---\n\n".toByteArray())
+        }
+
 
         vectorTask.add(
           buildString {
@@ -349,6 +387,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
           }.renderMarkdown
         )
         task.update()
+        transcript?.let {
+          it.write("## 🛡️ Mitigation Strategies\n\n".toByteArray())
+        }
+
 
         val mitigationAgent = createMitigationAgent(api)
         val mitigationPrompt = buildMitigationPrompt(
@@ -358,6 +400,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         )
 
         val mitigations = mitigationAgent.answer(listOf(mitigationPrompt))
+        transcript?.let {
+          it.write("$mitigations\n\n".toByteArray())
+        }
+
 
         mitigationTask.add(
           buildString {
@@ -406,6 +452,11 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         failureModes = allFailureModes,
         totalTime = System.currentTimeMillis() - startTime
       )
+      transcript?.let {
+        it.write("## 📊 Executive Summary\n\n".toByteArray())
+        it.write("$summary\n\n".toByteArray())
+      }
+
 
       summaryTask.add(
         buildString {
@@ -423,6 +474,16 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
       // Final overview update
       val totalTime = System.currentTimeMillis() - startTime
+      transcript?.let {
+        it.write("---\n\n".toByteArray())
+        it.write("## ✅ Analysis Complete\n\n".toByteArray())
+        it.write("**Total Time:** ${totalTime / 1000.0}s\n\n".toByteArray())
+        it.write("**Total Vulnerabilities:** ${allVulnerabilities.size}\n\n".toByteArray())
+        it.write("**Edge Cases Identified:** ${allEdgeCases.size}\n\n".toByteArray())
+        it.write("**Failure Modes:** ${allFailureModes.size}\n\n".toByteArray())
+        it.close()
+      }
+
       overviewTask.add(
         buildString {
           appendLine()
@@ -493,6 +554,13 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
       resultFn(conciseResult)
 
     } catch (e: Exception) {
+      transcript?.let {
+        it.write("\n\n---\n\n".toByteArray())
+        it.write("## ❌ Error Occurred\n\n".toByteArray())
+        it.write("**Error:** ${e.message}\n\n".toByteArray())
+        it.write("**Type:** ${e.javaClass.simpleName}\n\n".toByteArray())
+        it.close()
+      }
       log.error("Error during adversarial reasoning", e)
       task.error(e)
 
@@ -529,6 +597,20 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
       resultFn(errorOutput)
     }
   }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   private fun createAdversarialAgent(
     vector: String,

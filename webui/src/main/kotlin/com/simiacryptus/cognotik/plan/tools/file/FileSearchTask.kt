@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -72,6 +73,9 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
     ) {
         val searchResults = performSearch()
         val formattedResults = formatSearchResults(searchResults)
+      val transcript = transcript(task)
+      transcript?.write(formattedResults.toByteArray())
+      transcript?.close()
         task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui))
         resultFn(formattedResults)
     }
@@ -322,8 +326,21 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
         return sb.toString().take(maxLength) // Final safeguard
     }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("search_transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing search transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
 
-    companion object {
+
+  companion object {
         private val log = LoggerFactory.getLogger(FileSearchTask::class.java)
         fun getAvailableFiles(
             path: Path,

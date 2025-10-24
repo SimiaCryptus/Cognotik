@@ -5,20 +5,12 @@ import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.AbstractTask
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
-import com.simiacryptus.cognotik.plan.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileWriter
-import java.io.StringWriter
+import java.io.*
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -68,13 +60,20 @@ class DataTableCompilationTask(
           ** Specify output file path for the compiled table
     """.trimIndent()
 
-    override fun run(
+  override fun run(
         agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+    val transcript = transcript(task)
+    transcript?.use { out ->
+      out.write("# Data Table Compilation Task\n\n".toByteArray())
+      out.write("## Configuration\n\n".toByteArray())
+      out.write("- File Patterns: ${executionConfig?.file_patterns?.joinToString(", ")}\n".toByteArray())
+      out.write("- Output File: ${executionConfig?.output_file}\n\n".toByteArray())
+    }
 
         task.add(MarkdownUtil.renderMarkdown("## Step 1: Collecting files from patterns"))
         val result = mutableListOf<Path>()
@@ -88,14 +87,26 @@ class DataTableCompilationTask(
                     .forEach { result.add(it) }
             }
         }
-        val matchedFiles = result.distinct()
+    val matchedFiles = result.distinct()
         if (matchedFiles.isEmpty()) {
             val errorMsg = "No files matched the provided patterns: ${executionConfig?.file_patterns?.joinToString(", ")}"
+          transcript?.use { out ->
+            out.write("### Error\n\n".toByteArray())
+            out.write("$errorMsg\n\n".toByteArray())
+          }
             task.error(Exception(errorMsg))
             resultFn(errorMsg)
             return
         }
         task.add(MarkdownUtil.renderMarkdown("Found ${matchedFiles.size} files matching the patterns"))
+    transcript?.use { out ->
+      out.write("## Step 1: File Collection\n\n".toByteArray())
+      out.write("Found ${matchedFiles.size} files:\n\n".toByteArray())
+      matchedFiles.forEach { file ->
+        out.write("- ${file.name}\n".toByteArray())
+      }
+      out.write("\n".toByteArray())
+    }
 
         val fileContentString = matchedFiles.joinToString("\n\n") { file ->
             val content = readFileContent(file)
@@ -145,14 +156,23 @@ class DataTableCompilationTask(
             ),
         )
         val columns = columnsResponse.obj
-        val columnsList = columns.columns.map {
+    val columnsList = columns.columns.map {
             Column(
                 id = it.id,
                 name = it.name,
                 description = it.description,
             )
         }
-        val rowsList = ParsedAgent(
+    transcript?.use { out ->
+      out.write("## Step 2: Column Identification\n\n".toByteArray())
+      out.write("Identified ${columnsList.size} columns:\n\n".toByteArray())
+      columnsList.forEach { col ->
+        out.write("- **${col.name}** (${col.id}): ${col.description}\n".toByteArray())
+      }
+      out.write("\n".toByteArray())
+    }
+
+    val rowsList = ParsedAgent(
             name = "RowIdentifier",
             resultClass = Rows::class.java,
             exampleInstance = Rows(
@@ -189,8 +209,16 @@ class DataTableCompilationTask(
             ),
         )
 
-        task.add(MarkdownUtil.renderMarkdown("Identified ${rowsList.obj.rows.size} rows"))
+    task.add(MarkdownUtil.renderMarkdown("Identified ${rowsList.obj.rows.size} rows"))
         task.add(MarkdownUtil.renderMarkdown("Identified ${columnsList.size} columns"))
+    transcript?.use { out ->
+      out.write("## Step 3: Row Identification\n\n".toByteArray())
+      out.write("Identified ${rowsList.obj.rows.size} rows:\n\n".toByteArray())
+      rowsList.obj.rows.forEach { row ->
+        out.write("- **${row.id}** (Sources: ${row.sourceFiles.joinToString(", ")})\n".toByteArray())
+      }
+      out.write("\n".toByteArray())
+    }
 
         task.add(MarkdownUtil.renderMarkdown("## Step 4: Extracting cell data for each row"))
         val tableData = mutableListOf<Map<String, Any>>()
@@ -234,12 +262,19 @@ class DataTableCompilationTask(
                 ),
             )
 
-            val rowData = rowDataResponse.obj
+          val rowData = rowDataResponse.obj
             val rowMap = mutableMapOf<String, Any>()
             rowMap["rowId"] = row.id
             rowMap.putAll(rowData.data)
 
             tableData.add(rowMap)
+          transcript?.use { out ->
+            out.write("### Row: ${row.id}\n\n".toByteArray())
+            rowData.data.forEach { (key, value) ->
+              out.write("- $key: $value\n".toByteArray())
+            }
+            out.write("\n".toByteArray())
+          }
         }
 
         task.add(MarkdownUtil.renderMarkdown("## Step 5: Compiling and saving data table"))
@@ -299,7 +334,7 @@ class DataTableCompilationTask(
             }
         }
 
-        val resultMessage = ("""
+    val resultMessage = ("""
       Data table compilation complete!
       - Processed ${matchedFiles.size} source files
       - Identified ${rowsList.obj.rows.size} rows and ${columnsList.size} columns
@@ -312,6 +347,20 @@ class DataTableCompilationTask(
                 it.toString()
             }
         }").renderMarkdown()
+    transcript?.use { out ->
+      out.write("## Step 5: Final Results\n\n".toByteArray())
+      out.write("### Summary\n\n".toByteArray())
+      out.write("- Processed ${matchedFiles.size} source files\n".toByteArray())
+      out.write("- Identified ${rowsList.obj.rows.size} rows and ${columnsList.size} columns\n".toByteArray())
+      out.write("- Saved compiled data to: ${outputFile.absolutePath}\n\n".toByteArray())
+      out.write("### Compiled Data Table\n\n".toByteArray())
+      StringWriter().use { sw ->
+        BufferedWriter(sw).use { bw ->
+          writeMarkdown(columnsList, bw, tableData)
+        }
+        out.write(sw.toString().toByteArray())
+      }
+    }
 
         resultFn(resultMessage)
     }
@@ -340,7 +389,7 @@ class DataTableCompilationTask(
         }
     }
 
-    private fun readFileContent(path: Path): String {
+  private fun readFileContent(path: Path): String {
         return try {
             Files.readString(path)
         } catch (e: Exception) {
@@ -348,6 +397,19 @@ class DataTableCompilationTask(
             "ERROR: Could not read file content"
         }
     }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
 
     companion object {
         private val log = LoggerFactory.getLogger(DataTableCompilationTask::class.java)

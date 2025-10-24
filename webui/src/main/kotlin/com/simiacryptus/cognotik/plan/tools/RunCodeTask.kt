@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
@@ -62,6 +63,7 @@ class RunCodeTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         val autoRunCounter = AtomicInteger(0)
+      val transcript = transcript(task)
         val semaphore = Semaphore(0)
         val typeConfig = typeConfig ?: throw RuntimeException()
         val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
@@ -109,6 +111,10 @@ class RunCodeTask(
                 response: CodeAgent.CodeResult
             ) {
                 val formText = StringBuilder()
+              transcript?.write("## Code Request\n```${runtime.name.lowercase().replace("runtime", "")}\n${request.messages}\n```\n\n".toByteArray())
+              transcript?.write("## Execution Result\n".toByteArray())
+              transcript?.write("**Result Value:**\n```\n${response.result.resultValue}\n```\n\n".toByteArray())
+              transcript?.write("**Output:**\n```\n${response.result.resultOutput}\n```\n\n".toByteArray())
                 var formHandle: StringBuilder? = null
                 if (!orchestrationConfig.autoFix) formHandle = task.add(
                     "<div>\n${
@@ -116,6 +122,7 @@ class RunCodeTask(
                     }\n${
                         ui.hrefLink("Continue", "href-link play-button") {
                             response.let {
+                              transcript?.write("## User Action: Continue\n\n".toByteArray())
                                 "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
                             }.apply { resultFn(this) }
                             semaphore.release()
@@ -123,6 +130,7 @@ class RunCodeTask(
                     }\n</div>\n${
                         super.ui.textInput(oneAtATime { feedback: String ->
                             super.responseAction(task, "Revising...", formHandle!!, formText) {
+                              transcript?.write("## User Feedback\n$feedback\n\n".toByteArray())
                                 super.feedback(task, feedback, request, response)
                             }
                         })
@@ -143,6 +151,7 @@ class RunCodeTask(
             ): String {
                 val result = super.execute(task, response)
                 if (orchestrationConfig.autoFix) {
+                  transcript?.write("## Auto-fix Execution\n\n".toByteArray())
                     response.let {
                         "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n"
                     }.apply { resultFn(this) }
@@ -161,9 +170,26 @@ class RunCodeTask(
         try {
             semaphore.acquire()
         } catch (e: Throwable) {
+          transcript?.write("## Error\n```\n${e.message}\n${e.stackTraceToString()}\n```\n\n".toByteArray())
             log.warn("Error", e)
+        } finally {
+          transcript?.write("\n## Task Completed\n".toByteArray())
+          transcript?.close()
         }
     }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
 
     companion object {
         private val log = LoggerFactory.getLogger(RunCodeTask::class.java)

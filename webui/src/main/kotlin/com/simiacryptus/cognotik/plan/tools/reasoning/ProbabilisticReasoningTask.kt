@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -141,6 +142,17 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
 
     val ui = task.ui
     val tabs = TabbedDisplay(task)
+    // Create transcript file
+    val transcriptStream = transcript(task)
+    transcriptStream?.use { stream ->
+      stream.write("# Probabilistic Reasoning Analysis Transcript\n\n".toByteArray())
+      stream.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+      stream.write("**Decision Context:** $decisionContext\n\n".toByteArray())
+      stream.write("**Hypotheses:** ${hypotheses.size}\n\n".toByteArray())
+      stream.write("**Evidence Items:** ${evidence.size}\n\n".toByteArray())
+      stream.write("**Risk Tolerance:** ${executionConfig.risk_tolerance}\n\n".toByteArray())
+      stream.write("---\n\n".toByteArray())
+    }
 
     // Overview tab
     val overviewTask = ui.newTask(false)
@@ -262,6 +274,11 @@ Consider both the strength of evidence and its reliability.
       val updateResult = bayesianAgent.answer(listOf(updatePrompt))
       var stepTime = System.currentTimeMillis() - stepStartTime
       log.debug("Bayesian update completed in ${stepTime}ms: ${updateResult.length} characters")
+      // Write to transcript
+      transcriptStream?.write("\n## Bayesian Update\n\n".toByteArray())
+      transcriptStream?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
+      transcriptStream?.write(updateResult.toByteArray())
+      transcriptStream?.write("\n\n".toByteArray())
 
       
       updateTask.add(
@@ -320,6 +337,11 @@ Consider both the strength of evidence and its reliability.
         val evResult = bayesianAgent.answer(listOf(evPrompt))
         stepTime = System.currentTimeMillis() - stepStartTime
         log.debug("Expected value analysis completed in ${stepTime}ms: ${evResult.length} characters")
+        // Write to transcript
+        transcriptStream?.write("\n## Expected Value Analysis\n\n".toByteArray())
+        transcriptStream?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
+        transcriptStream?.write(evResult.toByteArray())
+        transcriptStream?.write("\n\n".toByteArray())
 
         
         evTask.add(
@@ -375,6 +397,11 @@ Consider both the strength of evidence and its reliability.
         val uncertaintyResult = bayesianAgent.answer(listOf(uncertaintyPrompt))
         stepTime = System.currentTimeMillis() - stepStartTime
         log.debug("Uncertainty analysis completed in ${stepTime}ms: ${uncertaintyResult .length} characters")
+        // Write to transcript
+        transcriptStream?.write("\n## Key Uncertainties\n\n".toByteArray())
+        transcriptStream?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
+        transcriptStream?.write(uncertaintyResult.toByteArray())
+        transcriptStream?.write("\n\n".toByteArray())
 
         
         uncertaintyTask.add(
@@ -430,6 +457,11 @@ Consider both the strength of evidence and its reliability.
         val experimentResult = bayesianAgent.answer(listOf(experimentPrompt))
         stepTime = System.currentTimeMillis() - stepStartTime
         log.debug("Experiment suggestions completed in ${stepTime}ms: ${experimentResult.length} characters")
+        // Write to transcript
+        transcriptStream?.write("\n## Suggested Experiments\n\n".toByteArray())
+        transcriptStream?.write("**Time:** ${stepTime / 1000.0}s\n\n".toByteArray())
+        transcriptStream?.write(experimentResult.toByteArray())
+        transcriptStream?.write("\n\n".toByteArray())
 
         
         experimentTask.add(
@@ -461,6 +493,13 @@ Consider both the strength of evidence and its reliability.
 
       val totalTime = System.currentTimeMillis() - startTime
       log.info("ProbabilisticReasoningTask completed: total_time=${totalTime}ms, hypotheses=${hypotheses.size}, evidence=${evidence.size}")
+      // Write final summary to transcript
+      transcriptStream?.write("\n---\n\n".toByteArray())
+      transcriptStream?.write("## Analysis Complete\n\n".toByteArray())
+      transcriptStream?.write("**Total Time:** ${totalTime / 1000.0}s\n\n".toByteArray())
+      transcriptStream?.write("**Hypotheses Analyzed:** ${hypotheses.size}\n\n".toByteArray())
+      transcriptStream?.write("**Evidence Processed:** ${evidence.size}\n\n".toByteArray())
+      transcriptStream?.write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
 
       // Final overview update
       overviewTask.add(
@@ -484,10 +523,17 @@ Consider both the strength of evidence and its reliability.
       val finalResult = resultBuilder.toString()
       task.safeComplete("Completed Bayesian analysis of ${hypotheses.size} hypotheses in ${totalTime / 1000.0}s", log)
       resultFn(finalResult)
+      transcriptStream?.close()
 
     } catch (e: Exception) {
       log.error("Error during probabilistic reasoning", e)
       task.error(e)
+      // Write error to transcript
+      transcriptStream?.write("\n---\n\n".toByteArray())
+      transcriptStream?.write("## Error Occurred\n\n".toByteArray())
+      transcriptStream?.write("**Error:** ${e.message}\n\n".toByteArray())
+      transcriptStream?.write("**Type:** ${e.javaClass.simpleName}\n\n".toByteArray())
+      transcriptStream?.close()
 
       overviewTask.add(
         buildString {
@@ -700,8 +746,22 @@ Provide:
 5. **Decision Criteria**: When to stop testing and make a decision
 
 Generate the experiment recommendations now:
-    """.trimIndent()
+""".trimIndent()
   }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ProbabilisticReasoningTask::class.java)

@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -252,6 +253,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting ReportGenerationTask for topic: '${executionConfig?.report_topic}'")
+    val markdownTranscript = transcript(task)
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
@@ -282,6 +284,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
       appendLine("# Report Generation")
       appendLine()
       appendLine("**Topic:** $reportTopic")
+      appendLine("**Topic:** $reportTopic")
       appendLine()
       appendLine("## Configuration")
       appendLine("- Report Type: ${executionConfig.report_type}")
@@ -307,6 +310,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
       appendLine("### Phase 1: Data Analysis")
       appendLine("*Analyzing metrics and data points...*")
     }
+    markdownTranscript?.write(overviewContent.toByteArray())
     overviewTask.add(overviewContent.renderMarkdown)
     task.update()
 
@@ -322,21 +326,23 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
         val contextTask = task.ui.newTask(false)
         tabs["Data Sources"] = contextTask.placeholder
-        contextTask.add(
-          buildString {
-            appendLine("# Data Sources & Context")
+        val contextContent = buildString {
+          appendLine("# Data Sources & Context")
+          appendLine()
+          if (priorContext.isNotBlank()) {
+            appendLine("## Prior Context")
+            appendLine(priorContext.truncateForDisplay(2000))
             appendLine()
-            if (priorContext.isNotBlank()) {
-              appendLine("## Prior Context")
-              appendLine(priorContext.truncateForDisplay(2000))
-              appendLine()
-            }
-            if (contextFiles.isNotBlank()) {
-              appendLine("## Related Files")
-              appendLine(contextFiles.truncateForDisplay(2000))
-            }
-          }.renderMarkdown
-        )
+          }
+          if (contextFiles.isNotBlank()) {
+            appendLine("## Related Files")
+            appendLine(contextFiles.truncateForDisplay(2000))
+          }
+        }
+        contextTask.add(contextContent.renderMarkdown)
+
+        markdownTranscript?.write(contextContent.toByteArray())
+
         task.update()
       }
 
@@ -348,6 +354,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
       dataAnalysisTask.add(
         buildString {
           appendLine("# Data Analysis")
+          appendLine()
           appendLine()
           appendLine("**Status:** Analyzing metrics and trends...")
           appendLine()
@@ -408,6 +415,7 @@ Be specific with numbers and percentages where available.
       log.info("Analyzed ${dataAnalyses.size} metrics")
 
       val dataAnalysisContent = buildString {
+        appendLine()
         appendLine("## Key Metrics Analysis")
         appendLine()
         dataAnalyses.forEach { analysis ->
@@ -434,6 +442,7 @@ Be specific with numbers and percentages where available.
         }
         appendLine("**Status:** ✅ Complete")
       }
+      markdownTranscript?.write(dataAnalysisContent.toByteArray())
       dataAnalysisTask.add(dataAnalysisContent.renderMarkdown)
       task.update()
 
@@ -449,6 +458,7 @@ Be specific with numbers and percentages where available.
       outlineTask.add(
         buildString {
           appendLine("# Report Outline")
+          appendLine()
           appendLine()
           appendLine("**Status:** Structuring report sections...")
           appendLine()
@@ -548,6 +558,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
         }
         appendLine("**Status:** ✅ Complete")
       }
+      markdownTranscript?.write(outlineContent.toByteArray())
       outlineTask.add(outlineContent.renderMarkdown)
       task.update()
 
@@ -669,6 +680,7 @@ Be specific, data-driven, and actionable.
             appendLine("**Status:** ✅ Complete")
           }.renderMarkdown
         )
+        markdownTranscript?.write(sectionTask.toString().toByteArray())
         task.update()
 
         resultBuilder.append("## ${sectionOutline.title}\n\n")
@@ -782,6 +794,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
           appendLine("**Status:** ✅ Complete")
         }
         recommendationsTask.add(recommendationsContent.renderMarkdown)
+        markdownTranscript?.write(recommendationsContent.toByteArray())
         task.update()
 
         resultBuilder.append("## Recommendations\n\n")
@@ -887,6 +900,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
           appendLine("**Status:** ✅ Complete")
         }
         riskTask.add(riskContent.renderMarkdown)
+        markdownTranscript?.write(riskContent.toByteArray())
         task.update()
 
         resultBuilder.append("## Risk Assessment\n\n")
@@ -963,6 +977,7 @@ Provide the complete revised report.
               appendLine()
             }.renderMarkdown
           )
+          markdownTranscript?.write("## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray())
           task.update()
         }
 
@@ -1013,6 +1028,7 @@ Provide the complete revised report.
       }
 
       finalTask.add(finalReport.renderMarkdown)
+      markdownTranscript?.write(finalReport.toByteArray())
       task.update()
 
       // Final statistics
@@ -1040,6 +1056,7 @@ Provide the complete revised report.
           appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
         }.renderMarkdown
       )
+      markdownTranscript?.write(overviewTask.toString().toByteArray())
       task.update()
 
       // Concise summary for resultFn
@@ -1062,6 +1079,8 @@ Provide the complete revised report.
       }
 
       log.info("ReportGenerationTask completed: words=$cumulativeWordCount, sections=${generatedSections.size}, time=${totalTime}ms")
+      markdownTranscript?.write("\n\n---\n\n# Final Result\n\n${finalResult}".toByteArray())
+      markdownTranscript?.close()
 
       task.safeComplete("Report generation complete: $cumulativeWordCount words in ${totalTime / 1000}s", log)
       resultFn(finalResult)
@@ -1082,6 +1101,7 @@ Provide the complete revised report.
           appendLine("**Type:** ${e.javaClass.simpleName}")
         }.renderMarkdown
       )
+      markdownTranscript?.write("\n\n---\n\n# Error\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray())
       task.update()
 
       val errorOutput = buildString {
@@ -1097,6 +1117,7 @@ Provide the complete revised report.
           appendLine(resultBuilder.toString())
         }
       }
+      markdownTranscript?.close()
       resultFn(errorOutput)
     }
   }
@@ -1127,6 +1148,18 @@ Provide the complete revised report.
         }
       }
     }
+  }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
   }
 
   companion object {

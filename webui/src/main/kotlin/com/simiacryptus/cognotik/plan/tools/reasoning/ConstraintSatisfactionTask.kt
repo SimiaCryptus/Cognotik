@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 
 class ConstraintSatisfactionTask(
   orchestrationConfig: OrchestrationConfig,
@@ -104,6 +105,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
     }
     
     val startTime = System.currentTimeMillis()
+    val transcript = transcript(task)
     try {
       val problemDescription = executionConfig?.problem_description
       if (problemDescription.isNullOrBlank()) {
@@ -133,6 +135,17 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       val tabbedDisplay = TabbedDisplay(task)
       task.ui.newTask(false).apply {
         tabbedDisplay["Problem Overview"] = placeholder
+        transcript?.write(
+          """
+          |## Constraint Satisfaction Problem
+          |
+          |**Problem**: $problemDescription
+          |
+          |**Hard Constraints** (${hardConstraints.size}):
+          |${hardConstraints.joinToString("\n") { "- $it" }}
+          |
+        """.trimMargin().toByteArray()
+        )
         add(
           MarkdownUtil.renderMarkdown(
             """
@@ -155,6 +168,12 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       task.update()
       // Step 2: Gather Context
       task.ui.newTask(false).apply {
+        transcript?.write(
+          """
+          |
+          |### Gathering Context
+        """.trimMargin().toByteArray()
+        )
         tabbedDisplay["Context"] = placeholder
         add(
           MarkdownUtil.renderMarkdown(
@@ -178,6 +197,12 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       )
       task.ui.newTask(false).apply {
         tabbedDisplay["Context"] = placeholder
+        transcript?.write(
+          """
+          |
+          |### Context Gathered
+        """.trimMargin().toByteArray()
+        )
         add(
           MarkdownUtil.renderMarkdown(
             """
@@ -192,6 +217,12 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       task.update()
       // Step 3: Generate Solution
       task.ui.newTask(false).apply {
+        transcript?.write(
+          """
+          |
+          |### Generating Solution
+        """.trimMargin().toByteArray()
+        )
         tabbedDisplay["Solution Generation"] = placeholder
         task.add(
           MarkdownUtil.renderMarkdown(
@@ -210,6 +241,12 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
 
       var answer: String? = chatAgent.answer(toInput(""))
       task.ui.newTask(false).apply {
+        transcript?.write(
+          """
+          |
+          |### Solution Generated
+        """.trimMargin().toByteArray()
+        )
         tabbedDisplay["Solution Generation"] = placeholder
         add(
           MarkdownUtil.renderMarkdown(
@@ -226,6 +263,14 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       task.ui.newTask(false).apply {
         tabbedDisplay["Final Solution"] = placeholder
         val solution = answer
+        transcript?.write(
+          """
+          |
+          |## Final Solution
+          |
+          |${solution ?: "No solution generated."}
+        """.trimMargin().toByteArray()
+        )
 
         add(
           MarkdownUtil.renderMarkdown(
@@ -241,6 +286,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       task.update()
       val duration = System.currentTimeMillis() - startTime
       log.info("Constraint Satisfaction Task completed in ${duration}ms")
+      transcript?.write("\n\n---\n**Completed in ${duration}ms**\n".toByteArray())
 
 
       if (orchestrationConfig.autoFix) {
@@ -264,6 +310,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
         )
       }
     } catch (e: Exception) {
+      transcript?.write("\n\n## ❌ Error\n\n${e.message}\n".toByteArray())
       log.error("Error in Constraint Satisfaction Task", e)
       task.error(e)
       task.add(
@@ -280,7 +327,23 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
         )
       )
       resultFn("ERROR: Failed to generate constraint satisfaction solution - ${e.message}")
+    } finally {
+      transcript?.flush()
+      transcript?.close()
     }
+  }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
   }
 
   private fun buildPrompt(

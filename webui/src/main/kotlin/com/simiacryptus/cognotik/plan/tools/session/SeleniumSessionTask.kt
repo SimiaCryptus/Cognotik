@@ -11,6 +11,7 @@ import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.devtools.v136.log.Log
 import org.openqa.selenium.devtools.v136.network.Network
 import org.openqa.selenium.remote.RemoteWebDriver
+import java.io.FileOutputStream
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
@@ -88,6 +89,8 @@ class SeleniumSessionTask(
         val keepObjectIds: Boolean = false,
         @Description("Whether to preserve whitespace in text nodes")
         val preserveWhitespace: Boolean = false,
+        @Description("Whether to create a transcript file of the session")
+        val createTranscript: Boolean = false,
     ) : TaskExecutionConfig(
         task_type = SeleniumSession.name,
         task_description = task_description,
@@ -168,6 +171,7 @@ class SeleniumSessionTask(
             }
         requireNotNull(executionConfig) { "SeleniumSessionTaskData is required" }
         var selenium: Selenium? = null
+      var transcriptStream: FileOutputStream? = null
         try {
 
             cleanupInactiveSessions()
@@ -179,31 +183,48 @@ class SeleniumSessionTask(
                 ?: seleniumFactory(agent.pool, null).also { newSession ->
                     executionConfig.sessionId?.let { id -> activeSessions[id] = newSession }
                 }
+          if (executionConfig.createTranscript) {
+            transcriptStream = createTranscript(task)
+            transcriptStream?.write("# Selenium Session Transcript\n\n".toByteArray())
+          }
             log.info("Starting Selenium session ${executionConfig.sessionId ?: "temporary"} for URL: ${executionConfig.url} with timeout ${executionConfig.timeout}ms")
             selenium.setScriptTimeout(executionConfig.timeout)
 
 
             if (executionConfig.url.isNotBlank()) {
                 selenium.navigate(executionConfig.url)
+              transcriptStream?.write("## Navigation\nNavigated to: ${executionConfig.url}\n\n".toByteArray())
             }
 
             val results = executionConfig.commands.map { command ->
                 try {
                     log.debug("Executing command: $command")
+                  transcriptStream?.write("### Executing Command\n```javascript\n$command\n```\n\n".toByteArray())
                     val startTime = System.currentTimeMillis()
                     val result = selenium.executeScript(command)?.toString() ?: "null"
                     val duration = System.currentTimeMillis() - startTime
                     log.debug("Command completed in ${duration}ms")
+                  transcriptStream?.write("**Duration:** ${duration}ms\n\n".toByteArray())
+                  transcriptStream?.write("**Result:**\n```\n${result.take(1000)}\n```\n\n".toByteArray())
                     result
                 } catch (e: Exception) {
                     task.error(e)
                     log.error("Error executing command: $command", e)
+                  transcriptStream?.write("**Error:** ${e.message}\n\n".toByteArray())
                     e.message ?: "Error executing command"
                 }
             }
-            val result = formatResults(executionConfig, selenium, results)
+          transcriptStream?.write("## Final State\n".toByteArray())
+          transcriptStream?.write("**Final URL:** ${selenium.getCurrentUrl()}\n\n".toByteArray())
+
+          val result = formatResults(executionConfig, selenium, results)
             task.add(MarkdownUtil.renderMarkdown(result))
             resultFn(result)
+          transcriptStream?.flush()
+          transcriptStream?.close()
+        } catch (e: Exception) {
+          transcriptStream?.close()
+          throw e
         } finally {
 
             if ((executionConfig.sessionId == null || executionConfig.closeSession) && selenium != null) {
@@ -296,4 +317,14 @@ class SeleniumSessionTask(
             appendLine("\nError getting page source: ${e.message}")
         }
     }
+  private fun createTranscript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+          "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+          "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
 }

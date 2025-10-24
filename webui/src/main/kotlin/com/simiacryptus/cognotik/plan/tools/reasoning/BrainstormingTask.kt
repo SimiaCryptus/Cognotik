@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -23,6 +24,7 @@ class BrainstormingTask(
 ) {
 
   val maxSummaryLength: Int = 10000
+  private var transcriptStream: FileOutputStream? = null
 
   data class BrainstormedOption(
     val title: String = "",
@@ -148,6 +150,13 @@ Brainstorming - Generate and analyze multiple solution options
     val ui = task.ui
 
     try {
+      // Initialize transcript
+      transcriptStream = transcript(task)
+      transcriptStream?.write("# Brainstorming Session Transcript\n\n".toByteArray())
+      transcriptStream?.write("**Problem Statement:** $problemStatement\n\n".toByteArray())
+      transcriptStream?.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+      transcriptStream?.write("---\n\n".toByteArray())
+
       // Create tabbed display for organized output
       val tabs = TabbedDisplay(task)
 
@@ -233,6 +242,15 @@ Brainstorming - Generate and analyze multiple solution options
       val options = brainstormResult.obj.options
 
       log.info("Generated ${options.size} options")
+      // Write to transcript
+      transcriptStream?.write("\n## Generated Options\n\n".toByteArray())
+      options.forEachIndexed { index, option ->
+        transcriptStream?.write("### ${index + 1}. ${option.title}\n".toByteArray())
+        if (option.category != null) {
+          transcriptStream?.write("**Category:** ${option.category}\n\n".toByteArray())
+        }
+        transcriptStream?.write("${option.description}\n\n".toByteArray())
+      }
 
       // Display generated options
       optionsTask.add(
@@ -306,6 +324,20 @@ Brainstorming - Generate and analyze multiple solution options
 
         val analysis = analysisAgent.answer(listOf(analysisPrompt))
         analyses[optionNumber] = analysis.obj
+        // Write analysis to transcript
+        transcriptStream?.write("\n## Option $optionNumber Analysis: ${option.title}\n\n".toByteArray())
+        transcriptStream?.write("### ✅ Pros\n".toByteArray())
+        analysis.obj.pros.forEach { transcriptStream?.write("- $it\n".toByteArray()) }
+        transcriptStream?.write("\n### ❌ Cons\n".toByteArray())
+        analysis.obj.cons.forEach { transcriptStream?.write("- $it\n".toByteArray()) }
+        transcriptStream?.write("\n### 📊 Feasibility\n${analysis.obj.feasibility}\n\n".toByteArray())
+        transcriptStream?.write("### 💥 Impact\n${analysis.obj.impact}\n\n".toByteArray())
+        transcriptStream?.write("### ⚠️ Risks\n".toByteArray())
+        analysis.obj.risks.forEach { transcriptStream?.write("- $it\n".toByteArray()) }
+        transcriptStream?.write("\n### 📋 Requirements\n".toByteArray())
+        analysis.obj.requirements.forEach { transcriptStream?.write("- $it\n".toByteArray()) }
+        transcriptStream?.write("\n---\n\n".toByteArray())
+
 
         // Display analysis
         analysisTask.add(
@@ -420,6 +452,15 @@ Brainstorming - Generate and analyze multiple solution options
 
       val totalTime = System.currentTimeMillis() - startTime
       log.info("BrainstormingTask completed: total_time=${totalTime}ms, options=${options.size}, output_size=${finalOutput.length} chars")
+      // Finalize transcript
+      transcriptStream?.write("\n## Session Complete\n\n".toByteArray())
+      transcriptStream?.write("**Total Time:** ${totalTime / 1000.0}s\n".toByteArray())
+      transcriptStream?.write("**Options Generated:** ${options.size}\n".toByteArray())
+      transcriptStream?.write("**Options Analyzed:** ${analyses.size}\n".toByteArray())
+      transcriptStream?.write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
+      transcriptStream?.flush()
+      transcriptStream?.close()
+
 
       // Update overview with completion
       overviewTask.add(
@@ -448,6 +489,13 @@ Brainstorming - Generate and analyze multiple solution options
     } catch (e: Exception) {
       val duration = System.currentTimeMillis() - startTime
       log.error("BrainstormingTask failed after ${duration}ms for problem: $problemStatement", e)
+      // Write error to transcript
+      transcriptStream?.write("\n## ❌ Error Occurred\n\n".toByteArray())
+      transcriptStream?.write("**Error:** ${e.message}\n".toByteArray())
+      transcriptStream?.write("**Type:** ${e.javaClass.simpleName}\n".toByteArray())
+      transcriptStream?.flush()
+      transcriptStream?.close()
+
       task.error(e)
 
       val errorOutput = buildString {
@@ -464,6 +512,20 @@ Brainstorming - Generate and analyze multiple solution options
       resultFn(errorOutput)
     }
   }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   private fun buildBrainstormPrompt(
     problemStatement: String,

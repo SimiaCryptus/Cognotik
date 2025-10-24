@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.io.FileOutputStream
 import java.lang.Thread.sleep
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -49,27 +50,28 @@ import kotlin.math.min
         @Description("Automatically follow links found in analyzed pages") val follow_links: Boolean? = null,
         @Description("Allow crawling the same page multiple times") val allow_revisit_pages: Boolean? = null,
         @Description("Generate a comprehensive summary of all results") val create_final_summary: Boolean? = null,
+        @Description("Generate a detailed transcript of the crawling session") val generate_transcript: Boolean? = true,
         task_type: String = "CrawlerAgent",
         model: ApiChatModel? = null,
         name: String? = task_type,
     ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
         override fun validate(): String? {
-            if (max_pages_per_task != null && max_pages_per_task!! <= 0) {
+          if (max_pages_per_task != null && max_pages_per_task <= 0) {
                 return "max_pages_per_task must be greater than 0"
             }
-            if (max_depth != null && max_depth!! < 0) {
+          if (max_depth != null && max_depth < 0) {
                 return "max_depth must be non-negative"
             }
-            if (max_queue_size != null && max_queue_size!! <= 0) {
+          if (max_queue_size != null && max_queue_size <= 0) {
                 return "max_queue_size must be greater than 0"
             }
-            if (concurrent_page_processing != null && concurrent_page_processing!! <= 0) {
+          if (concurrent_page_processing != null && concurrent_page_processing <= 0) {
                 return "concurrent_page_processing must be greater than 0"
             }
-            if (max_final_output_size != null && max_final_output_size!! <= 0) {
+          if (max_final_output_size != null && max_final_output_size <= 0) {
                 return "max_final_output_size must be greater than 0"
             }
-            if (min_content_length != null && min_content_length!! < 0) {
+          if (min_content_length != null && min_content_length < 0) {
                 return "min_content_length must be non-negative"
             }
             return ValidatedObject.validateFields(this)
@@ -228,6 +230,7 @@ import kotlin.math.min
         task: SessionTask,
         orchestrationConfig: OrchestrationConfig
     ): String {
+      var transcriptStream: FileOutputStream? = null
         try {
             val typeConfig = typeConfig ?: throw RuntimeException()
             val startTime = System.currentTimeMillis()
@@ -247,6 +250,13 @@ import kotlin.math.min
                 log.debug("Created websearch directory: ${webSearchDir.absolutePath}")
             }
             val tabs = TabbedDisplay(task)
+          // Initialize transcript if enabled
+          if (typeConfig.generate_transcript != false) {
+            transcriptStream = initializeTranscript(task)
+            transcriptStream?.let { stream ->
+              writeTranscriptHeader(stream, startTime)
+            }
+          }
 
             val seedMethod = when {
                 !executionConfig?.direct_urls.isNullOrEmpty() -> SeedMethod.DirectUrls
@@ -294,6 +304,10 @@ import kotlin.math.min
             }
             seedLinksTask.add(seedLinksContent.renderMarkdown)
             task.update()
+          // Log seed links to transcript
+          transcriptStream?.let { stream ->
+            writeToTranscript(stream, "## Seed Links\n\n$seedLinksContent\n\n")
+          }
 
 
             synchronized(pageQueueLock) {
@@ -384,7 +398,8 @@ import kotlin.math.min
                             agent = agent,
                             fetchStrategy = fetchStrategy,
                             orchestrationConfig = orchestrationConfig,
-                            analysisResultsMap = analysisResultsMap
+                          analysisResultsMap = analysisResultsMap,
+                          transcriptStream = transcriptStream
                         )
                     }
 
@@ -425,6 +440,10 @@ import kotlin.math.min
             val totalTime = System.currentTimeMillis() - startTime
             log.info("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if (processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
             task.complete("Completed in ${totalTime / 1000} seconds, processed ${processedCount.get()} pages with ${errorCount.get()} errors.")
+          // Write completion stats to transcript
+          transcriptStream?.let { stream ->
+            writeTranscriptFooter(stream, totalTime, processedCount.get(), errorCount.get())
+          }
 
             val analysisResults = (1..processedCount.get()).asSequence().mapNotNull {
                 analysisResultsMap[it]
@@ -460,6 +479,10 @@ import kotlin.math.min
             try {
                 summaryTask.add(finalOutput.renderMarkdown)
                 task.update()
+              // Write final summary to transcript
+              transcriptStream?.let { stream ->
+                writeToTranscript(stream, "\n\n## Final Summary\n\n$finalOutput\n\n")
+              }
             } catch (e: Exception) {
                 log.error("Failed to update task with final summary", e)
             }
@@ -469,10 +492,83 @@ import kotlin.math.min
             log.error("Unhandled exception in CrawlerAgentTask", e)
             task.error(e)
             return "Error: ${e.javaClass.simpleName} - ${e.message ?: "Unknown error"}"
+        } finally {
+          transcriptStream?.close()
+          log.debug("Transcript stream closed")
         }
     }
 
-    fun addToQueue(
+   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+     return try {
+       val (link, file) = task.createFile("crawler_transcript.md")
+       val transcriptStream = file?.outputStream()
+       task.complete(
+         "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+             "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+             "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+       )
+       log.info("Initialized transcript file: $link")
+       transcriptStream
+     } catch (e: Exception) {
+       log.error("Failed to initialize transcript", e)
+       null
+     }
+   }
+
+   private fun writeTranscriptHeader(stream: FileOutputStream, startTime: Long) {
+     try {
+       val header = buildString {
+         appendLine("# Crawler Agent Transcript")
+         appendLine()
+         appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+         appendLine()
+         appendLine("**Search Query:** ${executionConfig?.search_query ?: "N/A"}")
+         appendLine("**Direct URLs:** ${executionConfig?.direct_urls?.joinToString(", ") ?: "N/A"}")
+         appendLine("**Content Queries:** ${executionConfig?.content_queries ?: "N/A"}")
+         appendLine()
+         appendLine("---")
+         appendLine()
+       }
+       stream.write(header.toByteArray(StandardCharsets.UTF_8))
+       stream.flush()
+     } catch (e: Exception) {
+       log.error("Failed to write transcript header", e)
+     }
+   }
+
+   private fun writeToTranscript(stream: FileOutputStream, content: String) {
+     try {
+       stream.write(content.toByteArray(StandardCharsets.UTF_8))
+       stream.flush()
+     } catch (e: Exception) {
+       log.error("Failed to write to transcript", e)
+     }
+   }
+
+   private fun writeTranscriptFooter(stream: FileOutputStream, totalTime: Long, processedCount: Int, errorCount: Int) {
+     try {
+       val footer = buildString {
+         appendLine()
+         appendLine("---")
+         appendLine()
+         appendLine("## Crawling Session Summary")
+         appendLine()
+         appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+         appendLine("**Total Time:** ${totalTime / 1000} seconds")
+         appendLine("**Pages Processed:** $processedCount")
+         appendLine("**Errors:** $errorCount")
+         appendLine("**Success Rate:** ${if (processedCount > 0) ((processedCount - errorCount) * 100 / processedCount) else 0}%")
+         appendLine()
+       }
+       stream.write(footer.toByteArray(StandardCharsets.UTF_8))
+       stream.flush()
+     } catch (e: Exception) {
+       log.error("Failed to write transcript footer", e)
+     }
+   }
+
+
+   fun addToQueue(
         newLink: LinkData,
         maxDepth: Int,
         maxQueueSize: Int
@@ -557,7 +653,8 @@ import kotlin.math.min
         agent: TaskOrchestrator,
         fetchStrategy: FetchStrategy,
         orchestrationConfig: OrchestrationConfig,
-        analysisResultsMap: ConcurrentHashMap<Int, String>
+        analysisResultsMap: ConcurrentHashMap<Int, String>,
+        transcriptStream: FileOutputStream?
     ): Boolean {
         log.info("Status before queuing next page: $queueStats, active_tasks=${activeTasks.size}, errors=${errorCount.get()}/$maxErrors")
         val page = getNextPage() ?: return true
@@ -602,7 +699,8 @@ import kotlin.math.min
                     orchestrationConfig,
                     errorCount,
                     subTask,
-                    analysisResultsMap
+                  analysisResultsMap,
+                  transcriptStream
                 )
             } catch (e: Exception) {
                 log.error("Uncaught exception in page processing task for: ${page.url}", e)
@@ -630,7 +728,8 @@ import kotlin.math.min
         orchestrationConfig: OrchestrationConfig,
         errorCount: AtomicInteger,
         task: SessionTask,
-        analysisResultsMap: ConcurrentHashMap<Int, String>
+        analysisResultsMap: ConcurrentHashMap<Int, String>,
+        transcriptStream: FileOutputStream?
     ) {
         val typeConfig = typeConfig ?: throw RuntimeException()
         val pageStartTime = System.currentTimeMillis()
@@ -655,7 +754,13 @@ import kotlin.math.min
                         this.appendLine("## ${currentIndex}. [${title}]($url)")
                         this.appendLine()
                         try {
-                            val content = fetchAndProcessUrl(
+                          // Log page processing start to transcript
+                          transcriptStream?.let { stream ->
+                            writeToTranscript(stream, "### Processing Page ${currentIndex}: [$title]($url)\n\n")
+                            writeToTranscript(stream, "**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))}\n\n")
+                          }
+
+                          val content = fetchAndProcessUrl(
                                 url,
                                 webSearchDir = webSearchDir,
                                 index = currentIndex,
@@ -797,7 +902,15 @@ import kotlin.math.min
                                     this.appendLine("**Link Processing Summary:** ${addedCount} added to queue, ${skippedLinks.size} skipped")
                                     this.appendLine()
                                 }
+                              // Log link processing to transcript
+                              transcriptStream?.let { stream ->
+                                writeToTranscript(
+                                  stream,
+                                  "**Links Found:** ${linkData.size}, **Added to Queue:** $addedCount, **Skipped:** ${skippedLinks.size}\n\n"
+                                )
+                              }
                             }
+
                         } catch (e: Exception) {
                             log.error("Error processing URL: $url", e)
                             errorCount.incrementAndGet()
@@ -806,6 +919,10 @@ import kotlin.math.min
                             }
                             this.appendLine("*Error processing this result: ${e.message}*")
                             this.appendLine()
+                          // Log error to transcript
+                          transcriptStream?.let { stream ->
+                            writeToTranscript(stream, "**Error:** ${e.message}\n\n")
+                          }
                         }
                     }
                 task.add(processPageResult.renderMarkdown)
@@ -820,7 +937,13 @@ import kotlin.math.min
                 analysisResultsMap[currentIndex] =
                     "## ${currentIndex}. [${page.title}](${link})\n\n*Error processing this result: ${e.message}*\n\n"
             } finally {
-                page.completed = true
+              // Log page completion to transcript
+              transcriptStream?.let { stream ->
+                writeToTranscript(stream, "**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))}\n")
+                writeToTranscript(stream, "**Processing Time:** ${System.currentTimeMillis() - pageStartTime}ms\n\n---\n\n")
+              }
+
+              page.completed = true
                 page.processingTimeMs = System.currentTimeMillis() - pageStartTime
                 page.completed = true
                 log.debug("Page processing completed: url='${link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")

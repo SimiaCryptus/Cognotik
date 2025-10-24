@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.Semaphore
 import kotlin.io.path.exists
 
@@ -83,6 +84,7 @@ class SelfHealingTask(
     ) {
         val semaphore = Semaphore(0)
         Retryable(task = task) {
+          val markdownTranscript = transcript(task)
             val task = task.ui.newTask()
             agent.pool.submit {
                 val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
@@ -117,13 +119,23 @@ class SelfHealingTask(
                     model = model,
                     parsingModel = orchestrationConfig.parsingChatter,
                     processor = orchestrationConfig.processor,
-                ).run(
+                ).also { app ->
+                  markdownTranscript?.let { transcript ->
+                    transcript.write("# Self-Healing Task Execution\n\n".toByteArray())
+                    transcript.write("## Commands\n".toByteArray())
+                  }
+                }.run(
                     task = task, model = model
                 ).apply {
                     when {
                         this.exitCode == 0 -> {
                             resultFn("All Commands completed")
                             semaphore.release()
+                          markdownTranscript?.let { transcript ->
+                            transcript.write("\n## Result\n".toByteArray())
+                            transcript.write("All commands completed successfully (exit code: 0)\n".toByteArray())
+                            transcript.close()
+                          }
                         }
 
                         else -> {
@@ -131,6 +143,11 @@ class SelfHealingTask(
                                 task.ui.hrefLink("Ignore Error", "href-link cmd-button") {
                                     resultFn("Error: ${this.exitCode}")
                                     semaphore.release()
+                                  markdownTranscript?.let { transcript ->
+                                    transcript.write("\n## Result\n".toByteArray())
+                                    transcript.write("Command failed with exit code: ${this.exitCode}\n".toByteArray())
+                                    transcript.close()
+                                  }
                                 }
                             )
                         }
@@ -146,7 +163,20 @@ class SelfHealingTask(
         }
     }
 
-    companion object {
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
+  companion object {
         private val log = LoggerFactory.getLogger(SelfHealingTask::class.java)
         val SelfHealing = TaskType(
             "SelfHealing",

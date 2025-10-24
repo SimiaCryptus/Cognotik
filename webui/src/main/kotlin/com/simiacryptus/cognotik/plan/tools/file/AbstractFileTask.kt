@@ -10,7 +10,9 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
 
 abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
@@ -98,8 +100,19 @@ abstract class FileTaskExecutionConfig(
         )
         return textExtensions.contains(file.extension.lowercase())
     }
+  protected fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+          "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+          "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
 
-    companion object {
+
+  companion object {
         private val log = LoggerFactory.getLogger(AbstractFileTask::class.java)
         const val TRIPLE_TILDE = "```"
 

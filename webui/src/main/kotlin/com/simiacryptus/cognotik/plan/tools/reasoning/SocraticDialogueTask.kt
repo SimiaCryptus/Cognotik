@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -181,6 +182,18 @@ Provide substantive, well-reasoned responses that advance the dialogue.
 
     val dialogueBuilder = StringBuilder()
     val fullDialogueBuilder = StringBuilder()
+    // Create transcript file
+    val transcriptStream = transcript(task)
+    val transcriptWriter = transcriptStream?.bufferedWriter()
+    transcriptWriter?.apply {
+      write("# Socratic Dialogue Transcript\n\n")
+      write("**Initial Question:** $initialQuestion\n\n")
+      write("**Domain Constraints:** $domainConstraints\n\n")
+      write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n")
+      write("---\n\n")
+      flush()
+    }
+
 
     // Concise output for final result
     dialogueBuilder.append("# Socratic Dialogue Analysis\n\n")
@@ -194,6 +207,11 @@ Provide substantive, well-reasoned responses that advance the dialogue.
     if (priorContext.isNotBlank()) {
       fullDialogueBuilder.append("## Context from Previous Tasks\n\n")
       fullDialogueBuilder.append("$priorContext\n\n")
+      transcriptWriter?.apply {
+        write("## Context from Previous Tasks\n\n")
+        write("$priorContext\n\n")
+        flush()
+      }
       // Add context tab
       val contextTask = task.ui.newTask(false)
       tabs["Context"] = contextTask.placeholder
@@ -269,6 +287,13 @@ Provide substantive, well-reasoned responses that advance the dialogue.
         fullDialogueBuilder.append("## Exchange $depth\n\n")
         fullDialogueBuilder.append("**Question:** $currentQuestion\n\n")
         fullDialogueBuilder.append("**Response:** $currentResponse\n\n")
+        transcriptWriter?.apply {
+          write("## Exchange $depth\n\n")
+          write("**Question:** $currentQuestion\n\n")
+          write("**Response:** $currentResponse\n\n")
+          flush()
+        }
+
 
         // Store only key points in concise output
         if (depth == 1 || depth == maxDepth) {
@@ -330,6 +355,11 @@ Provide only the question, without preamble.
               appendLine()
             }.renderMarkdown
           )
+          transcriptWriter?.apply {
+            write("**Next Question:** $currentQuestion\n\n")
+            flush()
+          }
+
           task.update()
         }
         val exchangeTime = System.currentTimeMillis() - exchangeStartTime
@@ -395,6 +425,13 @@ Provide a structured synthesis.
 
       dialogueBuilder.append("## Key Insights\n\n")
       dialogueBuilder.append(synthesis)
+      transcriptWriter?.apply {
+        write("## Synthesis\n\n")
+        write(synthesis)
+        write("\n\n")
+        flush()
+      }
+
 
       // Add summary statistics
       dialogueBuilder.append("\n\n---\n\n")
@@ -426,6 +463,14 @@ Provide a structured synthesis.
       val totalTime = System.currentTimeMillis() - startTime
       val avgExchangeTime = if (exchangeTimes.isNotEmpty()) exchangeTimes.average() else 0.0
       log.info("SocraticDialogueTask completed: total_time=${totalTime}ms, exchanges=$maxDepth, avg_exchange_time=${avgExchangeTime}ms, output_size=${finalResult.length} chars (full: ${fullDialogue.length} chars)")
+      transcriptWriter?.apply {
+        write("---\n\n")
+        write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n")
+        write("**Total Time:** ${totalTime / 1000.0}s | **Exchanges:** $maxDepth | **Avg Exchange Time:** ${avgExchangeTime / 1000.0}s\n")
+        flush()
+        close()
+      }
+
 
       MarkdownUtil.renderMarkdown(
         """
@@ -462,6 +507,13 @@ Provide a structured synthesis.
     } catch (e: Exception) {
       log.error("Error during Socratic dialogue", e)
       task.error(e)
+      transcriptWriter?.apply {
+        write("\n\n---\n\n## ❌ Error Occurred\n\n")
+        write("**Error:** ${e.message}\n\n")
+        flush()
+        close()
+      }
+
 
       // Update overview with error
       overviewTask.add(
@@ -496,6 +548,18 @@ Provide a structured synthesis.
       resultFn(errorOutput)
     }
   }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(".md")
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(SocraticDialogueTask::class.java)

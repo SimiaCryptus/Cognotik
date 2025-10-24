@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import java.io.FileOutputStream
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -59,10 +60,7 @@ class GitHubSearchTask(
     }
 
     override fun promptSegment() = """
-        executionConfig?.validate()?.let { error ->
-            throw ValidatedObject.ValidationError(error, executionConfig!!)
-        }
-GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or users
+ GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or users
     * Specify the search query
     * Specify the type of search (code, commits, issues, repositories, topics, users)
     * Specify the number of results to return (max 100)
@@ -70,13 +68,27 @@ GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or
     * Optionally specify sort direction (asc or desc)
     """.trimIndent()
 
-    override fun run(
+  override fun run(
         agent: TaskOrchestrator,
         messages: List<String>,
         task: SessionTask,
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+    executionConfig?.validate()?.let { error ->
+      throw ValidatedObject.ValidationError(error, executionConfig!!)
+    }
+    val transcript = transcript(task)
+    transcript?.use { out ->
+      out.write("# GitHub Search Task\n\n".toByteArray())
+      out.write("## Configuration\n\n".toByteArray())
+      out.write("- **Query**: ${executionConfig?.search_query}\n".toByteArray())
+      out.write("- **Search Type**: ${executionConfig?.search_type}\n".toByteArray())
+      out.write("- **Results Per Page**: ${executionConfig?.per_page}\n".toByteArray())
+      executionConfig?.sort?.let { out.write("- **Sort**: $it\n".toByteArray()) }
+      executionConfig?.order?.let { out.write("- **Order**: $it\n\n".toByteArray()) }
+      out.write("\n## Search Results\n\n".toByteArray())
+    }
         
         val searchResults = performGitHubSearch(
             agent.user
@@ -85,21 +97,37 @@ GitHubSearch - Search GitHub for code, commits, issues, repositories, topics, or
                 ?: throw RuntimeException("GitHub API token is required")
         )
         val actorAnswerText = formatSearchResults(searchResults)
-        task.add(MarkdownUtil.renderMarkdown(actorAnswerText, ui = task.ui))
+    transcript?.use { out ->
+      out.write(actorAnswerText.toByteArray())
+    }
+
+    task.add(MarkdownUtil.renderMarkdown(actorAnswerText, ui = task.ui))
         resultFn(actorAnswerText)
     }
 
-    private fun performGitHubSearch(githubToken: String): String {
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
+  private fun performGitHubSearch(githubToken: String): String {
         val queryParams = mutableListOf<String>()
 
         var searchQuery = executionConfig?.search_query
-        //if (searchQuery.isNullOrBlank()) throw IllegalArgumentException("GitHub search query is required and cannot be empty.")
         if (searchQuery.isNullOrBlank()) {
-            searchQuery = ""
+          throw IllegalArgumentException("GitHub search query is required and cannot be empty.")
         }
         queryParams.add("q=${java.net.URLEncoder.encode(searchQuery, "UTF-8")}")
 
-        queryParams.add("per_page=${executionConfig?.per_page}") // perPage is now guaranteed non-null
+    queryParams.add("per_page=${executionConfig?.per_page ?: 30}")
         executionConfig?.sort?.let { queryParams.add("sort=${java.net.URLEncoder.encode(it, "UTF-8")}") }
         executionConfig?.order?.let { queryParams.add("order=${java.net.URLEncoder.encode(it, "UTF-8")}") }
         return HttpClient.newHttpClient().send(

@@ -7,13 +7,14 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
  import com.simiacryptus.cognotik.plan.*
  import com.simiacryptus.cognotik.util.LoggerFactory
  import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+ import com.simiacryptus.cognotik.util.ValidatedObject
  import com.simiacryptus.cognotik.webui.session.SessionTask
  import org.slf4j.Logger
+ import java.io.FileOutputStream
  import java.time.LocalDateTime
  import java.time.format.DateTimeFormatter
 
- class LateralThinkingTask(
+class LateralThinkingTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: LateralThinkingTaskExecutionConfigData?
  ) : AbstractTask<LateralThinkingTask.LateralThinkingTaskExecutionConfigData, TaskTypeConfig>(
@@ -210,6 +211,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
   ) {
     try {
       val startTime = System.currentTimeMillis()
+      val transcript = transcript(task)
       log.info("Starting LateralThinkingTask for problem='${executionConfig?.problem?.take(50)}...', techniques=${executionConfig?.techniques}")
 
       val problem = executionConfig?.problem
@@ -268,6 +270,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
         appendLine("| Alternatives per Technique | $numAlternatives |")
         appendLine("| Feasibility Evaluation | ${if (evaluateFeasibility) "✓ Enabled" else "✗ Disabled"} |")
         appendLine()
+        transcript?.write(this.toString().toByteArray())
         appendLine("## Progress")
         appendLine()
         appendLine("- ⏳ Gathering context...")
@@ -281,6 +284,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
       overviewTask.add(buildString {
         appendLine()
+        transcript?.write("\n- ✓ Context gathered\n- ⏳ Applying lateral thinking techniques...\n".toByteArray())
         appendLine("- ✓ Context gathered")
         appendLine("- ⏳ Applying lateral thinking techniques...")
       }.renderMarkdown)
@@ -300,6 +304,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
         techniqueTask.add(buildString {
           appendLine("# ${technique.capitalize()} Technique")
           appendLine()
+          transcript?.write("# ${technique.capitalize()} Technique\n\n**Status:** ⏳ Generating ideas...\n\n".toByteArray())
           appendLine("**Status:** ⏳ Generating ideas...")
           appendLine()
           appendLine(getTechniqueDescription(technique))
@@ -333,6 +338,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
           // Display technique results
           techniqueTask.add(buildString {
+            transcript?.write("\n---\n\n## Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
             appendLine()
             appendLine("---")
             appendLine()
@@ -381,6 +387,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
               appendLine("---")
               appendLine()
             }
+            transcript?.write(this.toString().toByteArray())
             if (application.insights.isNotEmpty()) {
               appendLine("### Key Insights")
               appendLine()
@@ -390,6 +397,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
           task.update()
         } else {
           log.warn("Failed to generate ideas for technique: $technique")
+          transcript?.write("\n**Status:** ⚠️ Failed to generate ideas\n".toByteArray())
           techniqueTask.add(buildString {
             appendLine()
             appendLine("**Status:** ⚠️ Failed to generate ideas")
@@ -399,6 +407,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
         overviewTask.add(buildString {
           appendLine()
+          transcript?.write("\n- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)\n".toByteArray())
           appendLine("- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)")
         }.renderMarkdown)
         task.update()
@@ -408,6 +417,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
       overviewTask.add(buildString {
         appendLine()
+        transcript?.write("\n- ✓ All techniques applied (${allIdeas.size} total ideas)\n- ⏳ Synthesizing insights...\n".toByteArray())
         appendLine("- ✓ All techniques applied (${allIdeas.size} total ideas)")
         appendLine("- ⏳ Synthesizing insights...")
       }.renderMarkdown)
@@ -420,6 +430,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
       synthesisTask.add(buildString {
         appendLine("# Cross-Technique Synthesis")
+        transcript?.write("\n# Cross-Technique Synthesis\n\n**Status:** ⏳ Analyzing patterns and insights...\n".toByteArray())
         appendLine()
         appendLine("**Status:** ⏳ Analyzing patterns and insights...")
       }.renderMarkdown)
@@ -470,6 +481,7 @@ Provide a comprehensive synthesis.
 
       synthesisTask.add(buildString {
         appendLine()
+        transcript?.write("\n---\n\n## Synthesis Results\n\n**Status:** ✓ Complete\n\n${synthesisText}\n".toByteArray())
         appendLine("---")
         appendLine()
         appendLine("## Synthesis Results")
@@ -485,6 +497,7 @@ Provide a comprehensive synthesis.
 
       overviewTask.add(buildString {
         appendLine()
+        transcript?.write("\n- ✓ Synthesis complete\n".toByteArray())
         appendLine("- ✓ Synthesis complete")
         if (evaluateFeasibility) {
           appendLine("- ⏳ Evaluating feasibility...")
@@ -501,6 +514,7 @@ Provide a comprehensive synthesis.
 
         feasibilityTask.add(buildString {
           appendLine("# Feasibility Evaluation")
+          transcript?.write("\n# Feasibility Evaluation\n\n**Status:** ⏳ Evaluating ${allIdeas.size} ideas...\n".toByteArray())
           appendLine()
           appendLine("**Status:** ⏳ Evaluating ${allIdeas.size} ideas...")
         }.renderMarkdown)
@@ -553,6 +567,7 @@ Provide a structured evaluation.
 
         if (feasibilityEvaluation != null) {
           feasibilityTask.add(buildString {
+            transcript?.write("\n---\n\n## Evaluation Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
             appendLine()
             appendLine("---")
             appendLine()
@@ -580,10 +595,12 @@ Provide a structured evaluation.
               feasibilityEvaluation.hybrid_approaches.forEach { appendLine("- $it") }
             }
           }.renderMarkdown)
+          transcript?.write(this.toString().toByteArray())
           task.update()
         }
 
         overviewTask.add(buildString {
+          transcript?.write("\n- ✓ Feasibility evaluation complete\n".toByteArray())
           appendLine()
           appendLine("- ✓ Feasibility evaluation complete")
         }.renderMarkdown)
@@ -606,6 +623,7 @@ Provide a structured evaluation.
 
       val summaryContent = formatSummary(result, problem, techniques)
       summaryTask.add(summaryContent.renderMarkdown)
+      transcript?.write("\n${summaryContent}\n".toByteArray())
       task.update()
 
       // Create concise result text
@@ -686,6 +704,7 @@ Provide a structured evaluation.
         appendLine("| Total Time | ${totalTime / 1000}s |")
         appendLine()
         appendLine("**Status:** ✓ Complete")
+        transcript?.write(this.toString().toByteArray())
       }.renderMarkdown)
       task.update()
 
@@ -699,6 +718,7 @@ Provide a structured evaluation.
         log
       )
       resultFn(resultText)
+      transcript?.close()
 
     } catch (e: Exception) {
       log.error("Error during LateralThinkingTask execution", e)
@@ -717,7 +737,21 @@ Provide a structured evaluation.
     }
   }
 
-  private fun getTechniqueDescription(technique: String): String {
+   private fun transcript(task: SessionTask): FileOutputStream? {
+     val (link, file) = task.createFile("transcript.md")
+     val markdownTranscript = file?.outputStream()
+     task.complete(
+       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+         link.removeSuffix(
+           ".md"
+         )
+       }.pdf' target='_blank'>pdf</a>"
+     )
+     return markdownTranscript
+   }
+
+
+   private fun getTechniqueDescription(technique: String): String {
     return when (technique.lowercase()) {
       "reversal" -> """
 ## Reversal Technique

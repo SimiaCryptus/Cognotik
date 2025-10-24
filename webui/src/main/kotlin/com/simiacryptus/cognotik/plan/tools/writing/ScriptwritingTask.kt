@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -190,6 +191,8 @@ Scriptwriting - Generate complete scripts for videos, podcasts, and presentation
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting ScriptwritingTask for topic: '${executionConfig?.topic}'")
+    val markdownTranscript = transcript(task)
+
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
@@ -197,6 +200,7 @@ Scriptwriting - Generate complete scripts for videos, podcasts, and presentation
       task.safeComplete("CONFIGURATION ERROR: $validationError", log)
       task.error(ValidatedObject.ValidationError(validationError, executionConfig))
       resultFn("CONFIGURATION ERROR: $validationError")
+      markdownTranscript?.close()
       return
     }
 
@@ -205,6 +209,7 @@ Scriptwriting - Generate complete scripts for videos, podcasts, and presentation
       log.error("No topic specified for scriptwriting")
       task.safeComplete("CONFIGURATION ERROR: No topic specified", log)
       resultFn("CONFIGURATION ERROR: No topic specified")
+      markdownTranscript?.close()
       return
     }
 
@@ -220,6 +225,13 @@ Scriptwriting - Generate complete scripts for videos, podcasts, and presentation
       appendLine("# Script Generation")
       appendLine()
       appendLine("**Topic:** $topic")
+      appendLine()
+    }
+    markdownTranscript?.write(overviewContent.toByteArray())
+    markdownTranscript?.write("\n".toByteArray())
+    overviewTask.add(overviewContent.renderMarkdown)
+    task.update()
+    val overviewContent2 = buildString {
       appendLine()
       appendLine("## Configuration")
       appendLine("- Script Type: ${executionConfig.script_type}")
@@ -242,10 +254,14 @@ Scriptwriting - Generate complete scripts for videos, podcasts, and presentation
       appendLine("### Phase 1: Research & Outline")
       appendLine("*Analyzing topic and creating script structure...*")
     }
-    overviewTask.add(overviewContent.renderMarkdown)
+    markdownTranscript?.write(overviewContent2.toByteArray())
+    markdownTranscript?.write("\n".toByteArray())
+    overviewTask.add(overviewContent2.renderMarkdown)
     task.update()
 
     val resultBuilder = StringBuilder()
+    markdownTranscript?.write("# Research Context\n\n".toByteArray())
+    markdownTranscript?.write("Context loaded from prior tasks and related files.\n\n".toByteArray())
     resultBuilder.append("# Script: $topic\n\n")
 
     try {
@@ -288,6 +304,8 @@ Scriptwriting - Generate complete scripts for videos, podcasts, and presentation
           appendLine()
         }.renderMarkdown
       )
+      markdownTranscript?.write("# Script Outline\n\n".toByteArray())
+      markdownTranscript?.write("Creating structured outline...\n\n".toByteArray())
       task.update()
 
       val targetDurationSeconds = executionConfig.target_duration_minutes * 60
@@ -395,6 +413,8 @@ Ensure the outline:
         appendLine("**Status:** ✅ Complete")
       }
       outlineTask.add(outlineContent.renderMarkdown)
+      markdownTranscript?.write(outlineContent.toByteArray())
+      markdownTranscript?.write("\n".toByteArray())
       task.update()
 
       overviewTask.add("✅ Phase 1 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown)
@@ -490,6 +510,9 @@ Ensure the dialogue sounds natural when spoken aloud.
             appendLine("**Status:** ✅ Complete")
           }.renderMarkdown
         )
+        markdownTranscript?.write("# Opening Hook\n\n".toByteArray())
+        markdownTranscript?.write(hookSegment.dialogue.toByteArray())
+        markdownTranscript?.write("\n\n".toByteArray())
         task.update()
 
         overviewTask.add("✅\n".renderMarkdown)
@@ -617,6 +640,9 @@ Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of co
             appendLine("**Status:** ✅ Complete")
           }.renderMarkdown
         )
+        markdownTranscript?.write("## Section ${sectionOutline.section_number}: ${sectionOutline.title}\n\n".toByteArray())
+        markdownTranscript?.write(sectionSegment.dialogue.toByteArray())
+        markdownTranscript?.write("\n\n".toByteArray())
         task.update()
 
         overviewTask.add("✅ (${sectionSegment.duration_seconds}s)\n".renderMarkdown)
@@ -711,6 +737,9 @@ Target duration: 15-20 seconds.
           appendLine("**Status:** ✅ Complete")
         }.renderMarkdown
       )
+      markdownTranscript?.write("# Closing\n\n".toByteArray())
+      markdownTranscript?.write(closingSegment.dialogue.toByteArray())
+      markdownTranscript?.write("\n\n".toByteArray())
       task.update()
 
       overviewTask.add("✅\n".renderMarkdown)
@@ -860,6 +889,9 @@ Provide the complete revised script with all formatting intact.
       }
 
       finalTask.add(finalScript.renderMarkdown)
+      markdownTranscript?.write("\n---\n\n# Complete Script\n\n".toByteArray())
+      markdownTranscript?.write(finalScript.toByteArray())
+      markdownTranscript?.write("\n".toByteArray())
       task.update()
 
       // Production notes tab
@@ -919,6 +951,9 @@ Provide the complete revised script with all formatting intact.
         }
 
         productionNotesTask.add(productionNotes.renderMarkdown)
+        markdownTranscript?.write("\n---\n\n".toByteArray())
+        markdownTranscript?.write(productionNotes.toByteArray())
+        markdownTranscript?.write("\n".toByteArray())
         task.update()
       }
 
@@ -946,6 +981,8 @@ Provide the complete revised script with all formatting intact.
           appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
         }.renderMarkdown
       )
+      markdownTranscript?.write("\n---\n\n## Generation Complete\n\n".toByteArray())
+      markdownTranscript?.write("Script generation completed successfully.\n".toByteArray())
       task.update()
 
       // Concise summary for resultFn
@@ -969,6 +1006,7 @@ Provide the complete revised script with all formatting intact.
       }
 
       log.info("ScriptwritingTask completed: duration=${cumulativeDuration}s, words=$cumulativeWordCount, segments=${scriptSegments.size}, time=${totalTime}ms")
+      markdownTranscript?.close()
 
       task.safeComplete("Script generation complete: ${formatTiming(cumulativeDuration)} in ${totalTime / 1000}s", log)
       resultFn(finalResult)
@@ -990,6 +1028,7 @@ Provide the complete revised script with all formatting intact.
         }.renderMarkdown
       )
       task.update()
+      markdownTranscript?.close()
 
       val errorOutput = buildString {
         appendLine("# Error in Script Generation")
@@ -1006,6 +1045,19 @@ Provide the complete revised script with all formatting intact.
       }
       resultFn(errorOutput)
     }
+  }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
   }
 
   private fun getContextFiles(): String {

@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -248,6 +249,8 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting EmailCampaignTask for goal: '${executionConfig?.campaign_goal}'")
+    val transcript = transcript(task)
+
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
@@ -255,6 +258,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
       task.safeComplete("CONFIGURATION ERROR: $validationError", log)
       task.error(ValidatedObject.ValidationError(validationError, executionConfig))
       resultFn("CONFIGURATION ERROR: $validationError")
+      transcript?.close()
       return
     }
 
@@ -263,10 +267,14 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
       log.error("No campaign goal specified")
       task.safeComplete("CONFIGURATION ERROR: No campaign goal specified", log)
       resultFn("CONFIGURATION ERROR: No campaign goal specified")
+      transcript?.close()
       return
     }
 
-    val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+    val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: run {
+      transcript?.close()
+      return
+    }
 
     val tabs = TabbedDisplay(task)
 
@@ -276,6 +284,8 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
 
     val overviewContent = buildString {
       appendLine("# Email Campaign Generation")
+      appendLine()
+      appendLine("**Generated:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
       appendLine()
       appendLine("**Campaign Goal:** $campaignGoal")
       appendLine()
@@ -312,6 +322,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
       appendLine("*Developing overall campaign approach...*")
     }
     overviewTask.add(overviewContent.renderMarkdown)
+    transcript?.write(overviewContent.toByteArray())
     task.update()
 
     val resultBuilder = StringBuilder()
@@ -341,6 +352,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
             }
           }.renderMarkdown
         )
+        transcript?.write(contextTask.placeholder.toString().toByteArray())
         task.update()
       }
 
@@ -352,6 +364,8 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
       strategyTask.add(
         buildString {
           appendLine("# Campaign Strategy")
+          appendLine()
+          appendLine("---")
           appendLine()
           appendLine("**Status:** Analyzing audience and developing approach...")
           appendLine()
@@ -440,6 +454,7 @@ Consider:
         appendLine("**Status:** ✅ Complete")
       }
       strategyTask.add(strategyContent.renderMarkdown)
+      transcript?.write(("\n\n" + strategyContent).toByteArray())
       task.update()
 
       overviewTask.add("✅ Phase 1 Complete: Strategy developed\n".renderMarkdown)
@@ -454,6 +469,8 @@ Consider:
       outlineTask.add(
         buildString {
           appendLine("# Email Sequence Outline")
+          appendLine()
+          appendLine("---")
           appendLine()
           appendLine("**Status:** Planning ${executionConfig.num_emails} emails...")
           appendLine()
@@ -543,6 +560,7 @@ Maintain ${executionConfig.brand_voice} voice and address ${executionConfig.targ
         appendLine("**Status:** ✅ Complete")
       }
       outlineTask.add(outlineContent.renderMarkdown)
+      transcript?.write(("\n\n" + outlineContent).toByteArray())
       task.update()
 
       overviewTask.add("✅ Phase 2 Complete: ${outlines.size} emails outlined\n".renderMarkdown)
@@ -566,6 +584,8 @@ Maintain ${executionConfig.brand_voice} voice and address ${executionConfig.targ
         emailTask.add(
           buildString {
             appendLine("# Email ${outline.email_number}")
+            appendLine()
+            appendLine("---")
             appendLine()
             appendLine("**Status:** Generating content...")
             appendLine()
@@ -777,6 +797,7 @@ ${if (executionConfig.include_ps) "- PS section" else ""}
           appendLine("**Status:** ✅ Complete")
         }
         emailTask.add(emailDisplay.renderMarkdown)
+        transcript?.write(("\n\n" + emailDisplay).toByteArray())
         task.update()
 
         overviewTask.add("✅ (${emailContent.word_count} words)\n".renderMarkdown)
@@ -798,6 +819,8 @@ ${if (executionConfig.include_ps) "- PS section" else ""}
           buildString {
             appendLine("# Revision Process")
             appendLine()
+            appendLine("---")
+            appendLine()
             appendLine("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...")
             appendLine()
           }.renderMarkdown
@@ -806,6 +829,7 @@ ${if (executionConfig.include_ps) "- PS section" else ""}
 
         repeat(executionConfig.revision_passes) { passNum ->
           log.debug("Revision pass ${passNum + 1}/${executionConfig.revision_passes}")
+          transcript?.write(("\n\n## Revision Pass ${passNum + 1}\n✅ All ${generatedEmails.size} emails revised\n").toByteArray())
 
           generatedEmails.forEachIndexed { index, email ->
             val revisionAgent = ChatAgent(
@@ -958,6 +982,7 @@ Provide the complete revised email body only.
       }
 
       finalTask.add(finalCampaign.renderMarkdown)
+      transcript?.write(("\n\n" + finalCampaign).toByteArray())
       task.update()
 
       // Final statistics
@@ -982,6 +1007,7 @@ Provide the complete revised email body only.
           appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
         }.renderMarkdown
       )
+      transcript?.write(("\n\n---\n\n## Campaign Complete\n\n**Statistics:**\n- Emails: ${generatedEmails.size}\n- Words: $totalWords\n- Time: ${totalTime / 1000.0}s\n").toByteArray())
       task.update()
 
       // Concise summary for resultFn
@@ -1002,6 +1028,7 @@ Provide the complete revised email body only.
       }
 
       log.info("EmailCampaignTask completed: emails=${generatedEmails.size}, words=$totalWords, time=${totalTime}ms")
+      transcript?.close()
 
       task.safeComplete("Email campaign generation complete: ${generatedEmails.size} emails, $totalWords words in ${totalTime / 1000}s", log)
       resultFn(finalResult)
@@ -1023,6 +1050,7 @@ Provide the complete revised email body only.
         }.renderMarkdown
       )
       task.update()
+      transcript?.close()
 
       val errorOutput = buildString {
         appendLine("# Error in Email Campaign Generation")
@@ -1068,6 +1096,17 @@ Provide the complete revised email body only.
       }
     }
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(".md")
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(EmailCampaignTask::class.java)

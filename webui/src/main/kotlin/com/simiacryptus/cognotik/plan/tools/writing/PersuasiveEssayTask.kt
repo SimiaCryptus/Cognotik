@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -180,6 +181,16 @@ PersuasiveEssay - Generate compelling persuasive essays with structured argument
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}'")
+    // Create transcript file
+    val transcript = transcript(task)
+    transcript?.use { stream ->
+      stream.write("# Persuasive Essay Generation Transcript\n\n".toByteArray())
+      stream.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+      stream.write("**Thesis:** ${executionConfig?.thesis}\n\n".toByteArray())
+      stream.write("---\n\n".toByteArray())
+      stream.flush()
+    }
+
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
@@ -233,6 +244,12 @@ PersuasiveEssay - Generate compelling persuasive essays with structured argument
     }
     overviewTask.add(overviewContent.renderMarkdown)
     task.update()
+    transcript?.use { stream ->
+      stream.write("## Configuration\n\n".toByteArray())
+      stream.write(overviewContent.toByteArray())
+      stream.write("\n\n".toByteArray())
+      stream.flush()
+    }
 
     val resultBuilder = StringBuilder()
     resultBuilder.append("# Persuasive Essay: $thesis\n\n")
@@ -392,6 +409,12 @@ Ensure the outline:
       }
       outlineTask.add(outlineContent.renderMarkdown)
       task.update()
+      transcript?.use { stream ->
+        stream.write("## Essay Outline\n\n".toByteArray())
+        stream.write(outlineContent.toByteArray())
+        stream.write("\n\n".toByteArray())
+        stream.flush()
+      }
 
       overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
       overviewTask.add("\n### Phase 2: Introduction\n*Writing compelling introduction...*\n".renderMarkdown)
@@ -462,6 +485,13 @@ Speak directly to the ${executionConfig.target_audience}.
         }.renderMarkdown
       )
       task.update()
+      transcript?.use { stream ->
+        stream.write("## Introduction\n\n".toByteArray())
+        stream.write(introduction.content.toByteArray())
+        stream.write("\n\n**Word Count:** ${introduction.word_count}\n\n".toByteArray())
+        stream.flush()
+      }
+
 
       resultBuilder.append(introduction.content)
       resultBuilder.append("\n\n")
@@ -569,6 +599,13 @@ Aim for approximately ${argOutline.estimated_word_count} words.
           }.renderMarkdown
         )
         task.update()
+        transcript?.use { stream ->
+          stream.write("## Argument ${index + 1}: ${argOutline.claim}\n\n".toByteArray())
+          stream.write(argumentSection.content.toByteArray())
+          stream.write("\n\n**Word Count:** ${argumentSection.word_count}\n\n".toByteArray())
+          stream.flush()
+        }
+
 
         resultBuilder.append(argumentSection.content)
         resultBuilder.append("\n\n")
@@ -643,6 +680,13 @@ Aim for approximately $counterargumentWords words.
           }.renderMarkdown
         )
         task.update()
+        transcript?.use { stream ->
+          stream.write("## Counterarguments & Rebuttals\n\n".toByteArray())
+          stream.write(counterSection.content.toByteArray())
+          stream.write("\n\n**Word Count:** ${counterSection.word_count}\n\n".toByteArray())
+          stream.flush()
+        }
+
 
         resultBuilder.append(counterSection.content)
         resultBuilder.append("\n\n")
@@ -725,6 +769,13 @@ End on a strong note that reinforces your position.
         }.renderMarkdown
       )
       task.update()
+      transcript?.use { stream ->
+        stream.write("## Conclusion\n\n".toByteArray())
+        stream.write(conclusion.content.toByteArray())
+        stream.write("\n\n**Word Count:** ${conclusion.word_count}\n\n".toByteArray())
+        stream.flush()
+      }
+
 
       resultBuilder.append(conclusion.content)
       resultBuilder.append("\n\n")
@@ -796,6 +847,11 @@ Provide the complete revised essay.
             }.renderMarkdown
           )
           task.update()
+          transcript?.use { stream ->
+            stream.write("### Revision Pass ${passNum + 1}\n\n".toByteArray())
+            stream.write("Completed revision pass ${passNum + 1} of ${executionConfig.revision_passes}\n\n".toByteArray())
+            stream.flush()
+          }
         }
 
         overviewTask.add("✅ Phase 6 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
@@ -825,6 +881,13 @@ Provide the complete revised essay.
 
       finalTask.add(finalEssay.renderMarkdown)
       task.update()
+      transcript?.use { stream ->
+        stream.write("## Complete Essay\n\n".toByteArray())
+        stream.write(finalEssay.toByteArray())
+        stream.write("\n\n".toByteArray())
+        stream.flush()
+      }
+
 
       // Final statistics
       val totalTime = System.currentTimeMillis() - startTime
@@ -849,6 +912,15 @@ Provide the complete revised essay.
         }.renderMarkdown
       )
       task.update()
+      transcript?.use { stream ->
+        stream.write("---\n\n".toByteArray())
+        stream.write("## Generation Complete\n\n".toByteArray())
+        stream.write("**Total Word Count:** $cumulativeWordCount\n\n".toByteArray())
+        stream.write("**Total Time:** ${totalTime / 1000.0}s\n\n".toByteArray())
+        stream.write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+        stream.flush()
+      }
+
 
       // Concise summary for resultFn
       val finalResult = buildString {
@@ -891,6 +963,13 @@ Provide the complete revised essay.
         }.renderMarkdown
       )
       task.update()
+      transcript?.use { stream ->
+        stream.write("---\n\n".toByteArray())
+        stream.write("## Error Occurred\n\n".toByteArray())
+        stream.write("**Error:** ${e.message}\n\n".toByteArray())
+        stream.flush()
+      }
+
 
       val errorOutput = buildString {
         appendLine("# Error in Persuasive Essay Generation")
@@ -936,6 +1015,19 @@ Provide the complete revised essay.
       }
     }
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(PersuasiveEssayTask::class.java)

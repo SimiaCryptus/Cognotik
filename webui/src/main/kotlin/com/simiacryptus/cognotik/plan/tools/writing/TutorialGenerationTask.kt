@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
-import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
@@ -13,6 +12,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -256,6 +256,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting TutorialGenerationTask for goal: '${executionConfig?.goal}'")
+    val transcript = transcript(task)
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
@@ -281,6 +282,11 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
     // Overview tab
     val overviewTask = task.ui.newTask(false)
     tabs["Overview"] = overviewTask.placeholder
+    transcript?.write("# Tutorial Generation Transcript\n\n".toByteArray())
+    transcript?.write("**Goal:** $goal\n\n".toByteArray())
+    transcript?.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+    transcript?.write("---\n\n".toByteArray())
+
 
     val overviewContent = buildString {
       appendLine("# Tutorial Generation")
@@ -344,6 +350,11 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
       log.info("Phase 1: Creating tutorial outline")
       val outlineTask = task.ui.newTask(false)
       tabs["Outline"] = outlineTask.placeholder
+      transcript?.write("## Phase 1: Planning & Outline\n\n".toByteArray())
+      transcript?.write("Creating tutorial structure...\n\n".toByteArray())
+      transcript?.write("**Configuration:**\n".toByteArray())
+      transcript?.write("- Target Steps: ${executionConfig.target_step_count}\n".toByteArray())
+      transcript?.write("- Skill Level: ${executionConfig.skill_level}\n\n".toByteArray())
 
       outlineTask.add(
         buildString {
@@ -418,6 +429,13 @@ Ensure the outline:
       }
 
       log.info("Generated outline: ${outline.steps.size} steps, ${outline.prerequisites.size} prerequisites")
+      transcript?.write("### Outline Generated\n\n".toByteArray())
+      transcript?.write("**Title:** ${outline.title}\n\n".toByteArray())
+      transcript?.write("**Steps:** ${outline.steps.size}\n\n".toByteArray())
+      transcript?.write("**Prerequisites:** ${outline.prerequisites.size}\n\n".toByteArray())
+      transcript?.write("**Estimated Time:** ${outline.estimated_time} minutes\n\n".toByteArray())
+      transcript?.write("---\n\n".toByteArray())
+
 
       val outlineContent = buildString {
         appendLine("## ${outline.title}")
@@ -505,6 +523,9 @@ Ensure the outline:
       overviewTask.add("✅ Phase 1 Complete: Outline created (${outline.steps.size} steps)\n".renderMarkdown)
       overviewTask.add("\n### Phase 2: Writing Steps\n*Developing detailed step-by-step instructions...*\n".renderMarkdown)
       task.update()
+      transcript?.write("## Phase 2: Writing Steps\n\n".toByteArray())
+      transcript?.write("Developing detailed step-by-step instructions...\n\n".toByteArray())
+
 
       // Phase 2: Write each step
       log.info("Phase 2: Writing detailed steps")
@@ -515,6 +536,9 @@ Ensure the outline:
 
         overviewTask.add("- Step ${index + 1}: ${stepOutline.title.truncateForDisplay(50)} ".renderMarkdown)
         task.update()
+        transcript?.write("### Step ${index + 1}: ${stepOutline.title}\n\n".toByteArray())
+        transcript?.write("Writing detailed instructions...\n\n".toByteArray())
+
 
         val stepTask = task.ui.newTask(false)
         tabs["Step ${index + 1}"] = stepTask.placeholder
@@ -586,6 +610,10 @@ Guidelines:
 
         var tutorialStep = stepAgent.answer(listOf("Write step")).obj
         tutorialSteps.add(tutorialStep)
+        transcript?.write("**Completed:** ${tutorialStep.title}\n".toByteArray())
+        transcript?.write("- Code blocks: ${tutorialStep.code_blocks.size}\n".toByteArray())
+        transcript?.write("- Validation steps: ${tutorialStep.validation_steps.size}\n\n".toByteArray())
+
 
         val stepContent = buildString {
           appendLine("## Step ${tutorialStep.step_number}: ${tutorialStep.title}")
@@ -658,6 +686,9 @@ Guidelines:
       if (executionConfig.include_troubleshooting) {
         overviewTask.add("\n### Phase 3: Troubleshooting\n*Compiling common issues and solutions...*\n".renderMarkdown)
         task.update()
+        transcript?.write("## Phase 3: Troubleshooting\n\n".toByteArray())
+        transcript?.write("Compiling common issues and solutions...\n\n".toByteArray())
+
 
         log.info("Phase 3: Creating troubleshooting section")
         val troubleshootingTask = task.ui.newTask(false)
@@ -711,6 +742,9 @@ Focus on issues that:
         )
 
         troubleshootingSection = troubleshootingAgent.answer(listOf("Create troubleshooting")).obj
+        transcript?.write("**Troubleshooting Issues Identified:** ${troubleshootingSection.issues.size}\n\n".toByteArray())
+        transcript?.write("---\n\n".toByteArray())
+
 
         val troubleshootingContent = buildString {
           appendLine("## Common Issues and Solutions")
@@ -763,6 +797,9 @@ Focus on issues that:
       if (executionConfig.include_next_steps) {
         overviewTask.add("\n### Phase 4: Next Steps\n*Suggesting further learning paths...*\n".renderMarkdown)
         task.update()
+        transcript?.write("## Phase 4: Next Steps\n\n".toByteArray())
+        transcript?.write("Suggesting further learning paths...\n\n".toByteArray())
+
 
         log.info("Phase 4: Creating next steps section")
         val nextStepsTask = task.ui.newTask(false)
@@ -803,6 +840,11 @@ Make suggestions:
         )
 
         nextSteps = nextStepsAgent.answer(listOf("Generate next steps")).obj
+        transcript?.write("**Next Steps Generated:**\n".toByteArray())
+        transcript?.write("- Suggestions: ${nextSteps.suggestions.size}\n".toByteArray())
+        transcript?.write("- Resources: ${nextSteps.related_resources.size}\n\n".toByteArray())
+        transcript?.write("---\n\n".toByteArray())
+
 
         val nextStepsContent = buildString {
           appendLine("## What's Next?")
@@ -841,6 +883,9 @@ Make suggestions:
       // Phase 5: Final Assembly
       overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete tutorial...*\n".renderMarkdown)
       task.update()
+      transcript?.write("## Phase 5: Final Assembly\n\n".toByteArray())
+      transcript?.write("Compiling complete tutorial...\n\n".toByteArray())
+
 
       log.info("Phase 5: Assembling final tutorial")
       val finalTask = task.ui.newTask(false)
@@ -1023,6 +1068,17 @@ Make suggestions:
       // Final statistics
       val totalTime = System.currentTimeMillis() - startTime
       val totalWords = finalTutorial.split("\\s+".toRegex()).size
+      transcript?.write("## Generation Complete\n\n".toByteArray())
+      transcript?.write("**Statistics:**\n".toByteArray())
+      transcript?.write("- Total Steps: ${tutorialSteps.size}\n".toByteArray())
+      transcript?.write("- Prerequisites: ${outline.prerequisites.size}\n".toByteArray())
+      transcript?.write("- Word Count: $totalWords\n".toByteArray())
+      transcript?.write("- Code Blocks: ${tutorialSteps.sumOf { it.code_blocks.size }}\n".toByteArray())
+      transcript?.write("- Total Time: ${totalTime / 1000.0}s\n\n".toByteArray())
+      transcript?.write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
+      transcript?.flush()
+      transcript?.close()
+
 
       overviewTask.add(
         buildString {
@@ -1074,6 +1130,10 @@ Make suggestions:
     } catch (e: Exception) {
       log.error("Error during tutorial generation", e)
       task.error(e)
+      transcript?.write("\n## Error Occurred\n\n".toByteArray())
+      transcript?.write("**Error:** ${e.message}\n\n".toByteArray())
+      transcript?.flush()
+      transcript?.close()
 
       overviewTask.add(
         buildString {
@@ -1132,6 +1192,16 @@ Make suggestions:
         }
       }
     }
+  }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(".md")
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
   }
 
   companion object {

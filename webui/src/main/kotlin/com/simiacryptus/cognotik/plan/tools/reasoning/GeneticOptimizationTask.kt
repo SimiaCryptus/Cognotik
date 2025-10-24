@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
@@ -23,6 +24,28 @@ class GeneticOptimizationTask(
     orchestrationConfig,
     planTask
 ) {
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(GeneticOptimizationTask::class.java)
+    val GeneticOptimization = TaskType(
+      "GeneticOptimization",
+      GeneticOptimizationTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Iteratively evolve and perfect text through genetic algorithms",
+      """
+              Uses genetic algorithms to optimize text through iterative evolution.
+              <ul>
+                <li>Generates variations using configurable mutation strategies</li>
+                <li>Evaluates variants against optimization criteria</li>
+                <li>Selects top performers for next generation</li>
+                <li>Applies crossover to combine successful traits</li>
+                <li>Tracks fitness progression across generations</li>
+                <li>Provides detailed analysis of evolution</li>
+                <li>Supports custom evaluation criteria and weights</li>
+                <li>Useful for perfecting prompts, copy, documentation, and messaging</li>
+              </ul>
+            """
+    )
+  }
 
     class GeneticOptimizationTaskExecutionConfigData(
         @Description("The initial text to optimize (seed for genetic algorithm)")
@@ -146,9 +169,10 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        try {
-            val startTime = System.currentTimeMillis()
-            log.info("Starting GeneticOptimizationTask with initial_text length=${executionConfig?.initial_text?.length}, goal='${executionConfig?.optimization_goal}'")
+      val transcript = transcript(task)
+      try {
+        val startTime = System.currentTimeMillis()
+        log.info("Starting GeneticOptimizationTask with initial_text length=${executionConfig?.initial_text?.length}, goal='${executionConfig?.optimization_goal}'")
             // Validate configuration
             executionConfig?.validate()?.let { errorMessage ->
                 log.error("Configuration validation failed: $errorMessage")
@@ -186,6 +210,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
             val tabs = TabbedDisplay(task)
             val api = orchestrationConfig.defaultChatter
+        transcript?.write("# Genetic Optimization Task Transcript\n\n".toByteArray())
 
             // Create overview tab
             val overviewTask = task.ui.newTask(false)
@@ -236,6 +261,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             }
             overviewTask.add(overviewContent.renderMarkdown)
             task.update()
+        transcript?.write(overviewContent.toByteArray())
 
             // Gather context
             log.debug("Gathering prior context")
@@ -261,8 +287,16 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             )
 
             log.info("Initial evaluation: score=${initialEvaluation.overall_score}")
+        transcript?.write("\n\n## Initial Evaluation\n\n".toByteArray())
+        transcript?.write("**Score:** ${String.format("%.1f", initialEvaluation.overall_score)}/100\n\n".toByteArray())
+        transcript?.write("**Strengths:**\n".toByteArray())
+        initialEvaluation.strengths.forEach { transcript?.write("- $it\n".toByteArray()) }
+        transcript?.write("\n**Weaknesses:**\n".toByteArray())
+        initialEvaluation.weaknesses.forEach { transcript?.write("- $it\n".toByteArray()) }
+        transcript?.write("\n".toByteArray())
 
-            // Update overview with initial score
+
+        // Update overview with initial score
             overviewTask.add(buildString {
                 appendLine()
                 appendLine("- ✓ Initial evaluation: **${String.format("%.1f", initialEvaluation.overall_score)}/100**")
@@ -281,6 +315,8 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
                 val generationTask = task.ui.newTask(false)
                 tabs["Generation $generation"] = generationTask.placeholder
+              transcript?.write("\n\n---\n\n".toByteArray())
+              transcript?.write("# Generation $generation\n\n".toByteArray())
                 generationTask.add(buildString {
                     appendLine("# Generation $generation")
                     appendLine()
@@ -379,8 +415,9 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                     bestVariant = generationBest
                 }
 
+
                 // Display generation results
-                generationTask.add(buildString {
+              val generationResults = buildString {
                     appendLine()
                     appendLine("---")
                     appendLine()
@@ -436,8 +473,10 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                             appendLine("---")
                             appendLine()
                         }
-                }.renderMarkdown)
+              }
+              generationTask.add(generationResults.renderMarkdown)
                 task.update()
+              transcript?.write(generationResults.toByteArray())
 
                 // Update overview
                 overviewTask.add(buildString {
@@ -458,7 +497,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             log.info("Creating evolution visualization")
             val evolutionTask = task.ui.newTask(false)
             tabs["Evolution Analysis"] = evolutionTask.placeholder
-            evolutionTask.add(buildString {
+        val evolutionAnalysis = buildString {
                 appendLine("# Evolution Analysis")
                 appendLine()
                 appendLine("## Fitness Progression")
@@ -564,8 +603,11 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 appendLine()
                 appendLine("**Justification:**")
                 appendLine(bestVariant.score.justification)
-            }.renderMarkdown)
+        }
+        evolutionTask.add(evolutionAnalysis.renderMarkdown)
             task.update()
+        transcript?.write("\n\n---\n\n".toByteArray())
+        transcript?.write(evolutionAnalysis.toByteArray())
 
             // Build final result
             val totalTime = System.currentTimeMillis() - startTime
@@ -604,7 +646,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             }
 
             // Final overview update
-            overviewTask.add(buildString {
+        val finalOverview = buildString {
                 appendLine()
                 appendLine("---")
                 appendLine()
@@ -627,8 +669,12 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 appendLine("| Total Time | ${totalTime / 1000}s |")
                 appendLine()
                 appendLine("**Status:** ✓ Complete")
-            }.renderMarkdown)
+        }
+        overviewTask.add(finalOverview.renderMarkdown)
             task.update()
+        transcript?.write("\n\n---\n\n".toByteArray())
+        transcript?.write(finalOverview.toByteArray())
+        transcript?.close()
 
             log.info("GeneticOptimizationTask completed successfully: total_time=${totalTime}ms, improvement=${bestVariant.score.overall_score - initialEvaluation.overall_score}, generations=$numGenerations")
             task.complete(
@@ -643,11 +689,25 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
         } catch (e: Exception) {
             log.error("Error during GeneticOptimizationTask execution", e)
+        transcript?.close()
             task.error(e)
             task.complete("Failed with error: ${e.message}")
             resultFn("ERROR: ${e.message}")
         }
     }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
 
     private fun generateMutation(
         text: String,
@@ -844,26 +904,5 @@ Be objective and consistent in your evaluation.
         }
     }
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(GeneticOptimizationTask::class.java)
-        val GeneticOptimization = TaskType(
-            "GeneticOptimization",
-            GeneticOptimizationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Iteratively evolve and perfect text through genetic algorithms",
-            """
-              Uses genetic algorithms to optimize text through iterative evolution.
-              <ul>
-                <li>Generates variations using configurable mutation strategies</li>
-                <li>Evaluates variants against optimization criteria</li>
-                <li>Selects top performers for next generation</li>
-                <li>Applies crossover to combine successful traits</li>
-                <li>Tracks fitness progression across generations</li>
-                <li>Provides detailed analysis of evolution</li>
-                <li>Supports custom evaluation criteria and weights</li>
-                <li>Useful for perfecting prompts, copy, documentation, and messaging</li>
-              </ul>
-            """
-        )
-    }
+
 }

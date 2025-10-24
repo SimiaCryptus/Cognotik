@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -216,6 +217,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting TechnicalExplanationTask for topic: '${executionConfig?.topic}'")
+    val markdownTranscript = transcript(task)
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
@@ -248,6 +250,11 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
       appendLine("**Topic:** $topic")
       appendLine()
       appendLine("## Configuration")
+      appendLine()
+    }
+    overviewTask.add(overviewContent.renderMarkdown)
+    markdownTranscript?.write(overviewContent.toByteArray())
+    buildString {
       appendLine("- Target Audience: ${executionConfig.target_audience}")
       appendLine("- Level of Detail: ${executionConfig.level_of_detail}")
       appendLine("- Format: ${executionConfig.explanation_format}")
@@ -265,8 +272,8 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
       appendLine()
       appendLine("---")
       appendLine()
-      appendLine("## Progress")
-      appendLine()
+    }
+    buildString {
       appendLine("### Phase 1: Analysis & Outline")
       appendLine("*Analyzing topic and creating explanation structure...*")
     }
@@ -292,6 +299,8 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
             if (priorContext.isNotBlank()) {
               appendLine("## Prior Context")
               appendLine(priorContext.truncateForDisplay(2000))
+              markdownTranscript?.write("\n## Prior Context\n".toByteArray())
+              markdownTranscript?.write(priorContext.truncateForDisplay(2000).toByteArray())
               appendLine()
             }
             if (contextFiles.isNotBlank()) {
@@ -301,6 +310,8 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
           }.renderMarkdown
         )
         task.update()
+        markdownTranscript?.write("\n## Related Files\n".toByteArray())
+        markdownTranscript?.write(contextFiles.truncateForDisplay(2000).toByteArray())
       }
 
       // Phase 1: Create outline
@@ -316,6 +327,8 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
           appendLine()
         }.renderMarkdown
       )
+      markdownTranscript?.write("\n# Explanation Outline\n\n".toByteArray())
+      markdownTranscript?.write("**Status:** Creating structured outline...\n\n".toByteArray())
       task.update()
 
       val audienceGuidance = when (executionConfig.target_audience.lowercase()) {
@@ -469,6 +482,7 @@ Ensure the outline:
       }
       outlineTask.add(outlineContent.renderMarkdown)
       task.update()
+      markdownTranscript?.write(outlineContent.toByteArray())
 
       overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
       overviewTask.add("\n### Phase 2: Content Generation\n*Writing explanation sections...*\n".renderMarkdown)
@@ -495,6 +509,8 @@ Ensure the outline:
             appendLine()
           }.renderMarkdown
         )
+        markdownTranscript?.write("\n# ${conceptOutline.concept}\n\n".toByteArray())
+        markdownTranscript?.write("**Status:** Writing section...\n\n".toByteArray())
         task.update()
 
         // Build context from previous sections
@@ -574,46 +590,46 @@ ${if (executionConfig.include_code_examples) {
         var section = sectionAgent.answer(listOf("Write section")).obj
         sections.add(section)
 
-        sectionTask.add(
-          buildString {
-            appendLine("## ${section.title}")
+        val sectionContent = buildString {
+          appendLine("## ${section.title}")
+          appendLine()
+          appendLine(section.content)
+          appendLine()
+          if (section.code_snippets.isNotEmpty()) {
+            appendLine("---")
             appendLine()
-            appendLine(section.content)
+            appendLine("### Code Examples")
             appendLine()
-            if (section.code_snippets.isNotEmpty()) {
-              appendLine("---")
+            section.code_snippets.forEach { snippet ->
+              appendLine("**${snippet.explanation}**")
               appendLine()
-              appendLine("### Code Examples")
+              appendLine("```${snippet.language}")
+              appendLine(snippet.code)
+              appendLine("```")
               appendLine()
-              section.code_snippets.forEach { snippet ->
-                appendLine("**${snippet.explanation}**")
-                appendLine()
-                appendLine("```${snippet.language}")
-                appendLine(snippet.code)
-                appendLine("```")
-                appendLine()
-                if (snippet.highlights.isNotEmpty()) {
-                  appendLine("**Key Points:**")
-                  snippet.highlights.forEach { highlight ->
-                    appendLine("- $highlight")
-                  }
-                  appendLine()
+              if (snippet.highlights.isNotEmpty()) {
+                appendLine("**Key Points:**")
+                snippet.highlights.forEach { highlight ->
+                  appendLine("- $highlight")
                 }
+                appendLine()
               }
             }
-            if (section.key_takeaways.isNotEmpty()) {
-              appendLine("---")
-              appendLine()
-              appendLine("### Key Takeaways")
-              section.key_takeaways.forEach { takeaway ->
-                appendLine("- $takeaway")
-              }
-              appendLine()
+          }
+          if (section.key_takeaways.isNotEmpty()) {
+            appendLine("---")
+            appendLine()
+            appendLine("### Key Takeaways")
+            section.key_takeaways.forEach { takeaway ->
+              appendLine("- $takeaway")
             }
-            appendLine("**Status:** ✅ Complete")
-          }.renderMarkdown
-        )
+            appendLine()
+          }
+          appendLine("**Status:** ✅ Complete")
+        }
+        sectionTask.add(sectionContent.renderMarkdown)
         task.update()
+        markdownTranscript?.write(sectionContent.toByteArray())
 
         resultBuilder.append("## ${section.title}\n\n")
         resultBuilder.append(section.content)
@@ -651,6 +667,8 @@ ${if (executionConfig.include_code_examples) {
             appendLine()
           }.renderMarkdown
         )
+        markdownTranscript?.write("\n# Comparisons\n\n".toByteArray())
+        markdownTranscript?.write("**Status:** Comparing with related concepts...\n\n".toByteArray())
         task.update()
 
         val comparisonAgent = ChatAgent(
@@ -688,6 +706,7 @@ Make comparisons clear and helpful for ${executionConfig.target_audience}.
           }.renderMarkdown
         )
         task.update()
+        markdownTranscript?.write("\n## Related Concepts\n\n${comparisons}\n\n".toByteArray())
 
         resultBuilder.append("## Comparisons with Related Concepts\n\n")
         resultBuilder.append(comparisons)
@@ -713,6 +732,8 @@ Make comparisons clear and helpful for ${executionConfig.target_audience}.
             appendLine()
           }.renderMarkdown
         )
+        markdownTranscript?.write("\n# Revision Process\n\n".toByteArray())
+        markdownTranscript?.write("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...\n\n".toByteArray())
         task.update()
 
         val fullExplanation = resultBuilder.toString()
@@ -765,6 +786,7 @@ Provide the complete revised explanation.
             }.renderMarkdown
           )
           task.update()
+          markdownTranscript?.write("\n## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray())
         }
 
         overviewTask.add("✅ Phase 4 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
@@ -818,31 +840,34 @@ Provide the complete revised explanation.
 
       finalTask.add(finalExplanation.renderMarkdown)
       task.update()
+      markdownTranscript?.write("\n---\n\n${finalExplanation}\n".toByteArray())
 
       // Final statistics
       val totalTime = System.currentTimeMillis() - startTime
       val wordCount = finalExplanation.split("\\s+".toRegex()).size
       val codeExampleCount = sections.sumOf { it.code_snippets.size }
 
+      val statsContent = buildString {
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine("## ✅ Generation Complete")
+        appendLine()
+        appendLine("**Statistics:**")
+        appendLine("- Sections: ${sections.size}")
+        appendLine("- Word Count: $wordCount")
+        appendLine("- Code Examples: $codeExampleCount")
+        appendLine("- Analogies Used: ${outline.analogies.size}")
+        appendLine("- Terms Defined: ${outline.terminology.size}")
+        appendLine("- Revision Passes: ${executionConfig.revision_passes}")
+        appendLine("- Total Time: ${totalTime / 1000.0}s")
+        appendLine()
+        appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+      }
       overviewTask.add(
-        buildString {
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("## ✅ Generation Complete")
-          appendLine()
-          appendLine("**Statistics:**")
-          appendLine("- Sections: ${sections.size}")
-          appendLine("- Word Count: $wordCount")
-          appendLine("- Code Examples: $codeExampleCount")
-          appendLine("- Analogies Used: ${outline.analogies.size}")
-          appendLine("- Terms Defined: ${outline.terminology.size}")
-          appendLine("- Revision Passes: ${executionConfig.revision_passes}")
-          appendLine("- Total Time: ${totalTime / 1000.0}s")
-          appendLine()
-          appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
-        }.renderMarkdown
+        statsContent.renderMarkdown
       )
+      markdownTranscript?.write(statsContent.toByteArray())
       task.update()
 
       // Concise summary for resultFn
@@ -863,6 +888,7 @@ Provide the complete revised explanation.
       }
 
       log.info("TechnicalExplanationTask completed: sections=${sections.size}, words=$wordCount, time=${totalTime}ms")
+      markdownTranscript?.close()
 
       task.safeComplete("Technical explanation generation complete: $wordCount words in ${totalTime / 1000}s", log)
       resultFn(finalResult)
@@ -884,6 +910,7 @@ Provide the complete revised explanation.
         }.renderMarkdown
       )
       task.update()
+      markdownTranscript?.close()
 
       val errorOutput = buildString {
         appendLine("# Error in Technical Explanation Generation")
@@ -929,6 +956,19 @@ Provide the complete revised explanation.
       }
     }
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(TechnicalExplanationTask::class.java)

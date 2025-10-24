@@ -78,7 +78,7 @@ open class ChatSocketManager(
         }
     protected val chatMessages = mutableListOf<ModelSchema.ChatMessage>()
 
-    val markdownTranscript by lazy { transcript() }
+    val markdownTranscript by lazy { transcript(newTask()) }
 
     override fun onRun(userMessage: String, socket: ChatSocket) {
 
@@ -116,21 +116,20 @@ open class ChatSocketManager(
         }
     }
 
-    private fun transcript(): FileOutputStream? {
-        val task = newTask()
-        val (link, file) = task.createFile("transcript.md")
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
         )
-        return markdownTranscript
-    }
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
 
-    private fun innerRun(
+  private fun innerRun(
         task: SessionTask,
         expandedUserMessage: String,
         currentChatMessages: List<ModelSchema.ChatMessage>,

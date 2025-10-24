@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -100,6 +101,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
     val ui = task.ui
     val tabs = TabbedDisplay(task)
+    val transcript = transcript(task)
     
     // Overview tab
     val overviewTask = ui.newTask(false)
@@ -124,6 +126,19 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
     }
     overviewTask.add(overviewContent.renderMarkdown)
     task.update()
+    transcript?.write(
+      """
+      |# Dialectical Reasoning Analysis
+      |
+      |**Context:** $context
+      |**Synthesis Levels:** $synthesisLevels
+      |**Preserve Strengths:** ${if (preserveStrengths) "Yes" else "No"}
+      |**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+      |
+      |---
+      |
+    """.trimMargin().toByteArray()
+    )
 
     val priorContext = getPriorCode(agent.executionState)
     val relatedFilesContent = getRelatedFilesContent()
@@ -149,6 +164,19 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
         }.renderMarkdown
       )
       task.update()
+      transcript?.write(
+        """
+        |## Context Information
+        |
+      """.trimMargin().toByteArray()
+      )
+      if (priorContext.isNotBlank()) {
+        transcript?.write("### Prior Task Results\n\n${priorContext.truncateForDisplay()}\n\n".toByteArray())
+      }
+      if (relatedFilesContent.isNotBlank()) {
+        transcript?.write("### Related Files\n\n${relatedFilesContent.truncateForDisplay()}\n\n".toByteArray())
+      }
+      transcript?.write("---\n\n".toByteArray())
     }
 
     // Concise output for final result
@@ -204,6 +232,20 @@ Be thorough and objective in your analysis.
       val thesisTime = System.currentTimeMillis() - stepStartTime
       log.info("Thesis analysis completed in ${thesisTime}ms: ${thesisAnalysis.length} characters")
       stepStartTime = System.currentTimeMillis()
+      transcript?.write(
+        """
+        |## Thesis Analysis
+        |
+        |**Statement:** $thesis
+        |
+        |$thesisAnalysis
+        |
+        |**Status:** ✅ Complete (${thesisTime / 1000.0}s)
+        |
+        |---
+        |
+      """.trimMargin().toByteArray()
+      )
 
       thesisTask.add(
         buildString {
@@ -279,6 +321,20 @@ Be thorough and objective in your analysis.
       val antithesisTime = System.currentTimeMillis() - stepStartTime
       log.info("Antithesis analysis completed in ${antithesisTime}ms: ${antithesisAnalysis.length} characters")
       stepStartTime = System.currentTimeMillis()
+      transcript?.write(
+        """
+        |## Antithesis Analysis
+        |
+        |**Statement:** $antithesis
+        |
+        |$antithesisAnalysis
+        |
+        |**Status:** ✅ Complete (${antithesisTime / 1000.0}s)
+        |
+        |---
+        |
+      """.trimMargin().toByteArray()
+      )
 
       antithesisTask.add(
         buildString {
@@ -351,6 +407,18 @@ Be thorough in exploring the dialectical tension.
       val contradictionsTime = System.currentTimeMillis() - stepStartTime
       log.info("Contradictions analysis completed in ${contradictionsTime}ms: ${contradictionsAnalysis.length} characters")
       stepStartTime = System.currentTimeMillis()
+      transcript?.write(
+        """
+        |## Contradictions & Tensions
+        |
+        |$contradictionsAnalysis
+        |
+        |**Status:** ✅ Complete (${contradictionsTime / 1000.0}s)
+        |
+        |---
+        |
+      """.trimMargin().toByteArray()
+      )
 
       contradictionsTask.add(
         buildString {
@@ -471,6 +539,18 @@ Aim for progressively deeper insight and integration.
         val synthesisTime = System.currentTimeMillis() - stepStartTime
         log.info("Synthesis level $level completed in ${synthesisTime}ms: ${synthesis.length} characters")
         stepStartTime = System.currentTimeMillis()
+        transcript?.write(
+          """
+          |## Synthesis - Level $level
+          |
+          |$synthesis
+          |
+          |**Status:** ✅ Complete (${synthesisTime / 1000.0}s)
+          |
+          |---
+          |
+        """.trimMargin().toByteArray()
+        )
         
         synthesisResults.add(synthesis)
         previousSynthesis = synthesis
@@ -554,6 +634,18 @@ Be comprehensive yet concise in your final integration.
       val integrationTime = System.currentTimeMillis() - stepStartTime
       log.info("Final integration completed in ${integrationTime}ms: ${finalIntegration.length} characters")
       // stepStartTime = System.currentTimeMillis() // Not needed for the last step
+      transcript?.write(
+        """
+        |## Final Integration
+        |
+        |$finalIntegration
+        |
+        |**Status:** ✅ Complete (${integrationTime / 1000.0}s)
+        |
+        |---
+        |
+      """.trimMargin().toByteArray()
+      )
 
       resultBuilder.append("## Final Integration\n\n")
       resultBuilder.append(finalIntegration)
@@ -593,6 +685,20 @@ Be comprehensive yet concise in your final integration.
         }.renderMarkdown
       )
       task.update()
+      transcript?.write(
+        """
+        |
+        |## Summary
+        |
+        |**Total Time:** ${totalTime / 1000.0}s
+        |**Synthesis Levels:** $synthesisLevels
+        |**Total Output:** ${resultBuilder.length} characters
+        |**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+        |
+      """.trimMargin().toByteArray()
+      )
+      transcript?.close()
+
 
       task.safeComplete("Completed dialectical analysis with $synthesisLevels synthesis levels in ${totalTime / 1000}s", log)
       resultFn(resultBuilder.toString())
@@ -614,6 +720,18 @@ Be comprehensive yet concise in your final integration.
         }.renderMarkdown
       )
       task.update()
+      transcript?.write(
+        """
+        |
+        |## ❌ Error Occurred
+        |
+        |**Error:** ${e.message}
+        |**Type:** ${e.javaClass.simpleName}
+        |
+      """.trimMargin().toByteArray()
+      )
+      transcript?.close()
+
 
       val errorOutput = buildString {
         appendLine("# Error in Dialectical Reasoning")
@@ -654,6 +772,19 @@ Be comprehensive yet concise in your final integration.
       files
     }.joinToString("\n\n")
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(DialecticalReasoningTask::class.java)

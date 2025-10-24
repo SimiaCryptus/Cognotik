@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 
 class AbstractionLadderTask(
   orchestrationConfig: OrchestrationConfig, planTask: AbstractionLadderTaskExecutionConfigData?
@@ -100,6 +101,17 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     // Initialize UI with tabbed display for better organization
+    val transcript = transcript(task)
+    transcript?.write(
+      """
+      # Abstraction Ladder Analysis Transcript
+      **Concept:** $concept  
+      **Direction:** $direction  
+      **Levels:** $levels  
+      **Pattern Analysis:** ${if (identifyPatterns) "Enabled" else "Disabled"}
+    """.trimIndent().toByteArray()
+    )
+
     val tabbedDisplay = TabbedDisplay(task)
 
     // Overview tab
@@ -140,6 +152,8 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         )
         result.append("## Upward Abstraction (Generalizations)\n\n")
         result.append(upwardAnalysis)
+        transcript?.write("\n## Upward Abstraction (Generalizations)\n\n".toByteArray())
+        transcript?.write(upwardAnalysis.toByteArray())
         result.append("\n\n")
         upwardTab.add(MarkdownUtil.renderMarkdown("✅ Upward analysis complete", ui = task.ui))
         upwardTab.complete()
@@ -160,6 +174,8 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         )
         result.append("## Downward Concretization (Specific Implementations)\n\n")
         result.append(downwardAnalysis)
+        transcript?.write("\n\n## Downward Concretization (Specific Implementations)\n\n".toByteArray())
+        transcript?.write(downwardAnalysis.toByteArray())
         result.append("\n\n")
         downwardTab.add(MarkdownUtil.renderMarkdown("✅ Downward analysis complete", ui = task.ui))
         downwardTab.complete()
@@ -178,6 +194,8 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         )
         result.append("## Pattern Analysis & Recommendations\n\n")
         result.append(patternSummary)
+        transcript?.write("\n\n## Pattern Analysis & Recommendations\n\n".toByteArray())
+        transcript?.write(patternSummary.toByteArray())
         patternTab.add(MarkdownUtil.renderMarkdown("✅ Pattern analysis complete", ui = task.ui))
         patternTab.complete()
       }
@@ -202,12 +220,14 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
 
       val duration = System.currentTimeMillis() - startTime
       log.info("Abstraction Ladder Analysis completed successfully - Concept: ${concept.truncateForDisplay(100)}, Levels: $levels")
+      transcript?.close()
       task.safeComplete("Abstraction ladder analysis complete for '${concept.truncateForDisplay(100)}' with $levels levels in $direction direction(s) (${duration}ms)", log)
       resultFn(result.toString())
 
     } catch (e: Exception) {
       val duration = System.currentTimeMillis() - startTime
       log.error("Error in abstraction ladder analysis after ${duration}ms", e)
+      transcript?.close()
       task.error(e)
       task.add(
         MarkdownUtil.renderMarkdown(
@@ -405,6 +425,19 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
       }
     }
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(AbstractionLadderTask::class.java)

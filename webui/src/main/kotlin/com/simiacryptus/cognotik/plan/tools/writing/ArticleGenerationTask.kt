@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -177,6 +178,15 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     val tabs = TabbedDisplay(task)
+    // Create transcript file
+    val transcript = transcript(task)
+    transcript?.use { out ->
+      out.write("# Article Generation Transcript\n\n".toByteArray())
+      out.write("**Story Topic:** $storyTopic\n\n".toByteArray())
+      out.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+      out.write("---\n\n".toByteArray())
+    }
+
 
     // Overview tab
     val overviewTask = task.ui.newTask(false)
@@ -208,6 +218,8 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
     }
     overviewTask.add(overviewContent.renderMarkdown)
     task.update()
+    transcript?.write(overviewContent.toByteArray())
+
 
     val resultBuilder = StringBuilder()
     resultBuilder.append("# Generated Article: $storyTopic\n\n")
@@ -219,6 +231,9 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
 
       super.run(agent, messages, task, { result ->
         investigationResult.append(result)
+        transcript?.write("\n## Investigation Results\n\n".toByteArray())
+        transcript?.write(result.toByteArray())
+        transcript?.write("\n\n".toByteArray())
       }, orchestrationConfig)
 
       overviewTask.add("\n✅ Phase 1 Complete: Investigation finished\n".renderMarkdown)
@@ -330,6 +345,10 @@ Ensure the structure:
       }
       structureTask.add(structureContent.renderMarkdown)
       task.update()
+      transcript?.write("\n## Article Structure\n\n".toByteArray())
+      transcript?.write(structureContent.toByteArray())
+      transcript?.write("\n\n".toByteArray())
+
 
       overviewTask.add("✅ Phase 2 Complete: Structure created (${structure.sections.size} sections)\n".renderMarkdown)
       overviewTask.add("\n### Phase 3: Article Writing\n*Writing full article...*\n".renderMarkdown)
@@ -477,6 +496,10 @@ Provide the revised article content only.
       }
       writingTask.add(articleContent.renderMarkdown)
       task.update()
+      transcript?.write("\n## Generated Article\n\n".toByteArray())
+      transcript?.write(articleContent.toByteArray())
+      transcript?.write("\n\n".toByteArray())
+
 
       resultBuilder.append("# ${article.headline}\n\n")
       resultBuilder.append("## ${article.subheadline}\n\n")
@@ -556,6 +579,10 @@ Make each snippet:
         }
         socialTask.add(socialContent.renderMarkdown)
         task.update()
+        transcript?.write("\n## Social Media Snippets\n\n".toByteArray())
+        transcript?.write(socialContent.toByteArray())
+        transcript?.write("\n\n".toByteArray())
+
 
         overviewTask.add("✅ Phase 4 Complete: Social snippets created\n".renderMarkdown)
         task.update()
@@ -585,6 +612,16 @@ Make each snippet:
         }.renderMarkdown
       )
       task.update()
+      transcript?.write("\n## Final Statistics\n\n".toByteArray())
+      transcript?.write("- Article Format: ${genConfig.article_format}\n".toByteArray())
+      transcript?.write("- Word Count: ${article.word_count}\n".toByteArray())
+      transcript?.write("- Target Word Count: ${genConfig.target_word_count}\n".toByteArray())
+      transcript?.write("- Target Accuracy: $targetAccuracy%\n".toByteArray())
+      transcript?.write("- Sources Cited: ${article.sources_cited.size}\n".toByteArray())
+      transcript?.write("- Key Facts: ${article.key_facts.size}\n".toByteArray())
+      transcript?.write("- Total Time: ${totalTime / 1000.0}s\n".toByteArray())
+      transcript?.write("\n**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
+
 
       // Per best practices, the final result passed to resultFn should be a concise summary
       val finalResult = buildString {
@@ -605,6 +642,7 @@ Make each snippet:
       }
 
       log.info("ArticleGenerationTask completed: words=${article.word_count}, sources=${article.sources_cited.size}, time=${totalTime}ms")
+      transcript?.close()
 
       task.safeComplete("Article generation complete: ${article.word_count} words in ${totalTime / 1000}s", log)
       resultFn(finalResult)
@@ -626,6 +664,11 @@ Make each snippet:
         }.renderMarkdown
       )
       task.update()
+      transcript?.write("\n## Error\n\n".toByteArray())
+      transcript?.write("**Error:** ${e.message}\n".toByteArray())
+      transcript?.write("**Type:** ${e.javaClass.simpleName}\n".toByteArray())
+      transcript?.close()
+
 
       val errorOutput = buildString {
         appendLine("# Error in Article Generation")
@@ -643,6 +686,20 @@ Make each snippet:
       resultFn(errorOutput)
     }
   }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ArticleGenerationTask::class.java)

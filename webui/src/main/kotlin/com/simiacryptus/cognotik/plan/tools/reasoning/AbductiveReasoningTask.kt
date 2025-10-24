@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -99,6 +100,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
     val startTime = System.currentTimeMillis()
     var stepStartTime = System.currentTimeMillis()
     log.info("Starting AbductiveReasoningTask with ${executionConfig?.observations?.size ?: 0} observations")
+    val transcript = transcript(task)
 
     val observations = executionConfig?.observations
     if (observations.isNullOrEmpty()) {
@@ -106,6 +108,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       log.error(errorMsg)
       task.safeComplete(errorMsg, log)
       resultFn(errorMsg)
+      transcript?.close()
       return
     }
 
@@ -132,6 +135,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
     overviewTask.add(
       buildString {
+        writeToTranscript(transcript, this)
         appendLine("# Abductive Reasoning Analysis")
         appendLine()
         appendLine("**Purpose:** Generate and evaluate explanatory hypotheses")
@@ -161,6 +165,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       tabs["Observations"] = observationsTask.placeholder
       observationsTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine("# Observations")
           appendLine()
           appendLine("The following observations need explanation:")
@@ -184,6 +189,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         tabs["Context"] = contextTask.placeholder
         contextTask.add(
           buildString {
+            writeToTranscript(transcript, this)
             appendLine("# Context from Previous Tasks")
             appendLine()
             appendLine(priorContext.truncateForDisplay())
@@ -195,6 +201,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       // Update overview
       overviewTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine()
           appendLine("✅ Observations documented")
           appendLine()
@@ -208,9 +215,10 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       tabs["Hypotheses"] = hypothesesTask.placeholder
       hypothesesTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine("# Hypothesis Generation")
           appendLine()
-          appendLine("**Status:** 🔄 Generating explanatory hypotheses...")
+          appendLine("**Status:** 🔄 Generating hypotheses...")
         }.renderMarkdown
       )
       task.update()
@@ -245,6 +253,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       // Display hypotheses
       hypothesesTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine()
           appendLine("## Generated Hypotheses")
           appendLine()
@@ -293,6 +302,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       // Update overview
       overviewTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine()
           appendLine("✅ Hypotheses generated: ${hypotheses.size} (${hypothesesTime}s)")
           appendLine()
@@ -306,6 +316,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       tabs["Analysis"] = analysisTask.placeholder
       analysisTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine("# Comparative Analysis")
           appendLine()
           appendLine("**Status:** 🔄 Analyzing hypotheses...")
@@ -326,6 +337,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
       analysisTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine()
           appendLine("## Comparative Analysis Results")
           appendLine()
@@ -341,6 +353,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       // Update overview
       overviewTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine()
           appendLine("✅ Comparative analysis complete (${analysisTime}s)")
           if (suggestTests) {
@@ -358,6 +371,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         tabs["Validation Tests"] = testsTask.placeholder
         testsTask.add(
           buildString {
+            writeToTranscript(transcript, this)
             appendLine("# Validation Tests")
             appendLine()
             appendLine("**Status:** 🔄 Generating test suggestions...")
@@ -378,6 +392,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
         testsTask.add(
           buildString {
+            writeToTranscript(transcript, this)
             appendLine()
             appendLine("## Suggested Validation Tests")
             appendLine()
@@ -392,6 +407,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
         overviewTask.add(
           buildString {
+            writeToTranscript(transcript, this)
             appendLine()
             appendLine("✅ Validation tests generated (${testsTime}s)")
           }.renderMarkdown
@@ -405,6 +421,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       tabs["Best Explanation"] = summaryTask.placeholder
       summaryTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine("# Best Explanation (Inference to Best Explanation)")
           appendLine()
           if (bestHypothesis != null) {
@@ -460,6 +477,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
       overviewTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine()
           appendLine("---")
           appendLine()
@@ -475,6 +493,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         }.renderMarkdown
       )
       task.update()
+      transcript?.close()
 
       task.safeComplete("Completed abductive reasoning analysis: ${hypotheses.size} hypotheses evaluated in ${totalTime / 1000}s", log)
       resultFn(finalSummary.toString())
@@ -486,6 +505,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
       overviewTask.add(
         buildString {
+          writeToTranscript(transcript, this)
           appendLine()
           appendLine("---")
           appendLine()
@@ -506,6 +526,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         appendLine("**Error:** ${e.message}")
       }
       resultFn(errorOutput)
+      transcript?.close()
     }
   }
 
@@ -756,6 +777,24 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
     score >= 0.4 -> "Possible - not impossible but less common"
     else -> "Unlikely - requires unusual circumstances"
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
+  private fun writeToTranscript(transcript: FileOutputStream?, content: StringBuilder) {
+    transcript?.write(content.toString().toByteArray())
+    transcript?.write("\n\n".toByteArray())
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(AbductiveReasoningTask::class.java)

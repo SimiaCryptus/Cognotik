@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -325,12 +326,25 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
+    // Create transcript file
+    val transcriptStream = transcript(task)
+    transcriptStream?.use { stream ->
+      stream.write("# Business Proposal Generation Transcript\n\n".toByteArray())
+      stream.write("**Proposal:** ${executionConfig?.proposal_title}\n".toByteArray())
+      stream.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+      stream.write("---\n\n".toByteArray())
+    }
+    fun logToTranscript(message: String) {
+      transcriptStream?.write("$message\n".toByteArray())
+    }
+
     val startTime = System.currentTimeMillis()
     log.info("Starting BusinessProposalTask for: '${executionConfig?.proposal_title}'")
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
       log.error("Configuration validation failed: $validationError")
+      logToTranscript("## Configuration Validation Failed\n\n$validationError\n")
       task.safeComplete("CONFIGURATION ERROR: $validationError", log)
       task.error(ValidatedObject.ValidationError(validationError, executionConfig))
       resultFn("CONFIGURATION ERROR: $validationError")
@@ -340,6 +354,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
     val proposalTitle = executionConfig?.proposal_title
     if (proposalTitle.isNullOrBlank()) {
       log.error("No proposal title specified")
+      logToTranscript("## Error: No Proposal Title\n")
       task.safeComplete("CONFIGURATION ERROR: No proposal title specified", log)
       resultFn("CONFIGURATION ERROR: No proposal title specified")
       return
@@ -419,6 +434,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
 
       // Phase 1: Stakeholder Analysis
       log.info("Phase 1: Analyzing stakeholders")
+      logToTranscript("## Phase 1: Stakeholder Analysis\n\n")
       val stakeholderTask = task.ui.newTask(false)
       tabs["Stakeholder Analysis"] = stakeholderTask.placeholder
 
@@ -468,6 +484,7 @@ Identify 3-5 key stakeholders who will influence the decision.
 
       val stakeholderAnalysis = stakeholderAgent.answer(listOf("Analyze stakeholders")).obj
       log.debug("Analyzed ${stakeholderAnalysis.stakeholders.size} stakeholders")
+      logToTranscript("Identified ${stakeholderAnalysis.stakeholders.size} key stakeholders\n\n")
 
       val stakeholderContent = buildString {
         appendLine("## Key Stakeholders")
@@ -509,6 +526,7 @@ Identify 3-5 key stakeholders who will influence the decision.
       // Phase 2: ROI Analysis (if enabled)
       var roiAnalysis: ROIAnalysis? = null
       if (executionConfig.include_roi_analysis) {
+        logToTranscript("## Phase 2: ROI Analysis\n\n")
         overviewTask.add("\n### Phase 2: ROI Analysis\n*Calculating financial projections and ROI...*\n".renderMarkdown)
         task.update()
 
@@ -570,6 +588,7 @@ If specific numbers aren't provided, use reasonable estimates based on the propo
 
         roiAnalysis = roiAgent.answer(listOf("Perform ROI analysis")).obj
         log.debug("ROI analysis complete")
+        logToTranscript("ROI Analysis complete: ${roiAnalysis.roi_summary.take(200)}\n\n")
 
         val roiContent = buildString {
           appendLine("## Financial Projections")
@@ -615,6 +634,7 @@ If specific numbers aren't provided, use reasonable estimates based on the propo
       // Phase 3: Risk Assessment (if enabled)
       var riskAssessment: RiskAssessment? = null
       if (executionConfig.include_risk_assessment) {
+        logToTranscript("## Phase 3: Risk Assessment\n\n")
         overviewTask.add("\n### Phase 3: Risk Assessment\n*Identifying and mitigating risks...*\n".renderMarkdown)
         task.update()
 
@@ -670,6 +690,7 @@ Be realistic but not alarmist. Focus on actionable mitigation strategies.
 
         riskAssessment = riskAgent.answer(listOf("Assess risks")).obj
         log.debug("Identified ${riskAssessment.risks.size} risks")
+        logToTranscript("Identified ${riskAssessment.risks.size} risks. Overall risk level: ${riskAssessment.overall_risk_level}\n\n")
 
         val riskContent = buildString {
           appendLine("## Overall Risk Level: ${riskAssessment.overall_risk_level}")
@@ -705,6 +726,7 @@ Be realistic but not alarmist. Focus on actionable mitigation strategies.
       // Phase 4: Competitive Analysis (if enabled)
       var competitiveAnalysis: CompetitiveAnalysis? = null
       if (executionConfig.include_competitive_analysis) {
+        logToTranscript("## Phase 4: Competitive Analysis\n\n")
         overviewTask.add("\n### Phase 4: Competitive Analysis\n*Analyzing alternatives and competitive advantages...*\n".renderMarkdown)
         task.update()
 
@@ -758,6 +780,7 @@ Be fair to alternatives but make a compelling case for this proposal.
 
         competitiveAnalysis = competitiveAgent.answer(listOf("Analyze competition")).obj
         log.debug("Analyzed ${competitiveAnalysis.alternatives.size} alternatives")
+        logToTranscript("Analyzed ${competitiveAnalysis.alternatives.size} alternative approaches\n\n")
 
         val competitiveContent = buildString {
           appendLine("## Competitive Advantages")
@@ -804,6 +827,7 @@ Be fair to alternatives but make a compelling case for this proposal.
       // Phase 5: Timeline & Milestones (if enabled)
       var timelineMilestones: TimelineMilestones? = null
       if (executionConfig.include_timeline_milestones) {
+        logToTranscript("## Phase 5: Timeline & Milestones\n\n")
         overviewTask.add("\n### Phase 5: Timeline & Milestones\n*Creating project timeline...*\n".renderMarkdown)
         task.update()
 
@@ -853,6 +877,7 @@ Ensure phases flow logically and dependencies are clear.
 
         timelineMilestones = timelineAgent.answer(listOf("Create timeline")).obj
         log.debug("Created timeline with ${timelineMilestones.phases.size} phases")
+        logToTranscript("Created project timeline with ${timelineMilestones.phases.size} phases\n\n")
 
         val timelineContent = buildString {
           appendLine("## Project Phases")
@@ -893,6 +918,7 @@ Ensure phases flow logically and dependencies are clear.
       }
 
       // Phase 6: Create Proposal Outline
+      logToTranscript("## Phase 6: Proposal Structure\n\n")
       overviewTask.add("\n### Phase 6: Proposal Structure\n*Creating detailed outline...*\n".renderMarkdown)
       task.update()
 
@@ -961,6 +987,7 @@ Tailor the outline to the ${executionConfig.proposal_type} proposal type and ${e
 
       val outline = outlineAgent.answer(listOf("Create outline")).obj
       log.debug("Outline created with ${outline.sections.size} sections")
+      logToTranscript("Created outline with ${outline.sections.size} main sections\n\n")
 
       val outlineContent = buildString {
         appendLine("## ${outline.title}")
@@ -1007,6 +1034,7 @@ Tailor the outline to the ${executionConfig.proposal_type} proposal type and ${e
       overviewTask.add("✅ Phase 6 Complete: Outline created\n".renderMarkdown)
 
       // Phase 7: Write Proposal Sections
+      logToTranscript("## Phase 7: Content Generation\n\n")
       overviewTask.add("\n### Phase 7: Content Generation\n*Writing proposal sections...*\n".renderMarkdown)
       task.update()
 
@@ -1059,6 +1087,7 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
       var execSummary = execSummaryAgent.answer(listOf("Write executive summary")).obj
       proposalSections.add(execSummary)
       cumulativeWordCount += execSummary.word_count
+      logToTranscript("Executive Summary written: ${execSummary.word_count} words\n")
 
       execSummaryTask.add(
         buildString {
@@ -1085,6 +1114,7 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
       // Write each main section
       outline.sections.forEachIndexed { index, sectionOutline ->
         log.info("Writing section ${index + 1}/${outline.sections.size}: ${sectionOutline.title}")
+        logToTranscript("Writing section: ${sectionOutline.title}\n")
 
         overviewTask.add("- ${sectionOutline.title} ".renderMarkdown)
         task.update()
@@ -1188,6 +1218,7 @@ Aim for approximately ${sectionOutline.estimated_word_count} words.
         var sectionContent = sectionAgent.answer(listOf("Write section")).obj
         proposalSections.add(sectionContent)
         cumulativeWordCount += sectionContent.word_count
+        logToTranscript("Section '${sectionOutline.title}' completed: ${sectionContent.word_count} words\n")
 
         sectionTask.add(
           buildString {
@@ -1222,6 +1253,7 @@ Aim for approximately ${sectionOutline.estimated_word_count} words.
       overviewTask.add("✅ Phase 7 Complete: All sections written\n".renderMarkdown)
 
       // Phase 8: Conclusion & Next Steps
+      logToTranscript("\n## Phase 8: Conclusion & Next Steps\n\n")
       overviewTask.add("\n### Phase 8: Conclusion\n*Writing conclusion and next steps...*\n".renderMarkdown)
       task.update()
 
@@ -1269,6 +1301,7 @@ Make it action-oriented and compelling. The reader should feel motivated to move
 
       var conclusion = conclusionAgent.answer(listOf("Write conclusion")).obj
       cumulativeWordCount += conclusion.word_count
+      logToTranscript("Conclusion written: ${conclusion.word_count} words\n\n")
 
       conclusionTask.add(
         buildString {
@@ -1293,6 +1326,7 @@ Make it action-oriented and compelling. The reader should feel motivated to move
 
       // Phase 9: Revision (if enabled)
       if (executionConfig.revision_passes > 0) {
+        logToTranscript("## Phase 9: Revision Process\n\n")
         overviewTask.add("\n### Phase 9: Revision\n*Refining and polishing...*\n".renderMarkdown)
         task.update()
 
@@ -1314,6 +1348,7 @@ Make it action-oriented and compelling. The reader should feel motivated to move
 
         repeat(executionConfig.revision_passes) { passNum ->
           log.debug("Revision pass ${passNum + 1}/${executionConfig.revision_passes}")
+          logToTranscript("Performing revision pass ${passNum + 1}/${executionConfig.revision_passes}\n")
 
           val revisionAgent = ChatAgent(
             prompt = """
@@ -1362,6 +1397,7 @@ Provide the complete revised proposal.
       }
 
       // Phase 10: Final Assembly
+      logToTranscript("\n## Phase 10: Final Assembly\n\n")
       overviewTask.add("\n### Phase 10: Final Assembly\n*Compiling complete proposal...*\n".renderMarkdown)
       task.update()
 
@@ -1412,6 +1448,7 @@ Provide the complete revised proposal.
 
       // Final statistics
       val totalTime = System.currentTimeMillis() - startTime
+      logToTranscript("\n## Generation Complete\n\nTotal time: ${totalTime / 1000.0}s\nTotal words: $cumulativeWordCount\n")
 
       overviewTask.add(
         buildString {
@@ -1465,6 +1502,7 @@ Provide the complete revised proposal.
 
     } catch (e: Exception) {
       log.error("Error during business proposal generation", e)
+      logToTranscript("\n## Error Occurred\n\n${e.message}\n")
       task.error(e)
 
       overviewTask.add(
@@ -1525,6 +1563,17 @@ Provide the complete revised proposal.
       }
     }
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(".md")
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(BusinessProposalTask::class.java)

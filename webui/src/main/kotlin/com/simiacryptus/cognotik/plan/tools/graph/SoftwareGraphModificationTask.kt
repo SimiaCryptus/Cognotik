@@ -5,11 +5,11 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.apps.graph.SoftwareNodeType
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.io.FileOutputStream
 
 class SoftwareGraphModificationTask(
     orchestrationConfig: OrchestrationConfig,
@@ -48,6 +48,7 @@ class SoftwareGraphModificationTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         val typeConfig = typeConfig ?: throw RuntimeException()
+      val transcript = transcript(task)
         val graphModificationActor = ParsedAgent(
             name = "SoftwareGraphModification",
             resultClass = SoftwareNodeType.SoftwareGraph::class.java,
@@ -91,11 +92,23 @@ class SoftwareGraphModificationTask(
         val inputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File("."))
             .resolve(executionConfig?.input_graph_file ?: throw IllegalArgumentException("Input graph file not specified"))
         if (!inputFile.exists()) throw IllegalArgumentException("Input graph file does not exist: ${inputFile.absolutePath}")
+
+      transcript?.write("# Software Graph Modification Task\n\n".toByteArray())
+      transcript?.write("## Input\n\n".toByteArray())
+      transcript?.write("- Input file: ${inputFile.absolutePath}\n".toByteArray())
+      transcript?.write("- Modification goal: ${executionConfig.modification_goal}\n\n".toByteArray())
         val originalGraph = JsonUtil.fromJson<SoftwareNodeType.SoftwareGraph>(
             inputFile.readText(),
             SoftwareNodeType.SoftwareGraph::class.java
         )
 
+      transcript?.write("## Original Graph Statistics\n\n".toByteArray())
+      transcript?.write("- Total nodes: ${originalGraph.nodes.size}\n".toByteArray())
+      transcript?.write(
+        "- Node types: ${
+          originalGraph.nodes.groupBy { it.javaClass.simpleName }.map { "${it.key}: ${it.value.size}" }.joinToString(", ")
+        }\n\n".toByteArray()
+      )
         val response = graphModificationActor.answer(
             messages + listOf(
                 "Current graph:\n```json\n${JsonUtil.toJson(originalGraph)}\n```",
@@ -104,7 +117,10 @@ class SoftwareGraphModificationTask(
         )
 
         val deltaGraph = response.obj
-        val newGraph = originalGraph + deltaGraph
+      transcript?.write("## Delta Changes\n\n".toByteArray())
+      transcript?.write("```json\n${JsonUtil.toJson(deltaGraph)}\n```\n\n".toByteArray())
+
+      val newGraph = originalGraph + deltaGraph
 
         val outputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File("."))
             .resolve(
@@ -137,9 +153,27 @@ class SoftwareGraphModificationTask(
         }
 
         task.add((summary.renderMarkdown))
-        resultFn(summary)
+      transcript?.write("## Summary\n\n".toByteArray())
+      transcript?.write(summary.toByteArray())
+      transcript?.flush()
+      transcript?.close()
+
+      resultFn(summary)
     }
 
     companion object {
+      private fun transcript(task: SessionTask): FileOutputStream? {
+        val (link, file) = task.createFile("transcript.md")
+        val markdownTranscript = file?.outputStream()
+        task.complete(
+          "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+            link.removeSuffix(
+              ".md"
+            )
+          }.pdf' target='_blank'>pdf</a>"
+        )
+        return markdownTranscript
     }
+
+}
 }

@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.BufferedReader
+import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.util.concurrent.ConcurrentHashMap
@@ -99,6 +100,7 @@ class CommandSessionTask(
     }
     task.add(uiOutput.toString())
     task.update()
+    val transcript = transcript(task)
     var process: Process? = null
     try {
       cleanupInactiveSessions()
@@ -120,6 +122,7 @@ class CommandSessionTask(
         uiOutput.appendLine("```")
         uiOutput.appendLine(input)
         uiOutput.appendLine("```")
+        transcript?.write(uiOutput.toString().toByteArray())
         task.add(uiOutput.toString())
         task.update()
         val output = try {
@@ -134,6 +137,7 @@ class CommandSessionTask(
         uiOutput.appendLine("```")
         uiOutput.appendLine(output.take(10000))
         uiOutput.appendLine("```")
+        transcript?.write(uiOutput.toString().toByteArray())
         task.add(uiOutput.toString())
         task.update()
       }
@@ -144,8 +148,10 @@ class CommandSessionTask(
       task.error(e)
       val errorResult = "Error in CommandSessionTask: ${e.message}"
       task.add(uiOutput.append("\n\n**ERROR:** $errorResult").toString())
+      transcript?.write(uiOutput.toString().toByteArray())
       resultFn(errorResult)
     } finally {
+      transcript?.close()
       if ((executionConfig.sessionId == null || executionConfig.closeSession) && process != null) {
         try {
           process.destroy()
@@ -185,5 +191,15 @@ class CommandSessionTask(
       }
     }
     return outputBuffer.toString()
+  }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(".md")
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
   }
 }

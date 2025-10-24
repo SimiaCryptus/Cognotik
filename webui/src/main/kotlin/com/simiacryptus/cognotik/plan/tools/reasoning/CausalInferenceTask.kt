@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
 
 class CausalInferenceTask(
@@ -84,6 +85,8 @@ CausalInference - Identify causal relationships and root causes
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting CausalInference task for effect: ${executionConfig?.observed_effect}")
+    // Create transcript file for logging the analysis
+    val markdownTranscript = transcript(task)
 
     val observedEffect = executionConfig?.observed_effect
     if (observedEffect.isNullOrBlank()) {
@@ -97,6 +100,8 @@ CausalInference - Identify causal relationships and root causes
     executionConfig?.validate()?.let { validationError ->
       val errorMsg = "CONFIGURATION ERROR: $validationError"
       log.error(errorMsg)
+      markdownTranscript?.write("# Configuration Error\n\n$errorMsg\n".toByteArray())
+      markdownTranscript?.close()
       task.complete(errorMsg)
       resultFn("CONFIGURATION ERROR: No observed effect specified")
       return
@@ -106,6 +111,8 @@ CausalInference - Identify causal relationships and root causes
     val ui = task.ui
     val api = orchestrationConfig.defaultChatter ?: run {
       log.error("No default chatter available")
+      markdownTranscript?.write("# Error\n\nNo API available\n".toByteArray())
+      markdownTranscript?.close()
       task.complete("ERROR: No API available")
       resultFn("ERROR: No API available")
       return
@@ -113,6 +120,18 @@ CausalInference - Identify causal relationships and root causes
     try {
       // Create tabbed display for organized output
       val tabs = TabbedDisplay(task)
+      // Write header to transcript
+      markdownTranscript?.write(
+        """
+        |# Causal Inference Analysis
+        |
+        |**Observed Effect:** $observedEffect
+        |**Start Time:** ${java.time.Instant.ofEpochMilli(startTime)}
+        |
+        |---
+        |
+        """.trimMargin().toByteArray()
+      )
 
       // Overview tab
       val overviewTask = task.ui.newTask(false)
@@ -140,6 +159,18 @@ CausalInference - Identify causal relationships and root causes
 
       val evidenceContext = gatherEvidence()
       log.debug("Evidence gathered: ${evidenceContext.length} characters")
+      markdownTranscript?.write(
+        """
+        |## Evidence Sources
+        |
+        |**Sources processed:** ${executionConfig?.evidence_sources?.size ?: 0}
+        |
+        |${evidenceContext.take(maxOutputLength)}${if (evidenceContext.length > maxOutputLength) "\n... (truncated)" else ""}
+        |
+        |---
+        |
+        """.trimMargin().toByteArray()
+      )
       evidenceLoading?.clear()
       evidenceTask.add(
         MarkdownUtil.renderMarkdown(
@@ -218,6 +249,17 @@ CausalInference - Identify causal relationships and root causes
 
 
       var answer: String? = chatAgent.answer(toInput(prompt))
+      // Write analysis to transcript
+      markdownTranscript?.write(
+        """
+        |## Causal Analysis Results
+        |
+        |$answer
+        |
+        |---
+        |
+        """.trimMargin().toByteArray()
+      )
 
       analysisTaskLoading?.clear()
       analysisTask.add(
@@ -279,6 +321,20 @@ Generate the Mermaid diagram now:
 
         var graphResult: String? = chatAgent.answer(toInput(graphPrompt))
         val mermaidCode = extractMermaidCode(graphResult ?: "")
+        // Write graph to transcript
+        markdownTranscript?.write(
+          """
+          |## Causal Graph
+          |
+          |```mermaid
+          |$mermaidCode
+          |```
+          |
+          |---
+          |
+          """.trimMargin().toByteArray()
+        )
+
         graphTaskStatus?.clear()
         if (mermaidCode.isNotEmpty()) {
           graphTaskStatus = graphTask.add(
@@ -315,6 +371,20 @@ Generate the Mermaid diagram now:
       val duration = System.currentTimeMillis() - startTime
       val summary = "Causal inference analysis completed for effect: $observedEffect"
       log.info("$summary (duration: ${duration}ms, causes analyzed: ${potentialCauses.size}, evidence sources: ${executionConfig?.evidence_sources?.size ?: 0})")
+      // Write summary to transcript
+      markdownTranscript?.write(
+        """
+        |## Summary
+        |
+        |$summary
+        |
+        |**Duration:** ${duration}ms
+        |**Causes Analyzed:** ${potentialCauses.size}
+        |**Evidence Sources:** ${executionConfig?.evidence_sources?.size ?: 0}
+        |
+        """.trimMargin().toByteArray()
+      )
+      markdownTranscript?.close()
 
       task.complete(summary)
       resultFn(answer ?: "Analysis completed")
@@ -322,6 +392,24 @@ Generate the Mermaid diagram now:
     } catch (e: Exception) {
       val duration = System.currentTimeMillis() - startTime
       log.error("CausalInference task failed after ${duration}ms for effect: $observedEffect", e)
+      // Write error to transcript
+      markdownTranscript?.write(
+        """
+        |## Error
+        |
+        |An error occurred during causal inference analysis:
+        |
+        |```
+        |${e.message}
+        |${e.stackTraceToString()}
+        |```
+        |
+        |**Duration:** ${duration}ms
+        |
+        """.trimMargin().toByteArray()
+      )
+      markdownTranscript?.close()
+
       task.error(e)
 
       val errorTask = task.ui.newTask(false)
@@ -449,6 +537,19 @@ Generate the causal analysis now:
     val mermaidBlockRegex = "```mermaid\\s*([\\s\\S]*?)```".toRegex()
     val match = mermaidBlockRegex.find(response)
     return match?.groupValues?.get(1)?.trim() ?: ""
+  }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
   }
 
   companion object {

@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -159,6 +160,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
     orchestrationConfig: OrchestrationConfig
   ) {
     val startTime = System.currentTimeMillis()
+    val transcript = transcript(task)
     val genConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData
     log.info("Starting NarrativeGenerationTask for subject: '${genConfig?.subject}'")
 
@@ -210,6 +212,8 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
       appendLine("*Running base narrative reasoning analysis...*")
     }
     overviewTask.add(overviewContent.renderMarkdown)
+    transcript?.write(overviewContent.toByteArray())
+    transcript?.flush()
     task.update()
 
     val resultBuilder = StringBuilder()
@@ -222,6 +226,8 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
 
       super.run(agent, messages, task, { result ->
         analysisResult.append(result)
+        transcript?.write(result.toByteArray())
+        transcript?.flush()
       }, orchestrationConfig)
 
       overviewTask.add("\n✅ Phase 1 Complete: Narrative analysis finished\n".renderMarkdown)
@@ -323,6 +329,8 @@ Ensure the outline:
         appendLine("**Status:** ✅ Complete")
       }
       outlineTask.add(outlineContent.renderMarkdown)
+      transcript?.write(outlineContent.toByteArray())
+      transcript?.flush()
       task.update()
 
       resultBuilder.append("## ${outline.title}\n\n")
@@ -511,6 +519,8 @@ Provide the revised scene content only.
           appendLine("**Status:** ✅ Complete")
         }
         sceneTask.add(sceneContent.renderMarkdown)
+        transcript?.write(sceneContent.toByteArray())
+        transcript?.flush()
         task.update()
 
         // Add to result
@@ -643,6 +653,20 @@ Provide the revised scene content only.
       resultFn(errorOutput)
     }
   }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(NarrativeGenerationTask::class.java)

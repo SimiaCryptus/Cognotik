@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 
 class CounterfactualAnalysisTask(
   orchestrationConfig: OrchestrationConfig,
@@ -98,7 +99,8 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
     }
 
     val toInput = { it: String -> listOf(it) }
-      return
+    val transcript = transcript(task)
+    transcript?.write("# Counterfactual Analysis Transcript\n\n".toByteArray())
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     try {
@@ -120,6 +122,18 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
           ui = task.ui
         )
       )
+      transcript?.write(
+        """
+        |## Counterfactual Analysis
+        |
+        |**Actual Scenario:** ${actualScenario.truncateForDisplay(maxDescriptionLength)}
+        |
+        |**Counterfactuals:** ${counterfactuals.size}
+        |
+        |**Status:** 🔄 Starting analysis...
+        |
+        """.trimMargin().toByteArray()
+      )
     } catch (e: Exception) {
       log.warn("Failed to create overview tab", e)
     }
@@ -135,36 +149,47 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
       priorCode,
       api,
       task,
-      toInput
+      toInput,
+      transcript
     )
-
+    transcript?.write("\n## Actual Scenario Analysis\n\n".toByteArray())
+    transcript?.write("**Scenario:** $actualScenario\n\n".toByteArray())
+    transcript?.write("**Analysis:**\n\n$actualAnalysis\n\n".toByteArray())
     // Analyze counterfactual scenarios
     val counterfactualAnalyses = counterfactuals.mapIndexed { index, counterfactual ->
-      analyzeScenario(
+      transcript?.write("\n## Counterfactual Scenario ${index + 1}\n\n".toByteArray())
+      transcript?.write("**Scenario:** $counterfactual\n\n".toByteArray())
+      val analysis = analyzeScenario(
         "Counterfactual ${index + 1}",
         counterfactual,
         contextFiles,
         priorCode,
         api,
         task,
-        toInput
+        toInput,
+        transcript
       )
+      transcript?.write("**Analysis:**\n\n$analysis\n\n".toByteArray())
+      analysis
     }
-
     // Compare outcomes if requested
     val comparisonAnalysis = if (executionConfig?.compare_outcomes == true) {
-      compareScenarios(
+      transcript?.write("\n## Comparative Analysis\n\n".toByteArray())
+      val comparison = compareScenarios(
         actualScenario,
-        actualAnalysis,
+        contextFiles,
+        actualAnalysis.split("\\s+"),
         counterfactuals,
         counterfactualAnalyses,
-        executionConfig?.control_factors,
-        contextFiles,
+        executionConfig.control_factors?.joinToString(", ") ?: "",
         priorCode,
         api,
         task,
-        toInput
+        toInput,
+        transcript
       )
+      transcript?.write(comparison.toByteArray())
+      comparison
     } else {
       ""
     }
@@ -193,6 +218,8 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
         appendLine(comparisonAnalysis)
       }
     }
+    transcript?.write("\n---\n\n**Analysis Complete**\n".toByteArray())
+    transcript?.close()
 
     task.add(MarkdownUtil.renderMarkdown(fullAnalysis, ui = task.ui))
     task.safeComplete("Analysis complete", log)
@@ -206,10 +233,11 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
     priorCode: String,
     api: ChatInterface,
     task: SessionTask,
-    toInput: (String) -> List<String>
+    toInput: (String) -> List<String>,
+    transcript: FileOutputStream?
   ): String {
     val prompt = """
-Analyze the following scenario in detail:
+ Analyze the following scenario in detail:
 
 ## Scenario: $scenarioName
 $scenario
@@ -232,8 +260,11 @@ ${executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None spec
 6. Highlight any assumptions or uncertainties
 7. Provide insights on causal relationships
 
-Provide a comprehensive analysis:
+ Provide a comprehensive analysis:
         """.trimIndent()
+    transcript?.write("\n### Prompt for $scenarioName\n\n".toByteArray())
+    transcript?.write("```\n$prompt\n```\n\n".toByteArray())
+
 
     val chatAgent = ChatAgent(
       prompt = promptSegment(),
@@ -241,6 +272,8 @@ Provide a comprehensive analysis:
     )
 
     var result: String? = chatAgent.answer(toInput(prompt))
+    transcript?.write("### Response for $scenarioName\n\n".toByteArray())
+    transcript?.write("${result ?: "(No response)"}\n\n".toByteArray())
     return result ?: ""
   }
 
@@ -254,7 +287,8 @@ Provide a comprehensive analysis:
     priorCode: String,
     api: ChatInterface,
     task: SessionTask,
-    toInput: (String) -> List<String>
+    toInput: (String) -> List<String>,
+    transcript: FileOutputStream?
   ): String {
     val scenarioComparisons = counterfactuals.zip(counterfactualAnalyses)
       .mapIndexed { index, (counterfactual, analysis) ->
@@ -293,8 +327,11 @@ $priorCode
 7. Highlight any surprising or counterintuitive findings
 8. Provide recommendations based on the analysis
 
-Provide a comprehensive comparative analysis:
+ Provide a comprehensive comparative analysis:
         """.trimIndent()
+    transcript?.write("\n### Comparison Prompt\n\n".toByteArray())
+    transcript?.write("```\n$prompt\n```\n\n".toByteArray())
+
 
     val chatAgent = ChatAgent(
       prompt = promptSegment(),
@@ -302,6 +339,8 @@ Provide a comprehensive comparative analysis:
     )
 
     var result: String? = chatAgent.answer(toInput(prompt))
+    transcript?.write("### Comparison Response\n\n".toByteArray())
+    transcript?.write("${result ?: "(No response)"}\n\n".toByteArray())
     return result ?: ""
   }
 
@@ -323,6 +362,17 @@ Provide a comprehensive comparative analysis:
       }
     }
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(".md")
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(CounterfactualAnalysisTask::class.java)

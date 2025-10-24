@@ -1,21 +1,17 @@
 package com.simiacryptus.cognotik.plan.tools.mcp
 
  import com.simiacryptus.cognotik.describe.Description
- import com.simiacryptus.cognotik.plan.AbstractTask
- import com.simiacryptus.cognotik.plan.ExecutionState
- import com.simiacryptus.cognotik.plan.OrchestrationConfig
- import com.simiacryptus.cognotik.plan.TaskExecutionConfig
- import com.simiacryptus.cognotik.plan.TaskOrchestrator
- import com.simiacryptus.cognotik.plan.TaskTypeConfig
+ import com.simiacryptus.cognotik.mcp.MCPServerRegistry
+ import com.simiacryptus.cognotik.plan.*
  import com.simiacryptus.cognotik.util.JsonUtil
  import com.simiacryptus.cognotik.util.LoggerFactory
  import com.simiacryptus.cognotik.webui.session.SessionTask
- import com.simiacryptus.cognotik.mcp.MCPServerRegistry
  import org.slf4j.Logger
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
+ import java.io.FileOutputStream
+ import java.util.concurrent.TimeUnit
+ import java.util.concurrent.TimeoutException
 
- class MCPToolTask(
+class MCPToolTask(
     orchestrationConfig: OrchestrationConfig,
     executionConfig: MCPToolTaskExecutionConfigData?
  ) : AbstractTask<MCPToolTask.MCPToolTaskExecutionConfigData, MCPToolTask.MCPToolTaskTypeConfig>(
@@ -49,6 +45,8 @@ import java.util.concurrent.TimeoutException
         val default_timeout: Int = 30,
         @Description("Whether to automatically retry failed tool executions")
         val auto_retry: Boolean = false,
+        @Description("Whether to generate a transcript of the tool execution")
+        val generate_transcript: Boolean = true,
         @Description("Maximum number of retry attempts")
         val max_retries: Int = 3,
         @Description("Initial retry delay in milliseconds")
@@ -88,7 +86,11 @@ import java.util.concurrent.TimeoutException
         val timeout = config.timeout_seconds ?: typeConfig.default_timeout
 
         task.add("Executing MCP tool: $toolName on server: $serverName")
-        task.add("Arguments: ${JsonUtil.toJson(arguments)}")
+      val transcriptStream = if (typeConfig.generate_transcript) {
+        transcript(task)
+      } else null
+
+      task.add("Arguments: ${JsonUtil.toJson(arguments)}")
 
         try {
             val result = executeMCPTool(
@@ -96,11 +98,16 @@ import java.util.concurrent.TimeoutException
                 toolName = toolName,
                 arguments = arguments,
                 timeout = timeout,
-                task = task
+              task = task,
+              transcriptStream = transcriptStream
             )
 
             task.add("Tool execution completed successfully")
             task.add("Result:\n```json\n${JsonUtil.toJson(result)}\n```")
+          transcriptStream?.let {
+            it.write("\n\n## Execution Completed Successfully\n".toByteArray())
+            it.close()
+          }
             
             resultFn(JsonUtil.toJson(result))
             state = TaskState.Completed
@@ -108,8 +115,12 @@ import java.util.concurrent.TimeoutException
             log.error("Error executing MCP tool", e)
             
             if (typeConfig.auto_retry && shouldRetry(e)) {
+              transcriptStream?.let {
+                it.write("\n\n## Retrying after error: ${e.message}\n".toByteArray())
+              }
                 handleRetry(agent, messages, task, resultFn, orchestrationConfig, e)
             } else {
+              transcriptStream?.close()
                 state = TaskState.Completed
                 task.error(e)
                 throw e
@@ -122,10 +133,14 @@ import java.util.concurrent.TimeoutException
         toolName: String,
         arguments: Map<String, Any>,
         timeout: Int,
-        task: SessionTask
+        task: SessionTask,
+        transcriptStream: FileOutputStream?
     ): Map<String, Any> {
         log.info("Connecting to MCP server: $serverName")
         task.add("Connecting to MCP server: $serverName")
+      transcriptStream?.write("# MCP Tool Execution Transcript\n\n".toByteArray())
+      transcriptStream?.write("## Server: $serverName\n".toByteArray())
+      transcriptStream?.write("## Tool: $toolName\n\n".toByteArray())
         
         // Get MCP client from registry
         val client = MCPServerRegistry.getClient(serverName)
@@ -135,7 +150,9 @@ import java.util.concurrent.TimeoutException
             // Ensure client is connected
             if (!client.isConnected()) {
                 task.add("Establishing connection to MCP server...")
+              transcriptStream?.write("### Establishing connection to MCP server...\n".toByteArray())
                 client.connect()
+              transcriptStream?.write("### Connection established\n\n".toByteArray())
             }
             
             // List available tools to verify the tool exists
@@ -145,9 +162,15 @@ import java.util.concurrent.TimeoutException
             
             task.add("Tool found: ${tool.name}")
             task.add("Tool description: ${tool.description}")
+          transcriptStream?.write("### Tool Information\n".toByteArray())
+          transcriptStream?.write("- **Name**: ${tool.name}\n".toByteArray())
+          transcriptStream?.write("- **Description**: ${tool.description}\n\n".toByteArray())
             
             // Execute the tool with timeout
             task.add("Executing tool with timeout of $timeout seconds...")
+          transcriptStream?.write("### Execution\n".toByteArray())
+          transcriptStream?.write("- **Arguments**: ```json\n${JsonUtil.toJson(arguments)}\n```\n".toByteArray())
+          transcriptStream?.write("- **Timeout**: $timeout seconds\n\n".toByteArray())
             val startTime = System.currentTimeMillis()
             
             val result = try {
@@ -158,6 +181,9 @@ import java.util.concurrent.TimeoutException
             
             val executionTime = System.currentTimeMillis() - startTime
             task.add("Tool executed in ${executionTime}ms")
+          transcriptStream?.write("### Results\n".toByteArray())
+          transcriptStream?.write("- **Execution Time**: ${executionTime}ms\n".toByteArray())
+          transcriptStream?.write("- **Result**: ```json\n${JsonUtil.toJson(result)}\n```\n\n".toByteArray())
             
             return mapOf(
                 "status" to "success",
@@ -170,6 +196,8 @@ import java.util.concurrent.TimeoutException
             )
         } catch (e: Exception) {
             log.error("Error executing MCP tool: ${e.message}", e)
+          transcriptStream?.write("\n### Error\n".toByteArray())
+          transcriptStream?.write("```\n${e.message}\n${e.stackTraceToString()}\n```\n".toByteArray())
             throw e
         }
     }
@@ -244,8 +272,19 @@ import java.util.concurrent.TimeoutException
             ""
         }
     }
+   private fun transcript(task: SessionTask): FileOutputStream? {
+     val (link, file) = task.createFile("mcp_tool_transcript.md")
+     val markdownTranscript = file?.outputStream()
+     task.complete(
+       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+         link.removeSuffix(".md")
+       }.pdf' target='_blank'>pdf</a>"
+     )
+     return markdownTranscript
+   }
 
-    companion object {
+
+   companion object {
         private val log: Logger = LoggerFactory.getLogger(MCPToolTask::class.java)
         val MCPTool = com.simiacryptus.cognotik.plan.TaskType(
             "MCPTool",

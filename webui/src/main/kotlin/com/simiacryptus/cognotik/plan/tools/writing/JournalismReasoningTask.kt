@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -209,6 +210,19 @@ JournalismReasoning - Investigate stories through journalistic principles and me
   ** Produces structured journalistic analysis with verified facts
         """.trimIndent()
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("journalism_transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   override fun run(
     agent: TaskOrchestrator,
@@ -219,6 +233,10 @@ JournalismReasoning - Investigate stories through journalistic principles and me
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting JournalismReasoningTask for story: '${executionConfig?.story_topic}'")
+    // Initialize transcript
+    val transcriptStream = transcript(task)
+    val transcriptWriter = transcriptStream?.bufferedWriter()
+    transcriptWriter?.use { writer ->
 
     val storyTopic = executionConfig?.story_topic
     if (storyTopic.isNullOrBlank()) {
@@ -276,7 +294,15 @@ JournalismReasoning - Investigate stories through journalistic principles and me
       appendLine()
       appendLine("*Initializing investigation...*")
     }
-    overviewTask.add(overviewContent.renderMarkdown)
+      // Write to transcript
+      writer.appendLine("# Journalism Investigation Transcript")
+      writer.appendLine()
+      writer.appendLine("**Story Topic:** $storyTopic")
+      writer.appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+      writer.appendLine()
+      writer.flush()
+
+      overviewTask.add(overviewContent.renderMarkdown)
     task.update()
 
     val priorContext = getPriorCode(agent.executionState)
@@ -316,6 +342,10 @@ JournalismReasoning - Investigate stories through journalistic principles and me
           }.renderMarkdown
         )
         task.update()
+        // Write to transcript
+        writer.appendLine("## Step 1: Fact Verification")
+        writer.appendLine()
+        writer.flush()
 
         val factAgent = ParsedAgent(
           resultClass = FactChecks::class.java,
@@ -395,6 +425,17 @@ Apply rigorous journalistic standards. Be skeptical but fair.
           appendLine()
           appendLine("**Status:** ✅ Complete")
         }
+        // Write facts to transcript
+        writer.appendLine("### Verified Facts (${factChecks.size} total)")
+        writer.appendLine()
+        factChecks.forEach { fact ->
+          writer.appendLine("- **${fact.verification_status}**: ${fact.claim}")
+          writer.appendLine("  - Source: ${fact.source}")
+          writer.appendLine("  - Confidence: ${fact.confidence_level}")
+          writer.appendLine()
+        }
+        writer.flush()
+
         factsTask.add(factsContent.renderMarkdown)
         task.update()
 
@@ -426,6 +467,10 @@ Apply rigorous journalistic standards. Be skeptical but fair.
           }.renderMarkdown
         )
         task.update()
+        // Write to transcript
+        writer.appendLine("## Step 2: Source Perspectives")
+        writer.appendLine()
+        writer.flush()
 
         val perspectiveAgent = ParsedAgent(
           resultClass = SourcePerspectives::class.java,
@@ -488,6 +533,16 @@ Ensure balanced representation of different viewpoints.
           }
           appendLine("**Status:** ✅ Complete")
         }
+        // Write perspectives to transcript
+        writer.appendLine("### Source Perspectives (${perspectives.size} total)")
+        writer.appendLine()
+        perspectives.forEach { source ->
+          writer.appendLine("- **${source.source_name}** (${source.role})")
+          writer.appendLine("  - ${source.perspective}")
+          writer.appendLine()
+        }
+        writer.flush()
+
         perspectivesTask.add(perspectivesContent.renderMarkdown)
         task.update()
 
@@ -519,6 +574,10 @@ Ensure balanced representation of different viewpoints.
           }.renderMarkdown
         )
         task.update()
+        // Write to transcript
+        writer.appendLine("## Step 3: Context Analysis")
+        writer.appendLine()
+        writer.flush()
 
         val contextAgent = ParsedAgent(
           resultClass = ContextAnalysis::class.java,
@@ -575,6 +634,12 @@ Help readers understand why this story matters and how it fits into the bigger p
           appendLine()
           appendLine("**Status:** ✅ Complete")
         }
+        // Write context to transcript
+        writer.appendLine("### Historical Background")
+        writer.appendLine(context.historical_background)
+        writer.appendLine()
+        writer.flush()
+
         contextTask.add(contextContent.renderMarkdown)
         task.update()
 
@@ -603,6 +668,10 @@ Help readers understand why this story matters and how it fits into the bigger p
           }.renderMarkdown
         )
         task.update()
+        // Write to transcript
+        writer.appendLine("## Step 4: Bias Analysis")
+        writer.appendLine()
+        writer.flush()
 
         val biasAgent = ParsedAgent(
           resultClass = BiasAnalysis::class.java,
@@ -667,6 +736,12 @@ Be thorough but fair. Distinguish between legitimate perspective and problematic
           appendLine()
           appendLine("**Status:** ✅ Complete")
         }
+        // Write bias analysis to transcript
+        writer.appendLine("### Balance Assessment")
+        writer.appendLine(biasAnalysis.balance_assessment)
+        writer.appendLine()
+        writer.flush()
+
         biasTask.add(biasContent.renderMarkdown)
         task.update()
 
@@ -695,6 +770,10 @@ Be thorough but fair. Distinguish between legitimate perspective and problematic
           }.renderMarkdown
         )
         task.update()
+        // Write to transcript
+        writer.appendLine("## Step 5: Alternative Story Angles")
+        writer.appendLine()
+        writer.flush()
 
         val anglesAgent = ParsedAgent(
           resultClass = StoryAngles::class.java,
@@ -755,6 +834,16 @@ Consider angles that:
           appendLine()
           appendLine("**Status:** ✅ Complete")
         }
+        // Write angles to transcript
+        writer.appendLine("### Story Angles (${angles.size} total)")
+        writer.appendLine()
+        angles.sortedByDescending { it.newsworthiness_score }.forEach { angle ->
+          writer.appendLine("- **${angle.angle_title}** (${String.format("%.1f%%", angle.newsworthiness_score * 100)})")
+          writer.appendLine("  - ${angle.focus}")
+          writer.appendLine()
+        }
+        writer.flush()
+
         anglesTask.add(anglesContent.renderMarkdown)
         task.update()
 
@@ -786,6 +875,10 @@ Consider angles that:
           }.renderMarkdown
         )
         task.update()
+        // Write to transcript
+        writer.appendLine("## Step 6: Information Gaps")
+        writer.appendLine()
+        writer.flush()
 
         val gapsAgent = ParsedAgent(
           resultClass = InformationGaps::class.java,
@@ -862,6 +955,19 @@ Prioritize gaps that are most important for understanding the full story.
           appendLine()
           appendLine("**Status:** ✅ Complete")
         }
+        // Write gaps to transcript
+        if (gaps.isEmpty()) {
+          writer.appendLine("### No significant information gaps identified")
+        } else {
+          writer.appendLine("### Information Gaps (${gaps.size} total)")
+          writer.appendLine()
+          gaps.forEach { gap ->
+            writer.appendLine("- **${gap.importance.uppercase()}**: ${gap.question}")
+            writer.appendLine()
+          }
+        }
+        writer.flush()
+
         gapsTask.add(gapsContent.renderMarkdown)
         task.update()
 
@@ -894,6 +1000,10 @@ Prioritize gaps that are most important for understanding the full story.
         }.renderMarkdown
       )
       task.update()
+      // Write to transcript
+      writer.appendLine("## Step 7: Editorial Synthesis")
+      writer.appendLine()
+      writer.flush()
 
       val synthesisAgent = ChatAgent(
         prompt = """
@@ -918,6 +1028,11 @@ Be concise, authoritative, and focused on journalistic value.
 
       val synthesis = synthesisAgent.answer(listOf("Generate synthesis"))
       log.debug("Synthesis generated: ${synthesis.length} characters")
+      // Write synthesis to transcript
+      writer.appendLine(synthesis)
+      writer.appendLine()
+      writer.flush()
+
 
       synthesisTask.add(
         buildString {
@@ -941,6 +1056,12 @@ Be concise, authoritative, and focused on journalistic value.
       resultBuilder.append("---\n\n")
       resultBuilder.append("**Investigation Time:** ${totalTime / 1000}s | ")
       resultBuilder.append("**Story:** $storyTopic\n")
+      // Write final statistics to transcript
+      writer.appendLine("---")
+      writer.appendLine()
+      writer.appendLine("**Investigation completed in ${totalTime / 1000.0}s**")
+      writer.appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+      writer.flush()
 
       overviewTask.add(
         buildString {
@@ -979,6 +1100,12 @@ Be concise, authoritative, and focused on journalistic value.
         }.renderMarkdown
       )
       task.update()
+      // Write error to transcript
+      writer.appendLine()
+      writer.appendLine("---")
+      writer.appendLine("## ❌ Error Occurred")
+      writer.appendLine("**Error:** ${e.message}")
+      writer.flush()
 
       val errorOutput = buildString {
         appendLine("# Error in Journalism Investigation")
@@ -995,6 +1122,8 @@ Be concise, authoritative, and focused on journalistic value.
       }
       resultFn(errorOutput)
     }
+    } // Close writer.use
+    transcriptStream?.close()
   }
 
   companion object {

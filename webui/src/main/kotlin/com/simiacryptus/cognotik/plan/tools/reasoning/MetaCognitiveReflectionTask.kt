@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 
 class MetaCognitiveReflectionTask(
   orchestrationConfig: OrchestrationConfig,
@@ -115,6 +116,14 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     }
 
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+    // Create transcript file
+    val transcript = transcript(task)
+    transcript?.use { stream ->
+      stream.write("# Meta-Cognitive Reflection Transcript\n\n".toByteArray())
+      stream.write("## Subject Task: `$subjectTaskId`\n\n".toByteArray())
+      stream.write("**Timestamp**: ${java.time.Instant.now()}\n\n".toByteArray())
+    }
+
 
     val tabbedDisplay = TabbedDisplay(task)
     val overviewTask = task.ui.newTask()
@@ -177,6 +186,15 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         ui = overviewTask.ui
       )
     )
+    transcript?.use { stream ->
+      stream.write("\n## Reflection Parameters\n\n".toByteArray())
+      stream.write("- **Subject Task**: `$subjectTaskId`\n".toByteArray())
+      stream.write("- **Reflection Aspects**: $aspectsText\n".toByteArray())
+      stream.write("- **Suggest Improvements**: ${executionConfig?.suggest_improvements ?: true}\n".toByteArray())
+      stream.write("- **Identify Gaps**: ${executionConfig?.identify_gaps ?: true}\n".toByteArray())
+      stream.write("- **Evaluate Confidence**: ${executionConfig?.evaluate_confidence ?: true}\n\n".toByteArray())
+    }
+
     overviewTask.safeComplete("", log)
     // Step 4: Create agent and perform reflection
     val reflectionTask = task.ui.newTask()
@@ -193,6 +211,12 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
     try {
       val reflectionResult: String = chatAgent.answer(listOf(prompt))
+      transcript?.use { stream ->
+        stream.write("\n## Reflection Analysis\n\n".toByteArray())
+        stream.write(reflectionResult.toByteArray())
+        stream.write("\n\n".toByteArray())
+      }
+
 
       reflectionTask.add(
         MarkdownUtil.renderMarkdown(
@@ -211,6 +235,14 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
 
       val summary = generateReflectionSummary(reflectionResult)
+      transcript?.use { stream ->
+        stream.write("\n## Summary\n\n".toByteArray())
+        stream.write(summary.toByteArray())
+        stream.write("\n\n---\n\n".toByteArray())
+        stream.write("**Duration**: ${System.currentTimeMillis() - startTime}ms\n".toByteArray())
+        stream.write("**Status**: Completed successfully\n".toByteArray())
+      }
+
 
       summaryTask.safeComplete(
         MarkdownUtil.renderMarkdown(
@@ -233,9 +265,17 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
       val duration = System.currentTimeMillis() - startTime
       log.info("MetaCognitiveReflection task completed successfully for subject_task_id: $subjectTaskId in ${duration}ms. Summary length: ${summary.length}")
       resultFn(summary)
+      transcript?.close()
+
 
     } catch (e: Exception) {
       log.error("Error during meta-cognitive reflection", e)
+      transcript?.use { stream ->
+        stream.write("\n## ❌ Error\n\n".toByteArray())
+        stream.write("```\n${e.message}\n```\n".toByteArray())
+      }
+      transcript?.close()
+
       task.error(e)
       reflectionTask.error(e)
       task.add(
@@ -258,9 +298,24 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     }
   }
 
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.add(
+      MarkdownUtil.renderMarkdown(
+        "Writing transcript to <a href='$link' target='_blank'>transcript.md</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>",
+        ui = task.ui
+      )
+    )
+    return markdownTranscript
+  }
+
+
   private fun buildSystemPrompt(): String {
     return """
-You are a meta-cognitive analyst specializing in critical thinking and reasoning evaluation.
+ You are a meta-cognitive analyst specializing in critical thinking and reasoning evaluation.
 Your role is to provide thoughtful, constructive reflection on reasoning processes.
 You identify strengths, weaknesses, assumptions, biases, and opportunities for improvement.
 You are thorough, objective, and focused on enhancing the quality of thinking.

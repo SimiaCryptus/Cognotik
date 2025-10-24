@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -93,6 +94,7 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
 
     val ui = task.ui
     val tabs = TabbedDisplay(task)
+    val transcript = transcript(task)
 
     val overviewTask = ui.newTask(false)
     try {
@@ -125,6 +127,11 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
           appendLine("**Status:** 🔄 Gathering context...")
         }.renderMarkdown
       )
+      transcript?.write(
+        "# Systems Thinking Analysis\n\n**System:** $systemDescription\n\n**Time Horizon:** $timeHorizon\n\n**Started:** ${
+          LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        }\n\n---\n\n".toByteArray()
+      )
       task.update()
 
       // Gather context
@@ -133,6 +140,7 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
       val relatedContext = gatherRelatedFiles()
 
       if (priorContext.isNotBlank() || relatedContext.isNotBlank()) {
+        transcript?.write("## Context\n\n$priorContext\n\n$relatedContext\n\n---\n\n".toByteArray())
         val contextTask = ui.newTask(false)
         tabs["Context"] = contextTask.placeholder
         contextTask.add(
@@ -204,6 +212,7 @@ Provide a clear, structured analysis.
           appendLine(structureAnalysis)
         }.renderMarkdown
       )
+      transcript?.write("## System Structure\n\n$structureAnalysis\n\n---\n\n".toByteArray())
       task.update()
 
       // Step 2: Feedback Loops
@@ -240,6 +249,7 @@ Provide the analysis and diagram.
         )
 
         val mermaidCode = extractMermaidCode(loopsAnalysis)
+        transcript?.write("## Feedback Loops\n\n$loopsAnalysis\n\n---\n\n".toByteArray())
         loopsTask.add(
           buildString {
             appendLine("## Feedback Loops")
@@ -297,6 +307,7 @@ Provide specific examples with estimated time scales.
             appendLine(delaysAnalysis)
           }.renderMarkdown
         )
+        transcript?.write("## Delays & Accumulations\n\n$delaysAnalysis\n\n---\n\n".toByteArray())
         task.update()
       }
 
@@ -342,6 +353,7 @@ Focus on the most relevant archetypes.
             appendLine(archetypesAnalysis)
           }.renderMarkdown
         )
+        transcript?.write("## System Archetypes\n\n$archetypesAnalysis\n\n---\n\n".toByteArray())
         task.update()
       }
 
@@ -378,6 +390,7 @@ Consider both positive and negative emergent behaviors.
             appendLine(emergentAnalysis)
           }.renderMarkdown
         )
+        transcript?.write("## Emergent Behavior\n\n$emergentAnalysis\n\n---\n\n".toByteArray())
         task.update()
       }
 
@@ -426,6 +439,7 @@ Focus on the most impactful leverage points.
             appendLine(leverageAnalysis)
           }.renderMarkdown
         )
+        transcript?.write("## Leverage Points\n\n$leverageAnalysis\n\n---\n\n".toByteArray())
         task.update()
       }
 
@@ -490,6 +504,7 @@ $simulationAnalysis
             simulationResults.forEach { appendLine(it) }
           }.renderMarkdown
         )
+        transcript?.write("## Intervention Simulation\n\n${simulationResults.joinToString("\n\n")}\n\n---\n\n".toByteArray())
         task.update()
       }
 
@@ -529,6 +544,7 @@ $simulationAnalysis
           appendLine(synthesis)
         }.renderMarkdown
       )
+      transcript?.write("## Synthesis & Recommendations\n\n$synthesis\n\n---\n\n".toByteArray())
       task.update()
 
       // Build concise final result
@@ -589,6 +605,11 @@ $simulationAnalysis
           appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
         }.renderMarkdown
       )
+      transcript?.write(
+        "\n\n## Analysis Complete\n\n**Total Time:** ${duration / 1000.0}s\n\n**Completed:** ${
+          LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        }\n".toByteArray()
+      )
       task.update()
 
       task.safeComplete("Systems thinking analysis completed in ${duration / 1000}s", log)
@@ -596,6 +617,7 @@ $simulationAnalysis
 
     } catch (e: Exception) {
       val duration = System.currentTimeMillis() - startTime
+      transcript?.write("\n\n## Error Occurred\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray())
       log.error("SystemsThinkingTask failed after ${duration}ms for system: $systemDescription", e)
       task.error(e)
 
@@ -621,6 +643,9 @@ $simulationAnalysis
         appendLine("**Error:** ${e.message}")
       }
       resultFn(errorOutput.toString())
+    } finally {
+      transcript?.flush()
+      transcript?.close()
     }
   }
 
@@ -701,6 +726,17 @@ Provide clear, actionable insights grounded in systems thinking principles.
     val match = mermaidBlockRegex.find(response)
     return match?.groupValues?.get(1)?.trim() ?: ""
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(".md")
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(SystemsThinkingTask::class.java)

@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -223,6 +224,19 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
   ** Produces structured narrative analysis with insights
         """.trimIndent()
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("narrative_transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   override fun run(
     agent: TaskOrchestrator,
@@ -258,6 +272,14 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
 
     val ui = task.ui
     val tabs = TabbedDisplay(task)
+    // Initialize transcript
+    val transcriptStream = transcript(task)
+    val transcriptWriter = transcriptStream?.bufferedWriter()
+    transcriptWriter?.appendLine("# Narrative Reasoning Analysis Transcript")
+    transcriptWriter?.appendLine("**Subject:** $subject")
+    transcriptWriter?.appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+    transcriptWriter?.appendLine()
+
 
     // Overview tab
     val overviewTask = task.ui.newTask(false)
@@ -309,6 +331,16 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
 
     val resultBuilder = StringBuilder()
     resultBuilder.append("# Narrative Reasoning Analysis: $subject\n\n")
+    // Write configuration to transcript
+    transcriptWriter?.appendLine("## Configuration")
+    transcriptWriter?.appendLine("- Construct Narrative: $constructNarrative")
+    transcriptWriter?.appendLine("- Identify Plot Points: $identifyPlotPoints")
+    transcriptWriter?.appendLine("- Predict Outcomes: $predictOutcomes")
+    transcriptWriter?.appendLine("- Alternative Narratives: $alternativeNarratives")
+    transcriptWriter?.appendLine("- Analyze Motivations: $analyzeMotivations")
+    transcriptWriter?.appendLine("- Find Inconsistencies: $findInconsistencies")
+    transcriptWriter?.appendLine()
+
 
     try {
       // Step 1: Construct the main narrative
@@ -319,6 +351,9 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
 
         val narrativeTask = task.ui.newTask(false)
         tabs["Main Narrative"] = narrativeTask.placeholder
+        transcriptWriter?.appendLine("## Step 1: Main Narrative Construction")
+        transcriptWriter?.appendLine()
+
 
         narrativeTask.add(
           buildString {
@@ -402,6 +437,20 @@ Focus on clarity, coherence, and emotional resonance.
         }
         narrativeTask.add(narrativeContent.renderMarkdown)
         task.update()
+        // Write to transcript
+        transcriptWriter?.appendLine("### ${narrative.title}")
+        transcriptWriter?.appendLine()
+        transcriptWriter?.appendLine("**Summary:** ${narrative.summary}")
+        transcriptWriter?.appendLine()
+        transcriptWriter?.appendLine("**Themes:** ${narrative.themes.joinToString(", ")}")
+        transcriptWriter?.appendLine()
+        transcriptWriter?.appendLine("**Tone:** ${narrative.tone}")
+        transcriptWriter?.appendLine()
+        narrative.acts.forEach { act ->
+          transcriptWriter?.appendLine("- **Act ${act.act_number}:** ${act.title}")
+        }
+        transcriptWriter?.appendLine()
+
 
         resultBuilder.append("## Main Narrative: ${narrative.title}\n")
         resultBuilder.append("${narrative.summary}\n\n")
@@ -419,6 +468,9 @@ Focus on clarity, coherence, and emotional resonance.
 
         val plotPointsTask = task.ui.newTask(false)
         tabs["Plot Points"] = plotPointsTask.placeholder
+        transcriptWriter?.appendLine("## Step 2: Plot Points Analysis")
+        transcriptWriter?.appendLine()
+
 
         plotPointsTask.add(
           buildString {
@@ -490,6 +542,13 @@ Be specific and concrete.
         }
         plotPointsTask.add(plotPointsContent.renderMarkdown)
         task.update()
+        // Write to transcript
+        transcriptWriter?.appendLine("### Identified ${plotPoints.size} Plot Points")
+        plotPoints.forEach { point ->
+          transcriptWriter?.appendLine("- **${point.type}:** ${point.description}")
+        }
+        transcriptWriter?.appendLine()
+
 
         resultBuilder.append("## Key Plot Points\n")
         plotPoints.take(3).forEach { point ->
@@ -509,6 +568,9 @@ Be specific and concrete.
 
         val charactersTask = task.ui.newTask(false)
         tabs["Characters"] = charactersTask.placeholder
+        transcriptWriter?.appendLine("## Step 3: Character Analysis")
+        transcriptWriter?.appendLine()
+
 
         charactersTask.add(
           buildString {
@@ -584,6 +646,14 @@ Consider stakeholder perspectives if analyzing organizational scenarios.
         }
         charactersTask.add(charactersContent.renderMarkdown)
         task.update()
+        // Write to transcript
+        transcriptWriter?.appendLine("### Analyzed ${characterAnalyses.size} Characters")
+        characterAnalyses.forEach { char ->
+          transcriptWriter?.appendLine("- **${char.name}** (${char.role})")
+          transcriptWriter?.appendLine("  - Motivations: ${char.motivations.joinToString("; ")}")
+        }
+        transcriptWriter?.appendLine()
+
 
         resultBuilder.append("## Character Motivations\n")
         characterAnalyses.take(2).forEach { char ->
@@ -603,6 +673,9 @@ Consider stakeholder perspectives if analyzing organizational scenarios.
 
         val outcomesTask = task.ui.newTask(false)
         tabs["Predicted Outcomes"] = outcomesTask.placeholder
+        transcriptWriter?.appendLine("## Step 4: Predicted Outcomes")
+        transcriptWriter?.appendLine()
+
 
         outcomesTask.add(
           buildString {
@@ -677,6 +750,13 @@ Be realistic and consider multiple perspectives.
         }
         outcomesTask.add(outcomesContent.renderMarkdown)
         task.update()
+        // Write to transcript
+        transcriptWriter?.appendLine("### Predicted ${outcomes.size} Outcomes")
+        outcomes.forEach { outcome ->
+          transcriptWriter?.appendLine("- **${outcome.scenario}** (${outcome.probability})")
+        }
+        transcriptWriter?.appendLine()
+
 
         resultBuilder.append("## Predicted Outcomes\n")
         outcomes.forEach { outcome ->
@@ -696,6 +776,9 @@ Be realistic and consider multiple perspectives.
 
         val inconsistenciesTask = task.ui.newTask(false)
         tabs["Inconsistencies"] = inconsistenciesTask.placeholder
+        transcriptWriter?.appendLine("## Step 5: Inconsistency Analysis")
+        transcriptWriter?.appendLine()
+
 
         inconsistenciesTask.add(
           buildString {
@@ -777,6 +860,17 @@ For each inconsistency, provide:
         }
         inconsistenciesTask.add(inconsistenciesContent.renderMarkdown)
         task.update()
+        // Write to transcript
+        if (inconsistencies.isEmpty()) {
+          transcriptWriter?.appendLine("### No significant inconsistencies found")
+        } else {
+          transcriptWriter?.appendLine("### Found ${inconsistencies.size} Inconsistencies")
+          inconsistencies.forEach { inconsistency ->
+            transcriptWriter?.appendLine("- **${inconsistency.type}** (${inconsistency.severity}): ${inconsistency.description}")
+          }
+        }
+        transcriptWriter?.appendLine()
+
 
         if (inconsistencies.isNotEmpty()) {
           resultBuilder.append("## Narrative Inconsistencies\n")
@@ -797,6 +891,9 @@ For each inconsistency, provide:
 
       val synthesisTask = task.ui.newTask(false)
       tabs["Synthesis"] = synthesisTask.placeholder
+      transcriptWriter?.appendLine("## Step 6: Synthesis")
+      transcriptWriter?.appendLine()
+
 
       synthesisTask.add(
         buildString {
@@ -843,6 +940,9 @@ Be concise but insightful. Focus on actionable insights.
         }.renderMarkdown
       )
       task.update()
+      transcriptWriter?.appendLine(synthesis)
+      transcriptWriter?.appendLine()
+
 
       resultBuilder.append("## Synthesis\n")
       resultBuilder.append(synthesis)
@@ -853,6 +953,10 @@ Be concise but insightful. Focus on actionable insights.
       resultBuilder.append("---\n\n")
       resultBuilder.append("**Analysis Time:** ${totalTime / 1000}s | ")
       resultBuilder.append("**Subject:** $subject\n")
+      // Write completion to transcript
+      transcriptWriter?.appendLine("---")
+      transcriptWriter?.appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+      transcriptWriter?.appendLine("**Total Time:** ${totalTime / 1000.0}s")
 
       overviewTask.add(
         buildString {
@@ -873,6 +977,9 @@ Be concise but insightful. Focus on actionable insights.
 
       task.safeComplete("Narrative analysis complete in ${totalTime / 1000}s. Generated ${finalResult.length} characters of analysis.", log)
       resultFn(finalResult)
+      // Close transcript
+      transcriptWriter?.flush()
+      transcriptWriter?.close()
 
     } catch (e: Exception) {
       log.error("Error during narrative reasoning", e)
@@ -906,6 +1013,10 @@ Be concise but insightful. Focus on actionable insights.
         }
       }
       resultFn(errorOutput)
+      // Close transcript on error
+      transcriptWriter?.appendLine("**Error:** ${e.message}")
+      transcriptWriter?.flush()
+      transcriptWriter?.close()
     }
   }
 

@@ -9,18 +9,14 @@ import com.simiacryptus.cognotik.embedding.DistanceType
 import com.simiacryptus.cognotik.embedding.EmbedderClient
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
-import com.simiacryptus.cognotik.plan.AbstractTask
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.Files
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -93,12 +89,20 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
         val threadPool = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors().coerceAtMost(8)
         )
+      val transcript = transcript(task)
         try {
-            val searchResults = performEmbeddingSearch(
+          transcript?.write("# Vector Search Task\n\n".toByteArray())
+          transcript?.write("## Search Configuration\n\n".toByteArray())
+          transcript?.write("```json\n${JsonUtil.toJson(executionConfig)}\n```\n\n".toByteArray())
+
+          val searchResults = performEmbeddingSearch(
             )
             val formattedResults = formatSearchResults(searchResults)
             task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui))
             resultFn(formattedResults)
+          transcript?.write("## Search Results\n\n".toByteArray())
+          transcript?.write(formattedResults.toByteArray())
+          transcript?.flush()
         } finally {
             threadPool.shutdown()
             try {
@@ -109,6 +113,7 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
                 threadPool.shutdownNow()
                 Thread.currentThread().interrupt()
             }
+          transcript?.close()
         }
     }
 
@@ -117,7 +122,9 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
         executionConfig?.validate()?.let { errorMessage ->
             throw ValidatedObject.ValidationError(errorMessage, executionConfig)
         }
-        if (executionConfig?.positive_queries?.isEmpty() != false) {
+      log.info("Starting embedding search with ${executionConfig?.positive_queries?.size} positive queries and ${executionConfig?.negative_queries?.size} negative queries")
+
+      if (executionConfig?.positive_queries?.isEmpty() != false) {
             throw ValidatedObject.ValidationError("At least one positive query is required", executionConfig!!)
         }
         
@@ -148,6 +155,7 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
         if (positiveEmbeddings.filterNotNull().isEmpty()) {
             throw IllegalStateException("Failed to create any positive embeddings")
         }
+      log.info("Successfully created ${positiveEmbeddings.filterNotNull().size} positive embeddings and ${negativeEmbeddings.filterNotNull().size} negative embeddings")
         val filtered = Files.walk(root).asSequence()
             .filter { path ->
                 path.toString().endsWith(".index.data")
@@ -194,6 +202,7 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
                 results
             }
             .toList()
+      log.info("Found ${searchResults.size} total results, returning top ${executionConfig.count}")
         return searchResults
             .sortedBy { it.distance }
             .take(executionConfig.count)
@@ -317,7 +326,21 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
         val distance: Double
     )
 
-    companion object {
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
+
+  companion object {
         private val log = LoggerFactory.getLogger(VectorSearchTask::class.java)
 
         val VectorSearch = TaskType(

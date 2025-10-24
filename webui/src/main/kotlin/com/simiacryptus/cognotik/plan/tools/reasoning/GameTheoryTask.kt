@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -144,6 +145,7 @@ GameTheory - Analyze strategic interactions using game theory
     val toInput = { it: String -> listOf(it) }
     val ui = task.ui
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+    val transcript = transcript(task)
     // Create tabbed display for organized output
     val tabs = TabbedDisplay(task)
     // Overview tab
@@ -152,6 +154,9 @@ GameTheory - Analyze strategic interactions using game theory
 
 
     try {
+      transcript?.write("# Game Theory Analysis\n\n".toByteArray())
+      transcript?.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+
 
       var overviewTaskStatus = overviewTask.add(
         MarkdownUtil.renderMarkdown(
@@ -166,6 +171,18 @@ GameTheory - Analyze strategic interactions using game theory
             |**Status:** 🔄 Initializing analysis...
         """.trimMargin(), ui = ui
         )
+      )
+      transcript?.write(
+        """
+        |## Game Theory Analysis
+        |
+        |**Scenario:** $gameScenario
+        |
+        |**Players:** ${players.joinToString(", ")}
+        |
+        |**Game Type:** ${executionConfig.game_type}
+        |
+        |""".trimMargin().toByteArray()
       )
       task.update()
 
@@ -189,6 +206,14 @@ GameTheory - Analyze strategic interactions using game theory
             |$priorContext
             """.trimMargin(), ui = ui
           )
+        )
+        transcript?.write(
+          """
+          |## Context from Previous Tasks
+          |
+          |$priorContext
+          |
+          |""".trimMargin().toByteArray()
         )
         task.update()
       }
@@ -238,6 +263,15 @@ GameTheory - Analyze strategic interactions using game theory
 
       val structureAnalysis = chatAgent.answer(toInput(structurePrompt))
       log.info("Structure analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${structureAnalysis.length} characters")
+      transcript?.write(
+        """
+        |## Game Structure Analysis
+        |
+        |$structureAnalysis
+        |
+        |""".trimMargin().toByteArray()
+      )
+
 
       structureLoading?.clear()
       structureTask.add(
@@ -281,6 +315,15 @@ Generate the payoff matrix now:
 
         payoffMatrix = chatAgent.answer(toInput(payoffPrompt))
         log.info("Payoff matrix generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${payoffMatrix.length} characters")
+        transcript?.write(
+          """
+          |## Payoff Matrix
+          |
+          |$payoffMatrix
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         payoffLoading?.clear()
         payoffTask.add(
@@ -328,6 +371,15 @@ Generate the Nash equilibrium analysis now:
 
         nashEquilibria = chatAgent.answer(toInput(nashPrompt))
         log.info("Nash equilibria analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${nashEquilibria.length} characters")
+        transcript?.write(
+          """
+          |## Nash Equilibria Analysis
+          |
+          |$nashEquilibria
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         nashLoading?.clear()
         nashTask.add(
@@ -372,6 +424,15 @@ Generate the dominant strategy analysis now:
 
         dominantStrategies = chatAgent.answer(toInput(dominantPrompt))
         log.info("Dominant strategies analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${dominantStrategies.length} characters")
+        transcript?.write(
+          """
+          |## Dominant Strategies Analysis
+          |
+          |$dominantStrategies
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         dominantLoading?.clear()
         dominantTask.add(
@@ -416,6 +477,15 @@ Generate the Pareto optimality analysis now:
 
         paretoOptimal = chatAgent.answer(toInput(paretoPrompt))
         log.info("Pareto optimality analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${paretoOptimal.length} characters")
+        transcript?.write(
+          """
+          |## Pareto Optimality Analysis
+          |
+          |$paretoOptimal
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         paretoLoading?.clear()
         paretoTask.add(
@@ -461,6 +531,15 @@ Generate the repeated game analysis now:
 
         repeatedGameAnalysis = chatAgent.answer(toInput(repeatedPrompt))
         log.info("Repeated game analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${repeatedGameAnalysis.length} characters")
+        transcript?.write(
+          """
+          |## Repeated Game Analysis
+          |
+          |$repeatedGameAnalysis
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         repeatedLoading?.clear()
         repeatedTask.add(
@@ -509,6 +588,15 @@ Generate the strategic recommendations now:
 
         recommendations = chatAgent.answer(toInput(recommendPrompt))
         log.info("Recommendations generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${recommendations.length} characters")
+        transcript?.write(
+          """
+          |## Strategic Recommendations
+          |
+          |$recommendations
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         recommendLoading?.clear()
         recommendTask.add(
@@ -560,6 +648,30 @@ Provide this in a clear, structured format.
 
       val gameAnalysis = parsedAgent.answer(toInput(summaryPrompt)).obj
       log.info("Structured summary generated in ${System.currentTimeMillis() - stepStartTime}ms")
+      transcript?.write(
+        """
+        |## Game Theory Analysis Summary
+        |
+        |### Game Type
+        |${gameAnalysis.game_type ?: "Not specified"}
+        |
+        |### Players
+        |${gameAnalysis.players?.joinToString(", ") ?: "Not specified"}
+        |
+        |### Nash Equilibria
+        |${gameAnalysis.nash_equilibria?.joinToString("\n") { "- $it" } ?: "None identified"}
+        |
+        |### Dominant Strategies
+        |${gameAnalysis.dominant_strategies?.entries?.joinToString("\n") { "- **${it.key}**: ${it.value}" } ?: "None identified"}
+        |
+        |### Pareto Optimal Outcomes
+        |${gameAnalysis.pareto_optimal_outcomes?.joinToString("\n") { "- $it" } ?: "None identified"}
+        |
+        |### Strategic Recommendations
+        |${gameAnalysis.recommendations?.entries?.joinToString("\n") { "- **${it.key}**: ${it.value}" } ?: "None provided"}
+        |
+        |""".trimMargin().toByteArray())
+
 
       summaryLoading?.clear()
       summaryTask.add(
@@ -654,6 +766,10 @@ Provide this in a clear, structured format.
       val duration = System.currentTimeMillis() - startTime
       val summary = "Game theory analysis completed for scenario: $gameScenario"
       log.info("$summary (duration: ${duration}ms, players: ${players.size}, game_type: ${executionConfig.game_type})")
+      transcript?.write("\n---\n".toByteArray())
+      transcript?.write("**Analysis completed in ${duration / 1000}s**\n".toByteArray())
+      transcript?.write("**Finished:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
+      transcript?.close()
 
       task.safeComplete(summary, log)
       resultFn(finalResult)
@@ -673,6 +789,8 @@ Provide this in a clear, structured format.
         )
       )
       task.update()
+      transcript?.write("\n---\n**ERROR:** ${e.message}\n".toByteArray())
+      transcript?.close()
       task.error(e)
       task.safeComplete("Analysis failed: ${e.message}", log)
       resultFn("ERROR: Game theory analysis failed - ${e.message}")
@@ -741,6 +859,19 @@ Provide a comprehensive analysis of the game structure.
 Generate the game structure analysis now:
         """.trimIndent()
   }
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)

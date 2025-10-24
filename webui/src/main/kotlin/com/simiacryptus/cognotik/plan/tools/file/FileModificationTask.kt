@@ -18,8 +18,22 @@ import com.simiacryptus.cognotik.util.ValidatedObject
  import com.simiacryptus.cognotik.webui.session.SessionTask
  import com.simiacryptus.cognotik.webui.session.getChildClient
  import java.io.File
+ import java.io.FileOutputStream
  import java.util.concurrent.Semaphore
  import java.util.concurrent.TimeUnit
+
+private fun transcript(task: SessionTask): FileOutputStream? {
+  val (link, file) = task.createFile("transcript.md")
+  val markdownTranscript = file?.outputStream()
+  task.complete(
+    "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+      link.removeSuffix(
+        ".md"
+      )
+    }.pdf' target='_blank'>pdf</a>"
+  )
+  return markdownTranscript
+}
 
  class FileModificationTask(
     orchestrationConfig: OrchestrationConfig,
@@ -101,6 +115,7 @@ Available files:
 ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 """.trimIndent()
 
+
     override fun run(
         agent: TaskOrchestrator,
         messages: List<String>,
@@ -122,6 +137,10 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
 
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
+      // Initialize transcript for this task
+      val transcriptStream = transcript(task)
+      transcriptStream?.use { stream ->
+        stream.write("# File Modification Task Transcript\n\n".toByteArray())
         Retryable(task = task) {
             val task = task.ui.newTask(false)
             val typeConfig = typeConfig ?: throw RuntimeException()
@@ -203,7 +222,12 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                         executionConfig?.task_description ?: "",
                     )).filter { it.isNotBlank() }
                 )
-                if (orchestrationConfig.autoFix) {
+              // Write to transcript
+              transcriptStream?.write("\n## AI Response\n\n".toByteArray())
+              transcriptStream?.write(codeResult.toByteArray())
+              transcriptStream?.write("\n\n".toByteArray())
+
+              if (orchestrationConfig.autoFix) {
                     val markdown = renderMarkdown(codeResult, ui = task.ui) {
                         AddApplyFileDiffLinks.instrumentFileDiffs(
                             task.ui,
@@ -220,6 +244,9 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                             orchestrationConfig.processor
                         ) + "\n\n## Auto-applied changes"
                     }
+                // Log auto-applied changes to transcript
+                transcriptStream?.write("## Auto-Applied Changes\n\n".toByteArray())
+                transcriptStream?.write(completionNotes.joinToString("\n").toByteArray())
                     task.complete(markdown)
                     semaphore.release()
                 } else {
@@ -242,11 +269,18 @@ ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
                         }
                     })
                 }
+              transcriptStream?.flush()
             }
             task.placeholder
         }
-        try {
+      }
+
+      try {
             semaphore.acquire()
+        // Write final completion notes to transcript
+        transcriptStream?.write("\n## Completion Notes\n\n".toByteArray())
+        transcriptStream?.write(completionNotes.joinToString("\n").toByteArray())
+        transcriptStream?.close()
             resultFn(completionNotes.joinToString("\n"))
         } catch (e: Throwable) {
             log.warn("Error", e)
