@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -11,6 +12,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -21,6 +23,8 @@ class DialecticalReasoningTask(
   orchestrationConfig,
   planTask
 ) {
+
+  protected val codeFiles = mutableMapOf<Path, String>()
   val maxDescriptionLength = 5000
 
   class DialecticalReasoningTaskExecutionConfigData(
@@ -34,6 +38,8 @@ class DialecticalReasoningTask(
     val synthesis_levels: Int = 3,
     @Description("Whether to preserve strengths from both sides in synthesis")
     val preserve_strengths: Boolean = true,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Additional files for context")
     val related_files: List<String>? = null,
     task_dependencies: List<String>? = null,
@@ -80,6 +86,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
   ) {
     val startTime = System.currentTimeMillis()
     var stepStartTime = startTime
+    var transcriptStream: FileOutputStream? = null
     log.info("Starting DialecticalReasoningTask")
 
     val thesis = executionConfig?.thesis
@@ -101,7 +108,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
     val ui = task.ui
     val tabs = TabbedDisplay(task)
-    val transcript = transcript(task)
+    transcriptStream = initializeTranscript(task)
     
     // Overview tab
     val overviewTask = ui.newTask(false)
@@ -126,7 +133,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
     }
     overviewTask.add(overviewContent.renderMarkdown)
     task.update()
-    transcript?.write(
+    transcriptStream?.write(
       """
       |# Dialectical Reasoning Analysis
       |
@@ -142,6 +149,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
 
     val priorContext = getPriorCode(agent.executionState)
     val relatedFilesContent = getRelatedFilesContent()
+    val inputFilesContent = getInputFileCode()
     
     if (priorContext.isNotBlank() || relatedFilesContent.isNotBlank()) {
       val contextTask = ui.newTask(false)
@@ -164,19 +172,23 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
         }.renderMarkdown
       )
       task.update()
-      transcript?.write(
+      transcriptStream?.write(
         """
         |## Context Information
         |
       """.trimMargin().toByteArray()
       )
       if (priorContext.isNotBlank()) {
-        transcript?.write("### Prior Task Results\n\n${priorContext.truncateForDisplay()}\n\n".toByteArray())
+        transcriptStream?.write("### Prior Task Results\n\n${priorContext.truncateForDisplay()}\n\n".toByteArray())
       }
       if (relatedFilesContent.isNotBlank()) {
-        transcript?.write("### Related Files\n\n${relatedFilesContent.truncateForDisplay()}\n\n".toByteArray())
+        transcriptStream?.write("### Related Files\n\n${relatedFilesContent.truncateForDisplay()}\n\n".toByteArray())
       }
-      transcript?.write("---\n\n".toByteArray())
+      transcriptStream?.write("---\n\n".toByteArray())
+      if (inputFilesContent.isNotBlank()) {
+        transcriptStream?.write("### Input Files\n\n${inputFilesContent.truncateForDisplay()}\n\n".toByteArray())
+      }
+      transcriptStream?.write("---\n\n".toByteArray())
     }
 
     // Concise output for final result
@@ -232,7 +244,7 @@ Be thorough and objective in your analysis.
       val thesisTime = System.currentTimeMillis() - stepStartTime
       log.info("Thesis analysis completed in ${thesisTime}ms: ${thesisAnalysis.length} characters")
       stepStartTime = System.currentTimeMillis()
-      transcript?.write(
+      transcriptStream?.write(
         """
         |## Thesis Analysis
         |
@@ -321,7 +333,7 @@ Be thorough and objective in your analysis.
       val antithesisTime = System.currentTimeMillis() - stepStartTime
       log.info("Antithesis analysis completed in ${antithesisTime}ms: ${antithesisAnalysis.length} characters")
       stepStartTime = System.currentTimeMillis()
-      transcript?.write(
+      transcriptStream?.write(
         """
         |## Antithesis Analysis
         |
@@ -407,7 +419,7 @@ Be thorough in exploring the dialectical tension.
       val contradictionsTime = System.currentTimeMillis() - stepStartTime
       log.info("Contradictions analysis completed in ${contradictionsTime}ms: ${contradictionsAnalysis.length} characters")
       stepStartTime = System.currentTimeMillis()
-      transcript?.write(
+      transcriptStream?.write(
         """
         |## Contradictions & Tensions
         |
@@ -539,7 +551,7 @@ Aim for progressively deeper insight and integration.
         val synthesisTime = System.currentTimeMillis() - stepStartTime
         log.info("Synthesis level $level completed in ${synthesisTime}ms: ${synthesis.length} characters")
         stepStartTime = System.currentTimeMillis()
-        transcript?.write(
+        transcriptStream?.write(
           """
           |## Synthesis - Level $level
           |
@@ -634,7 +646,7 @@ Be comprehensive yet concise in your final integration.
       val integrationTime = System.currentTimeMillis() - stepStartTime
       log.info("Final integration completed in ${integrationTime}ms: ${finalIntegration.length} characters")
       // stepStartTime = System.currentTimeMillis() // Not needed for the last step
-      transcript?.write(
+      transcriptStream?.write(
         """
         |## Final Integration
         |
@@ -685,7 +697,7 @@ Be comprehensive yet concise in your final integration.
         }.renderMarkdown
       )
       task.update()
-      transcript?.write(
+      transcriptStream?.write(
         """
         |
         |## Summary
@@ -697,7 +709,7 @@ Be comprehensive yet concise in your final integration.
         |
       """.trimMargin().toByteArray()
       )
-      transcript?.close()
+      transcriptStream?.close()
 
 
       task.safeComplete("Completed dialectical analysis with $synthesisLevels synthesis levels in ${totalTime / 1000}s", log)
@@ -720,7 +732,7 @@ Be comprehensive yet concise in your final integration.
         }.renderMarkdown
       )
       task.update()
-      transcript?.write(
+      transcriptStream?.write(
         """
         |
         |## ❌ Error Occurred
@@ -730,7 +742,7 @@ Be comprehensive yet concise in your final integration.
         |
       """.trimMargin().toByteArray()
       )
-      transcript?.close()
+      transcriptStream?.close()
 
 
       val errorOutput = buildString {
@@ -749,6 +761,48 @@ Be comprehensive yet concise in your final integration.
         }
       }
       resultFn(errorOutput)
+    }
+  }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = codeFiles[file.toPath()] ?: file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = task.createFile("dialectical_transcript.md")
+      val transcriptStream = file?.outputStream()
+      task.complete(
+        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
+      log.info("Initialized transcript file: $link")
+      transcriptStream
+    } catch (e: Exception) {
+      log.error("Failed to initialize transcript", e)
+      null
     }
   }
 
@@ -772,19 +826,6 @@ Be comprehensive yet concise in your final integration.
       files
     }.joinToString("\n\n")
   }
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
-
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(DialecticalReasoningTask::class.java)

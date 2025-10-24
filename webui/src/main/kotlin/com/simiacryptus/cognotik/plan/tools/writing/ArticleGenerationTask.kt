@@ -8,14 +8,18 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.extractDocumentContent
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -30,6 +34,8 @@ class ArticleGenerationTask(
   class ArticleGenerationTaskExecutionConfigData(
     @Description("The story topic or event to write about")
     story_topic: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    input_files: List<String>? = null,
 
     @Description("Journalism elements to consider (who, what, when, where, why, how)")
     journalism_elements: Map<String, Any>? = null,
@@ -80,7 +86,8 @@ class ArticleGenerationTask(
     alternative_angles = 1,
     assess_newsworthiness = true,
     task_dependencies = task_dependencies,
-    state = state
+    state = state,
+    input_files=input_files
   ) {
     override val task_type: String = ArticleGeneration.name
     override var task_description: String? = "Generate $article_format article about '$story_topic'"
@@ -174,6 +181,13 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
       resultFn("CONFIGURATION ERROR: No story topic specified")
       return
     }
+    val inputFileContent = getInputFileCode()
+    val messageContent = messages.filter { it.isNotBlank() }.joinToString("\n\n")
+    val combinedInput = listOfNotNull(
+      messageContent.takeIf { it.isNotBlank() },
+      inputFileContent.takeIf { it.isNotBlank() }
+    ).joinToString("\n\n---\n\n")
+
 
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
@@ -195,6 +209,10 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
     val overviewContent = buildString {
       appendLine("# Article Generation")
       appendLine()
+      if (combinedInput.isNotBlank()) {
+        appendLine("**Input Context:** ${combinedInput.take(200)}...")
+        appendLine()
+      }
       appendLine("**Story Topic:** $storyTopic")
       appendLine()
       appendLine("## Configuration")
@@ -259,6 +277,8 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
         resultClass = ArticleStructure::class.java,
         prompt = """
 You are an experienced news editor. Create a detailed structure for this article.
+
+${if (combinedInput.isNotBlank()) "Reference Material:\n$combinedInput\n\n" else ""}
 
 Story Topic: $storyTopic
 
@@ -371,6 +391,8 @@ Ensure the structure:
 
       val writingPrompt = """
 You are a professional journalist writing for ${genConfig.target_publication}. Write the complete article.
+
+${if (combinedInput.isNotBlank()) "Reference Material:\n$combinedInput\n\n" else ""}
 
 Story Topic: $storyTopic
 
@@ -686,6 +708,40 @@ Make each snippet:
       resultFn(errorOutput)
     }
   }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+  private fun isTextFile(file: File): Boolean {
+    return textExtensions.contains(file.extension.lowercase())
+  }
+
 
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
@@ -703,6 +759,32 @@ Make each snippet:
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ArticleGenerationTask::class.java)
+    private val textExtensions = setOf(
+      "txt",
+      "md",
+      "kt",
+      "java",
+      "js",
+      "ts",
+      "py",
+      "rb",
+      "go",
+      "rs",
+      "c",
+      "cpp",
+      "h",
+      "hpp",
+      "css",
+      "html",
+      "xml",
+      "json",
+      "yaml",
+      "yml",
+      "properties",
+      "gradle",
+      "maven"
+    )
+
     val ArticleGeneration = TaskType(
       "ArticleGeneration",
       ArticleGenerationTaskExecutionConfigData::class.java,

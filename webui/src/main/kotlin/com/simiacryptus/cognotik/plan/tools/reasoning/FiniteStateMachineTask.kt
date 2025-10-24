@@ -2,12 +2,16 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.File
+import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -18,6 +22,7 @@ class FiniteStateMachineTask(
   orchestrationConfig,
   planTask
 ) {
+  protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
   val maxDescriptionLength = 500
   private var transcriptStream: java.io.FileOutputStream? = null
 
@@ -36,6 +41,8 @@ class FiniteStateMachineTask(
     val generate_test_scenarios: Boolean = true,
     @Description("Domain or context for the FSM (e.g., 'authentication system', 'order processing')")
     val domain_context: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -72,11 +79,15 @@ FiniteStateMachine - Model concepts using finite state machine analysis
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
+    log.info("FiniteStateMachineTask.run() called with messages count: ${messages.size}")
     val startTime = System.currentTimeMillis()
     log.info("Starting FiniteStateMachineTask for concept: '${executionConfig?.concept_to_model}'")
     // Initialize transcript
     transcriptStream = transcript(task)
-    writeToTranscript("# Finite State Machine Analysis\n\n")
+    if (transcriptStream == null) {
+      log.error("Failed to initialize transcript stream")
+    }
+    writeToTranscript("# Finite State Machine Analysis\n\n${messages.joinToString("\n\n")}\n\n")
     writeToTranscript("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n")
 
     val conceptToModel = executionConfig?.concept_to_model
@@ -113,6 +124,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
       val knownEvents = executionConfig.known_events ?: emptyList()
       writeToTranscript("## Configuration\n\n")
       writeToTranscript("**Concept:** $conceptToModel\n\n")
+      writeToTranscript("**Input Files:** ${if (executionConfig.input_files?.isNotEmpty() == true) executionConfig.input_files.joinToString(", ") else "None"}\n\n")
       writeToTranscript("**Domain:** $domainContext\n\n")
       writeToTranscript("**Initial States:** ${if (initialStates.isNotEmpty()) initialStates.joinToString(", ") else "To be identified"}\n\n")
       writeToTranscript("**Known Events:** ${if (knownEvents.isNotEmpty()) knownEvents.joinToString(", ") else "To be identified"}\n\n")
@@ -143,6 +155,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
       log.debug("Gathering prior context from execution state")
       val priorContext = getPriorCode(agent.executionState)
+      val inputFileContent = getInputFileCode()
 
       // Step 1: Identify States
       log.info("Step 1: Identifying all possible states")
@@ -158,7 +171,8 @@ FiniteStateMachine - Model concepts using finite state machine analysis
         conceptToModel,
         domainContext,
         initialStates,
-        priorContext
+        priorContext,
+        inputFileContent
       )
 
       val stateAgent = ChatAgent(
@@ -580,7 +594,13 @@ Keep the summary concise but informative.
       writeToTranscript("**Status:** ✅ Analysis complete\n\n")
       closeTranscript()
 
-      task.complete("FSM analysis completed for: $conceptToModel")
+      val (link, _) = task.createFile("fsm_analysis.md")
+      task.complete(
+        "FSM analysis completed for: $conceptToModel. " +
+        "Full analysis written to <a href='$link' target='_blank'>$link</a> " +
+        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+        "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
       resultFn(conciseResult)
 
     } catch (e: Exception) {
@@ -601,10 +621,21 @@ Keep the summary concise but informative.
     concept: String,
     domain: String,
     initialStates: List<String>,
-    priorContext: String
+    priorContext: String,
+    inputFileContent: String
   ): String {
+    val fileContentSection = if (inputFileContent.isNotBlank()) {
+      """
+        |
+        |## Reference Files:
+        |$inputFileContent
+      """.trimMargin()
+    } else {
+      ""
+    }
     val initialStatesSection = if (initialStates.isNotEmpty()) {
       """
+$fileContentSection
         |
         |## Known Initial States:
         |${initialStates.joinToString("\n") { "- $it" }}
@@ -694,6 +725,59 @@ Create a comprehensive transition table covering:
 Format as a clear table or structured list.
     """.trimIndent()
   }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          codeFiles[file.toPath()] ?: file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+  private fun isTextFile(file: File): Boolean {
+    val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp",
+      "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
+    )
+    return textExtensions.contains(file.extension.lowercase())
+  }
+  private fun extractDocumentContent(file: File) = try {
+    file.getReader().use { reader ->
+      when (reader) {
+        is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+        else -> reader.getText()
+      }
+    }
+  } catch (e: Exception) {
+    log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+    try {
+      file.readText()
+    } catch (e2: Exception) {
+      "Error reading file: ${e2.message}"
+    }
+  }
+
 
   private fun extractMermaidCode(response: String): String {
     // Try to extract mermaid code block
@@ -767,3 +851,4 @@ Format as a clear table or structured list.
     )
   }
 }
+

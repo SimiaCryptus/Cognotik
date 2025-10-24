@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
+
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
@@ -12,18 +14,22 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+ import org.slf4j.Logger
+ import java.io.FileOutputStream
+ import java.time.LocalDateTime
+ import java.time.format.DateTimeFormatter
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.io.File
 
-class InteractiveStoryTask(
+ class InteractiveStoryTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: InteractiveStoryTaskExecutionConfigData?
-) : AbstractTask<InteractiveStoryTask.InteractiveStoryTaskExecutionConfigData, TaskTypeConfig>(
+ ) : AbstractTask<InteractiveStoryTask.InteractiveStoryTaskExecutionConfigData, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
+   protected val codeFiles = mutableMapOf<Path, String>()
 
   class InteractiveStoryTaskExecutionConfigData(
     @Description("The premise or starting scenario for the interactive story")
@@ -70,6 +76,9 @@ class InteractiveStoryTask(
 
     @Description("Point of view (e.g., 'second_person', 'first_person', 'third_person')")
     val point_of_view: String = "second_person",
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the story")
+    val input_files: List<String>? = null,
+
 
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -101,6 +110,13 @@ class InteractiveStoryTask(
       }
       if (point_of_view.isBlank()) {
         return "point_of_view must not be blank"
+      }
+      if (!input_files.isNullOrEmpty()) {
+        input_files.forEach { pattern ->
+          if (pattern.isBlank()) {
+            return "input_files patterns must not be blank"
+          }
+        }
       }
       return ValidatedObject.validateFields(this)
     }
@@ -200,7 +216,8 @@ class InteractiveStoryTask(
 
   override fun promptSegment(): String {
     return """
-InteractiveStory - Create choose-your-own-adventure narratives with branching paths
+ InteractiveStory - Create choose-your-own-adventure narratives with branching paths
+  ** Optionally, list input files (supports glob patterns) to be examined for context
   ** Specify the premise or starting scenario
   ** Define genre, tone, and target audience
   ** Set number of decision points and choices per decision
@@ -210,6 +227,8 @@ InteractiveStory - Create choose-your-own-adventure narratives with branching pa
   ** Optimize for replay value with different experiences
   ** Track consequences across choices for coherent storytelling
   ** Produces complete interactive narrative with decision tree
+  Available files:
+  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         """.trimIndent()
   }
   private fun transcript(task: SessionTask): FileOutputStream? {
@@ -237,6 +256,10 @@ InteractiveStory - Create choose-your-own-adventure narratives with branching pa
     // Initialize transcript
     val transcriptStream = transcript(task)
     val transcriptWriter = transcriptStream?.bufferedWriter()
+    // Gather input context from files and messages
+    val inputContext = getInputFileCode() + 
+      if (messages.isNotEmpty()) "\n\n## User Input\n\n${messages.joinToString("\n\n")}" else ""
+
 
     log.info("Starting InteractiveStoryTask for premise: '${executionConfig?.premise}'")
 
@@ -325,8 +348,12 @@ InteractiveStory - Create choose-your-own-adventure narratives with branching pa
     resultBuilder.append("# Interactive Story: $premise\n\n")
 
     try {
-      // Gather context
+      // Gather context from input files and messages
       val priorContext = getPriorCode(agent.executionState)
+      val combinedContext = (if (inputContext.isNotBlank()) inputContext else "") +
+        (if (priorContext.isNotBlank()) "\n\n## Prior Context\n\n$priorContext" else "")
+
+      // Gather context
       if (priorContext.isNotBlank()) {
         transcriptWriter?.apply {
           write("## Context from Previous Tasks\n\n")
@@ -375,16 +402,16 @@ val stateVars = if (executionConfig.track_state_variables) {
       // First, create a high-level outline
       val outlineAgent = ChatAgent(
         prompt = """
-You are an expert interactive fiction designer. Create a high-level outline for a branching story.
-Premise: $premise
-Story Parameters:
+ You are an expert interactive fiction designer. Create a high-level outline for a branching story.
+ Premise: $premise
+ Story Parameters:
 - Genre: ${executionConfig.genre}
 - Target Audience: ${executionConfig.target_audience}
 - Tone: ${executionConfig.tone}
 - Decision Points: ${executionConfig.num_decision_points}
 - Choices per Decision: ${executionConfig.choices_per_decision}
 - Number of Endings: ${executionConfig.num_endings}
-${if (priorContext.isNotBlank()) "Additional Context:\n${priorContext.truncateForDisplay(1000)}\n" else ""}
+${if (combinedContext.isNotBlank()) "Additional Context:\n${combinedContext.truncateForDisplay(1000)}\n" else ""}
 Create a brief outline with:
 1. A compelling title
 2. A one-paragraph opening concept
@@ -1074,7 +1101,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
       log.info("InteractiveStoryTask completed: words=$cumulativeWordCount, decisions=${structure.decision_points.size}, endings=${structure.endings.size}, time=${totalTime}ms")
 
       task.safeComplete("Interactive story generation complete: $cumulativeWordCount words, ${structure.decision_points.size} decisions, ${structure.endings.size} endings in ${totalTime / 1000}s", log)
-      resultFn(finalResult)
+      resultFn(buildFinalResultWithLinks(task, finalResult, storyMap, cumulativeWordCount, structure, totalTime))
 
     } catch (e: Exception) {
       log.error("Error during interactive story generation", e)
@@ -1111,6 +1138,88 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
       resultFn(errorOutput)
     }
   }
+  private fun buildFinalResultWithLinks(
+    task: SessionTask,
+    summary: String,
+    storyMap: String,
+    wordCount: Int,
+    structure: StoryStructure,
+    totalTime: Long
+  ): String {
+    return try {
+      // Save story map to file
+      val (mapLink, mapFile) = task.createFile("story_map.md")
+      mapFile?.writeText(storyMap)
+      // Save summary to file
+      val (summaryLink, summaryFile) = task.createFile("story_summary.md")
+      summaryFile?.writeText(summary)
+      buildString {
+        appendLine("# Interactive Story Generation Complete")
+        appendLine()
+        appendLine("**Story:** ${structure.title}")
+        appendLine("**Word Count:** $wordCount")
+        appendLine("**Decision Points:** ${structure.decision_points.size}")
+        appendLine("**Endings:** ${structure.endings.size}")
+        appendLine("**Generation Time:** ${totalTime / 1000.0}s")
+        appendLine()
+        appendLine("## Output Files")
+        appendLine()
+        appendLine("- [Story Map (Interactive)]($mapLink) - Complete playable story with all paths")
+        appendLine("  - [HTML](${ mapLink.removeSuffix(".md")}.html)")
+        appendLine("  - [PDF](${ mapLink.removeSuffix(".md")}.pdf)")
+        appendLine()
+        appendLine("- [Story Summary]($summaryLink) - Generation summary and statistics")
+        appendLine("  - [HTML](${ summaryLink.removeSuffix(".md")}.html)")
+        appendLine("  - [PDF](${ summaryLink.removeSuffix(".md")}.pdf)")
+        appendLine()
+        appendLine("## Quick Stats")
+        appendLine()
+        appendLine("- Total Choices: ${structure.decision_points.sumOf { it.choices.size }}")
+        appendLine("- Unique Paths: ~${calculateUniquePaths(structure)}")
+        appendLine("- Tracked Variables: ${structure.tracked_variables.size}")
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine(summary)
+      }
+    } catch (e: Exception) {
+      log.error("Failed to create output files", e)
+      buildString {
+        appendLine("# Interactive Story Generation Complete")
+        appendLine()
+        appendLine("**Note:** Could not save detailed output files, but story was generated successfully.")
+        appendLine()
+        appendLine(summary)
+      }
+    }
+  }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      }
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = codeFiles[file.toPath()] ?: file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
 
   private fun calculateUniquePaths(structure: StoryStructure): Int {
     // Simple estimation: multiply choices at each decision point
@@ -1148,5 +1257,23 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
               </ul>
             """
     )
+    fun getAvailableFiles(
+      path: Path,
+      treatDocumentsAsText: Boolean = false,
+    ): List<String> {
+      return try {
+        listOf(FileSelectionUtils.filteredWalkAsciiTree(path.toFile(), 20, treatDocumentsAsText = treatDocumentsAsText))
+      } catch (e: Exception) {
+        log.error("Error listing available files", e)
+        listOf("Error listing files: ${e.message}")
+      }
+    }
+    private val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
+      "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
+    )
+    fun isTextFile(file: File): Boolean {
+      return textExtensions.contains(file.extension.lowercase())
+    }
   }
 }

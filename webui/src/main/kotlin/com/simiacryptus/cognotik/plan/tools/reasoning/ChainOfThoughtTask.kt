@@ -4,15 +4,19 @@ import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
-import java.io.FileOutputStream
+ import com.simiacryptus.cognotik.webui.session.SessionTask
+ import org.slf4j.Logger
+ import java.io.FileOutputStream
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.nio.charset.StandardCharsets
 
-class ChainOfThoughtTask(
+ class ChainOfThoughtTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: ChainOfThoughtTaskExecutionConfigData?
 ) : AbstractTask<ChainOfThoughtTask.ChainOfThoughtTaskExecutionConfigData, TaskTypeConfig>(
@@ -27,7 +31,7 @@ class ChainOfThoughtTask(
     val reasoning_depth: Int = 10,
     @Description("Whether to validate each step before proceeding")
     val validate_steps: Boolean = true,
-    @Description("Additional files for context")
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
     val related_files: List<String> = emptyList(),
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -84,7 +88,8 @@ class ChainOfThoughtTask(
 
   override fun promptSegment(): String {
     return """
-ChainOfThought - Break down complex problems into explicit reasoning steps
+ ChainOfThought - Break down complex problems into explicit reasoning steps
+  ** Optionally, list input files (supports glob patterns) to be examined for context
   ** Specify the problem statement that requires step-by-step reasoning
   ** Optionally set reasoning_depth to control the number of steps (default: auto)
   ** Enable validate_steps to validate each step before proceeding (default: true)
@@ -108,6 +113,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
     val startTime = System.currentTimeMillis()
     log.info("Starting ChainOfThoughtTask with problem: '${executionConfig?.problem_statement}'")
     val transcript = transcript(task)
+    val inputFileContent = getInputFileCode()
 
     val problemStatement = executionConfig?.problem_statement
     if (problemStatement?.isBlank() != false) {
@@ -129,7 +135,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
     val overviewTask = task.ui.newTask(false)
     tabs["Overview"] = overviewTask.placeholder
 
-    val overviewContent = buildString {
+    var overviewContent = buildString {
       appendLine("# Chain of Thought Reasoning")
       appendLine()
       appendLine("**Problem Statement:** $problemStatement")
@@ -139,6 +145,10 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
       appendLine("**Validate Steps:** ${if (validateSteps) "Yes" else "No"}")
       appendLine()
     }
+    if (inputFileContent.isNotBlank()) {
+      overviewContent += "\n## Input Files\n\n$inputFileContent\n\n"
+    }
+    
     // Write to transcript
     transcript?.write(overviewContent.toByteArray())
     transcript?.flush()
@@ -722,6 +732,33 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
       }
     }
   }
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

@@ -14,11 +14,14 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
+import java.nio.file.Path
 
 abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     orchestrationConfig: OrchestrationConfig,
     planTask: T?
 ) : AbstractTask<T, TaskTypeConfig>(orchestrationConfig, planTask) {
+
+  protected val codeFiles = mutableMapOf<Path, String>()
 
 abstract class FileTaskExecutionConfig(
         task_type: String? = null,

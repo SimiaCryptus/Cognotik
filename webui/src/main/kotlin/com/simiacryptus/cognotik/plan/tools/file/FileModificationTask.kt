@@ -8,7 +8,6 @@ package com.simiacryptus.cognotik.plan.tools.file
  import com.simiacryptus.cognotik.plan.TaskType
  import com.simiacryptus.cognotik.plan.TaskTypeConfig
  import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
- import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.getAvailableFiles
  import com.simiacryptus.cognotik.platform.model.ApiChatModel
  import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
  import com.simiacryptus.cognotik.util.LoggerFactory
@@ -21,19 +20,6 @@ import com.simiacryptus.cognotik.util.ValidatedObject
  import java.io.FileOutputStream
  import java.util.concurrent.Semaphore
  import java.util.concurrent.TimeUnit
-
-private fun transcript(task: SessionTask): FileOutputStream? {
-  val (link, file) = task.createFile("transcript.md")
-  val markdownTranscript = file?.outputStream()
-  task.complete(
-    "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-      link.removeSuffix(
-        ".md"
-      )
-    }.pdf' target='_blank'>pdf</a>"
-  )
-  return markdownTranscript
-}
 
  class FileModificationTask(
     orchestrationConfig: OrchestrationConfig,
@@ -112,7 +98,10 @@ FileModification - Modify existing files or create new files
   * For each file, specify the relative file path and the goal of the modification or creation
   * List input files/tasks to be examined when designing the modifications or new files
 Available files:
-${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
+${
+      AnalysisTask.getAvailableFiles(
+        root
+      ).joinToString("\n") { "  - $it" }}
 """.trimIndent()
 
 

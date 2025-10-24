@@ -1,7 +1,11 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
-import com.simiacryptus.cognotik.actors.ChatAgent
+
 import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import java.nio.charset.StandardCharsets
+import java.nio.file.FileSystems
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -13,6 +17,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -32,6 +37,10 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
   open class NarrativeReasoningTaskExecutionConfigData(
     @Description("The subject or scenario to analyze through narrative reasoning")
     val subject: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
+    @Description("Additional context or questions to guide the narrative analysis")
+    val additional_context: String? = null,
 
     @Description("Narrative elements to consider (characters, setting, conflict, timeline, etc.)")
     val narrative_elements: Map<String, Any>? = null,
@@ -247,6 +256,17 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting NarrativeReasoningTask for subject: '${executionConfig?.subject}'")
+    // Create output directory for detailed results
+    val narrativeDir = java.io.File(agent.root.toFile(), ".narrative_analysis")
+    if (!narrativeDir.exists()) {
+      if (!narrativeDir.mkdirs()) {
+        log.error("Failed to create narrative analysis directory: ${narrativeDir.absolutePath}")
+        resultFn("Error: Failed to create output directory")
+        return
+      }
+      log.debug("Created narrative analysis directory: ${narrativeDir.absolutePath}")
+    }
+
 
     val subject = executionConfig?.subject
     if (subject.isNullOrBlank()) {
@@ -255,6 +275,24 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
       resultFn("CONFIGURATION ERROR: No subject specified")
       return
     }
+    // Read input files if specified
+    val inputFileContent = getInputFileContent()
+    val messageContent = messages.joinToString("\n\n")
+    val additionalContext = buildString {
+      if (messageContent.isNotBlank()) {
+        appendLine("## User Input")
+        appendLine(messageContent)
+      }
+      if (inputFileContent.isNotBlank()) {
+        appendLine("\n## Input Files")
+        appendLine(inputFileContent)
+      }
+      if (executionConfig?.additional_context?.isNotBlank() == true) {
+        appendLine("\n## Additional Context")
+        appendLine(executionConfig.additional_context)
+      }
+    }
+
 
     val narrativeElements = executionConfig.narrative_elements ?: emptyMap()
     val constructNarrative = executionConfig.construct_narrative
@@ -304,6 +342,11 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
       appendLine("- Find Inconsistencies: ${if (findInconsistencies) "✓" else "✗"}")
       appendLine()
       appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+      if (additionalContext.isNotBlank()) {
+        appendLine()
+        appendLine("## Input Context")
+        appendLine(additionalContext.take(500) + if (additionalContext.length > 500) "..." else "")
+      }
       appendLine()
       appendLine("---")
       appendLine()
@@ -368,16 +411,18 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
         val narrativeAgent = ParsedAgent(
           resultClass = ParsedNarrative::class.java,
           prompt = """
-You are an expert narrative analyst and storyteller. Construct a coherent narrative from the given elements.
+ You are an expert narrative analyst and storyteller. Construct a coherent narrative from the given elements.
 
-Subject: $subject
+ Subject: $subject
 
-Narrative Elements:
-${narrativeElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
+ Narrative Elements:
+ ${narrativeElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
+${if (additionalContext.isNotBlank()) "Additional Context:\n$additionalContext\n" else ""}
 
-${if (priorContext.isNotBlank()) "Additional Context:\n$priorContext\n" else ""}
 
-Create a structured narrative with:
+ ${if (priorContext.isNotBlank()) "Additional Context:\n$priorContext\n" else ""}
+
+ Create a structured narrative with:
 1. A compelling title
 2. A concise summary (2-3 sentences)
 3. Three acts with key events and character developments
@@ -437,6 +482,9 @@ Focus on clarity, coherence, and emotional resonance.
         }
         narrativeTask.add(narrativeContent.renderMarkdown)
         task.update()
+        // Save narrative to file
+        saveAnalysisToFile(narrativeDir, "01_main_narrative.md", narrativeContent)
+
         // Write to transcript
         transcriptWriter?.appendLine("### ${narrative.title}")
         transcriptWriter?.appendLine()
@@ -542,6 +590,9 @@ Be specific and concrete.
         }
         plotPointsTask.add(plotPointsContent.renderMarkdown)
         task.update()
+        // Save plot points to file
+        saveAnalysisToFile(narrativeDir, "02_plot_points.md", plotPointsContent)
+
         // Write to transcript
         transcriptWriter?.appendLine("### Identified ${plotPoints.size} Plot Points")
         plotPoints.forEach { point ->
@@ -646,6 +697,9 @@ Consider stakeholder perspectives if analyzing organizational scenarios.
         }
         charactersTask.add(charactersContent.renderMarkdown)
         task.update()
+        // Save character analysis to file
+        saveAnalysisToFile(narrativeDir, "03_character_analysis.md", charactersContent)
+
         // Write to transcript
         transcriptWriter?.appendLine("### Analyzed ${characterAnalyses.size} Characters")
         characterAnalyses.forEach { char ->
@@ -750,6 +804,9 @@ Be realistic and consider multiple perspectives.
         }
         outcomesTask.add(outcomesContent.renderMarkdown)
         task.update()
+        // Save outcomes to file
+        saveAnalysisToFile(narrativeDir, "04_predicted_outcomes.md", outcomesContent)
+
         // Write to transcript
         transcriptWriter?.appendLine("### Predicted ${outcomes.size} Outcomes")
         outcomes.forEach { outcome ->
@@ -860,6 +917,9 @@ For each inconsistency, provide:
         }
         inconsistenciesTask.add(inconsistenciesContent.renderMarkdown)
         task.update()
+        // Save inconsistencies to file
+        saveAnalysisToFile(narrativeDir, "05_inconsistencies.md", inconsistenciesContent)
+
         // Write to transcript
         if (inconsistencies.isEmpty()) {
           transcriptWriter?.appendLine("### No significant inconsistencies found")
@@ -940,6 +1000,9 @@ Be concise but insightful. Focus on actionable insights.
         }.renderMarkdown
       )
       task.update()
+      // Save synthesis to file
+      saveAnalysisToFile(narrativeDir, "06_synthesis.md", synthesis)
+
       transcriptWriter?.appendLine(synthesis)
       transcriptWriter?.appendLine()
 
@@ -975,8 +1038,31 @@ Be concise but insightful. Focus on actionable insights.
       val finalResult = resultBuilder.toString()
       log.info("NarrativeReasoningTask completed: total_time=${totalTime}ms, output_size=${finalResult.length} chars")
 
-      task.safeComplete("Narrative analysis complete in ${totalTime / 1000}s. Generated ${finalResult.length} characters of analysis.", log)
-      resultFn(finalResult)
+      // Create summary message with file links
+      val summaryMessage = buildString {
+        appendLine("# Narrative Analysis Complete")
+        appendLine()
+        appendLine("**Subject:** $subject")
+        appendLine("**Time:** ${totalTime / 1000}s")
+        appendLine()
+        appendLine("## Detailed Results")
+        appendLine()
+        appendLine("Full analysis has been saved to the following files:")
+        appendLine()
+        appendLine("- [Main Narrative](${narrativeDir.name}/01_main_narrative.md)")
+        appendLine("- [Plot Points](${narrativeDir.name}/02_plot_points.md)")
+        appendLine("- [Character Analysis](${narrativeDir.name}/03_character_analysis.md)")
+        appendLine("- [Predicted Outcomes](${narrativeDir.name}/04_predicted_outcomes.md)")
+        appendLine("- [Inconsistencies](${narrativeDir.name}/05_inconsistencies.md)")
+        appendLine("- [Synthesis](${narrativeDir.name}/06_synthesis.md)")
+        appendLine()
+        appendLine("## Summary")
+        appendLine()
+        appendLine(finalResult.take(1000) + if (finalResult.length > 1000) "\n\n*See detailed files for complete analysis*" else "")
+      }
+
+      task.safeComplete("Narrative analysis complete in ${totalTime / 1000}s. Results saved to .narrative_analysis directory.", log)
+      resultFn(summaryMessage)
       // Close transcript
       transcriptWriter?.flush()
       transcriptWriter?.close()
@@ -1019,6 +1105,50 @@ Be concise but insightful. Focus on actionable insights.
       transcriptWriter?.close()
     }
   }
+  private fun getInputFileContent(): String = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+  private fun saveAnalysisToFile(
+    outputDir: File,
+    filename: String,
+    content: String
+  ) {
+    try {
+      val outputFile = File(outputDir, filename)
+      outputFile.writeText(content, StandardCharsets.UTF_8)
+      log.debug("Saved analysis to file: ${outputFile.absolutePath} (size: ${content.length} chars)")
+    } catch (e: Exception) {
+      log.error("Failed to save analysis to file: $filename", e)
+    }
+  }
+  private fun isTextFile(file: File): Boolean {
+    val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+    return textExtensions.contains(file.extension.lowercase())
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(NarrativeReasoningTask::class.java)

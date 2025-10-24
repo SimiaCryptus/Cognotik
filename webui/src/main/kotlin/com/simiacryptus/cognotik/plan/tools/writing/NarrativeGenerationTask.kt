@@ -1,7 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
-import com.simiacryptus.cognotik.actors.ChatAgent
+
 import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
+import java.io.File
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -30,6 +33,8 @@ class NarrativeGenerationTask(
   class NarrativeGenerationTaskExecutionConfigData(
     @Description("The subject or scenario to develop into a full narrative")
     subject: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the narrative")
+    input_files: List<String>? = null,
 
     @Description("Narrative elements to consider (characters, setting, conflict, timeline, etc.)")
     narrative_elements: Map<String, Any>? = null,
@@ -76,11 +81,13 @@ class NarrativeGenerationTask(
     analyze_motivations = true,
     find_inconsistencies = true,
     task_dependencies = task_dependencies,
-    state = state
+    state = state,
+    input_files=input_files,
   ) {
     override val task_type: String = NarrativeGeneration.name
     override var task_description: String? = "Generate full narrative for '$subject'"
     override fun validate(): String? {
+      // First validate parent class
       // First validate parent class
       super.validate()?.let { return it }
       // Validate target_word_count
@@ -163,6 +170,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
     val transcript = transcript(task)
     val genConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData
     log.info("Starting NarrativeGenerationTask for subject: '${genConfig?.subject}'")
+    transcript?.write("# Narrative Generation Task\n\n".toByteArray())
 
     if (genConfig == null) {
       log.error("Invalid configuration type for NarrativeGenerationTask")
@@ -182,6 +190,17 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     val tabs = TabbedDisplay(task)
+    // Get input file context
+    val inputFileContext = getInputFileCode(agent.root.toFile())
+    if (inputFileContext.isNotBlank()) {
+      transcript?.write("## Input Files Context\n\n$inputFileContext\n\n".toByteArray())
+      transcript?.flush()
+    }
+    // Combine messages with input files
+    val combinedMessages = messages + listOf(inputFileContext).filter { it.isNotBlank() }
+    transcript?.write("## Input Messages\n\n${combinedMessages.joinToString("\n\n")}\n\n".toByteArray())
+    transcript?.flush()
+
 
     // Overview tab
     val overviewTask = task.ui.newTask(false)
@@ -212,7 +231,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
       appendLine("*Running base narrative reasoning analysis...*")
     }
     overviewTask.add(overviewContent.renderMarkdown)
-    transcript?.write(overviewContent.toByteArray())
+    transcript?.write("\n## Overview\n\n$overviewContent\n\n".toByteArray())
     transcript?.flush()
     task.update()
 
@@ -329,7 +348,7 @@ Ensure the outline:
         appendLine("**Status:** ✅ Complete")
       }
       outlineTask.add(outlineContent.renderMarkdown)
-      transcript?.write(outlineContent.toByteArray())
+      transcript?.write("\n## Outline\n\n$outlineContent\n\n".toByteArray())
       transcript?.flush()
       task.update()
 
@@ -519,7 +538,7 @@ Provide the revised scene content only.
           appendLine("**Status:** ✅ Complete")
         }
         sceneTask.add(sceneContent.renderMarkdown)
-        transcript?.write(sceneContent.toByteArray())
+        transcript?.write("\n## $sceneContent\n\n".toByteArray())
         transcript?.flush()
         task.update()
 
@@ -601,6 +620,8 @@ Provide the revised scene content only.
         }.renderMarkdown
       )
       task.update()
+      transcript?.write("\n## Final Statistics\n\n- Total Scenes: ${generatedScenes.size}\n- Total Word Count: $cumulativeWordCount\n- Time: ${totalTime / 1000.0}s\n\n".toByteArray())
+      transcript?.close()
 
 
       // Per best practices, the final result passed to resultFn should be a concise summary,
@@ -609,7 +630,7 @@ Provide the revised scene content only.
         appendLine("# Narrative Generation Summary: ${outline.title}")
         appendLine()
         appendLine("A complete narrative of **$cumulativeWordCount words** across **${generatedScenes.size} scenes** was generated in **${totalTime / 1000.0}s**.")
-        appendLine("> The full text is available in the UI for detailed review.")
+        appendLine("> The full narrative and detailed transcript are available in the UI tabs for review.")
         appendLine()
         appendLine(outlineContent.substringBeforeLast("\n**Status:**").trim())
       }
@@ -665,6 +686,39 @@ Provide the revised scene content only.
       }.pdf' target='_blank'>pdf</a>"
     )
     return markdownTranscript
+  }
+  private fun getInputFileCode(rootFile: File): String {
+    val executionConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData ?: return ""
+    return (executionConfig.input_files ?: listOf())
+      .flatMap { pattern: String ->
+        val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+        (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(rootFile) {
+          when {
+            com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+            matcher.matches(rootFile.toPath().relativize(it.toPath())) -> true
+            it.isDirectory -> true
+            else -> false
+          }
+        })
+      }.filter { file ->
+        file.isFile && file.exists()
+      }
+      .distinct()
+      .sortedBy { it }
+      .joinToString("\n\n") { relativePath ->
+        val file = rootFile.resolve(relativePath.name)
+        try {
+          val content = if (!AnalysisTask.isTextFile(file)) {
+            AnalysisTask.extractDocumentContent(file)
+          } else {
+            file.readText()
+          }
+          "# ${relativePath.name}\n\n```\n$content\n```"
+        } catch (e: Throwable) {
+          log.warn("Error reading file: ${relativePath.name}", e)
+          ""
+        }
+      }
   }
 
 

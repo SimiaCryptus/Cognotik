@@ -3,22 +3,25 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.nio.file.FileSystems
+ import org.slf4j.Logger
+ import java.io.FileOutputStream
+ import java.nio.file.FileSystems
+import java.nio.file.Path
 
-class CausalInferenceTask(
+ class CausalInferenceTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: CausalInferenceTaskExecutionConfigData?
 ) : AbstractTask<CausalInferenceTask.CausalInferenceTaskExecutionConfigData, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
+   protected val codeFiles = mutableMapOf<Path, String>()
 
   val maxOutputLength: Int = 20000
 
@@ -33,6 +36,8 @@ class CausalInferenceTask(
     val identify_confounders: Boolean = true,
     @Description("Data sources for evidence (file patterns or paths)")
     val evidence_sources: List<String>? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Additional files for context")
     val related_files: List<String>? = null,
     task_description: String? = null,
@@ -68,6 +73,7 @@ CausalInference - Identify causal relationships and root causes
   ** Optionally build a causal graph showing relationships
   ** Optionally identify confounding factors
   ** Provide evidence sources (logs, metrics, code files)
+  ** Optionally, list input files (supports glob patterns) to be examined
   ** Useful for:
      - Root cause analysis
      - Debugging complex issues
@@ -83,19 +89,22 @@ CausalInference - Identify causal relationships and root causes
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
+    val transcript = transcript(task)
     val startTime = System.currentTimeMillis()
     log.info("Starting CausalInference task for effect: ${executionConfig?.observed_effect}")
     // Create transcript file for logging the analysis
-    val markdownTranscript = transcript(task)
+    var markdownTranscript: FileOutputStream? = null
 
     val observedEffect = executionConfig?.observed_effect
     if (observedEffect.isNullOrBlank()) {
       val errorMsg = "CONFIGURATION ERROR: No observed effect specified"
       log.error(errorMsg)
       task.complete(errorMsg)
-      resultFn("CONFIGURATION ERROR: No observed effect specified")
+      resultFn(formatResultMessage(task, transcript, errorMsg))
       return
     }
+    markdownTranscript = transcript(task)
+    
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
       val errorMsg = "CONFIGURATION ERROR: $validationError"
@@ -103,7 +112,7 @@ CausalInference - Identify causal relationships and root causes
       markdownTranscript?.write("# Configuration Error\n\n$errorMsg\n".toByteArray())
       markdownTranscript?.close()
       task.complete(errorMsg)
-      resultFn("CONFIGURATION ERROR: No observed effect specified")
+      resultFn(formatResultMessage(task, transcript, errorMsg))
       return
     }
 
@@ -114,7 +123,7 @@ CausalInference - Identify causal relationships and root causes
       markdownTranscript?.write("# Error\n\nNo API available\n".toByteArray())
       markdownTranscript?.close()
       task.complete("ERROR: No API available")
-      resultFn("ERROR: No API available")
+      resultFn(formatResultMessage(task, transcript, "ERROR: No API available"))
       return
     }
     try {
@@ -139,6 +148,12 @@ CausalInference - Identify causal relationships and root causes
       var overviewTaskStatus = overviewTask.add(
         MarkdownUtil.renderMarkdown(
           """
+            |## Input Files
+            |
+            |${getInputFileCode()}
+            |
+            |---
+            |
             |## Causal Inference Analysis
             |
             |**Observed Effect:** $observedEffect
@@ -196,6 +211,7 @@ CausalInference - Identify causal relationships and root causes
       log.debug("Retrieving prior context from execution state")
 
       val priorContext = getPriorCode(agent.executionState)
+      val messageContext = messages.joinToString("\n\n")
 
       val potentialCauses = executionConfig.potential_causes ?: emptyList()
       val causesText = if (potentialCauses.isNotEmpty()) {
@@ -227,7 +243,8 @@ CausalInference - Identify causal relationships and root causes
         observedEffect,
         potentialCauses,
         evidenceContext,
-        priorContext
+        priorContext,
+        messageContext
       )
       log.debug("Initializing ChatAgent with model: ${api.javaClass.simpleName}")
 
@@ -387,7 +404,7 @@ Generate the Mermaid diagram now:
       markdownTranscript?.close()
 
       task.complete(summary)
-      resultFn(answer ?: "Analysis completed")
+      resultFn(formatResultMessage(task, transcript, summary))
 
     } catch (e: Exception) {
       val duration = System.currentTimeMillis() - startTime
@@ -416,7 +433,7 @@ Generate the Mermaid diagram now:
 //            tabs["Error"] = errorTask.placeholder
       errorTask.add(MarkdownUtil.renderMarkdown("## ❌ Error\n\nAn error occurred during causal inference analysis:\n\n```\n${e.message}\n```", ui = ui))
       task.complete("Analysis failed: ${e.message}")
-      resultFn("ERROR: Causal inference analysis failed - ${e.message}")
+      resultFn(formatResultMessage(task, transcript, "ERROR: Causal inference analysis failed - ${e.message}"))
     }
   }
 
@@ -424,10 +441,14 @@ Generate the Mermaid diagram now:
     observedEffect: String,
     potentialCauses: List<String>,
     evidenceContext: String,
-    priorContext: String
+    priorContext: String,
+    messageContext: String
   ): String {
     val causesSection = if (potentialCauses.isNotEmpty()) {
       """
+## User Input and Context:
+$messageContext
+---
             |## Potential Causes to Investigate:
             |${potentialCauses.joinToString("\n") { "- $it" }}
             """.trimMargin()
@@ -495,6 +516,45 @@ Provide a structured analysis with:
 
 Generate the causal analysis now:
         """.trimIndent()
+  }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = codeFiles[file.toPath()] ?: file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }.let { if (it.isBlank()) "No input files specified" else it }
+  private fun formatResultMessage(task: SessionTask, transcript: FileOutputStream?, summary: String): String {
+    return try {
+      val (link, _) = task.createFile("analysis_results.md")
+      transcript?.close()
+      "✅ $summary\n\n" +
+          "📄 Detailed results: <a href='$link' target='_blank'>$link</a> " +
+          "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+          "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+    } catch (e: Exception) {
+      log.error("Failed to create result file", e)
+      summary
+    }
   }
 
   private fun gatherEvidence(): String {

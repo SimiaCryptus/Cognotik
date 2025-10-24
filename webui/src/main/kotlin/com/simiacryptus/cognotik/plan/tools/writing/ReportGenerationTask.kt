@@ -4,23 +4,26 @@ import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+ import org.slf4j.Logger
+ import java.io.FileOutputStream
+ import java.time.LocalDateTime
+ import java.time.format.DateTimeFormatter
+import java.nio.file.FileSystems
 
-class ReportGenerationTask(
+ class ReportGenerationTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: ReportGenerationTaskExecutionConfigData?
-) : AbstractTask<ReportGenerationTask.ReportGenerationTaskExecutionConfigData, TaskTypeConfig>(
+ ) : AbstractTask<ReportGenerationTask.ReportGenerationTaskExecutionConfigData, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
@@ -73,6 +76,9 @@ class ReportGenerationTask(
 
     @Description("Related files or data sources to incorporate")
     val related_files: List<String>? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
+
 
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -244,7 +250,9 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         """.trimIndent()
   }
 
-  override fun run(
+   protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
+
+   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
     task: SessionTask,
@@ -254,6 +262,13 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
     val startTime = System.currentTimeMillis()
     log.info("Starting ReportGenerationTask for topic: '${executionConfig?.report_topic}'")
     val markdownTranscript = transcript(task)
+    // Read input from messages parameter
+    val messageContext = messages.filter { it.isNotBlank() }.joinToString("\n\n")
+    log.debug("Received ${messages.size} messages with total length: ${messageContext.length}")
+    // Load input files if specified
+    val inputFileContent = getInputFileCode()
+    log.debug("Loaded input files: ${inputFileContent.length} characters")
+    val fullContext = listOfNotNull(messageContext, inputFileContent).filter { it.isNotBlank() }.joinToString("\n\n---\n\n")
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
@@ -284,7 +299,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
       appendLine("# Report Generation")
       appendLine()
       appendLine("**Topic:** $reportTopic")
-      appendLine("**Topic:** $reportTopic")
+      appendLine("**Type:** ${executionConfig.report_type}")
       appendLine()
       appendLine("## Configuration")
       appendLine("- Report Type: ${executionConfig.report_type}")
@@ -310,7 +325,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
       appendLine("### Phase 1: Data Analysis")
       appendLine("*Analyzing metrics and data points...*")
     }
-    markdownTranscript?.write(overviewContent.toByteArray())
+    markdownTranscript?.write(overviewContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
     overviewTask.add(overviewContent.renderMarkdown)
     task.update()
 
@@ -320,7 +335,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
     try {
       // Gather context
       val priorContext = getPriorCode(agent.executionState)
-      val contextFiles = getContextFiles()
+      val contextFiles = getRelatedContextFiles()
 
       if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
         log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
@@ -329,6 +344,11 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         val contextContent = buildString {
           appendLine("# Data Sources & Context")
           appendLine()
+          if (fullContext.isNotBlank()) {
+            appendLine("## Input Context")
+            appendLine(fullContext.truncateForDisplay(3000))
+            appendLine()
+          }
           if (priorContext.isNotBlank()) {
             appendLine("## Prior Context")
             appendLine(priorContext.truncateForDisplay(2000))
@@ -341,7 +361,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         }
         contextTask.add(contextContent.renderMarkdown)
 
-        markdownTranscript?.write(contextContent.toByteArray())
+        markdownTranscript?.write(contextContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
 
         task.update()
       }
@@ -382,6 +402,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
       val dataAnalysisAgent = ParsedAgent(
         resultClass = DataAnalyses::class.java,
         prompt = """
+${if (fullContext.isNotBlank()) "Input Context:\n${fullContext.truncateForDisplay(3000)}\n" else ""}
 You are a data analyst expert. Analyze the provided metrics and data points for this report.
 
 Report Topic: $reportTopic
@@ -442,7 +463,7 @@ Be specific with numbers and percentages where available.
         }
         appendLine("**Status:** ✅ Complete")
       }
-      markdownTranscript?.write(dataAnalysisContent.toByteArray())
+      markdownTranscript?.write(dataAnalysisContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
       dataAnalysisTask.add(dataAnalysisContent.renderMarkdown)
       task.update()
 
@@ -558,7 +579,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
         }
         appendLine("**Status:** ✅ Complete")
       }
-      markdownTranscript?.write(outlineContent.toByteArray())
+      markdownTranscript?.write(outlineContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
       outlineTask.add(outlineContent.renderMarkdown)
       task.update()
 
@@ -680,7 +701,7 @@ Be specific, data-driven, and actionable.
             appendLine("**Status:** ✅ Complete")
           }.renderMarkdown
         )
-        markdownTranscript?.write(sectionTask.toString().toByteArray())
+        markdownTranscript?.write(sectionTask.toString().toByteArray(java.nio.charset.StandardCharsets.UTF_8))
         task.update()
 
         resultBuilder.append("## ${sectionOutline.title}\n\n")
@@ -794,7 +815,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
           appendLine("**Status:** ✅ Complete")
         }
         recommendationsTask.add(recommendationsContent.renderMarkdown)
-        markdownTranscript?.write(recommendationsContent.toByteArray())
+        markdownTranscript?.write(recommendationsContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
         task.update()
 
         resultBuilder.append("## Recommendations\n\n")
@@ -900,7 +921,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
           appendLine("**Status:** ✅ Complete")
         }
         riskTask.add(riskContent.renderMarkdown)
-        markdownTranscript?.write(riskContent.toByteArray())
+        markdownTranscript?.write(riskContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
         task.update()
 
         resultBuilder.append("## Risk Assessment\n\n")
@@ -977,7 +998,7 @@ Provide the complete revised report.
               appendLine()
             }.renderMarkdown
           )
-          markdownTranscript?.write("## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray())
+          markdownTranscript?.write("## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
           task.update()
         }
 
@@ -1028,7 +1049,7 @@ Provide the complete revised report.
       }
 
       finalTask.add(finalReport.renderMarkdown)
-      markdownTranscript?.write(finalReport.toByteArray())
+      markdownTranscript?.write(finalReport.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
       task.update()
 
       // Final statistics
@@ -1056,7 +1077,7 @@ Provide the complete revised report.
           appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
         }.renderMarkdown
       )
-      markdownTranscript?.write(overviewTask.toString().toByteArray())
+      markdownTranscript?.write(overviewTask.toString().toByteArray(java.nio.charset.StandardCharsets.UTF_8))
       task.update()
 
       // Concise summary for resultFn
@@ -1079,7 +1100,7 @@ Provide the complete revised report.
       }
 
       log.info("ReportGenerationTask completed: words=$cumulativeWordCount, sections=${generatedSections.size}, time=${totalTime}ms")
-      markdownTranscript?.write("\n\n---\n\n# Final Result\n\n${finalResult}".toByteArray())
+      markdownTranscript?.write("\n\n---\n\n# Final Result\n\n${finalResult}".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
       markdownTranscript?.close()
 
       task.safeComplete("Report generation complete: $cumulativeWordCount words in ${totalTime / 1000}s", log)
@@ -1101,7 +1122,7 @@ Provide the complete revised report.
           appendLine("**Type:** ${e.javaClass.simpleName}")
         }.renderMarkdown
       )
-      markdownTranscript?.write("\n\n---\n\n# Error\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray())
+      markdownTranscript?.write("\n\n---\n\n# Error\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
       task.update()
 
       val errorOutput = buildString {
@@ -1122,7 +1143,38 @@ Provide the complete revised report.
     }
   }
 
-  private fun getContextFiles(): String {
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          codeFiles[file.toPath()] ?: file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
+  private fun getRelatedContextFiles(): String {
     val relatedFiles = executionConfig?.related_files ?: return ""
     if (relatedFiles.isEmpty()) return ""
     log.debug("Loading ${relatedFiles.size} related context files")
@@ -1149,11 +1201,33 @@ Provide the complete revised report.
       }
     }
   }
+  private fun isTextFile(file: java.io.File): Boolean {
+    val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
+      "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
+    )
+    return textExtensions.contains(file.extension.lowercase())
+  }
+  private fun extractDocumentContent(file: java.io.File) = try {
+    file.getReader().use { reader ->
+      when (reader) {
+        is com.simiacryptus.cognotik.input.PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+        else -> reader.getText()
+      }
+    }
+  } catch (e: Exception) {
+    log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+    try {
+      file.readText()
+    } catch (e2: Exception) {
+      "Error reading file: ${e2.message}"
+    }
+  }
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()
     task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+      "Writing detailed report to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
         link.removeSuffix(
           ".md"
         )

@@ -8,16 +8,19 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+ import java.io.FileOutputStream
+ import java.time.LocalDateTime
+ import java.time.format.DateTimeFormatter
+import java.nio.file.FileSystems
+import java.nio.file.Path
 
-class EmailCampaignTask(
+ class EmailCampaignTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: EmailCampaignTaskExecutionConfigData?
 ) : AbstractTask<EmailCampaignTask.EmailCampaignTaskExecutionConfigData, TaskTypeConfig>(
@@ -76,6 +79,9 @@ class EmailCampaignTask(
 
     @Description("Number of revision passes for quality improvement")
     val revision_passes: Int = 1,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as brand context for the task")
+    val input_files: List<String>? = null,
+
 
     @Description("Related files or brand guidelines to incorporate")
     val related_files: List<String>? = null,
@@ -322,7 +328,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
       appendLine("*Developing overall campaign approach...*")
     }
     overviewTask.add(overviewContent.renderMarkdown)
-    transcript?.write(overviewContent.toByteArray())
+    transcript?.write(overviewContent.toByteArray(Charsets.UTF_8))
     task.update()
 
     val resultBuilder = StringBuilder()
@@ -330,7 +336,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
 
     try {
       // Gather context
-      val priorContext = getPriorCode(agent.executionState)
+      val priorContext = getPriorCode(agent.executionState) ?: ""
       val contextFiles = getContextFiles()
 
       if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
@@ -352,7 +358,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
             }
           }.renderMarkdown
         )
-        transcript?.write(contextTask.placeholder.toString().toByteArray())
+        transcript?.write(contextTask.placeholder.toString().toByteArray(Charsets.UTF_8))
         task.update()
       }
 
@@ -454,7 +460,7 @@ Consider:
         appendLine("**Status:** ✅ Complete")
       }
       strategyTask.add(strategyContent.renderMarkdown)
-      transcript?.write(("\n\n" + strategyContent).toByteArray())
+      transcript?.write(("\n\n" + strategyContent).toByteArray(Charsets.UTF_8))
       task.update()
 
       overviewTask.add("✅ Phase 1 Complete: Strategy developed\n".renderMarkdown)
@@ -560,7 +566,7 @@ Maintain ${executionConfig.brand_voice} voice and address ${executionConfig.targ
         appendLine("**Status:** ✅ Complete")
       }
       outlineTask.add(outlineContent.renderMarkdown)
-      transcript?.write(("\n\n" + outlineContent).toByteArray())
+      transcript?.write(("\n\n" + outlineContent).toByteArray(Charsets.UTF_8))
       task.update()
 
       overviewTask.add("✅ Phase 2 Complete: ${outlines.size} emails outlined\n".renderMarkdown)
@@ -797,7 +803,7 @@ ${if (executionConfig.include_ps) "- PS section" else ""}
           appendLine("**Status:** ✅ Complete")
         }
         emailTask.add(emailDisplay.renderMarkdown)
-        transcript?.write(("\n\n" + emailDisplay).toByteArray())
+        transcript?.write(("\n\n" + emailDisplay).toByteArray(Charsets.UTF_8))
         task.update()
 
         overviewTask.add("✅ (${emailContent.word_count} words)\n".renderMarkdown)
@@ -829,7 +835,7 @@ ${if (executionConfig.include_ps) "- PS section" else ""}
 
         repeat(executionConfig.revision_passes) { passNum ->
           log.debug("Revision pass ${passNum + 1}/${executionConfig.revision_passes}")
-          transcript?.write(("\n\n## Revision Pass ${passNum + 1}\n✅ All ${generatedEmails.size} emails revised\n").toByteArray())
+          transcript?.write(("\n\n## Revision Pass ${passNum + 1}\n✅ All ${generatedEmails.size} emails revised\n").toByteArray(Charsets.UTF_8))
 
           generatedEmails.forEachIndexed { index, email ->
             val revisionAgent = ChatAgent(
@@ -982,7 +988,7 @@ Provide the complete revised email body only.
       }
 
       finalTask.add(finalCampaign.renderMarkdown)
-      transcript?.write(("\n\n" + finalCampaign).toByteArray())
+      transcript?.write(("\n\n" + finalCampaign).toByteArray(Charsets.UTF_8))
       task.update()
 
       // Final statistics
@@ -1007,7 +1013,7 @@ Provide the complete revised email body only.
           appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
         }.renderMarkdown
       )
-      transcript?.write(("\n\n---\n\n## Campaign Complete\n\n**Statistics:**\n- Emails: ${generatedEmails.size}\n- Words: $totalWords\n- Time: ${totalTime / 1000.0}s\n").toByteArray())
+      transcript?.write(("\n\n---\n\n## Campaign Complete\n\n**Statistics:**\n- Emails: ${generatedEmails.size}\n- Words: $totalWords\n- Time: ${totalTime / 1000.0}s\n").toByteArray(Charsets.UTF_8))
       task.update()
 
       // Concise summary for resultFn
@@ -1030,7 +1036,8 @@ Provide the complete revised email body only.
       log.info("EmailCampaignTask completed: emails=${generatedEmails.size}, words=$totalWords, time=${totalTime}ms")
       transcript?.close()
 
-      task.safeComplete("Email campaign generation complete: ${generatedEmails.size} emails, $totalWords words in ${totalTime / 1000}s", log)
+      val (transcriptLink, _) = task.createFile("campaign_summary.md")
+      task.safeComplete("Email campaign generation complete: ${generatedEmails.size} emails, $totalWords words in ${totalTime / 1000}s. Full details: <a href='$transcriptLink' target='_blank'>transcript</a>", log)
       resultFn(finalResult)
 
     } catch (e: Exception) {
@@ -1068,6 +1075,31 @@ Provide the complete revised email body only.
       resultFn(errorOutput)
     }
   }
+  private fun getInputFileCode(): String = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        "# $relativePath\n\n```\n${file.readText()}\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
 
   private fun getContextFiles(): String {
     val relatedFiles = executionConfig?.related_files ?: return ""
@@ -1133,3 +1165,4 @@ Provide the complete revised email body only.
     )
   }
 }
+

@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -22,7 +23,32 @@ class DecompositionSynthesisTask(
 ) {
   val maxDescriptionLength = 1000
 
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(DecompositionSynthesisTask::class.java)
+    val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
+      "DecompositionSynthesis",
+      DecompositionSynthesisTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Decompose complex problems and synthesize solutions",
+      """
+              Decomposes complex problems into manageable subproblems, solves them, and synthesizes solutions.
+              <ul>
+                <li>Multiple decomposition strategies (functional, temporal, spatial, hierarchical)</li>
+                <li>Configurable decomposition depth</li>
+                <li>Dependency-aware subproblem solving</li>
+                <li>Solution synthesis with coherence validation</li>
+                <li>Confidence tracking at each level</li>
+                <li>Implements divide-and-conquer reasoning</li>
+              </ul>
+            """
+    )
+  }
+
   class DecompositionSynthesisTaskExecutionConfigData(
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
+    @Description("Whether to include file context in the analysis")
+    val include_file_context: Boolean = true,
     @Description("The complex problem to decompose")
     val complex_problem: String? = null,
     @Description("Decomposition strategy: 'functional', 'temporal', 'spatial', 'hierarchical'")
@@ -125,7 +151,8 @@ class DecompositionSynthesisTask(
 
   override fun promptSegment(): String {
     return """
-DecompositionSynthesis - Break down complex problems into subproblems and synthesize integrated solutions
+ DecompositionSynthesis - Break down complex problems into subproblems and synthesize integrated solutions
+  ** Optionally, list input files (supports glob patterns) to be examined for context
   ** Problem: ${executionConfig?.complex_problem?.take(100) ?: "Not specified"}
   ** Specify the complex problem to decompose
   ** Choose decomposition strategy:
@@ -164,7 +191,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     // Create tabbed display for organized output
     val tabs = TabbedDisplay(task)
     val ui = task.ui
-    val transcript = transcript(task)
+    val transcriptStream = initializeTranscript(task)
     val api = orchestrationConfig.defaultChatter ?: run {
       log.error("No default chatter available")
       task.complete("ERROR: No API available")
@@ -194,15 +221,14 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
       appendLine("⏳ Starting decomposition analysis...")
     }
     overviewTask.add(overviewContent.renderMarkdown)
-    transcript?.write(overviewContent.toByteArray())
-    transcript?.flush()
+    transcriptStream?.let { writeToTranscript(it, overviewContent) }
     task.update()
 
     try {
       // Step 3: Build context from related files and dependencies
       log.debug("Building context from related files and dependencies")
       // Get context from related files and dependencies
-      val context = buildContext(agent)
+      val context = buildContext(agent, root)
       // Context tab
       val contextTask = ui.newTask(false)
       tabs["Context"] = contextTask.placeholder
@@ -215,12 +241,11 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         appendLine()
         appendLine(context)
       }.renderMarkdown)
-      transcript?.write(buildString {
+      transcriptStream?.let { writeToTranscript(it, buildString {
         appendLine("# Task Context")
         appendLine()
         appendLine(context)
-      }.toByteArray())
-      transcript?.flush()
+      }) }
       task.update()
 
       // Update overview with context info
@@ -229,7 +254,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         appendLine("✅ Context built successfully")
         appendLine()
       }.renderMarkdown)
-      transcript?.write("\n✅ Context built successfully\n\n".toByteArray())
+      transcriptStream?.let { writeToTranscript(it, "\n✅ Context built successfully\n\n") }
       task.update()
       // Step 4: Decompose the problem
       // Decomposition tab
@@ -244,13 +269,12 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         appendLine("**Max Depth:** ${executionConfig.max_depth}")
       }.renderMarkdown)
       task.update()
-      transcript?.write(buildString {
+      transcriptStream?.let { writeToTranscript(it, buildString {
         appendLine("# Problem Decomposition")
         appendLine()
         appendLine("**Strategy:** ${executionConfig.decomposition_strategy}")
         appendLine("**Max Depth:** ${executionConfig.max_depth}")
-      }.toByteArray())
-      transcript?.flush()
+      }) }
       log.info("Starting problem decomposition with strategy: ${executionConfig.decomposition_strategy}")
 
       val decomposition = decomposeProblem(
@@ -293,7 +317,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         appendLine()
       }.renderMarkdown)
       task.update()
-      transcript?.write(buildString {
+      transcriptStream?.let { writeToTranscript(it, buildString {
         appendLine()
         appendLine("## Decomposition Results")
         appendLine()
@@ -311,8 +335,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         } else {
           decomposition.dependencies.entries.forEach { (id, deps) -> appendLine("- **$id** → ${deps.joinToString(", ")}") }
         }
-      }.toByteArray())
-      transcript?.flush()
+      }) }
       // Step 5: Solve all subproblems
 
       // Update overview
@@ -320,7 +343,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         appendLine("✅ Decomposition complete: ${decomposition.subproblems.size} subproblems identified")
         appendLine()
       }.renderMarkdown)
-      transcript?.write("\n✅ Decomposition complete: ${decomposition.subproblems.size} subproblems\n\n".toByteArray())
+      transcriptStream?.let { writeToTranscript(it, "\n✅ Decomposition complete: ${decomposition.subproblems.size} subproblems\n\n") }
       task.update()
 
       // Subproblem Solutions tab
@@ -333,12 +356,11 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         appendLine()
       }.renderMarkdown)
       task.update()
-      transcript?.write(buildString {
+      transcriptStream?.let { writeToTranscript(it, buildString {
         appendLine("# Subproblem Solutions")
         appendLine()
         appendLine("Solving ${decomposition.subproblems.size} subproblems...")
-      }.toByteArray())
-      transcript?.flush()
+      }) }
 
       val solvedCount = AtomicInteger(0)
       log.info("Starting to solve ${decomposition.subproblems.size} subproblems")
@@ -364,15 +386,14 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
             appendLine()
           }.renderMarkdown)
           task.update()
-          transcript?.write(buildString {
+          transcriptStream?.let { writeToTranscript(it, buildString {
             appendLine()
             appendLine("## ${count}. ${subproblemId}")
             appendLine()
             appendLine("**Confidence:** ${(solution.confidence * 100).toInt()}%")
             appendLine()
             appendLine(solution.solution)
-          }.toByteArray())
-          transcript?.flush()
+          }) }
 
           // Update overview
           overviewTask.add(buildString {
@@ -391,11 +412,10 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         appendLine()
       }.renderMarkdown)
       task.update()
-      transcript?.write(buildString {
+      transcriptStream?.let { writeToTranscript(it, buildString {
         appendLine()
         appendLine("✅ All subproblems solved! Average confidence: ${(solutions.map { it.confidence }.average() * 100).toInt()}%")
-      }.toByteArray())
-      transcript?.flush()
+      }) }
       // Step 6: Synthesize solution (if requested)
 
       // Update overview
@@ -403,7 +423,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         appendLine("✅ All ${solutions.size} subproblems solved")
         appendLine()
       }.renderMarkdown)
-      transcript?.write("\n✅ All ${solutions.size} subproblems solved\n\n".toByteArray())
+      transcriptStream?.let { writeToTranscript(it, "\n✅ All ${solutions.size} subproblems solved\n\n") }
       task.update()
 
       val finalResult = if (executionConfig.synthesize_solution) {
@@ -417,12 +437,11 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
           appendLine()
         }.renderMarkdown)
         task.update()
-        transcript?.write(buildString {
+        transcriptStream?.let { writeToTranscript(it, buildString {
           appendLine("# Solution Synthesis")
           appendLine()
           appendLine("Integrating ${solutions.size} subproblem solutions...")
-        }.toByteArray())
-        transcript?.flush()
+        }) }
         log.info("Starting solution synthesis from ${solutions.size} subproblem solutions")
         val synthesized = synthesizeSolution(
           problem = problem,
@@ -451,7 +470,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
           appendLine()
         }.renderMarkdown)
         task.update()
-        transcript?.write(buildString {
+        transcriptStream?.let { writeToTranscript(it, buildString {
           appendLine()
           appendLine("## Synthesized Solution")
           appendLine()
@@ -459,8 +478,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
           appendLine("**Confidence:** ${(synthesized.confidence * 100).toInt()}%")
           appendLine()
           appendLine(synthesized.solution)
-        }.toByteArray())
-        transcript?.flush()
+        }) }
 
         // Update overview
         overviewTask.add(buildString {
@@ -468,7 +486,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
           appendLine()
         }.renderMarkdown)
         task.update()
-        transcript?.write("\n✅ Solution synthesized (confidence: ${(synthesized.confidence * 100).toInt()}%)\n\n".toByteArray())
+        transcriptStream?.let { writeToTranscript(it, "\n✅ Solution synthesized (confidence: ${(synthesized.confidence * 100).toInt()}%)\n\n") }
         // Step 7: Validate coherence (if requested)
 
         // Validate coherence if requested
@@ -483,11 +501,10 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
             appendLine()
           }.renderMarkdown)
           task.update()
-          transcript?.write(buildString {
+          transcriptStream?.let { writeToTranscript(it, buildString {
             appendLine("# Coherence Validation")
             appendLine()
-          }.toByteArray())
-          transcript?.flush()
+          }) }
           log.info("Starting coherence validation")
           val validation = validateCoherence(
             problem = problem,
@@ -529,7 +546,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
             }
           }.renderMarkdown)
           task.update()
-          transcript?.write(buildString {
+          transcriptStream?.let { writeToTranscript(it, buildString {
             appendLine()
             appendLine("## Validation Results")
             appendLine()
@@ -544,8 +561,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
               appendLine("### Suggestions (${validation.suggestions.size})")
               validation.suggestions.forEach { appendLine("- $it") }
             }
-          }.toByteArray())
-          transcript?.flush()
+          }) }
 
           // Update overview
           overviewTask.add(buildString {
@@ -553,7 +569,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
             appendLine()
           }.renderMarkdown)
           task.update()
-          transcript?.write("\n✅ Validation complete\n\n".toByteArray())
+          transcriptStream?.let { writeToTranscript(it, "\n✅ Validation complete\n\n") }
         }
 
         synthesized.solution
@@ -587,7 +603,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         appendLine()
       }.renderMarkdown)
       task.update()
-      transcript?.write(buildString {
+      transcriptStream?.let { writeToTranscript(it, buildString {
         appendLine()
         appendLine("---")
         appendLine()
@@ -597,8 +613,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
         appendLine("**Subproblems:** ${decomposition.subproblems.size}")
         appendLine("**Solutions:** ${solutions.size}")
         appendLine("**Avg Confidence:** ${(solutions.map { it.confidence }.average() * 100).toInt()}%")
-      }.toByteArray())
-      transcript?.flush()
+      }) }
 
       val summary =
         "Decomposition & Synthesis completed: ${decomposition.subproblems.size} subproblems, ${solutions.size} solutions in ${totalTime / 1000}s"
@@ -606,7 +621,7 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
       resultFn(finalResult)
 
     } catch (e: Exception) {
-      transcript?.write("\n\n## ERROR\n\n${e.message}\n".toByteArray())
+      transcriptStream?.let { writeToTranscript(it, "\n\n## ERROR\n\n${e.message}\n") }
       log.error("Error in decomposition synthesis", e)
       task.error(e)
 
@@ -625,16 +640,22 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
 
       resultFn("ERROR: ${e.message}")
     } finally {
-      transcript?.flush()
-      transcript?.close()
+      transcriptStream?.flush()
+      transcriptStream?.close()
       log.debug("Transcript closed")
     }
   }
 
-  private fun buildContext(agent: TaskOrchestrator): String {
+  private fun buildContext(agent: TaskOrchestrator, root: java.nio.file.Path): String {
     log.debug("Building context from related files and prior code")
     val priorCode = getPriorCode(agent.executionState)
     val relatedFiles = executionConfig?.related_files?.joinToString("\n") { "- $it" } ?: ""
+    val fileContext = if (executionConfig?.include_file_context == true) {
+      getInputFileCode(root)
+    } else {
+      ""
+    }
+
 
     return """
             |## Context
@@ -642,9 +663,62 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
             |### Related Files
             |$relatedFiles
             |
+            |### Input Files
+            |$fileContext
+            |
             |### Previous Task Results
             |$priorCode
         """.trimMargin()
+  }
+  private fun getInputFileCode(root: java.nio.file.Path): String = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = task.createFile("decomposition_transcript.md")
+      val transcriptStream = file?.outputStream()
+      task.complete(
+        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
+      log.info("Initialized transcript file: $link")
+      transcriptStream
+    } catch (e: Exception) {
+      log.error("Failed to initialize transcript", e)
+      null
+    }
+  }
+  private fun writeToTranscript(stream: FileOutputStream, content: String) {
+    try {
+      stream.write(content.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+      stream.flush()
+    } catch (e: Exception) {
+      log.error("Failed to write to transcript", e)
+    }
   }
 
   private fun decomposeProblem(
@@ -692,7 +766,8 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     val decomposition = decompositionAgent.answer(listOf(problem)).obj
     // Validate the decomposition
     decomposition.validate()?.let { error ->
-      throw ValidatedObject.ValidationError(error, decomposition)
+      log.error("Decomposition validation failed: $error")
+      throw IllegalArgumentException("Invalid decomposition: $error")
     }
     
     return decomposition
@@ -773,7 +848,8 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
       val solution = solutionAgent.answer(listOf(subproblem.description)).obj
       // Validate the solution
       solution.validate()?.let { error ->
-        throw ValidatedObject.ValidationError(error, solution)
+        log.error("Solution validation failed for ${subproblem.id}: $error")
+        throw IllegalArgumentException("Invalid solution for ${subproblem.id}: $error")
       }
 
       val finalSolution = solution.copy(subproblem_id = subproblem.id)
@@ -882,7 +958,8 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     val synthesized: SynthesizedSolution = synthesisAgent.answer(listOf(problem)).obj
     // Validate the synthesized solution
     synthesized.validate()?.let { error ->
-      throw ValidatedObject.ValidationError(error, synthesized)
+      log.error("Synthesis validation failed: $error")
+      throw IllegalArgumentException("Invalid synthesis: $error")
     }
     
     return synthesized!!
@@ -930,7 +1007,8 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
     val validation: CoherenceValidation = validationAgent.answer(listOf(synthesized.solution)).obj
     // Validate the validation result
     validation.validate()?.let { error ->
-      throw ValidatedObject.ValidationError(error, validation)
+      log.error("Validation result validation failed: $error")
+      throw IllegalArgumentException("Invalid validation result: $error")
     }
     
     return validation!!
@@ -949,24 +1027,4 @@ DecompositionSynthesis - Break down complex problems into subproblems and synthe
   }
 
 
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(DecompositionSynthesisTask::class.java)
-    val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
-      "DecompositionSynthesis",
-      DecompositionSynthesisTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Decompose complex problems and synthesize solutions",
-      """
-              Decomposes complex problems into manageable subproblems, solves them, and synthesizes solutions.
-              <ul>
-                <li>Multiple decomposition strategies (functional, temporal, spatial, hierarchical)</li>
-                <li>Configurable decomposition depth</li>
-                <li>Dependency-aware subproblem solving</li>
-                <li>Solution synthesis with coherence validation</li>
-                <li>Confidence tracking at each level</li>
-                <li>Implements divide-and-conquer reasoning</li>
-              </ul>
-            """
-    )
-  }
 }

@@ -3,7 +3,9 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -22,7 +24,55 @@ class GameTheoryTask(
   planTask
 ) {
   val maxOutputLengthPerField = 10000
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
+    val GameTheory = TaskType(
+      "GameTheory",
+      GameTheoryTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Analyze strategic interactions using game theory",
+      """
+              Performs comprehensive game theory analysis of strategic situations.
+              <ul>
+                <li>Analyzes game structure and player strategies</li>
+                <li>Constructs payoff matrices for strategy combinations</li>
+                <li>Identifies Nash equilibria (pure and mixed strategies)</li>
+                <li>Analyzes dominant and dominated strategies</li>
+                <li>Finds Pareto optimal outcomes</li>
+                <li>Supports repeated game analysis with trigger strategies</li>
+                <li>Provides strategic recommendations for each player</li>
+                <li>Handles cooperative, non-cooperative, zero-sum, and sequential games</li>
+                <li>Useful for competitive analysis, negotiation, and strategic planning</li>
+              </ul>
+            """
+    )
+    private val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs",
+      "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml",
+      "yml", "properties", "gradle", "maven"
+    )
+    fun isTextFile(file: java.io.File): Boolean {
+      return textExtensions.contains(file.extension.lowercase())
+    }
+    fun extractDocumentContent(file: java.io.File) = try {
+      file.getReader().use { reader ->
+        when (reader) {
+          is com.simiacryptus.cognotik.input.PaginatedDocumentReader ->
+            reader.getText(0, reader.getPageCount())
+          else -> reader.getText()
+        }
+      }
+    } catch (e: Exception) {
+      log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+      try {
+        file.readText()
+      } catch (e2: Exception) {
+        "Error reading file: ${e2.message}"
+      }
+    }
 
+
+  }
   data class GameAnalysis(
     val game_type: String? = null,
     val players: List<String>? = null,
@@ -33,8 +83,9 @@ class GameTheoryTask(
     val pareto_optimal_outcomes: List<String>? = null,
     val recommendations: Map<String, String>? = null
   )
+  protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
 
-  class GameTheoryTaskExecutionConfigData(
+ class GameTheoryTaskExecutionConfigData(
     @Description("The strategic situation or game to analyze")
     val game_scenario: String? = null,
     @Description("List of players/agents in the game")
@@ -59,6 +110,8 @@ class GameTheoryTask(
     val iterations: Int = 10,
     @Description("Additional context or constraints")
     val additional_context: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -123,6 +176,7 @@ GameTheory - Analyze strategic interactions using game theory
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting GameTheory task for scenario: ${executionConfig?.game_scenario}")
+    val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
 
     val gameScenario = executionConfig?.game_scenario
     if (gameScenario.isNullOrBlank()) {
@@ -142,7 +196,6 @@ GameTheory - Analyze strategic interactions using game theory
       return
     }
 
-    val toInput = { it: String -> listOf(it) }
     val ui = task.ui
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
     val transcript = transcript(task)
@@ -155,7 +208,7 @@ GameTheory - Analyze strategic interactions using game theory
 
     try {
       transcript?.write("# Game Theory Analysis\n\n".toByteArray())
-      transcript?.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+      transcript?.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
 
 
       var overviewTaskStatus = overviewTask.add(
@@ -796,6 +849,36 @@ Provide this in a clear, structured format.
       resultFn("ERROR: Game theory analysis failed - ${e.message}")
     }
   }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          codeFiles[file.toPath()] ?: file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
 
   private fun buildStructurePrompt(
     gameScenario: String,
@@ -859,41 +942,15 @@ Provide a comprehensive analysis of the game structure.
 Generate the game structure analysis now:
         """.trimIndent()
   }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()
     task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+          "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+          "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
     )
     return markdownTranscript
-  }
-
-
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
-    val GameTheory = TaskType(
-      "GameTheory",
-      GameTheoryTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Analyze strategic interactions using game theory",
-      """
-              Performs comprehensive game theory analysis of strategic situations.
-              <ul>
-                <li>Analyzes game structure and player strategies</li>
-                <li>Constructs payoff matrices for strategy combinations</li>
-                <li>Identifies Nash equilibria (pure and mixed strategies)</li>
-                <li>Analyzes dominant and dominated strategies</li>
-                <li>Finds Pareto optimal outcomes</li>
-                <li>Supports repeated game analysis with trigger strategies</li>
-                <li>Provides strategic recommendations for each player</li>
-                <li>Handles cooperative, non-cooperative, zero-sum, and sequential games</li>
-                <li>Useful for competitive analysis, negotiation, and strategic planning</li>
-              </ul>
-            """
-    )
   }
 }

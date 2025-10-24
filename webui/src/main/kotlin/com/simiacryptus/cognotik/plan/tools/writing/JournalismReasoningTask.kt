@@ -8,12 +8,15 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
+import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -26,10 +29,36 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
 ) {
 
   val maxDescriptionLength = 100
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(JournalismReasoningTask::class.java)
+    val JournalismReasoning = TaskType(
+      "JournalismReasoning",
+      JournalismReasoningTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Investigate stories through journalistic principles and methods",
+      """
+              Analyzes stories using professional journalism standards and practices.
+              <ul>
+                <li>Verifies facts and checks claims against evidence</li>
+                <li>Identifies multiple perspectives and source credibility</li>
+                <li>Analyzes context, background, and broader implications</li>
+                <li>Detects potential biases and conflicts of interest</li>
+                <li>Finds information gaps and unanswered questions</li>
+                <li>Explores alternative story angles and approaches</li>
+                <li>Assesses newsworthiness and public interest</li>
+                <li>Useful for investigative reporting, fact-checking, editorial planning</li>
+                <li>Generates structured journalistic analysis with verified facts</li>
+              </ul>
+            """
+    )
+  }
 
   open class JournalismReasoningTaskExecutionConfigData(
     @Description("The story topic or event to investigate")
     val story_topic: String? = null,
+
+    @Description("Input files or documents to inform the investigation (glob patterns)")
+    val input_files: List<String>? = null,
 
     @Description("Journalism elements to consider (who, what, when, where, why, how)")
     val journalism_elements: Map<String, Any>? = null,
@@ -55,6 +84,9 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     @Description("Whether to assess newsworthiness and public interest")
     val assess_newsworthiness: Boolean = true,
 
+    @Description("Whether to include file content in the analysis")
+    val include_file_content: Boolean = false,
+
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : TaskExecutionConfig(
@@ -66,6 +98,9 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     override fun validate(): String? {
       if (story_topic.isNullOrBlank()) {
         return "Story topic must not be null or blank"
+      }
+      if (input_files != null && input_files.isEmpty()) {
+        return "input_files must not be empty if specified"
       }
       if (alternative_angles < 1 || alternative_angles > 10) {
         return "Alternative angles must be between 1 and 10, got: $alternative_angles"
@@ -222,6 +257,31 @@ JournalismReasoning - Investigate stories through journalistic principles and me
     )
     return markdownTranscript
   }
+  private fun getInputFileContent(): String {
+    val inputFiles = executionConfig?.input_files ?: return ""
+    if (inputFiles.isEmpty() || !executionConfig?.include_file_content!!) {
+      return ""
+    }
+    return inputFiles
+      .flatMap { pattern: String ->
+        val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+        (FileSelectionUtils.filteredWalk(root.toFile()) {
+          when {
+            FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+            matcher.matches(root.relativize(it.toPath())) -> true
+            it.isDirectory -> true
+            else -> false
+          }
+        })
+      }.filter { file ->
+        file.isFile && file.exists()
+      }
+      .distinct()
+      .sortedBy { it }
+      .joinToString("\n\n") { file ->
+        "# ${root.relativize(file.toPath())}\n\n```\n${file.readText()}\n```"
+      }
+  }
 
 
   override fun run(
@@ -233,7 +293,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting JournalismReasoningTask for story: '${executionConfig?.story_topic}'")
-    // Initialize transcript
+    // Initialize detailed output file
     val transcriptStream = transcript(task)
     val transcriptWriter = transcriptStream?.bufferedWriter()
     transcriptWriter?.use { writer ->
@@ -301,6 +361,15 @@ JournalismReasoning - Investigate stories through journalistic principles and me
       writer.appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
       writer.appendLine()
       writer.flush()
+      // Include file content if requested
+      val fileContent = getInputFileContent()
+      if (fileContent.isNotBlank()) {
+        writer.appendLine("## Input Files")
+        writer.appendLine()
+        writer.appendLine(fileContent)
+        writer.appendLine()
+        writer.flush()
+      }
 
       overviewTask.add(overviewContent.renderMarkdown)
     task.update()
@@ -1080,8 +1149,19 @@ Be concise, authoritative, and focused on journalistic value.
       val finalResult = resultBuilder.toString()
       log.info("JournalismReasoningTask completed: total_time=${totalTime}ms, output_size=${finalResult.length} chars")
 
-      task.safeComplete("Journalism investigation complete in ${totalTime / 1000}s. Generated ${finalResult.length} characters of analysis.", log)
-      resultFn(finalResult)
+      // Write full analysis to file
+      val (link, file) = task.createFile("journalism_analysis.md")
+      file?.writeText(finalResult, StandardCharsets.UTF_8)
+      
+      val summaryMessage = buildString {
+        appendLine("✅ Journalism investigation complete in ${totalTime / 1000}s")
+        appendLine()
+        appendLine("📄 Full analysis: <a href='$link' target='_blank'>$link</a>")
+        appendLine("📊 Transcript: <a href='${link.removeSuffix(".md")}_transcript.md' target='_blank'>transcript</a>")
+      }
+      
+      task.safeComplete(summaryMessage, log)
+      resultFn(summaryMessage)
 
     } catch (e: Exception) {
       log.error("Error during journalism reasoning", e)
@@ -1126,27 +1206,4 @@ Be concise, authoritative, and focused on journalistic value.
     transcriptStream?.close()
   }
 
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(JournalismReasoningTask::class.java)
-    val JournalismReasoning = TaskType(
-      "JournalismReasoning",
-      JournalismReasoningTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Investigate stories through journalistic principles and methods",
-      """
-              Analyzes stories using professional journalism standards and practices.
-              <ul>
-                <li>Verifies facts and checks claims against evidence</li>
-                <li>Identifies multiple perspectives and source credibility</li>
-                <li>Analyzes context, background, and broader implications</li>
-                <li>Detects potential biases and conflicts of interest</li>
-                <li>Finds information gaps and unanswered questions</li>
-                <li>Explores alternative story angles and approaches</li>
-                <li>Assesses newsworthiness and public interest</li>
-                <li>Useful for investigative reporting, fact-checking, editorial planning</li>
-                <li>Generates structured journalistic analysis with verified facts</li>
-              </ul>
-            """
-    )
-  }
 }

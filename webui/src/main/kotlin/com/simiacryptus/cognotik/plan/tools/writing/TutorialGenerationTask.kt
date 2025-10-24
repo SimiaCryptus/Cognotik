@@ -16,6 +16,10 @@ import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
+import java.io.File
+
+
 class TutorialGenerationTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: TutorialGenerationTaskExecutionConfigData?
@@ -63,6 +67,9 @@ class TutorialGenerationTask(
 
     @Description("Related files or documentation to reference")
     val related_files: List<String>? = null,
+    @Description("Optional input files to use as context (supports glob patterns, e.g. **/*.kt)")
+    val input_files: List<String>? = null,
+
 
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -257,6 +264,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
     val startTime = System.currentTimeMillis()
     log.info("Starting TutorialGenerationTask for goal: '${executionConfig?.goal}'")
     val transcript = transcript(task)
+    val tutorialOutputFile = createTutorialOutputFile(task)
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
@@ -305,6 +313,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
       appendLine("- Include Troubleshooting: ${if (executionConfig.include_troubleshooting) "✓" else "✗"}")
       appendLine()
       appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+      appendLine("**Input Messages:** ${messages.size}")
       appendLine()
       appendLine("---")
       appendLine()
@@ -323,6 +332,12 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
       // Gather context
       val priorContext = getPriorCode(agent.executionState)
       val contextFiles = getContextFiles()
+      val inputFileContent = getInputFileCode()
+      // Combine all context
+      val allContext = buildString {
+        if (inputFileContent.isNotBlank()) appendLine(inputFileContent)
+        if (contextFiles.isNotBlank()) appendLine(contextFiles)
+      }
 
       if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
         log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
@@ -332,6 +347,11 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
           buildString {
             appendLine("# Context & Resources")
             appendLine()
+            if (inputFileContent.isNotBlank()) {
+              appendLine("## Input Files")
+              appendLine(inputFileContent.truncateForDisplay(2000))
+              appendLine()
+            }
             if (priorContext.isNotBlank()) {
               appendLine("## Prior Context")
               appendLine(priorContext.truncateForDisplay(2000))
@@ -378,6 +398,8 @@ Skill Level: ${executionConfig.skill_level}
 Estimated Duration: ${executionConfig.estimated_duration} minutes
 Target Step Count: ${executionConfig.target_step_count}
 
+${if (inputFileContent.isNotBlank()) "Input Files:\n${inputFileContent.truncateForDisplay(3000)}\n" else ""}
+${if (messages.isNotEmpty()) "User Messages:\n${messages.joinToString("\n").truncateForDisplay(2000)}\n" else ""}
 ${if (priorContext.isNotBlank()) "Context:\n${priorContext.truncateForDisplay(3000)}\n" else ""}
 ${if (contextFiles.isNotBlank()) "Related Files:\n${contextFiles.truncateForDisplay(3000)}\n" else ""}
 
@@ -524,6 +546,17 @@ Ensure the outline:
       overviewTask.add("\n### Phase 2: Writing Steps\n*Developing detailed step-by-step instructions...*\n".renderMarkdown)
       task.update()
       transcript?.write("## Phase 2: Writing Steps\n\n".toByteArray())
+    transcript?.write("Input Context:\n".toByteArray())
+    if (messages.isNotEmpty()) {
+      transcript?.write("**Messages:** ${messages.size} items\n".toByteArray())
+      messages.forEach { msg ->
+        transcript?.write("- ${msg.truncateForDisplay(100)}\n".toByteArray())
+      }
+      transcript?.write("\n".toByteArray())
+    }
+    if (inputFileContent.isNotBlank()) {
+      transcript?.write("**Input Files Loaded:** ${inputFileContent.length} characters\n\n".toByteArray())
+    }
       transcript?.write("Developing detailed step-by-step instructions...\n\n".toByteArray())
 
 
@@ -1063,6 +1096,7 @@ Make suggestions:
       }
 
       finalTask.add(finalTutorial.renderMarkdown)
+      tutorialOutputFile?.write(finalTutorial.toByteArray(Charsets.UTF_8))
       task.update()
 
       // Final statistics
@@ -1087,6 +1121,10 @@ Make suggestions:
           appendLine()
           appendLine("## ✅ Generation Complete")
           appendLine()
+          appendLine("**Output Files:**")
+          appendLine("- [Complete Tutorial](tutorial.md)")
+          appendLine("- [Transcript](transcript.md)")
+          appendLine()
           appendLine("**Statistics:**")
           appendLine("- Total Steps: ${tutorialSteps.size}")
           appendLine("- Prerequisites: ${outline.prerequisites.size}")
@@ -1103,23 +1141,38 @@ Make suggestions:
       )
       task.update()
 
+      // Write final tutorial to file
+      tutorialOutputFile?.flush()
+      tutorialOutputFile?.close()
+      
       // Concise summary for resultFn
       val finalResult = buildString {
-        appendLine("# Tutorial Generation Summary: ${outline.title}")
+        appendLine("# ✅ Tutorial Generated: ${outline.title}")
         appendLine()
-        appendLine("A complete tutorial with **${tutorialSteps.size} steps** was generated in **${totalTime / 1000.0}s**.")
+        appendLine("A comprehensive tutorial with **${tutorialSteps.size} steps** was successfully generated.")
+        appendLine()
+        appendLine("## Summary")
         appendLine()
         appendLine("**Goal:** $goal")
-        appendLine()
+        appendLine("**Platform:** ${executionConfig.target_platform}")
+        appendLine("**Skill Level:** ${executionConfig.skill_level}")
+        appendLine("**Estimated Duration:** ${outline.estimated_time} minutes")
         appendLine("**Key Features:**")
         appendLine("- ${outline.prerequisites.size} prerequisites identified")
+        appendLine("- ${tutorialSteps.size} detailed steps with explanations")
         appendLine("- ${tutorialSteps.sumOf { it.code_blocks.size }} code examples")
+        appendLine("- ${tutorialSteps.sumOf { it.validation_steps.size }} validation steps")
         appendLine("- Estimated completion time: ${outline.estimated_time} minutes")
         if (troubleshootingSection != null) {
           appendLine("- ${troubleshootingSection.issues.size} troubleshooting scenarios")
         }
         appendLine()
-        appendLine("> The complete tutorial is available in the Complete Tutorial tab for review.")
+        appendLine("## Output Files")
+        appendLine()
+        appendLine("- **Complete Tutorial:** [tutorial.md](tutorial.md)")
+        appendLine("- **Transcript:** [transcript.md](transcript.md)")
+        appendLine()
+        appendLine("**Generation Time:** ${totalTime / 1000.0}s")
       }
 
       log.info("TutorialGenerationTask completed: steps=${tutorialSteps.size}, time=${totalTime}ms")
@@ -1148,6 +1201,7 @@ Make suggestions:
         }.renderMarkdown
       )
       task.update()
+      tutorialOutputFile?.close()
 
       val errorOutput = buildString {
         appendLine("# Error in Tutorial Generation")
@@ -1165,6 +1219,17 @@ Make suggestions:
       resultFn(errorOutput)
     }
   }
+  private fun createTutorialOutputFile(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = task.createFile("tutorial.md")
+      log.info("Created tutorial output file: $link")
+      file?.outputStream()
+    } catch (e: Exception) {
+      log.error("Failed to create tutorial output file", e)
+      null
+    }
+  }
+
 
   private fun getContextFiles(): String {
     val relatedFiles = executionConfig?.related_files ?: return ""
@@ -1189,6 +1254,32 @@ Make suggestions:
           }
         } catch (e: Exception) {
           log.warn("Error reading file: $file", e)
+        }
+      }
+    }
+  }
+  private fun getInputFileCode(): String {
+    val inputFiles = executionConfig?.input_files ?: return ""
+    if (inputFiles.isEmpty()) return ""
+    log.debug("Loading ${inputFiles.size} input files")
+    return buildString {
+      appendLine("## Input Files Context")
+      appendLine()
+      inputFiles.forEach { pattern ->
+        try {
+          val filePath = root.resolve(pattern)
+          if (filePath.toFile().exists()) {
+            log.debug("Successfully loaded input file: $pattern")
+            appendLine("### $pattern")
+            appendLine("```")
+            appendLine(filePath.toFile().readText().truncateForDisplay(2000))
+            appendLine("```")
+            appendLine()
+          } else {
+            log.warn("Input file not found: $pattern")
+          }
+        } catch (e: Exception) {
+          log.warn("Error reading input file: $pattern", e)
         }
       }
     }

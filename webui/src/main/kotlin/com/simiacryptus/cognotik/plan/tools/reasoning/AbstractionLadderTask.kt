@@ -24,6 +24,7 @@ class AbstractionLadderTask(
     @Description("Direction to traverse: 'up' for abstraction (generalizations), 'down' for concretization (specific implementations), 'both' for bidirectional analysis") val direction: String = "both",
     @Description("Number of abstraction levels to traverse in each direction (1-5 recommended)") val levels: Int = 3,
     @Description("Whether to identify design patterns, anti-patterns, and refactoring opportunities at each level") val identify_patterns: Boolean = true,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task") val input_files: List<String>? = null,
     @Description("Additional files for context (e.g., existing code, related implementations)") val related_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -68,6 +69,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
   override fun run(
     agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig
   ) {
+    var detailedOutputFile: FileOutputStream? = null
     val startTime = System.currentTimeMillis()
     log.info("Starting Abstraction Ladder Analysis - Concept: ${executionConfig?.concrete_concept?.truncateForDisplay(100)}, Direction: ${executionConfig?.direction}, Levels: ${executionConfig?.levels}")
     // Validate configuration
@@ -100,11 +102,17 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
 
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
-    // Initialize UI with tabbed display for better organization
-    val transcript = transcript(task)
-    transcript?.write(
+    // Initialize detailed output file
+    detailedOutputFile = initializeDetailedOutput(task)
+    detailedOutputFile?.write(
       """
       # Abstraction Ladder Analysis Transcript
+      **Concept:** $concept  
+      **Direction:** $direction  
+      **Levels:** $levels  
+      **Pattern Analysis:** ${if (identifyPatterns) "Enabled" else "Disabled"}
+      ---
+      
       **Concept:** $concept  
       **Direction:** $direction  
       **Levels:** $levels  
@@ -114,7 +122,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
 
     val tabbedDisplay = TabbedDisplay(task)
 
-    // Overview tab
+    // Overview tab with input context
     val overviewTask = task.ui.newTask(false).apply {
       tabbedDisplay["Overview"] = placeholder
       add(
@@ -129,6 +137,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         )
       )
     }
+    val inputFileContent = getInputFileContent()
 
 
     val contextFiles = getContextFiles()
@@ -146,14 +155,15 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
           levels = levels,
           identifyPatterns = identifyPatterns,
           contextFiles = contextFiles,
+          inputFileContent = inputFileContent,
           priorCode = priorCode,
           api = api,
           task = upwardTab
         )
         result.append("## Upward Abstraction (Generalizations)\n\n")
         result.append(upwardAnalysis)
-        transcript?.write("\n## Upward Abstraction (Generalizations)\n\n".toByteArray())
-        transcript?.write(upwardAnalysis.toByteArray())
+        detailedOutputFile?.write("\n## Upward Abstraction (Generalizations)\n\n".toByteArray())
+        detailedOutputFile?.write(upwardAnalysis.toByteArray())
         result.append("\n\n")
         upwardTab.add(MarkdownUtil.renderMarkdown("✅ Upward analysis complete", ui = task.ui))
         upwardTab.complete()
@@ -168,14 +178,15 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
           levels = levels,
           identifyPatterns = identifyPatterns,
           contextFiles = contextFiles,
+          inputFileContent = inputFileContent,
           priorCode = priorCode,
           api = api,
           task = downwardTab
         )
         result.append("## Downward Concretization (Specific Implementations)\n\n")
         result.append(downwardAnalysis)
-        transcript?.write("\n\n## Downward Concretization (Specific Implementations)\n\n".toByteArray())
-        transcript?.write(downwardAnalysis.toByteArray())
+        detailedOutputFile?.write("\n\n## Downward Concretization (Specific Implementations)\n\n".toByteArray())
+        detailedOutputFile?.write(downwardAnalysis.toByteArray())
         result.append("\n\n")
         downwardTab.add(MarkdownUtil.renderMarkdown("✅ Downward analysis complete", ui = task.ui))
         downwardTab.complete()
@@ -194,8 +205,8 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         )
         result.append("## Pattern Analysis & Recommendations\n\n")
         result.append(patternSummary)
-        transcript?.write("\n\n## Pattern Analysis & Recommendations\n\n".toByteArray())
-        transcript?.write(patternSummary.toByteArray())
+        detailedOutputFile?.write("\n\n## Pattern Analysis & Recommendations\n\n".toByteArray())
+        detailedOutputFile?.write(patternSummary.toByteArray())
         patternTab.add(MarkdownUtil.renderMarkdown("✅ Pattern analysis complete", ui = task.ui))
         patternTab.complete()
       }
@@ -220,14 +231,15 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
 
       val duration = System.currentTimeMillis() - startTime
       log.info("Abstraction Ladder Analysis completed successfully - Concept: ${concept.truncateForDisplay(100)}, Levels: $levels")
-      transcript?.close()
+      detailedOutputFile?.close()
       task.safeComplete("Abstraction ladder analysis complete for '${concept.truncateForDisplay(100)}' with $levels levels in $direction direction(s) (${duration}ms)", log)
-      resultFn(result.toString())
+      val summaryMessage = generateSummaryMessage(task, duration, concept, levels, direction)
+      resultFn(summaryMessage)
 
     } catch (e: Exception) {
       val duration = System.currentTimeMillis() - startTime
       log.error("Error in abstraction ladder analysis after ${duration}ms", e)
-      transcript?.close()
+      detailedOutputFile?.close()
       task.error(e)
       task.add(
         MarkdownUtil.renderMarkdown(
@@ -250,6 +262,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     levels: Int,
     identifyPatterns: Boolean,
     contextFiles: String,
+    inputFileContent: String,
     priorCode: String,
     api: ChatInterface,
     task: SessionTask
@@ -258,6 +271,9 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
  Analyze the following concept by moving UP the abstraction ladder.
  Start with the concrete concept and identify increasingly general abstractions.
 
+ ## Input Files:
+ $inputFileContent
+ 
  ## Concrete Concept:
  $concept
 
@@ -309,6 +325,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     levels: Int,
     identifyPatterns: Boolean,
     contextFiles: String,
+    inputFileContent: String,
     priorCode: String,
     api: ChatInterface,
     task: SessionTask
@@ -317,6 +334,9 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
  Analyze the following concept by moving DOWN the abstraction ladder.
  Start with the concept and identify increasingly specific/concrete implementations.
 
+ ## Input Files:
+ $inputFileContent
+ 
  ## Starting Concept:
  $concept
 
@@ -425,6 +445,60 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
       }
     }
   }
+  private fun getInputFileContent(): String {
+    val inputFiles = executionConfig?.input_files ?: emptyList()
+    if (inputFiles.isEmpty()) return "No input files provided."
+    return inputFiles.flatMap { pattern: String ->
+      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+      .distinct()
+      .sortedBy { it }
+      .joinToString("\n\n") { relativePath ->
+        val file = root.toFile().resolve(relativePath)
+        try {
+          val content = file.readText()
+          "# $relativePath\n\n```\n$content\n```"
+        } catch (e: Exception) {
+          log.warn("Error reading file: $relativePath", e)
+          ""
+        }
+      }
+  }
+  private fun initializeDetailedOutput(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = task.createFile("abstraction_ladder_analysis.md")
+      val outputStream = file?.outputStream()
+      task.complete(
+        "Writing detailed analysis to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
+      log.info("Initialized detailed output file: $link")
+      outputStream
+    } catch (e: Exception) {
+      log.error("Failed to initialize detailed output file", e)
+      null
+    }
+  }
+  private fun generateSummaryMessage(task: SessionTask, duration: Long, concept: String, levels: Int, direction: String): String {
+    val (link, _) = task.createFile("abstraction_ladder_analysis.md")
+    return """
+      Abstraction Ladder analysis complete for '$concept' with $levels levels in $direction direction(s).
+      **Duration:** ${duration / 1000}s
+      Detailed analysis: <a href='$link' target='_blank'>View Full Report</a>
+    """.trimIndent()
+  }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()

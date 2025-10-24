@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.max
@@ -50,6 +51,8 @@ class GeneticOptimizationTask(
     class GeneticOptimizationTaskExecutionConfigData(
         @Description("The initial text to optimize (seed for genetic algorithm)")
         val initial_text: String? = null,
+        @Description("Optional input files (or file patterns, e.g. **/*.kt) to be used as context for optimization")
+        val input_files: List<String>? = null,
         @Description("The optimization goal or criteria (e.g., 'clarity and conciseness', 'persuasiveness', 'technical accuracy')")
         val optimization_goal: String? = null,
         @Description("Number of generations to evolve (default: 5)")
@@ -79,6 +82,8 @@ class GeneticOptimizationTask(
             if (initial_text.isNullOrBlank()) {
                 return "initial_text must not be blank"
             }
+            // input_files is optional, so no validation needed
+            
             if (optimization_goal.isNullOrBlank()) {
                 return "optimization_goal must not be blank"
             }
@@ -172,12 +177,14 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
       val transcript = transcript(task)
       try {
         val startTime = System.currentTimeMillis()
+        val messagesContext = messages.joinToString("\n\n")
         log.info("Starting GeneticOptimizationTask with initial_text length=${executionConfig?.initial_text?.length}, goal='${executionConfig?.optimization_goal}'")
             // Validate configuration
             executionConfig?.validate()?.let { errorMessage ->
                 log.error("Configuration validation failed: $errorMessage")
                 task.complete("VALIDATION ERROR: $errorMessage")
                 task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
+                transcript?.close()
                 resultFn("VALIDATION ERROR: $errorMessage")
                 return
             }
@@ -197,10 +204,12 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 "goal_alignment" to 0.15
             )
             val constraints = executionConfig?.constraints ?: emptyList()
+            val inputFileContent = getInputFileContent()
 
             if (initialText.isNullOrBlank() || optimizationGoal.isNullOrBlank()) {
                 log.error("Configuration error: initial_text or optimization_goal is blank")
                 task.complete("CONFIGURATION ERROR: Both initial_text and optimization_goal must be specified")
+                transcript?.close()
                 task.error(RuntimeException("Configuration error: initial_text or optimization_goal is blank"))
                 resultFn("CONFIGURATION ERROR: Both initial_text and optimization_goal must be specified")
                 return
@@ -223,6 +232,12 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                     }"
                 )
+              if (inputFileContent.isNotBlank()) {
+                appendLine()
+                appendLine("## Input Context")
+                appendLine()
+                appendLine(inputFileContent)
+              }
                 appendLine()
                 appendLine("## Configuration")
                 appendLine()
@@ -261,7 +276,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             }
             overviewTask.add(overviewContent.renderMarkdown)
             task.update()
-        transcript?.write(overviewContent.toByteArray())
+        transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
 
             // Gather context
             log.debug("Gathering prior context")
@@ -281,19 +296,19 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             // Evaluate initial text
             log.info("Evaluating initial text")
             val initialEvaluation =
-                evaluateVariant(initialText, optimizationGoal, evaluationWeights, constraints, api)
+               evaluateVariant(initialText, optimizationGoal, evaluationWeights, constraints, api, inputFileContent)
             currentPopulation = listOf(
                 currentPopulation[0].copy(score = initialEvaluation)
             )
 
             log.info("Initial evaluation: score=${initialEvaluation.overall_score}")
-        transcript?.write("\n\n## Initial Evaluation\n\n".toByteArray())
-        transcript?.write("**Score:** ${String.format("%.1f", initialEvaluation.overall_score)}/100\n\n".toByteArray())
-        transcript?.write("**Strengths:**\n".toByteArray())
-        initialEvaluation.strengths.forEach { transcript?.write("- $it\n".toByteArray()) }
-        transcript?.write("\n**Weaknesses:**\n".toByteArray())
-        initialEvaluation.weaknesses.forEach { transcript?.write("- $it\n".toByteArray()) }
-        transcript?.write("\n".toByteArray())
+        transcript?.write("\n\n## Initial Evaluation\n\n".toByteArray(StandardCharsets.UTF_8))
+        transcript?.write("**Score:** ${String.format("%.1f", initialEvaluation.overall_score)}/100\n\n".toByteArray(StandardCharsets.UTF_8))
+        transcript?.write("**Strengths:**\n".toByteArray(StandardCharsets.UTF_8))
+        initialEvaluation.strengths.forEach { transcript?.write("- $it\n".toByteArray(StandardCharsets.UTF_8)) }
+        transcript?.write("\n**Weaknesses:**\n".toByteArray(StandardCharsets.UTF_8))
+        initialEvaluation.weaknesses.forEach { transcript?.write("- $it\n".toByteArray(StandardCharsets.UTF_8)) }
+        transcript?.write("\n".toByteArray(StandardCharsets.UTF_8))
 
 
         // Update overview with initial score
@@ -315,8 +330,8 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
                 val generationTask = task.ui.newTask(false)
                 tabs["Generation $generation"] = generationTask.placeholder
-              transcript?.write("\n\n---\n\n".toByteArray())
-              transcript?.write("# Generation $generation\n\n".toByteArray())
+              transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
+              transcript?.write("# Generation $generation\n\n".toByteArray(StandardCharsets.UTF_8))
                 generationTask.add(buildString {
                     appendLine("# Generation $generation")
                     appendLine()
@@ -349,7 +364,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                         val strategy = mutationStrategies.random()
                         log.debug("Generating mutation using strategy: $strategy")
                         val mutated =
-                            generateMutation(survivor.text, strategy, optimizationGoal, constraints, priorContext, api)
+                            generateMutation(survivor.text, strategy, optimizationGoal, constraints, priorContext + "\n\n" + inputFileContent, api)
                         if (mutated != null) {
                             newVariants.add(
                                 EvaluatedVariant(
@@ -398,7 +413,8 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                             optimizationGoal,
                             evaluationWeights,
                             constraints,
-                            api
+                          api,
+                          inputFileContent
                         )
                         variant.copy(score = evaluation)
                     } else {
@@ -476,7 +492,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
               }
               generationTask.add(generationResults.renderMarkdown)
                 task.update()
-              transcript?.write(generationResults.toByteArray())
+              transcript?.write(generationResults.toByteArray(StandardCharsets.UTF_8))
 
                 // Update overview
                 overviewTask.add(buildString {
@@ -606,8 +622,8 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         }
         evolutionTask.add(evolutionAnalysis.renderMarkdown)
             task.update()
-        transcript?.write("\n\n---\n\n".toByteArray())
-        transcript?.write(evolutionAnalysis.toByteArray())
+        transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
+        transcript?.write(evolutionAnalysis.toByteArray(StandardCharsets.UTF_8))
 
             // Build final result
             val totalTime = System.currentTimeMillis() - startTime
@@ -672,8 +688,8 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         }
         overviewTask.add(finalOverview.renderMarkdown)
             task.update()
-        transcript?.write("\n\n---\n\n".toByteArray())
-        transcript?.write(finalOverview.toByteArray())
+        transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
+        transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
         transcript?.close()
 
             log.info("GeneticOptimizationTask completed successfully: total_time=${totalTime}ms, improvement=${bestVariant.score.overall_score - initialEvaluation.overall_score}, generations=$numGenerations")
@@ -685,7 +701,19 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                     )
                 } points in ${totalTime / 1000}s"
             )
-            resultFn(finalResult)
+            val (link, _) = task.createFile("optimization_results.md")
+            val summaryMessage = buildString {
+                appendLine("Optimization complete: improved by ${String.format("%.1f", bestVariant.score.overall_score - initialEvaluation.overall_score)} points")
+                appendLine()
+                appendLine("**Final Score:** ${String.format("%.1f", bestVariant.score.overall_score)}/100")
+                appendLine("**Generations:** $numGenerations")
+                appendLine("**Total Time:** ${totalTime / 1000}s")
+                appendLine()
+                appendLine("Detailed results: <a href='$link' target='_blank'>$link</a> " +
+                    "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+                    "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>")
+            }
+            resultFn(summaryMessage)
 
         } catch (e: Exception) {
             log.error("Error during GeneticOptimizationTask execution", e)
@@ -708,6 +736,29 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
     )
     return markdownTranscript
   }
+  private fun getInputFileContent(): String {
+    return (executionConfig?.input_files ?: listOf())
+      .flatMap { pattern: String ->
+        val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+        (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
+          when {
+            com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+            matcher.matches(root.relativize(it.toPath())) -> true
+            it.isDirectory -> true
+            else -> false
+          }
+        })
+      }.filter { file ->
+        file.isFile && file.exists()
+      }
+      .distinct()
+      .sortedBy { it }
+      .joinToString("\n\n") { relativePath ->
+        val file = root.toFile().resolve(relativePath)
+        "# $relativePath\n\n${file.readText()}"
+      }
+  }
+
 
     private fun generateMutation(
         text: String,
@@ -835,7 +886,8 @@ Generate the crossover variant now.
         goal: String,
         weights: Map<String, Double>,
         constraints: List<String>,
-        api: ChatInterface
+        api: ChatInterface,
+        inputFileContent: String = ""
     ): EvaluationScore {
         try {
             val constraintsText = if (constraints.isNotEmpty()) {
@@ -845,9 +897,16 @@ Generate the crossover variant now.
             val weightsText = weights.entries.joinToString("\n") { (criterion, weight) ->
                 "- $criterion (${String.format("%.0f%%", weight * 100)} weight)"
             }
+            val contextText = if (inputFileContent.isNotBlank()) {
+                "\n\nAdditional context from input files:\n${inputFileContent.take(5000)}"
+            } else {
+                ""
+            }
+
 
             val prompt = """
-You are an expert evaluator for text optimization using genetic algorithms.
+ You are an expert evaluator for text optimization using genetic algorithms.
+$contextText
 
 ## Text to Evaluate
 ```
@@ -903,6 +962,4 @@ Be objective and consistent in your evaluation.
             )
         }
     }
-
-
 }

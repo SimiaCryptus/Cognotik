@@ -17,6 +17,11 @@ import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import java.nio.charset.StandardCharsets
+import java.nio.file.FileSystems
+import java.nio.file.Path
+
 class PersuasiveEssayTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: PersuasiveEssayTaskExecutionConfigData?
@@ -58,6 +63,9 @@ class PersuasiveEssayTask(
 
     @Description("Number of revision passes for quality improvement")
     val revision_passes: Int = 1,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
+
 
     @Description("Related files or research to incorporate")
     val related_files: List<String>? = null,
@@ -83,6 +91,9 @@ class PersuasiveEssayTask(
       }
       if (revision_passes < 0 || revision_passes > 5) {
         return "revision_passes must be between 0 and 5, got: $revision_passes"
+      }
+      if (target_audience.isBlank()) {
+        return "target_audience must not be blank"
       }
       if (tone.isBlank()) {
         return "tone must not be blank"
@@ -158,8 +169,9 @@ class PersuasiveEssayTask(
 
   override fun promptSegment(): String {
     return """
-PersuasiveEssay - Generate compelling persuasive essays with structured arguments
+ PersuasiveEssay - Generate compelling persuasive essays with structured arguments
   ** Specify the thesis statement or position to argue
+  ** Optionally provide input files (supports glob patterns) to incorporate as research
   ** Define target audience and tone
   ** Set target word count and number of main arguments
   ** Enable counterarguments and rebuttals for balanced perspective
@@ -169,6 +181,7 @@ PersuasiveEssay - Generate compelling persuasive essays with structured argument
   ** Configure call to action strength
   ** Performs outline creation, argument development, and iterative writing
   ** Produces complete, well-structured persuasive essay
+  ** Detailed output saved to files with links in summary
         """.trimIndent()
   }
 
@@ -180,7 +193,7 @@ PersuasiveEssay - Generate compelling persuasive essays with structured argument
     orchestrationConfig: OrchestrationConfig
   ) {
     val startTime = System.currentTimeMillis()
-    log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}'")
+    log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}', input_files: ${executionConfig?.input_files?.size ?: 0}")
     // Create transcript file
     val transcript = transcript(task)
     transcript?.use { stream ->
@@ -257,9 +270,10 @@ PersuasiveEssay - Generate compelling persuasive essays with structured argument
     try {
       // Gather context
       val priorContext = getPriorCode(agent.executionState)
+      val inputFileContent = getInputFileContent()
       val contextFiles = getContextFiles()
 
-      if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
+      if (priorContext.isNotBlank() || inputFileContent.isNotBlank() || contextFiles.isNotBlank()) {
         log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
         val contextTask = task.ui.newTask(false)
         tabs["Research Context"] = contextTask.placeholder
@@ -270,6 +284,11 @@ PersuasiveEssay - Generate compelling persuasive essays with structured argument
             if (priorContext.isNotBlank()) {
               appendLine("## Prior Context")
               appendLine(priorContext.truncateForDisplay(2000))
+              appendLine()
+            }
+            if (inputFileContent.isNotBlank()) {
+              appendLine("## Input Files")
+              appendLine(inputFileContent.truncateForDisplay(3000))
               appendLine()
             }
             if (contextFiles.isNotBlank()) {
@@ -313,6 +332,7 @@ Tone: ${executionConfig.tone}
 Target Word Count: ${executionConfig.target_word_count}
 Number of Arguments: ${executionConfig.num_arguments}
 
+${if (inputFileContent.isNotBlank()) "Input Files:\n${inputFileContent.truncateForDisplay(3000)}\n" else ""}
 ${if (priorContext.isNotBlank()) "Research Context:\n${priorContext.truncateForDisplay(3000)}\n" else ""}
 ${if (contextFiles.isNotBlank()) "Additional Research:\n${contextFiles.truncateForDisplay(3000)}\n" else ""}
 
@@ -878,9 +898,15 @@ Provide the complete revised essay.
         appendLine()
         appendLine("**Completion:** ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
       }
+      // Save complete essay to file
+      val (essayLink, essayFile) = task.createFile("persuasive_essay.md")
+      essayFile?.writeText(finalEssay, StandardCharsets.UTF_8)
+      log.info("Saved complete essay to: $essayLink")
+
 
       finalTask.add(finalEssay.renderMarkdown)
       task.update()
+      // Update transcript with final essay
       transcript?.use { stream ->
         stream.write("## Complete Essay\n\n".toByteArray())
         stream.write(finalEssay.toByteArray())
@@ -922,7 +948,11 @@ Provide the complete revised essay.
       }
 
 
-      // Concise summary for resultFn
+      // Close transcript and get link
+      transcript?.close()
+      val (transcriptLink, _) = task.createFile("transcript.md")
+
+      // Concise summary for resultFn with file links
       val finalResult = buildString {
         appendLine("# Persuasive Essay Summary: ${outline.title}")
         appendLine()
@@ -938,7 +968,15 @@ Provide the complete revised essay.
         }
         appendLine("- Conclusion with ${executionConfig.call_to_action} call to action")
         appendLine()
-        appendLine("> The full essay is available in the Complete Essay tab for detailed review.")
+        appendLine("## Output Files")
+        appendLine()
+        appendLine("- **Complete Essay:** <a href='$essayLink' target='_blank'>$essayLink</a>")
+        appendLine("  - <a href='${essayLink.removeSuffix(".md")}.html' target='_blank'>HTML</a>")
+        appendLine("  - <a href='${essayLink.removeSuffix(".md")}.pdf' target='_blank'>PDF</a>")
+        appendLine()
+        appendLine("- **Transcript:** <a href='$transcriptLink' target='_blank'>$transcriptLink</a>")
+        appendLine("  - <a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>HTML</a>")
+        appendLine("  - <a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>PDF</a>")
       }
 
       log.info("PersuasiveEssayTask completed: words=$cumulativeWordCount, arguments=${argumentSections.size}, time=${totalTime}ms")
@@ -969,6 +1007,7 @@ Provide the complete revised essay.
         stream.write("**Error:** ${e.message}\n\n".toByteArray())
         stream.flush()
       }
+      transcript?.close()
 
 
       val errorOutput = buildString {
@@ -987,6 +1026,39 @@ Provide the complete revised essay.
       resultFn(errorOutput)
     }
   }
+  private fun getInputFileContent(): String {
+    val inputFiles = executionConfig?.input_files ?: return ""
+    if (inputFiles.isEmpty()) return ""
+    log.debug("Loading ${inputFiles.size} input files")
+    return buildString {
+      appendLine("## Input Files Content")
+      appendLine()
+      inputFiles.forEach { pattern: String ->
+        try {
+          val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+          val matchedFiles = FileSelectionUtils.filteredWalk(root.toFile()) {
+            when {
+              FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+              matcher.matches(root.relativize(it.toPath())) -> true
+              it.isDirectory -> true
+              else -> false
+            }
+          }.filter { it.isFile && it.exists() }.distinct().sortedBy { it }
+          matchedFiles.forEach { file ->
+            log.debug("Loading input file: ${file.path}")
+            appendLine("### ${root.relativize(file.toPath())}")
+            appendLine("```")
+            appendLine(file.readText().truncateForDisplay(1000))
+            appendLine("```")
+            appendLine()
+          }
+        } catch (e: Exception) {
+          log.warn("Error reading input files matching pattern: $pattern", e)
+        }
+      }
+    }
+  }
+
 
   private fun getContextFiles(): String {
     val relatedFiles = executionConfig?.related_files ?: return ""

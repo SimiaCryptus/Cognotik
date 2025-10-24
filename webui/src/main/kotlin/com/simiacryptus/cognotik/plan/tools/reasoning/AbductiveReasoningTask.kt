@@ -5,12 +5,17 @@ import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -37,6 +42,14 @@ class AbductiveReasoningTask(
     val testable_predictions: List<String> = emptyList()
   )
 
+  protected val codeFiles = mutableMapOf<Path, String>()
+
+  data class LinkInfo(
+    val link: String,
+    val file: File?
+  )
+
+
   data class HypothesesResponse(
     val hypotheses: List<Hypothesis> = emptyList(),
     val reasoning: String = ""
@@ -49,6 +62,8 @@ class AbductiveReasoningTask(
     val generate_hypotheses: Boolean = true,
     @Description("Maximum number of hypotheses to generate")
     val max_hypotheses: Int = 5,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Criteria for evaluating hypotheses: explanatory_power, simplicity, testability, prior_probability")
     val evaluate_criteria: List<String>? = listOf(
       "explanatory_power",
@@ -101,6 +116,9 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
     var stepStartTime = System.currentTimeMillis()
     log.info("Starting AbductiveReasoningTask with ${executionConfig?.observations?.size ?: 0} observations")
     val transcript = transcript(task)
+    // Combine messages with file input
+    val inputContext = (messages + listOf(getInputFileCode())).filter { it.isNotBlank() }
+
 
     val observations = executionConfig?.observations
     if (observations.isNullOrEmpty()) {
@@ -150,6 +168,8 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         appendLine()
         appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
         appendLine()
+        appendLine("**Input Context:** ${inputContext.size} sections provided")
+        appendLine()
         appendLine("---")
         appendLine()
         appendLine("## Progress")
@@ -183,6 +203,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
       // Gather context
       val priorContext = getPriorCode(agent.executionState)
+      val combinedContext = (priorContext + "\n\n" + inputContext.joinToString("\n\n")).trim()
       if (priorContext.isNotBlank()) {
         log.debug("Found prior context: ${priorContext.length} characters")
         val contextTask = ui.newTask(false)
@@ -230,7 +251,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
           maxHypotheses,
           evaluateCriteria,
           domainContext,
-          priorContext,
+          combinedContext,
           api
         )
       } else {
@@ -241,7 +262,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
           existing,
           evaluateCriteria,
           domainContext,
-          priorContext,
+          combinedContext,
           api
         )
       }
@@ -460,6 +481,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
       // Final summary
       val totalTime = System.currentTimeMillis() - startTime
+      val (summaryLink, summaryFile) = task.createFile("analysis_summary.md")
       val finalSummary = buildString {
         appendLine("# Abductive Reasoning Summary")
         appendLine()
@@ -472,6 +494,22 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         appendLine()
         appendLine(analysis.truncateForDisplay(maxOutputSize))
       }
+      // Write detailed summary to file
+      summaryFile?.outputStream()?.use { stream ->
+        stream.write(finalSummary.toByteArray())
+        stream.flush()
+      }
+      val summaryMessage = buildString {
+        appendLine("Analysis complete. View detailed results:")
+        appendLine(
+          "<a href='$summaryLink' target='_blank'>Summary</a> | <a href='${summaryLink.removeSuffix(".md")}.html' target='_blank'>HTML</a> | <a href='${
+            summaryLink.removeSuffix(
+              ".md"
+            )
+          }.pdf' target='_blank'>PDF</a>"
+        )
+      }
+
 
       log.info("AbductiveReasoningTask completed: total_time=${totalTime}ms, observations=${observations.size}, hypotheses=${hypotheses.size}, best_score=${bestHypothesis?.overall_score}")
 
@@ -496,7 +534,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       transcript?.close()
 
       task.safeComplete("Completed abductive reasoning analysis: ${hypotheses.size} hypotheses evaluated in ${totalTime / 1000}s", log)
-      resultFn(finalSummary.toString())
+      resultFn(summaryMessage.toString())
 
     } catch (e: Exception) {
       val duration = System.currentTimeMillis() - startTime
@@ -529,6 +567,55 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       transcript?.close()
     }
   }
+
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          codeFiles[file.toPath()] ?: file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
+  private fun isTextFile(file: File): Boolean {
+    val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
+      "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
+    )
+    return textExtensions.contains(file.extension.lowercase())
+  }
+
+  private fun extractDocumentContent(file: File) = try {
+    file.getReader().use { reader ->
+      reader.getText()
+    }
+  } catch (e: Exception) {
+    log.warn("Failed to extract content from ${file.name}", e)
+    file.readText()
+  }
+
 
   private fun generateHypotheses(
     observations: List<String>,

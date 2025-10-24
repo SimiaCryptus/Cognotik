@@ -10,16 +10,18 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.File
 import java.io.FileOutputStream
 
-class CounterfactualAnalysisTask(
+ class CounterfactualAnalysisTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: CounterfactualAnalysisTaskExecutionConfigData?
-) : AbstractTask<CounterfactualAnalysisTask.CounterfactualAnalysisTaskExecutionConfigData, TaskTypeConfig>(
+ ) : AbstractTask<CounterfactualAnalysisTask.CounterfactualAnalysisTaskExecutionConfigData, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
   val maxDescriptionLength = 200
+  protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
 
   class CounterfactualAnalysisTaskExecutionConfigData(
     @Description("The actual scenario or decision to analyze")
@@ -32,6 +34,8 @@ class CounterfactualAnalysisTask(
     val control_factors: List<String>? = null,
     @Description("Additional files for context (e.g., historical data, related analyses)")
     val related_files: List<String>? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Detailed description of the analysis objectives")
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -78,7 +82,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    System.currentTimeMillis()
+    val startTime = System.currentTimeMillis()
     log.info("Starting CounterfactualAnalysis task for scenario: ${executionConfig?.actual_scenario}")
 
     val actualScenario = executionConfig?.actual_scenario
@@ -98,7 +102,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
       return
     }
 
-    val toInput = { it: String -> listOf(it) }
+    val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
     val transcript = transcript(task)
     transcript?.write("# Counterfactual Analysis Transcript\n\n".toByteArray())
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
@@ -176,17 +180,17 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
     val comparisonAnalysis = if (executionConfig?.compare_outcomes == true) {
       transcript?.write("\n## Comparative Analysis\n\n".toByteArray())
       val comparison = compareScenarios(
-        actualScenario,
-        contextFiles,
-        actualAnalysis.split("\\s+"),
-        counterfactuals,
-        counterfactualAnalyses,
-        executionConfig.control_factors?.joinToString(", ") ?: "",
-        priorCode,
-        api,
-        task,
-        toInput,
-        transcript
+        actualScenario = actualScenario,
+        actualAnalysisTokens = actualAnalysis.split("\\s+"),
+        counterfactuals = counterfactuals,
+        counterfactualAnalyses = counterfactualAnalyses,
+        controlFactors = executionConfig.control_factors,
+        contextFiles = contextFiles,
+        priorCode = priorCode,
+        api = api,
+        task = task,
+        toInput = toInput,
+        transcript = transcript
       )
       transcript?.write(comparison.toByteArray())
       comparison
@@ -221,9 +225,12 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
     transcript?.write("\n---\n\n**Analysis Complete**\n".toByteArray())
     transcript?.close()
 
-    task.add(MarkdownUtil.renderMarkdown(fullAnalysis, ui = task.ui))
+    val (link, _) = task.createFile("analysis_results.md")
+    task.complete("Analysis complete. Full results written to <a href='$link' target='_blank'>$link</a>")
+    
+    val summaryMessage = "Counterfactual analysis completed in ${(System.currentTimeMillis() - startTime) / 1000}s. Results: $actualScenario with ${counterfactuals.size} counterfactual scenarios analyzed."
     task.safeComplete("Analysis complete", log)
-    resultFn(fullAnalysis)
+    resultFn(summaryMessage)
   }
 
   private fun analyzeScenario(
@@ -279,7 +286,7 @@ ${executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None spec
 
   private fun compareScenarios(
     actualScenario: String,
-    actualAnalysis: String,
+    actualAnalysisTokens: List<String>,
     counterfactuals: List<String>,
     counterfactualAnalyses: List<String>,
     controlFactors: List<String>?,
@@ -304,7 +311,7 @@ Compare the following scenarios and provide insights on their differences:
 
 ## Actual Scenario
 **Description:** $actualScenario
-**Analysis:** $actualAnalysis
+**Analysis:** ${actualAnalysisTokens.joinToString(" ")}
 
 $scenarioComparisons
 
@@ -362,6 +369,50 @@ $priorCode
       }
     }
   }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          codeFiles[file.toPath()] ?: file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+  private fun isTextFile(file: File): Boolean {
+    val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
+      "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
+    )
+    return textExtensions.contains(file.extension.lowercase())
+  }
+  private fun extractDocumentContent(file: File) = try {
+    file.readText()
+  } catch (e: Exception) {
+    log.warn("Failed to extract content from ${file.name}", e)
+    "Error reading file: ${e.message}"
+  }
+
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()
@@ -395,3 +446,5 @@ $priorCode
     )
   }
 }
+
+

@@ -128,7 +128,6 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
 
     private fun getPackageGroup(taskType: TaskType<*, *>): String {
         return when {
-          taskType.name.contains("Reasoning") ||
               taskType.name in listOf(
             "MultiPerspectiveAnalysis", "SocraticDialogue", "AnalogicalReasoning",
             "CounterfactualAnalysis", "AbstractionLadder", "ConstraintSatisfaction",

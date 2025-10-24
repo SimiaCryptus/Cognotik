@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -55,6 +56,8 @@ class AdversarialReasoningTask(
     val suggest_mitigations: Boolean = true,
     @Description("Related files or code to analyze (glob patterns)")
     val related_files: List<String>? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Specific assumptions to challenge")
     val challenge_assumptions: List<String>? = null,
     @Description("Maximum number of vulnerabilities to identify per vector")
@@ -117,9 +120,9 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting AdversarialReasoningTask for target: '${executionConfig?.target_system}'")
+    var transcriptStream: FileOutputStream? = null
 
     val targetSystem = executionConfig?.target_system
-    val transcript = transcript(task)
     if (targetSystem.isNullOrBlank()) {
       log.error("Configuration error: No target_system specified")
       task.safeComplete("CONFIGURATION ERROR: No target_system specified", log)
@@ -137,6 +140,11 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     val challengeAssumptions = executionConfig.challenge_assumptions
     val maxVulnerabilitiesPerVector = executionConfig.max_vulnerabilities_per_vector.coerceIn(1, 20)
 
+    // Initialize transcript
+    transcriptStream = initializeTranscript(task)
+    transcriptStream?.let { stream ->
+      writeTranscriptHeader(stream, targetSystem, attackVectors, adversaryCapability, generateExploits, suggestMitigations)
+    }
     log.info(
       "Configuration: vectors=${attackVectors.size}, capability=$adversaryCapability, " +
         "exploits=$generateExploits, mitigations=$suggestMitigations"
@@ -148,7 +156,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     // Overview tab
     val overviewTask = ui.newTask(false)
     tabs["Overview"] = overviewTask.placeholder
-    transcript?.let {
+    transcriptStream?.let {
       it.write("# 🔴 Adversarial Reasoning / Red Team Analysis\n\n".toByteArray())
       it.write("**Target System:** $targetSystem\n\n".toByteArray())
       it.write("**Attack Vectors:** ${attackVectors.joinToString(", ")}\n\n".toByteArray())
@@ -203,10 +211,11 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
       }
     } else ""
 
-    if (priorContext.isNotBlank() || fileContext.isNotBlank()) {
+    val inputFileContent = getInputFileCode()
+    if (priorContext.isNotBlank() || fileContext.isNotBlank() || inputFileContent.isNotBlank()) {
       val contextTask = ui.newTask(false)
       tabs["Context"] = contextTask.placeholder
-      transcript?.let {
+      transcriptStream?.let {
         it.write("## Context for Analysis\n\n".toByteArray())
         if (priorContext.isNotBlank()) {
           it.write("### Prior Task Results\n\n".toByteArray())
@@ -221,6 +230,12 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             appendLine("## Prior Task Results")
             appendLine()
             appendLine(priorContext.truncateForDisplay())
+            appendLine()
+          }
+          if (inputFileContent.isNotBlank()) {
+            appendLine("## Input Files")
+            appendLine()
+            appendLine(inputFileContent)
             appendLine()
           }
           if (fileContext.isNotBlank()) {
@@ -255,10 +270,11 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         val vectorTask = ui.newTask(false)
         tabs["Vector: ${vector.capitalize()}"] = vectorTask.placeholder
-        transcript?.let {
+        transcriptStream?.let {
           it.write("## Attack Vector: ${vector.capitalize()}\n\n".toByteArray())
           it.write("**Adversary Capability:** $adversaryCapability\n\n".toByteArray())
           it.write("---\n\n".toByteArray())
+          it.flush()
         }
 
 
@@ -307,9 +323,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         // Perform analysis
         val analysisResult = adversarialAgent.answer(listOf(analysisPrompt))
-        transcript?.let {
+        transcriptStream?.let {
           it.write("### Analysis Results\n\n".toByteArray())
           it.write("$analysisResult\n\n".toByteArray())
+          it.flush()
         }
 
 
@@ -336,10 +353,11 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         val vectorTime = System.currentTimeMillis() - vectorStartTime
         vectorAnalysisTimes[vector] = vectorTime
-        transcript?.let {
+        transcriptStream?.let {
           it.write("**Vulnerabilities Found:** ${parsedVulnerabilities.size}\n\n".toByteArray())
           it.write("**Analysis Time:** ${vectorTime / 1000.0}s\n\n".toByteArray())
           it.write("---\n\n".toByteArray())
+          it.flush()
         }
 
 
@@ -387,7 +405,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
           }.renderMarkdown
         )
         task.update()
-        transcript?.let {
+      transcriptStream?.let {
           it.write("## 🛡️ Mitigation Strategies\n\n".toByteArray())
         }
 
@@ -400,8 +418,9 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         )
 
         val mitigations = mitigationAgent.answer(listOf(mitigationPrompt))
-        transcript?.let {
+        transcriptStream?.let {
           it.write("$mitigations\n\n".toByteArray())
+          it.flush()
         }
 
 
@@ -452,9 +471,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         failureModes = allFailureModes,
         totalTime = System.currentTimeMillis() - startTime
       )
-      transcript?.let {
+      transcriptStream?.let {
         it.write("## 📊 Executive Summary\n\n".toByteArray())
         it.write("$summary\n\n".toByteArray())
+        it.flush()
       }
 
 
@@ -474,13 +494,14 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
       // Final overview update
       val totalTime = System.currentTimeMillis() - startTime
-      transcript?.let {
+      transcriptStream?.let {
         it.write("---\n\n".toByteArray())
         it.write("## ✅ Analysis Complete\n\n".toByteArray())
         it.write("**Total Time:** ${totalTime / 1000.0}s\n\n".toByteArray())
         it.write("**Total Vulnerabilities:** ${allVulnerabilities.size}\n\n".toByteArray())
         it.write("**Edge Cases Identified:** ${allEdgeCases.size}\n\n".toByteArray())
         it.write("**Failure Modes:** ${allFailureModes.size}\n\n".toByteArray())
+        it.flush()
         it.close()
       }
 
@@ -554,11 +575,12 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
       resultFn(conciseResult)
 
     } catch (e: Exception) {
-      transcript?.let {
+      transcriptStream?.let {
         it.write("\n\n---\n\n".toByteArray())
         it.write("## ❌ Error Occurred\n\n".toByteArray())
         it.write("**Error:** ${e.message}\n\n".toByteArray())
         it.write("**Type:** ${e.javaClass.simpleName}\n\n".toByteArray())
+        it.flush()
         it.close()
       }
       log.error("Error during adversarial reasoning", e)
@@ -595,20 +617,110 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         }
       }
       resultFn(errorOutput)
+    } finally {
+      transcriptStream?.close()
+      log.debug("Transcript stream closed")
     }
   }
 
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
+  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = task.createFile("adversarial_transcript.md")
+      val transcriptStream = file?.outputStream()
+      task.complete(
+        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
+      log.info("Initialized transcript file: $link")
+      transcriptStream
+    } catch (e: Exception) {
+      log.error("Failed to initialize transcript", e)
+      null
+    }
+  }
+
+  private fun writeTranscriptHeader(
+    stream: FileOutputStream,
+    targetSystem: String,
+    attackVectors: List<String>,
+    adversaryCapability: String,
+    generateExploits: Boolean,
+    suggestMitigations: Boolean
+  ) {
+    try {
+      val header = buildString {
+        appendLine("# 🔴 Adversarial Reasoning / Red Team Analysis Transcript")
+        appendLine()
+        appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+        appendLine()
+        appendLine("**Target System:** $targetSystem")
+        appendLine("**Attack Vectors:** ${attackVectors.joinToString(", ")}")
+        appendLine("**Adversary Capability:** $adversaryCapability")
+        appendLine("**Generate Exploits:** ${if (generateExploits) "⚠️ Yes" else "No"}")
+        appendLine("**Suggest Mitigations:** ${if (suggestMitigations) "Yes" else "No"}")
+        appendLine()
+        appendLine("---")
+        appendLine()
+      }
+      stream.write(header.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+      stream.flush()
+    } catch (e: Exception) {
+      log.error("Failed to write transcript header", e)
+    }
+  }
+
+  private fun getInputFileCode(): String = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+  private fun isTextFile(file: java.io.File): Boolean {
+    val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
+      "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
     )
-    return markdownTranscript
+    return textExtensions.contains(file.extension.lowercase())
+  }
+  private fun extractDocumentContent(file: java.io.File): String = try {
+    file.getReader().use { reader ->
+      when (reader) {
+        is com.simiacryptus.cognotik.input.PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+        else -> reader.getText()
+      }
+    }
+  } catch (e: Exception) {
+    log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+    try {
+      file.readText()
+    } catch (e2: Exception) {
+      "Error reading file: ${e2.message}"
+    }
   }
 
 

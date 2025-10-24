@@ -32,6 +32,8 @@ class TemporalReasoningTask(
     val time_range: String? = null,
     @Description("Granularity of analysis: daily, weekly, monthly, quarterly, yearly")
     val granularity: String = "weekly",
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Whether to identify temporal patterns and cycles")
     val identify_patterns: Boolean = true,
     @Description("Whether to predict future states")
@@ -663,15 +665,16 @@ Generate the Mermaid timeline diagram now:
   }
 
   private fun gatherTemporalData(): String {
-    val relatedFiles = executionConfig?.related_files ?: emptyList()
+    val inputFiles = (executionConfig?.input_files ?: emptyList()) +
+        (executionConfig?.related_files ?: emptyList())
 
-    if (relatedFiles.isEmpty()) {
+    if (inputFiles.isEmpty()) {
       return "No specific temporal data files provided."
     }
 
     val maxFileSize = 2000
 
-    return relatedFiles.flatMap { pattern ->
+    return inputFiles.flatMap { pattern ->
       val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
       root.toFile().walkTopDown()
         .filter { file ->
@@ -689,6 +692,29 @@ Generate the Mermaid timeline diagram now:
         }
         .toList()
     }.joinToString("\n\n")
+  }
+  private fun getInputFileCode(): String {
+    val patterns = (executionConfig?.input_files ?: listOf())
+    if (patterns.isEmpty()) {
+      return ""
+    }
+    return patterns.flatMap { pattern ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      root.toFile().walkTopDown()
+        .filter { file -> file.isFile && matcher.matches(root.relativize(file.toPath())) }
+        .map { it.toPath() }
+        .toList()
+    }.distinct().sortedBy { it }
+      .joinToString("\n\n") { relativePath ->
+        val file = root.toFile().resolve(relativePath.toString())
+        try {
+          val content = file.readText()
+          "# $relativePath\n\n```\n$content\n```"
+        } catch (e: Throwable) {
+          log.warn("Error reading file: $relativePath", e)
+          ""
+        }
+      }
   }
 
   private fun formatTimeline(events: List<TimelineEvent>): String {

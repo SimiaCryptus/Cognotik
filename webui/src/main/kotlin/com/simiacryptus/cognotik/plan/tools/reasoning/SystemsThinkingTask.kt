@@ -4,15 +4,18 @@ import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+ import java.io.FileOutputStream
+ import java.time.LocalDateTime
+ import java.time.format.DateTimeFormatter
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 
-class SystemsThinkingTask(
+ class SystemsThinkingTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: SystemsThinkingTaskExecutionConfigData?
 ) : AbstractTask<SystemsThinkingTask.SystemsThinkingTaskExecutionConfigData, TaskTypeConfig>(
@@ -27,6 +30,8 @@ class SystemsThinkingTask(
     val system_description: String? = null,
     @Description("Whether to identify feedback loops (reinforcing and balancing)")
     val identify_feedback_loops: Boolean = true,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Whether to map delays and accumulations in the system")
     val map_delays: Boolean = true,
     @Description("Whether to find leverage points for intervention")
@@ -80,6 +85,7 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting SystemsThinkingTask for system: '${executionConfig?.system_description}'")
+    var transcriptStream: FileOutputStream? = null
 
     val systemDescription = executionConfig?.system_description
     if (systemDescription.isNullOrBlank()) {
@@ -94,7 +100,7 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
 
     val ui = task.ui
     val tabs = TabbedDisplay(task)
-    val transcript = transcript(task)
+    transcriptStream = initializeTranscript(task)
 
     val overviewTask = ui.newTask(false)
     try {
@@ -127,7 +133,7 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
           appendLine("**Status:** 🔄 Gathering context...")
         }.renderMarkdown
       )
-      transcript?.write(
+      transcriptStream?.write(
         "# Systems Thinking Analysis\n\n**System:** $systemDescription\n\n**Time Horizon:** $timeHorizon\n\n**Started:** ${
           LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
         }\n\n---\n\n".toByteArray()
@@ -137,16 +143,23 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
       // Gather context
       log.debug("Gathering context from prior tasks and related files")
       val priorContext = getPriorCode(agent.executionState)
+      val inputFileContext = getInputFileCode()
       val relatedContext = gatherRelatedFiles()
 
-      if (priorContext.isNotBlank() || relatedContext.isNotBlank()) {
-        transcript?.write("## Context\n\n$priorContext\n\n$relatedContext\n\n---\n\n".toByteArray())
+      if (priorContext.isNotBlank() || inputFileContext.isNotBlank() || relatedContext.isNotBlank()) {
+        transcriptStream?.write("## Context\n\n$priorContext\n\n$inputFileContext\n\n$relatedContext\n\n---\n\n".toByteArray())
         val contextTask = ui.newTask(false)
         tabs["Context"] = contextTask.placeholder
         contextTask.add(
           buildString {
             appendLine("# Context")
             appendLine()
+            if (priorContext.isNotBlank()) {
+              appendLine("## Input Files")
+              appendLine()
+              appendLine(inputFileContext.truncateForDisplay())
+              appendLine()
+            }
             if (priorContext.isNotBlank()) {
               appendLine("## Prior Task Results")
               appendLine()
@@ -212,7 +225,7 @@ Provide a clear, structured analysis.
           appendLine(structureAnalysis)
         }.renderMarkdown
       )
-      transcript?.write("## System Structure\n\n$structureAnalysis\n\n---\n\n".toByteArray())
+      transcriptStream?.write("## System Structure\n\n$structureAnalysis\n\n---\n\n".toByteArray())
       task.update()
 
       // Step 2: Feedback Loops
@@ -249,7 +262,7 @@ Provide the analysis and diagram.
         )
 
         val mermaidCode = extractMermaidCode(loopsAnalysis)
-        transcript?.write("## Feedback Loops\n\n$loopsAnalysis\n\n---\n\n".toByteArray())
+        transcriptStream?.write("## Feedback Loops\n\n$loopsAnalysis\n\n---\n\n".toByteArray())
         loopsTask.add(
           buildString {
             appendLine("## Feedback Loops")
@@ -307,7 +320,7 @@ Provide specific examples with estimated time scales.
             appendLine(delaysAnalysis)
           }.renderMarkdown
         )
-        transcript?.write("## Delays & Accumulations\n\n$delaysAnalysis\n\n---\n\n".toByteArray())
+        transcriptStream?.write("## Delays & Accumulations\n\n$delaysAnalysis\n\n---\n\n".toByteArray())
         task.update()
       }
 
@@ -353,7 +366,7 @@ Focus on the most relevant archetypes.
             appendLine(archetypesAnalysis)
           }.renderMarkdown
         )
-        transcript?.write("## System Archetypes\n\n$archetypesAnalysis\n\n---\n\n".toByteArray())
+        transcriptStream?.write("## System Archetypes\n\n$archetypesAnalysis\n\n---\n\n".toByteArray())
         task.update()
       }
 
@@ -390,7 +403,7 @@ Consider both positive and negative emergent behaviors.
             appendLine(emergentAnalysis)
           }.renderMarkdown
         )
-        transcript?.write("## Emergent Behavior\n\n$emergentAnalysis\n\n---\n\n".toByteArray())
+        transcriptStream?.write("## Emergent Behavior\n\n$emergentAnalysis\n\n---\n\n".toByteArray())
         task.update()
       }
 
@@ -439,7 +452,7 @@ Focus on the most impactful leverage points.
             appendLine(leverageAnalysis)
           }.renderMarkdown
         )
-        transcript?.write("## Leverage Points\n\n$leverageAnalysis\n\n---\n\n".toByteArray())
+        transcriptStream?.write("## Leverage Points\n\n$leverageAnalysis\n\n---\n\n".toByteArray())
         task.update()
       }
 
@@ -504,7 +517,7 @@ $simulationAnalysis
             simulationResults.forEach { appendLine(it) }
           }.renderMarkdown
         )
-        transcript?.write("## Intervention Simulation\n\n${simulationResults.joinToString("\n\n")}\n\n---\n\n".toByteArray())
+        transcriptStream?.write("## Intervention Simulation\n\n${simulationResults.joinToString("\n\n")}\n\n---\n\n".toByteArray())
         task.update()
       }
 
@@ -544,7 +557,7 @@ $simulationAnalysis
           appendLine(synthesis)
         }.renderMarkdown
       )
-      transcript?.write("## Synthesis & Recommendations\n\n$synthesis\n\n---\n\n".toByteArray())
+      transcriptStream?.write("## Synthesis & Recommendations\n\n$synthesis\n\n---\n\n".toByteArray())
       task.update()
 
       // Build concise final result
@@ -605,19 +618,26 @@ $simulationAnalysis
           appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
         }.renderMarkdown
       )
-      transcript?.write(
+      transcriptStream?.write(
         "\n\n## Analysis Complete\n\n**Total Time:** ${duration / 1000.0}s\n\n**Completed:** ${
           LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
         }\n".toByteArray()
       )
       task.update()
 
-      task.safeComplete("Systems thinking analysis completed in ${duration / 1000}s", log)
+      val (transcriptLink, _) = task.createFile("systems_thinking_transcript.md")
+      task.safeComplete(
+        "Systems thinking analysis completed in ${duration / 1000}s. " +
+            "View detailed transcript: <a href='$transcriptLink' target='_blank'>markdown</a> " +
+            "<a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>",
+        log
+      )
       resultFn(finalResult.toString())
 
     } catch (e: Exception) {
       val duration = System.currentTimeMillis() - startTime
-      transcript?.write("\n\n## Error Occurred\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray())
+      transcriptStream?.write("\n\n## Error Occurred\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray())
       log.error("SystemsThinkingTask failed after ${duration}ms for system: $systemDescription", e)
       task.error(e)
 
@@ -644,8 +664,8 @@ $simulationAnalysis
       }
       resultFn(errorOutput.toString())
     } finally {
-      transcript?.flush()
-      transcript?.close()
+      transcriptStream?.flush()
+      transcriptStream?.close()
     }
   }
 
@@ -720,6 +740,33 @@ Provide clear, actionable insights grounded in systems thinking principles.
         .joinToString("\n\n")
     }.joinToString("\n\n")
   }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
 
   private fun extractMermaidCode(response: String): String {
     val mermaidBlockRegex = "```mermaid\\s*([\\s\\S]*?)```".toRegex()
@@ -735,6 +782,22 @@ Provide clear, actionable insights grounded in systems thinking principles.
       }.pdf' target='_blank'>pdf</a>"
     )
     return markdownTranscript
+  }
+  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = task.createFile("systems_thinking_transcript.md")
+      val transcriptStream = file?.outputStream()
+      task.complete(
+        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
+      log.info("Initialized transcript file: $link")
+      transcriptStream
+    } catch (e: Exception) {
+      log.error("Failed to initialize transcript", e)
+      null
+    }
   }
 
 

@@ -1,7 +1,11 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
-import com.simiacryptus.cognotik.actors.ChatAgent
+
 import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -13,6 +17,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -24,6 +29,7 @@ class ScriptwritingTask(
   orchestrationConfig,
   planTask
 ) {
+  protected val codeFiles = mutableMapOf<Path, String>()
 
   class ScriptwritingTaskExecutionConfigData(
     @Description("The topic or subject of the script")
@@ -64,6 +70,9 @@ class ScriptwritingTask(
 
     @Description("Whether to include a call-to-action")
     val include_cta: Boolean = true,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
+
 
     @Description("Number of revision passes")
     val revision_passes: Int = 1,
@@ -170,7 +179,13 @@ class ScriptwritingTask(
 
   override fun promptSegment(): String {
     return """
-Scriptwriting - Generate complete scripts for videos, podcasts, and presentations
+ Scriptwriting - Generate complete scripts for videos, podcasts, and presentations
+  ** Optionally, list input files (supports glob patterns) to be examined when generating the script
+  ** Available files:
+  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
+  ** Specify the topic and script type (video, podcast, presentation, etc.)
+  ** Set target duration and audience
+  ** Configure tone and pacing
   ** Specify the topic and script type (video, podcast, presentation, etc.)
   ** Set target duration and audience
   ** Configure tone and pacing
@@ -199,6 +214,7 @@ Scriptwriting - Generate complete scripts for videos, podcasts, and presentation
       log.error("Configuration validation failed: $validationError")
       task.safeComplete("CONFIGURATION ERROR: $validationError", log)
       task.error(ValidatedObject.ValidationError(validationError, executionConfig))
+      markdownTranscript?.close()
       resultFn("CONFIGURATION ERROR: $validationError")
       markdownTranscript?.close()
       return
@@ -208,6 +224,7 @@ Scriptwriting - Generate complete scripts for videos, podcasts, and presentation
     if (topic.isNullOrBlank()) {
       log.error("No topic specified for scriptwriting")
       task.safeComplete("CONFIGURATION ERROR: No topic specified", log)
+      markdownTranscript?.close()
       resultFn("CONFIGURATION ERROR: No topic specified")
       markdownTranscript?.close()
       return
@@ -255,6 +272,7 @@ Scriptwriting - Generate complete scripts for videos, podcasts, and presentation
       appendLine("*Analyzing topic and creating script structure...*")
     }
     markdownTranscript?.write(overviewContent2.toByteArray())
+    markdownTranscript?.write(overviewContent2.toByteArray())
     markdownTranscript?.write("\n".toByteArray())
     overviewTask.add(overviewContent2.renderMarkdown)
     task.update()
@@ -290,9 +308,11 @@ Scriptwriting - Generate complete scripts for videos, podcasts, and presentation
         )
         task.update()
       }
+      markdownTranscript?.write("# Research Context\n\n".toByteArray())
 
       // Phase 1: Create outline
       log.info("Phase 1: Creating script outline")
+      markdownTranscript?.write("# Script Outline\n\n".toByteArray())
       val outlineTask = task.ui.newTask(false)
       tabs["Outline"] = outlineTask.placeholder
 
@@ -413,6 +433,7 @@ Ensure the outline:
         appendLine("**Status:** ✅ Complete")
       }
       outlineTask.add(outlineContent.renderMarkdown)
+        markdownTranscript?.write(outlineContent.toByteArray())
       markdownTranscript?.write(outlineContent.toByteArray())
       markdownTranscript?.write("\n".toByteArray())
       task.update()
@@ -510,6 +531,7 @@ Ensure the dialogue sounds natural when spoken aloud.
             appendLine("**Status:** ✅ Complete")
           }.renderMarkdown
         )
+        markdownTranscript?.write("# Opening Hook\n\n".toByteArray())
         markdownTranscript?.write("# Opening Hook\n\n".toByteArray())
         markdownTranscript?.write(hookSegment.dialogue.toByteArray())
         markdownTranscript?.write("\n\n".toByteArray())
@@ -641,6 +663,7 @@ Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of co
           }.renderMarkdown
         )
         markdownTranscript?.write("## Section ${sectionOutline.section_number}: ${sectionOutline.title}\n\n".toByteArray())
+        markdownTranscript?.write("## Section ${sectionOutline.section_number}: ${sectionOutline.title}\n\n".toByteArray())
         markdownTranscript?.write(sectionSegment.dialogue.toByteArray())
         markdownTranscript?.write("\n\n".toByteArray())
         task.update()
@@ -737,6 +760,7 @@ Target duration: 15-20 seconds.
           appendLine("**Status:** ✅ Complete")
         }.renderMarkdown
       )
+      markdownTranscript?.write("# Closing\n\n".toByteArray())
       markdownTranscript?.write("# Closing\n\n".toByteArray())
       markdownTranscript?.write(closingSegment.dialogue.toByteArray())
       markdownTranscript?.write("\n\n".toByteArray())
@@ -890,6 +914,7 @@ Provide the complete revised script with all formatting intact.
 
       finalTask.add(finalScript.renderMarkdown)
       markdownTranscript?.write("\n---\n\n# Complete Script\n\n".toByteArray())
+      markdownTranscript?.write("\n---\n\n# Complete Script\n\n".toByteArray())
       markdownTranscript?.write(finalScript.toByteArray())
       markdownTranscript?.write("\n".toByteArray())
       task.update()
@@ -952,6 +977,7 @@ Provide the complete revised script with all formatting intact.
 
         productionNotesTask.add(productionNotes.renderMarkdown)
         markdownTranscript?.write("\n---\n\n".toByteArray())
+        markdownTranscript?.write("\n---\n\n".toByteArray())
         markdownTranscript?.write(productionNotes.toByteArray())
         markdownTranscript?.write("\n".toByteArray())
         task.update()
@@ -982,6 +1008,7 @@ Provide the complete revised script with all formatting intact.
         }.renderMarkdown
       )
       markdownTranscript?.write("\n---\n\n## Generation Complete\n\n".toByteArray())
+      markdownTranscript?.write("\n---\n\n## Generation Complete\n\n".toByteArray())
       markdownTranscript?.write("Script generation completed successfully.\n".toByteArray())
       task.update()
 
@@ -1006,6 +1033,7 @@ Provide the complete revised script with all formatting intact.
       }
 
       log.info("ScriptwritingTask completed: duration=${cumulativeDuration}s, words=$cumulativeWordCount, segments=${scriptSegments.size}, time=${totalTime}ms")
+      markdownTranscript?.close()
       markdownTranscript?.close()
 
       task.safeComplete("Script generation complete: ${formatTiming(cumulativeDuration)} in ${totalTime / 1000}s", log)
@@ -1045,6 +1073,7 @@ Provide the complete revised script with all formatting intact.
       }
       resultFn(errorOutput)
     }
+    markdownTranscript?.close()
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
@@ -1059,6 +1088,41 @@ Provide the complete revised script with all formatting intact.
     )
     return markdownTranscript
   }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          codeFiles[file.toPath()] ?: file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+  private fun isTextFile(file: File): Boolean {
+    val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+    return textExtensions.contains(file.extension.lowercase())
+  }
+
 
   private fun getContextFiles(): String {
     val relatedFiles = executionConfig?.related_files ?: return ""
@@ -1113,6 +1177,23 @@ Provide the complete revised script with all formatting intact.
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ScriptwritingTask::class.java)
+    fun getAvailableFiles(
+      path: Path,
+      treatDocumentsAsText: Boolean = false,
+    ): List<String> {
+      return try {
+        listOf(FileSelectionUtils.filteredWalkAsciiTree(path.toFile(), 20, treatDocumentsAsText = treatDocumentsAsText))
+      } catch (e: Exception) {
+        log.error("Error listing available files", e)
+        listOf("Error listing files: ${e.message}")
+      }
+    }
+    fun extractDocumentContent(file: File) = try {
+      file.readText()
+    } catch (e: Exception) {
+      "Error reading file: ${e.message}"
+    }
+
     val Scriptwriting = TaskType(
       "Scriptwriting",
       ScriptwritingTaskExecutionConfigData::class.java,

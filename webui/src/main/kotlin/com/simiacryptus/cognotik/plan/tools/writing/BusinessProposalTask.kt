@@ -8,12 +8,14 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -82,6 +84,9 @@ class BusinessProposalTask(
 
     @Description("Related files or research to incorporate")
     val related_files: List<String>? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
+
 
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -328,6 +333,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
   ) {
     // Create transcript file
     val transcriptStream = transcript(task)
+    val proposalStream = proposalFile(task)
     transcriptStream?.use { stream ->
       stream.write("# Business Proposal Generation Transcript\n\n".toByteArray())
       stream.write("**Proposal:** ${executionConfig?.proposal_title}\n".toByteArray())
@@ -336,6 +342,9 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
     }
     fun logToTranscript(message: String) {
       transcriptStream?.write("$message\n".toByteArray())
+    }
+    fun writeToProposal(message: String) {
+      proposalStream?.write("$message\n".toByteArray())
     }
 
     val startTime = System.currentTimeMillis()
@@ -404,6 +413,29 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
 
     val resultBuilder = StringBuilder()
     resultBuilder.append("# Business Proposal: $proposalTitle\n\n")
+    // Load input files if specified
+    val inputFileContent = getInputFileContent()
+    val messagesWithContext = if (inputFileContent.isNotBlank()) {
+      messages + listOf(
+        "## Input Files Context\n\n$inputFileContent"
+      )
+    } else {
+      messages
+    }
+    // Include messages in context
+    val messagesContext = if (messagesWithContext.isNotEmpty()) {
+      buildString {
+        appendLine("## User Input")
+        appendLine()
+        messagesWithContext.forEach { msg ->
+          appendLine(msg)
+          appendLine()
+        }
+      }
+    } else {
+      ""
+    }
+
 
     try {
       // Gather context
@@ -426,6 +458,10 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
             if (contextFiles.isNotBlank()) {
               appendLine("## Related Files")
               appendLine(contextFiles.truncateForDisplay(2000))
+            }
+            if (messagesContext.isNotBlank()) {
+              appendLine()
+              appendLine(messagesContext.truncateForDisplay(2000))
             }
           }.renderMarkdown
         )
@@ -485,6 +521,7 @@ Identify 3-5 key stakeholders who will influence the decision.
       val stakeholderAnalysis = stakeholderAgent.answer(listOf("Analyze stakeholders")).obj
       log.debug("Analyzed ${stakeholderAnalysis.stakeholders.size} stakeholders")
       logToTranscript("Identified ${stakeholderAnalysis.stakeholders.size} key stakeholders\n\n")
+      writeToProposal("## Key Stakeholders\n\n")
 
       val stakeholderContent = buildString {
         appendLine("## Key Stakeholders")
@@ -520,6 +557,7 @@ Identify 3-5 key stakeholders who will influence the decision.
       }
       stakeholderTask.add(stakeholderContent.renderMarkdown)
       task.update()
+      writeToProposal(stakeholderContent)
 
       overviewTask.add("✅ Phase 1 Complete: Stakeholder analysis finished\n".renderMarkdown)
 
@@ -627,6 +665,7 @@ If specific numbers aren't provided, use reasonable estimates based on the propo
         }
         roiTask.add(roiContent.renderMarkdown)
         task.update()
+        writeToProposal(roiContent)
 
         overviewTask.add("✅ Phase 2 Complete: ROI analysis finished\n".renderMarkdown)
       }
@@ -719,6 +758,7 @@ Be realistic but not alarmist. Focus on actionable mitigation strategies.
         }
         riskTask.add(riskContent.renderMarkdown)
         task.update()
+        writeToProposal(riskContent)
 
         overviewTask.add("✅ Phase 3 Complete: Risk assessment finished\n".renderMarkdown)
       }
@@ -820,6 +860,7 @@ Be fair to alternatives but make a compelling case for this proposal.
         }
         competitiveTask.add(competitiveContent.renderMarkdown)
         task.update()
+        writeToProposal(competitiveContent)
 
         overviewTask.add("✅ Phase 4 Complete: Competitive analysis finished\n".renderMarkdown)
       }
@@ -913,6 +954,7 @@ Ensure phases flow logically and dependencies are clear.
         }
         timelineTask.add(timelineContent.renderMarkdown)
         task.update()
+        writeToProposal(timelineContent)
 
         overviewTask.add("✅ Phase 5 Complete: Timeline created\n".renderMarkdown)
       }
@@ -1030,6 +1072,7 @@ Tailor the outline to the ${executionConfig.proposal_type} proposal type and ${e
       }
       outlineTask.add(outlineContent.renderMarkdown)
       task.update()
+      writeToProposal(outlineContent)
 
       overviewTask.add("✅ Phase 6 Complete: Outline created\n".renderMarkdown)
 
@@ -1089,20 +1132,22 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
       cumulativeWordCount += execSummary.word_count
       logToTranscript("Executive Summary written: ${execSummary.word_count} words\n")
 
+      val execSummaryContent = buildString {
+        appendLine("## Executive Summary")
+        appendLine()
+        appendLine(execSummary.content)
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine("**Word Count:** ${execSummary.word_count}")
+        appendLine()
+        appendLine("**Status:** ✅ Complete")
+      }
       execSummaryTask.add(
-        buildString {
-          appendLine("## Executive Summary")
-          appendLine()
-          appendLine(execSummary.content)
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("**Word Count:** ${execSummary.word_count}")
-          appendLine()
-          appendLine("**Status:** ✅ Complete")
-        }.renderMarkdown
+        execSummaryContent.renderMarkdown
       )
       task.update()
+      writeToProposal(execSummaryContent)
 
       resultBuilder.append("## Executive Summary\n\n")
       resultBuilder.append(execSummary.content)
@@ -1241,6 +1286,7 @@ Aim for approximately ${sectionOutline.estimated_word_count} words.
           }.renderMarkdown
         )
         task.update()
+        writeToProposal(sectionContent.content)
 
         resultBuilder.append("## ${sectionOutline.title}\n\n")
         resultBuilder.append(sectionContent.content)
@@ -1303,20 +1349,22 @@ Make it action-oriented and compelling. The reader should feel motivated to move
       cumulativeWordCount += conclusion.word_count
       logToTranscript("Conclusion written: ${conclusion.word_count} words\n\n")
 
+      val conclusionContent = buildString {
+        appendLine("## Conclusion & Next Steps")
+        appendLine()
+        appendLine(conclusion.content)
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine("**Word Count:** ${conclusion.word_count}")
+        appendLine()
+        appendLine("**Status:** ✅ Complete")
+      }
       conclusionTask.add(
-        buildString {
-          appendLine("## Conclusion & Next Steps")
-          appendLine()
-          appendLine(conclusion.content)
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("**Word Count:** ${conclusion.word_count}")
-          appendLine()
-          appendLine("**Status:** ✅ Complete")
-        }.renderMarkdown
+        conclusionContent.renderMarkdown
       )
       task.update()
+      writeToProposal(conclusionContent)
 
       resultBuilder.append("## Conclusion & Next Steps\n\n")
       resultBuilder.append(conclusion.content)
@@ -1445,6 +1493,7 @@ Provide the complete revised proposal.
 
       finalTask.add(finalProposal.renderMarkdown)
       task.update()
+      writeToProposal(finalProposal)
 
       // Final statistics
       val totalTime = System.currentTimeMillis() - startTime
@@ -1483,6 +1532,13 @@ Provide the complete revised proposal.
         appendLine()
         appendLine("**Objective:** ${executionConfig.objective}")
         appendLine()
+        appendLine("## Output Files")
+        appendLine()
+        val (proposalLink, _) = task.createFile("proposal.md")
+        val (transcriptLink, _) = task.createFile("transcript.md")
+        appendLine("- **Complete Proposal:** [View](${proposalLink}) | [HTML](${proposalLink.removeSuffix(".md")}.html) | [PDF](${proposalLink.removeSuffix(".md")}.pdf)")
+        appendLine("- **Transcript:** [View](${transcriptLink}) | [HTML](${transcriptLink.removeSuffix(".md")}.html) | [PDF](${transcriptLink.removeSuffix(".md")}.pdf)")
+        appendLine()
         appendLine("**Key Components:**")
         appendLine("- Executive Summary")
         appendLine("- ${outline.sections.size} main sections")
@@ -1492,7 +1548,10 @@ Provide the complete revised proposal.
         if (timelineMilestones != null) appendLine("- Timeline with ${timelineMilestones.phases.size} phases")
         appendLine("- Conclusion with next steps")
         appendLine()
-        appendLine("> The full proposal is available in the Complete Proposal tab for detailed review.")
+        appendLine("**Statistics:**")
+        appendLine("- Total Word Count: $cumulativeWordCount / ${executionConfig.target_word_count}")
+        appendLine("- Sections: ${proposalSections.size}")
+        appendLine("- Generation Time: ${totalTime / 1000.0}s")
       }
 
       log.info("BusinessProposalTask completed: words=$cumulativeWordCount, sections=${proposalSections.size}, time=${totalTime}ms")
@@ -1534,6 +1593,7 @@ Provide the complete revised proposal.
       }
       resultFn(errorOutput)
     }
+    proposalStream?.close()
   }
 
   private fun getContextFiles(): String {
@@ -1563,6 +1623,37 @@ Provide the complete revised proposal.
       }
     }
   }
+  private fun getInputFileContent(): String {
+    val inputFiles = executionConfig?.input_files ?: return ""
+    if (inputFiles.isEmpty()) return ""
+    log.debug("Loading ${inputFiles.size} input files")
+    return inputFiles
+      .flatMap { pattern: String ->
+        val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+        (FileSelectionUtils.filteredWalk(root.toFile()) {
+          when {
+            FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+            matcher.matches(root.relativize(it.toPath())) -> true
+            it.isDirectory -> true
+            else -> false
+          }
+        })
+      }.filter { file ->
+        file.isFile && file.exists()
+      }
+      .distinct()
+      .sortedBy { it }
+      .joinToString("\n\n") { relativePath ->
+        val file = root.toFile().resolve(relativePath)
+        try {
+          val content = file.readText()
+          "# $relativePath\n\n```\n$content\n```"
+        } catch (e: Throwable) {
+          log.warn("Error reading file: $relativePath", e)
+          ""
+        }
+      }
+  }
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")
     val markdownTranscript = file?.outputStream()
@@ -1572,6 +1663,12 @@ Provide the complete revised proposal.
       }.pdf' target='_blank'>pdf</a>"
     )
     return markdownTranscript
+  }
+  private fun proposalFile(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("proposal.md")
+    val proposalStream = file?.outputStream()
+    log.info("Initialized proposal file: $link")
+    return proposalStream
   }
 
 

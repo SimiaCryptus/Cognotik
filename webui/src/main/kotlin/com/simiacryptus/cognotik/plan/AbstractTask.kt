@@ -12,7 +12,6 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val executionConfig: T?
 ) {
     var state: TaskState? = TaskState.Pending
-    protected val codeFiles = mutableMapOf<Path, String>()
 
     protected open val root: Path
         get() = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }

@@ -1,7 +1,11 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
-import com.simiacryptus.cognotik.actors.ChatAgent
+
 import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import java.nio.charset.StandardCharsets
+import java.nio.file.FileSystems
+import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -55,6 +59,9 @@ class TechnicalExplanationTask(
 
     @Description("Whether to provide comparison with related concepts")
     val include_comparisons: Boolean = true,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
+
 
     @Description("Programming language for code examples (if applicable)")
     val code_language: String? = null,
@@ -97,6 +104,13 @@ class TechnicalExplanationTask(
       }
       if (revision_passes < 0 || revision_passes > 5) {
         return "revision_passes must be between 0 and 5, got: $revision_passes"
+      }
+      if (!input_files.isNullOrEmpty()) {
+        input_files.forEach { file ->
+          if (file.isBlank()) {
+            return "input_files must not contain blank entries"
+          }
+        }
       }
       return ValidatedObject.validateFields(this)
     }
@@ -218,6 +232,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
     val startTime = System.currentTimeMillis()
     log.info("Starting TechnicalExplanationTask for topic: '${executionConfig?.topic}'")
     val markdownTranscript = transcript(task)
+    val userMessages = messages.filter { it.isNotBlank() }
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
@@ -239,6 +254,30 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     val tabs = TabbedDisplay(task)
+    // Load input files if specified
+    val inputFileContent = getInputFileCode()
+    if (inputFileContent.isNotBlank()) {
+      log.info("Loaded input files for context")
+      val inputFilesTask = task.ui.newTask(false)
+      tabs["Input Files"] = inputFilesTask.placeholder
+      inputFilesTask.add(
+        buildString {
+          appendLine("# Input Files")
+          appendLine()
+          appendLine(inputFileContent.truncateForDisplay(3000))
+          appendLine()
+        }.renderMarkdown
+      )
+      markdownTranscript?.write("# Input Files\n\n".toByteArray(StandardCharsets.UTF_8))
+      markdownTranscript?.write(inputFileContent.truncateForDisplay(3000).toByteArray(StandardCharsets.UTF_8))
+      markdownTranscript?.write("\n\n".toByteArray(StandardCharsets.UTF_8))
+      task.update()
+    }
+    // Include user messages in context
+    if (userMessages.isNotEmpty()) {
+      log.info("Including ${userMessages.size} user message(s) in context")
+    }
+
 
     // Overview tab
     val overviewTask = task.ui.newTask(false)
@@ -251,9 +290,19 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
       appendLine()
       appendLine("## Configuration")
       appendLine()
+      if (userMessages.isNotEmpty()) {
+        appendLine("### User Input")
+        appendLine()
+        userMessages.forEach { message ->
+          appendLine(message)
+          appendLine()
+        }
+        appendLine("---")
+        appendLine()
+      }
     }
     overviewTask.add(overviewContent.renderMarkdown)
-    markdownTranscript?.write(overviewContent.toByteArray())
+    markdownTranscript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
     buildString {
       appendLine("- Target Audience: ${executionConfig.target_audience}")
       appendLine("- Level of Detail: ${executionConfig.level_of_detail}")
@@ -299,8 +348,8 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
             if (priorContext.isNotBlank()) {
               appendLine("## Prior Context")
               appendLine(priorContext.truncateForDisplay(2000))
-              markdownTranscript?.write("\n## Prior Context\n".toByteArray())
-              markdownTranscript?.write(priorContext.truncateForDisplay(2000).toByteArray())
+              markdownTranscript?.write("\n## Prior Context\n".toByteArray(StandardCharsets.UTF_8))
+              markdownTranscript?.write(priorContext.truncateForDisplay(2000).toByteArray(StandardCharsets.UTF_8))
               appendLine()
             }
             if (contextFiles.isNotBlank()) {
@@ -310,8 +359,8 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
           }.renderMarkdown
         )
         task.update()
-        markdownTranscript?.write("\n## Related Files\n".toByteArray())
-        markdownTranscript?.write(contextFiles.truncateForDisplay(2000).toByteArray())
+        markdownTranscript?.write("\n## Related Files\n".toByteArray(StandardCharsets.UTF_8))
+        markdownTranscript?.write(contextFiles.truncateForDisplay(2000).toByteArray(StandardCharsets.UTF_8))
       }
 
       // Phase 1: Create outline
@@ -327,8 +376,8 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
           appendLine()
         }.renderMarkdown
       )
-      markdownTranscript?.write("\n# Explanation Outline\n\n".toByteArray())
-      markdownTranscript?.write("**Status:** Creating structured outline...\n\n".toByteArray())
+      markdownTranscript?.write("\n# Explanation Outline\n\n".toByteArray(StandardCharsets.UTF_8))
+      markdownTranscript?.write("**Status:** Creating structured outline...\n\n".toByteArray(StandardCharsets.UTF_8))
       task.update()
 
       val audienceGuidance = when (executionConfig.target_audience.lowercase()) {
@@ -482,7 +531,7 @@ Ensure the outline:
       }
       outlineTask.add(outlineContent.renderMarkdown)
       task.update()
-      markdownTranscript?.write(outlineContent.toByteArray())
+      markdownTranscript?.write(outlineContent.toByteArray(StandardCharsets.UTF_8))
 
       overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
       overviewTask.add("\n### Phase 2: Content Generation\n*Writing explanation sections...*\n".renderMarkdown)
@@ -509,8 +558,8 @@ Ensure the outline:
             appendLine()
           }.renderMarkdown
         )
-        markdownTranscript?.write("\n# ${conceptOutline.concept}\n\n".toByteArray())
-        markdownTranscript?.write("**Status:** Writing section...\n\n".toByteArray())
+        markdownTranscript?.write("\n# ${conceptOutline.concept}\n\n".toByteArray(StandardCharsets.UTF_8))
+        markdownTranscript?.write("**Status:** Writing section...\n\n".toByteArray(StandardCharsets.UTF_8))
         task.update()
 
         // Build context from previous sections
@@ -629,7 +678,7 @@ ${if (executionConfig.include_code_examples) {
         }
         sectionTask.add(sectionContent.renderMarkdown)
         task.update()
-        markdownTranscript?.write(sectionContent.toByteArray())
+        markdownTranscript?.write(sectionContent.toByteArray(StandardCharsets.UTF_8))
 
         resultBuilder.append("## ${section.title}\n\n")
         resultBuilder.append(section.content)
@@ -667,8 +716,8 @@ ${if (executionConfig.include_code_examples) {
             appendLine()
           }.renderMarkdown
         )
-        markdownTranscript?.write("\n# Comparisons\n\n".toByteArray())
-        markdownTranscript?.write("**Status:** Comparing with related concepts...\n\n".toByteArray())
+      markdownTranscript?.write("\n# Comparisons\n\n".toByteArray(StandardCharsets.UTF_8))
+      markdownTranscript?.write("**Status:** Comparing with related concepts...\n\n".toByteArray(StandardCharsets.UTF_8))
         task.update()
 
         val comparisonAgent = ChatAgent(
@@ -706,7 +755,7 @@ Make comparisons clear and helpful for ${executionConfig.target_audience}.
           }.renderMarkdown
         )
         task.update()
-        markdownTranscript?.write("\n## Related Concepts\n\n${comparisons}\n\n".toByteArray())
+      markdownTranscript?.write("\n## Related Concepts\n\n${comparisons}\n\n".toByteArray(StandardCharsets.UTF_8))
 
         resultBuilder.append("## Comparisons with Related Concepts\n\n")
         resultBuilder.append(comparisons)
@@ -732,8 +781,8 @@ Make comparisons clear and helpful for ${executionConfig.target_audience}.
             appendLine()
           }.renderMarkdown
         )
-        markdownTranscript?.write("\n# Revision Process\n\n".toByteArray())
-        markdownTranscript?.write("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...\n\n".toByteArray())
+      markdownTranscript?.write("\n# Revision Process\n\n".toByteArray(StandardCharsets.UTF_8))
+      markdownTranscript?.write("**Status:** Performing ${executionConfig.revision_passes} revision pass(es)...\n\n".toByteArray(StandardCharsets.UTF_8))
         task.update()
 
         val fullExplanation = resultBuilder.toString()
@@ -786,7 +835,7 @@ Provide the complete revised explanation.
             }.renderMarkdown
           )
           task.update()
-          markdownTranscript?.write("\n## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray())
+          markdownTranscript?.write("\n## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray(StandardCharsets.UTF_8))
         }
 
         overviewTask.add("✅ Phase 4 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
@@ -840,7 +889,7 @@ Provide the complete revised explanation.
 
       finalTask.add(finalExplanation.renderMarkdown)
       task.update()
-      markdownTranscript?.write("\n---\n\n${finalExplanation}\n".toByteArray())
+      markdownTranscript?.write("\n---\n\n${finalExplanation}\n".toByteArray(StandardCharsets.UTF_8))
 
       // Final statistics
       val totalTime = System.currentTimeMillis() - startTime
@@ -867,7 +916,7 @@ Provide the complete revised explanation.
       overviewTask.add(
         statsContent.renderMarkdown
       )
-      markdownTranscript?.write(statsContent.toByteArray())
+      markdownTranscript?.write(statsContent.toByteArray(StandardCharsets.UTF_8))
       task.update()
 
       // Concise summary for resultFn
@@ -928,6 +977,33 @@ Provide the complete revised explanation.
       resultFn(errorOutput)
     }
   }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
 
   private fun getContextFiles(): String {
     val relatedFiles = executionConfig?.related_files ?: return ""

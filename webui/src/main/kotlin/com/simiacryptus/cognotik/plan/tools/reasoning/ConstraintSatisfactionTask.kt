@@ -3,15 +3,21 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
-import java.io.FileOutputStream
+ import org.slf4j.Logger
+ import java.io.FileOutputStream
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.nio.charset.StandardCharsets
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
-class ConstraintSatisfactionTask(
+ class ConstraintSatisfactionTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: ConstraintSatisfactionTaskExecutionConfigData?
 ) : AbstractTask<ConstraintSatisfactionTask.ConstraintSatisfactionTaskExecutionConfigData, TaskTypeConfig>(
@@ -22,6 +28,8 @@ class ConstraintSatisfactionTask(
   class ConstraintSatisfactionTaskExecutionConfigData(
     @Description("The problem requiring constraint satisfaction")
     val problem_description: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Hard constraints that must be satisfied (cannot be violated)")
     val hard_constraints: List<String>? = null,
     @Description("Soft constraints to optimize with their relative weights (0.0-1.0)")
@@ -64,6 +72,12 @@ class ConstraintSatisfactionTask(
           return "soft constraint '$constraint' has invalid weight $weight (must be between 0.0 and 1.0)"
         }
       }
+      // Validate input files if provided
+      input_files?.forEach { pattern ->
+        if (pattern.isBlank()) {
+          return "input_files patterns cannot be blank"
+        }
+      }
       
       // Call parent validation
       return ValidatedObject.validateFields(this)
@@ -72,7 +86,8 @@ class ConstraintSatisfactionTask(
 
   override fun promptSegment(): String {
     return """
-ConstraintSatisfaction - Solve problems with multiple competing constraints
+ ConstraintSatisfaction - Solve problems with multiple competing constraints
+  ** Optionally, list input files (supports glob patterns) to be examined when solving the problem
   ** Specify the problem description clearly
   ** Define hard constraints that MUST be satisfied (non-negotiable requirements)
   ** Define soft constraints with weights (0.0-1.0) representing their relative importance
@@ -105,7 +120,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
     }
     
     val startTime = System.currentTimeMillis()
-    val transcript = transcript(task)
+    var transcriptStream: FileOutputStream? = null
     try {
       val problemDescription = executionConfig?.problem_description
       if (problemDescription.isNullOrBlank()) {
@@ -119,6 +134,12 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       val softConstraints = executionConfig.soft_constraints ?: emptyMap()
       val searchStrategy = executionConfig.search_strategy
       val maxIterations = executionConfig.max_iterations
+      // Initialize transcript
+      transcriptStream = initializeTranscript(task)
+      transcriptStream?.let { stream ->
+        writeTranscriptHeader(stream, problemDescription, hardConstraints, softConstraints, searchStrategy, maxIterations)
+      }
+
 
       val toInput = { it: String -> listOf(it) }
       val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
@@ -135,7 +156,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       val tabbedDisplay = TabbedDisplay(task)
       task.ui.newTask(false).apply {
         tabbedDisplay["Problem Overview"] = placeholder
-        transcript?.write(
+        transcriptStream?.write(
           """
           |## Constraint Satisfaction Problem
           |
@@ -168,7 +189,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       task.update()
       // Step 2: Gather Context
       task.ui.newTask(false).apply {
-        transcript?.write(
+        transcriptStream?.write(
           """
           |
           |### Gathering Context
@@ -186,6 +207,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
 
 
       val priorCode = getPriorCode(agent.executionState)
+      val inputFileContent = getInputFileContent()
 
       val prompt = buildPrompt(
         problemDescription,
@@ -193,11 +215,12 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
         softConstraints,
         searchStrategy,
         maxIterations,
-        priorCode
+        priorCode,
+        inputFileContent
       )
       task.ui.newTask(false).apply {
         tabbedDisplay["Context"] = placeholder
-        transcript?.write(
+        transcriptStream?.write(
           """
           |
           |### Context Gathered
@@ -217,7 +240,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       task.update()
       // Step 3: Generate Solution
       task.ui.newTask(false).apply {
-        transcript?.write(
+        transcriptStream?.write(
           """
           |
           |### Generating Solution
@@ -241,7 +264,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
 
       var answer: String? = chatAgent.answer(toInput(""))
       task.ui.newTask(false).apply {
-        transcript?.write(
+        transcriptStream?.write(
           """
           |
           |### Solution Generated
@@ -263,7 +286,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       task.ui.newTask(false).apply {
         tabbedDisplay["Final Solution"] = placeholder
         val solution = answer
-        transcript?.write(
+        transcriptStream?.write(
           """
           |
           |## Final Solution
@@ -286,18 +309,28 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       task.update()
       val duration = System.currentTimeMillis() - startTime
       log.info("Constraint Satisfaction Task completed in ${duration}ms")
-      transcript?.write("\n\n---\n**Completed in ${duration}ms**\n".toByteArray())
+      transcriptStream?.write("\n\n---\n**Completed in ${duration}ms**\n".toByteArray())
 
 
       if (orchestrationConfig.autoFix) {
-        task.safeComplete("Constraint satisfaction solution generated and auto-applied", log)
+        val (link, _) = task.createFile("constraint_solution_transcript.md")
+        val summaryMessage = "Constraint satisfaction solution generated. " +
+          "View detailed transcript: <a href='$link' target='_blank'>markdown</a> " +
+          "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+          "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+        task.safeComplete(summaryMessage, log)
         resultFn(answer ?: "No solution generated")
       } else {
         task.add(
           MarkdownUtil.renderMarkdown(
             acceptButtonFooter(task.ui) {
               try {
-                task.complete("Constraint satisfaction solution accepted")
+                val (link, _) = task.createFile("constraint_solution_transcript.md")
+                val summaryMessage = "Constraint satisfaction solution accepted. " +
+                  "View detailed transcript: <a href='$link' target='_blank'>markdown</a> " +
+                  "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+                  "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+                task.complete(summaryMessage)
                 resultFn(answer ?: "No solution generated")
               } catch (e: Exception) {
                 log.error("Error accepting constraint satisfaction solution", e)
@@ -310,7 +343,7 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
         )
       }
     } catch (e: Exception) {
-      transcript?.write("\n\n## ❌ Error\n\n${e.message}\n".toByteArray())
+      transcriptStream?.write("\n\n## ❌ Error\n\n${e.message}\n".toByteArray())
       log.error("Error in Constraint Satisfaction Task", e)
       task.error(e)
       task.add(
@@ -328,8 +361,8 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
       )
       resultFn("ERROR: Failed to generate constraint satisfaction solution - ${e.message}")
     } finally {
-      transcript?.flush()
-      transcript?.close()
+      transcriptStream?.flush()
+      transcriptStream?.close()
     }
   }
 
@@ -345,6 +378,77 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
     )
     return markdownTranscript
   }
+  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = task.createFile("constraint_solution_transcript.md")
+      val transcriptStream = file?.outputStream()
+      task.complete(
+        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
+      log.info("Initialized transcript file: $link")
+      transcriptStream
+    } catch (e: Exception) {
+      log.error("Failed to initialize transcript", e)
+      null
+    }
+  }
+  private fun writeTranscriptHeader(
+    stream: FileOutputStream,
+    problemDescription: String,
+    hardConstraints: List<String>,
+    softConstraints: Map<String, Double>,
+    searchStrategy: String,
+    maxIterations: Int
+  ) {
+    try {
+      val header = buildString {
+        appendLine("# Constraint Satisfaction Task Transcript")
+        appendLine()
+        appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+        appendLine()
+        appendLine("**Problem:** $problemDescription")
+        appendLine("**Hard Constraints:** ${hardConstraints.size}")
+        appendLine("**Soft Constraints:** ${softConstraints.size}")
+        appendLine("**Search Strategy:** $searchStrategy")
+        appendLine("**Max Iterations:** $maxIterations")
+        appendLine()
+        appendLine("---")
+        appendLine()
+      }
+      stream.write(header.toByteArray(StandardCharsets.UTF_8))
+      stream.flush()
+    } catch (e: Exception) {
+      log.error("Failed to write transcript header", e)
+    }
+  }
+  private fun getInputFileContent(): String = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
 
   private fun buildPrompt(
     problemDescription: String,
@@ -352,16 +456,20 @@ ConstraintSatisfaction - Solve problems with multiple competing constraints
     softConstraints: Map<String, Double>,
     searchStrategy: String,
     maxIterations: Int,
-    priorCode: String
+    priorCode: String,
+    inputFileContent: String
   ): String {
     return """
-You are an expert problem solver specializing in constraint satisfaction problems (CSP).
+ You are an expert problem solver specializing in constraint satisfaction problems (CSP).
 
-## Problem Description:
-$problemDescription
+ ## Problem Description:
+ $problemDescription
+## Input Files Context:
+${if (inputFileContent.isNotBlank()) inputFileContent else "No input files provided"}
 
-## Hard Constraints (MUST be satisfied):
-${hardConstraints.mapIndexed { i, c -> "${i + 1}. $c" }.joinToString("\n")}
+
+ ## Hard Constraints (MUST be satisfied):
+ ${hardConstraints.mapIndexed { i, c -> "${i + 1}. $c" }.joinToString("\n")}
 
 ## Soft Constraints (optimize with given weights):
 ${

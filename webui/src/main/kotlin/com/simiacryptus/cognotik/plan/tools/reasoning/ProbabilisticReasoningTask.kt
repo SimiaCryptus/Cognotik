@@ -4,16 +4,19 @@ import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+ import org.slf4j.Logger
+ import java.io.FileOutputStream
+ import java.time.LocalDateTime
+ import java.time.format.DateTimeFormatter
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 
-class ProbabilisticReasoningTask(
+ class ProbabilisticReasoningTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: ProbabilisticReasoningTaskExecutionConfigData?
 ) : AbstractTask<ProbabilisticReasoningTask.ProbabilisticReasoningTaskExecutionConfigData, TaskTypeConfig>(
@@ -21,6 +24,8 @@ class ProbabilisticReasoningTask(
   planTask
 ) {
   val maxDescriptionLength = 10000
+  protected val codeFiles = mutableMapOf<Path, String>()
+
 
   class ProbabilisticReasoningTaskExecutionConfigData(
     @Description("Map of hypotheses to their prior probabilities (must sum to 1.0)")
@@ -35,6 +40,8 @@ class ProbabilisticReasoningTask(
     val suggest_experiments: Boolean = true,
     @Description("Risk tolerance level (low/medium/high)")
     val risk_tolerance: String = "medium",
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Decision context or problem statement")
     val decision_context: String? = null,
     task_description: String? = null,
@@ -143,7 +150,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
     val ui = task.ui
     val tabs = TabbedDisplay(task)
     // Create transcript file
-    val transcriptStream = transcript(task)
+    val transcriptStream = initializeTranscript(task)
     transcriptStream?.use { stream ->
       stream.write("# Probabilistic Reasoning Analysis Transcript\n\n".toByteArray())
       stream.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
@@ -152,6 +159,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
       stream.write("**Evidence Items:** ${evidence.size}\n\n".toByteArray())
       stream.write("**Risk Tolerance:** ${executionConfig.risk_tolerance}\n\n".toByteArray())
       stream.write("---\n\n".toByteArray())
+      writeInputFilesSection(stream, agent)
     }
 
     // Overview tab
@@ -179,6 +187,16 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
     }
     overviewTask.add(overviewContent.renderMarkdown)
     task.update()
+    val inputFileContent = getInputFileCode(agent)
+    if (inputFileContent.isNotBlank()) {
+      log.debug("Found input files: ${inputFileContent.length} characters")
+      val filesTask = ui.newTask(false)
+      tabs["Input Files"] = filesTask.placeholder
+      filesTask.add(
+        "# Input Files\n\n$inputFileContent".renderMarkdown
+      )
+      task.update()
+    }
 
     val priorContext = getPriorCode(agent.executionState)
     if (priorContext.isNotBlank()) {
@@ -197,6 +215,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
       task.update()
     }
     val resultBuilder = StringBuilder()
+    var transcriptStreamRef = transcriptStream
 
     try {
       // Prior Probabilities tab
@@ -281,6 +300,7 @@ Consider both the strength of evidence and its reliability.
       transcriptStream?.write("\n\n".toByteArray())
 
       
+
       updateTask.add(
         buildString {
           appendLine("## Analysis Results")
@@ -344,6 +364,7 @@ Consider both the strength of evidence and its reliability.
         transcriptStream?.write("\n\n".toByteArray())
 
         
+
         evTask.add(
           buildString {
             appendLine("## Expected Value & Risk Analysis")
@@ -404,6 +425,7 @@ Consider both the strength of evidence and its reliability.
         transcriptStream?.write("\n\n".toByteArray())
 
         
+
         uncertaintyTask.add(
           buildString {
             appendLine("## Critical Uncertainties")
@@ -464,6 +486,7 @@ Consider both the strength of evidence and its reliability.
         transcriptStream?.write("\n\n".toByteArray())
 
         
+
         experimentTask.add(
           buildString {
             appendLine("## Recommended Experiments")
@@ -565,7 +588,71 @@ Consider both the strength of evidence and its reliability.
       resultFn(errorOutput)
     }
   }
-
+  private fun getInputFileCode(agent: TaskOrchestrator): String {
+    return (executionConfig?.input_files ?: listOf())
+      .flatMap { pattern: String ->
+        val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+        (FileSelectionUtils.filteredWalk(agent.root.toFile()) {
+          when {
+            FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+            matcher.matches(agent.root.relativize(it.toPath())) -> true
+            it.isDirectory -> true
+            else -> false
+          }
+        })
+      }.filter { file ->
+        file.isFile && file.exists()
+      }
+      .distinct()
+      .sortedBy { it }
+      .joinToString("\n\n") { relativePath ->
+        val file = agent.root.toFile().resolve(relativePath)
+        try {
+          val content = file.readText()
+          "# $relativePath\n\n```\n$content\n```"
+        } catch (e: Throwable) {
+          log.warn("Error reading file: $relativePath", e)
+          ""
+        }
+      }
+  }
+  private fun writeInputFilesSection(stream: FileOutputStream, agent: TaskOrchestrator) {
+    try {
+      val inputFileContent = getInputFileCode(agent)
+      if (inputFileContent.isNotBlank()) {
+        stream.write("\n## Input Files\n\n".toByteArray(StandardCharsets.UTF_8))
+        stream.write(inputFileContent.toByteArray(StandardCharsets.UTF_8))
+        stream.write("\n\n".toByteArray(StandardCharsets.UTF_8))
+        stream.flush()
+      }
+    } catch (e: Exception) {
+      log.error("Failed to write input files section to transcript", e)
+    }
+  }
+  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = task.createFile("reasoning_transcript.md")
+      val transcriptStream = file?.outputStream()
+      task.complete(
+        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
+      log.info("Initialized transcript file: $link")
+      transcriptStream
+    } catch (e: Exception) {
+      log.error("Failed to initialize transcript", e)
+      null
+    }
+  }
+  private fun writeToTranscript(stream: FileOutputStream, content: String) {
+    try {
+      stream.write(content.toByteArray(StandardCharsets.UTF_8))
+      stream.flush()
+    } catch (e: Exception) {
+      log.error("Failed to write to transcript", e)
+    }
+  }
   private fun buildBayesianUpdatePrompt(
     hypotheses: Map<String, Double>,
     evidence: List<String>,
@@ -748,20 +835,6 @@ Provide:
 Generate the experiment recommendations now:
 """.trimIndent()
   }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
-
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ProbabilisticReasoningTask::class.java)

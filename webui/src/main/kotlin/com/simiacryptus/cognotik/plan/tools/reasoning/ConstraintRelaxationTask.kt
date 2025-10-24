@@ -2,18 +2,22 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+ import org.slf4j.Logger
+ import java.io.FileOutputStream
+ import java.time.LocalDateTime
+ import java.time.format.DateTimeFormatter
+import java.nio.file.FileSystems
+import java.nio.file.Path
 
-class ConstraintRelaxationTask(
+ class ConstraintRelaxationTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: ConstraintRelaxationTaskExecutionConfigData?
 ) : AbstractTask<ConstraintRelaxationTask.ConstraintRelaxationTaskExecutionConfigData, TaskTypeConfig>(
@@ -35,6 +39,8 @@ class ConstraintRelaxationTask(
     val find_creative_satisfactions: Boolean = true,
     @Description("Maximum number of relaxation/reintroduction iterations")
     val max_iterations: Int = 5,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Additional files for context")
     val related_files: List<String>? = null,
     task_dependencies: List<String>? = null,
@@ -83,6 +89,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
   ** Enable creative satisfaction finding to discover novel solutions
   ** Produces a solution that progressively satisfies constraints
   ** Shows evolution of solution as constraints are reintroduced
+  ** Optionally, list input files (supports glob patterns) to be examined for context
         """.trimIndent()
   }
 
@@ -131,7 +138,8 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     val tabs = TabbedDisplay(task)
-    val transcript = transcript(task)
+    val (transcriptLink, transcriptFile) = task.createFile("constraint_relaxation_transcript.md")
+    val transcript = transcriptFile?.outputStream()
     val overviewTask = task.ui.newTask(false)
     tabs["Overview"] = overviewTask.placeholder
 
@@ -172,6 +180,11 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     }
     transcript?.write(overviewContent.toByteArray())
     overviewTask.add(overviewContent.renderMarkdown)
+    task.complete(
+      "Writing transcript to <a href='$transcriptLink' target='_blank'>$transcriptLink</a> " +
+          "<a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+          "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+    )
     task.update()
 
     val priorContext = getPriorCode(agent.executionState)
@@ -189,6 +202,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
       transcript?.write("\n\n# Context from Previous Tasks\n\n${priorContext.truncateForDisplay()}\n".toByteArray())
       task.update()
     }
+    val inputFileContent = getInputFileCode()
 
     overviewTask.add(
       buildString {
@@ -204,6 +218,11 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     val solutionBuilder = StringBuilder()
     solutionBuilder.append("# Constraint Relaxation Solution\n\n")
     solutionBuilder.append("**Problem:** $problem\n\n")
+    if (inputFileContent.isNotBlank()) {
+      solutionBuilder.append("## Input Files Context\n\n")
+      solutionBuilder.append(inputFileContent)
+      solutionBuilder.append("\n\n")
+    }
 
     try {
       // Step 1: Analyze and order constraints
@@ -483,16 +502,34 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
       task.update()
 
       val finalResult = solutionBuilder.toString()
+      // Write detailed output to file
+      val (detailedLink, detailedFile) = task.createFile("constraint_relaxation_detailed.md")
+      detailedFile?.outputStream()?.use { stream ->
+        stream.write(finalResult.toByteArray())
+      }
+      // Generate summary message
+      val summaryMessage = buildString {
+        appendLine("✅ Constraint Relaxation Complete")
+        appendLine()
+        appendLine("**Total Time:** ${totalTime / 1000.0}s")
+        appendLine("**Iterations:** ${reintroductionSteps.size}")
+        appendLine("**Constraints Satisfied:** ${constraints.size - relaxedConstraints.size + reintroductionSteps.size}/${constraints.size}")
+        appendLine()
+        appendLine("📄 [View Detailed Results]($detailedLink)")
+      }
+      
       task.safeComplete(
-        "Completed ${reintroductionSteps.size} constraint reintroduction iterations in ${totalTime / 1000}s",
+        summaryMessage,
         log
       )
-      resultFn(finalResult)
+      resultFn(summaryMessage)
 
     } catch (e: Exception) {
       log.error("Error during constraint relaxation", e)
       task.error(e)
-      transcript?.close()
+      transcript?.let {
+        it.close()
+      }
 
       overviewTask.add(
         buildString {
@@ -523,17 +560,6 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
       }
       resultFn(errorOutput)
     }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(".md")
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
 
@@ -585,7 +611,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     problem: String,
     constraints: Map<String, Double>,
     priorContext: String,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface,
+    api: ChatInterface,
     findCreative: Boolean
   ): String {
     val prompt = buildString {
@@ -634,7 +660,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     priority: Double,
     allActiveConstraints: Map<String, Double>,
     priorContext: String,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface,
+    api: ChatInterface,
     findCreative: Boolean
   ): String {
     val prompt = buildString {
@@ -695,7 +721,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     initiallyRelaxed: Set<String>,
     reintroductionSteps: List<ReintroductionStep>,
     finalSolution: String,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface
+    api: ChatInterface
   ): String {
     val prompt = buildString {
       appendLine("You are an expert problem solver providing a final synthesis of a constraint relaxation process.")
@@ -741,6 +767,33 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
     return agent.answer(listOf(""))
   }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
 
   private data class ReintroductionStep(
     val constraint: String = "",

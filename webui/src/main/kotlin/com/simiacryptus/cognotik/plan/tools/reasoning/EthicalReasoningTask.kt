@@ -2,7 +2,9 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -44,6 +46,8 @@ class EthicalReasoningTask(
   class EthicalReasoningTaskExecutionConfigData(
     @Description("A clear description of the ethical problem or decision to be made.")
     val ethical_dilemma: String? = null,
+    @Description("Optional input files (supports glob patterns) to provide context for the ethical analysis")
+    val input_files: List<String>? = null,
     @Description("A list of individuals, groups, or entities affected by the decision.")
     val stakeholders: List<String>? = null,
     @Description("The ethical frameworks to apply. Options: utilitarianism, deontology, virtue_ethics, care_ethics, rights_based.")
@@ -76,7 +80,10 @@ class EthicalReasoningTask(
 
   override fun promptSegment(): String {
     return """
-EthicalReasoning - Analyze a dilemma through multiple ethical frameworks
+ EthicalReasoning - Analyze a dilemma through multiple ethical frameworks
+  ** Optionally specify input files (supports glob patterns) to provide context
+  ** Files will be read and included in the analysis
+  ** Specify the ethical dilemma and stakeholders
   ** Specify the ethical dilemma and stakeholders
   ** Choose from frameworks: utilitarianism, deontology, virtue_ethics, care_ethics, rights_based
   ** Provides analysis from each framework's perspective
@@ -97,6 +104,7 @@ EthicalReasoning - Analyze a dilemma through multiple ethical frameworks
     orchestrationConfig: OrchestrationConfig
   ) {
     val startTime = System.currentTimeMillis()
+    val allMessages = messages + getInputFileContent()
     log.info("Starting EthicalReasoning task for dilemma: ${executionConfig?.ethical_dilemma?.truncateForDisplay(200)}")
     // Validate configuration first
     executionConfig?.validate()?.let { validationError ->
@@ -176,7 +184,7 @@ EthicalReasoning - Analyze a dilemma through multiple ethical frameworks
         if (fullContext.isNotBlank()) {
           val contextTask = task.ui.newTask(false)
           tabs["Context"] = contextTask.placeholder
-          contextTask.add(MarkdownUtil.renderMarkdown(fullContext, ui = ui))
+          contextTask.add(MarkdownUtil.renderMarkdown("## Analysis Context\n\n$fullContext", ui = ui))
           task.update()
         }
 
@@ -214,7 +222,7 @@ Provide a detailed analysis.
         val dilemmaAnalysis = chatAgent.answer(listOf(analysisPrompt))
         log.info("Dilemma analysis completed. Length: ${dilemmaAnalysis.length} characters")
         transcript?.write("## Dilemma & Stakeholder Analysis\n\n".toByteArray())
-        transcript?.write("$dilemmaAnalysis\n\n".toByteArray())
+        transcript?.write("${dilemmaAnalysis}\n\n".toByteArray())
         transcript?.write("---\n\n".toByteArray())
 
 
@@ -275,7 +283,7 @@ Provide a clear and structured analysis.
           frameworkAnalyses[framework] = frameworkAnalysis
           log.info("$framework analysis completed. Length: ${frameworkAnalysis.length} characters")
           transcript?.write("## $capitalizedFramework Analysis\n\n".toByteArray())
-          transcript?.write("$frameworkAnalysis\n\n".toByteArray())
+          transcript?.write("${frameworkAnalysis}\n\n".toByteArray())
           transcript?.write("---\n\n".toByteArray())
 
 
@@ -313,7 +321,7 @@ Provide a detailed synthesis and a clear final recommendation.
         val synthesis = chatAgent.answer(listOf<String>(synthesisPrompt))
         log.info("Synthesis completed. Length: ${synthesis.length} characters")
         transcript?.write("## Synthesis & Recommendation\n\n".toByteArray())
-        transcript?.write("$synthesis\n\n".toByteArray())
+        transcript?.write("${synthesis}\n\n".toByteArray())
         transcript?.write("---\n\n".toByteArray())
 
 
@@ -333,7 +341,7 @@ Provide a detailed synthesis and a clear final recommendation.
           )
         )
         transcript?.write("## Final Recommendation Summary\n\n".toByteArray())
-        transcript?.write("$finalRecommendationSummary\n\n".toByteArray())
+        transcript?.write("${finalRecommendationSummary}\n\n".toByteArray())
         transcript?.write("---\n\n".toByteArray())
         transcript?.write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
         transcript?.flush()
@@ -375,9 +383,10 @@ Provide a detailed synthesis and a clear final recommendation.
         val duration = System.currentTimeMillis() - startTime
         val summary = "Ethical reasoning analysis completed for dilemma: ${dilemma.truncateForDisplay(200)}"
         log.info("$summary (duration: ${duration}ms)")
+        val (transcriptLink, _) = task.createFile("transcript.md")
 
         task.safeComplete(summary, log)
-        resultFn(finalResult)
+        resultFn("$finalResult\n\n---\n\nDetailed analysis: [View Transcript]($transcriptLink)")
 
       } catch (e: Exception) {
         val duration = System.currentTimeMillis() - startTime
@@ -405,6 +414,48 @@ Provide a detailed synthesis and a clear final recommendation.
         resultFn("ERROR: Ethical reasoning analysis failed - ${e.message}")
       }
     }
+  private fun getInputFileContent(): List<String> {
+    return (executionConfig?.input_files ?: listOf())
+      .flatMap { pattern: String ->
+        val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+        (FileSelectionUtils.filteredWalk(root.toFile()) {
+          when {
+            FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+            matcher.matches(root.relativize(it.toPath())) -> true
+            it.isDirectory -> true
+            else -> false
+          }
+        })
+      }.filter { file ->
+        file.isFile && file.exists()
+      }
+      .distinct()
+      .sortedBy { it }
+      .mapNotNull { relativePath ->
+        val file = root.toFile().resolve(relativePath)
+        try {
+          val content = if (!isTextFile(file)) {
+            extractDocumentContent(file)
+          } else {
+            file.readText()
+          }
+          "# ${relativePath}\n\n```\n$content\n```"
+        } catch (e: Throwable) {
+          log.warn("Error reading file: $relativePath", e)
+          null
+        }
+      }
+  }
+  private fun isTextFile(file: java.io.File): Boolean {
+    val textExtensions = setOf("txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven")
+    return textExtensions.contains(file.extension.lowercase())
+  }
+  private fun extractDocumentContent(file: java.io.File) = try {
+    file.getReader().use { it.getText() }
+  } catch (e: Exception) {
+    log.warn("Failed to extract content from ${file.name}", e)
+    file.readText()
+  }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
     val (link, file) = task.createFile("transcript.md")

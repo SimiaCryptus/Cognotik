@@ -3,7 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.actors.ChatAgent
 import com.simiacryptus.cognotik.actors.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -12,10 +15,15 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+ import java.time.LocalDateTime
+ import java.time.format.DateTimeFormatter
+import java.io.File
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.nio.charset.StandardCharsets
 
-class BrainstormingTask(
+
+ class BrainstormingTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: BrainstormingTaskExecutionConfigData?
 ) : AbstractTask<BrainstormingTask.BrainstormingTaskExecutionConfigData, TaskTypeConfig>(
@@ -25,6 +33,7 @@ class BrainstormingTask(
 
   val maxSummaryLength: Int = 10000
   private var transcriptStream: FileOutputStream? = null
+  protected val codeFiles = mutableMapOf<Path, String>()
 
   data class BrainstormedOption(
     val title: String = "",
@@ -69,6 +78,8 @@ class BrainstormingTask(
   class BrainstormingTaskExecutionConfigData(
     @Description("The problem or question to brainstorm solutions for")
     val problem_statement: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Number of options to generate (default: 5-10)")
     val target_option_count: Int = 7,
     @Description("Categories or domains to consider (optional)")
@@ -146,6 +157,7 @@ Brainstorming - Generate and analyze multiple solution options
     val analysisDepth = executionConfig.analysis_depth
 
     log.info("Configuration: targetCount=$targetCount, categories=$categories, includeCreative=$includeCreative, analysisDepth=$analysisDepth")
+    log.info("Input files: ${executionConfig?.input_files?.joinToString(", ") ?: "none"}")
 
     val ui = task.ui
 
@@ -153,6 +165,7 @@ Brainstorming - Generate and analyze multiple solution options
       // Initialize transcript
       transcriptStream = transcript(task)
       transcriptStream?.write("# Brainstorming Session Transcript\n\n".toByteArray())
+      transcriptStream?.write("**Input Files:** ${executionConfig?.input_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
       transcriptStream?.write("**Problem Statement:** $problemStatement\n\n".toByteArray())
       transcriptStream?.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
       transcriptStream?.write("---\n\n".toByteArray())
@@ -183,6 +196,11 @@ Brainstorming - Generate and analyze multiple solution options
         appendLine("**Analysis Depth:** $analysisDepth")
         appendLine()
         appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+        if (!executionConfig?.input_files.isNullOrEmpty()) {
+          appendLine()
+          appendLine("**Input Files:**")
+          executionConfig?.input_files?.forEach { appendLine("- $it") }
+        }
         appendLine()
         appendLine("---")
         appendLine()
@@ -192,6 +210,17 @@ Brainstorming - Generate and analyze multiple solution options
       }
       overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent, ui = ui))
       task.update()
+      // Get input file content
+      val inputFileContent = getInputFileCode()
+      if (inputFileContent.isNotBlank()) {
+        log.debug("Found input file content: ${inputFileContent.length} characters")
+        val inputFilesTask = task.ui.newTask(false)
+        tabs["Input Files"] = inputFilesTask.placeholder
+        inputFilesTask.add(MarkdownUtil.renderMarkdown(inputFileContent, ui = ui))
+        task.update()
+        transcriptStream?.write("\n## Input Files\n\n$inputFileContent\n\n".toByteArray())
+      }
+
 
       // Gather context from previous tasks
       val priorContext = getPriorCode(agent.executionState)
@@ -224,7 +253,8 @@ Brainstorming - Generate and analyze multiple solution options
         categories,
         constraints,
         includeCreative,
-        priorContext
+        priorContext,
+        inputFileContent
       )
 
       val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
@@ -431,27 +461,22 @@ Brainstorming - Generate and analyze multiple solution options
       )
       task.update()
 
-      // Build final concise output
-      val finalOutput = buildString {
-        appendLine("# Brainstorming Results: $problemStatement")
-        appendLine()
-        appendLine("## Options Generated: ${options.size}")
-        appendLine()
-        options.forEachIndexed { index, option ->
-          appendLine("### ${index + 1}. ${option.title}")
-          appendLine(option.description.truncateForDisplay())
-          appendLine()
-        }
-        appendLine("## Key Findings")
-        appendLine()
-        appendLine(summary.truncateForDisplay())
-        appendLine()
-        appendLine("---")
-        appendLine("**Options:** ${options.size} | **Analysis Depth:** $analysisDepth | **Time:** ${(System.currentTimeMillis() - startTime) / 1000}s")
-      }
-
       val totalTime = System.currentTimeMillis() - startTime
-      log.info("BrainstormingTask completed: total_time=${totalTime}ms, options=${options.size}, output_size=${finalOutput.length} chars")
+      // Write detailed results to file
+      val detailedResults = buildDetailedResults(
+        problemStatement,
+        options,
+        analyses,
+        summary,
+        totalTime
+      )
+      val (resultsLink, resultsFile) = task.createFile("brainstorming_results.md")
+      resultsFile?.outputStream()?.use { stream ->
+        stream.write(detailedResults.toByteArray(StandardCharsets.UTF_8))
+        stream.flush()
+      }
+      log.info("Saved detailed results to: $resultsLink")
+
       // Finalize transcript
       transcriptStream?.write("\n## Session Complete\n\n".toByteArray())
       transcriptStream?.write("**Total Time:** ${totalTime / 1000.0}s\n".toByteArray())
@@ -460,7 +485,40 @@ Brainstorming - Generate and analyze multiple solution options
       transcriptStream?.write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
       transcriptStream?.flush()
       transcriptStream?.close()
+      val transcriptLink = task.createFile("brainstorming_transcript.md").first
+      // Build final concise output with file links
+      val finalOutput = buildString {
+        appendLine("# Brainstorming Results: $problemStatement")
+        appendLine()
+        appendLine("✅ Generated and analyzed ${options.size} options in ${totalTime / 1000}s")
+        appendLine()
+        appendLine("## Summary")
+        appendLine()
+        appendLine(summary.truncateForDisplay())
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine("## Detailed Results")
+        appendLine()
+        appendLine("📄 [Full Results]($resultsLink) | [HTML](${resultsLink.removeSuffix(".md")}.html) | [PDF](${resultsLink.removeSuffix(".md")}.pdf)")
+        appendLine()
+        appendLine("📋 [Transcript]($transcriptLink) | [HTML](${transcriptLink.removeSuffix(".md")}.html) | [PDF](${transcriptLink.removeSuffix(".md")}.pdf)")
+        appendLine()
+        appendLine("**Options:** ${options.size} | **Analysis Depth:** $analysisDepth | **Time:** ${totalTime / 1000}s")
 
+        appendLine()
+        appendLine()
+        options.forEachIndexed { index, option ->
+          appendLine("### ${index + 1}. ${option.title}")
+          appendLine()
+        }
+        appendLine()
+        appendLine()
+        appendLine("---")
+
+      }
+
+      log.info("BrainstormingTask completed: total_time=${totalTime}ms, options=${options.size}, output_size=${finalOutput.length} chars")
 
       // Update overview with completion
       overviewTask.add(
@@ -527,13 +585,15 @@ Brainstorming - Generate and analyze multiple solution options
   }
 
 
+
   private fun buildBrainstormPrompt(
     problemStatement: String,
     targetCount: Int,
     categories: String,
     constraints: List<String>,
     includeCreative: Boolean,
-    priorContext: String
+    priorContext: String,
+    inputFileContent: String = ""
   ): String {
     val constraintsSection = if (constraints.isNotEmpty()) {
       """
@@ -697,6 +757,120 @@ Provide a comprehensive summary that includes:
 Provide a well-structured, actionable summary now.
         """.trimIndent()
   }
+  private fun buildDetailedResults(
+    problemStatement: String,
+    options: List<BrainstormedOption>,
+    analyses: Map<Int, OptionAnalysis>,
+    summary: String,
+    totalTime: Long
+  ): String {
+    return buildString {
+      appendLine("# Brainstorming Session - Detailed Results")
+      appendLine()
+      appendLine("**Problem Statement:** $problemStatement")
+      appendLine()
+      appendLine("**Session Duration:** ${totalTime / 1000}s")
+      appendLine()
+      appendLine("**Options Generated:** ${options.size}")
+      appendLine()
+      appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+      appendLine()
+      appendLine("---")
+      appendLine()
+      appendLine("## All Options")
+      appendLine()
+      options.forEachIndexed { index, option ->
+        val optionNumber = index + 1
+        appendLine("### ${optionNumber}. ${option.title}")
+        if (option.category != null) {
+          appendLine("**Category:** ${option.category}")
+        }
+        appendLine()
+        appendLine(option.description)
+        appendLine()
+        val analysis = analyses[optionNumber]
+        if (analysis != null) {
+          appendLine("#### Analysis")
+          appendLine()
+          appendLine("**Pros:**")
+          analysis.pros.forEach { appendLine("- $it") }
+          appendLine()
+          appendLine("**Cons:**")
+          analysis.cons.forEach { appendLine("- $it") }
+          appendLine()
+          appendLine("**Feasibility:** ${analysis.feasibility}")
+          appendLine()
+          appendLine("**Impact:** ${analysis.impact}")
+          appendLine()
+          appendLine("**Risks:**")
+          analysis.risks.forEach { appendLine("- $it") }
+          appendLine()
+          appendLine("**Requirements:**")
+          analysis.requirements.forEach { appendLine("- $it") }
+          appendLine()
+        }
+        appendLine("---")
+        appendLine()
+      }
+      appendLine("## Summary & Recommendations")
+      appendLine()
+      appendLine(summary)
+      appendLine()
+    }
+  }
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          codeFiles[file.toPath()] ?: file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+  private fun isTextFile(file: File): Boolean {
+    val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp",
+      "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
+    )
+    return textExtensions.contains(file.extension.lowercase())
+  }
+  private fun extractDocumentContent(file: File) = try {
+    file.getReader().use { reader ->
+      when (reader) {
+        is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+        else -> reader.getText()
+      }
+    }
+  } catch (e: Exception) {
+    log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+    try {
+      file.readText()
+    } catch (e2: Exception) {
+      "Error reading file: ${e2.message}"
+    }
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(BrainstormingTask::class.java)
