@@ -14,6 +14,7 @@ import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
+import kotlin.jvm.optionals.getOrNull
 
 /**
  * Gemini Chat Client using the official Google Gen AI Java SDK
@@ -159,13 +160,13 @@ class GeminiSdkChatClient(
             contentPart.image_url != null -> {
               // Handle image URLs
               val imageUrl = contentPart.image_url
-              if (imageUrl.startsWith("data:")) {
+              if (imageUrl?.startsWith("data:") == true) {
                 // Base64 encoded image
                 val parts = imageUrl.split(",")
                 val mimeType = parts[0].substringAfter("data:").substringBefore(";")
                 val data = parts[1]
                 Part.fromBytes(data.decodeBase64()?.toByteArray(), mimeType)
-              } else if (imageUrl.startsWith("gs://")) {
+              } else if (imageUrl?.startsWith("gs://") == true) {
                 // GCS URI
                 Part.fromUri(imageUrl, "image/jpeg")
               } else {
@@ -189,10 +190,28 @@ class GeminiSdkChatClient(
     val choices = response.candidates().orElse(emptyList()).mapIndexed { index, candidate ->
       val content = candidate.content().orElse(null)
       val text = content?.parts()?.orElse(emptyList())
-        ?.joinToString("\n") { it.text().orElse("") } ?: ""
+        ?.mapNotNull { it.text().getOrNull() }?.joinToString("\n")?.let {
+          when (it) {
+            "" -> null
+            else -> it
+          }
+        }
 
+      val chatMessageResponse = ModelSchema.ChatMessageResponse(
+        content = text,
+      )
+      content?.parts()?.orElse(emptyList())?.forEach { part ->
+        part.inlineData()?.getOrNull()?.apply {
+          when (mimeType().getOrNull()) {
+            "image/png", "image/jpeg", "image/jpg", "image/gif" -> {
+              chatMessageResponse.image_data = this.data().getOrNull()
+              chatMessageResponse.image_mime_type = this.mimeType().getOrNull()
+            }
+          }
+        }
+      }
       ModelSchema.ChatChoice(
-        message = ModelSchema.ChatMessageResponse(content = text),
+        message = chatMessageResponse,
         index = index,
         finish_reason = candidate.finishReason().orElse(null)?.toString()
       )

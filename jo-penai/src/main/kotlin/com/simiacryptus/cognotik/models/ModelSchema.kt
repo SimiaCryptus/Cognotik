@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.models
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.image.BufferedImage
@@ -224,9 +225,51 @@ interface ModelSchema {
     data class ContentPart(
         val type: String,
         val text: String? = null,
-        val image_url: String? = null,
+        var image_url: String? = null,
         val input_audio: AudioInput? = null
     ) {
+      var image_data: ByteArray?
+        @JsonIgnore
+        get() {
+          return if (image_url != null && image_url!!.startsWith("data:image/")) {
+              val parts = image_url!!.split(",")
+              Base64.getDecoder().decode(parts[1])
+          } else {
+              null
+          }
+        }
+        @JsonIgnore
+        set(value) {
+          if (value != null) {
+              val base64Data = Base64.getEncoder().encodeToString(value)
+              image_url = "data:image/jpeg;base64,$base64Data"
+          } else {
+              image_url = null
+          }
+        }
+      var image: BufferedImage?
+        @JsonIgnore
+        get() {
+          val data = image_data
+          return if (data != null) {
+              ImageIO.read(data.inputStream())
+          } else {
+              null
+          }
+        }
+        @JsonIgnore
+        set(value) {
+          if (value != null) {
+              val output = ByteArrayOutputStream()
+              ImageIO.write(value, "jpg", output)
+              val base64Data = Base64.getEncoder().encodeToString(output.toByteArray())
+              image_url = "data:image/jpeg;base64,$base64Data"
+          } else {
+              image_url = null
+          }
+        }
+
+
         companion object {
             private val log = LoggerFactory.getLogger(ContentPart::class.java)
             fun text(content: String): ContentPart {
@@ -265,10 +308,54 @@ interface ModelSchema {
     )
 
     data class ChatMessageResponse(
-        val role: Role? = null,
-        val content: String? = null,
-        val function_call: FunctionCall? = null,
-    )
+      val role: Role? = null,
+      val content: String? = null,
+      val function_call: FunctionCall? = null,
+      var image_url: String? = null,
+      var image_mime_type: String? = null,
+    ) {
+      var image: BufferedImage?
+        @JsonIgnore
+        get() {
+          return if (image_url != null && image_url!!.startsWith("data:image/")) {
+              val parts = image_url!!.split(",")
+              val data = Base64.getDecoder().decode(parts[1])
+              ImageIO.read(data.inputStream())
+          } else {
+              null
+          }
+        }
+        @JsonIgnore
+        set(value) {
+          if (value != null) {
+              val output = ByteArrayOutputStream()
+              ImageIO.write(value, "jpg", output)
+              val base64Data = Base64.getEncoder().encodeToString(output.toByteArray())
+              image_url = "data:image/jpeg;base64,$base64Data"
+          } else {
+              image_url = null
+          }
+        }
+      var image_data: ByteArray?
+        @JsonIgnore
+        get() {
+          return if (image_url != null && image_url!!.startsWith("data:image/")) {
+              val parts = image_url!!.split(",")
+              Base64.getDecoder().decode(parts[1])
+          } else {
+              null
+          }
+        }
+        @JsonIgnore
+        set(value) {
+          if (value != null) {
+              val base64Data = Base64.getEncoder().encodeToString(value)
+              image_url = "data:image/jpeg;base64,$base64Data"
+          } else {
+              image_url = null
+          }
+        }
+    }
 
     enum class Role {
         assistant, user, system
@@ -281,7 +368,6 @@ interface ModelSchema {
 
     data class GroqChatMessage(
         val role: Role? = null,
-
         val content: String? = null,
         val function_call: FunctionCall? = null,
     )

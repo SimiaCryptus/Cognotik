@@ -172,7 +172,8 @@ import java.util.concurrent.ConcurrentHashMap
                             id = response.id, choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                        content = response.content?.joinToString("\n") { it.text ?: "" }), index = 0
+                                      content = response.content?.joinToString("\n") { it.text ?: "" },
+                                    ), index = 0
                                 )
                             ), usage = ModelSchema.Usage(
                                 prompt_tokens = response.usage?.input_tokens?.toLong() ?: 0,
