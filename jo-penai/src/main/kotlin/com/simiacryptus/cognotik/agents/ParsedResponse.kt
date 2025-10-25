@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.actors
+package com.simiacryptus.cognotik.agents
 
 abstract class ParsedResponse<T>(val clazz: Class<T>) {
     abstract val text: String

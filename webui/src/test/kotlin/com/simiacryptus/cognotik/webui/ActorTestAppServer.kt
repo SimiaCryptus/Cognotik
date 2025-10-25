@@ -1,10 +1,9 @@
 package com.simiacryptus.cognotik.webui
 
-import com.simiacryptus.cognotik.OpenAIClient
-import com.simiacryptus.cognotik.actors.CodeAgent
-import com.simiacryptus.cognotik.actors.ImageAgent
-import com.simiacryptus.cognotik.actors.ParsedAgent
-import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.agents.CodeAgent
+import com.simiacryptus.cognotik.agents.ImageGenerationAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.StressTestApp
 import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
 import com.simiacryptus.cognotik.apps.parse.DocumentParsingModel
@@ -13,7 +12,6 @@ import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
 import com.simiacryptus.cognotik.image.GeminiImageModels
-import com.simiacryptus.cognotik.image.OpenAIImageClient
 import com.simiacryptus.cognotik.kotlin.KotlinCodeRuntime
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
@@ -30,7 +28,6 @@ import com.simiacryptus.cognotik.webui.test.ParsedActorTestApp
 import com.simiacryptus.cognotik.webui.test.SimpleActorTestApp
 import org.eclipse.jetty.webapp.WebAppContext
 import java.io.File
-import java.util.concurrent.Executors
 
 object ActorTestAppServer : ApplicationDirectory(port = 7092) {
 
@@ -78,7 +75,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                 )
             ),
 
-            ChildWebApp("/images", ImageActorTestApp(ImageAgent(
+            ChildWebApp("/images", ImageActorTestApp(ImageGenerationAgent(
               textModel = model,
               imageModel = TODO(),
               imageClient = TODO()

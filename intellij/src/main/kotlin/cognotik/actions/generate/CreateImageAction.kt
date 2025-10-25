@@ -10,8 +10,8 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.ui.JBUI
-import com.simiacryptus.cognotik.actors.ImageAgent
-import com.simiacryptus.cognotik.actors.ImageResponse
+import com.simiacryptus.cognotik.agents.ImageGenerationAgent
+import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.util.*
 import java.awt.GridBagConstraints
@@ -119,7 +119,7 @@ class CreateImageAction : BaseAction() {
         log.debug("Collected ${codeFiles.size} code files")
         progress.text = "Generating image..."
         log.info("Starting image generation with ${codeFiles.size} files")
-        val imageActor = ImageAgent(
+        val imageActor = ImageGenerationAgent(
           prompt = """
                     You are a technical drawing assistant.
                     You will be composing an image about the following code:
@@ -153,7 +153,7 @@ class CreateImageAction : BaseAction() {
   }
 
   private fun write(
-    code: ImageResponse, path: Path
+    code: ImageAndText, path: Path
   ) = try {
     log.debug("Creating parent directories for: {}", path)
     path.parent?.toFile()?.mkdirs()

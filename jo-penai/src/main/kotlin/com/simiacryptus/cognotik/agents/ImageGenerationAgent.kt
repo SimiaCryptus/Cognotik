@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.actors
+package com.simiacryptus.cognotik.agents
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.image.ImageClientInterface
@@ -13,7 +13,7 @@ import java.awt.image.BufferedImage
 import java.net.URL
 import javax.imageio.ImageIO
 
-open class ImageAgent(
+open class ImageGenerationAgent(
   prompt: String = "Transform the user request into an image generation prompt that the user will like",
   name: String? = null,
   textModel: ChatInterface,
@@ -22,7 +22,7 @@ open class ImageAgent(
   temperature: Double = 0.3,
   val width: Int = 1024,
   val height: Int = 1024,
-) : BaseAgent<List<String>, ImageResponse>(
+) : BaseAgent<List<String>, ImageAndText>(
   prompt = prompt,
   name = name,
   model = textModel,
@@ -38,16 +38,6 @@ open class ImageAgent(
       role = ModelSchema.Role.user,
       content = it.toContentList()
     )
-  }
-
-  inner class ImageResponseImpl(
-    override val text: String,
-    private val api: ImageClientInterface
-  ) : ImageResponse {
-    private val _image: BufferedImage by lazy {
-      render(text, api)
-    }
-    override val image: BufferedImage get() = _image
   }
 
   open fun render(
@@ -69,7 +59,7 @@ open class ImageAgent(
     }
   }
 
-  override fun respond(input: List<String>, vararg messages: ChatMessage): ImageResponse {
+  override fun respond(input: List<String>, vararg messages: ChatMessage): ImageAndText {
     var text = response(*messages).choices.first().message?.content
       ?: throw RuntimeException("No response")
     val maxPrompt = imageModel?.maxPrompt ?: Int.MAX_VALUE
@@ -85,10 +75,16 @@ open class ImageAgent(
         model = imageModel!!
       ).choices.first().message?.content ?: throw RuntimeException("No response")
     }
-    return ImageResponseImpl(text, api = this.imageClient ?: throw RuntimeException("No image client configured"))
+    return ImageAndText(
+      text = text,
+      image = render(
+        text,
+        api = this.imageClient ?: throw RuntimeException("No image client configured")
+      )
+    )
   }
 
-  override fun withModel(model: ChatInterface): ImageAgent = ImageAgent(
+  override fun withModel(model: ChatInterface): ImageGenerationAgent = ImageGenerationAgent(
     prompt = prompt,
     name = name,
     textModel = model,

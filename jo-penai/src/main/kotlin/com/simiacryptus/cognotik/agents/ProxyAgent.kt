@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.actors
+package com.simiacryptus.cognotik.agents
 
 import com.fasterxml.jackson.module.kotlin.isKotlinClass
 import com.google.gson.reflect.TypeToken

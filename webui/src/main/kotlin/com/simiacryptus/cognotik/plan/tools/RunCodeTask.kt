@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools
 
-import com.simiacryptus.cognotik.actors.CodeAgent
+import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.apps.code.CodingTask
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.interpreter.CodeRuntime

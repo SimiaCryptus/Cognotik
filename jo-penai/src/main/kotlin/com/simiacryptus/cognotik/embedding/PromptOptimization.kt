@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.embedding
 
-import com.simiacryptus.cognotik.actors.ProxyAgent
+import com.simiacryptus.cognotik.agents.ProxyAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.ModelSchema
