@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.models.ModelSchema.Usage
 @JsonDeserialize(using = LLMModelDeserializer::class)
 @JsonSerialize(using = LLMModelSerializer::class)
 open class LLMModel(
-  override val modelName: String?,
+  override val modelName: String,
   override val provider: APIProvider?,
   val maxTotalTokens: Int = -1,
   val maxOutTokens: Int = maxTotalTokens,

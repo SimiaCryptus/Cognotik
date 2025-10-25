@@ -12,6 +12,7 @@ import okio.ByteString.Companion.decodeBase64
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 
 /**
@@ -19,7 +20,7 @@ import java.util.concurrent.ExecutorService
  */
 class GeminiSdkChatClient(
   apiKey: String,
-  apiBase: String = APIProvider.Gemini.base,
+  val apiBase: String = APIProvider.Gemini.base,
   workPool: ExecutorService,
   logLevel: Level = Level.INFO,
   logStreams: MutableList<BufferedOutputStream>,
@@ -59,7 +60,9 @@ class GeminiSdkChatClient(
   }
 
   override fun getModels(): List<ChatModel>? {
-    return try {
+    // Check cache first
+    modelsCache[apiBase]?.let { return it }
+    val models = try {
       client.models.list(
         ListModelsConfig.builder().build()
       ).mapNotNull {
@@ -85,6 +88,9 @@ class GeminiSdkChatClient(
       log.warn("Failed to fetch models: ${e.message}")
       null
     }
+    // Cache the result
+    models?.let { modelsCache[apiBase] = it }
+    return models
   }
 
   override fun chat(
@@ -212,5 +218,6 @@ class GeminiSdkChatClient(
 
   companion object {
     private val log = LoggerFactory.getLogger(GeminiSdkChatClient::class.java)
+    private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
   }
 }

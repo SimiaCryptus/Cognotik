@@ -108,10 +108,6 @@
                         text="🔨 Process Filesets"
                         description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
                 </action>
-                <action class="cognotik.actions.generate.CreateImageAction"
-                        text="🖼️ Create Image from Description"
-                        description="Generate an image based on a natural language description, with customizable styles and formats">
-                </action>
             </group>
 
             <group id="cognotik.ui.ProjectMenu.Agents"
@@ -158,6 +154,10 @@
             <action class="cognotik.actions.generate.CreateFileFromDescriptionAction"
                     text="✨ Create File from Description"
                     description="Create a new file with appropriate content based on a natural language description, intelligently determining file type and location">
+            </action>
+            <action class="cognotik.actions.generate.CreateImageAction"
+                    text="🖼️ Create Image from Description"
+                    description="Generate an image based on a natural language description, with customizable styles and formats">
             </action>
         </group>
 

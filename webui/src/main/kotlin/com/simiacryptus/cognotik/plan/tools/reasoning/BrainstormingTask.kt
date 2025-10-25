@@ -830,6 +830,7 @@ Provide a well-structured, actionable summary now.
       file.isFile && file.exists()
     }
     .distinct()
+    .filterNotNull()
     .sortedBy { it }
     .joinToString("\n\n") { relativePath ->
       val file = root.toFile().resolve(relativePath)

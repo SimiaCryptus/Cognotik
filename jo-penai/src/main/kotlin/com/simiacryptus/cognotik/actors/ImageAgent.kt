@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
 import com.simiacryptus.cognotik.models.ModelSchema.ImageGenerationRequest
 import com.simiacryptus.cognotik.util.toChatMessage
 import com.simiacryptus.cognotik.util.toContentList
+import okio.ByteString.Companion.decodeBase64
 import java.awt.image.BufferedImage
 import java.net.URL
 import javax.imageio.ImageIO
@@ -53,14 +54,19 @@ open class ImageAgent(
     text: String,
     api: ImageClientInterface,
   ): BufferedImage {
-    val url = api.createImage(
+    val data = api.createImage(
       ImageGenerationRequest(
         prompt = text,
         model = imageModel?.modelName ?: throw RuntimeException("No image model configured"),
         size = "${width}x$height"
       )
-    ).data.first().url
-    return ImageIO.read(URL(url))
+    ).data
+    val first = data.first()
+    return when {
+      first.url != null -> ImageIO.read(URL(first.url))
+      first.b64_json != null -> ImageIO.read(first.b64_json.decodeBase64()?.toByteArray()?.inputStream())
+      else -> throw RuntimeException("No image data returned")
+    }
   }
 
   override fun respond(input: List<String>, vararg messages: ChatMessage): ImageResponse {

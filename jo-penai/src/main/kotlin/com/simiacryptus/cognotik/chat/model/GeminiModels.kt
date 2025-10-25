@@ -75,7 +75,7 @@ object GeminiModels {
     )
     val GeminiFlash_20_Preview_Image_Generation = ChatModel(
         name = "GeminiFlash_20_Preview_Image_Generation",
-        modelName = "gemini-2.0-flash-preview-image-generation",
+        modelName = "gemini-2.0-flash-exp-image-generation",
         maxTotalTokens = 1048576,
         maxOutTokens = 8192,
         provider = APIProvider.Companion.Gemini,
@@ -85,7 +85,7 @@ object GeminiModels {
 
     val GeminiPro_25 = ChatModel(
         name = "GeminiPro_25",
-        modelName = "gemini-2.5-pro",
+        modelName = "gemini-2.5-pro-preview-03-25",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = APIProvider.Companion.Gemini,
@@ -104,7 +104,7 @@ object GeminiModels {
     )
     val GeminiFlash_25_Lite = ChatModel(
         name = "GeminiFlash_25_Lite",
-        modelName = "gemini-2.5-flash-lite",
+        modelName = "gemini-2.5-flash-lite-preview-06-17",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = APIProvider.Companion.Gemini,
@@ -113,7 +113,7 @@ object GeminiModels {
     )
     val GeminiFlash_25_Live = ChatModel(
         name = "GeminiFlash_25_Live",
-        modelName = "gemini-live-2.5-flash-preview",
+        modelName = "gemini-2.5-flash-preview-05-20",
         maxTotalTokens = 1048576,
         maxOutTokens = 65536,
         provider = APIProvider.Companion.Gemini,

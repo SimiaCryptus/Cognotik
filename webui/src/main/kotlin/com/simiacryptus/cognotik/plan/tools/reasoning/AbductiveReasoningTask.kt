@@ -597,6 +597,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       file.isFile && file.exists()
     }
     .distinct()
+    .filterNotNull()
     .sortedBy { it }
     .joinToString("\n\n") { relativePath ->
       val file = root.toFile().resolve(relativePath)

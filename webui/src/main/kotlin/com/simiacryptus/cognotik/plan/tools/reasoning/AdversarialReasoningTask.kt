@@ -685,6 +685,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
       file.isFile && file.exists()
     }
     .distinct()
+    .filterNotNull()
     .sortedBy { it }
     .joinToString("\n\n") { relativePath ->
       val file = root.toFile().resolve(relativePath)

@@ -296,9 +296,8 @@ class AppSettingsComponent : Disposable {
       // Auto-populate name and base URL when provider changes
       providerCombo.addActionListener {
         val selectedProvider = APIProvider.valueOf(providerCombo.selectedItem as String)
-        urlField.text = selectedProvider.base ?: ""
+        urlField.text = selectedProvider.base
         nameField.text = selectedProvider.name
-        urlField.text = selectedProvider.base ?: ""
       }
 
       // Initialize with first provider's defaults
@@ -314,8 +313,6 @@ class AppSettingsComponent : Disposable {
       okButton.addActionListener {
         val provider = providerCombo.selectedItem as? String
         val name = nameField.text
-        val key = keyField.text
-        val url = urlField.text
 
         if (provider.isNullOrBlank()) {
           log.warn("Provider type is required")
@@ -520,6 +517,14 @@ class AppSettingsComponent : Disposable {
         log.error("Failed to load available models: ${e.message}", e)
         emptyMap()
       }
+      availableChatModels.forEach {
+        this.smartModel.addItem(it.value.modelName)
+        this.fastModel.addItem(it.value.modelName)
+      }
+    } catch (e: Exception) {
+      log.error("Error loading models: ${e.message}", e)
+    }
+    try {
       val availableImageModels = try {
         apis.filter { api ->
           api.key != null
@@ -539,6 +544,13 @@ class AppSettingsComponent : Disposable {
         log.error("Failed to load available models: ${e.message}", e)
         emptyMap()
       }
+      availableImageModels.forEach {
+        this.mainImageModel.addItem(it.value.modelName)
+      }
+    } catch (e: Exception) {
+      log.error("Error loading models: ${e.message}", e)
+    }
+    try {
       val availableEmbeddingModels = try {
         apis.filter { api ->
           api.key != null
@@ -557,18 +569,9 @@ class AppSettingsComponent : Disposable {
         log.error("Failed to load available models: ${e.message}", e)
         emptyMap()
       }
-
-      availableChatModels.forEach {
-        this.smartModel.addItem(it.value.modelName)
-        this.fastModel.addItem(it.value.modelName)
-      }
       availableEmbeddingModels.forEach {
         this.embeddingModel.addItem(it.value.modelName)
       }
-      availableImageModels.forEach {
-        this.mainImageModel.addItem(it.value.modelName)
-      }
-      log.debug("Loaded ${availableChatModels.size} available chat models, ${availableImageModels.size} image models, and ${availableEmbeddingModels.size} embedding models")
     } catch (e: Exception) {
       log.error("Error loading models: ${e.message}", e)
     }
@@ -582,17 +585,16 @@ class AppSettingsComponent : Disposable {
 
 
     val smartModelItems = (0 until smartModel.itemCount).map { smartModel.getItemAt(it) }.filter { modelItem ->
-      val chatModel = apis.filter { it.key != null }
-        .mapNotNull { apiData ->
-          apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
-        }.firstOrNull()
+      val chatModel = apis.filter { it.key != null }.firstNotNullOfOrNull { apiData ->
+        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
+      }
       if (chatModel == null) {
         false
       } else {
         val visible = isVisible(chatModel)
         visible
       }
-    }.sortedBy { modelItem ->
+    }.filterNotNull().sortedBy { modelItem ->
       val model =
         apis.filter { it.key != null }
           .find { apiData ->
@@ -606,17 +608,16 @@ class AppSettingsComponent : Disposable {
       "${model.provider?.name} - ${model.modelName}"
     }.toList()
     val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }.filter { modelItem ->
-      val chatModel = apis.filter { it.key != null }
-        .mapNotNull { apiData ->
-          apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
-        }.firstOrNull()
+      val chatModel = apis.filter { it.key != null }.firstNotNullOfOrNull { apiData ->
+        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
+      }
       if (chatModel == null) {
         false
       } else {
         val visible = isVisible(chatModel)
         visible
       }
-    }.sortedBy { modelItem ->
+    }.filterNotNull().sortedBy { modelItem ->
       val model =
         //ChatModel.values().entries.find { it.value.modelName == modelItem }?.value ?: return@sortedBy ""
         apis.filter { it.key != null }

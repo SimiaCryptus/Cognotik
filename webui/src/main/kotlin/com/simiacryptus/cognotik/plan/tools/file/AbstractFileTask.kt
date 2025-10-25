@@ -58,6 +58,7 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     }
     return filter
       .distinct()
+      .filterNotNull()
       .sortedBy { it }
       .joinToString("\n\n") { relativePath ->
         val file = root.toFile().resolve(relativePath)

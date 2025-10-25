@@ -761,7 +761,7 @@ Provide a brief validation assessment.
               it.isDirectory -> true
               else -> false
             }
-          }.filter { it.isFile && it.exists() }.distinct().sortedBy { it }
+          }.filter { it.isFile && it.exists() }.distinct().filterNotNull().sortedBy { it }
           files.forEach { file ->
             try {
               val relativePath = root.toFile().toPath().relativize(file.toPath())

@@ -459,14 +459,13 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       val imageModelName = component.mainImageModel.selectedItem as String?
       log.debug("Selected models - fast: $fastModelName, smart: $smartModelName")
 
-      val fastChatModel = userSettings.apis.filter { it.key != null }.firstOrNull()
-        ?.let { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { model -> model.modelName == fastModelName } }
+      val chatModels = userSettings.apis.flatMap { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl) ?: emptyList() }
+      val imageModels = userSettings.apis.flatMap { apiData -> apiData.provider?.getImageModels(apiData.key!!, apiData.baseUrl) ?: emptyList() }
+      val fastChatModel = chatModels.find { model -> model.modelName == fastModelName || model.name == fastModelName }
       val fastApiData = userSettings.apis.find { it.provider == fastChatModel?.provider }
-      val smartChatModel = userSettings.apis.filter { it.key != null }.firstOrNull()
-        ?.let { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { model -> model.modelName == smartModelName } }
+      val smartChatModel = chatModels.find { model -> model.modelName == smartModelName || model.name == smartModelName }
       val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
-      val imageModel = userSettings.apis.filter { it.key != null }.firstOrNull()
-        ?.let { apiData -> apiData.provider?.getImageModels(apiData.key!!, apiData.baseUrl)?.find { model -> model.modelName == imageModelName } }
+      val imageModel = imageModels.find { model -> model.modelName == imageModelName || model.name == imageModelName }
       val imageApiData = userSettings.apis.find { it.provider == imageModel?.provider }
 
       settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
@@ -480,7 +479,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       settings.listeningEndpoint = component.listeningEndpoint.text
       settings.suppressErrors = component.suppressErrors.isSelected
       settings.smartModel = ApiChatModel(smartChatModel, smartApiData)
-      settings.imageModel = ApiImageModel(imageModel, imageApiData)
+      settings.imageModel = imageModel?.let { ApiImageModel(it, imageApiData) }
       settings.devActions = component.devActions.isSelected
       settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
       settings.temperature = component.temperature.text.safeDouble()

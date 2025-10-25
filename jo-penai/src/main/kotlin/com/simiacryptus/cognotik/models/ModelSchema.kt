@@ -374,7 +374,8 @@ interface ModelSchema {
     )
 
     data class ImageObject(
-        val url: String
+      val url: String? = null,
+      val b64_json: String? = null
     )
 
     data class ImageGenerationResponse(

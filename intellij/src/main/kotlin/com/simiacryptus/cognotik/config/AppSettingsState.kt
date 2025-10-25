@@ -17,6 +17,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.log
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageModel
@@ -310,9 +311,10 @@ fun ApiChatModel.instance(): ChatInterface? {
   val usageManager = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager
   val model = model
   if (model == null) {
-    throw RuntimeException("Model not configured for ${provider?.provider?.name}")
+    log.warn("Model not configured for ${provider?.provider?.name}")
+    return null
   }
-  return (model).instance(
+  return model.instance(
     key = provider?.key ?: throw IllegalArgumentException("API key is not set"),
     base = provider?.provider?.base
       ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
@@ -332,14 +334,15 @@ fun ApiChatModel.instance(): ChatInterface? {
 }
 
 data class ApiImageModel(
-  val model: ImageModel?,
+  val model: ImageModel,
   val provider: ApiData?
 )
 
 fun ApiImageModel.instance(): com.simiacryptus.cognotik.image.ImageClientInterface? {
   val model = model
   if (model == null) {
-    throw RuntimeException("Model not configured for ${provider?.provider?.name}")
+    log.warn("Model not configured for ${provider?.provider?.name}")
+    return null
   }
   return provider?.provider?.getImageClient(
     key = provider.key ?: throw IllegalArgumentException("API key is not set"),
