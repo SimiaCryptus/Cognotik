@@ -627,7 +627,7 @@ $simulationAnalysis
       )
       task.update()
 
-      val (transcriptLink, _) = task.createFile("systems_thinking_transcript.md")
+      val (transcriptLink, _) = Pair(task.linkTo("systems_thinking_transcript.md"), task.resolve("systems_thinking_transcript.md"))
       task.safeComplete(
         "Systems thinking analysis completed in ${duration / 1000}s. " +
             "View detailed transcript: <a href='$transcriptLink' target='_blank'>markdown</a> " +
@@ -778,7 +778,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
+    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
@@ -790,7 +790,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
 
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
-      val (link, file) = task.createFile("systems_thinking_transcript.md")
+      val (link, file) = Pair(task.linkTo("systems_thinking_transcript.md"), task.resolve("systems_thinking_transcript.md"))
       val transcriptStream = file?.outputStream()
       task.complete(
         "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

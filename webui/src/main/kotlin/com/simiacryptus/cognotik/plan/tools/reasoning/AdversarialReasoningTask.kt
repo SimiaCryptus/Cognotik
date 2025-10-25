@@ -625,7 +625,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
-      val (link, file) = task.createFile("adversarial_transcript.md")
+      val (link, file) = Pair(task.linkTo("adversarial_transcript.md"), task.resolve("adversarial_transcript.md"))
       val transcriptStream = file?.outputStream()
       task.complete(
         "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

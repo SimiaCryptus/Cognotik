@@ -1077,7 +1077,7 @@ Provide the complete revised script with all formatting intact.
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
+    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

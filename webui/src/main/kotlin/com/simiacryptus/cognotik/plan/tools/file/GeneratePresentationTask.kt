@@ -336,7 +336,7 @@ Provide only the CSS code within a code block:
   }
 
   private fun transcript(task: SessionTask, slideContent: String, presentationTitle: String): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
+    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
     val markdownTranscript = file?.outputStream()
     if (markdownTranscript != null) {
       try {

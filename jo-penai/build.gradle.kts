@@ -43,8 +43,10 @@ dependencies {
     implementation(libs.guava)
     implementation(libs.gson)
     implementation(libs.commons.io)
-    // Optional Android dependency
-    compileOnly(libs.android)
+
+  implementation("com.google.genai:google-genai:1.24.0")
+
+  compileOnly(libs.android)
 
     compileOnly(kotlin("stdlib"))
     compileOnly(kotlin("reflect"))

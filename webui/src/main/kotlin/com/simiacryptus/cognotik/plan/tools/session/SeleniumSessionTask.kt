@@ -319,7 +319,7 @@ class SeleniumSessionTask(
   }
 
   private fun createTranscript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
+    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

@@ -431,8 +431,8 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       component.disableAutoOpenUrls.isSelected = settings.disableAutoOpenUrls
       settings.fastModel?.model?.let { component.fastModel.selectedItem = it.modelName }
       settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelName }
+      settings.imageModel?.model?.let { component.mainImageModel.selectedItem = it.modelName }
       component.devActions.isSelected = settings.devActions
-      component.mainImageModel.selectedItem = settings.mainImageModel
       component.temperature.text = settings.temperature.toString()
       component.embeddingModel.selectedItem = settings.embeddingModel
       component.shellCommand.text = settings.shellCommand
@@ -456,6 +456,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
 
       val fastModelName = component.fastModel.selectedItem as String?
       val smartModelName = component.smartModel.selectedItem as String?
+      val imageModelName = component.mainImageModel.selectedItem as String?
       log.debug("Selected models - fast: $fastModelName, smart: $smartModelName")
 
       val fastChatModel = userSettings.apis.filter { it.key != null }.firstOrNull()
@@ -464,6 +465,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       val smartChatModel = userSettings.apis.filter { it.key != null }.firstOrNull()
         ?.let { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { model -> model.modelName == smartModelName } }
       val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
+      val imageModel = userSettings.apis.filter { it.key != null }.firstOrNull()
+        ?.let { apiData -> apiData.provider?.getImageModels(apiData.key!!, apiData.baseUrl)?.find { model -> model.modelName == imageModelName } }
+      val imageApiData = userSettings.apis.find { it.provider == imageModel?.provider }
 
       settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
       settings.diffLoggingEnabled = component.diffLoggingEnabled.isSelected
@@ -476,6 +480,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       settings.listeningEndpoint = component.listeningEndpoint.text
       settings.suppressErrors = component.suppressErrors.isSelected
       settings.smartModel = ApiChatModel(smartChatModel, smartApiData)
+      settings.imageModel = ApiImageModel(imageModel, imageApiData)
       settings.devActions = component.devActions.isSelected
       settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
       settings.temperature = component.temperature.text.safeDouble()
@@ -484,12 +489,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
           is String -> it.embeddingModel()
           is EmbeddingModel -> it
           else -> null
-        }
-      }
-      settings.mainImageModel = component.mainImageModel.selectedItem.let {
-        when (it) {
-          is String -> it
-          else -> ""
         }
       }
       settings.shellCommand = component.shellCommand.text

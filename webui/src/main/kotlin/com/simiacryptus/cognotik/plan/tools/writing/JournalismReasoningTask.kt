@@ -100,9 +100,6 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
       if (story_topic.isNullOrBlank()) {
         return "Story topic must not be null or blank"
       }
-      if (input_files != null && input_files.isEmpty()) {
-        return "input_files must not be empty if specified"
-      }
       if (alternative_angles < 1 || alternative_angles > 10) {
         return "Alternative angles must be between 1 and 10, got: $alternative_angles"
       }
@@ -121,9 +118,6 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
     override fun validate(): String? {
       if (claim.isBlank()) {
         return "Fact claim must not be blank"
-      }
-      if (verification_status.isNotBlank()) {
-        return "Verification status must not be blank"
       }
       return ValidatedObject.validateFields(this)
     }
@@ -248,7 +242,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("journalism_transcript.md")
+    val (link, file) = Pair(task.linkTo("journalism_transcript.md"), task.resolve("journalism_transcript.md"))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
@@ -1155,7 +1149,7 @@ Be concise, authoritative, and focused on journalistic value.
         log.info("JournalismReasoningTask completed: total_time=${totalTime}ms, output_size=${finalResult.length} chars")
 
         // Write full analysis to file
-        val (link, file) = task.createFile("journalism_analysis.md")
+        val (link, file) = Pair(task.linkTo("journalism_analysis.md"), task.resolve("journalism_analysis.md"))
         file?.writeText(finalResult, StandardCharsets.UTF_8)
 
         val summaryMessage = buildString {

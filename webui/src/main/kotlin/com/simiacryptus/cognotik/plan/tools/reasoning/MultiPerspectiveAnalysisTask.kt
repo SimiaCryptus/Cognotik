@@ -324,7 +324,7 @@ Provide a comprehensive synthesis that integrates all perspectives.
 
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
-      val (link, file) = task.createFile("analysis_transcript.md")
+      val (link, file) = Pair(task.linkTo("analysis_transcript.md"), task.resolve("analysis_transcript.md"))
       val transcriptStream = file?.outputStream()
       task.complete(
         "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

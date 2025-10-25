@@ -7,18 +7,19 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.audio.AudioModels
 import com.simiacryptus.cognotik.chat.*
 import com.simiacryptus.cognotik.chat.model.*
-import com.simiacryptus.cognotik.embedding.EmbeddingClientInterface
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
 import com.simiacryptus.cognotik.embedding.OpenAIEmbeddingModels
+import com.simiacryptus.cognotik.image.ImageClientInterface
 import com.simiacryptus.cognotik.image.ImageModel
-import com.simiacryptus.cognotik.image.ImageModels
+import com.simiacryptus.cognotik.image.OpenAIImageClient
+import com.simiacryptus.cognotik.image.OpenAIImageModels
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
-import org.slf4j.Logger
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.hc.core5.http.HttpRequest
+import org.slf4j.Logger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
@@ -43,11 +44,13 @@ abstract class APIProvider private constructor(name: String, val base: String) :
     open fun getEmbeddingModels(key: String, baseUrl: String): List<EmbeddingModel> = emptyList()
 
     open fun getTranscriptionModels(key: String, baseUrl: String): List<AudioModels> = emptyList()
+  open fun getImageModels(key: String, baseUrl: String): List<ImageModel> = emptyList()
 
     open fun authorize(request: HttpRequest, key: String, apiBase: String) {
         request.addHeader("Authorization", "Bearer ${key}")
     }
-    open fun getEmbeddingClient(
+
+  open fun getEmbeddingClient(
         key: String,
         base: String,
         workPool: ExecutorService,
@@ -57,6 +60,16 @@ abstract class APIProvider private constructor(name: String, val base: String) :
     ): com.simiacryptus.cognotik.embedding.EmbeddingClientInterface {
         throw UnsupportedOperationException("${this.name} does not support embedding functionality")
     }
+  open fun getImageClient(
+    key: String,
+    base: String,
+    workPool: ExecutorService,
+    logLevel: Level = Level.INFO,
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    scheduledPool: ListeningScheduledExecutorService
+  ): ImageClientInterface {
+    throw UnsupportedOperationException("${this.name} does not support image generation functionality")
+  }
 
     companion object {
         val SearchAPI: APIProvider = object : APIProvider("SearchAPI", "https://api.searchapi.com") {
@@ -97,13 +110,20 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logLevel: Level,
                 logStreams: MutableList<BufferedOutputStream>,
                 scheduledPool: ListeningScheduledExecutorService
-            ) = GeminiChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool
+            ) = if (false) GeminiChatClient(
+              apiKey = key,
+              apiBase = base,
+              workPool = workPool,
+              logLevel = logLevel,
+              logStreams = logStreams,
+              scheduledPool = scheduledPool
+            ) else GeminiSdkChatClient(
+              apiKey = key,
+              apiBase = base,
+              workPool = workPool,
+              logLevel = logLevel,
+              logStreams = logStreams,
+              scheduledPool = scheduledPool
             )
         }
         val Ollama: APIProvider = object : APIProvider("Ollama", "http://localhost:11434") {
@@ -197,9 +217,26 @@ abstract class APIProvider private constructor(name: String, val base: String) :
                 logStreams = logStreams,
                 scheduledPool = scheduledPool
             )
-            fun getImageModels(key: String, baseUrl: String): List<ImageModel> {
-                return ImageModels.values.values.toList()
-            }
+
+          override fun getImageModels(key: String, baseUrl: String): List<ImageModel> {
+            return OpenAIImageModels.values.values.toList()
+          }
+
+          override fun getImageClient(
+            key: String,
+            base: String,
+            workPool: ExecutorService,
+            logLevel: Level,
+            logStreams: MutableList<BufferedOutputStream>,
+            scheduledPool: ListeningScheduledExecutorService
+          ): ImageClientInterface = OpenAIImageClient(
+            key = key,
+            apiBase = base,
+            workPool = workPool,
+            logLevel = logLevel,
+            logStreams = logStreams,
+            scheduledPool = scheduledPool
+          )
 
             override fun getTranscriptionModels(
                 key: String,

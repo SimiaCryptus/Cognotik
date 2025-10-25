@@ -701,7 +701,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
           )
         } points in ${totalTime / 1000}s"
       )
-      val (link, _) = task.createFile("optimization_results.md")
+      val (link, _) = Pair(task.linkTo("optimization_results.md"), task.resolve("optimization_results.md"))
       val summaryMessage = buildString {
         appendLine("Optimization complete: improved by ${String.format("%.1f", bestVariant.score.overall_score - initialEvaluation.overall_score)} points")
         appendLine()
@@ -727,7 +727,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
+    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

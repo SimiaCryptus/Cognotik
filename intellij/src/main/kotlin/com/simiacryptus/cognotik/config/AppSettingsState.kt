@@ -20,12 +20,12 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageModel
-import com.simiacryptus.cognotik.image.ImageModels
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -58,7 +58,7 @@ data class AppSettingsState(
   var smartModel: ApiChatModel? = null,
   var fastModel: ApiChatModel? = null,
   var transcriptionModel: String? = null,
-  var mainImageModel: String = "",
+  var imageModel: ApiImageModel? = null,
   /* Embedding Model Settings */
   var embeddingModel: EmbeddingModel? = null,
   var processor: PatchProcessors = PatchProcessors.Fuzzy,
@@ -80,7 +80,7 @@ data class AppSettingsState(
   var devActions: Boolean = false,
   var disableAutoOpenUrls: Boolean = false,
   var showWelcomeScreen: Boolean = true,
-var greetedVersion: String = "",
+  var greetedVersion: String = "",
   var shellCommand: String = getDefaultShell(),
   var feedbackRequested: Boolean = false,
   var feedbackOptOut: Boolean = false,
@@ -100,6 +100,11 @@ var greetedVersion: String = "",
   @get:JsonIgnore
   val fastChatClient: ChatInterface
     get() = fastModel?.instance() ?: throw IllegalStateException("Fast model not configured")
+
+  @get:JsonIgnore
+  val imageClient: com.simiacryptus.cognotik.image.ImageClientInterface?
+    get() = imageModel?.instance()
+
 
   @get:JsonIgnore
   val embeddingClient: com.simiacryptus.cognotik.embedding.Embedder? get() = embeddingModel?.instance()
@@ -191,7 +196,7 @@ var greetedVersion: String = "",
     if (smartModel != other.smartModel) return false
     if (fastModel != other.fastModel) return false
     if (transcriptionModel != other.transcriptionModel) return false
-    if (mainImageModel != other.mainImageModel) return false
+    if (imageModel != other.imageModel) return false
     if (embeddingModel != other.embeddingModel) return false
     if (processor != other.processor) return false
     if (awsProfile != other.awsProfile) return false
@@ -238,7 +243,7 @@ var greetedVersion: String = "",
     result = 31 * result + smartModel.hashCode()
     result = 31 * result + fastModel.hashCode()
     result = 31 * result + (transcriptionModel?.hashCode() ?: 0)
-    result = 31 * result + mainImageModel.hashCode()
+    result = 31 * result + (imageModel?.hashCode() ?: 0)
     result = 31 * result + (embeddingModel?.hashCode() ?: 0)
     result = 31 * result + processor.hashCode()
     result = 31 * result + (awsProfile?.hashCode() ?: 0)
@@ -300,11 +305,6 @@ var greetedVersion: String = "",
 
 }
 
-fun String.imageModel(): ImageModel {
-  return ImageModels.values.values.toList().firstOrNull {
-    it.modelName == this || it.name == this
-  } ?: ImageModels.DallE3
-}
 
 fun ApiChatModel.instance(): ChatInterface? {
   val usageManager = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager
@@ -328,5 +328,27 @@ fun ApiChatModel.instance(): ChatInterface? {
         UserSettingsManager.defaultUser, model, usage
       )
     },
+  )
+}
+
+data class ApiImageModel(
+  val model: ImageModel?,
+  val provider: ApiData?
+)
+
+fun ApiImageModel.instance(): com.simiacryptus.cognotik.image.ImageClientInterface? {
+  val model = model
+  if (model == null) {
+    throw RuntimeException("Model not configured for ${provider?.provider?.name}")
+  }
+  return provider?.provider?.getImageClient(
+    key = provider.key ?: throw IllegalArgumentException("API key is not set"),
+    base = provider.baseUrl ?: provider.provider?.base
+    ?: throw IllegalArgumentException("API base for ${provider.provider?.name} is not set"),
+    workPool = AppSettingsState.workPool,
+    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+      AppSettingsState.currentSession,
+      UserSettingsManager.defaultUser
+    ),
   )
 }

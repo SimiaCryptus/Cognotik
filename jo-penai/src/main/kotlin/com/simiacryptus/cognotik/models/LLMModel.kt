@@ -13,10 +13,10 @@ import com.simiacryptus.cognotik.models.ModelSchema.Usage
 @JsonDeserialize(using = LLMModelDeserializer::class)
 @JsonSerialize(using = LLMModelSerializer::class)
 open class LLMModel(
-    override val modelName: String?,
-    val provider: APIProvider?,
-    val maxTotalTokens: Int = -1,
-    val maxOutTokens: Int = maxTotalTokens,
+  override val modelName: String?,
+  override val provider: APIProvider?,
+  val maxTotalTokens: Int = -1,
+  val maxOutTokens: Int = maxTotalTokens,
 ) : AIModel {
     open fun pricing(usage: Usage): Double = 0.0
 }
