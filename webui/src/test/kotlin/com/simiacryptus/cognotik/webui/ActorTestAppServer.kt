@@ -12,6 +12,8 @@ import com.simiacryptus.cognotik.apps.parse.ParsingModel
 import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
+import com.simiacryptus.cognotik.image.GeminiImageModels
+import com.simiacryptus.cognotik.image.OpenAIImageClient
 import com.simiacryptus.cognotik.kotlin.KotlinCodeRuntime
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
@@ -53,6 +55,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
         )
         listOf(
             ChildWebApp("/chat", BasicChatApp(File("."), model.modelType, model.modelType)),
+
             ChildWebApp(
                 "/test_simple",
                 SimpleActorTestApp(
@@ -63,6 +66,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                     )
                 )
             ),
+
             ChildWebApp(
                 "/test_parsed_joke", ParsedActorTestApp(
                     ParsedAgent(
@@ -73,18 +77,14 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                     )
                 )
             ),
-            ChildWebApp("/images", ImageActorTestApp(ImageAgent(textModel = model).apply {
-                openAI = OpenAIClient(
-                    workPool = Executors.newCachedThreadPool(),
-                    key = "",
-                    apiBase = "",
-                    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
-                        session = TODO(),
-                        user = TODO()
-                    ),
-                )
-            })),
 
+            ChildWebApp("/images", ImageActorTestApp(ImageAgent(
+              textModel = model,
+              imageModel = TODO(),
+              imageClient = TODO()
+            ).apply {
+                this.imageModel = GeminiImageModels.Imagen4Fast
+            })),
 
             ChildWebApp(
                 "/test_coding_kotlin",

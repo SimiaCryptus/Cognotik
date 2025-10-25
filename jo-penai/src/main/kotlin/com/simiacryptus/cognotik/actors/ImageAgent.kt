@@ -17,7 +17,7 @@ open class ImageAgent(
   prompt: String = "Transform the user request into an image generation prompt that the user will like",
   name: String? = null,
   textModel: ChatInterface,
-  val imageModel: ImageModel?,
+  var imageModel: ImageModel?,
   val imageClient: ImageClientInterface?,
   temperature: Double = 0.3,
   val width: Int = 1024,
