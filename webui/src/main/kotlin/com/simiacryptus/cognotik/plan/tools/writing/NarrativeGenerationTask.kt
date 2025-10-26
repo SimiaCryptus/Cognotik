@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.BufferedWriter
@@ -186,7 +187,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
   ) {
     val startTime = System.currentTimeMillis()
     val transcript = transcript(task)
-    val genConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData
+    val genConfig = executionConfig
     log.info("Starting NarrativeGenerationTask for subject: '${genConfig?.subject}'")
     transcript?.write("# Narrative Generation Task\n\n")
 
@@ -377,7 +378,6 @@ Ensure the outline:
       overviewTask.add("✅ Phase 2 Complete: Outline created (${outline.acts.sumOf { it.scenes?.size ?: 0 }} scenes)\n".renderMarkdown)
       overviewTask.add("\n### Phase 3: Scene Generation\n*Writing scenes iteratively with context...*\n".renderMarkdown)
       task.update()
-      val narrativeDir = task.resolve( "narrative_generation")!!
       // Generate cover image if enabled
       if (genConfig.generate_cover_image) {
         generateCoverImage(
@@ -385,7 +385,6 @@ Ensure the outline:
           tabs = tabs,
           title = outline.title,
           premise = outline.premise,
-          narrativeDir = narrativeDir,
           transcriptWriter = transcript,
           orchestrationConfig = orchestrationConfig
         )
@@ -590,7 +589,6 @@ Provide the revised scene content only.
             sceneTitle = sceneOutline.title,
             sceneContent = generatedScene.content,
             setting = sceneOutline.setting,
-            narrativeDir = narrativeDir,
             transcriptWriter = transcript,
             orchestrationConfig = orchestrationConfig
           )
@@ -773,7 +771,6 @@ Provide the revised scene content only.
     tabs: TabbedDisplay,
     title: String,
     premise: String,
-    narrativeDir: File,
     transcriptWriter: java.io.BufferedWriter?,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -790,7 +787,6 @@ Provide the revised scene content only.
         }.renderMarkdown
       )
       task.update()
-      val genConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData
       val imageAgent = ImageModificationAgent(
         prompt = "Create a compelling book cover image that captures the essence of this narrative",
         model = orchestrationConfig.imageChatChatter,
@@ -800,11 +796,11 @@ Provide the revised scene content only.
       val result = imageAgent.answer(listOf(ImageAndText(coverPrompt)))
       val image = result.image
       // Save image
-      val imageFile = File(narrativeDir, "00_cover_image.png")
+      val imageFile = task.resolve("00_cover_image.png")!!
       ImageIO.write(image, "png", imageFile)
       log.debug("Saved cover image to: ${imageFile.absolutePath}")
       // Create display link
-      val (link, _) = task.createFile("00_cover_image.png")
+      val link = task.linkTo("00_cover_image.png")
       val imageHtml = """
         <div class='cover-image'>
           <h3>$title</h3>
@@ -822,7 +818,7 @@ Provide the revised scene content only.
       transcriptWriter?.appendLine()
       transcriptWriter?.appendLine("**Prompt:** ${result.text}")
       transcriptWriter?.appendLine()
-      transcriptWriter?.appendLine("![Cover Image]($link)")
+      transcriptWriter?.appendLine("![Cover Image]($link)".transcriptFilter())
       transcriptWriter?.appendLine()
       transcriptWriter?.flush()
       coverTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
@@ -841,7 +837,6 @@ Provide the revised scene content only.
     sceneTitle: String,
     sceneContent: String,
     setting: String,
-    narrativeDir: File,
     transcriptWriter: java.io.BufferedWriter?,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -858,8 +853,6 @@ Provide the revised scene content only.
         }.renderMarkdown
       )
       task.update()
-      val genConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData
-      val imageModel = genConfig?.image_model
       val imageAgent = ImageModificationAgent(
         prompt = "Create a cinematic scene illustration that captures the key moment and atmosphere",
         model = orchestrationConfig.imageChatChatter,
@@ -875,11 +868,12 @@ Provide the revised scene content only.
       val result = imageAgent.answer(listOf(ImageAndText(scenePrompt)))
       val image = result.image
       // Save image
-      val imageFile = File(narrativeDir, "scene_${sceneNumber}_image.png")
+      val relativePath = "scene_${sceneNumber}_image.png"
+      val imageFile = task.resolve(relativePath)!!
       ImageIO.write(image, "png", imageFile)
       log.debug("Saved scene image to: ${imageFile.absolutePath}")
       // Create display link
-      val (link, _) = task.createFile("scene_${sceneNumber}_image.png")
+      val link = task.linkTo(relativePath)
       val imageHtml = """
         <div class='scene-image'>
           <h4>Scene $sceneNumber: $sceneTitle</h4>
@@ -897,7 +891,7 @@ Provide the revised scene content only.
       transcriptWriter?.appendLine()
       transcriptWriter?.appendLine("**Prompt:** ${result.text}")
       transcriptWriter?.appendLine()
-      transcriptWriter?.appendLine("![Scene $sceneNumber]($link)")
+      transcriptWriter?.appendLine("![Scene $sceneNumber]($link)".transcriptFilter())
       transcriptWriter?.appendLine()
       transcriptWriter?.flush()
       sceneImageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)

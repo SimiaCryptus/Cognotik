@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
-import java.io.File
+import java.util.*
 import javax.imageio.ImageIO
 
 class GenerateImageTask(
@@ -121,11 +121,10 @@ GenerateImage - Create images using AI image generation models
 
       // Display the generated image
       task.add(MarkdownUtil.renderMarkdown("### Generated Image Preview", ui = task.ui))
-      val tempFile = File.createTempFile("preview_", ".png")
-      ImageIO.write(generatedImage, "png", tempFile)
-      val previewLink = task.saveFile(imageFile, tempFile.readBytes())
+      val filename = "preview_" + UUID.randomUUID() + ".png"
+      ImageIO.write(generatedImage, "png", task.resolve(filename)!!)
+      val previewLink = task.linkTo(filename)
       task.add("""<a href="$previewLink" target="_blank"><img src="$previewLink" style="max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" /></a>""")
-      tempFile.delete()
 
       // Save the image
       val outputPath = root.resolve(imageFile)

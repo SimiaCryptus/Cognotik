@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
@@ -1274,11 +1275,11 @@ ${description.indent("  ")}
       """)))
       val image = result.image
       // Save image to file
-      val imageFile = File(imageDir, filename)
+      val imageFile = task.resolve(filename)!!
       ImageIO.write(image, "png", imageFile)
       log.debug("Saved image to: ${imageFile.absolutePath}")
       // Create display link
-      val (link, _) = task.createFile(filename)
+      val link = task.linkTo(filename)
       val imageHtml = """
         <div class='narrative-image'>
           <h4>$title</h4>
@@ -1295,7 +1296,7 @@ ${description.indent("  ")}
       transcriptWriter?.appendLine()
       transcriptWriter?.appendLine("**Prompt:** ${result.text}")
       transcriptWriter?.appendLine()
-      transcriptWriter?.appendLine("![${title}]($link)")
+      transcriptWriter?.appendLine("![${title}]($link)".transcriptFilter())
       transcriptWriter?.appendLine()
       transcriptWriter?.flush()
       imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)

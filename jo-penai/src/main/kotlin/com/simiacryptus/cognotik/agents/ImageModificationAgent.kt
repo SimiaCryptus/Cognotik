@@ -50,8 +50,8 @@ open class ImageModificationAgent(
   ): ImageAndText {
     val choices = response(*messages).choices
     val image = choices.firstOrNull { it.message?.image_url != null }?.let { it.message?.image }
-    if (image != null) {
-      log.info("Received image URL from model response")
+    if (image == null) {
+      log.info("No image returned in response, falling back to input image.")
     }
     val text = choices.firstOrNull()?.message?.content ?: ""
     return ImageAndText(text = text, image = image ?: input.map { it.image }.firstOrNull())
