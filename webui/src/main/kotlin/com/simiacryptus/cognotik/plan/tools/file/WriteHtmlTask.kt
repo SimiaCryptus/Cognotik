@@ -1,6 +1,9 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ImageAndText
+import com.simiacryptus.cognotik.agents.ImageModificationAgent
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -9,9 +12,12 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import javax.imageio.ImageIO
 
 class WriteHtmlTask(
   orchestrationConfig: OrchestrationConfig,
@@ -25,6 +31,10 @@ class WriteHtmlTask(
     related_files: List<String>? = null,
     @Description("Detailed description of the HTML page to create, including layout, styling, and functionality requirements")
     task_description: String? = null,
+    @Description("Whether to generate images for the HTML page")
+    val generate_images: Boolean = false,
+    @Description("Number of images to generate (valid range: 0-10)")
+    var image_count: Int = 0,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : ValidatedObject, FileTaskExecutionConfig(
@@ -51,6 +61,10 @@ class WriteHtmlTask(
       if (task_description.isNullOrBlank()) {
         return "WriteHtmlTaskExecutionConfigData: task_description cannot be null or blank"
       }
+      // Validate image count
+      if (image_count < 0 || image_count > 10) {
+        image_count = image_count.coerceIn(0, 10)
+      }
 
       // Call parent validation
       return super.validate()
@@ -67,19 +81,21 @@ class WriteHtmlTask(
 
   override fun promptSegment(): String {
     return """
-WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
+ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
   ** Specify the HTML file path in the files array (must end with .html)
   ** Provide a detailed description of the page requirements including:
      - Layout and structure
      - Styling requirements (colors, fonts, spacing, etc.)
      - Interactive functionality needed
      - Any specific HTML5 features to use
+     - Image requirements (if generate_images is enabled)
   ** The generated HTML will be a complete, self-contained document with:
      - Proper HTML5 structure (<!DOCTYPE html>, <html>, <head>, <body>)
      - Embedded CSS within <style> tags in the <head>
      - Embedded JavaScript within <script> tags (typically before </body>)
      - Responsive design considerations
      - Modern best practices
+     - Generated images (if enabled) embedded as base64 or saved as separate files
   ** Related files can include existing HTML templates or reference files
   ** Output will be presented for review before being written to disk
         """.trimIndent()
@@ -117,7 +133,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
 
     val toInput = { it: String -> listOf(it) }
     val ui = task.ui
-    val api = orchestrationConfig.defaultChatter
+    val api = orchestrationConfig.defaultChatter.getChildClient(task)
 
     newTask.add(MarkdownUtil.renderMarkdown("## Creating HTML File: `$htmlFile`", ui = ui))
 
@@ -125,6 +141,12 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
     transcriptWriter?.write("# HTML Generation Transcript\n\n")
     transcriptWriter?.write("## Creating HTML File: `$htmlFile`\n\n")
     val priorCode = getPriorCode(agent.executionState)
+    // Create directory for images if needed
+    val imageDir = if (executionConfig?.generate_images == true && executionConfig.image_count > 0) {
+      val dir = root.resolve(htmlFile).parent.resolve("images")
+      dir.toFile().mkdirs()
+      dir
+    } else null
 
     // Step 1: Generate HTML structure with classes
     val htmlPrompt = """
@@ -182,6 +204,77 @@ Provide the HTML structure within a code block:
       transcriptWriter?.close()
       resultFn("ERROR: Failed to generate HTML structure")
       return
+    }
+    // Step 1.5: Generate images if enabled
+    val generatedImages = mutableListOf<Pair<String, String>>() // filename to description
+    if (executionConfig?.generate_images == true && executionConfig.image_count > 0 && imageDir != null) {
+      newTask.add(MarkdownUtil.renderMarkdown("### Step 1.5: Generating Images", ui = ui))
+      transcriptWriter?.write("### Step 1.5: Generating Images\n\n")
+      val imagePrompt = """
+Based on the following HTML page description and structure, identify ${executionConfig.image_count} key images that should be generated.
+## Page Description:
+${executionConfig.task_description}
+## HTML Structure:
+```html
+$htmlStructure
+```
+For each image, provide:
+1. A descriptive filename ending in .png (e.g., "hero-banner.png", "product-showcase.png")
+2. A detailed visual description for image generation (be specific about style, colors, composition)
+
+Note: All images will be generated as PNG files by an AI image model.
+
+Format your response as:
+IMAGE: filename.png
+DESCRIPTION: detailed visual description
+IMAGE: another-image.png
+DESCRIPTION: another detailed description
+      """.trimIndent()
+      transcriptWriter?.write("**Prompt:**\n```\n$imagePrompt\n```\n\n")
+      val imageSpecResponse = chatAgent.answer(toInput(imagePrompt))
+      transcriptWriter?.write("**Response:**\n$imageSpecResponse\n\n")
+      // Parse image specifications
+      val imageSpecs = parseImageSpecs(imageSpecResponse)
+      // Generate each image
+      imageSpecs.take(executionConfig.image_count).forEach { (filename, description) ->
+        val filename = filename
+        try {
+          newTask.add(MarkdownUtil.renderMarkdown("Generating image: `$filename`...", ui = ui))
+          val imageAgent = ImageModificationAgent(
+            prompt = "Create a high-quality image for a web page based on the description",
+            model = orchestrationConfig.imageChatChatter,
+            temperature = 0.7,
+          )
+          val result = imageAgent.answer(
+            listOf(
+              ImageAndText(
+                """
+ Create an image for a web page with the following description:
+ $description
+Output format: PNG image
+ Style: Modern, professional, web-optimized
+          """
+              )
+            )
+          )
+          val image = result.image
+          val imageFile = task.resolve(filename)
+          ImageIO.write(image, "png", imageFile)
+          generatedImages.add(filename to description)
+          val imageLink = task.linkTo(filename)
+          val markdown = "✅ Generated: [$filename]($imageLink)\n\n![${description}]($imageLink)"
+          newTask.add(markdown.renderMarkdown)
+
+          transcriptWriter?.write("**Generated Image:** $filename\n")
+          transcriptWriter?.write("**Description:** $description\n")
+          transcriptWriter?.write("**Prompt Used:** ${result.text}\n\n$markdown\n\n".transcriptFilter())
+          log.debug("Generated image: $filename")
+        } catch (e: Exception) {
+          log.error("Failed to generate image: $filename", e)
+          newTask.add(MarkdownUtil.renderMarkdown("⚠️ Failed to generate: `$filename` - ${e.message}", ui = ui))
+          transcriptWriter?.write("**Error generating $filename:** ${e.message}\n\n")
+        }
+      }
     }
 
     // Step 2: Generate JavaScript
@@ -258,7 +351,8 @@ Provide only the CSS code within a code block:
     val cssCode = extractCodeFromResponse(cssResponse, "css")
 
     // Step 4: Combine everything into a complete HTML file
-    val completeHtml = combineHtmlComponents(htmlStructure, cssCode, jsCode)
+    val htmlWithImages = insertImageReferences(htmlStructure, generatedImages, chatAgent, toInput, transcriptWriter, newTask, ui)
+    val completeHtml = combineHtmlComponents(htmlWithImages, cssCode, jsCode, generatedImages)
 
     if (completeHtml.isEmpty()) {
       transcriptWriter?.close()
@@ -272,34 +366,12 @@ Provide only the CSS code within a code block:
     transcriptWriter?.write("```html\n$completeHtml\n```\n\n")
 
 
-    if (orchestrationConfig.autoFix) {
-      outputPath.toFile().parentFile?.mkdirs()
-      outputPath.toFile().writeText(completeHtml)
-      transcriptWriter?.write("**Result:** Successfully wrote $htmlFile (auto-applied)\n")
-      transcriptWriter?.close()
-      newTask.complete("Successfully wrote $htmlFile")
-      resultFn("Successfully wrote $htmlFile")
-    } else {
-      newTask.add(
-        MarkdownUtil.renderMarkdown(
-          acceptButtonFooter(ui) {
-            try {
-              outputPath.toFile().parentFile?.mkdirs()
-              outputPath.toFile().writeText(completeHtml)
-              transcriptWriter?.write("**Result:** Successfully wrote $htmlFile (user accepted)\n")
-              transcriptWriter?.close()
-              newTask.complete("Successfully wrote $htmlFile")
-              resultFn("Successfully wrote $htmlFile")
-            } catch (e: Exception) {
-              log.error("Error writing HTML file", e)
-              newTask.error(e)
-              resultFn("ERROR: ${e.message}")
-            }
-          },
-          ui = ui
-        )
-      )
-    }
+    outputPath.toFile().parentFile?.mkdirs()
+    outputPath.toFile().writeText(completeHtml)
+    transcriptWriter?.write("**Result:** Successfully wrote $htmlFile (auto-applied)\n")
+    transcriptWriter?.close()
+    newTask.complete("Successfully wrote $htmlFile")
+    resultFn("Successfully wrote $htmlFile")
   }
 
   private fun extractCodeFromResponse(response: String, vararg languages: String): String {
@@ -322,7 +394,12 @@ Provide only the CSS code within a code block:
     return ""
   }
 
-  private fun combineHtmlComponents(htmlStructure: String, cssCode: String, jsCode: String): String {
+  private fun combineHtmlComponents(
+    htmlStructure: String,
+    cssCode: String,
+    jsCode: String,
+    generatedImages: List<Pair<String, String>> = emptyList()
+  ): String {
     // Parse the HTML structure and insert CSS and JavaScript
     val headEndIndex = htmlStructure.indexOf("</head>", ignoreCase = true)
     val bodyEndIndex = htmlStructure.indexOf("</body>", ignoreCase = true)
@@ -333,8 +410,17 @@ Provide only the CSS code within a code block:
     }
 
     val beforeHead = htmlStructure.substring(0, headEndIndex)
-    val afterHeadBeforeBody = htmlStructure.substring(headEndIndex, bodyEndIndex)
+    var afterHeadBeforeBody = htmlStructure.substring(headEndIndex, bodyEndIndex)
     val afterBody = htmlStructure.substring(bodyEndIndex)
+    // Insert image references if images were generated
+    if (generatedImages.isNotEmpty()) {
+      val imageComment = """
+    <!-- Generated Images:
+${generatedImages.joinToString("\n") { (filename, desc) -> "         - $filename: $desc" }}
+    -->
+""".trimIndent()
+      afterHeadBeforeBody = afterHeadBeforeBody.replace("</head>", "$imageComment\n</head>")
+    }
 
     return buildString {
       append(beforeHead)
@@ -352,6 +438,94 @@ Provide only the CSS code within a code block:
       append(afterBody)
     }
   }
+
+  private fun parseImageSpecs(response: String): List<Pair<String, String>> {
+    val specs = mutableListOf<Pair<String, String>>()
+    val lines = response.lines()
+    var currentFilename: String? = null
+    var currentDescription: String? = null
+    for (line in lines) {
+      when {
+        line.startsWith("IMAGE:", ignoreCase = true) -> {
+          // Save previous spec if exists
+          if (currentFilename != null && currentDescription != null) {
+            specs.add(currentFilename to currentDescription)
+          }
+          currentFilename = line.substringAfter(":", "").trim()
+          currentDescription = null
+        }
+
+        line.startsWith("DESCRIPTION:", ignoreCase = true) -> {
+          currentDescription = line.substringAfter(":", "").trim()
+        }
+
+        currentDescription != null && line.isNotBlank() -> {
+          // Continue multi-line description
+          currentDescription += " " + line.trim()
+        }
+      }
+    }
+    // Save last spec
+    if (currentFilename != null && currentDescription != null) {
+      specs.add(currentFilename to currentDescription)
+    }
+    return specs
+  }
+
+  private fun insertImageReferences(
+    htmlStructure: String,
+    generatedImages: List<Pair<String, String>>,
+    chatAgent: ChatAgent,
+    toInput: (String) -> List<String>,
+    transcriptWriter: java.io.BufferedWriter?,
+    newTask: SessionTask,
+    ui: SocketManager
+  ): String {
+    if (generatedImages.isEmpty()) {
+      return htmlStructure
+    }
+    newTask.add(MarkdownUtil.renderMarkdown("### Step 3.5: Inserting Image References", ui = ui))
+    transcriptWriter?.write("### Step 3.5: Inserting Image References\n\n")
+    val imageList = generatedImages.joinToString("\n") { (filename, description) ->
+      "- $filename: $description"
+    }
+    val imageInsertPrompt = """
+You need to insert image references into the HTML structure.
+## Current HTML Structure:
+```html
+$htmlStructure
+```
+## Generated Images:
+$imageList
+## Instructions:
+1. Insert <img> tags at appropriate locations in the HTML where these images should appear
+2. Use the given PNG filename (e.g., "filename.png") for the src attribute
+3. Add appropriate alt text based on the image description
+4. Add appropriate class names for styling
+5. Consider the semantic meaning of where each image should go (hero sections, content areas, etc.)
+6. Maintain the existing HTML structure and class names
+7. Do NOT add any CSS or JavaScript - just insert the <img> tags
+## Output Format:
+Provide the complete updated HTML structure within a code block:
+```html
+<!DOCTYPE html>
+...
+```
+        """.trimIndent()
+    transcriptWriter?.write("**Prompt:**\n```\n$imageInsertPrompt\n```\n\n")
+    val imageInsertResponse = chatAgent.answer(toInput(imageInsertPrompt))
+    transcriptWriter?.write("**Response:**\n$imageInsertResponse\n\n")
+    val updatedHtml = extractCodeFromResponse(imageInsertResponse, "html")
+    return if (updatedHtml.isNotEmpty()) {
+      newTask.add(MarkdownUtil.renderMarkdown("✅ Successfully inserted ${generatedImages.size} image reference(s)", ui = ui))
+      updatedHtml
+    } else {
+      log.warn("Failed to insert image references, using original HTML structure")
+      newTask.add(MarkdownUtil.renderMarkdown("⚠️ Failed to insert image references, using original structure", ui = ui))
+      htmlStructure
+    }
+  }
+
 
   override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
     val acceptLink = ui.hrefLink("Accept and Write File") {
@@ -379,6 +553,8 @@ Provide only the CSS code within a code block:
                 <li>Embeds CSS styles within &lt;style&gt; tags</li>
                 <li>Embeds JavaScript within &lt;script&gt; tags</li>
                 <li>Supports modern HTML5 features</li>
+                <li>Can generate images using AI image models</li>
+                <li>Automatically creates image directory and references</li>
                 <li>Interactive approval or auto-apply mode</li>
                 <li>Proper HTML structure and formatting</li>
               </ul>
@@ -386,4 +562,3 @@ Provide only the CSS code within a code block:
     )
   }
 }
-
