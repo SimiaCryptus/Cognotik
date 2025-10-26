@@ -1,12 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.agents.ParsedAgent
@@ -33,6 +27,9 @@ class OrchestrationConfig(
   @JsonSerialize(using = ApiChatModelSerializer::class)
   @JsonDeserialize(using = ApiChatModelDeserializer::class)
   var parsingModel: ApiChatModel? = null,
+  @JsonSerialize(using = ApiChatModelSerializer::class)
+  @JsonDeserialize(using = ApiChatModelDeserializer::class)
+  var imageChatModel: ApiChatModel? = null,
   var cognitiveMode: CognitiveModeStrategies? = null,
   val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
   var temperature: Double = 0.2,
@@ -63,6 +60,11 @@ class OrchestrationConfig(
   @get:JsonIgnore
   val parsingChatter
     get() = instance(parsingModel ?: defaultModel ?: throw IllegalStateException("Parsing model not set"))
+
+  @get:JsonIgnore
+  val imageChatChatter
+    get() = instance(imageChatModel ?: defaultModel ?: throw IllegalStateException("Image chat model not set"))
+
 
   @JsonIgnore
   fun instance(model: ApiChatModel) = instanceFn?.let { it(model) }
@@ -110,6 +112,7 @@ class OrchestrationConfig(
   fun copy(
     model: ApiChatModel? = this.defaultModel,
     parsingModel: ApiChatModel? = this.parsingModel,
+    imageChatModel: ApiChatModel? = this.imageChatModel,
     shellCmd: List<String> = this.shellCmd,
     temperature: Double = this.temperature,
     budget: Double = this.budget,
@@ -125,6 +128,7 @@ class OrchestrationConfig(
   ): OrchestrationConfig = OrchestrationConfig(
     defaultModel = model,
     parsingModel = parsingModel,
+    imageChatModel = imageChatModel,
     shellCmd = shellCmd,
     temperature = temperature,
     budget = budget,
@@ -250,43 +254,3 @@ class OrchestrationConfig(
   }
 }
 
-/**
- * Custom serializer for ApiChatModel that only serializes the model name
- */
-class ApiChatModelSerializer : JsonSerializer<ApiChatModel>() {
-  override fun serialize(value: ApiChatModel?, gen: JsonGenerator, serializers: SerializerProvider) {
-    if (value == null) {
-      gen.writeNull()
-    } else {
-      gen.writeString(value.model?.modelName ?: value.model?.name)
-    }
-  }
-}
-
-/**
- * Custom deserializer for ApiChatModel that resolves the model from its name
- */
-class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
-  override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ApiChatModel? {
-    val modelName = p.readValueAs(String::class.java) ?: return null
-    val userSettings = com.simiacryptus.cognotik.platform.ApplicationServices
-      .fileApplicationServices()
-      .userSettingsManager
-      .getUserSettings()
-    val model = userSettings.apis.flatMap {
-      it.provider?.getChatModels(it.key ?: "", it.baseUrl) ?: listOf()
-    }.firstOrNull {
-      it.modelName == modelName || it.name == modelName
-    }
-    if (model == null) {
-      throw IllegalStateException("No API model found for model $modelName")
-    }
-    val apiData = userSettings.apis.firstOrNull {
-      it.provider == model.provider
-    }
-    if (apiData == null) {
-      throw IllegalStateException("No API data found for model $modelName")
-    }
-    return ApiChatModel(model, apiData)
-  }
-}

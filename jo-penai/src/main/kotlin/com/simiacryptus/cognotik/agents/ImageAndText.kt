@@ -4,5 +4,5 @@ import java.awt.image.BufferedImage
 
 data class ImageAndText(
     val text: String,
-    val image: BufferedImage,
+    val image: BufferedImage? = null,
 )

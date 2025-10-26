@@ -2,7 +2,10 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 
 import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.agents.ImageModificationAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -21,6 +24,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.imageio.ImageIO
 
 private const val i = 100
 
@@ -54,14 +58,23 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
     @Description("Whether to predict narrative outcomes and resolutions")
     val predict_outcomes: Boolean = true,
 
-    @Description("Number of alternative narrative paths to explore")
-    val alternative_narratives: Int = 3,
+    @Description("Number of narrative paths to explore (valid range: 1-10)")
+    var alternatives: Int = 3,
 
     @Description("Whether to analyze character motivations and stakeholder perspectives")
     val analyze_motivations: Boolean = true,
 
     @Description("Whether to identify narrative inconsistencies or gaps")
     val find_inconsistencies: Boolean = true,
+    @Description("Whether to generate images for key narrative elements")
+    val generate_images: Boolean = false,
+    @Description("Image generation model to use (e.g., 'DallE3', 'DallE2')")
+    val image_model: String = "DallE3",
+    @Description("Width of generated images in pixels")
+    val image_width: Int = 1024,
+    @Description("Height of generated images in pixels")
+    val image_height: Int = 1024,
+
 
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -75,8 +88,14 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
       if (subject.isNullOrBlank()) {
         return "Subject must not be null or blank"
       }
-      if (alternative_narratives < 1 || alternative_narratives > 10) {
-        return "Alternative narratives must be between 1 and 10, got: $alternative_narratives"
+      if (alternatives < 1 || alternatives > 10) {
+        alternatives = alternatives.coerceIn(1, 10)
+      }
+      if (image_width < 256 || image_width > 2048) {
+        return "Image width must be between 256 and 2048, got: $image_width"
+      }
+      if (image_height < 256 || image_height > 2048) {
+        return "Image height must be between 256 and 2048, got: $image_height"
       }
       return ValidatedObject.validateFields(this)
     }
@@ -288,7 +307,7 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
         appendLine("\n## Input Files")
         appendLine(inputFileContent)
       }
-      if (executionConfig?.additional_context?.isNotBlank() == true) {
+      if (executionConfig.additional_context?.isNotBlank() == true) {
         appendLine("\n## Additional Context")
         appendLine(executionConfig.additional_context)
       }
@@ -299,7 +318,7 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
     val constructNarrative = executionConfig.construct_narrative
     val identifyPlotPoints = executionConfig.identify_plot_points
     val predictOutcomes = executionConfig.predict_outcomes
-    val alternativeNarratives = executionConfig.alternative_narratives.coerceIn(1, 10)
+    val alternativeNarratives = executionConfig.alternatives.coerceIn(1, 10)
     val analyzeMotivations = executionConfig.analyze_motivations
     val findInconsistencies = executionConfig.find_inconsistencies
 
@@ -509,6 +528,19 @@ Focus on clarity, coherence, and emotional resonance.
 
         overviewTask.add("✅ Main narrative constructed\n".renderMarkdown)
         task.update()
+        // Generate image for main narrative if enabled
+        if (executionConfig.generate_images) {
+          generateNarrativeImage(
+            task = task,
+            tabs = tabs,
+            title = "Main Narrative Visualization",
+            description = "${narrative.title}: ${narrative.summary}",
+            imageDir = narrativeDir,
+            filename = "01_main_narrative_image.png",
+            transcriptWriter = transcriptWriter,
+            orchestrationConfig = orchestrationConfig
+          )
+        }
       }
 
       // Step 2: Identify plot points
@@ -612,6 +644,20 @@ Be specific and concrete.
 
         overviewTask.add("✅ Plot points identified (${plotPoints.size} points)\n".renderMarkdown)
         task.update()
+        // Generate images for key plot points if enabled
+        if (executionConfig.generate_images && plotPoints.isNotEmpty()) {
+          val keyPlotPoint = plotPoints.first()
+          generateNarrativeImage(
+            task = task,
+            tabs = tabs,
+            title = "Key Plot Point: ${keyPlotPoint.type}",
+            description = keyPlotPoint.description,
+            imageDir = narrativeDir,
+            filename = "02_plot_point_image.png",
+            transcriptWriter = transcriptWriter,
+            orchestrationConfig = orchestrationConfig
+          )
+        }
       }
 
       // Step 3: Analyze character motivations
@@ -720,6 +766,21 @@ Consider stakeholder perspectives if analyzing organizational scenarios.
 
         overviewTask.add("✅ Character motivations analyzed (${characterAnalyses.size} characters)\n".renderMarkdown)
         task.update()
+        // Generate character portraits if enabled
+        if (executionConfig.generate_images && characterAnalyses.isNotEmpty()) {
+          characterAnalyses.take(2).forEachIndexed { index, char ->
+            generateNarrativeImage(
+              task = task,
+              tabs = tabs,
+              title = "Character: ${char.name}",
+              description = "${char.name}, ${char.role}. ${char.motivations.firstOrNull() ?: ""}",
+              imageDir = narrativeDir,
+              filename = "03_character_${index + 1}_${char.name.replace(" ", "_")}.png",
+              transcriptWriter = transcriptWriter,
+              orchestrationConfig = orchestrationConfig
+            )
+          }
+        }
       }
 
       // Step 4: Predict outcomes
@@ -1177,6 +1238,73 @@ Be concise but insightful. Focus on actionable insights.
       "maven"
     )
     return textExtensions.contains(file.extension.lowercase())
+  }
+
+  private fun generateNarrativeImage(
+    task: SessionTask,
+    tabs: TabbedDisplay,
+    title: String,
+    description: String,
+    imageDir: File,
+    filename: String,
+    transcriptWriter: java.io.BufferedWriter?,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    try {
+      log.info("Generating image: $title")
+      val imageTask = task.ui.newTask(false)
+      tabs["Image: $title"] = imageTask.placeholder
+      imageTask.add(
+        buildString {
+          appendLine("# $title")
+          appendLine()
+          appendLine("**Status:** Generating image...")
+          appendLine()
+        }.renderMarkdown
+      )
+      task.update()
+      val imageAgent = ImageModificationAgent(
+        prompt = "Transform the narrative description into a vivid, cinematic image",
+        model = orchestrationConfig.imageChatChatter,
+        temperature = 0.7,
+      )
+      val result = imageAgent.answer(listOf(ImageAndText("""
+Draw an image based on the following narrative description:
+${description.indent("  ")}
+      """)))
+      val image = result.image
+      // Save image to file
+      val imageFile = File(imageDir, filename)
+      ImageIO.write(image, "png", imageFile)
+      log.debug("Saved image to: ${imageFile.absolutePath}")
+      // Create display link
+      val (link, _) = task.createFile(filename)
+      val imageHtml = """
+        <div class='narrative-image'>
+          <h4>$title</h4>
+          <p><strong>Prompt:</strong> ${result.text}</p>
+          <a href='$link' target='_blank'>
+            <img src='$link' alt='$title' style='max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />
+          </a>
+        </div>
+      """.trimIndent()
+      imageTask.add(imageHtml.renderMarkdown)
+      task.update()
+      // Write to transcript
+      transcriptWriter?.appendLine("### $title")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.appendLine("**Prompt:** ${result.text}")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.appendLine("![${title}]($link)")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.flush()
+      imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+      task.update()
+    } catch (e: Exception) {
+      log.error("Failed to generate image: $title", e)
+      transcriptWriter?.appendLine("**Image Generation Failed:** ${e.message}")
+      transcriptWriter?.appendLine()
+    }
   }
 
 

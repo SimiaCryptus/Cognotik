@@ -408,7 +408,6 @@ class AwsChatClient(
         ) = ModelSchema.ChatMessage(
             role = acc.role, content = listOf(
                 ModelSchema.ContentPart(
-                    type = "text",
                     text = (acc.content?.plus(chatMessage.content ?: emptyList()) ?: chatMessage.content)?.joinToString(
                         "\n"
                     ) { it.text ?: "" })

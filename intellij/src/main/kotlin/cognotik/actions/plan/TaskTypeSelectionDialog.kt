@@ -149,7 +149,7 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
 
           taskType.name in listOf(
                 "Analysis", "FileModification", "FileSearch",
-                "WriteHtml", "GeneratePresentation"
+                "WriteHtml", "GeneratePresentation", "GenerateImage"
             ) -> "File Operations"
 
             taskType.name in listOf("VectorSearch", "KnowledgeIndexing") -> "Knowledge Management"

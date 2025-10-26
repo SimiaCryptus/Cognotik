@@ -2,7 +2,9 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 
 import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.agents.ImageModificationAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -17,10 +19,11 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.BufferedWriter
 import java.io.File
-import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.imageio.ImageIO
 
 class NarrativeGenerationTask(
   orchestrationConfig: OrchestrationConfig,
@@ -68,6 +71,17 @@ class NarrativeGenerationTask(
 
     @Description("Number of revision passes for each scene")
     val revision_passes: Int = 1,
+    @Description("Whether to generate images for each scene")
+    val generate_scene_images: Boolean = false,
+    @Description("Whether to generate a cover image for the narrative")
+    val generate_cover_image: Boolean = false,
+    @Description("Image generation model to use (e.g., 'DallE3', 'DallE2')")
+    image_model: String = "DallE3",
+    @Description("Width of generated images in pixels")
+    image_width: Int = 1024,
+    @Description("Height of generated images in pixels")
+    image_height: Int = 1024,
+
 
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -77,9 +91,13 @@ class NarrativeGenerationTask(
     construct_narrative = true,
     identify_plot_points = true,
     predict_outcomes = true,
-    alternative_narratives = 1,
+    alternatives = 1,
     analyze_motivations = true,
     find_inconsistencies = true,
+    generate_images = generate_scene_images || generate_cover_image,
+    image_model = image_model,
+    image_width = image_width,
+    image_height = image_height,
     task_dependencies = task_dependencies,
     state = state,
     input_files = input_files,
@@ -170,7 +188,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
     val transcript = transcript(task)
     val genConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData
     log.info("Starting NarrativeGenerationTask for subject: '${genConfig?.subject}'")
-    transcript?.write("# Narrative Generation Task\n\n".toByteArray())
+    transcript?.write("# Narrative Generation Task\n\n")
 
     if (genConfig == null) {
       log.error("Invalid configuration type for NarrativeGenerationTask")
@@ -193,12 +211,12 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
     // Get input file context
     val inputFileContext = getInputFileCode(agent.root.toFile())
     if (inputFileContext.isNotBlank()) {
-      transcript?.write("## Input Files Context\n\n$inputFileContext\n\n".toByteArray())
+      transcript?.write("## Input Files Context\n\n$inputFileContext\n\n")
       transcript?.flush()
     }
     // Combine messages with input files
     val combinedMessages = messages + listOf(inputFileContext).filter { it.isNotBlank() }
-    transcript?.write("## Input Messages\n\n${combinedMessages.joinToString("\n\n")}\n\n".toByteArray())
+    transcript?.write("## Input Messages\n\n${combinedMessages.joinToString("\n\n")}\n\n")
     transcript?.flush()
 
 
@@ -231,7 +249,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
       appendLine("*Running base narrative reasoning analysis...*")
     }
     overviewTask.add(overviewContent.renderMarkdown)
-    transcript?.write("\n## Overview\n\n$overviewContent\n\n".toByteArray())
+    transcript?.write("\n## Overview\n\n$overviewContent\n\n")
     transcript?.flush()
     task.update()
 
@@ -245,7 +263,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
 
       super.run(agent, messages, task, { result ->
         analysisResult.append(result)
-        transcript?.write(result.toByteArray())
+        transcript?.write(result)
         transcript?.flush()
       }, orchestrationConfig)
 
@@ -348,7 +366,7 @@ Ensure the outline:
         appendLine("**Status:** ✅ Complete")
       }
       outlineTask.add(outlineContent.renderMarkdown)
-      transcript?.write("\n## Outline\n\n$outlineContent\n\n".toByteArray())
+      transcript?.write("\n## Outline\n\n$outlineContent\n\n")
       transcript?.flush()
       task.update()
 
@@ -359,6 +377,20 @@ Ensure the outline:
       overviewTask.add("✅ Phase 2 Complete: Outline created (${outline.acts.sumOf { it.scenes?.size ?: 0 }} scenes)\n".renderMarkdown)
       overviewTask.add("\n### Phase 3: Scene Generation\n*Writing scenes iteratively with context...*\n".renderMarkdown)
       task.update()
+      val narrativeDir = task.resolve( "narrative_generation")!!
+      // Generate cover image if enabled
+      if (genConfig.generate_cover_image) {
+        generateCoverImage(
+          task = task,
+          tabs = tabs,
+          title = outline.title,
+          premise = outline.premise,
+          narrativeDir = narrativeDir,
+          transcriptWriter = transcript,
+          orchestrationConfig = orchestrationConfig
+        )
+      }
+
 
       // Phase 3: Generate each scene iteratively
       log.info("Phase 3: Generating scenes")
@@ -538,7 +570,7 @@ Provide the revised scene content only.
           appendLine("**Status:** ✅ Complete")
         }
         sceneTask.add(sceneContent.renderMarkdown)
-        transcript?.write("\n## $sceneContent\n\n".toByteArray())
+        transcript?.write("\n## $sceneContent\n\n")
         transcript?.flush()
         task.update()
 
@@ -549,6 +581,20 @@ Provide the revised scene content only.
 
         overviewTask.add("✅ (${generatedScene.word_count} words)\n".renderMarkdown)
         task.update()
+        // Generate scene image if enabled
+        if (genConfig.generate_scene_images) {
+          generateSceneImage(
+            task = task,
+            tabs = tabs,
+            sceneNumber = sceneOutline.scene_number,
+            sceneTitle = sceneOutline.title,
+            sceneContent = generatedScene.content,
+            setting = sceneOutline.setting,
+            narrativeDir = narrativeDir,
+            transcriptWriter = transcript,
+            orchestrationConfig = orchestrationConfig
+          )
+        }
       }
 
       overviewTask.add("\n✅ Phase 3 Complete: All scenes generated\n".renderMarkdown)
@@ -620,7 +666,7 @@ Provide the revised scene content only.
         }.renderMarkdown
       )
       task.update()
-      transcript?.write("\n## Final Statistics\n\n- Total Scenes: ${generatedScenes.size}\n- Total Word Count: $cumulativeWordCount\n- Time: ${totalTime / 1000.0}s\n\n".toByteArray())
+      transcript?.write("\n## Final Statistics\n\n- Total Scenes: ${generatedScenes.size}\n- Total Word Count: $cumulativeWordCount\n- Time: ${totalTime / 1000.0}s\n\n")
       transcript?.close()
 
 
@@ -675,7 +721,7 @@ Provide the revised scene content only.
     }
   }
 
-  private fun transcript(task: SessionTask): FileOutputStream? {
+  private fun transcript(task: SessionTask): BufferedWriter? {
     val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
     val markdownTranscript = file?.outputStream()
     task.complete(
@@ -685,7 +731,7 @@ Provide the revised scene content only.
         )
       }.pdf' target='_blank'>pdf</a>"
     )
-    return markdownTranscript
+    return java.io.BufferedWriter(markdownTranscript?.let { java.io.OutputStreamWriter(it) })
   }
 
   private fun getInputFileCode(rootFile: File): String {
@@ -720,6 +766,147 @@ Provide the revised scene content only.
           ""
         }
       }
+  }
+
+  private fun generateCoverImage(
+    task: SessionTask,
+    tabs: TabbedDisplay,
+    title: String,
+    premise: String,
+    narrativeDir: File,
+    transcriptWriter: java.io.BufferedWriter?,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    try {
+      log.info("Generating cover image for: $title")
+      val coverTask = task.ui.newTask(false)
+      tabs["Cover Image"] = coverTask.placeholder
+      coverTask.add(
+        buildString {
+          appendLine("# Cover Image")
+          appendLine()
+          appendLine("**Status:** Generating cover image...")
+          appendLine()
+        }.renderMarkdown
+      )
+      task.update()
+      val genConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData
+      val imageAgent = ImageModificationAgent(
+        prompt = "Create a compelling book cover image that captures the essence of this narrative",
+        model = orchestrationConfig.imageChatChatter,
+        temperature = 0.8,
+      )
+      val coverPrompt = "$title: $premise"
+      val result = imageAgent.answer(listOf(ImageAndText(coverPrompt)))
+      val image = result.image
+      // Save image
+      val imageFile = File(narrativeDir, "00_cover_image.png")
+      ImageIO.write(image, "png", imageFile)
+      log.debug("Saved cover image to: ${imageFile.absolutePath}")
+      // Create display link
+      val (link, _) = task.createFile("00_cover_image.png")
+      val imageHtml = """
+        <div class='cover-image'>
+          <h3>$title</h3>
+          <p><em>$premise</em></p>
+          <p><strong>Image Prompt:</strong> ${result.text}</p>
+          <a href='$link' target='_blank'>
+            <img src='$link' alt='Cover' style='max-width: 600px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);' />
+          </a>
+        </div>
+      """.trimIndent()
+      coverTask.add(imageHtml.renderMarkdown)
+      task.update()
+      // Write to transcript
+      transcriptWriter?.appendLine("## Cover Image")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.appendLine("**Prompt:** ${result.text}")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.appendLine("![Cover Image]($link)")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.flush()
+      coverTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+      task.update()
+    } catch (e: Exception) {
+      log.error("Failed to generate cover image", e)
+      transcriptWriter?.appendLine("**Cover Image Generation Failed:** ${e.message}")
+      transcriptWriter?.appendLine()
+    }
+  }
+
+  private fun generateSceneImage(
+    task: SessionTask,
+    tabs: TabbedDisplay,
+    sceneNumber: Int,
+    sceneTitle: String,
+    sceneContent: String,
+    setting: String,
+    narrativeDir: File,
+    transcriptWriter: java.io.BufferedWriter?,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    try {
+      log.info("Generating image for scene $sceneNumber: $sceneTitle")
+      val sceneImageTask = task.ui.newTask(false)
+      tabs["Scene $sceneNumber Image"] = sceneImageTask.placeholder
+      sceneImageTask.add(
+        buildString {
+          appendLine("# Scene $sceneNumber Image")
+          appendLine()
+          appendLine("**Status:** Generating scene visualization...")
+          appendLine()
+        }.renderMarkdown
+      )
+      task.update()
+      val genConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData
+      val imageModel = genConfig?.image_model
+      val imageAgent = ImageModificationAgent(
+        prompt = "Create a cinematic scene illustration that captures the key moment and atmosphere",
+        model = orchestrationConfig.imageChatChatter,
+        temperature = 0.7,
+      )
+      // Extract key visual elements from scene
+      val scenePrompt = buildString {
+        append("Scene: $sceneTitle. ")
+        append("Setting: $setting. ")
+        // Take first 500 chars of scene content for context
+        append(sceneContent.take(500))
+      }
+      val result = imageAgent.answer(listOf(ImageAndText(scenePrompt)))
+      val image = result.image
+      // Save image
+      val imageFile = File(narrativeDir, "scene_${sceneNumber}_image.png")
+      ImageIO.write(image, "png", imageFile)
+      log.debug("Saved scene image to: ${imageFile.absolutePath}")
+      // Create display link
+      val (link, _) = task.createFile("scene_${sceneNumber}_image.png")
+      val imageHtml = """
+        <div class='scene-image'>
+          <h4>Scene $sceneNumber: $sceneTitle</h4>
+          <p><strong>Setting:</strong> $setting</p>
+          <p><strong>Image Prompt:</strong> ${result.text}</p>
+          <a href='$link' target='_blank'>
+            <img src='$link' alt='Scene $sceneNumber' style='max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />
+          </a>
+        </div>
+      """.trimIndent()
+      sceneImageTask.add(imageHtml.renderMarkdown)
+      task.update()
+      // Write to transcript
+      transcriptWriter?.appendLine("#### Scene $sceneNumber Image")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.appendLine("**Prompt:** ${result.text}")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.appendLine("![Scene $sceneNumber]($link)")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.flush()
+      sceneImageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+      task.update()
+    } catch (e: Exception) {
+      log.error("Failed to generate scene image for scene $sceneNumber", e)
+      transcriptWriter?.appendLine("**Scene Image Generation Failed:** ${e.message}")
+      transcriptWriter?.appendLine()
+    }
   }
 
 

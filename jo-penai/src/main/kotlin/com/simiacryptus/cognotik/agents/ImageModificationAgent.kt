@@ -19,56 +19,42 @@ open class ImageModificationAgent(
   name: String? = null,
   model: ChatInterface,
   temperature: Double = 0.3,
-) : BaseAgent<ImageAndText, ImageAndText>(
+) : BaseAgent<List<ImageAndText>, ImageAndText>(
   prompt = prompt,
   name = name,
   model = model,
   temperature = temperature,
 ) {
 
-  override fun chatMessages(questions: ImageAndText): Array<ChatMessage> {
-    val imageBase64 = encodeImageToBase64(questions.image)
-
-    return arrayOf(
-      ChatMessage(
-        role = ModelSchema.Role.system,
-        content = prompt.toContentList()
-      ),
-      ChatMessage(
-        role = ModelSchema.Role.user,
-        content = listOf(
+  override fun chatMessages(questions: List<ImageAndText>) = arrayOf(
+    ChatMessage(
+      role = ModelSchema.Role.system,
+      content = prompt.toContentList()
+    ),
+    ChatMessage(
+      role = ModelSchema.Role.user,
+      content = questions.flatMap { question ->
+        listOf(
           ContentPart(
-            type = "text",
-            text = questions.text
-          ),
-          ContentPart(
-            type = "image_url",
-            image_url = "data:image/png;base64,$imageBase64"
+            text = question.text,
+            image_url = question.image?.let { "data:image/png;base64,${it.encodeImageToBase64()}" },
           )
         )
-      )
+      }
     )
-  }
+  )
 
   override fun respond(
-    input: ImageAndText,
+    input: List<ImageAndText>,
     vararg messages: ChatMessage
   ): ImageAndText {
     val choices = response(*messages).choices
-    return ImageAndText(
-      text = choices.first().message?.content ?: throw RuntimeException("No response from model"),
-      image = choices.firstOrNull { it.message?.image_url != null }
-        ?.let { it.message?.image } ?: input.image
-    )
-  }
-
-  /**
-   * Encodes a BufferedImage to a Base64 string in PNG format
-   */
-  private fun encodeImageToBase64(image: BufferedImage): String {
-    val outputStream = ByteArrayOutputStream()
-    ImageIO.write(image, "png", outputStream)
-    return Base64.getEncoder().encodeToString(outputStream.toByteArray())
+    val image = choices.firstOrNull { it.message?.image_url != null }?.let { it.message?.image }
+    if (image != null) {
+      log.info("Received image URL from model response")
+    }
+    val text = choices.firstOrNull()?.message?.content ?: ""
+    return ImageAndText(text = text, image = image ?: input.map { it.image }.firstOrNull())
   }
 
   override fun withModel(model: ChatInterface): ImageModificationAgent = ImageModificationAgent(
@@ -77,4 +63,17 @@ open class ImageModificationAgent(
     model = model,
     temperature = temperature,
   )
+
+  companion object {
+    private val log = org.slf4j.LoggerFactory.getLogger(ImageModificationAgent::class.java)
+  }
+}
+
+/**
+ * Encodes a BufferedImage to a Base64 string in PNG format
+ */
+fun BufferedImage.encodeImageToBase64(): String {
+  val outputStream = ByteArrayOutputStream()
+  ImageIO.write(this, "png", outputStream)
+  return Base64.getEncoder().encodeToString(outputStream.toByteArray())
 }

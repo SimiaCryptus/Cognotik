@@ -55,9 +55,10 @@ data class AppSettingsState(
   var temperature: Double = 0.1,
   var useScratchesSystemPath: Boolean = false,
 
-  /* Model Settings */
+/* Model Settings */
   var smartModel: ApiChatModel? = null,
   var fastModel: ApiChatModel? = null,
+  var imageChatModel: ApiChatModel? = null,
   var transcriptionModel: String? = null,
   var imageModel: ApiImageModel? = null,
   /* Embedding Model Settings */
@@ -98,9 +99,13 @@ data class AppSettingsState(
   val smartChatClient: ChatInterface
     get() = smartModel?.instance() ?: throw IllegalStateException("Smart model not configured")
 
-  @get:JsonIgnore
+@get:JsonIgnore
   val fastChatClient: ChatInterface
     get() = fastModel?.instance() ?: throw IllegalStateException("Fast model not configured")
+  @get:JsonIgnore
+  val imageChatClient: ChatInterface
+    get() = imageChatModel?.instance() ?: throw IllegalStateException("Image chat model not configured")
+
 
   @get:JsonIgnore
   val imageClient: com.simiacryptus.cognotik.image.ImageClientInterface?
@@ -193,9 +198,10 @@ data class AppSettingsState(
     if (sampleSize != other.sampleSize) return false
     if (channels != other.channels) return false
     if (temperature != other.temperature) return false
-    if (useScratchesSystemPath != other.useScratchesSystemPath) return false
+if (useScratchesSystemPath != other.useScratchesSystemPath) return false
     if (smartModel != other.smartModel) return false
     if (fastModel != other.fastModel) return false
+    if (imageChatModel != other.imageChatModel) return false
     if (transcriptionModel != other.transcriptionModel) return false
     if (imageModel != other.imageModel) return false
     if (embeddingModel != other.embeddingModel) return false
@@ -240,9 +246,10 @@ data class AppSettingsState(
     result = 31 * result + sampleSize
     result = 31 * result + channels
     result = 31 * result + temperature.hashCode()
-    result = 31 * result + useScratchesSystemPath.hashCode()
+result = 31 * result + useScratchesSystemPath.hashCode()
     result = 31 * result + smartModel.hashCode()
     result = 31 * result + fastModel.hashCode()
+    result = 31 * result + (imageChatModel?.hashCode() ?: 0)
     result = 31 * result + (transcriptionModel?.hashCode() ?: 0)
     result = 31 * result + (imageModel?.hashCode() ?: 0)
     result = 31 * result + (embeddingModel?.hashCode() ?: 0)

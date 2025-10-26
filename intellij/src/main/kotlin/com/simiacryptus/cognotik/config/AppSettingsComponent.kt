@@ -174,8 +174,11 @@ class AppSettingsComponent : Disposable {
   @Name("Model")
   val smartModel = ComboBox<String>()
 
-  @Name("Model")
+@Name("Model")
   val fastModel = ComboBox<String>()
+  @Name("Model")
+  val imageChatModel = ComboBox<String>()
+
 
   @Name("Main Image Model")
   val mainImageModel = ComboBox<String>()
@@ -520,6 +523,7 @@ class AppSettingsComponent : Disposable {
       availableChatModels.forEach {
         this.smartModel.addItem(it.value.modelName)
         this.fastModel.addItem(it.value.modelName)
+        this.imageChatModel.addItem(it.value.modelName)
       }
     } catch (e: Exception) {
       log.error("Error loading models: ${e.message}", e)
@@ -607,7 +611,7 @@ class AppSettingsComponent : Disposable {
           }!!
       "${model.provider?.name} - ${model.modelName}"
     }.toList()
-    val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }.filter { modelItem ->
+val fastModelItems = (0 until fastModel.itemCount).map { fastModel.getItemAt(it) }.filter { modelItem ->
       val chatModel = apis.filter { it.key != null }.firstNotNullOfOrNull { apiData ->
         apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
       }
@@ -631,14 +635,41 @@ class AppSettingsComponent : Disposable {
           }
       "${model?.provider?.name} - ${model?.modelName}"
     }.toList()
+    val imageChatModelItems = (0 until imageChatModel.itemCount).map { imageChatModel.getItemAt(it) }.filter { modelItem ->
+      val chatModel = apis.filter { it.key != null }.firstNotNullOfOrNull { apiData ->
+        apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.find { it.modelName == modelItem }
+      }
+      if (chatModel == null) {
+        false
+      } else {
+        val visible = isVisible(chatModel)
+        visible
+      }
+    }.filterNotNull().sortedBy { modelItem ->
+      val model =
+        apis.filter { it.key != null }
+          .find { apiData ->
+            apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+              ?.any { it.modelName == modelItem } == true
+          }
+          ?.let { apiData ->
+            apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)
+              ?.find { it.modelName == modelItem }
+          }
+      "${model?.provider?.name} - ${model?.modelName}"
+    }.toList()
     smartModel.removeAllItems()
     fastModel.removeAllItems()
+    imageChatModel.removeAllItems()
     smartModelItems.forEach { smartModel.addItem(it) }
     fastModelItems.forEach { fastModel.addItem(it) }
+    imageChatModelItems.forEach { imageChatModel.addItem(it) }
     this.smartModel.isEditable = true
     this.fastModel.isEditable = true
+    this.imageChatModel.isEditable = true
     this.smartModel.renderer = getModelRenderer()
     this.fastModel.renderer = getModelRenderer()
+    this.imageChatModel.renderer = getModelRenderer()
     this.mainImageModel.isEditable = true
     this.mainImageModel.renderer = getImageModelRenderer()
     this.embeddingModel.isEditable = true
@@ -649,8 +680,11 @@ class AppSettingsComponent : Disposable {
     AppSettingsState.instance.smartModel?.model?.let { model ->
       this.smartModel.selectedItem = model.modelName
     }
-    AppSettingsState.instance.fastModel?.model?.let { model ->
+AppSettingsState.instance.fastModel?.model?.let { model ->
       this.fastModel.selectedItem = model.modelName
+    }
+    AppSettingsState.instance.imageChatModel?.model?.let { model ->
+      this.imageChatModel.selectedItem = model.modelName
     }
     AppSettingsState.instance.embeddingModel?.let { model ->
       this.embeddingModel.selectedItem = model

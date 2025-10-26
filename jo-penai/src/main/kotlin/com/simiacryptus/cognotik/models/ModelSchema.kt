@@ -223,7 +223,6 @@ interface ModelSchema {
     )
 
     data class ContentPart(
-        val type: String,
         val text: String? = null,
         var image_url: String? = null,
         val input_audio: AudioInput? = null
@@ -274,22 +273,22 @@ interface ModelSchema {
             private val log = LoggerFactory.getLogger(ContentPart::class.java)
             fun text(content: String): ContentPart {
                 log.info("Creating text ContentPart")
-                return ContentPart(type = "text", text = content)
+                return ContentPart(text = content)
             }
 
             fun jpg(img: BufferedImage): ContentPart {
                 log.info("Creating jpg ContentPart")
-                return ContentPart(type = "image_url", image_url = "data:image/jpeg;base64," + toBase64(img, "jpg"))
+                return ContentPart(image_url = "data:image/jpeg;base64," + toBase64(img, "jpg"))
             }
 
             fun png(img: BufferedImage): ContentPart {
                 log.info("Creating png ContentPart")
-                return ContentPart(type = "image_url", image_url = "data:image/png;base64," + toBase64(img, "png"))
+                return ContentPart(image_url = "data:image/png;base64," + toBase64(img, "png"))
             }
 
             fun audio(data: String, format: String): ContentPart {
                 log.info("Creating audio ContentPart")
-                return ContentPart(type = "input_audio", input_audio = AudioInput(data, format))
+                return ContentPart(input_audio = AudioInput(data, format))
             }
 
             fun toBase64(image: BufferedImage, fmt: String): String {

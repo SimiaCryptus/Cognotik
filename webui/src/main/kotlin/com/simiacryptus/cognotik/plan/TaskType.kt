@@ -189,6 +189,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
       registerConstructor(ScriptwritingTask.Scriptwriting) { settings, task ->
         ScriptwritingTask(settings, task)
       }
+      registerConstructor(GenerateImageTask.GenerateImage) { settings, task ->
+        GenerateImageTask(settings, task)
+      }
     }
 
     fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
@@ -233,5 +236,4 @@ class TaskTypeSerializer : DynamicEnumSerializer<TaskType<*, *>>(TaskType::class
 
 class TaskTypeDeserializer : DynamicEnumDeserializer<TaskType<*, *>>(TaskType::class.java)
 
-private val taskConstructors =
-  mutableMapOf<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>>()
+private val taskConstructors = mutableMapOf<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>>()

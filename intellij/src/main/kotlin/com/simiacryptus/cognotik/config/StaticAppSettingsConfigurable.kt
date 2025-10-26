@@ -41,9 +41,13 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             add(JLabel("Smart Model:"))
             add(component.smartModel)
           })
-          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
             add(JLabel("Fast Model:"))
             add(component.fastModel)
+          })
+          add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+            add(JLabel("Image Chat Model:"))
+            add(component.imageChatModel)
           })
           add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
             add(JLabel("Image Model:"))
@@ -427,10 +431,11 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       component.awsBucket.text = settings.awsBucket ?: ""
       component.listeningPort.text = settings.listeningPort.toString()
       component.listeningEndpoint.text = settings.listeningEndpoint
-      component.suppressErrors.isSelected = settings.suppressErrors
+component.suppressErrors.isSelected = settings.suppressErrors
       component.disableAutoOpenUrls.isSelected = settings.disableAutoOpenUrls
       settings.fastModel?.model?.let { component.fastModel.selectedItem = it.modelName }
       settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelName }
+      settings.imageChatModel?.model?.let { component.imageChatModel.selectedItem = it.modelName }
       settings.imageModel?.model?.let { component.mainImageModel.selectedItem = it.modelName }
       component.devActions.isSelected = settings.devActions
       component.temperature.text = settings.temperature.toString()
@@ -454,22 +459,26 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
       ).userSettingsManager.getUserSettings()
       log.debug("Current user has ${userSettings.apis.size} API configurations")
 
-      val fastModelName = component.fastModel.selectedItem as String?
+val fastModelName = component.fastModel.selectedItem as String?
       val smartModelName = component.smartModel.selectedItem as String?
+      val imageChatModelName = component.imageChatModel.selectedItem as String?
       val imageModelName = component.mainImageModel.selectedItem as String?
-      log.debug("Selected models - fast: $fastModelName, smart: $smartModelName")
+      log.debug("Selected models - fast: $fastModelName, smart: $smartModelName, imageChat: $imageChatModelName")
 
       val chatModels = userSettings.apis.flatMap { apiData -> apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl) ?: emptyList() }
       val imageModels = userSettings.apis.flatMap { apiData -> apiData.provider?.getImageModels(apiData.key!!, apiData.baseUrl) ?: emptyList() }
       val fastChatModel = chatModels.find { model -> model.modelName == fastModelName || model.name == fastModelName }
       val fastApiData = userSettings.apis.find { it.provider == fastChatModel?.provider }
-      val smartChatModel = chatModels.find { model -> model.modelName == smartModelName || model.name == smartModelName }
+val smartChatModel = chatModels.find { model -> model.modelName == smartModelName || model.name == smartModelName }
       val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
+      val imageChatModel = chatModels.find { model -> model.modelName == imageChatModelName || model.name == imageChatModelName }
+      val imageChatApiData = userSettings.apis.find { it.provider == imageChatModel?.provider }
       val imageModel = imageModels.find { model -> model.modelName == imageModelName || model.name == imageModelName }
       val imageApiData = userSettings.apis.find { it.provider == imageModel?.provider }
 
-      settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
+settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
       settings.diffLoggingEnabled = component.diffLoggingEnabled.isSelected
+      settings.imageChatModel = ApiChatModel(imageChatModel, imageChatApiData)
       settings.awsProfile = component.awsProfile.text.takeIf { it.isNotBlank() }
       settings.awsRegion = component.awsRegion.text.takeIf { it.isNotBlank() }
       settings.awsBucket = component.awsBucket.text.takeIf { it.isNotBlank() }

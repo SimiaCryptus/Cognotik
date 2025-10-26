@@ -39,7 +39,7 @@ open class ImageActorTestApp(
                 listOf(userMessage)
             )
             message.verbose(response.text)
-            message.image(response.image)
+            message.image(response.image!!)
             message.complete()
         } catch (e: Throwable) {
             log.warn("Error flushing image", e)
