@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools
 
-import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import java.io.FileOutputStream
 
 class SubPlanningTask(
   orchestrationConfig: OrchestrationConfig, planTask: SubPlanningTaskExecutionConfigData?
@@ -51,14 +52,14 @@ class SubPlanningTask(
       if (planning_goal.isNullOrBlank() && task_description.isNullOrBlank()) {
         return "Either planning_goal or task_description must be specified for SubPlanningTask"
       }
-      
+
       // Validate context items if present
       context?.forEachIndexed { index, ctx ->
         if (ctx.isBlank()) {
           return "Context item at index $index is blank"
         }
       }
-      
+
       return ValidatedObject.validateFields(this)
     }
   }
@@ -85,6 +86,7 @@ class SubPlanningTask(
     agent: TaskOrchestrator, messages: List<String>, task: SessionTask, resultFn: (String) -> Unit, orchestrationConfig: OrchestrationConfig
   ) {
     log.info("Starting SubPlanningTask with goal: ${executionConfig?.planning_goal}")
+    val transcript = transcript(task)
 
     try {
       val typeConfig = this.typeConfig ?: throw RuntimeException()
@@ -152,6 +154,7 @@ class SubPlanningTask(
         appendLine("---")
         appendLine()
       }
+      transcript?.write(planningInfo.toByteArray())
       planningTask.add(planningInfo.renderMarkdown)
 
       // Execute the sub-plan using the cognitive mode
@@ -161,6 +164,11 @@ class SubPlanningTask(
       log.debug("Executing sub-plan with ${contextMessages.size} context messages")
 
       // Handle the user message through the cognitive mode
+      transcript?.write("\n\n## Execution\n\n".toByteArray())
+      transcript?.write("**Planning Goal:**\n\n".toByteArray())
+      transcript?.write(planningGoal.toByteArray())
+      transcript?.write("\n\n".toByteArray())
+
       cognitiveInstance.handleUserMessage(planningGoal, executionTask)
 
       // Collect results from the cognitive mode's context
@@ -173,14 +181,21 @@ class SubPlanningTask(
       tabs["Summary"] = summaryTask.placeholder
 
       val summary = createSummary(results, planningGoal, summaryTask, orchestrationConfig)
+      transcript?.write("\n\n## Summary\n\n".toByteArray())
+      transcript?.write(summary.toByteArray())
+      transcript?.write("\n\n".toByteArray())
       summaryTask.add(summary.renderMarkdown)
       tabs.update()
       resultFn(summary)
 
     } catch (e: Exception) {
       log.error("Error executing SubPlanningTask", e)
+      transcript?.write("\n\n## Error\n\n".toByteArray())
+      transcript?.write("```\n${e.message}\n${e.stackTraceToString()}\n```\n".toByteArray())
       task.error(e)
       resultFn("Error in sub-planning: ${e.message}")
+    } finally {
+      transcript?.close()
     }
   }
 
@@ -266,6 +281,20 @@ class SubPlanningTask(
       appendLine("</details>")
     }
   }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   companion object {
     private val log = LoggerFactory.getLogger(SubPlanningTask::class.java)

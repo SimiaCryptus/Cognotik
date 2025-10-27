@@ -10,7 +10,7 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
@@ -97,12 +97,19 @@ class PlanConfigDialog(
                 settings.defaultModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
             toolTipText = "Default AI model for all tasks"
         }
-    private val parsingModelCombo =
+private val parsingModelCombo =
         ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
             maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
             selectedItem =
                 settings.parsingModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
             toolTipText = "AI model for parsing and understanding tasks"
+        }
+    private val imageChatModelCombo =
+        ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
+            maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
+            selectedItem =
+                settings.imageChatModel?.model?.modelName ?: AppSettingsState.instance.imageChatModel?.model?.modelName
+            toolTipText = "Multimodal AI model for image-related tasks"
         }
 
     private val temperatureSlider =
@@ -436,10 +443,11 @@ class PlanConfigDialog(
             settings.temperature = config.temperature.coerceIn(0.0, 1.0)
             settings.autoFix = config.autoFix
             settings.maxTaskHistoryChars = config.maxTaskHistoryChars
-            settings.maxTasksPerIteration = config.maxTasksPerIteration
+settings.maxTasksPerIteration = config.maxTasksPerIteration
             settings.maxIterations = config.maxIterations
             settings.defaultModel = config.defaultModel
             settings.parsingModel = config.parsingModel
+            settings.imageChatModel = config.imageChatModel
             settings.cognitiveMode = config.cognitiveMode
 
             // Update UI components
@@ -473,10 +481,16 @@ class PlanConfigDialog(
                 }
             }
 
-            config.parsingModel?.model?.modelName?.let { modelName ->
+config.parsingModel?.model?.modelName?.let { modelName ->
                 visibleModelsCache.find { it.modelName == modelName }?.let { model ->
                     settings.parsingModel = model.toApiChatModel()
                     parsingModelCombo.selectedItem = modelName
+                }
+            }
+            config.imageChatModel?.model?.modelName?.let { modelName ->
+                visibleModelsCache.find { it.modelName == modelName }?.let { model ->
+                    settings.imageChatModel = model.toApiChatModel()
+                    imageChatModelCombo.selectedItem = modelName
                 }
             }
 
@@ -551,9 +565,13 @@ class PlanConfigDialog(
                 cell(globalModelCombo).align(Align.FILL)
                     .comment("Default AI model for all tasks")
             }
-            row("Parsing Model:") {
+row("Parsing Model:") {
                 cell(parsingModelCombo).align(Align.FILL)
                     .comment("AI model for parsing and understanding tasks")
+            }
+            row("Image Chat Model:") {
+                cell(imageChatModelCombo).align(Align.FILL)
+                    .comment("Multimodal AI model for image-related tasks")
             }
 
             group("Task Configurations") {
@@ -626,10 +644,15 @@ class PlanConfigDialog(
             val model = visibleModelsCache.find { it.modelName == selectedGlobalModel }
             settings.defaultModel = model?.toApiChatModel()
         }
-        val selectedParsingModel = parsingModelCombo.selectedItem as? String
+val selectedParsingModel = parsingModelCombo.selectedItem as? String
         if (selectedParsingModel != null) {
             val model = visibleModelsCache.find { it.modelName == selectedParsingModel }
             settings.parsingModel = model?.toApiChatModel()
+        }
+        val selectedImageChatModel = imageChatModelCombo.selectedItem as? String
+        if (selectedImageChatModel != null) {
+            val model = visibleModelsCache.find { it.modelName == selectedImageChatModel }
+            settings.imageChatModel = model?.toApiChatModel()
         }
         val selectedCognitiveMode = cognitiveModeCombo.selectedItem as String
         settings.cognitiveMode = CognitiveModeStrategies.valueOf(selectedCognitiveMode)
@@ -663,7 +686,7 @@ class PlanConfigDialog(
         // Validation patterns
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")
 
-        fun isVisible(chatModel: LLMModel) =
+      fun isVisible(chatModel: AIModel) =
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter { it.key != null }
                 .any { it.provider == chatModel.provider }
     }

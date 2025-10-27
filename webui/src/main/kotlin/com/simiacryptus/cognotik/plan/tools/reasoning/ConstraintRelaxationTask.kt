@@ -1,14 +1,17 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -34,6 +37,8 @@ class ConstraintRelaxationTask(
     val find_creative_satisfactions: Boolean = true,
     @Description("Maximum number of relaxation/reintroduction iterations")
     val max_iterations: Int = 5,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Additional files for context")
     val related_files: List<String>? = null,
     task_dependencies: List<String>? = null,
@@ -82,6 +87,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
   ** Enable creative satisfaction finding to discover novel solutions
   ** Produces a solution that progressively satisfies constraints
   ** Shows evolution of solution as constraints are reintroduced
+  ** Optionally, list input files (supports glob patterns) to be examined for context
         """.trimIndent()
   }
 
@@ -130,6 +136,8 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     val tabs = TabbedDisplay(task)
+    val (transcriptLink, transcriptFile) = Pair(task.linkTo("constraint_relaxation_transcript.md"), task.resolve("constraint_relaxation_transcript.md"))
+    val transcript = transcriptFile?.outputStream()
     val overviewTask = task.ui.newTask(false)
     tabs["Overview"] = overviewTask.placeholder
 
@@ -168,7 +176,13 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
       appendLine()
       appendLine("*Initializing constraint relaxation process...*")
     }
+    transcript?.write(overviewContent.toByteArray())
     overviewTask.add(overviewContent.renderMarkdown)
+    task.complete(
+      "Writing transcript to <a href='$transcriptLink' target='_blank'>$transcriptLink</a> " +
+          "<a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+          "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+    )
     task.update()
 
     val priorContext = getPriorCode(agent.executionState)
@@ -183,8 +197,10 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
           appendLine(priorContext.truncateForDisplay())
         }.renderMarkdown
       )
+      transcript?.write("\n\n# Context from Previous Tasks\n\n${priorContext.truncateForDisplay()}\n".toByteArray())
       task.update()
     }
+    val inputFileContent = getInputFileCode()
 
     overviewTask.add(
       buildString {
@@ -194,11 +210,17 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         appendLine("*Analyzing constraint structure...*")
       }.renderMarkdown
     )
+    transcript?.write("\n\n✅ Initialization complete\n\n*Analyzing constraint structure...*\n".toByteArray())
     task.update()
 
     val solutionBuilder = StringBuilder()
     solutionBuilder.append("# Constraint Relaxation Solution\n\n")
     solutionBuilder.append("**Problem:** $problem\n\n")
+    if (inputFileContent.isNotBlank()) {
+      solutionBuilder.append("## Input Files Context\n\n")
+      solutionBuilder.append(inputFileContent)
+      solutionBuilder.append("\n\n")
+    }
 
     try {
       // Step 1: Analyze and order constraints
@@ -217,24 +239,22 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
       val orderedConstraints = orderConstraints(constraints, reintroductionOrder)
       val relaxedConstraints = selectConstraintsToRelax(orderedConstraints, relaxationStrategy)
+      buildString {
+        appendLine()
+        appendLine("## Constraint Ordering")
+        appendLine()
+        appendLine("Constraints will be reintroduced in the following order:")
+        appendLine()
+        orderedConstraints.forEachIndexed { index, (constraint, priority) ->
+          val status = if (relaxedConstraints.contains(constraint)) "🔓 Initially Relaxed" else "🔒 Active"
+          appendLine("${index + 1}. **$constraint** ($status, priority: ${String.format("%.2f", priority)})")
+        }
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine("**Status:** ✅ Analysis complete")
+      }
 
-      analysisTask.add(
-        buildString {
-          appendLine()
-          appendLine("## Constraint Ordering")
-          appendLine()
-          appendLine("Constraints will be reintroduced in the following order:")
-          appendLine()
-          orderedConstraints.forEachIndexed { index, (constraint, priority) ->
-            val status = if (relaxedConstraints.contains(constraint)) "🔓 Initially Relaxed" else "🔒 Active"
-            appendLine("${index + 1}. **$constraint** ($status, priority: ${String.format("%.2f", priority)})")
-          }
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("**Status:** ✅ Analysis complete")
-        }.renderMarkdown
-      )
       task.update()
 
       overviewTask.add(
@@ -265,6 +285,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
           appendLine("**Status:** Generating solution without relaxed constraints...")
         }.renderMarkdown
       )
+      transcript?.write("\n\n# Initial Relaxed Solution\n\n**Relaxed Constraints:** ${relaxedConstraints.size}\n\n".toByteArray())
       task.update()
 
       val activeConstraints = constraints.filterKeys { !relaxedConstraints.contains(it) }
@@ -276,7 +297,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         findCreativeSatisfactions
       )
 
-      relaxedSolutionTask.add(
+      val relaxedSolutionContent =
         buildString {
           appendLine()
           appendLine("## Solution")
@@ -286,8 +307,10 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
           appendLine("---")
           appendLine()
           appendLine("**Status:** ✅ Relaxed solution generated")
-        }.renderMarkdown
-      )
+        }
+
+      transcript?.write(relaxedSolutionContent.toByteArray())
+      relaxedSolutionTask.add(relaxedSolutionContent.renderMarkdown)
       task.update()
 
       solutionBuilder.append("## Initial Relaxed Solution\n\n")
@@ -336,6 +359,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
             appendLine("**Status:** Adapting solution to satisfy this constraint...")
           }.renderMarkdown
         )
+        transcript?.write("\n\n# Iteration ${index + 1}: Reintroducing Constraint\n\n**Constraint:** $constraint\n\n".toByteArray())
         task.update()
 
         val newActiveConstraints = activeConstraints.toMutableMap()
@@ -354,7 +378,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
         val iterationTime = System.currentTimeMillis() - iterationStartTime
 
-        iterationTask.add(
+        val iterationContent =
           buildString {
             appendLine()
             appendLine("## Adapted Solution")
@@ -364,8 +388,10 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
             appendLine("---")
             appendLine()
             appendLine("**Status:** ✅ Complete (${iterationTime / 1000.0}s)")
-          }.renderMarkdown
-        )
+          }
+
+        transcript?.write(iterationContent.toByteArray())
+        iterationTask.add(iterationContent.renderMarkdown)
         task.update()
 
         reintroductionSteps.add(
@@ -411,7 +437,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         api
       )
 
-      synthesisTask.add(
+      val synthesisContent =
         buildString {
           appendLine()
           appendLine(synthesis)
@@ -419,8 +445,10 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
           appendLine("---")
           appendLine()
           appendLine("**Status:** ✅ Complete")
-        }.renderMarkdown
-      )
+        }
+
+      transcript?.write("\n\n# Final Synthesis\n\n${synthesis}\n".toByteArray())
+      synthesisTask.add(synthesisContent.renderMarkdown)
       task.update()
 
       solutionBuilder.append("## Progressive Reintroduction\n\n")
@@ -446,36 +474,60 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         """.trimMargin()
       )
 
+      val completionContent = buildString {
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine("## ✅ Constraint Relaxation Complete")
+        appendLine()
+        appendLine("**Total Time:** ${totalTime / 1000.0}s")
+        appendLine()
+        appendLine("**Iterations:** ${reintroductionSteps.size}")
+        appendLine()
+        appendLine("**Average Iteration Time:** ${avgIterationTime / 1000.0}s")
+        appendLine()
+        appendLine("**Constraints Satisfied:** ${constraints.size - relaxedConstraints.size + reintroductionSteps.size}/${constraints.size}")
+        appendLine()
+        appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+      }
       overviewTask.add(
-        buildString {
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("## ✅ Constraint Relaxation Complete")
-          appendLine()
-          appendLine("**Total Time:** ${totalTime / 1000.0}s")
-          appendLine()
-          appendLine("**Iterations:** ${reintroductionSteps.size}")
-          appendLine()
-          appendLine("**Average Iteration Time:** ${avgIterationTime / 1000.0}s")
-          appendLine()
-          appendLine("**Constraints Satisfied:** ${constraints.size - relaxedConstraints.size + reintroductionSteps.size}/${constraints.size}")
-          appendLine()
-          appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
-        }.renderMarkdown
+        completionContent.renderMarkdown
       )
+
+      transcript?.write(completionContent.toByteArray())
+      transcript?.close()
+      overviewTask.add(completionContent.renderMarkdown)
       task.update()
 
       val finalResult = solutionBuilder.toString()
+      // Write detailed output to file
+      val (detailedLink, detailedFile) = Pair(task.linkTo("constraint_relaxation_detailed.md"), task.resolve("constraint_relaxation_detailed.md"))
+      detailedFile?.outputStream()?.use { stream ->
+        stream.write(finalResult.toByteArray())
+      }
+      // Generate summary message
+      val summaryMessage = buildString {
+        appendLine("✅ Constraint Relaxation Complete")
+        appendLine()
+        appendLine("**Total Time:** ${totalTime / 1000.0}s")
+        appendLine("**Iterations:** ${reintroductionSteps.size}")
+        appendLine("**Constraints Satisfied:** ${constraints.size - relaxedConstraints.size + reintroductionSteps.size}/${constraints.size}")
+        appendLine()
+        appendLine("📄 [View Detailed Results]($detailedLink)")
+      }
+
       task.safeComplete(
-        "Completed ${reintroductionSteps.size} constraint reintroduction iterations in ${totalTime / 1000}s",
+        summaryMessage,
         log
       )
-      resultFn(finalResult)
+      resultFn(summaryMessage)
 
     } catch (e: Exception) {
       log.error("Error during constraint relaxation", e)
       task.error(e)
+      transcript?.let {
+        it.close()
+      }
 
       overviewTask.add(
         buildString {
@@ -508,6 +560,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     }
   }
 
+
   private fun orderConstraints(
     constraints: Map<String, Double>,
     order: String
@@ -518,10 +571,12 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         // For now, treat lower priority as potentially easier to satisfy
         constraints.entries.sortedBy { it.value }.map { it.key to it.value }
       }
+
       "by_dependency" -> {
         // Simple heuristic: reintroduce in priority order (could be enhanced with dependency analysis)
         constraints.entries.sortedByDescending { it.value }.map { it.key to it.value }
       }
+
       else -> constraints.entries.sortedByDescending { it.value }.map { it.key to it.value }
     }
   }
@@ -536,14 +591,17 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         val relaxCount = (orderedConstraints.size * 0.5).toInt().coerceAtLeast(1)
         orderedConstraints.takeLast(relaxCount).map { it.first }.toSet()
       }
+
       "selective" -> {
         // Relax constraints with priority < 0.7
         orderedConstraints.filter { it.second < 0.7 }.map { it.first }.toSet()
       }
+
       "hierarchical" -> {
         // Relax all but the top priority tier (>= 0.9)
         orderedConstraints.filter { it.second < 0.9 }.map { it.first }.toSet()
       }
+
       else -> {
         // Default to progressive
         val relaxCount = (orderedConstraints.size * 0.5).toInt().coerceAtLeast(1)
@@ -556,7 +614,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     problem: String,
     constraints: Map<String, Double>,
     priorContext: String,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface,
+    api: ChatInterface,
     findCreative: Boolean
   ): String {
     val prompt = buildString {
@@ -605,7 +663,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     priority: Double,
     allActiveConstraints: Map<String, Double>,
     priorContext: String,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface,
+    api: ChatInterface,
     findCreative: Boolean
   ): String {
     val prompt = buildString {
@@ -666,7 +724,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     initiallyRelaxed: Set<String>,
     reintroductionSteps: List<ReintroductionStep>,
     finalSolution: String,
-    api: com.simiacryptus.cognotik.chat.model.ChatInterface
+    api: ChatInterface
   ): String {
     val prompt = buildString {
       appendLine("You are an expert problem solver providing a final synthesis of a constraint relaxation process.")
@@ -712,6 +770,34 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
     return agent.answer(listOf(""))
   }
+
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
 
   private data class ReintroductionStep(
     val constraint: String = "",

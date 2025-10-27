@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.util.*

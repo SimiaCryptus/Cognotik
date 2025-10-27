@@ -7,9 +7,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.actors.ChatAgent
-import com.simiacryptus.cognotik.actors.ParsedAgent
-import com.simiacryptus.cognotik.actors.ParsedResponse
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState

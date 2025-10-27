@@ -408,7 +408,6 @@ class AwsChatClient(
         ) = ModelSchema.ChatMessage(
             role = acc.role, content = listOf(
                 ModelSchema.ContentPart(
-                    type = "text",
                     text = (acc.content?.plus(chatMessage.content ?: emptyList()) ?: chatMessage.content)?.joinToString(
                         "\n"
                     ) { it.text ?: "" })
@@ -443,7 +442,7 @@ class AwsChatClient(
                             choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                        content = fromJson.generation ?: ""
+                                      content = fromJson.generation ?: "",
                                     ), index = 0
                                 )
                             ), usage = ModelSchema.Usage(
@@ -463,7 +462,7 @@ class AwsChatClient(
                             choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                        content = fromJson.outputs?.firstOrNull()?.text ?: ""
+                                      content = fromJson.outputs?.firstOrNull()?.text ?: "",
                                     ), index = 0
                                 )
                             )
@@ -478,7 +477,7 @@ class AwsChatClient(
                             choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                        content = fromJson.results?.firstOrNull()?.outputText ?: ""
+                                      content = fromJson.results?.firstOrNull()?.outputText ?: "",
                                     ), index = 0
                                 )
                             )
@@ -493,7 +492,7 @@ class AwsChatClient(
                             choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                        content = fromJson.generations?.firstOrNull()?.text ?: ""
+                                      content = fromJson.generations?.firstOrNull()?.text ?: "",
                                     ), index = 0
                                 )
                             )
@@ -508,7 +507,7 @@ class AwsChatClient(
                             choices = fromJson.completions?.mapIndexed { index, completion ->
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                        content = completion.data?.text ?: ""
+                                      content = completion.data?.text ?: "",
                                     ), index = index
                                 )
                             } ?: emptyList(),
@@ -526,7 +525,7 @@ class AwsChatClient(
                             choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                        content = fromJson.content?.firstOrNull()?.text ?: ""
+                                      content = fromJson.content?.firstOrNull()?.text ?: "",
                                     ), index = 0
                                 )
                             ), usage = ModelSchema.Usage(

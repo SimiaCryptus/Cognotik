@@ -8,7 +8,7 @@ object AnthropicModels {
         modelName = "claude-opus-4-1-20250805",
         maxTotalTokens = 200000,
         maxOutTokens = 32000,
-        provider = APIProvider.Companion.Anthropic,
+        provider = APIProvider.Anthropic,
         inputTokenPricePerK = 15.0 / 1000.0,
         outputTokenPricePerK = 75.0 / 1000.0,
     )
@@ -17,7 +17,7 @@ object AnthropicModels {
         modelName = "claude-sonnet-4-20250514",
         maxTotalTokens = 200000,
         maxOutTokens = 64000,
-        provider = APIProvider.Companion.Anthropic,
+        provider = APIProvider.Anthropic,
         inputTokenPricePerK = 3.0 / 1000.0,
         outputTokenPricePerK = 15.0 / 1000.0,
     )
@@ -27,7 +27,7 @@ object AnthropicModels {
         modelName = "claude-sonnet-4-5-20250929",
         maxTotalTokens = 200000,
         maxOutTokens = 64000,
-        provider = APIProvider.Companion.Anthropic,
+        provider = APIProvider.Anthropic,
         inputTokenPricePerK = 3.0 / 1000.0,
         outputTokenPricePerK = 15.0 / 1000.0,
     )
@@ -37,7 +37,7 @@ object AnthropicModels {
         modelName = "claude-3-5-haiku-latest",
         maxTotalTokens = 200000,
         maxOutTokens = 8192,
-        provider = APIProvider.Companion.Anthropic,
+        provider = APIProvider.Anthropic,
         inputTokenPricePerK = 0.80 / 1000.0,
         outputTokenPricePerK = 4.0 / 1000.0,
     )
@@ -45,8 +45,8 @@ object AnthropicModels {
         name = "Claude45Haiku",
         modelName = "claude-haiku-4-5-20251001",
         maxTotalTokens = 200000,
-        maxOutTokens = 8192,
-        provider = APIProvider.Companion.Anthropic,
+        maxOutTokens = 64000,
+        provider = APIProvider.Anthropic,
         inputTokenPricePerK = 0.80 / 1000.0,
         outputTokenPricePerK = 4.0 / 1000.0,
     )

@@ -1,7 +1,7 @@
 package com.example.news.api
 
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.actors.ProxyAgent
+import com.simiacryptus.cognotik.agents.ProxyAgent
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber

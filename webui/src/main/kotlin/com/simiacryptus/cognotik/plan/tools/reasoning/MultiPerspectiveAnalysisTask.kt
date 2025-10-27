@@ -1,14 +1,13 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 
 class MultiPerspectiveAnalysisTask(
@@ -25,6 +24,8 @@ class MultiPerspectiveAnalysisTask(
     val analysis_subject: String? = null,
     @Description("List of perspectives to consider (e.g., technical, business, ethical, user)")
     val perspectives: List<String>? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the analysis")
+    val input_files: List<String>? = null,
     @Description("Whether to synthesize perspectives into unified conclusion")
     val synthesize: Boolean = true,
     @Description("Minimum confidence threshold for perspective agreement (0.0-1.0)")
@@ -49,6 +50,9 @@ class MultiPerspectiveAnalysisTask(
       if (consensus_threshold < 0.0 || consensus_threshold > 1.0) {
         return "consensus_threshold must be between 0.0 and 1.0, got: $consensus_threshold"
       }
+      if (!input_files.isNullOrEmpty() && input_files.any { it.isBlank() }) {
+        return "input_files cannot contain blank entries"
+      }
       // Call parent validation for nested ValidatedObject fields
       return ValidatedObject.validateFields(this)
     }
@@ -56,12 +60,13 @@ class MultiPerspectiveAnalysisTask(
 
   override fun promptSegment(): String {
     return """
-MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthesis
+ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthesis
   ** Specify the subject to analyze in analysis_subject
   ** Provide a list of perspectives to consider (e.g., technical, business, ethical, user experience)
+  ** Optionally, list input files (supports glob patterns) to provide context for the analysis
   ** Set synthesize=true to generate a unified conclusion from all perspectives
   ** Configure consensus_threshold (0.0-1.0) to determine minimum agreement level
-  ** Related files can provide additional context for the analysis
+  ** Additional context files can be specified via input_files
   ** Each perspective will be analyzed independently, then synthesized
   ** Useful for:
      - Architectural decision making
@@ -90,7 +95,7 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
       resultFn("CONFIGURATION ERROR: $error")
       return
     }
-    
+
     if (subject.isNullOrBlank()) {
       log.error("No analysis subject specified")
       task.safeComplete("CONFIGURATION ERROR: No analysis subject specified", log)
@@ -135,6 +140,8 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
     } catch (e: Exception) {
       log.warn("Failed to create tabbed display", e)
     }
+    var transcriptStream: FileOutputStream? = null
+
 
     val contextFiles = getContextFiles()
     val priorCode = getPriorCode(agent.executionState)
@@ -142,6 +149,20 @@ MultiPerspectiveAnalysis - Analyze problems from multiple viewpoints with synthe
     // Create tabs for each perspective
     val tabs = TabbedDisplay(task)
     val perspectiveResults = mutableMapOf<String, String>()
+
+    try {
+      transcriptStream = initializeTranscript(task)
+      transcriptStream?.let { stream ->
+        writeToTranscript(stream, "# Multi-Perspective Analysis Transcript\n\n")
+        writeToTranscript(stream, "**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}\n\n")
+        writeToTranscript(stream, "**Perspectives:** ${perspectives.joinToString(", ")}\n\n")
+        writeToTranscript(stream, "**Consensus Threshold:** ${executionConfig.consensus_threshold}\n\n")
+        writeToTranscript(stream, "---\n\n")
+      }
+    } catch (e: Exception) {
+      log.warn("Failed to initialize transcript", e)
+    }
+
 
     // Analyze from each perspective
     perspectives.forEach { perspective ->
@@ -180,6 +201,10 @@ Provide a thorough analysis from the $perspective viewpoint.
         var analysis: String? = chatAgent.answer(listOf(prompt))
 
         perspectiveResults[perspective] = analysis ?: ""
+        transcriptStream?.let { stream ->
+          writeToTranscript(stream, "## $perspective Perspective\n\n$analysis\n\n---\n\n")
+        }
+
         perspectiveTask.complete(
           MarkdownUtil.renderMarkdown(
             "### $perspective Perspective\n\n$analysis",
@@ -238,6 +263,10 @@ Provide a comprehensive synthesis that integrates all perspectives.
 
       try {
         val synthesis = synthesisAgent.answer(listOf(synthesisPrompt))
+        transcriptStream?.let { stream ->
+          writeToTranscript(stream, "## Synthesis\n\n$synthesis\n\n")
+        }
+
         synthesisTask.complete(
           MarkdownUtil.renderMarkdown(
             "## Synthesis\n\n$synthesis",
@@ -282,10 +311,61 @@ Provide a comprehensive synthesis that integrates all perspectives.
         }
       }
     }
+    try {
+      transcriptStream?.flush()
+    } catch (e: Exception) {
+      log.warn("Failed to close transcript stream", e)
+    }
+
 
     task.safeComplete("Multi-perspective analysis complete.", log)
     resultFn(finalResult)
   }
+
+  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = Pair(task.linkTo("analysis_transcript.md"), task.resolve("analysis_transcript.md"))
+      val transcriptStream = file?.outputStream()
+      task.complete(
+        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
+      log.info("Initialized transcript file: $link")
+      transcriptStream
+    } catch (e: Exception) {
+      log.error("Failed to initialize transcript", e)
+      null
+    }
+  }
+
+  private fun writeToTranscript(stream: FileOutputStream, content: String) {
+    try {
+      stream.write(content.toByteArray(StandardCharsets.UTF_8))
+      stream.flush()
+    } catch (e: Exception) {
+      log.error("Failed to write to transcript", e)
+    }
+  }
+
+  private fun getInputFileCode(): String = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      }
+    }.filter { it.isFile && it.exists() }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { file ->
+      "# ${root.relativize(file.toPath())}\n\n```\n${file.readText()}\n```"
+    }
+
 
   private fun getContextFiles(): String {
     val relatedFiles = executionConfig?.related_files ?: return ""
@@ -307,6 +387,7 @@ Provide a comprehensive synthesis that integrates all perspectives.
       files
     }.joinToString("\n\n")
   }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(MultiPerspectiveAnalysisTask::class.java)

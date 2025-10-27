@@ -1,17 +1,31 @@
-package com.simiacryptus.cognotik.plan.tools.reasoning
+package com.simiacryptus.cognotik.plan.tools.writing
 
-import com.simiacryptus.cognotik.actors.ChatAgent
-import com.simiacryptus.cognotik.actors.ParsedAgent
+
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.agents.ImageAndText
+import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.agents.ImageModificationAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
+import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
+import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.File
+import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
+import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.imageio.ImageIO
 
 private const val i = 100
 
@@ -28,6 +42,10 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
   open class NarrativeReasoningTaskExecutionConfigData(
     @Description("The subject or scenario to analyze through narrative reasoning")
     val subject: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
+    @Description("Additional context or questions to guide the narrative analysis")
+    val additional_context: String? = null,
 
     @Description("Narrative elements to consider (characters, setting, conflict, timeline, etc.)")
     val narrative_elements: Map<String, Any>? = null,
@@ -41,14 +59,23 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
     @Description("Whether to predict narrative outcomes and resolutions")
     val predict_outcomes: Boolean = true,
 
-    @Description("Number of alternative narrative paths to explore")
-    val alternative_narratives: Int = 3,
+    @Description("Number of narrative paths to explore (valid range: 1-10)")
+    var alternatives: Int = 3,
 
     @Description("Whether to analyze character motivations and stakeholder perspectives")
     val analyze_motivations: Boolean = true,
 
     @Description("Whether to identify narrative inconsistencies or gaps")
     val find_inconsistencies: Boolean = true,
+    @Description("Whether to generate images for key narrative elements")
+    val generate_images: Boolean = false,
+    @Description("Image generation model to use (e.g., 'DallE3', 'DallE2')")
+    val image_model: String = "DallE3",
+    @Description("Width of generated images in pixels")
+    val image_width: Int = 1024,
+    @Description("Height of generated images in pixels")
+    val image_height: Int = 1024,
+
 
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -62,8 +89,14 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
       if (subject.isNullOrBlank()) {
         return "Subject must not be null or blank"
       }
-      if (alternative_narratives < 1 || alternative_narratives > 10) {
-        return "Alternative narratives must be between 1 and 10, got: $alternative_narratives"
+      if (alternatives < 1 || alternatives > 10) {
+        alternatives = alternatives.coerceIn(1, 10)
+      }
+      if (image_width < 256 || image_width > 2048) {
+        return "Image width must be between 256 and 2048, got: $image_width"
+      }
+      if (image_height < 256 || image_height > 2048) {
+        return "Image height must be between 256 and 2048, got: $image_height"
       }
       return ValidatedObject.validateFields(this)
     }
@@ -151,7 +184,7 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
       return ValidatedObject.validateFields(this)
     }
   }
-  
+
   data class CharacterAnalyses(
     val characters: List<CharacterAnalysis> = emptyList()
   ) : ValidatedObject
@@ -174,7 +207,7 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
       return ValidatedObject.validateFields(this)
     }
   }
-  
+
   data class NarrativeOutcomes(
     val outcomes: List<NarrativeOutcome> = emptyList()
   ) : ValidatedObject
@@ -201,7 +234,7 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
       return ValidatedObject.validateFields(this)
     }
   }
-  
+
   data class NarrativeInconsistencies(
     val inconsistencies: List<NarrativeInconsistency> = emptyList()
   ) : ValidatedObject
@@ -221,6 +254,20 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
         """.trimIndent()
   }
 
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("narrative_transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
+
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
@@ -230,6 +277,17 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting NarrativeReasoningTask for subject: '${executionConfig?.subject}'")
+    // Create output directory for detailed results
+    val narrativeDir = File(agent.root.toFile(), ".narrative_analysis")
+    if (!narrativeDir.exists()) {
+      if (!narrativeDir.mkdirs()) {
+        log.error("Failed to create narrative analysis directory: ${narrativeDir.absolutePath}")
+        resultFn("Error: Failed to create output directory")
+        return
+      }
+      log.debug("Created narrative analysis directory: ${narrativeDir.absolutePath}")
+    }
+
 
     val subject = executionConfig?.subject
     if (subject.isNullOrBlank()) {
@@ -238,23 +296,51 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
       resultFn("CONFIGURATION ERROR: No subject specified")
       return
     }
+    // Read input files if specified
+    val inputFileContent = getInputFileContent()
+    val messageContent = messages.joinToString("\n\n")
+    val additionalContext = buildString {
+      if (messageContent.isNotBlank()) {
+        appendLine("## User Input")
+        appendLine(messageContent)
+      }
+      if (inputFileContent.isNotBlank()) {
+        appendLine("\n## Input Files")
+        appendLine(inputFileContent)
+      }
+      if (executionConfig.additional_context?.isNotBlank() == true) {
+        appendLine("\n## Additional Context")
+        appendLine(executionConfig.additional_context)
+      }
+    }
+
 
     val narrativeElements = executionConfig.narrative_elements ?: emptyMap()
     val constructNarrative = executionConfig.construct_narrative
     val identifyPlotPoints = executionConfig.identify_plot_points
     val predictOutcomes = executionConfig.predict_outcomes
-    val alternativeNarratives = executionConfig.alternative_narratives.coerceIn(1, 10)
+    val alternativeNarratives = executionConfig.alternatives.coerceIn(1, 10)
     val analyzeMotivations = executionConfig.analyze_motivations
     val findInconsistencies = executionConfig.find_inconsistencies
 
-    log.info("Configuration: constructNarrative=$constructNarrative, identifyPlotPoints=$identifyPlotPoints, " +
-            "predictOutcomes=$predictOutcomes, alternativeNarratives=$alternativeNarratives, " +
-            "analyzeMotivations=$analyzeMotivations, findInconsistencies=$findInconsistencies")
+    log.info(
+      "Configuration: constructNarrative=$constructNarrative, identifyPlotPoints=$identifyPlotPoints, " +
+          "predictOutcomes=$predictOutcomes, alternativeNarratives=$alternativeNarratives, " +
+          "analyzeMotivations=$analyzeMotivations, findInconsistencies=$findInconsistencies"
+    )
 
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
-    val ui = task.ui
+    task.ui
     val tabs = TabbedDisplay(task)
+    // Initialize transcript
+    val transcriptStream = transcript(task)
+    val transcriptWriter = transcriptStream?.bufferedWriter()
+    transcriptWriter?.appendLine("# Narrative Reasoning Analysis Transcript")
+    transcriptWriter?.appendLine("**Subject:** $subject")
+    transcriptWriter?.appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+    transcriptWriter?.appendLine()
+
 
     // Overview tab
     val overviewTask = task.ui.newTask(false)
@@ -279,6 +365,11 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
       appendLine("- Find Inconsistencies: ${if (findInconsistencies) "✓" else "✗"}")
       appendLine()
       appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+      if (additionalContext.isNotBlank()) {
+        appendLine()
+        appendLine("## Input Context")
+        appendLine(additionalContext.take(500) + if (additionalContext.length > 500) "..." else "")
+      }
       appendLine()
       appendLine("---")
       appendLine()
@@ -306,6 +397,16 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
 
     val resultBuilder = StringBuilder()
     resultBuilder.append("# Narrative Reasoning Analysis: $subject\n\n")
+    // Write configuration to transcript
+    transcriptWriter?.appendLine("## Configuration")
+    transcriptWriter?.appendLine("- Construct Narrative: $constructNarrative")
+    transcriptWriter?.appendLine("- Identify Plot Points: $identifyPlotPoints")
+    transcriptWriter?.appendLine("- Predict Outcomes: $predictOutcomes")
+    transcriptWriter?.appendLine("- Alternative Narratives: $alternativeNarratives")
+    transcriptWriter?.appendLine("- Analyze Motivations: $analyzeMotivations")
+    transcriptWriter?.appendLine("- Find Inconsistencies: $findInconsistencies")
+    transcriptWriter?.appendLine()
+
 
     try {
       // Step 1: Construct the main narrative
@@ -316,6 +417,9 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
 
         val narrativeTask = task.ui.newTask(false)
         tabs["Main Narrative"] = narrativeTask.placeholder
+        transcriptWriter?.appendLine("## Step 1: Main Narrative Construction")
+        transcriptWriter?.appendLine()
+
 
         narrativeTask.add(
           buildString {
@@ -330,16 +434,18 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
         val narrativeAgent = ParsedAgent(
           resultClass = ParsedNarrative::class.java,
           prompt = """
-You are an expert narrative analyst and storyteller. Construct a coherent narrative from the given elements.
+ You are an expert narrative analyst and storyteller. Construct a coherent narrative from the given elements.
 
-Subject: $subject
+ Subject: $subject
 
-Narrative Elements:
-${narrativeElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
+ Narrative Elements:
+ ${narrativeElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
+${if (additionalContext.isNotBlank()) "Additional Context:\n$additionalContext\n" else ""}
 
-${if (priorContext.isNotBlank()) "Additional Context:\n$priorContext\n" else ""}
 
-Create a structured narrative with:
+ ${if (priorContext.isNotBlank()) "Additional Context:\n$priorContext\n" else ""}
+
+ Create a structured narrative with:
 1. A compelling title
 2. A concise summary (2-3 sentences)
 3. Three acts with key events and character developments
@@ -399,6 +505,23 @@ Focus on clarity, coherence, and emotional resonance.
         }
         narrativeTask.add(narrativeContent.renderMarkdown)
         task.update()
+        // Save narrative to file
+        saveAnalysisToFile(narrativeDir, "01_main_narrative.md", narrativeContent)
+
+        // Write to transcript
+        transcriptWriter?.appendLine("### ${narrative.title}")
+        transcriptWriter?.appendLine()
+        transcriptWriter?.appendLine("**Summary:** ${narrative.summary}")
+        transcriptWriter?.appendLine()
+        transcriptWriter?.appendLine("**Themes:** ${narrative.themes.joinToString(", ")}")
+        transcriptWriter?.appendLine()
+        transcriptWriter?.appendLine("**Tone:** ${narrative.tone}")
+        transcriptWriter?.appendLine()
+        narrative.acts.forEach { act ->
+          transcriptWriter?.appendLine("- **Act ${act.act_number}:** ${act.title}")
+        }
+        transcriptWriter?.appendLine()
+
 
         resultBuilder.append("## Main Narrative: ${narrative.title}\n")
         resultBuilder.append("${narrative.summary}\n\n")
@@ -406,6 +529,19 @@ Focus on clarity, coherence, and emotional resonance.
 
         overviewTask.add("✅ Main narrative constructed\n".renderMarkdown)
         task.update()
+        // Generate image for main narrative if enabled
+        if (executionConfig.generate_images) {
+          generateNarrativeImage(
+            task = task,
+            tabs = tabs,
+            title = "Main Narrative Visualization",
+            description = "${narrative.title}: ${narrative.summary}",
+            imageDir = narrativeDir,
+            filename = "01_main_narrative_image.png",
+            transcriptWriter = transcriptWriter,
+            orchestrationConfig = orchestrationConfig
+          )
+        }
       }
 
       // Step 2: Identify plot points
@@ -416,6 +552,9 @@ Focus on clarity, coherence, and emotional resonance.
 
         val plotPointsTask = task.ui.newTask(false)
         tabs["Plot Points"] = plotPointsTask.placeholder
+        transcriptWriter?.appendLine("## Step 2: Plot Points Analysis")
+        transcriptWriter?.appendLine()
+
 
         plotPointsTask.add(
           buildString {
@@ -487,6 +626,16 @@ Be specific and concrete.
         }
         plotPointsTask.add(plotPointsContent.renderMarkdown)
         task.update()
+        // Save plot points to file
+        saveAnalysisToFile(narrativeDir, "02_plot_points.md", plotPointsContent)
+
+        // Write to transcript
+        transcriptWriter?.appendLine("### Identified ${plotPoints.size} Plot Points")
+        plotPoints.forEach { point ->
+          transcriptWriter?.appendLine("- **${point.type}:** ${point.description}")
+        }
+        transcriptWriter?.appendLine()
+
 
         resultBuilder.append("## Key Plot Points\n")
         plotPoints.take(3).forEach { point ->
@@ -496,6 +645,20 @@ Be specific and concrete.
 
         overviewTask.add("✅ Plot points identified (${plotPoints.size} points)\n".renderMarkdown)
         task.update()
+        // Generate images for key plot points if enabled
+        if (executionConfig.generate_images && plotPoints.isNotEmpty()) {
+          val keyPlotPoint = plotPoints.first()
+          generateNarrativeImage(
+            task = task,
+            tabs = tabs,
+            title = "Key Plot Point: ${keyPlotPoint.type}",
+            description = keyPlotPoint.description,
+            imageDir = narrativeDir,
+            filename = "02_plot_point_image.png",
+            transcriptWriter = transcriptWriter,
+            orchestrationConfig = orchestrationConfig
+          )
+        }
       }
 
       // Step 3: Analyze character motivations
@@ -506,6 +669,9 @@ Be specific and concrete.
 
         val charactersTask = task.ui.newTask(false)
         tabs["Characters"] = charactersTask.placeholder
+        transcriptWriter?.appendLine("## Step 3: Character Analysis")
+        transcriptWriter?.appendLine()
+
 
         charactersTask.add(
           buildString {
@@ -581,6 +747,17 @@ Consider stakeholder perspectives if analyzing organizational scenarios.
         }
         charactersTask.add(charactersContent.renderMarkdown)
         task.update()
+        // Save character analysis to file
+        saveAnalysisToFile(narrativeDir, "03_character_analysis.md", charactersContent)
+
+        // Write to transcript
+        transcriptWriter?.appendLine("### Analyzed ${characterAnalyses.size} Characters")
+        characterAnalyses.forEach { char ->
+          transcriptWriter?.appendLine("- **${char.name}** (${char.role})")
+          transcriptWriter?.appendLine("  - Motivations: ${char.motivations.joinToString("; ")}")
+        }
+        transcriptWriter?.appendLine()
+
 
         resultBuilder.append("## Character Motivations\n")
         characterAnalyses.take(2).forEach { char ->
@@ -590,6 +767,21 @@ Consider stakeholder perspectives if analyzing organizational scenarios.
 
         overviewTask.add("✅ Character motivations analyzed (${characterAnalyses.size} characters)\n".renderMarkdown)
         task.update()
+        // Generate character portraits if enabled
+        if (executionConfig.generate_images && characterAnalyses.isNotEmpty()) {
+          characterAnalyses.take(2).forEachIndexed { index, char ->
+            generateNarrativeImage(
+              task = task,
+              tabs = tabs,
+              title = "Character: ${char.name}",
+              description = "${char.name}, ${char.role}. ${char.motivations.firstOrNull() ?: ""}",
+              imageDir = narrativeDir,
+              filename = "03_character_${index + 1}_${char.name.replace(" ", "_")}.png",
+              transcriptWriter = transcriptWriter,
+              orchestrationConfig = orchestrationConfig
+            )
+          }
+        }
       }
 
       // Step 4: Predict outcomes
@@ -600,6 +792,9 @@ Consider stakeholder perspectives if analyzing organizational scenarios.
 
         val outcomesTask = task.ui.newTask(false)
         tabs["Predicted Outcomes"] = outcomesTask.placeholder
+        transcriptWriter?.appendLine("## Step 4: Predicted Outcomes")
+        transcriptWriter?.appendLine()
+
 
         outcomesTask.add(
           buildString {
@@ -674,6 +869,16 @@ Be realistic and consider multiple perspectives.
         }
         outcomesTask.add(outcomesContent.renderMarkdown)
         task.update()
+        // Save outcomes to file
+        saveAnalysisToFile(narrativeDir, "04_predicted_outcomes.md", outcomesContent)
+
+        // Write to transcript
+        transcriptWriter?.appendLine("### Predicted ${outcomes.size} Outcomes")
+        outcomes.forEach { outcome ->
+          transcriptWriter?.appendLine("- **${outcome.scenario}** (${outcome.probability})")
+        }
+        transcriptWriter?.appendLine()
+
 
         resultBuilder.append("## Predicted Outcomes\n")
         outcomes.forEach { outcome ->
@@ -693,6 +898,9 @@ Be realistic and consider multiple perspectives.
 
         val inconsistenciesTask = task.ui.newTask(false)
         tabs["Inconsistencies"] = inconsistenciesTask.placeholder
+        transcriptWriter?.appendLine("## Step 5: Inconsistency Analysis")
+        transcriptWriter?.appendLine()
+
 
         inconsistenciesTask.add(
           buildString {
@@ -774,6 +982,20 @@ For each inconsistency, provide:
         }
         inconsistenciesTask.add(inconsistenciesContent.renderMarkdown)
         task.update()
+        // Save inconsistencies to file
+        saveAnalysisToFile(narrativeDir, "05_inconsistencies.md", inconsistenciesContent)
+
+        // Write to transcript
+        if (inconsistencies.isEmpty()) {
+          transcriptWriter?.appendLine("### No significant inconsistencies found")
+        } else {
+          transcriptWriter?.appendLine("### Found ${inconsistencies.size} Inconsistencies")
+          inconsistencies.forEach { inconsistency ->
+            transcriptWriter?.appendLine("- **${inconsistency.type}** (${inconsistency.severity}): ${inconsistency.description}")
+          }
+        }
+        transcriptWriter?.appendLine()
+
 
         if (inconsistencies.isNotEmpty()) {
           resultBuilder.append("## Narrative Inconsistencies\n")
@@ -794,6 +1016,9 @@ For each inconsistency, provide:
 
       val synthesisTask = task.ui.newTask(false)
       tabs["Synthesis"] = synthesisTask.placeholder
+      transcriptWriter?.appendLine("## Step 6: Synthesis")
+      transcriptWriter?.appendLine()
+
 
       synthesisTask.add(
         buildString {
@@ -840,6 +1065,12 @@ Be concise but insightful. Focus on actionable insights.
         }.renderMarkdown
       )
       task.update()
+      // Save synthesis to file
+      saveAnalysisToFile(narrativeDir, "06_synthesis.md", synthesis)
+
+      transcriptWriter?.appendLine(synthesis)
+      transcriptWriter?.appendLine()
+
 
       resultBuilder.append("## Synthesis\n")
       resultBuilder.append(synthesis)
@@ -850,6 +1081,10 @@ Be concise but insightful. Focus on actionable insights.
       resultBuilder.append("---\n\n")
       resultBuilder.append("**Analysis Time:** ${totalTime / 1000}s | ")
       resultBuilder.append("**Subject:** $subject\n")
+      // Write completion to transcript
+      transcriptWriter?.appendLine("---")
+      transcriptWriter?.appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+      transcriptWriter?.appendLine("**Total Time:** ${totalTime / 1000.0}s")
 
       overviewTask.add(
         buildString {
@@ -868,8 +1103,34 @@ Be concise but insightful. Focus on actionable insights.
       val finalResult = resultBuilder.toString()
       log.info("NarrativeReasoningTask completed: total_time=${totalTime}ms, output_size=${finalResult.length} chars")
 
-      task.safeComplete("Narrative analysis complete in ${totalTime / 1000}s. Generated ${finalResult.length} characters of analysis.", log)
-      resultFn(finalResult)
+      // Create summary message with file links
+      val summaryMessage = buildString {
+        appendLine("# Narrative Analysis Complete")
+        appendLine()
+        appendLine("**Subject:** $subject")
+        appendLine("**Time:** ${totalTime / 1000}s")
+        appendLine()
+        appendLine("## Detailed Results")
+        appendLine()
+        appendLine("Full analysis has been saved to the following files:")
+        appendLine()
+        appendLine("- [Main Narrative](${narrativeDir.name}/01_main_narrative.md)")
+        appendLine("- [Plot Points](${narrativeDir.name}/02_plot_points.md)")
+        appendLine("- [Character Analysis](${narrativeDir.name}/03_character_analysis.md)")
+        appendLine("- [Predicted Outcomes](${narrativeDir.name}/04_predicted_outcomes.md)")
+        appendLine("- [Inconsistencies](${narrativeDir.name}/05_inconsistencies.md)")
+        appendLine("- [Synthesis](${narrativeDir.name}/06_synthesis.md)")
+        appendLine()
+        appendLine("## Summary")
+        appendLine()
+        appendLine(finalResult.take(1000) + if (finalResult.length > 1000) "\n\n*See detailed files for complete analysis*" else "")
+      }
+
+      task.safeComplete("Narrative analysis complete in ${totalTime / 1000}s. Results saved to .narrative_analysis directory.", log)
+      resultFn(summaryMessage)
+      // Close transcript
+      transcriptWriter?.flush()
+      transcriptWriter?.close()
 
     } catch (e: Exception) {
       log.error("Error during narrative reasoning", e)
@@ -903,8 +1164,150 @@ Be concise but insightful. Focus on actionable insights.
         }
       }
       resultFn(errorOutput)
+      // Close transcript on error
+      transcriptWriter?.appendLine("**Error:** ${e.message}")
+      transcriptWriter?.flush()
+      transcriptWriter?.close()
     }
   }
+
+  private fun getInputFileContent(): String = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
+  private fun saveAnalysisToFile(
+    outputDir: File,
+    filename: String,
+    content: String
+  ) {
+    try {
+      val outputFile = File(outputDir, filename)
+      outputFile.writeText(content, StandardCharsets.UTF_8)
+      log.debug("Saved analysis to file: ${outputFile.absolutePath} (size: ${content.length} chars)")
+    } catch (e: Exception) {
+      log.error("Failed to save analysis to file: $filename", e)
+    }
+  }
+
+  private fun isTextFile(file: File): Boolean {
+    val textExtensions = setOf(
+      "txt",
+      "md",
+      "kt",
+      "java",
+      "js",
+      "ts",
+      "py",
+      "rb",
+      "go",
+      "rs",
+      "c",
+      "cpp",
+      "h",
+      "hpp",
+      "css",
+      "html",
+      "xml",
+      "json",
+      "yaml",
+      "yml",
+      "properties",
+      "gradle",
+      "maven"
+    )
+    return textExtensions.contains(file.extension.lowercase())
+  }
+
+  private fun generateNarrativeImage(
+    task: SessionTask,
+    tabs: TabbedDisplay,
+    title: String,
+    description: String,
+    imageDir: File,
+    filename: String,
+    transcriptWriter: java.io.BufferedWriter?,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    try {
+      log.info("Generating image: $title")
+      val imageTask = task.ui.newTask(false)
+      tabs["Image: $title"] = imageTask.placeholder
+      imageTask.add(
+        buildString {
+          appendLine("# $title")
+          appendLine()
+          appendLine("**Status:** Generating image...")
+          appendLine()
+        }.renderMarkdown
+      )
+      task.update()
+      val imageAgent = ImageModificationAgent(
+        prompt = "Transform the narrative description into a vivid, cinematic image",
+        model = orchestrationConfig.imageChatChatter,
+        temperature = 0.7,
+      )
+      val result = imageAgent.answer(listOf(ImageAndText("""
+Draw an image based on the following narrative description:
+${description.indent("  ")}
+      """)))
+      val image = result.image
+      // Save image to file
+      val imageFile = task.resolve(filename)!!
+      ImageIO.write(image, "png", imageFile)
+      log.debug("Saved image to: ${imageFile.absolutePath}")
+      // Create display link
+      val link = task.linkTo(filename)
+      val imageHtml = """
+        <div class='narrative-image'>
+          <h4>$title</h4>
+          <p><strong>Prompt:</strong> ${result.text}</p>
+          <a href='$link' target='_blank'>
+            <img src='$link' alt='$title' style='max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />
+          </a>
+        </div>
+      """.trimIndent()
+      imageTask.add(imageHtml.renderMarkdown)
+      task.update()
+      // Write to transcript
+      transcriptWriter?.appendLine("### $title")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.appendLine("**Prompt:** ${result.text}")
+      transcriptWriter?.appendLine()
+      transcriptWriter?.appendLine("![${title}]($link)".transcriptFilter())
+      transcriptWriter?.appendLine()
+      transcriptWriter?.flush()
+      imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+      task.update()
+    } catch (e: Exception) {
+      log.error("Failed to generate image: $title", e)
+      transcriptWriter?.appendLine("**Image Generation Failed:** ${e.message}")
+      transcriptWriter?.appendLine()
+    }
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(NarrativeReasoningTask::class.java)

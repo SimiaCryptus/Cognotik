@@ -116,8 +116,8 @@ class OllamaChatClient(
                             index = 0,
                             message = ollamaResponse.message.let { message ->
                                 ChatMessageResponse(
-                                    role = message.role.let { Role.valueOf(it) },
-                                    content = message.content
+                                  role = message.role.let { Role.valueOf(it) },
+                                  content = message.content,
                                 )
                             },
                             finish_reason = if (ollamaResponse.done) "stop" else "length"

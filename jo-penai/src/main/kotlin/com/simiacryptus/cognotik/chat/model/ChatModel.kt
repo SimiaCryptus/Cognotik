@@ -1,35 +1,34 @@
 package com.simiacryptus.cognotik.chat.model
 
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.core.JsonToken
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.databind.ser.std.StdSerializer
-import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.chat.model.ChatModel.Companion.values
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ModelSchema.Usage
-import com.simiacryptus.cognotik.models.LLMModel
-import org.slf4j.event.Level
-import java.io.BufferedOutputStream
-import java.util.concurrent.ExecutorService
+ import com.fasterxml.jackson.core.JsonGenerator
+ import com.fasterxml.jackson.core.JsonParser
+ import com.fasterxml.jackson.core.JsonToken
+ import com.fasterxml.jackson.databind.DeserializationContext
+ import com.fasterxml.jackson.databind.JsonDeserializer
+ import com.fasterxml.jackson.databind.JsonNode
+ import com.fasterxml.jackson.databind.SerializerProvider
+ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+ import com.fasterxml.jackson.databind.annotation.JsonSerialize
+ import com.fasterxml.jackson.databind.ser.std.StdSerializer
+ import com.google.common.util.concurrent.ListeningScheduledExecutorService
+ import com.simiacryptus.cognotik.models.APIProvider
+ import com.simiacryptus.cognotik.models.ModelSchema.Usage
+ import com.simiacryptus.cognotik.models.LLMModel
+ import org.slf4j.event.Level
+ import java.io.BufferedOutputStream
+ import java.util.concurrent.ExecutorService
 
-@JsonDeserialize(using = ChatModelsDeserializer::class)
-@JsonSerialize(using = ChatModelsSerializer::class)
-open class ChatModel(
-    val name: String,
-    modelName: String,
-    maxTotalTokens: Int,
+ @JsonDeserialize(using = ChatModelsDeserializer::class)
+ @JsonSerialize(using = ChatModelsSerializer::class)
+ open class ChatModel(
+    val name: String = "",
+    modelName: String = name,
+    maxTotalTokens: Int = -1,
     maxOutTokens: Int = maxTotalTokens,
-    provider: APIProvider,
-    val inputTokenPricePerK: Double,
-    val outputTokenPricePerK: Double,
-) : LLMModel(
+    provider: APIProvider? = null,
+    val inputTokenPricePerK: Double = 0.0,
+    val outputTokenPricePerK: Double = inputTokenPricePerK,
+ ) : LLMModel(
     modelName = modelName,
     maxTotalTokens = maxTotalTokens,
     maxOutTokens = maxOutTokens,
@@ -79,31 +78,46 @@ open class ChatModel(
     }
 }
 
-class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
+ class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
     override fun serialize(value: ChatModel, gen: JsonGenerator, provider: SerializerProvider) {
-        val modelKey = values().entries.find { it.value == value }?.key
-        gen.writeString(modelKey ?: value.modelName)
+        gen.writeStartObject()
+        gen.writeStringField("name", value.name)
+        gen.writeStringField("modelName", value.modelName)
+        gen.writeNumberField("maxTotalTokens", value.maxTotalTokens)
+        gen.writeNumberField("maxOutTokens", value.maxOutTokens)
+        value.provider?.let { gen.writeStringField("provider", it.name) }
+        gen.writeNumberField("inputTokenPricePerK", value.inputTokenPricePerK)
+        gen.writeNumberField("outputTokenPricePerK", value.outputTokenPricePerK)
+        gen.writeEndObject()
     }
 }
 
-class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
+ class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatModel {
         return when (p.currentToken) {
-            JsonToken.VALUE_STRING -> {
-                // Handle string format
-                val modelName = p.readValueAs(String::class.java)
-                values().entries.find { it.key == modelName || it.value.name == modelName || it.value.modelName == modelName }?.value
-                    ?: throw IllegalArgumentException("Unknown model: $modelName")
-            }
             JsonToken.START_OBJECT -> {
-                // Handle object format - delegate to default deserialization
+                // Handle object format
                 val node = p.readValueAsTree<JsonNode>()
-                val modelName = node.get("modelName")?.asText() ?: node.get("name")?.asText()
-                    ?: throw IllegalArgumentException("Object format must contain 'modelName' or 'name' field")
-                values().entries.find { it.key == modelName || it.value.name == modelName || it.value.modelName == modelName }?.value
-                    ?: throw IllegalArgumentException("Unknown model: $modelName")
+                val name = node.get("name")?.asText() ?: ""
+                val modelName = node.get("modelName")?.asText() ?: name
+                val maxTotalTokens = node.get("maxTotalTokens")?.asInt() ?: -1
+                val maxOutTokens = node.get("maxOutTokens")?.asInt() ?: maxTotalTokens
+                val providerName = node.get("provider")?.asText()
+                val provider = providerName?.let { APIProvider.valueOf(it) }
+                val inputTokenPricePerK = node.get("inputTokenPricePerK")?.asDouble() ?: 0.0
+                val outputTokenPricePerK = node.get("outputTokenPricePerK")?.asDouble() ?: inputTokenPricePerK
+                
+                return ChatModel(
+                    name = name,
+                    modelName = modelName,
+                    maxTotalTokens = maxTotalTokens,
+                    maxOutTokens = maxOutTokens,
+                    provider = provider,
+                    inputTokenPricePerK = inputTokenPricePerK,
+                    outputTokenPricePerK = outputTokenPricePerK
+                )
             }
-            else -> throw IllegalArgumentException("ChatModel must be deserialized from either a string or an object")
+            else -> throw IllegalArgumentException("ChatModel must be deserialized from an object")
         }
     }
 }

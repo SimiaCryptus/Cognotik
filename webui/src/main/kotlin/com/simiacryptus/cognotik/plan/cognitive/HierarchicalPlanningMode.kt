@@ -1,23 +1,25 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningMode.Companion.initDescriber
-import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningMode.Tasks
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.set
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -45,10 +47,15 @@ open class HierarchicalPlanningMode(
   private var periodicUpdateFuture: ScheduledFuture<*>? = null
   private val sessionLog = StringBuilder()
   private var sessionLogTask: SessionTask? = null
+  private var transcriptStream: FileOutputStream? = null
+  private var transcriptTask: SessionTask? = null
+
   fun logToSession(message: String) {
     log.info(message)
     sessionLog.append(message).append("\n")
     sessionLogTask?.complete(message.renderMarkdown())
+    transcriptStream?.write("$message\n".toByteArray())
+    transcriptStream?.flush()
   }
 
   val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(task.ui.pool, maxConcurrency)
@@ -60,6 +67,9 @@ open class HierarchicalPlanningMode(
     goalIdCounter.set(1)
     taskIdCounter.set(1)
     stopRequested.set(false)
+    transcriptStream?.close()
+    transcriptStream = null
+    transcriptTask = null
   }
 
   override fun handleUserMessage(userMessage: String, task: SessionTask) {
@@ -81,6 +91,13 @@ open class HierarchicalPlanningMode(
 
   private fun startGoalOrientedSession(userMessage: String, task: SessionTask) {
     task.echo("User: $userMessage".renderMarkdown())
+    // Initialize transcript
+    transcriptTask = task.linkedTask("Transcript")
+    transcriptStream = transcript(transcriptTask!!)
+    logToSession("# Goal-Oriented Planning Session Transcript\n")
+    logToSession("**User Request:** $userMessage\n")
+    logToSession("**Started:** ${java.time.LocalDateTime.now()}\n\n")
+
 
     val stopLinkRef = AtomicReference<StringBuilder>()
     val stopLink = task.add(this.task.ui.hrefLink("Stop Goal-Oriented Processing") {
@@ -162,6 +179,15 @@ open class HierarchicalPlanningMode(
     tasksSummaryTask.add(taskSummary(tasksTask).renderMarkdown())
     handleStop(iteration, task, stopLink)
     sessionLogTask?.complete(sessionLog.toString().renderMarkdown())
+    // Finalize transcript
+    logToSession("\n---\n")
+    logToSession("**Completed:** ${java.time.LocalDateTime.now()}")
+    logToSession("\n## Final Statistics")
+    logToSession("- Total Goals: ${goalTree.size}")
+    logToSession("- Total Tasks: ${taskMap.size}")
+    logToSession("- Iterations: $iteration")
+    transcriptStream?.close()
+    transcriptStream = null
   }
 
   private fun nextIteration(
@@ -252,6 +278,7 @@ open class HierarchicalPlanningMode(
     task: SessionTask
   ) {
     logToSession("Decomposing goal: ${goal.description} (ID: ${goal.id})")
+    logToSession("\n### Goal Decomposition: ${goal.id}\n")
     // Create a goal tab for this goal
     goalTasks[goal.id] = task
     task.add("# Goal: ${goal.description}\n\nID: ${goal.id}".renderMarkdown())
@@ -296,6 +323,7 @@ open class HierarchicalPlanningMode(
       } else {
         val subgoalsList = StringBuilder("## Subgoals:\n")
         val tasksList = StringBuilder("## Tasks:\n")
+        logToSession("\n#### Generated Subgoals and Tasks for Goal ${goal.id}:")
 
         subgoals.forEach { subgoal ->
           if (!goalTree.containsKey(subgoal.id)) {
@@ -482,6 +510,9 @@ open class HierarchicalPlanningMode(
   ): String? {
     return try {
       log.info("Started execution of Task ID ${id} (${t.description}) in processor.")
+      logToSession("\n### Task Execution: ${t.id}\n")
+      logToSession("**Description:** ${t.description}")
+      logToSession("**Status:** ${t.status}")
       task.add("Starting execution of task: ${t.description}".renderMarkdown())
       task.verbose("Task Details:\n```json\n${t.toJson()}\n```\n".renderMarkdown())
       val answer = actor.answer(
@@ -516,18 +547,21 @@ open class HierarchicalPlanningMode(
       val acquired = semaphore.tryAcquire(5, TimeUnit.MINUTES)
       if (!acquired) {
         logToSession("Task ID ${t.id} timed out after 5 minutes")
+        logToSession("**Result:** TIMEOUT")
         t.status = TaskStatus.FAILED
         t.result = "Task execution timed out"
         task.add("Task execution timed out after 5 minutes".renderMarkdown())
       }
       logToSession("Task ID ${t.id} complete")
       val result = t.result
+      logToSession("**Result:** ${result?.take(200)?.replace("\n", " ")}${if ((result?.length ?: 0) > 200) "..." else ""}")
       log.info("Completed execution of Task ID ${id} (${t.description}) in processor.")
       result
     } catch (e: Exception) {
       log.error(
         "Task ID ${id} (${t.description}) execution failed in processor.submit lambda", e
       )
+      logToSession("**Result:** FAILED - ${e.message}")
       taskMap[id]?.apply {
         status = TaskStatus.FAILED
         result = "Execution Error: ${e.message}"
@@ -537,12 +571,25 @@ open class HierarchicalPlanningMode(
     }
   }
 
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>".renderMarkdown()
+    )
+    return markdownTranscript
+  }
+
 
   private fun getParsedActor(
     task: Task, chatInterface: ChatInterface
   ): ParsedAgent<Tasks> {
     val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
-    initDescriber(this.orchestrationConfig, this.describer)
+    Tasks.initDescriber(orchestrationConfig, describer)
     return ParsedAgent(
       name = "TaskTypeChooser",
       resultClass = Tasks::class.java, // Parse directly into TaskConfigBase
@@ -937,7 +984,7 @@ open class HierarchicalPlanningMode(
             else -> "Deps: $it"
           }
         }
-      nodeSb.append("- " + ("""$statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let { it ->
+      nodeSb.append("- " + ("""$statusEmoji **${goal.description ?: "N/A"} (ID: ${goal.id})**""").let {
         goalTasks[goal.id]?.ui?.linkToSession(
           it
         ) ?: it

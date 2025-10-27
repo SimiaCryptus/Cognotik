@@ -1,15 +1,14 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.actors.ChatAgent
-import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
+import java.nio.file.FileSystems
 
 class ChainOfThoughtTask(
   orchestrationConfig: OrchestrationConfig,
@@ -26,7 +25,7 @@ class ChainOfThoughtTask(
     val reasoning_depth: Int = 10,
     @Description("Whether to validate each step before proceeding")
     val validate_steps: Boolean = true,
-    @Description("Additional files for context")
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
     val related_files: List<String> = emptyList(),
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -83,7 +82,8 @@ class ChainOfThoughtTask(
 
   override fun promptSegment(): String {
     return """
-ChainOfThought - Break down complex problems into explicit reasoning steps
+ ChainOfThought - Break down complex problems into explicit reasoning steps
+  ** Optionally, list input files (supports glob patterns) to be examined for context
   ** Specify the problem statement that requires step-by-step reasoning
   ** Optionally set reasoning_depth to control the number of steps (default: auto)
   ** Enable validate_steps to validate each step before proceeding (default: true)
@@ -106,6 +106,8 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting ChainOfThoughtTask with problem: '${executionConfig?.problem_statement}'")
+    val transcript = transcript(task)
+    val inputFileContent = getInputFileCode()
 
     val problemStatement = executionConfig?.problem_statement
     if (problemStatement?.isBlank() != false) {
@@ -120,19 +122,14 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
     log.info("Configuration: maxSteps=$maxSteps, validateSteps=$validateSteps")
 
     val ui = task.ui
-    val api = orchestrationConfig.defaultChatter ?: run {
-      log.error("No default chatter available")
-      task.complete("ERROR: No API available")
-      resultFn("ERROR: No API available")
-      return
-    }
+    val api = orchestrationConfig.defaultChatter
     // Create tabbed display for organized output
     val tabs = TabbedDisplay(task)
     // Overview tab
     val overviewTask = task.ui.newTask(false)
     tabs["Overview"] = overviewTask.placeholder
 
-    val overviewContent = buildString {
+    var overviewContent = buildString {
       appendLine("# Chain of Thought Reasoning")
       appendLine()
       appendLine("**Problem Statement:** $problemStatement")
@@ -141,24 +138,31 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
       appendLine()
       appendLine("**Validate Steps:** ${if (validateSteps) "Yes" else "No"}")
       appendLine()
-      appendLine(
-        "**Started:** ${
-          java.time.LocalDateTime.now()
-            .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-        }"
-      )
-      appendLine()
-      appendLine("---")
-      appendLine()
-      appendLine("## Progress")
-      appendLine()
-      appendLine("*Initializing reasoning process...*")
     }
+    if (inputFileContent.isNotBlank()) {
+      overviewContent += "\n## Input Files\n\n$inputFileContent\n\n"
+    }
+
+    // Write to transcript
+    transcript?.write(overviewContent.toByteArray())
+    transcript?.flush()
     overviewTask.add(
       MarkdownUtil.renderMarkdown(
-        overviewContent,
-        ui = ui
-      )
+        overviewContent + buildString {
+          appendLine()
+          appendLine(
+            "**Started:** ${
+              java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            }"
+          )
+          appendLine()
+          appendLine("---")
+          appendLine()
+          appendLine("## Progress")
+          appendLine()
+          appendLine("*Initializing reasoning process...*")
+        })
     )
     task.update()
 
@@ -192,6 +196,11 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
           }
         }.let { MarkdownUtil.renderMarkdown(it, ui = ui) }
       )
+      // Write context to transcript
+      transcript?.write("\n\n# Context\n\n".toByteArray())
+      if (priorContext.isNotBlank()) transcript?.write("## Previous Tasks\n\n$priorContext\n\n".toByteArray())
+      if (contextFiles.isNotBlank()) transcript?.write("## Related Files\n\n$contextFiles\n\n".toByteArray())
+      transcript?.flush()
       task.update()
     }
 
@@ -237,6 +246,11 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
           )
         )
         task.update()
+        // Write step header to transcript
+        transcript?.write("\n\n# Step $stepNumber of $maxSteps\n\n".toByteArray())
+        transcript?.write("**Question:** $currentQuestion\n\n".toByteArray())
+        transcript?.flush()
+
 
         val step = generateReasoningStep(
           stepTask,
@@ -281,6 +295,11 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
                 ui = ui
               )
             )
+            // Write validation failure to transcript
+            transcript?.write("### ⚠️ Validation Failed\n\n".toByteArray())
+            transcript?.write("**Issues**: ${validation.issues?.joinToString(", ")}\n\n".toByteArray())
+            transcript?.write("**Suggestions**: ${validation.suggestions}\n\n".toByteArray())
+            transcript?.flush()
             task.update()
 
             // Attempt to regenerate with validation feedback
@@ -306,6 +325,14 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
         val lastStep = reasoningChain.last()
         val stepTime = System.currentTimeMillis() - stepStartTime
         stepTimes.add(stepTime)
+        // Write completed step to transcript
+        transcript?.write("**Reasoning**: ${lastStep.reasoning}\n\n".toByteArray())
+        transcript?.write("**Conclusion**: ${lastStep.conclusion}\n\n".toByteArray())
+        transcript?.write("**Confidence**: ${String.format("%.1f%%", lastStep.confidence * 100)}\n\n".toByteArray())
+        if (lastStep.next_question != null) {
+          transcript?.write("**Next Question**: ${lastStep.next_question}\n\n".toByteArray())
+        }
+        transcript?.flush()
         // Mark step as complete
         stepTask.add(
           MarkdownUtil.renderMarkdown(
@@ -399,6 +426,9 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
           ui = ui
         )
       )
+      // Write summary to transcript
+      transcript?.write("\n\n# Final Summary\n\n$summary\n\n".toByteArray())
+      transcript?.flush()
       summaryTask.complete()
       task.update()
 
@@ -442,6 +472,7 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
         )
       )
       task.update()
+      transcript?.close()
 
       task.complete("Completed ${reasoningChain.size} reasoning steps in ${totalTime / 1000}s.")
 
@@ -487,6 +518,10 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
         }
       }
       resultFn(errorOutput)
+      // Write error to transcript and close
+      transcript?.write("\n\n# Error\n\n${e.message}\n\n".toByteArray())
+      transcript?.write("**Steps Completed:** ${reasoningChain.size} of $maxSteps\n".toByteArray())
+      transcript?.close()
     }
   }
 
@@ -690,6 +725,46 @@ ChainOfThought - Break down complex problems into explicit reasoning steps
         "### $filePath\n(Error reading file: ${e.message})"
       }
     }
+  }
+
+  private fun getInputFileCode() = (executionConfig?.related_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = file.readText()
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
   }
 
   companion object {

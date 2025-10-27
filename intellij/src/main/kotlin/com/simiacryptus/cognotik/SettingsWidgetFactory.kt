@@ -39,6 +39,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private var statusBar: StatusBar? = null
         private var smartModelTree: Tree? = null
         private var fastModelTree: Tree? = null
+        private var imageChatModelTree: Tree? = null
         private val sessionsList = JBList<Session>()
         private val sessionsListModel = DefaultListModel<Session>()
         private fun getSmartModelTree(): Tree {
@@ -54,10 +55,18 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
             return fastModelTree!!
         }
+        private fun getImageChatModelTree(): Tree {
+            if (imageChatModelTree == null) {
+                imageChatModelTree = createModelTree("Image Chat Model", AppSettingsState.instance.imageChatModel)
+            }
+            return imageChatModelTree!!
+        }
+
 
         private fun recreateModelTrees() {
             smartModelTree = null
             fastModelTree = null
+            imageChatModelTree = null
         }
 
         private fun createModelTree(title: String, selectedModel: ApiChatModel?): Tree {
@@ -106,7 +115,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             tree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
             tree.isRootVisible = false
             tree.showsRootHandles = true
-            tree.addTreeSelectionListener {
+tree.addTreeSelectionListener {
                 val selectedPath = tree.selectionPath
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
@@ -122,6 +131,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                             ApiChatModel(chatModel, apiData)
 
                         "Fast Model" -> AppSettingsState.instance.fastModel =
+                            ApiChatModel(chatModel, apiData)
+                        "Image Chat Model" -> AppSettingsState.instance.imageChatModel =
                             ApiChatModel(chatModel, apiData)
                     }
                     statusBar?.updateWidget(ID())
@@ -285,7 +296,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
         }
 
-        init {
+init {
             AppSettingsState.onSettingsLoadedListeners.add {
                 Thread {
                     statusBar?.updateWidget(ID())
@@ -297,6 +308,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                         }
                         AppSettingsState.instance.fastModel?.model.let { model ->
                             setSelectedModel(getFastModelTree(), model?.modelName ?: "")
+                        }
+                        AppSettingsState.instance.imageChatModel?.model.let { model ->
+                            setSelectedModel(getImageChatModelTree(), model?.modelName ?: "")
                         }
                     }
                 }.start()
@@ -310,6 +324,11 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 AppSettingsState.instance.fastModel?.model.let { model ->
                     SwingUtilities.invokeLater {
                         setSelectedModel(getFastModelTree(), model?.modelName ?: "")
+                    }
+                }
+                AppSettingsState.instance.imageChatModel?.model.let { model ->
+                    SwingUtilities.invokeLater {
+                        setSelectedModel(getImageChatModelTree(), model?.modelName ?: "")
                     }
                 }
             }.start()
@@ -368,7 +387,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
         }
 
-        override fun getPopup(): JBPopup {
+override fun getPopup(): JBPopup {
             updateSessionsList()
             val panel = JPanel(BorderLayout())
             panel.accessibleContext.accessibleDescription = getMessage("popup.description")
@@ -382,12 +401,16 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
             val fastModelPanel = JPanel(BorderLayout())
             fastModelPanel.add(JScrollPane(getFastModelTree()), BorderLayout.CENTER)
+            val imageChatModelPanel = JPanel(BorderLayout())
+            imageChatModelPanel.add(JScrollPane(getImageChatModelTree()), BorderLayout.CENTER)
+
 
             val usagePanel = JPanel(BorderLayout())
             usagePanel.add(UsageTable(ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).usageManager), BorderLayout.CENTER)
 
             tabbedPane.addTab(getMessage("tab.smartModel"), smartModelPanel)
             tabbedPane.addTab(getMessage("tab.fastModel"), fastModelPanel)
+            tabbedPane.addTab(getMessage("tab.imageChatModel"), imageChatModelPanel)
             tabbedPane.addTab(getMessage("tab.server"), createServerControlPanel())
             tabbedPane.addTab(getMessage("tab.usage"), usagePanel)
 
@@ -410,9 +433,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             return AppSettingsState.instance.smartModel?.model?.modelName ?: "Uninitialized"
         }
 
-        override fun getTooltipText() = """
+override fun getTooltipText() = """
     Smart Model: ${AppSettingsState.instance.smartModel?.model?.modelName ?: "Not configured"}<br/>
     Fast Model: ${AppSettingsState.instance.fastModel?.model?.modelName ?: "Not configured"}<br/>
+    Image Chat Model: ${AppSettingsState.instance.imageChatModel?.model?.modelName ?: "Not configured"}<br/>
     Temperature: ${AppSettingsState.instance.temperature}<br/>
     ${
             if (CognotikAppServer.isRunning()) {

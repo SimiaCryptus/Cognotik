@@ -136,7 +136,8 @@ import java.util.concurrent.ConcurrentHashMap
                     choices = fromJson.candidates?.mapIndexed { index, candidate ->
                         ModelSchema.ChatChoice(
                             message = ModelSchema.ChatMessageResponse(
-                                content = candidate.content?.parts?.joinToString("\n") { it.text ?: "" }), index = index
+                              content = candidate.content?.parts?.joinToString("\n") { it.text ?: "" },
+                            ), index = index
                         )
                     } ?: emptyList(),
                     usage = ModelSchema.Usage(

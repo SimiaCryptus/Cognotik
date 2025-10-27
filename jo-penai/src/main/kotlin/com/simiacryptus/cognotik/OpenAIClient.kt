@@ -4,21 +4,21 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.simiacryptus.cognotik.exceptions.ModerationException
-import com.simiacryptus.cognotik.models.*
-import com.simiacryptus.cognotik.models.ModelSchema.*
-import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.allowedCharset
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.image.ImageModels
+import com.simiacryptus.cognotik.exceptions.ModerationException
+import com.simiacryptus.cognotik.models.AIModel
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.StringUtil
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
 import org.slf4j.Logger
-import com.simiacryptus.cognotik.util.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
@@ -240,35 +240,6 @@ open class OpenAIClient(
                     )
                 )
             }
-        }
-    }
-
-    open fun createImage(request: ImageGenerationRequest): ImageGenerationResponse = withReliability {
-        withPerformanceLogging {
-            val url = "${apiBase}/images/generations"
-            val httpRequest = HttpPost(url)
-            httpRequest.addHeader("Accept", "application/json")
-            httpRequest.addHeader("Content-Type", "application/json")
-            provider.authorize(httpRequest, key, apiBase)
-
-            val requestBody = Gson().toJson(request)
-            httpRequest.entity = StringEntity(requestBody, Charsets.UTF_8, false)
-
-            val response = post(httpRequest)
-            checkError(response)
-            log.info("Image creation response received")
-            val model = ImageModels.values.values.find { it.modelName.equals(request.model, true) }
-            val dims = request.size?.split("x")
-            onUsage(
-                model, Usage(
-                    completion_tokens = 1, cost = model?.pricing(
-                        width = dims?.get(0)?.toInt() ?: 0,
-                        height = dims?.get(1)?.toInt() ?: 0
-                    )
-                )
-            )
-
-            JsonUtil.objectMapper().readValue(response, ImageGenerationResponse::class.java)
         }
     }
 

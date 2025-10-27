@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.apps.parse
 
-import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.embedding.EmbeddingModel

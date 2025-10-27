@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps.code
 
-import com.simiacryptus.cognotik.actors.CodeAgent
-import com.simiacryptus.cognotik.actors.CodeAgent.CodeResult
+import com.simiacryptus.cognotik.agents.CodeAgent
+import com.simiacryptus.cognotik.agents.CodeAgent.CodeResult
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.interpreter.CodeRuntime

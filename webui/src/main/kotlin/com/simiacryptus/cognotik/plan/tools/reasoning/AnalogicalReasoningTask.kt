@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.actors.ChatAgent
-import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -10,6 +10,8 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -32,6 +34,8 @@ class AnalogicalReasoningTask(
     val validate_mappings: Boolean = true,
     @Description("Additional context files to inform the reasoning process")
     val related_files: List<String>? = null,
+    @Description("Input files to provide context for analogical reasoning (supports glob patterns)")
+    val input_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -138,6 +142,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
+    var transcriptStream: FileOutputStream? = null
     try {
       val startTime = System.currentTimeMillis()
       log.info("Starting AnalogicalReasoningTask with source_domain='${executionConfig?.source_domain}', target_problem='${executionConfig?.target_problem}', num_analogies=${executionConfig?.num_analogies ?: 3}")
@@ -168,6 +173,12 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
 
       val tabs = TabbedDisplay(task)
       val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+      // Initialize transcript
+      transcriptStream = initializeTranscript(task)
+      transcriptStream?.let { stream ->
+        writeTranscriptHeader(stream, sourceDomain, targetProblem, numAnalogies, validateMappings)
+      }
+
 
       // Create overview tab
       val overviewTask = task.ui.newTask(false)
@@ -196,6 +207,10 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
       log.debug("Gathering prior context and related files")
       val priorContext = getPriorCode(agent.executionState)
       val contextFiles = getContextFiles()
+      val inputFileContent = getInputFileContent()
+      transcriptStream?.let { stream ->
+        writeToTranscript(stream, "## Input Files Context\n\n$inputFileContent\n\n")
+      }
       log.debug("Context gathered: priorContext length=${priorContext.length}, contextFiles length=${contextFiles.length}")
       // Update overview with context info
       overviewTask.add(buildString {
@@ -221,6 +236,9 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
       val analogiesPrompt = """
  You are an expert in analogical reasoning and creative problem-solving.
 
+ ## Input Files
+ $inputFileContent
+ 
  ## Task
  Generate $numAnalogies high-quality analogies from the source domain to help solve the target problem.
 
@@ -278,6 +296,9 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
           appendLine()
           appendLine("- ✗ Analogy generation failed")
         }.renderMarkdown)
+        transcriptStream?.let { stream ->
+          writeToTranscript(stream, "## Error\n\nFailed to generate analogies\n\n")
+        }
         task.safeComplete("Failed to generate analogies", log)
         task.update()
         resultFn("ERROR: Failed to generate analogies")
@@ -325,6 +346,10 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
         }
       }.renderMarkdown)
       task.update()
+      transcriptStream?.let { stream ->
+        writeToTranscript(stream, "## Generated Analogies\n\n${result.analogies.size} analogies generated\n\n")
+      }
+
       // Update overview
       overviewTask.add(buildString {
         appendLine()
@@ -403,6 +428,10 @@ Provide a brief validation assessment.
           appendLine(validationResult.truncateForDisplay())
         }.renderMarkdown)
         task.update()
+        transcriptStream?.let { stream ->
+          writeToTranscript(stream, "## Validation Results\n\n$validationResult\n\n")
+        }
+
         // Update overview
         overviewTask.add(buildString {
           appendLine()
@@ -499,6 +528,10 @@ Provide a brief validation assessment.
         appendLine("**Status:** ✓ Complete")
       }.renderMarkdown)
       task.update()
+      transcriptStream?.let { stream ->
+        writeTranscriptFooter(stream, totalTime, result.analogies.size)
+      }
+
 
       log.info(
         "AnalogicalReasoningTask completed successfully: total_time=${totalTime}ms, analogies=${result.analogies.size}, avg_confidence=${
@@ -510,6 +543,9 @@ Provide a brief validation assessment.
 
     } catch (e: Exception) {
       log.error("Error during AnalogicalReasoningTask execution", e)
+      transcriptStream?.let { stream ->
+        writeToTranscript(stream, "## Error\n\n${e.message}\n\n")
+      }
       task.error(e)
       val errorTask = task.ui.newTask(false)
       errorTask.add(buildString {
@@ -522,6 +558,8 @@ Provide a brief validation assessment.
       }.renderMarkdown)
       task.safeComplete("Failed with error: ${e.message}", log)
       resultFn("ERROR: ${e.message}")
+    } finally {
+      transcriptStream?.close()
     }
   }
 
@@ -605,6 +643,79 @@ Provide a brief validation assessment.
     }
   }
 
+  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = task.createFile("reasoning_transcript.md")
+      val transcriptStream = file?.outputStream()
+      task.complete(
+        "Writing detailed transcript to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
+      log.info("Initialized transcript file: $link")
+      transcriptStream
+    } catch (e: Exception) {
+      log.error("Failed to initialize transcript", e)
+      null
+    }
+  }
+
+  private fun writeTranscriptHeader(
+    stream: FileOutputStream,
+    sourceDomain: String,
+    targetProblem: String,
+    numAnalogies: Int,
+    validateMappings: Boolean
+  ) {
+    try {
+      val header = buildString {
+        appendLine("# Analogical Reasoning Transcript")
+        appendLine()
+        appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+        appendLine()
+        appendLine("## Configuration")
+        appendLine()
+        appendLine("- **Source Domain:** $sourceDomain")
+        appendLine("- **Target Problem:** $targetProblem")
+        appendLine("- **Number of Analogies:** $numAnalogies")
+        appendLine("- **Validation Enabled:** $validateMappings")
+        appendLine()
+        appendLine("---")
+        appendLine()
+      }
+      stream.write(header.toByteArray(StandardCharsets.UTF_8))
+      stream.flush()
+    } catch (e: Exception) {
+      log.error("Failed to write transcript header", e)
+    }
+  }
+
+  private fun writeToTranscript(stream: FileOutputStream, content: String) {
+    try {
+      stream.write(content.toByteArray(StandardCharsets.UTF_8))
+      stream.flush()
+    } catch (e: Exception) {
+      log.error("Failed to write to transcript", e)
+    }
+  }
+
+  private fun writeTranscriptFooter(stream: FileOutputStream, totalTime: Long, analogyCount: Int) {
+    try {
+      val footer = buildString {
+        appendLine("---")
+        appendLine()
+        appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+        appendLine("**Total Time:** ${totalTime / 1000} seconds")
+        appendLine("**Analogies Generated:** $analogyCount")
+      }
+      stream.write(footer.toByteArray(StandardCharsets.UTF_8))
+      stream.flush()
+    } catch (e: Exception) {
+      log.error("Failed to write transcript footer", e)
+    }
+  }
+
+
   private fun getContextFiles(): String {
     val relatedFiles = executionConfig?.related_files ?: return ""
     if (relatedFiles.isEmpty()) return ""
@@ -632,6 +743,50 @@ Provide a brief validation assessment.
       }
     }
   }
+
+  private fun getInputFileContent(): String {
+    val inputFiles = executionConfig?.input_files ?: return ""
+    if (inputFiles.isEmpty()) return ""
+    log.debug("Loading ${inputFiles.size} input files")
+    return buildString {
+      appendLine("## Input Files")
+      appendLine()
+      inputFiles.forEach { pattern: String ->
+        val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+        try {
+          val files = com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
+            when {
+              com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+              matcher.matches(root.relativize(it.toPath())) -> true
+              it.isDirectory -> true
+              else -> false
+            }
+          }.filter { it.isFile && it.exists() }.distinct().filterNotNull().sortedBy { it }
+          files.forEach { file ->
+            try {
+              val relativePath = root.toFile().toPath().relativize(file.toPath())
+              val content = file.readText().truncateForDisplay(500)
+              appendLine("### $relativePath")
+              appendLine("```")
+              appendLine(content)
+              appendLine("```")
+              appendLine()
+              log.debug("Successfully loaded input file: $relativePath")
+            } catch (e: Exception) {
+              log.warn("Error reading input file: ${file.name}", e)
+            }
+          }
+        } catch (e: Exception) {
+          log.warn("Error processing input file pattern: $pattern", e)
+        }
+      }
+    }
+  }
+
+  private fun String.truncateForDisplay(maxLength: Int = 1000): String {
+    return if (this.length > maxLength) this.substring(0, maxLength) + "\n...(truncated)" else this
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(AnalogicalReasoningTask::class.java)

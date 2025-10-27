@@ -9,10 +9,12 @@ import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.session.resolve
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
+import java.util.*
 import kotlin.io.path.readText
 
 open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
@@ -125,7 +127,14 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
 
     private fun String.reverseLines(): String = lines().reversed().joinToString("\n")
 
-    fun instrument(
+  private fun record(socketManager: SocketManager, data: Any): String {
+    val relativePath = UUID.randomUUID().toString() + ".json"
+    require(relativePath.isNotBlank()) { "File path cannot be blank" }
+    socketManager.resolve(relativePath)?.writeText(data.toJson())
+    return "<a href='fileIndex/${socketManager.sessionId}/$relativePath' target='_blank'>Patch Data</a>"
+  }
+
+  fun instrument(
         self: SocketManager,
         root: Path,
         response: String,
@@ -180,6 +189,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                     false
                 }
             }.flatMap { it.second }.map { it.range to it }.toList()
+
             val patchBlocks = resolvedMatches.filter { (header, block) ->
                 try {
                     val resolvedPath = resolver(root, header ?: return@filter false)
@@ -192,8 +202,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
 
             val withPatchLinks: String = patchBlocks.foldIndexed(response) { index, markdown, diffBlock ->
                 val diffValue = diffBlock.second.groupValues[2].trim()
-                val header =
-                    headers.lastOrNull { it.first.last < diffBlock.first.first }?.second ?: defaultFile ?: "Unknown"
+              val header = headers.lastOrNull { it.first.last < diffBlock.first.first }?.second ?: defaultFile ?: "Unknown"
                 val filename = resolver(root, normalizeFilename(header))
                 if (filename.isNullOrBlank()) return@foldIndexed markdown
                 val newValue = renderDiffBlock(root, filename, diffValue, handle, self, shouldAutoApply)
@@ -210,10 +219,18 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                 if (header.isNullOrBlank()) return markdown
                 val filename = prefilterFilename(normalizeFilename(header))
                 if (filename.isNullOrBlank()) return markdown
-                val newMarkdown = renderNewFile(root, filename, codeValue, handle, self, lang, shouldAutoApply)
+              val newMarkdown = renderNewFile(root, filename, codeValue, handle, self, lang, shouldAutoApply) + record(
+                self, mapOf(
+                  "filename" to filename,
+                  "code" to codeValue,
+                  "header" to header,
+                  "language" to lang,
+                )
+              )
                 markdown.replace(codeBlock.second.value, newMarkdown)
             }
-            return withSaveLinks
+
+          return withSaveLinks
         }
     }
 
@@ -451,7 +468,16 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             diffTask.placeholder + "\n" + applydiffTask.placeholder
         } else {
             diffTask.placeholder + """<div class="warning">Warning: The patch is not valid: ${newCode.error?.renderMarkdown() ?: "???"}</div>""" + applydiffTask.placeholder
-        }
+        } + record(
+          ui, mapOf(
+            "filename" to filename,
+            "originalCode" to prevCode,
+            "diff" to diffVal,
+            "newCode" to newCode.newCode,
+            "isValid" to newCode.isValid,
+            "errors" to newCode.error,
+          )
+        )
     }
 
     private val DiffApplicationResult.patchResult

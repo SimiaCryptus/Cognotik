@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.actors.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.io.FileOutputStream
 import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
@@ -36,7 +37,8 @@ open class AdaptivePlanningMode(
   private val executionRecords = mutableListOf<ExecutionRecord>()
   private val reasoningState = AtomicReference<ReasoningState?>(null)
   private var isRunning = false
-  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+)+)}""")
+  private var transcriptStream: FileOutputStream? = null
+  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+)}""")
 
   override fun initialize() {
     log.debug("Initializing AutoPlanMode")
@@ -58,6 +60,7 @@ open class AdaptivePlanningMode(
   private fun startAutoPlanChat(userMessage: String) {
     log.debug("Starting auto plan chat with initial message: $userMessage")
     task.echo(renderMarkdown(userMessage))
+    transcriptStream = transcript(task)
 
     val continueLoop = true
     val tabbedDisplay = TabbedDisplay(task)
@@ -81,6 +84,7 @@ open class AdaptivePlanningMode(
         log.debug("Initialized thinking status")
         initialStatus.initialPrompt = userMessage
         reasoningState.set(initialStatus)
+        writeToTranscript("# Auto Plan Chat Session\n\n## Initial Prompt\n\n$userMessage\n\n")
 
         var iteration = 0
         while (iteration++ < maxIterations && continueLoop) {
@@ -88,6 +92,7 @@ open class AdaptivePlanningMode(
           task.complete()
           val currentThinkingStatus = reasoningState.get()
             ?: throw IllegalStateException("ThinkingStatus is null at iteration $iteration")
+          writeToTranscript("## Iteration $iteration\n\n")
 
           val task = task.linkedTask("Iteration $iteration")
           val ui = task.ui
@@ -140,22 +145,23 @@ open class AdaptivePlanningMode(
           val taskResults = mutableListOf<Pair<TaskExecutionConfig, Future<String>>>()
           for ((index, currentTask: TaskData) in nextTask.withIndex()) {
             val currentTaskId = "task_${index + 1}"
+            writeToTranscript("### Task $currentTaskId\n\n")
             log.debug("Executing task $currentTaskId")
             val taskExecutionTask = ui.newTask(false)
             val taskConfig = currentTask.task.tasks?.get(index)
             val taskDescription =
               taskConfig?.task_description ?: "No description provided for this task item."
             taskExecutionTask.add("\n```json\n${taskConfig?.toJson()}\n```\n".renderMarkdown)
+            writeToTranscript("**Description:** $taskDescription\n\n```json\n${JsonUtil.toJson(taskConfig)}\n```\n\n")
             taskExecutionTask.verbose(
-              renderMarkdown(
-                """
-Executing task: `$currentTaskId` - $taskDescription
+
+              """
+ Executing task: `$currentTaskId` - $taskDescription
 Full TaskData JSON:
 ```json
 ${JsonUtil.toJson(taskConfig)}
 ```
-""".trimIndent(), tabs = false
-              )
+""".trimIndent().renderMarkdown
             )
             iterationTabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder
 
@@ -184,6 +190,7 @@ ${JsonUtil.toJson(taskConfig)}
           val completedTasks = taskResults.map { (task, future) ->
             val result = future.get()
             log.debug("Task completed: ${task.task_description}")
+            writeToTranscript("**Result:**\n\n$result\n\n")
             ExecutionRecord(
               time = Date(),
               iteration = iteration,
@@ -197,6 +204,7 @@ ${JsonUtil.toJson(taskConfig)}
             ui.newTask(false).apply { iterationTabbedDisplay["Thinking Status"] = placeholder }
           try {
             log.debug("Updating thinking status")
+            writeToTranscript("### Updated Thinking Status\n\n")
             val updatedStatus = updateThinking(currentThinkingStatus, completedTasks, task)
             reasoningState.set(updatedStatus)
             log.debug("Updated thinking status")
@@ -209,6 +217,7 @@ ${JsonUtil.toJson(taskConfig)}
                 }"
               )
             )
+            writeToTranscript("```json\n${JsonUtil.toJson(updatedStatus)}\n```\n\n")
           } catch (e: Exception) {
             log.error("Error updating thinking status", e)
             thinkingStatusTask.error(e)
@@ -233,6 +242,11 @@ ${JsonUtil.toJson(taskConfig)}
               } ?: "null"
             }")
         )
+        writeToTranscript("\n## Summary\n\nAuto Plan Chat completed.\n\n")
+        transcriptStream?.flush()
+        transcriptStream?.close()
+        transcriptStream = null
+        task.complete()
         task.complete()
       }
     }
@@ -268,7 +282,7 @@ ${JsonUtil.toJson(taskConfig)}
     reasoningState: ReasoningState,
     task: SessionTask
   ): List<TaskData>? {
-    initDescriber(this.orchestrationConfig, this.describer)
+    Tasks.initDescriber(orchestrationConfig, describer)
     val parsedActor = ParsedAgent(
       name = "TaskChooser",
       resultClass = Tasks::class.java,
@@ -685,9 +699,23 @@ ${JsonUtil.toJson(taskConfig)}
     val description: String? = null
   )
 
-  data class Tasks(
-    val tasks: MutableList<TaskExecutionConfig>? = null
-  )
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
+  private fun writeToTranscript(content: String) {
+    transcriptStream?.write(content.toByteArray())
+  }
+
 
   companion object : CognitiveModeStrategy {
     override val inputCnt = 1
@@ -698,11 +726,5 @@ ${JsonUtil.toJson(taskConfig)}
       user: User?
     ) = AdaptivePlanningMode(task, orchestrationConfig, session, user)
 
-    fun initDescriber(orchestrationConfig: OrchestrationConfig, describer: TaskContextYamlDescriber) {
-      describer.clearSubTypes(TaskExecutionConfig::class.java)
-      TaskType.getAvailableTaskTypes(orchestrationConfig).forEach { taskType ->
-        describer.registerSubType(TaskExecutionConfig::class.java, taskType.executionConfigClass)
-      }
-    }
   }
 }

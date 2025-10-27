@@ -26,7 +26,7 @@ interface Embedder {
 @JsonDeserialize(using = EmbeddingModelsDeserializer::class)
 @JsonSerialize(using = EmbeddingModelsSerializer::class)
 open class EmbeddingModel(
-    modelName: String? = null,
+    modelName: String = "",
     maxTokens: Int = 0,
     provider: APIProvider? = null,
     private val tokenPricePerK: Double = 0.0,
@@ -36,7 +36,7 @@ open class EmbeddingModel(
     maxTotalTokens = maxTokens
 ) {
     private val log = LoggerFactory.getLogger(EmbeddingModel::class.java)
-    override fun toString() = modelName ?: "UnnamedEmbeddingModel"
+    override fun toString() = modelName
     
     override fun pricing(usage: ModelSchema.Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
         .also { log.info("Calculated pricing for model: $modelName with prompt tokens: ${usage.prompt_tokens}, price: $it") }

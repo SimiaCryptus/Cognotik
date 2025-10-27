@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.actors
+package com.simiacryptus.cognotik.agents
 
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.chat.model.ChatInterface

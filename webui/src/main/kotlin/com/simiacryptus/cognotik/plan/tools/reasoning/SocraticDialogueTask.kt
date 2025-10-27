@@ -1,15 +1,15 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
+import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -26,6 +26,8 @@ class SocraticDialogueTask(
   class SocraticDialogueTaskExecutionConfigData(
     @Description("The initial question or hypothesis to explore")
     val initial_question: String? = null,
+    @Description("Optional input files (supports glob patterns) to provide context for the dialogue")
+    val input_files: List<String>? = null,
     @Description("Maximum dialogue depth (number of question-answer exchanges)")
     val max_depth: Int = 5,
     @Description("Whether to challenge assumptions at each level")
@@ -53,7 +55,17 @@ class SocraticDialogueTask(
 
   override fun promptSegment(): String {
     return """
-SocraticDialogue - Explore ideas through Socratic questioning
+ SocraticDialogue - Explore ideas through Socratic questioning
+  ** Specify the initial question or hypothesis to explore
+  ** Optionally provide input files (supports glob patterns) for context
+  ** Configure maximum dialogue depth (default: 5 exchanges)
+  ** Enable/disable assumption challenging
+  ** Optionally constrain to specific topics or domains
+  ** Creates a dialogue between questioner and responder agents
+  ** Explores definitions, assumptions, implications, and contradictions
+  ** Produces a structured dialogue transcript with insights
+  Available files:
+  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
   ** Specify the initial question or hypothesis to explore
   ** Configure maximum dialogue depth (default: 5 exchanges)
   ** Enable/disable assumption challenging
@@ -64,6 +76,32 @@ SocraticDialogue - Explore ideas through Socratic questioning
         """.trimIndent()
   }
 
+  private fun getInputFileContext(): String = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        "# $relativePath\n\n```\n${file.readText()}\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
@@ -71,6 +109,7 @@ SocraticDialogue - Explore ideas through Socratic questioning
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
+    val inputFileContext = getInputFileContext()
     val startTime = System.currentTimeMillis()
     log.info("Starting SocraticDialogueTask with initial question: '${executionConfig?.initial_question}'")
     // Validate configuration
@@ -138,6 +177,9 @@ SocraticDialogue - Explore ideas through Socratic questioning
     if (priorContext.isNotBlank()) {
       log.debug("Found prior context from previous tasks: ${priorContext.length} characters")
     }
+    val combinedContext = listOfNotNull(priorContext, inputFileContext)
+      .filter { it.isNotBlank() }
+      .joinToString("\n\n---\n\n")
 
     // Create the Socratic questioner agent
     log.info("Creating Socratic questioner agent")
@@ -181,6 +223,18 @@ Provide substantive, well-reasoned responses that advance the dialogue.
 
     val dialogueBuilder = StringBuilder()
     val fullDialogueBuilder = StringBuilder()
+    // Create transcript file
+    val (transcriptLink, transcriptStream) = createTranscriptFile(task)
+    val transcriptWriter = transcriptStream?.bufferedWriter()
+    transcriptWriter?.apply {
+      write("# Socratic Dialogue Transcript\n\n")
+      write("**Initial Question:** $initialQuestion\n\n")
+      write("**Domain Constraints:** $domainConstraints\n\n")
+      write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n")
+      write("---\n\n")
+      flush()
+    }
+
 
     // Concise output for final result
     dialogueBuilder.append("# Socratic Dialogue Analysis\n\n")
@@ -191,9 +245,14 @@ Provide substantive, well-reasoned responses that advance the dialogue.
     fullDialogueBuilder.append("## Initial Question\n\n")
     fullDialogueBuilder.append("$initialQuestion\n\n")
 
-    if (priorContext.isNotBlank()) {
+    if (combinedContext.isNotBlank()) {
       fullDialogueBuilder.append("## Context from Previous Tasks\n\n")
-      fullDialogueBuilder.append("$priorContext\n\n")
+      fullDialogueBuilder.append("$combinedContext\n\n")
+      transcriptWriter?.apply {
+        write("## Context from Previous Tasks\n\n")
+        write("$combinedContext\n\n")
+        flush()
+      }
       // Add context tab
       val contextTask = task.ui.newTask(false)
       tabs["Context"] = contextTask.placeholder
@@ -201,7 +260,7 @@ Provide substantive, well-reasoned responses that advance the dialogue.
         buildString {
           appendLine("# Context from Previous Tasks")
           appendLine()
-          appendLine(priorContext)
+          appendLine(combinedContext)
         }.renderMarkdown
       )
       task.update()
@@ -269,6 +328,13 @@ Provide substantive, well-reasoned responses that advance the dialogue.
         fullDialogueBuilder.append("## Exchange $depth\n\n")
         fullDialogueBuilder.append("**Question:** $currentQuestion\n\n")
         fullDialogueBuilder.append("**Response:** $currentResponse\n\n")
+        transcriptWriter?.apply {
+          write("## Exchange $depth\n\n")
+          write("**Question:** $currentQuestion\n\n")
+          write("**Response:** $currentResponse\n\n")
+          flush()
+        }
+
 
         // Store only key points in concise output
         if (depth == 1 || depth == maxDepth) {
@@ -330,6 +396,11 @@ Provide only the question, without preamble.
               appendLine()
             }.renderMarkdown
           )
+          transcriptWriter?.apply {
+            write("**Next Question:** $currentQuestion\n\n")
+            flush()
+          }
+
           task.update()
         }
         val exchangeTime = System.currentTimeMillis() - exchangeStartTime
@@ -395,6 +466,13 @@ Provide a structured synthesis.
 
       dialogueBuilder.append("## Key Insights\n\n")
       dialogueBuilder.append(synthesis)
+      transcriptWriter?.apply {
+        write("## Synthesis\n\n")
+        write(synthesis)
+        write("\n\n")
+        flush()
+      }
+
 
       // Add summary statistics
       dialogueBuilder.append("\n\n---\n\n")
@@ -426,6 +504,14 @@ Provide a structured synthesis.
       val totalTime = System.currentTimeMillis() - startTime
       val avgExchangeTime = if (exchangeTimes.isNotEmpty()) exchangeTimes.average() else 0.0
       log.info("SocraticDialogueTask completed: total_time=${totalTime}ms, exchanges=$maxDepth, avg_exchange_time=${avgExchangeTime}ms, output_size=${finalResult.length} chars (full: ${fullDialogue.length} chars)")
+      transcriptWriter?.apply {
+        write("---\n\n")
+        write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n")
+        write("**Total Time:** ${totalTime / 1000.0}s | **Exchanges:** $maxDepth | **Avg Exchange Time:** ${avgExchangeTime / 1000.0}s\n")
+        flush()
+        close()
+      }
+
 
       MarkdownUtil.renderMarkdown(
         """
@@ -457,11 +543,29 @@ Provide a structured synthesis.
 
       task.complete("Completed $maxDepth exchanges in ${totalTime / 1000}s. Concise analysis: ${finalResult.length} chars.")
 
-      resultFn(finalResult)
+      val summaryMessage = buildString {
+        appendLine(finalResult)
+        appendLine("\n---\n")
+        appendLine(
+          "Full dialogue transcript: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+            transcriptLink.removeSuffix(
+              ".md"
+            )
+          }.pdf' target='_blank'>pdf</a>"
+        )
+      }
+      resultFn(summaryMessage)
 
     } catch (e: Exception) {
       log.error("Error during Socratic dialogue", e)
       task.error(e)
+      transcriptWriter?.apply {
+        write("\n\n---\n\n## ❌ Error Occurred\n\n")
+        write("**Error:** ${e.message}\n\n")
+        flush()
+        close()
+      }
+
 
       // Update overview with error
       overviewTask.add(
@@ -496,6 +600,30 @@ Provide a structured synthesis.
       resultFn(errorOutput)
     }
   }
+
+  private fun createTranscriptFile(task: SessionTask): Pair<String, FileOutputStream?> {
+    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(".md")
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return Pair(link, markdownTranscript)
+  }
+
+  private fun getAvailableFiles(
+    path: Path,
+    treatDocumentsAsText: Boolean = false,
+  ): List<String> {
+    return try {
+      listOf(FileSelectionUtils.filteredWalkAsciiTree(path.toFile(), 20, treatDocumentsAsText = treatDocumentsAsText))
+    } catch (e: Exception) {
+      log.error("Error listing available files", e)
+      listOf("Error listing files: ${e.message}")
+    }
+  }
+
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(SocraticDialogueTask::class.java)

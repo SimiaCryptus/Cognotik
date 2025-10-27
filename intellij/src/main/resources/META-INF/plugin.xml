@@ -155,6 +155,10 @@
                     text="✨ Create File from Description"
                     description="Create a new file with appropriate content based on a natural language description, intelligently determining file type and location">
             </action>
+            <action class="cognotik.actions.generate.CreateImageAction"
+                    text="🖼️ Create Image from Description"
+                    description="Generate an image based on a natural language description, with customizable styles and formats">
+            </action>
         </group>
 
         <group id="cognotik.ui.VcsMenu"

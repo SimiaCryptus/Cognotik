@@ -1,25 +1,58 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
- import com.simiacryptus.cognotik.actors.ChatAgent
- import com.simiacryptus.cognotik.actors.ParsedAgent
- import com.simiacryptus.cognotik.apps.general.renderMarkdown
- import com.simiacryptus.cognotik.describe.Description
- import com.simiacryptus.cognotik.plan.*
- import com.simiacryptus.cognotik.util.LoggerFactory
- import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
+import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
- import com.simiacryptus.cognotik.webui.session.SessionTask
- import org.slf4j.Logger
- import java.time.LocalDateTime
- import java.time.format.DateTimeFormatter
+import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.slf4j.Logger
+import java.io.File
+import java.io.FileOutputStream
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
- class LateralThinkingTask(
+class LateralThinkingTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: LateralThinkingTaskExecutionConfigData?
- ) : AbstractTask<LateralThinkingTask.LateralThinkingTaskExecutionConfigData, TaskTypeConfig>(
+) : AbstractTask<LateralThinkingTask.LateralThinkingTaskExecutionConfigData, LateralThinkingTask.LateralThinkingTaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(LateralThinkingTask::class.java)
+
+    val LateralThinking = TaskType(
+      "LateralThinking",
+      LateralThinkingTaskExecutionConfigData::class.java,
+      LateralThinkingTaskTypeConfig::class.java,
+      "Break conventional thinking patterns to find innovative solutions",
+      """
+              Applies lateral thinking techniques to generate unconventional solutions.
+              <ul>
+                <li>Supports multiple techniques: reversal, random stimulus, challenge assumptions, exaggeration, escape, metaphor, provocation</li>
+                <li>Generates multiple alternatives per technique</li>
+                <li>Identifies breakthrough aspects and novel perspectives</li>
+                <li>Evaluates novelty and feasibility of ideas</li>
+                <li>Synthesizes insights across techniques</li>
+                <li>Optionally performs detailed feasibility evaluation</li>
+                <li>Suggests hybrid approaches combining multiple ideas</li>
+                <li>Ideal for innovation, breaking design impasses, and creative problem-solving</li>
+              </ul>
+            """
+    )
+  }
+
   val maxDescriptionLength = 1500
 
   class LateralThinkingTaskExecutionConfigData(
@@ -41,6 +74,8 @@ import com.simiacryptus.cognotik.util.ValidatedObject
     val domain_context: String? = null,
     @Description("Additional constraints or requirements to consider")
     val constraints: List<String>? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the task")
+    val input_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -51,6 +86,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
   ), ValidatedObject {
+
     override fun validate(): String? {
       if (problem.isNullOrBlank()) {
         return "Problem must be specified and cannot be blank"
@@ -60,7 +96,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
       }
       techniques?.forEach { technique ->
         val validTechniques = listOf(
-          "reversal", "random_stimulus", "challenge_assumptions", 
+          "reversal", "random_stimulus", "challenge_assumptions",
           "exaggeration", "escape", "metaphor", "provocation"
         )
         if (technique !in validTechniques) {
@@ -70,6 +106,16 @@ import com.simiacryptus.cognotik.util.ValidatedObject
       return ValidatedObject.validateFields(this)
     }
   }
+
+  class LateralThinkingTaskTypeConfig(
+    task_type: String? = LateralThinking.name,
+    name: String? = null,
+    model: ApiChatModel? = null
+  ) : TaskTypeConfig(
+    task_type = task_type,
+    name = name,
+    model = model
+  ), ValidatedObject
 
   data class LateralIdea(
     @Description("Title of the idea")
@@ -210,6 +256,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
   ) {
     try {
       val startTime = System.currentTimeMillis()
+      val transcript = transcript(task)
       log.info("Starting LateralThinkingTask for problem='${executionConfig?.problem?.take(50)}...', techniques=${executionConfig?.techniques}")
 
       val problem = executionConfig?.problem
@@ -268,6 +315,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
         appendLine("| Alternatives per Technique | $numAlternatives |")
         appendLine("| Feasibility Evaluation | ${if (evaluateFeasibility) "✓ Enabled" else "✗ Disabled"} |")
         appendLine()
+        transcript?.write(this.toString().toByteArray())
         appendLine("## Progress")
         appendLine()
         appendLine("- ⏳ Gathering context...")
@@ -277,10 +325,13 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
       log.debug("Gathering prior context")
       val priorContext = getPriorCode(agent.executionState)
-      log.debug("Context gathered: priorContext length=${priorContext.length}")
+      val fileContext = getInputFileCode(agent.root)
+      val combinedContext = priorContext + "\n\n" + fileContext
+      log.debug("Context gathered: priorContext length=${priorContext.length}, fileContext length=${fileContext.length}")
 
       overviewTask.add(buildString {
         appendLine()
+        transcript?.write("\n- ✓ Context gathered\n- ⏳ Applying lateral thinking techniques...\n".toByteArray())
         appendLine("- ✓ Context gathered")
         appendLine("- ⏳ Applying lateral thinking techniques...")
       }.renderMarkdown)
@@ -300,6 +351,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
         techniqueTask.add(buildString {
           appendLine("# ${technique.capitalize()} Technique")
           appendLine()
+          transcript?.write("# ${technique.capitalize()} Technique\n\n**Status:** ⏳ Generating ideas...\n\n".toByteArray())
           appendLine("**Status:** ⏳ Generating ideas...")
           appendLine()
           appendLine(getTechniqueDescription(technique))
@@ -312,13 +364,13 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
           numAlternatives,
           domainContext,
           constraints,
-          priorContext
+          combinedContext
         )
 
         val techniqueParser = ParsedAgent(
           resultClass = TechniqueApplication::class.java,
           prompt = techniquePrompt,
-          model = api,
+          model = api.getChildClient(task),
           temperature = 0.8,
           name = "LateralThinking_${technique}",
           parsingChatter = orchestrationConfig.parsingChatter,
@@ -333,6 +385,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
           // Display technique results
           techniqueTask.add(buildString {
+            transcript?.write("\n---\n\n## Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
             appendLine()
             appendLine("---")
             appendLine()
@@ -381,6 +434,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
               appendLine("---")
               appendLine()
             }
+            transcript?.write(this.toString().toByteArray())
             if (application.insights.isNotEmpty()) {
               appendLine("### Key Insights")
               appendLine()
@@ -390,6 +444,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
           task.update()
         } else {
           log.warn("Failed to generate ideas for technique: $technique")
+          transcript?.write("\n**Status:** ⚠️ Failed to generate ideas\n".toByteArray())
           techniqueTask.add(buildString {
             appendLine()
             appendLine("**Status:** ⚠️ Failed to generate ideas")
@@ -399,6 +454,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
         overviewTask.add(buildString {
           appendLine()
+          transcript?.write("\n- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)\n".toByteArray())
           appendLine("- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)")
         }.renderMarkdown)
         task.update()
@@ -408,6 +464,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
       overviewTask.add(buildString {
         appendLine()
+        transcript?.write("\n- ✓ All techniques applied (${allIdeas.size} total ideas)\n- ⏳ Synthesizing insights...\n".toByteArray())
         appendLine("- ✓ All techniques applied (${allIdeas.size} total ideas)")
         appendLine("- ⏳ Synthesizing insights...")
       }.renderMarkdown)
@@ -420,6 +477,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
       synthesisTask.add(buildString {
         appendLine("# Cross-Technique Synthesis")
+        transcript?.write("\n# Cross-Technique Synthesis\n\n**Status:** ⏳ Analyzing patterns and insights...\n".toByteArray())
         appendLine()
         appendLine("**Status:** ⏳ Analyzing patterns and insights...")
       }.renderMarkdown)
@@ -462,7 +520,7 @@ Provide a comprehensive synthesis.
 
       val synthesisAgent = ChatAgent(
         prompt = "You are an expert in creative synthesis and innovation strategy.",
-        model = api,
+        model = api.getChildClient(task),
         temperature = 0.6
       )
 
@@ -470,6 +528,7 @@ Provide a comprehensive synthesis.
 
       synthesisTask.add(buildString {
         appendLine()
+        transcript?.write("\n---\n\n## Synthesis Results\n\n**Status:** ✓ Complete\n\n${synthesisText}\n".toByteArray())
         appendLine("---")
         appendLine()
         appendLine("## Synthesis Results")
@@ -485,6 +544,7 @@ Provide a comprehensive synthesis.
 
       overviewTask.add(buildString {
         appendLine()
+        transcript?.write("\n- ✓ Synthesis complete\n".toByteArray())
         appendLine("- ✓ Synthesis complete")
         if (evaluateFeasibility) {
           appendLine("- ⏳ Evaluating feasibility...")
@@ -501,6 +561,7 @@ Provide a comprehensive synthesis.
 
         feasibilityTask.add(buildString {
           appendLine("# Feasibility Evaluation")
+          transcript?.write("\n# Feasibility Evaluation\n\n**Status:** ⏳ Evaluating ${allIdeas.size} ideas...\n".toByteArray())
           appendLine()
           appendLine("**Status:** ⏳ Evaluating ${allIdeas.size} ideas...")
         }.renderMarkdown)
@@ -543,7 +604,7 @@ Provide a structured evaluation.
         val feasibilityParser = ParsedAgent(
           resultClass = FeasibilityEvaluation::class.java,
           prompt = feasibilityPrompt,
-          model = api,
+          model = api.getChildClient(task),
           temperature = 0.4,
           name = "FeasibilityEvaluation",
           parsingChatter = orchestrationConfig.parsingChatter,
@@ -553,6 +614,7 @@ Provide a structured evaluation.
 
         if (feasibilityEvaluation != null) {
           feasibilityTask.add(buildString {
+            transcript?.write("\n---\n\n## Evaluation Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
             appendLine()
             appendLine("---")
             appendLine()
@@ -580,10 +642,12 @@ Provide a structured evaluation.
               feasibilityEvaluation.hybrid_approaches.forEach { appendLine("- $it") }
             }
           }.renderMarkdown)
+          transcript?.write(this.toString().toByteArray())
           task.update()
         }
 
         overviewTask.add(buildString {
+          transcript?.write("\n- ✓ Feasibility evaluation complete\n".toByteArray())
           appendLine()
           appendLine("- ✓ Feasibility evaluation complete")
         }.renderMarkdown)
@@ -606,6 +670,7 @@ Provide a structured evaluation.
 
       val summaryContent = formatSummary(result, problem, techniques)
       summaryTask.add(summaryContent.renderMarkdown)
+      transcript?.write("\n${summaryContent}\n".toByteArray())
       task.update()
 
       // Create concise result text
@@ -686,6 +751,7 @@ Provide a structured evaluation.
         appendLine("| Total Time | ${totalTime / 1000}s |")
         appendLine()
         appendLine("**Status:** ✓ Complete")
+        transcript?.write(this.toString().toByteArray())
       }.renderMarkdown)
       task.update()
 
@@ -699,6 +765,23 @@ Provide a structured evaluation.
         log
       )
       resultFn(resultText)
+      transcript?.close()
+      // Create summary message with transcript link
+      val (transcriptLink, _) = task.createFile("lateral_thinking_summary.md")
+      val summaryMessage = buildString {
+        appendLine(resultText)
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine(
+          "📄 **Full Analysis:** [View Transcript]($transcriptLink) | [HTML](${transcriptLink.removeSuffix(".md")}.html) | [PDF](${
+            transcriptLink.removeSuffix(
+              ".md"
+            )
+          }.pdf)"
+        )
+      }
+      resultFn(summaryMessage)
 
     } catch (e: Exception) {
       log.error("Error during LateralThinkingTask execution", e)
@@ -716,6 +799,20 @@ Provide a structured evaluation.
       resultFn("ERROR: ${e.message}")
     }
   }
+
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
 
   private fun getTechniqueDescription(technique: String): String {
     return when (technique.lowercase()) {
@@ -1136,29 +1233,78 @@ Generate $numAlternatives ideas using $technique.
     return this.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
   }
 
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(LateralThinkingTask::class.java)
+  private fun getInputFileCode(root: Path): String = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
 
-    val LateralThinking = TaskType(
-      "LateralThinking",
-      LateralThinkingTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Break conventional thinking patterns to find innovative solutions",
-      """
-              Applies lateral thinking techniques to generate unconventional solutions.
-              <ul>
-                <li>Supports multiple techniques: reversal, random stimulus, challenge assumptions, exaggeration, escape, metaphor, provocation</li>
-                <li>Generates multiple alternatives per technique</li>
-                <li>Identifies breakthrough aspects and novel perspectives</li>
-                <li>Evaluates novelty and feasibility of ideas</li>
-                <li>Synthesizes insights across techniques</li>
-                <li>Optionally performs detailed feasibility evaluation</li>
-                <li>Suggests hybrid approaches combining multiple ideas</li>
-                <li>Ideal for innovation, breaking design impasses, and creative problem-solving</li>
-              </ul>
-            """
+  private fun isTextFile(file: File): Boolean {
+    val textExtensions = setOf(
+      "txt",
+      "md",
+      "kt",
+      "java",
+      "js",
+      "ts",
+      "py",
+      "rb",
+      "go",
+      "rs",
+      "c",
+      "cpp",
+      "h",
+      "hpp",
+      "css",
+      "html",
+      "xml",
+      "json",
+      "yaml",
+      "yml",
+      "properties",
+      "gradle",
+      "maven"
     )
+    return textExtensions.contains(file.extension.lowercase())
   }
+
+  private fun extractDocumentContent(file: File) = try {
+    file.getReader().use { reader ->
+      when (reader) {
+        is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+        else -> reader.getText()
+      }
+    }
+  } catch (e: Exception) {
+    log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+    file.readText()
+  }
+
 }
 
 private fun String.removePrefix(prefix: Regex): String {

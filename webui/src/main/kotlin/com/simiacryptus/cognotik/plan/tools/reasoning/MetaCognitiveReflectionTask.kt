@@ -1,14 +1,13 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
+import java.nio.file.FileSystems
 
 class MetaCognitiveReflectionTask(
   orchestrationConfig: OrchestrationConfig,
@@ -21,6 +20,12 @@ class MetaCognitiveReflectionTask(
   class MetaCognitiveReflectionTaskExecutionConfigData(
     @Description("The ID of the task whose reasoning process should be reflected upon")
     val subject_task_id: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as context for reflection")
+    val input_files: List<String>? = null,
+    @Description("Additional context or questions to guide the reflection")
+    val reflection_questions: List<String>? = null,
+    @Description("Whether to include file context in the reflection analysis")
+    val include_file_context: Boolean = true,
     @Description("Aspects to evaluate: 'assumptions', 'biases', 'alternatives', 'confidence', 'completeness', 'logic'")
     val reflection_aspects: List<String>? = listOf("assumptions", "biases", "alternatives", "confidence"),
     @Description("Whether to suggest improvements to the reasoning process")
@@ -45,6 +50,9 @@ class MetaCognitiveReflectionTask(
       if (reflection_aspects.isNullOrEmpty()) {
         return "reflection_aspects must not be null or empty"
       }
+      if (reflection_aspects.isNullOrEmpty()) {
+        return "reflection_aspects must not be null or empty"
+      }
       val validAspects = setOf("assumptions", "biases", "alternatives", "confidence", "completeness", "logic")
       val invalidAspects = reflection_aspects.filterNot { it in validAspects }
       if (invalidAspects.isNotEmpty()) {
@@ -65,6 +73,9 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
      - 'confidence': Evaluate certainty levels
      - 'completeness': Check for missing considerations
      - 'logic': Verify logical consistency
+  ** Optionally, list input files (supports glob patterns) to provide context
+  ** Optionally, specify reflection_questions to guide the analysis
+  ** Enable include_file_context to incorporate file content in reflection
   ** Enable suggest_improvements to get actionable recommendations
   ** Enable identify_gaps to surface knowledge uncertainties
   ** Enable evaluate_confidence to assess conclusion reliability
@@ -115,6 +126,14 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     }
 
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+    // Create transcript file
+    val (transcriptLink, transcript) = initializeTranscript(task)
+    transcript?.let { stream ->
+      stream.write("# Meta-Cognitive Reflection Transcript\n\n".toByteArray())
+      stream.write("## Subject Task: `$subjectTaskId`\n\n".toByteArray())
+      stream.write("**Timestamp**: ${java.time.Instant.now()}\n\n".toByteArray())
+    }
+
 
     val tabbedDisplay = TabbedDisplay(task)
     val overviewTask = task.ui.newTask()
@@ -142,6 +161,25 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         ), log
       )
     }
+    // Gather file context if enabled
+    val fileContext = if (executionConfig?.include_file_context == true) {
+      getInputFileContext(executionConfig?.input_files ?: listOf())
+    } else {
+      ""
+    }
+    // Gather messages context
+    val messagesContext = messages.filter { it.isNotBlank() }.joinToString("\n\n")
+    // Gather reflection questions
+    val questionsContext = if (!executionConfig?.reflection_questions.isNullOrEmpty()) {
+      "## Reflection Questions:\n\n" + executionConfig?.reflection_questions?.mapIndexed { idx, q ->
+        "${idx + 1}. $q"
+      }?.joinToString("\n")
+    } else {
+      ""
+    }
+    transcript?.let { stream ->
+      writeToTranscript(stream, "## Input Context\n\n$fileContext\n\n$messagesContext\n\n$questionsContext\n\n")
+    }
 
 
     val reflectionAspects =
@@ -153,6 +191,9 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
       subjectTaskId = subjectTaskId,
       subjectTaskResult = subjectTaskResult,
       priorContext = priorContext,
+      fileContext = fileContext,
+      messagesContext = messagesContext,
+      questionsContext = questionsContext,
       reflectionAspects = reflectionAspects,
       suggestImprovements = executionConfig?.suggest_improvements ?: true,
       identifyGaps = executionConfig?.identify_gaps ?: true,
@@ -167,6 +208,12 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
                 |**Subject Task**: `$subjectTaskId`
                 |
                 |**Reflection Aspects**: $aspectsText
+         |
+         |**Include File Context**: ${executionConfig?.include_file_context ?: true}
+         |
+         |**Input Files**: ${executionConfig?.input_files?.joinToString(", ") ?: "None"}
+         |
+         |**Reflection Questions**: ${executionConfig?.reflection_questions?.size ?: 0} questions
                 |
                 |**Suggest Improvements**: ${executionConfig?.suggest_improvements ?: true}
                 |
@@ -177,6 +224,18 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         ui = overviewTask.ui
       )
     )
+    transcript?.let { stream ->
+      stream.write("\n## Reflection Parameters\n\n".toByteArray())
+      stream.write("- **Subject Task**: `$subjectTaskId`\n".toByteArray())
+      stream.write("- **Reflection Aspects**: $aspectsText\n".toByteArray())
+      stream.write("- **Include File Context**: ${executionConfig?.include_file_context ?: true}\n".toByteArray())
+      stream.write("- **Input Files**: ${executionConfig?.input_files?.joinToString(", ") ?: "None"}\n".toByteArray())
+      stream.write("- **Reflection Questions**: ${executionConfig?.reflection_questions?.size ?: 0}\n".toByteArray())
+      stream.write("- **Suggest Improvements**: ${executionConfig?.suggest_improvements ?: true}\n".toByteArray())
+      stream.write("- **Identify Gaps**: ${executionConfig?.identify_gaps ?: true}\n".toByteArray())
+      stream.write("- **Evaluate Confidence**: ${executionConfig?.evaluate_confidence ?: true}\n\n".toByteArray())
+    }
+
     overviewTask.safeComplete("", log)
     // Step 4: Create agent and perform reflection
     val reflectionTask = task.ui.newTask()
@@ -193,6 +252,12 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
     try {
       val reflectionResult: String = chatAgent.answer(listOf(prompt))
+      transcript?.let { stream ->
+        writeToTranscript(stream, "\n## Reflection Analysis\n\n")
+        stream.write(reflectionResult.toByteArray())
+        stream.write("\n\n".toByteArray())
+      }
+
 
       reflectionTask.add(
         MarkdownUtil.renderMarkdown(
@@ -211,6 +276,14 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
 
       val summary = generateReflectionSummary(reflectionResult)
+      transcript?.let { stream ->
+        writeToTranscript(stream, "\n## Summary\n\n")
+        stream.write(summary.toByteArray())
+        stream.write("\n\n---\n\n".toByteArray())
+        stream.write("**Duration**: ${System.currentTimeMillis() - startTime}ms\n".toByteArray())
+        stream.write("**Status**: Completed successfully\n".toByteArray())
+      }
+
 
       summaryTask.safeComplete(
         MarkdownUtil.renderMarkdown(
@@ -232,10 +305,21 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
       val duration = System.currentTimeMillis() - startTime
       log.info("MetaCognitiveReflection task completed successfully for subject_task_id: $subjectTaskId in ${duration}ms. Summary length: ${summary.length}")
-      resultFn(summary)
+      val finalOutput = "Meta-cognitive reflection completed. View detailed analysis: <a href='$transcriptLink' target='_blank'>transcript.md</a> <a href='${
+        transcriptLink.removeSuffix(".md")
+      }.html' target='_blank'>html</a> <a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>\n\n$summary"
+      resultFn(finalOutput)
+      transcript?.close()
+
 
     } catch (e: Exception) {
       log.error("Error during meta-cognitive reflection", e)
+      transcript?.let { stream ->
+        stream.write("\n## ❌ Error\n\n".toByteArray())
+        stream.write("```\n${e.message}\n```\n".toByteArray())
+      }
+      transcript?.close()
+
       task.error(e)
       reflectionTask.error(e)
       task.add(
@@ -258,9 +342,60 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
     }
   }
 
+  private fun initializeTranscript(task: SessionTask): Pair<String, FileOutputStream?> {
+    val (link, file) = task.createFile("transcript.md")
+    val markdownTranscript = file?.outputStream()
+    task.add(
+      MarkdownUtil.renderMarkdown(
+        "Writing transcript to <a href='$link' target='_blank'>transcript.md</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>",
+        ui = task.ui
+      )
+    )
+    return Pair(link, markdownTranscript)
+  }
+
+  private fun writeToTranscript(stream: FileOutputStream, content: String) {
+    try {
+      stream.write(content.toByteArray(Charsets.UTF_8))
+      stream.flush()
+    } catch (e: Exception) {
+      log.error("Failed to write to transcript", e)
+    }
+  }
+
+  private fun getInputFileContext(inputFiles: List<String>): String {
+    if (inputFiles.isEmpty()) return ""
+    return inputFiles.flatMap { pattern: String ->
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      }
+    }.filter { it.isFile && it.exists() }
+      .distinct()
+      .sortedBy { it }
+      .joinToString("\n\n") { relativePath ->
+        val file = root.toFile().resolve(relativePath)
+        try {
+          val content = file.readText()
+          "# $relativePath\n\n```\n$content\n```"
+        } catch (e: Throwable) {
+          log.warn("Error reading file: $relativePath", e)
+          ""
+        }
+      }
+  }
+
+
   private fun buildSystemPrompt(): String {
     return """
-You are a meta-cognitive analyst specializing in critical thinking and reasoning evaluation.
+ You are a meta-cognitive analyst specializing in critical thinking and reasoning evaluation.
 Your role is to provide thoughtful, constructive reflection on reasoning processes.
 You identify strengths, weaknesses, assumptions, biases, and opportunities for improvement.
 You are thorough, objective, and focused on enhancing the quality of thinking.
@@ -271,11 +406,29 @@ You are thorough, objective, and focused on enhancing the quality of thinking.
     subjectTaskId: String,
     subjectTaskResult: String,
     priorContext: String,
+    fileContext: String,
+    messagesContext: String,
+    questionsContext: String,
     reflectionAspects: List<String>,
     suggestImprovements: Boolean,
     identifyGaps: Boolean,
     evaluateConfidence: Boolean
   ): String {
+
+    if (fileContext.isNotBlank()) """
+## File Context:
+The following files provide additional context for the reflection:
+$fileContext
+""" else ""
+    if (messagesContext.isNotBlank()) """
+## Messages Context:
+The following messages were provided as input:
+$messagesContext
+""" else ""
+    if (questionsContext.isNotBlank()) """
+$questionsContext
+""" else ""
+
     val contextBlock = if (priorContext.isNotBlank()) """
 ## Overall Context from Prior Steps:
 The following context was available to the task being analyzed. Consider this when evaluating its reasoning.

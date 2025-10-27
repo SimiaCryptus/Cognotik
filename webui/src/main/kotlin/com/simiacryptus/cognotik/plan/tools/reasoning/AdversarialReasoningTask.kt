@@ -1,14 +1,16 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.actors.ChatAgent
+import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -54,6 +56,8 @@ class AdversarialReasoningTask(
     val suggest_mitigations: Boolean = true,
     @Description("Related files or code to analyze (glob patterns)")
     val related_files: List<String>? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     @Description("Specific assumptions to challenge")
     val challenge_assumptions: List<String>? = null,
     @Description("Maximum number of vulnerabilities to identify per vector")
@@ -67,28 +71,26 @@ class AdversarialReasoningTask(
       ?: "Red team analysis of '$target_system' with ${attack_vectors?.size ?: 0} attack vectors",
     task_dependencies = task_dependencies?.toMutableList(),
     state = state
-  ) , ValidatedObject {
+  ), ValidatedObject {
     override fun validate(): String? {
       if (target_system.isNullOrBlank()) {
         return "AdversarialReasoningTaskExecutionConfigData: target_system is required"
       }
-      
-      val validVectors = setOf("security", "performance", "logic", "business", "privacy", "compliance")
+
       attack_vectors?.forEach { vector ->
-        if (vector.lowercase() !in validVectors) {
-          return "AdversarialReasoningTaskExecutionConfigData: invalid attack_vector '$vector'. Must be one of: ${validVectors.joinToString(", ")}"
+        if (vector.isBlank()) {
+          return "AdversarialReasoningTaskExecutionConfigData: invalid attack_vector '$vector'.}"
         }
       }
-      
-      val validCapabilities = setOf("basic", "intermediate", "advanced", "nation-state")
-      if (adversary_capability.lowercase() !in validCapabilities) {
-        return "AdversarialReasoningTaskExecutionConfigData: invalid adversary_capability '$adversary_capability'. Must be one of: ${validCapabilities.joinToString(", ")}"
+
+      if (adversary_capability.isBlank()) {
+        return "AdversarialReasoningTaskExecutionConfigData: adversary_capability cannot be blank"
       }
-      
+
       if (max_vulnerabilities_per_vector !in 1..20) {
         return "AdversarialReasoningTaskExecutionConfigData: max_vulnerabilities_per_vector must be between 1 and 20"
       }
-      
+
       return ValidatedObject.validateFields(this)
     }
   }
@@ -118,6 +120,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting AdversarialReasoningTask for target: '${executionConfig?.target_system}'")
+    var transcriptStream: FileOutputStream? = null
 
     val targetSystem = executionConfig?.target_system
     if (targetSystem.isNullOrBlank()) {
@@ -137,9 +140,14 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     val challengeAssumptions = executionConfig.challenge_assumptions
     val maxVulnerabilitiesPerVector = executionConfig.max_vulnerabilities_per_vector.coerceIn(1, 20)
 
+    // Initialize transcript
+    transcriptStream = initializeTranscript(task)
+    transcriptStream?.let { stream ->
+      writeTranscriptHeader(stream, targetSystem, attackVectors, adversaryCapability, generateExploits, suggestMitigations)
+    }
     log.info(
       "Configuration: vectors=${attackVectors.size}, capability=$adversaryCapability, " +
-        "exploits=$generateExploits, mitigations=$suggestMitigations"
+          "exploits=$generateExploits, mitigations=$suggestMitigations"
     )
 
     val ui = task.ui
@@ -148,6 +156,18 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
     // Overview tab
     val overviewTask = ui.newTask(false)
     tabs["Overview"] = overviewTask.placeholder
+    transcriptStream?.let {
+      it.write("# 🔴 Adversarial Reasoning / Red Team Analysis\n\n".toByteArray())
+      it.write("**Target System:** $targetSystem\n\n".toByteArray())
+      it.write("**Attack Vectors:** ${attackVectors.joinToString(", ")}\n\n".toByteArray())
+      it.write("**Adversary Capability:** $adversaryCapability\n\n".toByteArray())
+      it.write("**Generate Exploits:** ${if (generateExploits) "⚠️ Yes" else "No"}\n\n".toByteArray())
+      it.write("**Suggest Mitigations:** ${if (suggestMitigations) "Yes" else "No"}\n\n".toByteArray())
+      it.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
+      it.write("---\n\n".toByteArray())
+      it.flush()
+    }
+
 
     val overviewContent = buildString {
       appendLine("# 🔴 Adversarial Reasoning / Red Team Analysis")
@@ -191,9 +211,17 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
       }
     } else ""
 
-    if (priorContext.isNotBlank() || fileContext.isNotBlank()) {
+    val inputFileContent = getInputFileCode()
+    if (priorContext.isNotBlank() || fileContext.isNotBlank() || inputFileContent.isNotBlank()) {
       val contextTask = ui.newTask(false)
       tabs["Context"] = contextTask.placeholder
+      transcriptStream?.let {
+        it.write("## Context for Analysis\n\n".toByteArray())
+        if (priorContext.isNotBlank()) {
+          it.write("### Prior Task Results\n\n".toByteArray())
+          it.write("${priorContext.truncateForDisplay()}\n\n".toByteArray())
+        }
+      }
       contextTask.add(
         buildString {
           appendLine("# Context for Analysis")
@@ -202,6 +230,12 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             appendLine("## Prior Task Results")
             appendLine()
             appendLine(priorContext.truncateForDisplay())
+            appendLine()
+          }
+          if (inputFileContent.isNotBlank()) {
+            appendLine("## Input Files")
+            appendLine()
+            appendLine(inputFileContent)
             appendLine()
           }
           if (fileContext.isNotBlank()) {
@@ -236,6 +270,13 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         val vectorTask = ui.newTask(false)
         tabs["Vector: ${vector.capitalize()}"] = vectorTask.placeholder
+        transcriptStream?.let {
+          it.write("## Attack Vector: ${vector.capitalize()}\n\n".toByteArray())
+          it.write("**Adversary Capability:** $adversaryCapability\n\n".toByteArray())
+          it.write("---\n\n".toByteArray())
+          it.flush()
+        }
+
 
         vectorTask.add(
           buildString {
@@ -282,6 +323,12 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         // Perform analysis
         val analysisResult = adversarialAgent.answer(listOf(analysisPrompt))
+        transcriptStream?.let {
+          it.write("### Analysis Results\n\n".toByteArray())
+          it.write("$analysisResult\n\n".toByteArray())
+          it.flush()
+        }
+
 
         vectorTask.add(
           buildString {
@@ -306,6 +353,13 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         val vectorTime = System.currentTimeMillis() - vectorStartTime
         vectorAnalysisTimes[vector] = vectorTime
+        transcriptStream?.let {
+          it.write("**Vulnerabilities Found:** ${parsedVulnerabilities.size}\n\n".toByteArray())
+          it.write("**Analysis Time:** ${vectorTime / 1000.0}s\n\n".toByteArray())
+          it.write("---\n\n".toByteArray())
+          it.flush()
+        }
+
 
         vectorTask.add(
           buildString {
@@ -351,6 +405,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
           }.renderMarkdown
         )
         task.update()
+        transcriptStream?.let {
+          it.write("## 🛡️ Mitigation Strategies\n\n".toByteArray())
+        }
+
 
         val mitigationAgent = createMitigationAgent(api)
         val mitigationPrompt = buildMitigationPrompt(
@@ -360,6 +418,11 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         )
 
         val mitigations = mitigationAgent.answer(listOf(mitigationPrompt))
+        transcriptStream?.let {
+          it.write("$mitigations\n\n".toByteArray())
+          it.flush()
+        }
+
 
         mitigationTask.add(
           buildString {
@@ -408,6 +471,12 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         failureModes = allFailureModes,
         totalTime = System.currentTimeMillis() - startTime
       )
+      transcriptStream?.let {
+        it.write("## 📊 Executive Summary\n\n".toByteArray())
+        it.write("$summary\n\n".toByteArray())
+        it.flush()
+      }
+
 
       summaryTask.add(
         buildString {
@@ -425,6 +494,17 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
       // Final overview update
       val totalTime = System.currentTimeMillis() - startTime
+      transcriptStream?.let {
+        it.write("---\n\n".toByteArray())
+        it.write("## ✅ Analysis Complete\n\n".toByteArray())
+        it.write("**Total Time:** ${totalTime / 1000.0}s\n\n".toByteArray())
+        it.write("**Total Vulnerabilities:** ${allVulnerabilities.size}\n\n".toByteArray())
+        it.write("**Edge Cases Identified:** ${allEdgeCases.size}\n\n".toByteArray())
+        it.write("**Failure Modes:** ${allFailureModes.size}\n\n".toByteArray())
+        it.flush()
+        it.close()
+      }
+
       overviewTask.add(
         buildString {
           appendLine()
@@ -460,7 +540,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         appendLine("- **Critical/High Severity:** ${allVulnerabilities.count { it.severity in listOf("critical", "high") }}")
         appendLine("- **Attack Vectors:** ${attackVectors.joinToString(", ")}")
         appendLine()
-        
+
         if (allVulnerabilities.isNotEmpty()) {
           appendLine("## Top Vulnerabilities")
           appendLine()
@@ -473,7 +553,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
               appendLine()
             }
         }
-        
+
         appendLine("## Statistics")
         appendLine("- Analysis Time: ${totalTime / 1000.0}s")
         appendLine("- Vectors Analyzed: ${attackVectors.size}")
@@ -488,13 +568,21 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
       log.info(
         "AdversarialReasoningTask completed: total_time=${totalTime}ms, " +
-          "vectors=${attackVectors.size}, vulnerabilities=${allVulnerabilities.size}, " +
-          "edge_cases=${allEdgeCases.size}, failure_modes=${allFailureModes.size}"
+            "vectors=${attackVectors.size}, vulnerabilities=${allVulnerabilities.size}, " +
+            "edge_cases=${allEdgeCases.size}, failure_modes=${allFailureModes.size}"
       )
 
       resultFn(conciseResult)
 
     } catch (e: Exception) {
+      transcriptStream?.let {
+        it.write("\n\n---\n\n".toByteArray())
+        it.write("## ❌ Error Occurred\n\n".toByteArray())
+        it.write("**Error:** ${e.message}\n\n".toByteArray())
+        it.write("**Type:** ${e.javaClass.simpleName}\n\n".toByteArray())
+        it.flush()
+        it.close()
+      }
       log.error("Error during adversarial reasoning", e)
       task.error(e)
 
@@ -529,8 +617,115 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         }
       }
       resultFn(errorOutput)
+    } finally {
+      transcriptStream?.close()
+      log.debug("Transcript stream closed")
     }
   }
+
+  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+    return try {
+      val (link, file) = Pair(task.linkTo("adversarial_transcript.md"), task.resolve("adversarial_transcript.md"))
+      val transcriptStream = file?.outputStream()
+      task.complete(
+        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+      )
+      log.info("Initialized transcript file: $link")
+      transcriptStream
+    } catch (e: Exception) {
+      log.error("Failed to initialize transcript", e)
+      null
+    }
+  }
+
+  private fun writeTranscriptHeader(
+    stream: FileOutputStream,
+    targetSystem: String,
+    attackVectors: List<String>,
+    adversaryCapability: String,
+    generateExploits: Boolean,
+    suggestMitigations: Boolean
+  ) {
+    try {
+      val header = buildString {
+        appendLine("# 🔴 Adversarial Reasoning / Red Team Analysis Transcript")
+        appendLine()
+        appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+        appendLine()
+        appendLine("**Target System:** $targetSystem")
+        appendLine("**Attack Vectors:** ${attackVectors.joinToString(", ")}")
+        appendLine("**Adversary Capability:** $adversaryCapability")
+        appendLine("**Generate Exploits:** ${if (generateExploits) "⚠️ Yes" else "No"}")
+        appendLine("**Suggest Mitigations:** ${if (suggestMitigations) "Yes" else "No"}")
+        appendLine()
+        appendLine("---")
+        appendLine()
+      }
+      stream.write(header.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+      stream.flush()
+    } catch (e: Exception) {
+      log.error("Failed to write transcript header", e)
+    }
+  }
+
+  private fun getInputFileCode(): String = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .filterNotNull()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
+
+  private fun isTextFile(file: java.io.File): Boolean {
+    val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",
+      "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
+    )
+    return textExtensions.contains(file.extension.lowercase())
+  }
+
+  private fun extractDocumentContent(file: java.io.File): String = try {
+    file.getReader().use { reader ->
+      when (reader) {
+        is com.simiacryptus.cognotik.input.PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+        else -> reader.getText()
+      }
+    }
+  } catch (e: Exception) {
+    log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+    try {
+      file.readText()
+    } catch (e2: Exception) {
+      "Error reading file: ${e2.message}"
+    }
+  }
+
 
   private fun createAdversarialAgent(
     vector: String,
@@ -612,24 +807,24 @@ Consider both immediate fixes and long-term architectural improvements.
       appendLine("## Target System")
       appendLine(targetSystem)
       appendLine()
-      
+
       if (priorContext.isNotBlank()) {
         appendLine("## System Context")
         appendLine(priorContext.truncateForDisplay(5000))
         appendLine()
       }
-      
+
       if (fileContext.isNotBlank()) {
         appendLine(fileContext)
         appendLine()
       }
-      
+
       appendLine("## Attack Vector Focus")
       appendLine("**Vector:** $vector")
       appendLine()
       appendLine("**Your Capability Level:** $adversaryCapability")
       appendLine()
-      
+
       if (!challengeAssumptions.isNullOrEmpty()) {
         appendLine("## Assumptions to Challenge")
         challengeAssumptions.forEach { assumption ->
@@ -637,7 +832,7 @@ Consider both immediate fixes and long-term architectural improvements.
         }
         appendLine()
       }
-      
+
       appendLine("## Analysis Requirements")
       appendLine()
       appendLine("Identify up to $maxVulnerabilities vulnerabilities in the '$vector' category.")
@@ -648,11 +843,11 @@ Consider both immediate fixes and long-term architectural improvements.
       appendLine("3. **Description**: Clear explanation of the weakness")
       appendLine("4. **Attack Scenario**: How an attacker would exploit this")
       appendLine("5. **Potential Impact**: What damage could be done")
-      
+
       if (generateExploits) {
         appendLine("6. **Exploit Steps**: Detailed technical steps to exploit")
       }
-      
+
       appendLine()
       appendLine("Also identify:")
       appendLine("- **Edge Cases**: Unusual inputs or conditions that could cause problems")
@@ -684,7 +879,7 @@ Consider both immediate fixes and long-term architectural improvements.
       appendLine()
       appendLine("## Identified Vulnerabilities")
       appendLine()
-      
+
       vulnerabilities
         .sortedByDescending { severityToInt(it.severity) }
         .forEach { vuln ->
@@ -692,7 +887,7 @@ Consider both immediate fixes and long-term architectural improvements.
           appendLine(vuln.description)
           appendLine()
         }
-      
+
       appendLine("## Required Mitigations")
       appendLine()
       appendLine("For each vulnerability category, provide:")
@@ -715,15 +910,15 @@ Consider both immediate fixes and long-term architectural improvements.
 
   private fun parseVulnerabilities(analysisResult: String, vector: String): List<VulnerabilityReport> {
     val vulnerabilities = mutableListOf<VulnerabilityReport>()
-    
+
     // Simple parsing - look for severity indicators and structure
     val lines = analysisResult.lines()
     var currentVuln: MutableMap<String, String>? = null
     var currentSection = ""
-    
+
     lines.forEach { line ->
       val trimmed = line.trim()
-      
+
       // Detect severity markers
       when {
         trimmed.matches(Regex(".*\\b(critical|high|medium|low)\\b.*", RegexOption.IGNORE_CASE)) -> {
@@ -739,7 +934,7 @@ Consider both immediate fixes and long-term architectural improvements.
               )
             )
           }
-          
+
           // Start new vulnerability
           currentVuln = mutableMapOf()
           val severityMatch = Regex("\\b(critical|high|medium|low)\\b", RegexOption.IGNORE_CASE)
@@ -747,12 +942,12 @@ Consider both immediate fixes and long-term architectural improvements.
           currentVuln["severity"] = severityMatch?.value?.lowercase() ?: "medium"
           currentVuln["category"] = trimmed.replace(Regex("\\*+|#+|severity:?|\\b(critical|high|medium|low)\\b", RegexOption.IGNORE_CASE), "").trim()
         }
-        
+
         trimmed.matches(Regex("\\*\\*?(description|attack|scenario|impact|exploit).*", RegexOption.IGNORE_CASE)) -> {
           currentSection = Regex("(description|attack|scenario|impact|exploit)", RegexOption.IGNORE_CASE)
             .find(trimmed)?.value?.lowercase() ?: ""
         }
-        
+
         currentVuln != null && trimmed.isNotEmpty() && !trimmed.startsWith("#") && !trimmed.startsWith("*") -> {
           when (currentSection) {
             "description" -> currentVuln["description"] = (currentVuln["description"] ?: "") + " " + trimmed
@@ -762,7 +957,7 @@ Consider both immediate fixes and long-term architectural improvements.
         }
       }
     }
-    
+
     // Save last vulnerability
     currentVuln?.let { vuln ->
       vulnerabilities.add(
@@ -775,7 +970,7 @@ Consider both immediate fixes and long-term architectural improvements.
         )
       )
     }
-    
+
     return vulnerabilities
   }
 
@@ -783,16 +978,18 @@ Consider both immediate fixes and long-term architectural improvements.
     val edgeCases = mutableListOf<String>()
     val lines = analysisResult.lines()
     var inEdgeCaseSection = false
-    
+
     lines.forEach { line ->
       val trimmed = line.trim()
       when {
         trimmed.matches(Regex(".*edge\\s*case.*", RegexOption.IGNORE_CASE)) -> {
           inEdgeCaseSection = true
         }
+
         trimmed.matches(Regex(".*failure\\s*mode.*", RegexOption.IGNORE_CASE)) -> {
           inEdgeCaseSection = false
         }
+
         inEdgeCaseSection && (trimmed.startsWith("-") || trimmed.startsWith("*") || trimmed.matches(Regex("^\\d+\\."))) -> {
           val cleaned = trimmed.removePrefix("-").removePrefix("*").replace(Regex("^\\d+\\."), "").trim()
           if (cleaned.length > 10) {
@@ -801,7 +998,7 @@ Consider both immediate fixes and long-term architectural improvements.
         }
       }
     }
-    
+
     return edgeCases
   }
 
@@ -809,16 +1006,18 @@ Consider both immediate fixes and long-term architectural improvements.
     val failureModes = mutableListOf<String>()
     val lines = analysisResult.lines()
     var inFailureSection = false
-    
+
     lines.forEach { line ->
       val trimmed = line.trim()
       when {
         trimmed.matches(Regex(".*failure\\s*mode.*", RegexOption.IGNORE_CASE)) -> {
           inFailureSection = true
         }
+
         trimmed.startsWith("#") && inFailureSection -> {
           inFailureSection = false
         }
+
         inFailureSection && (trimmed.startsWith("-") || trimmed.startsWith("*") || trimmed.matches(Regex("^\\d+\\."))) -> {
           val cleaned = trimmed.removePrefix("-").removePrefix("*").replace(Regex("^\\d+\\."), "").trim()
           if (cleaned.length > 10) {
@@ -827,7 +1026,7 @@ Consider both immediate fixes and long-term architectural improvements.
         }
       }
     }
-    
+
     return failureModes
   }
 
@@ -844,7 +1043,7 @@ Consider both immediate fixes and long-term architectural improvements.
     val highCount = vulnerabilities.count { it.severity == "high" }
     val mediumCount = vulnerabilities.count { it.severity == "medium" }
     val lowCount = vulnerabilities.count { it.severity == "low" }
-    
+
     return buildString {
       appendLine("## Overview")
       appendLine()
@@ -859,17 +1058,17 @@ Consider both immediate fixes and long-term architectural improvements.
       appendLine("| 🟡 Medium | $mediumCount |")
       appendLine("| 🟢 Low | $lowCount |")
       appendLine()
-      
+
       val overallRisk = when {
         criticalCount > 0 -> "🔴 **CRITICAL** - Immediate action required"
         highCount > 2 -> "🟠 **HIGH** - Urgent attention needed"
         highCount > 0 || mediumCount > 3 -> "🟡 **MEDIUM** - Should be addressed soon"
         else -> "🟢 **LOW** - Monitor and improve over time"
       }
-      
+
       appendLine("**Overall Risk Level:** $overallRisk")
       appendLine()
-      
+
       appendLine("## Attack Surface Analysis")
       appendLine()
       appendLine("**Vectors Analyzed:** ${attackVectors.joinToString(", ")}")
@@ -878,7 +1077,7 @@ Consider both immediate fixes and long-term architectural improvements.
       appendLine()
       appendLine("**Failure Modes:** ${failureModes.size}")
       appendLine()
-      
+
       if (vulnerabilities.isNotEmpty()) {
         appendLine("## Top Concerns")
         appendLine()
@@ -891,7 +1090,7 @@ Consider both immediate fixes and long-term architectural improvements.
             appendLine()
           }
       }
-      
+
       appendLine("## Recommendations")
       appendLine()
       when {
@@ -900,18 +1099,20 @@ Consider both immediate fixes and long-term architectural improvements.
           appendLine("2. **Urgent:** Implement temporary mitigations for high-severity issues")
           appendLine("3. **Short-term:** Develop comprehensive remediation plan")
         }
+
         highCount > 0 -> {
           appendLine("1. **Priority:** Address high-severity vulnerabilities within 1-2 weeks")
           appendLine("2. **Planning:** Schedule remediation for medium-severity issues")
           appendLine("3. **Monitoring:** Implement detection for identified attack patterns")
         }
+
         else -> {
           appendLine("1. **Continuous Improvement:** Address identified issues in regular sprint cycles")
           appendLine("2. **Monitoring:** Implement logging and alerting for edge cases")
           appendLine("3. **Testing:** Add test coverage for identified failure modes")
         }
       }
-      
+
       appendLine()
       appendLine("---")
       appendLine()

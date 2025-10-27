@@ -1,15 +1,14 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.actors.ChatAgent
-import com.simiacryptus.cognotik.actors.ParsedAgent
+import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.getReader
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -22,6 +21,59 @@ class GameTheoryTask(
 ) {
   val maxOutputLengthPerField = 10000
 
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
+    val GameTheory = TaskType(
+      "GameTheory",
+      GameTheoryTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Analyze strategic interactions using game theory",
+      """
+              Performs comprehensive game theory analysis of strategic situations.
+              <ul>
+                <li>Analyzes game structure and player strategies</li>
+                <li>Constructs payoff matrices for strategy combinations</li>
+                <li>Identifies Nash equilibria (pure and mixed strategies)</li>
+                <li>Analyzes dominant and dominated strategies</li>
+                <li>Finds Pareto optimal outcomes</li>
+                <li>Supports repeated game analysis with trigger strategies</li>
+                <li>Provides strategic recommendations for each player</li>
+                <li>Handles cooperative, non-cooperative, zero-sum, and sequential games</li>
+                <li>Useful for competitive analysis, negotiation, and strategic planning</li>
+              </ul>
+            """
+    )
+    private val textExtensions = setOf(
+      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs",
+      "c", "cpp", "h", "hpp", "css", "html", "xml", "json", "yaml",
+      "yml", "properties", "gradle", "maven"
+    )
+
+    fun isTextFile(file: java.io.File): Boolean {
+      return textExtensions.contains(file.extension.lowercase())
+    }
+
+    fun extractDocumentContent(file: java.io.File) = try {
+      file.getReader().use { reader ->
+        when (reader) {
+          is com.simiacryptus.cognotik.input.PaginatedDocumentReader ->
+            reader.getText(0, reader.getPageCount())
+
+          else -> reader.getText()
+        }
+      }
+    } catch (e: Exception) {
+      log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+      try {
+        file.readText()
+      } catch (e2: Exception) {
+        "Error reading file: ${e2.message}"
+      }
+    }
+
+
+  }
+
   data class GameAnalysis(
     val game_type: String? = null,
     val players: List<String>? = null,
@@ -32,6 +84,8 @@ class GameTheoryTask(
     val pareto_optimal_outcomes: List<String>? = null,
     val recommendations: Map<String, String>? = null
   )
+
+  protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
 
   class GameTheoryTaskExecutionConfigData(
     @Description("The strategic situation or game to analyze")
@@ -58,6 +112,8 @@ class GameTheoryTask(
     val iterations: Int = 10,
     @Description("Additional context or constraints")
     val additional_context: String? = null,
+    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+    val input_files: List<String>? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -80,9 +136,8 @@ class GameTheoryTask(
       if (game_type.isNullOrBlank()) {
         return "game_type must not be null or blank"
       }
-      val validGameTypes = setOf("cooperative", "non-cooperative", "zero-sum", "repeated", "sequential")
-      if (game_type !in validGameTypes) {
-        return "game_type must be one of: ${validGameTypes.joinToString(", ")}"
+      if (game_type.isBlank()) {
+        return "game_type must not be blank"
       }
       if (iterations < 1) {
         return "iterations must be at least 1"
@@ -123,6 +178,7 @@ GameTheory - Analyze strategic interactions using game theory
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting GameTheory task for scenario: ${executionConfig?.game_scenario}")
+    val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
 
     val gameScenario = executionConfig?.game_scenario
     if (gameScenario.isNullOrBlank()) {
@@ -142,9 +198,9 @@ GameTheory - Analyze strategic interactions using game theory
       return
     }
 
-    val toInput = { it: String -> listOf(it) }
     val ui = task.ui
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+    val transcript = transcript(task)
     // Create tabbed display for organized output
     val tabs = TabbedDisplay(task)
     // Overview tab
@@ -153,6 +209,9 @@ GameTheory - Analyze strategic interactions using game theory
 
 
     try {
+      transcript?.write("# Game Theory Analysis\n\n".toByteArray())
+      transcript?.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
+
 
       var overviewTaskStatus = overviewTask.add(
         MarkdownUtil.renderMarkdown(
@@ -167,6 +226,18 @@ GameTheory - Analyze strategic interactions using game theory
             |**Status:** 🔄 Initializing analysis...
         """.trimMargin(), ui = ui
         )
+      )
+      transcript?.write(
+        """
+        |## Game Theory Analysis
+        |
+        |**Scenario:** $gameScenario
+        |
+        |**Players:** ${players.joinToString(", ")}
+        |
+        |**Game Type:** ${executionConfig.game_type}
+        |
+        |""".trimMargin().toByteArray()
       )
       task.update()
 
@@ -190,6 +261,14 @@ GameTheory - Analyze strategic interactions using game theory
             |$priorContext
             """.trimMargin(), ui = ui
           )
+        )
+        transcript?.write(
+          """
+          |## Context from Previous Tasks
+          |
+          |$priorContext
+          |
+          |""".trimMargin().toByteArray()
         )
         task.update()
       }
@@ -239,6 +318,15 @@ GameTheory - Analyze strategic interactions using game theory
 
       val structureAnalysis = chatAgent.answer(toInput(structurePrompt))
       log.info("Structure analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${structureAnalysis.length} characters")
+      transcript?.write(
+        """
+        |## Game Structure Analysis
+        |
+        |$structureAnalysis
+        |
+        |""".trimMargin().toByteArray()
+      )
+
 
       structureLoading?.clear()
       structureTask.add(
@@ -282,6 +370,15 @@ Generate the payoff matrix now:
 
         payoffMatrix = chatAgent.answer(toInput(payoffPrompt))
         log.info("Payoff matrix generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${payoffMatrix.length} characters")
+        transcript?.write(
+          """
+          |## Payoff Matrix
+          |
+          |$payoffMatrix
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         payoffLoading?.clear()
         payoffTask.add(
@@ -329,6 +426,15 @@ Generate the Nash equilibrium analysis now:
 
         nashEquilibria = chatAgent.answer(toInput(nashPrompt))
         log.info("Nash equilibria analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${nashEquilibria.length} characters")
+        transcript?.write(
+          """
+          |## Nash Equilibria Analysis
+          |
+          |$nashEquilibria
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         nashLoading?.clear()
         nashTask.add(
@@ -373,6 +479,15 @@ Generate the dominant strategy analysis now:
 
         dominantStrategies = chatAgent.answer(toInput(dominantPrompt))
         log.info("Dominant strategies analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${dominantStrategies.length} characters")
+        transcript?.write(
+          """
+          |## Dominant Strategies Analysis
+          |
+          |$dominantStrategies
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         dominantLoading?.clear()
         dominantTask.add(
@@ -417,6 +532,15 @@ Generate the Pareto optimality analysis now:
 
         paretoOptimal = chatAgent.answer(toInput(paretoPrompt))
         log.info("Pareto optimality analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${paretoOptimal.length} characters")
+        transcript?.write(
+          """
+          |## Pareto Optimality Analysis
+          |
+          |$paretoOptimal
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         paretoLoading?.clear()
         paretoTask.add(
@@ -462,6 +586,15 @@ Generate the repeated game analysis now:
 
         repeatedGameAnalysis = chatAgent.answer(toInput(repeatedPrompt))
         log.info("Repeated game analysis completed in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${repeatedGameAnalysis.length} characters")
+        transcript?.write(
+          """
+          |## Repeated Game Analysis
+          |
+          |$repeatedGameAnalysis
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         repeatedLoading?.clear()
         repeatedTask.add(
@@ -510,6 +643,15 @@ Generate the strategic recommendations now:
 
         recommendations = chatAgent.answer(toInput(recommendPrompt))
         log.info("Recommendations generated in ${System.currentTimeMillis() - stepStartTime}ms. Length: ${recommendations.length} characters")
+        transcript?.write(
+          """
+          |## Strategic Recommendations
+          |
+          |$recommendations
+          |
+          |""".trimMargin().toByteArray()
+        )
+
 
         recommendLoading?.clear()
         recommendTask.add(
@@ -561,6 +703,30 @@ Provide this in a clear, structured format.
 
       val gameAnalysis = parsedAgent.answer(toInput(summaryPrompt)).obj
       log.info("Structured summary generated in ${System.currentTimeMillis() - stepStartTime}ms")
+      transcript?.write(
+        """
+        |## Game Theory Analysis Summary
+        |
+        |### Game Type
+        |${gameAnalysis.game_type ?: "Not specified"}
+        |
+        |### Players
+        |${gameAnalysis.players?.joinToString(", ") ?: "Not specified"}
+        |
+        |### Nash Equilibria
+        |${gameAnalysis.nash_equilibria?.joinToString("\n") { "- $it" } ?: "None identified"}
+        |
+        |### Dominant Strategies
+        |${gameAnalysis.dominant_strategies?.entries?.joinToString("\n") { "- **${it.key}**: ${it.value}" } ?: "None identified"}
+        |
+        |### Pareto Optimal Outcomes
+        |${gameAnalysis.pareto_optimal_outcomes?.joinToString("\n") { "- $it" } ?: "None identified"}
+        |
+        |### Strategic Recommendations
+        |${gameAnalysis.recommendations?.entries?.joinToString("\n") { "- **${it.key}**: ${it.value}" } ?: "None provided"}
+        |
+        |""".trimMargin().toByteArray())
+
 
       summaryLoading?.clear()
       summaryTask.add(
@@ -655,6 +821,10 @@ Provide this in a clear, structured format.
       val duration = System.currentTimeMillis() - startTime
       val summary = "Game theory analysis completed for scenario: $gameScenario"
       log.info("$summary (duration: ${duration}ms, players: ${players.size}, game_type: ${executionConfig.game_type})")
+      transcript?.write("\n---\n".toByteArray())
+      transcript?.write("**Analysis completed in ${duration / 1000}s**\n".toByteArray())
+      transcript?.write("**Finished:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
+      transcript?.close()
 
       task.safeComplete(summary, log)
       resultFn(finalResult)
@@ -674,11 +844,44 @@ Provide this in a clear, structured format.
         )
       )
       task.update()
+      transcript?.write("\n---\n**ERROR:** ${e.message}\n".toByteArray())
+      transcript?.close()
       task.error(e)
       task.safeComplete("Analysis failed: ${e.message}", log)
       resultFn("ERROR: Game theory analysis failed - ${e.message}")
     }
   }
+
+  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+    .flatMap { pattern: String ->
+      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile()) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          matcher.matches(root.relativize(it.toPath())) -> true
+          it.isDirectory -> true
+          else -> false
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        val content = if (!isTextFile(file)) {
+          extractDocumentContent(file)
+        } else {
+          codeFiles[file.toPath()] ?: file.readText()
+        }
+        "# $relativePath\n\n```\n$content\n```"
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
 
   private fun buildStructurePrompt(
     gameScenario: String,
@@ -743,27 +946,14 @@ Generate the game structure analysis now:
         """.trimIndent()
   }
 
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
-    val GameTheory = TaskType(
-      "GameTheory",
-      GameTheoryTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Analyze strategic interactions using game theory",
-      """
-              Performs comprehensive game theory analysis of strategic situations.
-              <ul>
-                <li>Analyzes game structure and player strategies</li>
-                <li>Constructs payoff matrices for strategy combinations</li>
-                <li>Identifies Nash equilibria (pure and mixed strategies)</li>
-                <li>Analyzes dominant and dominated strategies</li>
-                <li>Finds Pareto optimal outcomes</li>
-                <li>Supports repeated game analysis with trigger strategies</li>
-                <li>Provides strategic recommendations for each player</li>
-                <li>Handles cooperative, non-cooperative, zero-sum, and sequential games</li>
-                <li>Useful for competitive analysis, negotiation, and strategic planning</li>
-              </ul>
-            """
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+          "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+          "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
     )
+    return markdownTranscript
   }
 }
