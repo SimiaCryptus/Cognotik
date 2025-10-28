@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
-import com.simiacryptus.cognotik.agents.ImageModificationAgent
+import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -456,7 +456,7 @@ Provide only the CSS code within a code block:
               ui = task.ui
             )
           )
-          val imageAgent = ImageModificationAgent(
+          val imageAgent = ImageProcessingAgent(
             prompt = "Create a professional, visually appealing image for a presentation slide",
             model = orchestrationConfig.imageChatChatter,
             temperature = 0.7,

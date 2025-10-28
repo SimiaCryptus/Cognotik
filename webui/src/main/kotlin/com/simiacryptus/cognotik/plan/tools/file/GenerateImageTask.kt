@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.ImageAndText
-import com.simiacryptus.cognotik.agents.ImageModificationAgent
+import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -106,7 +106,7 @@ GenerateImage - Create images using AI image generation models
       task.add(MarkdownUtil.renderMarkdown("### Generating image...", ui = task.ui))
 
       // Use the image generation agent
-      val imageAgent = ImageModificationAgent(
+      val imageAgent = ImageProcessingAgent(
         prompt = "Transform the user request into an image",
         name = "ImageGenerator",
         model = orchestrationConfig.imageChatChatter,

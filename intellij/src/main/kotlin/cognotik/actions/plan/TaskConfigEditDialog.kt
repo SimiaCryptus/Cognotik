@@ -329,8 +329,17 @@ private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: Su
 
 
 
-    private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: CrawlerAgentTask.CrawlerTaskTypeConfig) {
+private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: CrawlerAgentTask.CrawlerTaskTypeConfig) {
         group("Web Crawler Settings") {
+            row("Processing Strategy:") {
+                val strategies = arrayOf("DefaultSummarizer", "FactChecking", "JobMatching")
+                val combo = ComboBox(strategies)
+                combo.selectedItem = config.processing_strategy?.name ?: "DefaultSummarizer"
+                combo.toolTipText = "Strategy for processing and analyzing page content"
+                cell(combo)
+                    .comment("Select how pages should be processed and analyzed")
+                configFields["processing_strategy"] = combo
+            }
             row("Seed Method:") {
                 val methods = SeedMethod.entries.map { it.name }.toTypedArray()
                 val combo = ComboBox(methods)
@@ -645,11 +654,15 @@ private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: Su
             }
 
 
-            is CrawlerAgentTask.CrawlerTaskTypeConfig -> {
+is CrawlerAgentTask.CrawlerTaskTypeConfig -> {
                 CrawlerAgentTask.CrawlerTaskTypeConfig(
                     task_type = baseConfig.task_type!!,
                     name = baseConfig.name,
                     model = baseConfig.model,
+                    processing_strategy = CrawlerAgentTask.ProcessingStrategyType.valueOf(
+                        (configFields["processing_strategy"] as? ComboBox<*>)?.selectedItem as? String
+                            ?: "DefaultSummarizer"
+                    ),
                     seed_method = SeedMethod.valueOf(
                         (configFields["seed_method"] as? ComboBox<*>)?.selectedItem as? String
                             ?: "GoogleProxy"

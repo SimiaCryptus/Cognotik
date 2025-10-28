@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MultiExeption
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.toContentList
+import com.simiacryptus.cognotik.util.toJson
 import java.util.function.Function
 
 open class ParsedAgent<T : Any>(
@@ -176,3 +177,19 @@ open class ParsedAgent<T : Any>(
     }
 
 }
+
+
+inline fun <reified T : Any> Any.parserCast(
+  model: ChatInterface, describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
+    "com.simiacryptus", "aicoder.actions"
+  ) {
+    override val includeMethods: Boolean get() = false
+  }
+) : T = ParsedAgent(
+  prompt = "",
+  resultClass = T::class.java,
+  model = model,
+  parsingChatter = model,
+  describer = describer
+).getParser().apply(this.toJson())
+

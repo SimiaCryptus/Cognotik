@@ -11,10 +11,10 @@ import java.util.*
 import javax.imageio.ImageIO
 
 /**
- * Agent that processes images using multimodal chat models.
- * Takes an input image and text prompt, and returns modified image with description.
+ * Agent that processes text/images input and generates text/images output based on the prompt.
+ * Can be used for image generation, image captioning, and image editing tasks.
  */
-open class ImageModificationAgent(
+open class ImageProcessingAgent(
   prompt: String = "Analyze and describe the image based on the user's request",
   name: String? = null,
   model: ChatInterface,
@@ -57,7 +57,7 @@ open class ImageModificationAgent(
     return ImageAndText(text = text, image = image ?: input.map { it.image }.firstOrNull())
   }
 
-  override fun withModel(model: ChatInterface): ImageModificationAgent = ImageModificationAgent(
+  override fun withModel(model: ChatInterface): ImageProcessingAgent = ImageProcessingAgent(
     prompt = prompt,
     name = name,
     model = model,
@@ -65,7 +65,7 @@ open class ImageModificationAgent(
   )
 
   companion object {
-    private val log = org.slf4j.LoggerFactory.getLogger(ImageModificationAgent::class.java)
+    private val log = org.slf4j.LoggerFactory.getLogger(ImageProcessingAgent::class.java)
   }
 }
 
