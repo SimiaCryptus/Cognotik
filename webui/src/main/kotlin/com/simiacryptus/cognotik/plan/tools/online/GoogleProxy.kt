@@ -33,8 +33,8 @@ class GoogleProxy : SeedMethodFactory {
       val client = HttpClient.newBuilder().build()
       val query = taskConfig.search_query.trim()
       val encodedQuery = URLEncoder.encode(query, "UTF-8")
-      val resultCount = min(10, 20)
-      val searchLimit = 15
+      val resultCount = 20
+      val searchLimit = resultCount
 
       SeedMethod.log.debug("Using proxy endpoint: $PROXY_ENDPOINT")
 

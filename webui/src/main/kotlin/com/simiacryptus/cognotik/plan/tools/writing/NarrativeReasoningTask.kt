@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.agents.ImageModificationAgent
+import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -1264,7 +1264,7 @@ Be concise but insightful. Focus on actionable insights.
         }.renderMarkdown
       )
       task.update()
-      val imageAgent = ImageModificationAgent(
+      val imageAgent = ImageProcessingAgent(
         prompt = "Transform the narrative description into a vivid, cinematic image",
         model = orchestrationConfig.imageChatChatter,
         temperature = 0.7,

@@ -32,8 +32,8 @@ class GoogleSearch : SeedMethodFactory {
       SeedMethod.log.debug("Using search query: $query")
       val encodedQuery = URLEncoder.encode(query, "UTF-8")
 
-      val resultCount = min(10, 20) // Ensure we don't exceed API limits
-      val searchLimit = 15 // Reduced from 20 to be more conservative
+      val resultCount = 20 // Ensure we don't exceed API limits
+      val searchLimit = resultCount // Reduced from 20 to be more conservative
       SeedMethod.log.debug("Fetching user settings for Google Search API")
       val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(
         user ?: UserSettingsManager.defaultUser
