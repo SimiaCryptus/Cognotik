@@ -365,7 +365,7 @@ private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: Crawle
             }
             row("Max Pages Per Task:") {
                 val field = JBTextField(config.max_pages_per_task?.toString() ?: "30")
-                field.toolTipText = "Maximum number of pages to process (1-100)"
+                field.toolTipText = "Maximum number of pages to process (1-500)"
                 cell(field)
                     .comment("Limit the number of pages crawled per task")
                 configFields["max_pages_per_task"] = field
@@ -502,9 +502,9 @@ private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: Crawle
             val maxPages = (configFields["max_pages_per_task"] as? JBTextField)?.text?.trim()
             if (!maxPages.isNullOrEmpty()) {
                 val value = maxPages.toIntOrNull()
-                if (value == null || value !in 1..100) {
+                if (value == null || value !in 1..1000) {
                     Messages.showWarningDialog(
-                        "Max Pages Per Task must be between 1 and 100",
+                        "Max Pages Per Task must be between 1 and 1000",
                         "Invalid Value"
                     )
                     configFields["max_pages_per_task"]?.requestFocusInWindow()

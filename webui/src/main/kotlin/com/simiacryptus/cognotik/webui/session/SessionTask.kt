@@ -16,7 +16,7 @@ import java.util.function.Consumer
 
 
 open class SessionTask(
-    val messageID: String,
+    val messageID: String = Session.long64(),
     private var buffer: MutableList<StringBuilder> = mutableListOf(),
     private val spinner: String = SessionTask.spinner,
     val ui: SocketManager

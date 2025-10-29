@@ -71,7 +71,7 @@ def lambda_handler(event, context):
             }
 
         query = params['q']
-        num_results = min(int(params.get('num', 10)), 10)  # Cap at 10
+        num_results = int(params.get('num', 10))  # Cap at 10
         start_index = params.get('start', '1')
 
         # Build Google API URL

@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import kotlin.math.min
@@ -22,11 +23,7 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
     content: String,
     context: PageProcessingStrategy.ProcessingContext
   ): PageProcessingStrategy.PageProcessingResult {
-    val analysisGoal = when {
-      context.executionConfig.content_queries != null -> context.executionConfig.content_queries.toString()
-      context.executionConfig.task_description?.isNotBlank() == true -> context.executionConfig.task_description!!
-      else -> "Analyze the content and provide insights."
-    }
+    val analysisGoal = analysisGoal(context)
 
     val analysis = try {
       transformContent(content, analysisGoal, context)
@@ -51,6 +48,12 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
       ),
       shouldTerminate = false
     )
+  }
+
+  open fun analysisGoal(context: PageProcessingStrategy.ProcessingContext): String = when {
+    context.executionConfig.content_queries != null -> context.executionConfig.content_queries.toJson()
+    context.executionConfig.task_description?.isNotBlank() == true -> context.executionConfig.task_description!!
+    else -> "Analyze the content and provide insights."
   }
 
   override fun shouldContinueCrawling(
