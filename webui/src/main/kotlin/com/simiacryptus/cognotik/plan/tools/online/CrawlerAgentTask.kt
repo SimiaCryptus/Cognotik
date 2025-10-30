@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 import kotlin.math.min
+import kotlin.random.Random
 
 class CrawlerAgentTask(
   orchestrationConfig: OrchestrationConfig,
@@ -118,14 +119,10 @@ class CrawlerAgentTask(
   }
 
   var selenium: Selenium2S3? = null
-
   val urlContentCache = ConcurrentHashMap<String, String>()
   private val robotsTxtParser = RobotsTxtParser()
   private val pageQueueLock = Object()
-
-  // Use a priority queue that sorts by calculated priority (higher first)
-  private val pageQueue = java.util.PriorityQueue<LinkData>(
-    compareByDescending { it.calculatePriority() })
+  private val pageQueue = java.util.PriorityQueue<LinkData>(compareByDescending { it.calculatePriority() })
   private val seenUrls = ConcurrentHashMap.newKeySet<String>()
 
   override fun promptSegment(): String {
@@ -188,8 +185,6 @@ class CrawlerAgentTask(
     var error: String? = null
     var processingTimeMs: Long = 0
 
-    // Priority calculation: higher relevance and lower depth = higher priority
-    fun calculatePriority(): Double = relevance_score / (depth + 1.0)
     override fun validate(): String? {
       if (url.isNullOrBlank()) {
         return "link cannot be null or blank"
@@ -203,6 +198,9 @@ class CrawlerAgentTask(
       return ValidatedObject.validateFields(this)
     }
   }
+
+  // Priority calculation: higher relevance and lower depth = higher priority
+  fun LinkData.calculatePriority(): Double = relevance_score // / (depth + 1.0)
 
   enum class PageType {
     Error, Irrelevant, OK
@@ -495,7 +493,7 @@ class CrawlerAgentTask(
       val totalTime = System.currentTimeMillis() - startTime
       log.info("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if (processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
       // Add page queue details tab
-      addPageQueueDetailsTab(crawlTabs, crawlTask, processedCount.get(), errorCount.get())
+      addPageQueueDetailsTab(tabs, processedCount.get(), errorCount.get())
 
       task.complete("Completed in ${totalTime / 1000} seconds, processed ${processedCount.get()} pages with ${errorCount.get()} errors.")
       // Write completion stats to transcript
@@ -517,15 +515,25 @@ class CrawlerAgentTask(
         return errorMessage
       }
 
-      val summaryTask = task.ui.newTask(false)
-      tabs["Final Summary"] = summaryTask.placeholder
-
       // Use strategy to generate final output
       val finalOutput = try {
         log.info("Generating final output using strategy: ${strategyType.name}")
-        processingStrategy.generateFinalOutput(
-          allPageResults.values.toList(), processingContext
-        )
+        buildString {
+          appendLine("# Final Output")
+          appendLine(processingStrategy.generateFinalOutput(allPageResults.values.toList(), processingContext))
+          appendLine("# Remaining Queue")
+          synchronized(pageQueueLock) {
+            if (pageQueue.isEmpty()) {
+              appendLine("No remaining pages in the queue.")
+            } else {
+              appendLine("The following pages were not processed:")
+              var index = 1
+              pageQueue.toList().sortedBy { -it.calculatePriority() }.forEach { linkData ->
+                appendLine("${index++}. [${linkData.title ?: linkData.url}](${linkData.url}), Relevance Score: ${linkData.relevance_score}")
+              }
+            }
+          }
+        }
       } catch (e: Exception) {
         log.error("Failed to generate final output using strategy, falling back to basic summary", e)
         if (typeConfig.create_final_summary != false && analysisResults.length > (typeConfig.max_final_output_size ?: 15000)) {
@@ -536,7 +544,6 @@ class CrawlerAgentTask(
       }
 
       try {
-        summaryTask.add(finalOutput.renderMarkdown)
         task.update()
         // Write final summary to transcript
         transcriptStream?.let { stream ->
@@ -563,11 +570,7 @@ class CrawlerAgentTask(
       val (link, file) = task.createFile("crawler_transcript.md")
       val transcriptStream = file?.outputStream()
       task.complete(
-        "Writing transcript to <a href='$link' target='_blank'>$link</a> " + "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " + "<a href='${
-          link.removeSuffix(
-            ".md"
-          )
-        }.pdf' target='_blank'>pdf</a>"
+        "Writing transcript to <a href='$link' target='_blank'>$link</a> " + "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> "
       )
       log.info("Initialized transcript file: $link")
       transcriptStream
@@ -585,8 +588,14 @@ class CrawlerAgentTask(
         appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
         appendLine()
         appendLine("**Search Query:** ${executionConfig?.search_query ?: "N/A"}")
+        appendLine()
         appendLine("**Direct URLs:** ${executionConfig?.direct_urls?.joinToString(", ") ?: "N/A"}")
-        appendLine("**Content Queries:** ${executionConfig?.content_queries ?: "N/A"}")
+        appendLine()
+        appendLine("<details><summary>Execution Configuration (click to expand)</summary>\n")
+        appendLine()
+        appendLine(executionConfig?.content_queries?.toJson()?.let { "\n```json\n${it.indent()}\n```" } ?: "N/A")
+        appendLine()
+        appendLine("</details>")
         appendLine()
         appendLine("---")
         appendLine()
@@ -635,7 +644,6 @@ class CrawlerAgentTask(
     }
   }
 
-
   fun addToQueue(
     newLink: LinkData, maxDepth: Int, maxQueueSize: Int
   ): Boolean = synchronized(pageQueueLock) {
@@ -662,7 +670,9 @@ class CrawlerAgentTask(
       return false
     }
     seenUrls.add(newUrl)
-    pageQueue.add(newLink)
+    pageQueue.add(newLink.copy(
+      relevance_score = newLink.relevance_score.coerceIn(1.0, 100.0) + Random.nextInt(-500, 500) * 0.001 // Slight randomness to prevent priority ties
+    ))
     log.debug("Added new link to queue: $newUrl (depth=${newLink.depth}, priority=${newLink.calculatePriority()})")
     true
   }
@@ -827,7 +837,7 @@ class CrawlerAgentTask(
             // Log page processing start to transcript
             transcriptStream?.let { stream ->
               try {
-                writeToTranscript(stream, "### Processing Page ${currentIndex}: [$title]($url)\n\n")
+                writeToTranscript(stream, "### Processing Page ${currentIndex}: [$title]($url) (priority=${"%0.3f".format(page.calculatePriority())})\n\n")
                 writeToTranscript(stream, "**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))}\n\n")
               } catch (e: Exception) {
                 log.debug("Failed to write page start to transcript (stream may be closed)", e)
@@ -1149,12 +1159,11 @@ class CrawlerAgentTask(
 
   private fun addPageQueueDetailsTab(
     tabs: TabbedDisplay,
-    task: SessionTask,
     processedCount: Int,
     errorCount: Int
   ) {
     try {
-      val queueDetailsTask = task.ui.newTask(false)
+      val queueDetailsTask = tabs.task.ui.newTask(false)
       tabs["Queue Details"] = queueDetailsTask.placeholder
       val queueDetails = buildString {
         appendLine("# Page Queue Details")
@@ -1217,70 +1226,10 @@ class CrawlerAgentTask(
             }
           }
           appendLine()
-          // Depth distribution
-          appendLine("## Depth Distribution")
-          appendLine()
-          val depthCounts = unprocessedPages.groupBy { it.depth }.mapValues { it.value.size }
-          val maxDepth = (depthCounts.keys.maxOrNull() ?: 0)
-          if (depthCounts.isEmpty()) {
-            appendLine("*No depth data available.*")
-          } else {
-            appendLine("| Depth | Count | Percentage |")
-            appendLine("|-------|-------|------------|")
-            (0..maxDepth).forEach { depth ->
-              val count = depthCounts[depth] ?: 0
-              val percentage = if (unprocessedPages.isNotEmpty()) {
-                (count * 100.0 / unprocessedPages.size).toInt()
-              } else 0
-              appendLine("| $depth | $count | $percentage% |")
-            }
-          }
-          appendLine()
-          // Relevance distribution
-          appendLine("## Relevance Score Distribution")
-          appendLine()
-          val relevanceBuckets = unprocessedPages.groupBy {
-            ((it.relevance_score / 10).toInt() * 10).coerceIn(0, 100)
-          }.mapValues { it.value.size }
-          if (relevanceBuckets.isEmpty()) {
-            appendLine("*No relevance data available.*")
-          } else {
-            appendLine("| Score Range | Count | Percentage |")
-            appendLine("|-------------|-------|------------|")
-            (0..100 step 10).reversed().forEach { bucket ->
-              val count = relevanceBuckets[bucket] ?: 0
-              val percentage = if (unprocessedPages.isNotEmpty()) {
-                (count * 100.0 / unprocessedPages.size).toInt()
-              } else 0
-              val range = "${bucket}-${bucket + 9}"
-              appendLine("| $range | $count | $percentage% |")
-            }
-          }
-          appendLine()
-          // Top unprocessed pages by priority
-          appendLine("## Top 10 Unprocessed Pages by Priority")
-          appendLine()
-          val topPages = unprocessedPages.sortedByDescending { it.calculatePriority() }.take(10)
-          if (topPages.isEmpty()) {
-            appendLine("*No unprocessed pages.*")
-          } else {
-            topPages.forEachIndexed { index, page ->
-              appendLine("### ${index + 1}. [${page.title ?: "Untitled"}](${page.url})")
-              appendLine()
-              appendLine("- **URL:** ${page.url}")
-              appendLine("- **Relevance Score:** ${String.format("%.1f", page.relevance_score)}")
-              appendLine("- **Depth:** ${page.depth}")
-              appendLine("- **Priority:** ${String.format("%.2f", page.calculatePriority())}")
-              if (!page.tags.isNullOrEmpty()) {
-                appendLine("- **Tags:** ${page.tags.joinToString(", ")}")
-              }
-              appendLine()
-            }
-          }
         }
       }
-      queueDetailsTask.add(queueDetails.renderMarkdown)
-      task.update()
+      queueDetailsTask.complete(queueDetails.renderMarkdown)
+      tabs.task.update()
       log.info("Added page queue details tab with statistics")
     } catch (e: Exception) {
       log.error("Failed to create page queue details tab", e)
