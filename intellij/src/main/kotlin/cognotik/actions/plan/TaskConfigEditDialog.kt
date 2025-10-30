@@ -20,8 +20,9 @@ import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.SubPlanningTask
 import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
-import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
+import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType
+import com.simiacryptus.cognotik.plan.tools.online.fetch.FetchMethod
+import com.simiacryptus.cognotik.plan.tools.online.seed.SeedMethod
 import java.awt.Component
 import java.awt.Dimension
 import javax.swing.*
@@ -329,8 +330,17 @@ private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: Su
 
 
 
-    private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: CrawlerAgentTask.CrawlerTaskTypeConfig) {
+private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: CrawlerAgentTask.CrawlerTaskTypeConfig) {
         group("Web Crawler Settings") {
+            row("Processing Strategy:") {
+                val strategies = ProcessingStrategyType.entries.map { it.name }.toTypedArray()
+                val combo = ComboBox(strategies)
+                combo.selectedItem = config.processing_strategy?.name ?: "DefaultSummarizer"
+                combo.toolTipText = "Strategy for processing and analyzing page content"
+                cell(combo)
+                    .comment("Select how pages should be processed and analyzed")
+                configFields["processing_strategy"] = combo
+            }
             row("Seed Method:") {
                 val methods = SeedMethod.entries.map { it.name }.toTypedArray()
                 val combo = ComboBox(methods)
@@ -356,7 +366,7 @@ private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: Su
             }
             row("Max Pages Per Task:") {
                 val field = JBTextField(config.max_pages_per_task?.toString() ?: "30")
-                field.toolTipText = "Maximum number of pages to process (1-100)"
+                field.toolTipText = "Maximum number of pages to process (1-500)"
                 cell(field)
                     .comment("Limit the number of pages crawled per task")
                 configFields["max_pages_per_task"] = field
@@ -493,9 +503,9 @@ private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: Su
             val maxPages = (configFields["max_pages_per_task"] as? JBTextField)?.text?.trim()
             if (!maxPages.isNullOrEmpty()) {
                 val value = maxPages.toIntOrNull()
-                if (value == null || value !in 1..100) {
+                if (value == null || value !in 1..1000) {
                     Messages.showWarningDialog(
-                        "Max Pages Per Task must be between 1 and 100",
+                        "Max Pages Per Task must be between 1 and 1000",
                         "Invalid Value"
                     )
                     configFields["max_pages_per_task"]?.requestFocusInWindow()
@@ -645,11 +655,15 @@ private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: Su
             }
 
 
-            is CrawlerAgentTask.CrawlerTaskTypeConfig -> {
+is CrawlerAgentTask.CrawlerTaskTypeConfig -> {
                 CrawlerAgentTask.CrawlerTaskTypeConfig(
                     task_type = baseConfig.task_type!!,
                     name = baseConfig.name,
                     model = baseConfig.model,
+                    processing_strategy = ProcessingStrategyType.valueOf(
+                        (configFields["processing_strategy"] as? ComboBox<*>)?.selectedItem as? String
+                            ?: "DefaultSummarizer"
+                    ),
                     seed_method = SeedMethod.valueOf(
                         (configFields["seed_method"] as? ComboBox<*>)?.selectedItem as? String
                             ?: "GoogleProxy"

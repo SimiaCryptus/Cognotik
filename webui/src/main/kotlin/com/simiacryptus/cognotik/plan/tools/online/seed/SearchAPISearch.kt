@@ -1,8 +1,8 @@
-package com.simiacryptus.cognotik.plan.tools.online
+package com.simiacryptus.cognotik.plan.tools.online.seed
 
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.online.SeedMethod.Companion.log
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.User
@@ -26,18 +26,18 @@ open class SearchAPISearch(
       taskConfig: CrawlerAgentTask.CrawlerTaskExecutionConfigData?,
       orchestrationConfig: OrchestrationConfig,
     ): List<SeedItem> {
-      log.info("Starting SearchAPI.io seed method with query: ${taskConfig?.search_query}")
+      SeedMethod.Companion.log.info("Starting SearchAPI.io seed method with query: ${taskConfig?.search_query}")
       if (taskConfig?.search_query.isNullOrBlank()) {
-        log.error("Search query is missing for SearchAPI.io seed method")
+        SeedMethod.Companion.log.error("Search query is missing for SearchAPI.io seed method")
         throw IllegalArgumentException("Search query is required when using SearchAPI.io seed method")
       }
       val client = HttpClient.newBuilder().build()
       val query = taskConfig.search_query.trim()
-      log.debug("Using search query: $query")
+      SeedMethod.Companion.log.debug("Using search query: $query")
       val encodedQuery = URLEncoder.encode(query, "UTF-8")
       val resultCount = 10
       val searchLimit = 20
-      log.debug("Fetching user settings for SearchAPI.io")
+      SeedMethod.Companion.log.debug("Fetching user settings for SearchAPI.io")
       val userSettings =
         ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(
           user ?: UserSettingsManager.defaultUser
@@ -45,7 +45,7 @@ open class SearchAPISearch(
       val apiKey = userSettings
         .apis.firstOrNull { it.provider == APIProvider.SearchAPI }?.key?.trim()
         ?: throw RuntimeException("SearchAPI.io API key is required")
-      log.debug("Preparing SearchAPI.io request")
+      SeedMethod.Companion.log.debug("Preparing SearchAPI.io request")
       val uriBuilder =
         "https://www.searchapi.io/api/v1/search?engine=$engine&q=$encodedQuery&num=$resultCount&api_key=$apiKey"
       val request = HttpRequest.newBuilder()
@@ -53,17 +53,17 @@ open class SearchAPISearch(
         .header("User-Agent", "CognoTik-Crawler/1.0")
         .GET()
         .build()
-      log.info("Sending request to SearchAPI.io")
+      SeedMethod.Companion.log.info("Sending request to SearchAPI.io")
       val response = client.send(request, HttpResponse.BodyHandlers.ofString())
       val statusCode = response.statusCode()
       val body = response.body()
       if (statusCode != 200) {
-        log.error("SearchAPI.io request failed with status $statusCode: $body")
+        SeedMethod.Companion.log.error("SearchAPI.io request failed with status $statusCode: $body")
         throw RuntimeException("SearchAPI.io request failed with status $statusCode: $body")
       }
-      log.debug("Parsing SearchAPI.io response")
+      SeedMethod.Companion.log.debug("Parsing SearchAPI.io response")
       var results = handleResult(body, query)
-      log.info(
+      SeedMethod.Companion.log.info(
         "Successfully retrieved ${results.size} search results, returning ${
           results.size.coerceAtMost(searchLimit)
         } items"
@@ -91,7 +91,7 @@ open class SearchAPISearch(
             }
           )
         } else {
-          log.warn("Skipping invalid search result missing link or title: $result")
+          SeedMethod.Companion.log.warn("Skipping invalid search result missing link or title: $result")
           null
         }
       }
@@ -113,25 +113,25 @@ open class SearchAPISearch(
     ).let { rawData ->
       try {
         if (!rawData.containsKey(mainResultField)) {
-          log.warn("Expected field '$mainResultField' not found in SearchAPI.io response for query: $query")
+          SeedMethod.Companion.log.warn("Expected field '$mainResultField' not found in SearchAPI.io response for query: $query")
           listOf(rawData)
         } else {
           val list = (rawData[mainResultField] as List<Map<String, Any>>)
           if (list.isEmpty()) {
-            log.warn("No search results found for query: $query")
+            SeedMethod.Companion.log.warn("No search results found for query: $query")
             listOf(rawData)
           } else {
-            log.debug("Parsed ${list.size} results from SearchAPI.io response")
+            SeedMethod.Companion.log.debug("Parsed ${list.size} results from SearchAPI.io response")
             list
           }
         }
       } catch (e: Exception) {
-        log.debug("Failed to parse SearchAPI.io response", e)
+        SeedMethod.Companion.log.debug("Failed to parse SearchAPI.io response", e)
         listOf(rawData)
       }
     }
   } catch (e: Exception) {
-    log.debug("Failed to parse SearchAPI.io response", e)
+    SeedMethod.Companion.log.debug("Failed to parse SearchAPI.io response", e)
     listOf(JsonUtil.fromJson(body, Map::class.java))
   }
 }

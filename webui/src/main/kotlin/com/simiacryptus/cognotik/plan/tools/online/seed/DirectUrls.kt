@@ -1,6 +1,7 @@
-package com.simiacryptus.cognotik.plan.tools.online
+package com.simiacryptus.cognotik.plan.tools.online.seed
 
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.platform.model.User
 import java.net.URI
 

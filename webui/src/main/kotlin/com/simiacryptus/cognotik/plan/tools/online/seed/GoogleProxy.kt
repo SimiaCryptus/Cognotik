@@ -1,8 +1,9 @@
-package com.simiacryptus.cognotik.plan.tools.online
+package com.simiacryptus.cognotik.plan.tools.online.seed
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.platform.model.User
 import java.net.URI
 import java.net.URLEncoder
@@ -10,7 +11,6 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
-import kotlin.math.min
 
 class GoogleProxy : SeedMethodFactory {
   companion object {
@@ -33,8 +33,8 @@ class GoogleProxy : SeedMethodFactory {
       val client = HttpClient.newBuilder().build()
       val query = taskConfig.search_query.trim()
       val encodedQuery = URLEncoder.encode(query, "UTF-8")
-      val resultCount = min(10, 20)
-      val searchLimit = 15
+      val resultCount = 20
+      val searchLimit = resultCount
 
       SeedMethod.log.debug("Using proxy endpoint: $PROXY_ENDPOINT")
 

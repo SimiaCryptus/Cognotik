@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
-import com.simiacryptus.cognotik.agents.ImageModificationAgent
+import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -240,7 +240,7 @@ DESCRIPTION: another detailed description
         val filename = filename
         try {
           newTask.add(MarkdownUtil.renderMarkdown("Generating image: `$filename`...", ui = ui))
-          val imageAgent = ImageModificationAgent(
+          val imageAgent = ImageProcessingAgent(
             prompt = "Create a high-quality image for a web page based on the description",
             model = orchestrationConfig.imageChatChatter,
             temperature = 0.7,

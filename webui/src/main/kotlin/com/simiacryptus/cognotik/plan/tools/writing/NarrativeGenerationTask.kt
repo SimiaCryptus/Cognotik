@@ -4,7 +4,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.agents.ImageModificationAgent
+import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -787,7 +787,7 @@ Provide the revised scene content only.
         }.renderMarkdown
       )
       task.update()
-      val imageAgent = ImageModificationAgent(
+      val imageAgent = ImageProcessingAgent(
         prompt = "Create a compelling book cover image that captures the essence of this narrative",
         model = orchestrationConfig.imageChatChatter,
         temperature = 0.8,
@@ -853,7 +853,7 @@ Provide the revised scene content only.
         }.renderMarkdown
       )
       task.update()
-      val imageAgent = ImageModificationAgent(
+      val imageAgent = ImageProcessingAgent(
         prompt = "Create a cinematic scene illustration that captures the key moment and atmosphere",
         model = orchestrationConfig.imageChatChatter,
         temperature = 0.7,
