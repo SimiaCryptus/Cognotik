@@ -1,10 +1,11 @@
-package com.simiacryptus.cognotik.plan.tools.online
+package com.simiacryptus.cognotik.plan.tools.online.processing
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.parserCast
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
@@ -14,7 +15,6 @@ import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
-import java.util.regex.Pattern
 
 class JobMatchingStrategy : DefaultSummarizerStrategy() {
 
@@ -25,8 +25,12 @@ class JobMatchingStrategy : DefaultSummarizerStrategy() {
     val target_roles: List<String> = listOf(),
     @Description("Required skills to match")
     val required_skills: List<String>? = null,
-    @Description("Preferred locations")
+    @Description("Preferred locations (cities, states, countries, or 'Remote')")
     val preferred_locations: List<String>? = null,
+    @Description("Acceptable locations (if different from preferred)")
+    val acceptable_locations: List<String>? = null,
+    @Description("Excluded locations")
+    val excluded_locations: List<String>? = null,
     @Description("Minimum match score (0.0-1.0)")
     val min_match_score: Double = 0.6,
     @Description("(Optional) Stop after finding N good matches")
@@ -37,14 +41,30 @@ class JobMatchingStrategy : DefaultSummarizerStrategy() {
     val preferred_industries: List<String>? = null,
     @Description("Excluded companies")
     val excluded_companies: List<String>? = null,
-    @Description("Salary range (min-max)")
-    val salary_range: Pair<Int, Int>? = null,
-    @Description("Remote work preference")
-    val remote_preference: String? = null
+    @Description("Minimum acceptable salary (annual)")
+    val min_salary: Int? = null,
+    @Description("Target salary (annual)")
+    val target_salary: Int? = null,
+    @Description("Maximum salary expectation (annual)")
+    val max_salary: Int? = null,
+    @Description("Currency for salary (e.g., USD, EUR, GBP)")
+    val salary_currency: String = "USD",
+    @Description("Work arrangement preference: 'remote', 'hybrid', 'onsite', or 'flexible'")
+    val work_arrangement_preference: String? = null,
+    @Description("Maximum acceptable days in office per week (for hybrid roles)")
+    val max_days_in_office: Int? = null,
+    @Description("Willing to travel (percentage or 'none', 'occasional', 'frequent')")
+    val travel_willingness: String? = null,
+    @Description("Maximum acceptable travel percentage (0-100)")
+    val max_travel_percentage: Int? = null,
+    @Description("Willing to relocate")
+    val willing_to_relocate: Boolean = false,
+    @Description("Relocation assistance required")
+    val requires_relocation_assistance: Boolean = false
   )
 
 
-override val description: String
+  override val description: String
     get() = "Analyzes job postings against user experience to find strong matches, generates application materials, and saves detailed reports."
 
   data class JobAnalysis(
@@ -52,22 +72,56 @@ override val description: String
     val job_title: String? = null,
     @Description("Company/organization name")
     val company: String = "",
-    @Description("Job location (city, state, country, or 'Remote')")
+    @Description("Primary job location (city, state, country)")
     val location: String? = null,
+    @Description("Additional locations or service areas")
+    val additional_locations: List<String>? = null,
+    @Description("Work arrangement: 'remote', 'hybrid', 'onsite'")
+    val work_arrangement: String? = null,
+    @Description("Days in office per week (for hybrid)")
+    val days_in_office: Int? = null,
+    @Description("Travel requirements description")
+    val travel_requirements: String? = null,
+    @Description("Travel percentage (0-100)")
+    val travel_percentage: Int? = null,
+    @Description("Relocation offered")
+    val relocation_offered: Boolean? = null,
+    @Description("Relocation assistance details")
+    val relocation_assistance: String? = null,
     @Description("URL where the candidate can apply for the position")
     val application_url: String = "",
     @Description("URL of the original job description page")
     val job_description_url: String = "",
     @Description("Full text of the job description")
     val job_description: String = "",
+    @Description("Minimum salary offered (if disclosed)")
+    val salary_min: Int? = null,
+    @Description("Maximum salary offered (if disclosed)")
+    val salary_max: Int? = null,
+    @Description("Salary currency")
+    val salary_currency: String? = null,
+    @Description("Salary period: 'annual', 'hourly', 'monthly'")
+    val salary_period: String? = null,
+    @Description("Additional compensation details (bonus, equity, etc.)")
+    val compensation_details: String? = null,
     @Description("List of skills explicitly required for the position")
     val required_skills: List<String> = listOf(),
     @Description("List of skills that are preferred but not required")
     val preferred_skills: List<String> = listOf(),
     @Description("Overall match score between candidate and position (0.0-1.0)")
     val match_score: Double = 0.0,
+    @Description("Location compatibility score (0.0-1.0)")
+    val location_score: Double = 0.0,
+    @Description("Salary compatibility score (0.0-1.0)")
+    val salary_score: Double = 0.0,
+    @Description("Work arrangement compatibility score (0.0-1.0)")
+    val work_arrangement_score: Double = 0.0,
     @Description("Detailed analysis of how well the candidate matches the position")
     val match_analysis: String = "",
+    @Description("Analysis of location and work arrangement fit")
+    val location_analysis: String = "",
+    @Description("Analysis of compensation fit")
+    val compensation_analysis: String = "",
     @Description("Skills the candidate lacks that are required or preferred")
     val skill_gaps: List<String> = listOf(),
     @Description("Skills the candidate has that match the job requirements")
@@ -278,6 +332,31 @@ override val description: String
         }
       }
     } else ""
+    val locationContext = buildString {
+      appendLine()
+      appendLine("LOCATION PREFERENCES:")
+      config.preferred_locations?.let { appendLine("Preferred: ${it.joinToString(", ")}") }
+      config.acceptable_locations?.let { appendLine("Acceptable: ${it.joinToString(", ")}") }
+      config.excluded_locations?.let { appendLine("Excluded: ${it.joinToString(", ")}") }
+      appendLine("Willing to relocate: ${config.willing_to_relocate}")
+      if (config.requires_relocation_assistance) appendLine("Requires relocation assistance")
+    }
+    val compensationContext = buildString {
+      appendLine()
+      appendLine("COMPENSATION EXPECTATIONS:")
+      config.min_salary?.let { appendLine("Minimum: ${config.salary_currency} $it/year") }
+      config.target_salary?.let { appendLine("Target: ${config.salary_currency} $it/year") }
+      config.max_salary?.let { appendLine("Maximum: ${config.salary_currency} $it/year") }
+    }
+    val workArrangementContext = buildString {
+      appendLine()
+      appendLine("WORK ARRANGEMENT PREFERENCES:")
+      config.work_arrangement_preference?.let { appendLine("Preference: $it") }
+      config.max_days_in_office?.let { appendLine("Max days in office: $it/week") }
+      config.travel_willingness?.let { appendLine("Travel willingness: $it") }
+      config.max_travel_percentage?.let { appendLine("Max travel: $it%") }
+    }
+
 
     val prompt = """
             Analyze this job posting and compare it to the candidate's experience.
@@ -287,19 +366,37 @@ override val description: String
 
             TARGET ROLES: ${config.target_roles.joinToString(", ")}
             REQUIRED SKILLS: ${config.required_skills?.joinToString(", ") ?: "Not specified"}
+            ${locationContext}
+            ${compensationContext}
+            ${workArrangementContext}
             ${additionalContext}
 
             Extract:
             1. Job title, company, location
-            2. Application URL
-            3. Required and preferred skills
-            4. Match score (0.0-1.0) based on experience alignment
-            5. Detailed match analysis
-            6. Skill gaps and matches
-            7. Draft a compelling cover letter (200-300 words) that incorporates the additional context and highlights relevant experience
-            8. Application strategy notes
+            2. Work arrangement (remote/hybrid/onsite), days in office if hybrid
+            3. Travel requirements and percentage
+            4. Relocation information
+            5. Salary range and compensation details (if disclosed)
+            6. Application URL
+            7. Required and preferred skills
+            8. Overall match score (0.0-1.0) based on experience alignment
+            9. Location compatibility score (0.0-1.0) considering preferences and work arrangement
+            10. Salary compatibility score (0.0-1.0) if salary disclosed
+            11. Work arrangement compatibility score (0.0-1.0)
+            12. Detailed match analysis
+            13. Location and work arrangement analysis
+            14. Compensation analysis (if salary disclosed)
+            15. Skill gaps and matches
+            16. Draft a compelling cover letter (200-300 words) that incorporates the additional context and highlights relevant experience
+            17. Application strategy notes
+            
             When drafting the cover letter, pay special attention to any specific requirements, preferences, or context 
             provided in the additional context section. Tailor the letter to address these points directly.
+            IMPORTANT: When calculating scores, consider:
+            - Location score: Match against preferred/acceptable locations, work arrangement fit, relocation needs
+            - Salary score: Only calculate if salary is disclosed; compare against min/target/max expectations
+            - Work arrangement score: Match remote/hybrid/onsite preference, travel requirements, days in office
+            - Overall match score: Weight skills heavily, but factor in location, salary, and work arrangement
         """.trimIndent()
 
     val analysis = try {
@@ -359,11 +456,59 @@ override val description: String
       appendLine("- **Title:** ${jobAnalysis.job_title}")
       appendLine("- **Company:** ${jobAnalysis.company}")
       appendLine("- **Location:** ${jobAnalysis.location ?: "Not specified"}")
+      jobAnalysis.additional_locations?.let {
+        if (it.isNotEmpty()) {
+          appendLine("- **Additional Locations:** ${it.joinToString(", ")}")
+        }
+      }
+      appendLine("- **Work Arrangement:** ${jobAnalysis.work_arrangement ?: "Not specified"}")
+      jobAnalysis.days_in_office?.let {
+        appendLine("- **Days in Office:** $it/week")
+      }
+      jobAnalysis.travel_percentage?.let {
+        appendLine("- **Travel Required:** $it%")
+      }
+      jobAnalysis.travel_requirements?.let {
+        appendLine("- **Travel Details:** $it")
+      }
       appendLine("- **Application URL:** [Apply Here](${jobAnalysis.application_url})")
+      appendLine()
+      appendLine("## Compensation")
+      if (jobAnalysis.salary_min != null || jobAnalysis.salary_max != null) {
+        val salaryRange = buildString {
+          jobAnalysis.salary_min?.let { append("${jobAnalysis.salary_currency ?: "USD"} $it") }
+          if (jobAnalysis.salary_min != null && jobAnalysis.salary_max != null) append(" - ")
+          jobAnalysis.salary_max?.let { append("${jobAnalysis.salary_currency ?: "USD"} $it") }
+          jobAnalysis.salary_period?.let { append(" ($it)") }
+        }
+        appendLine("- **Salary Range:** $salaryRange")
+      } else {
+        appendLine("- **Salary Range:** Not disclosed")
+      }
+      jobAnalysis.compensation_details?.let {
+        appendLine("- **Additional Compensation:** $it")
+      }
+      if (jobAnalysis.relocation_offered == true) {
+        appendLine("- **Relocation:** Offered")
+        jobAnalysis.relocation_assistance?.let {
+          appendLine("  - $it")
+        }
+      }
       appendLine()
 
       appendLine("## Match Analysis")
+      appendLine("### Overall Match Score: ${(jobAnalysis.match_score * 100).toInt()}%")
       appendLine(jobAnalysis.match_analysis)
+      appendLine()
+      appendLine("### Location Compatibility: ${(jobAnalysis.location_score * 100).toInt()}%")
+      appendLine(jobAnalysis.location_analysis)
+      appendLine()
+      if (jobAnalysis.salary_min != null || jobAnalysis.salary_max != null) {
+        appendLine("### Salary Compatibility: ${(jobAnalysis.salary_score * 100).toInt()}%")
+        appendLine(jobAnalysis.compensation_analysis)
+        appendLine()
+      }
+      appendLine("### Work Arrangement Fit: ${(jobAnalysis.work_arrangement_score * 100).toInt()}%")
       appendLine()
 
       appendLine("## Skills Assessment")
@@ -425,6 +570,17 @@ override val description: String
       appendLine()
       appendLine("**Match Score:** ${(jobAnalysis.match_score * 100).toInt()}%")
       appendLine("**Location:** ${jobAnalysis.location ?: "Not specified"}")
+      jobAnalysis.work_arrangement?.let {
+        appendLine("**Work Arrangement:** $it")
+      }
+      if (jobAnalysis.salary_min != null || jobAnalysis.salary_max != null) {
+        val salaryRange = buildString {
+          jobAnalysis.salary_min?.let { append("${jobAnalysis.salary_currency ?: "USD"} $it") }
+          if (jobAnalysis.salary_min != null && jobAnalysis.salary_max != null) append(" - ")
+          jobAnalysis.salary_max?.let { append("${jobAnalysis.salary_currency ?: "USD"} $it") }
+        }
+        appendLine("**Salary:** $salaryRange")
+      }
       appendLine("**Application:** [Apply Here](${jobAnalysis.application_url})")
       appendLine()
 
@@ -433,6 +589,14 @@ override val description: String
       } else {
         appendLine("⚠️ **Weak Match** - Consider other opportunities")
       }
+      appendLine()
+      appendLine("**Compatibility Scores:**")
+      appendLine("- Skills: ${(jobAnalysis.match_score * 100).toInt()}%")
+      appendLine("- Location: ${(jobAnalysis.location_score * 100).toInt()}%")
+      if (jobAnalysis.salary_min != null || jobAnalysis.salary_max != null) {
+        appendLine("- Salary: ${(jobAnalysis.salary_score * 100).toInt()}%")
+      }
+      appendLine("- Work Arrangement: ${(jobAnalysis.work_arrangement_score * 100).toInt()}%")
       appendLine()
 
       appendLine("<details>")
@@ -496,6 +660,8 @@ override val description: String
         appendLine("- Broadening search criteria")
         appendLine("- Adjusting required skills")
         appendLine("- Expanding target roles")
+        appendLine("- Relaxing location or work arrangement preferences")
+        appendLine("- Adjusting salary expectations")
         appendLine()
         return@buildString
       }
@@ -510,7 +676,26 @@ override val description: String
           appendLine()
           appendLine("**Match Score:** ${(job.match_score * 100).toInt()}%")
           appendLine("**Location:** ${job.location ?: "Not specified"}")
+          job.work_arrangement?.let {
+            appendLine("**Work Arrangement:** $it")
+          }
+          if (job.salary_min != null || job.salary_max != null) {
+            val salaryRange = buildString {
+              job.salary_min?.let { append("${job.salary_currency ?: "USD"} $it") }
+              if (job.salary_min != null && job.salary_max != null) append(" - ")
+              job.salary_max?.let { append("${job.salary_currency ?: "USD"} $it") }
+            }
+            appendLine("**Salary:** $salaryRange")
+          }
           appendLine("**Application:** [Apply Here](${job.application_url})")
+          appendLine()
+          appendLine("**Compatibility:**")
+          appendLine("- Skills: ${(job.match_score * 100).toInt()}%")
+          appendLine("- Location: ${(job.location_score * 100).toInt()}%")
+          if (job.salary_min != null || job.salary_max != null) {
+            appendLine("- Salary: ${(job.salary_score * 100).toInt()}%")
+          }
+          appendLine("- Work Arrangement: ${(job.work_arrangement_score * 100).toInt()}%")
           appendLine()
           appendLine("**Skills Match:** ${job.skill_matches.size}/${job.skill_matches.size + job.skill_gaps.size}")
           appendLine()
@@ -528,6 +713,8 @@ override val description: String
       appendLine("2. Customize cover letters for each application")
       appendLine("3. Prepare for interviews by reviewing skill gaps")
       appendLine("4. Track application status")
+      appendLine("5. Verify work arrangement and compensation details during screening")
+      appendLine("6. Prepare questions about travel requirements and relocation assistance")
       // Log completion to transcript
       context.transcriptStream?.let { stream ->
         try {

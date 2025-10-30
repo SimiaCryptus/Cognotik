@@ -20,8 +20,9 @@ import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.SubPlanningTask
 import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.cognotik.plan.tools.online.FetchMethod
-import com.simiacryptus.cognotik.plan.tools.online.SeedMethod
+import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType
+import com.simiacryptus.cognotik.plan.tools.online.fetch.FetchMethod
+import com.simiacryptus.cognotik.plan.tools.online.seed.SeedMethod
 import java.awt.Component
 import java.awt.Dimension
 import javax.swing.*
@@ -332,7 +333,7 @@ private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: Su
 private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: CrawlerAgentTask.CrawlerTaskTypeConfig) {
         group("Web Crawler Settings") {
             row("Processing Strategy:") {
-                val strategies = arrayOf("DefaultSummarizer", "FactChecking", "JobMatching")
+                val strategies = ProcessingStrategyType.entries.map { it.name }.toTypedArray()
                 val combo = ComboBox(strategies)
                 combo.selectedItem = config.processing_strategy?.name ?: "DefaultSummarizer"
                 combo.toolTipText = "Strategy for processing and analyzing page content"
@@ -659,7 +660,7 @@ is CrawlerAgentTask.CrawlerTaskTypeConfig -> {
                     task_type = baseConfig.task_type!!,
                     name = baseConfig.name,
                     model = baseConfig.model,
-                    processing_strategy = CrawlerAgentTask.ProcessingStrategyType.valueOf(
+                    processing_strategy = ProcessingStrategyType.valueOf(
                         (configFields["processing_strategy"] as? ComboBox<*>)?.selectedItem as? String
                             ?: "DefaultSummarizer"
                     ),

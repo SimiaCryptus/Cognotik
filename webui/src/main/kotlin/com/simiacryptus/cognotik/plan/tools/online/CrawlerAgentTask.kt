@@ -8,8 +8,13 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.online.PageProcessingStrategy.PageProcessingResult
-import com.simiacryptus.cognotik.plan.tools.online.PageProcessingStrategy.ProcessingContext
+import com.simiacryptus.cognotik.plan.tools.online.fetch.FetchMethod
+import com.simiacryptus.cognotik.plan.tools.online.fetch.FetchStrategy
+import com.simiacryptus.cognotik.plan.tools.online.processing.PageProcessingStrategy
+import com.simiacryptus.cognotik.plan.tools.online.processing.PageProcessingStrategy.PageProcessingResult
+import com.simiacryptus.cognotik.plan.tools.online.processing.PageProcessingStrategy.ProcessingContext
+import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType
+import com.simiacryptus.cognotik.plan.tools.online.seed.SeedMethod
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -284,15 +289,11 @@ class CrawlerAgentTask(
         log.debug("Created websearch directory: ${webSearchDir.absolutePath}")
       }
       val tabs = TabbedDisplay(task)
-      val crawlTask = task.linkedTask("Crawl Details").apply { tabs["Crawl"] = placeholder }
+      val crawlTask = task.linkedTask("Crawl Details")
       val crawlTabs = TabbedDisplay(crawlTask)
       task.update()
       transcriptStream?.let { stream ->
-
-        // Write transcript header if stream is available
-        transcriptStream?.let { stream ->
-          writeTranscriptHeader(stream)
-        }
+        writeTranscriptHeader(stream)
       }
 
       val seedMethod = when {
@@ -387,7 +388,7 @@ class CrawlerAgentTask(
         typeConfig = typeConfig,
         orchestrationConfig = orchestrationConfig,
         messages = messages,
-        task = task,
+        task = crawlTask,
         webSearchDir = webSearchDir,
         processedCount = AtomicInteger(0),
         maxPages = maxPages,
@@ -433,7 +434,6 @@ class CrawlerAgentTask(
               activeTasks = activeTasks,
               errorCount = errorCount,
               maxErrors = maxErrors,
-              task = task,
               tabs = crawlTabs,
               processedCount = processedCount,
               maxPages = maxPages,
@@ -703,7 +703,6 @@ class CrawlerAgentTask(
     activeTasks: MutableSet<String>,
     errorCount: AtomicInteger,
     maxErrors: Int,
-    task: SessionTask,
     tabs: TabbedDisplay,
     processedCount: AtomicInteger,
     maxPages: Int,
@@ -764,7 +763,9 @@ class CrawlerAgentTask(
           analysisResultsMap,
           transcriptStream,
           processingStrategy,
-          processingContext,
+          processingContext.copy(
+            task = subTask
+          ),
           allPageResults
         )
       } catch (e: Exception) {
@@ -969,7 +970,12 @@ class CrawlerAgentTask(
                     appendLine()
                     linkData.forEach { link ->
                       val wasAdded = seenUrls.contains(link.url)
-                      appendLine("- ${if (wasAdded) "✅" else "⏭️"} **[${link.title ?: "Untitled"}](${link.url})** - Relevance: ${link.relevance_score} ${link.tags?.joinToString(", ")?.let { " - Tags: $it" } ?: ""}")
+                      appendLine(
+                        "- ${if (wasAdded) "✅" else "⏭️"} **[${link.title ?: "Untitled"}](${link.url})** - Relevance: ${link.relevance_score} ${
+                          link.tags?.joinToString(
+                            ", "
+                          )?.let { " - Tags: $it" } ?: ""
+                        }")
                     }
                     appendLine()
                     appendLine("</details>")
@@ -1435,21 +1441,4 @@ class CrawlerAgentTask(
 
   }
 
-enum class ProcessingStrategyType {
-
-    DefaultSummarizer {
-      override fun createStrategy(): PageProcessingStrategy = DefaultSummarizerStrategy()
-    },
-    FactChecking {
-      override fun createStrategy(): PageProcessingStrategy = FactCheckingStrategy()
-    },
-    JobMatching {
-      override fun createStrategy(): PageProcessingStrategy = JobMatchingStrategy()
-    },
-    SchemaExtraction {
-      override fun createStrategy(): PageProcessingStrategy = SchemaExtractionStrategy()
-    };
-
-    abstract fun createStrategy(): PageProcessingStrategy
-  }
 }

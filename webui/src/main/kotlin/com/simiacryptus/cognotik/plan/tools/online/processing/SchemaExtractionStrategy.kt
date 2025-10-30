@@ -1,7 +1,9 @@
-package com.simiacryptus.cognotik.plan.tools.online
+package com.simiacryptus.cognotik.plan.tools.online.processing
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.util.toJson
@@ -390,7 +392,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
       
       // Also save a pretty-printed version
       val prettyFile = File(context.webSearchDir, "aggregated_data_pretty.json")
-      val prettyJson = com.fasterxml.jackson.databind.ObjectMapper()
+      val prettyJson = ObjectMapper()
         .writerWithDefaultPrettyPrinter()
         .writeValueAsString(data)
       prettyFile.writeText(prettyJson, StandardCharsets.UTF_8)
@@ -419,7 +421,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
     return try {
       val schemaConfig = when (config) {
         is SchemaExtractionConfig -> config
-        is String -> com.fasterxml.jackson.databind.ObjectMapper().readValue(config, SchemaExtractionConfig::class.java)
+        is String -> ObjectMapper().readValue(config, SchemaExtractionConfig::class.java)
         else -> return "Invalid config type: ${config.javaClass.name}"
       }
       

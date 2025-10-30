@@ -1,8 +1,9 @@
-package com.simiacryptus.cognotik.plan.tools.online
+package com.simiacryptus.cognotik.plan.tools.online.processing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.parserCast
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
