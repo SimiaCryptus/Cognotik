@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.online.processing
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.agents.parserCast
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -65,10 +66,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
     log.debug("Processing page with schema extraction: $url")
     val config = try {
       context.executionConfig.content_queries?.let { queries ->
-        when (queries) {
-          is String -> JsonUtil.fromJson(queries, SchemaExtractionConfig::class.java)
-          else -> queries.jsonCast<SchemaExtractionConfig>()
-        }
+        queries.parserCast<SchemaExtractionConfig>(context.orchestrationConfig.parsingChatter.getChildClient(context.task))
       } ?: run {
         log.warn("No schema extraction config provided, using default")
         SchemaExtractionConfig()
@@ -268,12 +266,8 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
   ): String {
     log.info("Generating final aggregated output")
     val config = try {
-      context.executionConfig.content_queries?.let { queries ->
-        when (queries) {
-          is String -> JsonUtil.fromJson(queries, SchemaExtractionConfig::class.java)
-          else -> queries.jsonCast<SchemaExtractionConfig>()
-        }
-      } ?: SchemaExtractionConfig()
+      val chatInterface = context.orchestrationConfig.parsingChatter.getChildClient(context.task)
+      context.executionConfig.content_queries?.parserCast<SchemaExtractionConfig>(chatInterface) ?: SchemaExtractionConfig()
     } catch (e: Exception) {
       log.error("Failed to parse config for final output", e)
       SchemaExtractionConfig()

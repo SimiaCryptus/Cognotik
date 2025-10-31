@@ -213,9 +213,6 @@ class CrawlerAgentTask(
     val link_data: List<LinkData>? = null,
   ) : ValidatedObject {
     override fun validate(): String? {
-      if (page_type == PageType.OK && page_information == null) {
-        return "page_information is required when page_type is OK"
-      }
       link_data?.forEach { linkData ->
         linkData.validate()?.let { return it }
       }

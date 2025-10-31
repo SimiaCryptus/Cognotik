@@ -133,7 +133,7 @@ ${settings?.toJson()}
         ui: SocketManager
     ) {
         try {
-            val settings: OrchestrationConfig = try {
+            val settings = try {
                 getSettings(session, user, OrchestrationConfig::class.java)
             } catch (e: Exception) {
                 log.error("Error retrieving orchestration config, using default", e)
