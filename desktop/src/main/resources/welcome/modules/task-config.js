@@ -143,6 +143,14 @@ class TaskConfigManager {
                         tooltip: 'Method used to fetch content from URLs'
                     },
                     {
+                        id: 'processing_strategy',
+                        label: 'Processing Method',
+                        type: 'select',
+                        options: ['DefaultSummarizer', 'FactChecking', 'JobMatching', 'SchemaExtraction', 'DataTableAccumulation'],
+                        default: 'DefaultSummarizer',
+                        tooltip: 'Strategy for processing fetched content'
+                    },
+                    {
                         id: 'max_pages_per_task',
                         label: 'Max Pages Per Task',
                         type: 'number',
@@ -209,7 +217,7 @@ class TaskConfigManager {
                     {
                         id: 'allowed_domains',
                         label: 'Allowed Domains',
-                        type: 'textarea',
+                        type: 'text',
                         placeholder: 'Enter one domain per line (e.g., example.com)',
                         tooltip: 'List of domains that the crawler is allowed to visit'
                     }

@@ -202,7 +202,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       task.update()
 
       // Gather context
-      val priorContext = getPriorCode(agent.executionState)
+      val priorContext = getPriorCode(agent?.executionState)
       val combinedContext = (priorContext + "\n\n" + inputContext.joinToString("\n\n")).trim()
       if (priorContext.isNotBlank()) {
         log.debug("Found prior context: ${priorContext.length} characters")

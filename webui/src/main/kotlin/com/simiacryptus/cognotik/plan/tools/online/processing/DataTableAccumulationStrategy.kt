@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.online.processing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
+import com.simiacryptus.cognotik.agents.parserCast
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
@@ -82,11 +82,9 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
     log.debug("Processing page for data table accumulation: $url")
     
     val config = try {
+      val chatInterface = context.orchestrationConfig.parsingChatter.getChildClient(context.task)
       context.executionConfig.content_queries?.let { queries ->
-        when (queries) {
-          is String -> JsonUtil.fromJson(queries, DataTableConfig::class.java)
-          else -> queries.jsonCast<DataTableConfig>()
-        }
+        queries.parserCast<DataTableConfig>(chatInterface)
       } ?: run {
         log.warn("No data table config provided, using default")
         DataTableConfig()
@@ -409,10 +407,7 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
     
     val config = try {
       context.executionConfig.content_queries?.let { queries ->
-        when (queries) {
-          is String -> JsonUtil.fromJson(queries, DataTableConfig::class.java)
-          else -> queries.jsonCast<DataTableConfig>()
-        }
+        queries.parserCast<DataTableConfig>(context.orchestrationConfig.parsingChatter.getChildClient(context.task))
       } ?: DataTableConfig()
     } catch (e: Exception) {
       log.error("Failed to parse config for final output", e)

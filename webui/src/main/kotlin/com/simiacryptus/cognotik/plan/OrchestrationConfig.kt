@@ -67,8 +67,7 @@ class OrchestrationConfig(
 
 
   @JsonIgnore
-  fun instance(model: ApiChatModel) = instanceFn?.let { it(model) }
-    ?: throw IllegalStateException("Instance function not set")
+  fun instance(model: ApiChatModel) = instanceFn?.let { it(model) } ?: throw IllegalStateException("Instance function not set")
 
   @get:JsonIgnore
   val absoluteWorkingDir

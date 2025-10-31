@@ -89,11 +89,11 @@ class JobMatchingStrategy : DefaultSummarizerStrategy() {
     @Description("Relocation assistance details")
     val relocation_assistance: String? = null,
     @Description("URL where the candidate can apply for the position")
-    val application_url: String = "",
+    val application_url: String? = null,
     @Description("URL of the original job description page")
-    val job_description_url: String = "",
+    val job_description_url: String? = null,
     @Description("Full text of the job description")
-    val job_description: String = "",
+    val job_description: String? = null,
     @Description("Minimum salary offered (if disclosed)")
     val salary_min: Int? = null,
     @Description("Maximum salary offered (if disclosed)")
@@ -127,9 +127,9 @@ class JobMatchingStrategy : DefaultSummarizerStrategy() {
     @Description("Skills the candidate has that match the job requirements")
     val skill_matches: List<String> = listOf(),
     @Description("Draft cover letter tailored to this specific position")
-    val cover_letter: String = "",
+    val cover_letter: String? = null,
     @Description("Strategic notes and recommendations for the application")
-    val application_notes: String = ""
+    val application_notes: String? = null
   )
 
   private val goodMatches = ConcurrentHashMap<String, JobAnalysis>()
@@ -204,7 +204,7 @@ class JobMatchingStrategy : DefaultSummarizerStrategy() {
       val errorMsg = "Failed to analyze job match for URL: $url - ${e.message}"
       log.error(errorMsg, e)
       context.task.error(e)
-      writeToTranscript(context, "\n**ERROR:** $errorMsg\n```\n${e.stackTraceToString().indent("  ")}\n```\n\n")
+      writeToTranscript(context, "\n**ERROR:** $errorMsg\n")
       throw e
     }
 

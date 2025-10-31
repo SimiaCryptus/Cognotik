@@ -107,7 +107,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
     }
 
     protected open fun getInitiatorPattern(): Regex {
-        return "(?s)```\\w*\n".toRegex()
+        return processor.getInitiatorPattern()
     }
 
     protected open fun loadFile(filepath: Path?): String = try {
@@ -134,7 +134,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
     return "<a href='fileIndex/${socketManager.sessionId}/$relativePath' target='_blank' class='verbose'>Patch Data</a>"
   }
 
-  fun instrument(
+fun instrument(
         self: SocketManager,
         root: Path,
         response: String,
@@ -159,28 +159,17 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                 )
             }
 
-            val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex()
-
-            val codeblockGreedyPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*)\n```""".toRegex()
-
-            val findAll = codeblockPattern.findAll(response).toList()
-                .groupBy { block -> findHeader(block, response) ?: defaultFile }
-            val findAllGreedy = codeblockGreedyPattern.findAll(response).toList()
-                .groupBy { block -> findHeader(block, response) ?: defaultFile }
-            val resolvedMatches = mutableListOf<Pair<String?, List<MatchResult>>>()
-            if (findAllGreedy.values.flatten().any { it.groupValues[1] == "markdown" }) {
-
-                findAllGreedy.forEach { s, matchResults -> resolvedMatches.add(s to matchResults) }
-            } else {
-
-                findAll.forEach { s, matchResults -> resolvedMatches.add(s to matchResults) }
+            val codeBlocks = processor.extractCodeBlocks(response)
+            val codeBlocksWithHeaders = codeBlocks.mapIndexed { index, (lang, code) ->
+                val header = findHeaderForBlock(response, lang, code, index) ?: defaultFile
+                Triple(header, lang, code)
             }
 
             val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
 
             val headers = headerPattern.findAll(response).map { it.range to it.groupValues[1] }.toList()
 
-            val codeblocks = resolvedMatches.filter { (header, block) ->
+            val newFileBlocks = codeBlocksWithHeaders.filter { (header, lang, code) ->
                 try {
                     val resolvedPath = resolver(root, header ?: return@filter false)
                     resolvedPath == null || !root.resolve(resolvedPath).toFile().exists()
@@ -188,9 +177,9 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                     log.info("Error processing code block", e)
                     false
                 }
-            }.flatMap { it.second }.map { it.range to it }.toList()
+            }
 
-            val patchBlocks = resolvedMatches.filter { (header, block) ->
+            val patchBlocks = codeBlocksWithHeaders.filter { (header, lang, code) ->
                 try {
                     val resolvedPath = resolver(root, header ?: return@filter false)
                     resolvedPath != null && root.resolve(resolvedPath).toFile().exists()
@@ -198,43 +187,42 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                     log.info("Error processing code block", e)
                     false
                 }
-            }.flatMap { it.second }.map { it.range to it }.toList()
-
-            val withPatchLinks: String = patchBlocks.foldIndexed(response) { index, markdown, diffBlock ->
-                val diffValue = diffBlock.second.groupValues[2].trim()
-              val header = headers.lastOrNull { it.first.last < diffBlock.first.first }?.second ?: defaultFile ?: "Unknown"
-                val filename = resolver(root, normalizeFilename(header))
-                if (filename.isNullOrBlank()) return@foldIndexed markdown
-                val newValue = renderDiffBlock(root, filename, diffValue, handle, self, shouldAutoApply)
-                markdown.replace(diffBlock.second.value, newValue)
             }
 
-            val withSaveLinks = codeblocks.foldIndexed(withPatchLinks) { index, markdown, codeBlock ->
-                val lang = codeBlock.second.groupValues[1]
-                var codeValue = codeBlock.second.groupValues[2].trim().trimIndent()
+            val withPatchLinks: String = patchBlocks.foldIndexed(response) { index, markdown, (header, lang, diffValue) ->
+                val filename = resolver(root, normalizeFilename(header ?: ""))
+                if (filename.isNullOrBlank()) return@foldIndexed markdown
+                val newValue = renderDiffBlock(root, filename, diffValue, handle, self, shouldAutoApply)
+                markdown.replace("```$lang\n$diffValue\n```", newValue)
+            }
+
+            val withSaveLinks = newFileBlocks.foldIndexed(withPatchLinks) { index, markdown, (header, lang, codeValue) ->
+                var processedCode = codeValue.trimIndent()
                 if (codeValue.lines().all { it.startsWith('+') || it.startsWith('-') }) {
-                    codeValue = codeValue.lines().joinToString("\n") { it.drop(1) }
+                    processedCode = codeValue.lines().joinToString("\n") { it.drop(1) }
                 }
-                val header = headers.lastOrNull { it.first.last < codeBlock.first.first }?.second ?: defaultFile
                 if (header.isNullOrBlank()) return markdown
                 val filename = prefilterFilename(normalizeFilename(header))
                 if (filename.isNullOrBlank()) return markdown
-              val newMarkdown = renderNewFile(root, filename, codeValue, handle, self, lang, shouldAutoApply) + record(
+              val newMarkdown = renderNewFile(root, filename, processedCode, handle, self, lang, shouldAutoApply) + record(
                 self, mapOf(
                   "filename" to filename,
-                  "code" to codeValue,
+                  "code" to processedCode,
                   "header" to header,
                   "language" to lang,
                 )
               )
-                markdown.replace(codeBlock.second.value, newMarkdown)
+                markdown.replace("```$lang\n$codeValue\n```", newMarkdown)
             }
 
           return withSaveLinks
         }
     }
 
-    private fun findHeader(block: MatchResult, response: String): String? {
+    private fun findHeaderForBlock(response: String, lang: String, code: String, blockIndex: Int): String? {
+        val blockText = "```$lang\n$code\n```"
+        val blockPosition = response.indexOf(blockText)
+        if (blockPosition == -1) return null
 
         val markdownHeaderPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
 
@@ -247,7 +235,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         fileHeaderPattern.findAll(response).forEach { match ->
             headers.add(match.range to normalizeFilename(match.groupValues[1]))
         }
-        return headers.filter { it.first.last <= block.range.first }
+        return headers.filter { it.first.last <= blockPosition }
             .maxByOrNull { it.first.last }?.second
     }
 

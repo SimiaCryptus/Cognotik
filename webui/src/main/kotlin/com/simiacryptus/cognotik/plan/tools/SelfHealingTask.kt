@@ -18,6 +18,26 @@ import kotlin.io.path.exists
 class SelfHealingTask(
   orchestrationConfig: OrchestrationConfig, planTask: SelfHealingTaskExecutionConfigData?
 ) : AbstractTask<SelfHealingTask.SelfHealingTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+
+  companion object {
+    private val log = LoggerFactory.getLogger(SelfHealingTask::class.java)
+    val SelfHealing = TaskType(
+      "SelfHealing",
+      SelfHealingTaskExecutionConfigData::class.java,
+      SelfHealingTaskTypeConfig::class.java,
+      "Run a command and automatically fix any issues that arise",
+      """
+          Executes a command and automatically fixes any issues that arise.
+          <ul>
+            <li>Specify commands and working directories</li>
+            <li>Supports multiple commands and directories</li>
+            <li>Interactive approval mode</li>
+            <li>Output diff formatting</li>
+          </ul>
+        """
+    )
+  }
+
   class SelfHealingTaskTypeConfig(
     task_type: String? = null,
     model: ApiChatModel? = null,
@@ -176,23 +196,4 @@ class SelfHealingTask(
     return markdownTranscript
   }
 
-  companion object {
-    private val log = LoggerFactory.getLogger(SelfHealingTask::class.java)
-    val SelfHealing = TaskType(
-      "SelfHealing",
-      SelfHealingTaskExecutionConfigData::class.java,
-      SelfHealingTaskTypeConfig::class.java,
-      "Run a command and automatically fix any issues that arise",
-      """
-          Executes a command and automatically fixes any issues that arise.
-          <ul>
-            <li>Specify commands and working directories</li>
-            <li>Supports multiple commands and directories</li>
-            <li>Interactive approval mode</li>
-            <li>Output diff formatting</li>
-          </ul>
-        """
-    )
-
-  }
 }

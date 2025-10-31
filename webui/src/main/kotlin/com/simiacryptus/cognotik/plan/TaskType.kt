@@ -38,7 +38,18 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 
   companion object {
 
-    init {
+    private val taskConstructors by lazy {
+      val taskConstructors: MutableMap<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>> = mutableMapOf()
+
+      fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
+        taskType: TaskType<T, U>, constructor: (OrchestrationConfig, T?) -> AbstractTask<T, U>
+      ) {
+        taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskExecutionConfig? ->
+          constructor(settings, task as T?) as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
+        }
+        register(taskType)
+      }
+
       registerConstructor(ChainOfThought) { settings, task ->
         ChainOfThoughtTask(settings, task)
       }
@@ -192,21 +203,13 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
       registerConstructor(GenerateImageTask.GenerateImage) { settings, task ->
         GenerateImageTask(settings, task)
       }
-    }
-
-    fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
-      taskType: TaskType<T, U>, constructor: (OrchestrationConfig, T?) -> AbstractTask<T, U>
-    ) {
-      taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskExecutionConfig? ->
-        constructor(settings, task as T?) as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
-      }
-      register(taskType)
+      taskConstructors.toMap()
     }
 
     fun values() = values(TaskType::class.java)
 
     fun getImpl(
-      orchestrationConfig: OrchestrationConfig, planTask: TaskExecutionConfig?, strict: Boolean = true
+      orchestrationConfig: OrchestrationConfig, planTask: TaskExecutionConfig?
     ) = getImpl(
       orchestrationConfig = orchestrationConfig,
       taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
@@ -222,10 +225,15 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
       return constructor(orchestrationConfig, planTask)
     }
 
-    fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig) =
-      orchestrationConfig.taskSettings.mapNotNull { x -> valueOf(x.value.task_type ?: return@mapNotNull null) }
+    fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig): List<TaskType<*, *>> {
+      @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization
+      return orchestrationConfig.taskSettings.mapNotNull { x -> valueOf(x.value.task_type ?: return@mapNotNull null) }
+    }
 
-    fun valueOf(name: String): TaskType<*, *> = valueOf(TaskType::class.java, name)
+    fun valueOf(name: String): TaskType<*, *> {
+      @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization
+      return valueOf(TaskType::class.java, name)
+    }
 
     private fun register(taskType: TaskType<*, *>) = register(TaskType::class.java, taskType)
   }
@@ -235,5 +243,3 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 class TaskTypeSerializer : DynamicEnumSerializer<TaskType<*, *>>(TaskType::class.java)
 
 class TaskTypeDeserializer : DynamicEnumDeserializer<TaskType<*, *>>(TaskType::class.java)
-
-private val taskConstructors = mutableMapOf<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>>()

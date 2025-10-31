@@ -43,7 +43,7 @@ open class FuzzyPatchMatcher(
   private val requireAnchorMatch: Boolean = true,
 ) : PatchProcessor {
   /** A descriptive label for this patch processor. */
-  override val label: String = "Fuzzy Patch Matcher"
+override val label: String = "Fuzzy Patch Matcher"
 
   /**
    * A detailed instructional prompt intended for a language model (LLM).
@@ -88,6 +88,26 @@ open class FuzzyPatchMatcher(
       Alternately, the patch can be provided as a snippet of updated code with context.
       This is useful when the patch is small and can be applied directly, when creating the delete lines is cumbersome, or when creating a new file.
       """.trimIndent()
+  override fun getInitiatorPattern(): Regex {
+    return "(?s)```\\w*\n".toRegex()
+  }
+  override fun extractCodeBlocks(response: String): List<Pair<String, String>> {
+    val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex()
+    val codeblockGreedyPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*)\n```""".toRegex()
+    val findAll = codeblockPattern.findAll(response).toList()
+    val findAllGreedy = codeblockGreedyPattern.findAll(response).toList()
+    // Use greedy pattern if we find markdown blocks, otherwise use non-greedy
+    val matches = if (findAllGreedy.any { it.groupValues[1] == "markdown" }) {
+      findAllGreedy
+    } else {
+      findAll
+    }
+    return matches.map { match ->
+      val language = match.groupValues[1]
+      val code = match.groupValues[2].trim()
+      language to code
+    }
+  }
 
   /**
    * Generates a diff patch that transforms the `oldCode` into the `newCode`.

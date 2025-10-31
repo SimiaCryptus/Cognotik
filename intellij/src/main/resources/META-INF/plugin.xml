@@ -91,7 +91,7 @@
                     description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
             </action>
 
-            <group id="cognotik.ui.ProjectMenu.Modify"
+<group id="cognotik.ui.ProjectMenu.Modify"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
                    text="🔧 Macros"
@@ -107,6 +107,25 @@
                 <action class="cognotik.actions.agent.CustomFileSetPatchAction"
                         text="🔨 Process Filesets"
                         description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
+                </action>
+            </group>
+
+<group id="cognotik.ui.ProjectMenu.Tasks"
+                   class="com.intellij.openapi.actionSystem.DefaultActionGroup"
+                   popup="true"
+                   text="⚡ Single Tasks"
+                   description="Execute individual tasks with custom configuration">
+                <action class="cognotik.actions.task.FileModificationTaskAction"
+                        text="📝 File Modification"
+                        description="Modify or create files with AI assistance using custom configuration">
+                </action>
+                <action class="cognotik.actions.task.WriteHtmlAction"
+                        text="🌐 Generate HTML Page"
+                        description="Create a complete HTML page with embedded CSS and JavaScript, optionally with AI-generated images">
+                </action>
+                <action class="cognotik.actions.task.GeneratePresentationAction"
+                        text="📊 Generate Presentation"
+                        description="Create a complete Reveal.js presentation with speaker notes and optional AI-generated images">
                 </action>
             </group>
 
