@@ -15,6 +15,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import kotlin.io.path.exists
 
 abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
   orchestrationConfig: OrchestrationConfig,
@@ -42,6 +43,9 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     val strings = (executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())
     val flatMap = strings
       .flatMap { pattern: String ->
+        if(root.resolve(pattern).exists()) {
+          return@flatMap listOf(root.resolve(pattern).toFile())
+        }
         val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
         (FileSelectionUtils.filteredWalk(root.toFile()) {
           //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())

@@ -123,7 +123,7 @@ class FileModificationTaskAction : BaseAction() {
 fun getFiles(e: AnActionEvent): List<File> {
   val selectedFiles = e.getSelectedFiles()
   val relatedFiles = if (selectedFiles.isEmpty()) {
-    e.getSelectedFolder()?.toFile?.let {
+    e.getSelectedFolder()?.toFile?.absoluteFile?.let {
       FileSelectionUtils.filteredWalk(it) { file ->
         when {
           FileSelectionUtils.isLLMIgnored(file.toPath()) -> false
