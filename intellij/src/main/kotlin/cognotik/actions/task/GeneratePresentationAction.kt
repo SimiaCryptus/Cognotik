@@ -9,8 +9,7 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.SingleTaskApp
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.plan.tools.file.GeneratePresentationTask
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
@@ -22,18 +21,20 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.io.File
 import java.text.SimpleDateFormat
 
-class FileModificationTaskAction : BaseAction() {
+class GeneratePresentationAction : BaseAction() {
 
   override fun getActionUpdateThread() = ActionUpdateThread.BGT
+  override fun isEnabled(event: AnActionEvent): Boolean {
+    if (!super.isEnabled(event)) return false
+    if (event.getSelectedFiles().isEmpty() && event.getSelectedFolder() == null) return false
+    return true
+  }
 
   override fun handle(e: AnActionEvent) {
     val root = getProjectRoot(e) ?: return
-    val files = getFiles(e)
-
-    val dialog = FileModificationTaskDialog(
-      e.project,
-      root,
-      files
+    val relatedFiles = getFiles(e)
+    val dialog = GeneratePresentationTaskDialog(
+      e.project, root, relatedFiles
     )
 
     if (dialog.showAndGet()) {
@@ -41,11 +42,11 @@ class FileModificationTaskAction : BaseAction() {
         val taskConfig = dialog.getTaskConfig()
         val orchestrationConfig = dialog.getOrchestrationConfig()
 
-        UITools.runAsync(e.project, "Initializing File Modification Task", true) { progress ->
+        UITools.runAsync(e.project, "Initializing Presentation Generation Task", true) { progress ->
           initializeTask(e, progress, orchestrationConfig, taskConfig, root)
         }
       } catch (ex: Exception) {
-        log.error("Failed to initialize file modification task", ex)
+        log.error("Failed to initialize presentation generation task", ex)
         UITools.showError(e.project, "Failed to initialize task: ${ex.message}")
       }
     }
@@ -55,7 +56,7 @@ class FileModificationTaskAction : BaseAction() {
     e: AnActionEvent,
     progress: ProgressIndicator,
     orchestrationConfig: OrchestrationConfig,
-    taskConfig: FileModificationTask.FileModificationTaskExecutionConfigData,
+    taskConfig: GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData,
     root: File
   ) {
     progress.text = "Setting up session..."
@@ -79,35 +80,26 @@ class FileModificationTaskAction : BaseAction() {
   }
 
   private fun setupTaskSession(
-    session: Session,
-    orchestrationConfig: OrchestrationConfig,
-    taskConfig: FileModificationTask.FileModificationTaskExecutionConfigData,
-    root: File
+    session: Session, orchestrationConfig: OrchestrationConfig, taskConfig: GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData, root: File
   ) {
     val app = object : SingleTaskApp(
-      applicationName = "File Modification Task",
-      path = "/fileModificationTask",
+      applicationName = "Presentation Generation Task",
+      path = "/generatePresentationTask",
       showMenubar = false,
-      taskType = FileModification,
+      taskType = GeneratePresentationTask.GeneratePresentation,
       taskConfig = taskConfig,
       instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
     ) {
-      override fun instance(model: ApiChatModel) = model.instance()
-        ?: throw IllegalStateException("Model or Provider not set")
+      override fun instance(model: ApiChatModel) = model.instance() ?: throw IllegalStateException("Model or Provider not set")
     }
 
     app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
     SessionProxyServer.chats[session] = app
     ApplicationServer.appInfoMap[session] = AppInfoData(
-      applicationName = "File Modification Task",
-      inputCnt = 0,
-      stickyInput = false,
-      showMenubar = false
+      applicationName = "Presentation Generation Task", inputCnt = 0, stickyInput = false, showMenubar = false
     )
     SessionProxyServer.metadataStorage.setSessionName(
-      null,
-      session,
-      "File Modification @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+      null, session, "Presentation Generation @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
     )
   }
 
@@ -118,23 +110,3 @@ class FileModificationTaskAction : BaseAction() {
     }
   }
 }
-
-
-fun getFiles(e: AnActionEvent): List<File> {
-  val selectedFiles = e.getSelectedFiles()
-  val relatedFiles = if (selectedFiles.isEmpty()) {
-    e.getSelectedFolder()?.toFile?.let {
-      FileSelectionUtils.filteredWalk(it) { file ->
-        when {
-          FileSelectionUtils.isLLMIgnored(file.toPath()) -> false
-          it.isDirectory -> true
-          else -> false
-        }
-      }
-    } ?: emptyList()
-  } else {
-    selectedFiles.map { it.toFile }
-  }
-  return relatedFiles
-}
-

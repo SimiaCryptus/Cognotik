@@ -5,6 +5,8 @@ enum class PatchProcessors : PatchProcessor {
   FullReplacement {
     override val label = "FullReplacement"
     override val matcher = FullReplacementProcessor()
+    override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+    override fun getInitiatorPattern() = matcher.getInitiatorPattern()
   },
 
   // Thermodynamic mode - DNA-like binding energy approach
@@ -15,6 +17,8 @@ enum class PatchProcessors : PatchProcessor {
       cooperativityBonus = 2.0,
       entropyPenalty = 1.0
     )
+    override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+    override fun getInitiatorPattern() = matcher.getInitiatorPattern()
   },
 
   // Strict mode - exact matching only, no fuzzy logic
@@ -25,6 +29,8 @@ enum class PatchProcessors : PatchProcessor {
       enableSnippetPatching = false,
       contextSize = 5
     )
+    override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+    override fun getInitiatorPattern() = matcher.getInitiatorPattern()
   },
 
   // Lenient mode - maximum fuzzy matching
@@ -39,11 +45,15 @@ enum class PatchProcessors : PatchProcessor {
       requireAnchorMatch = false,
       contextSize = 2
     )
+    override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+    override fun getInitiatorPattern() = matcher.getInitiatorPattern()
   },
 
   // Default/Fuzzy - balanced configuration
   Fuzzy {
     override val label = "Fuzzy"
+    override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+    override fun getInitiatorPattern() = matcher.getInitiatorPattern()
     override val matcher = FuzzyPatchMatcher()
   };
 

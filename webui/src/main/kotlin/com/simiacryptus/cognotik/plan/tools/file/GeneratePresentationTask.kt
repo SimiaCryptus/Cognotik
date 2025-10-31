@@ -17,6 +17,8 @@ import org.slf4j.Logger
 import java.io.FileOutputStream
 import javax.imageio.ImageIO
 
+private const val TT = """```"""
+
 class GeneratePresentationTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: GeneratePresentationTaskExecutionConfigData?
@@ -144,6 +146,12 @@ class GeneratePresentationTask(
     val outlinePrompt = """
  You are an expert presentation designer tasked with creating a Reveal.js presentation.
 
+## Standard CSS Already Included:
+The following standard CSS is already included and should not be duplicated:
+${TT}css
+$standardCss
+$TT
+
  ## Requirements:
  ${executionConfig?.task_description ?: "Create a presentation as specified"}
 
@@ -169,7 +177,7 @@ class GeneratePresentationTask(
 
 ## Output Format:
 Provide ONLY the slide sections within a code block (no DOCTYPE, html, head, or body tags):
-```html
+${TT}html
 <section>
     <h1>Title</h1>
     <p class="subtitle">Subtitle</p>
@@ -188,7 +196,7 @@ Provide ONLY the slide sections within a code block (no DOCTYPE, html, head, or 
         Detailed speaker notes explaining the content.
     </aside>
 </section>
-```
+$TT
         """.trimIndent()
 
     newTask.add(MarkdownUtil.renderMarkdown("### Step 1: Generating Presentation Structure", ui = ui))
@@ -256,42 +264,40 @@ $enhancedSlideContent
     """.trimIndent()
 
 
-    // Step 2: Generate custom CSS
+// Step 2: Generate custom CSS
     val cssPrompt = """
- Based on the following Reveal.js presentation HTML, generate custom CSS styling.
+Based on the following Reveal.js presentation HTML, generate custom CSS styling.
 
-## Slide Content:
-```html
-$slideContent
-```
+ ## Slide Content:
+ ${TT}html
+ $slideContent
+$TT
 
 ## Requirements:
 ${executionConfig?.task_description ?: "Create appropriate styling for the presentation"}
 
 ## Instructions:
-1. Create CSS that enhances the Reveal.js black theme with custom styling
-2. Style the control container (#controlsContainer) with:
-   - Fixed positioning at the top
-   - Professional appearance
-   - Responsive design
-3. Add custom styles for:
+1. Create ONLY additional custom CSS that enhances the presentation
+2. DO NOT duplicate any styles already present in the standard CSS above
+3. Focus on adding custom styles for:
    - .subtitle class for subtitle text
    - .fade-in-text for animated text
    - .intro-points for bullet point lists
    - Custom slide transitions and animations
-4. Ensure readability with appropriate:
+   - Any slide-specific styling based on the content
+4. Only add new styles that complement the existing CSS, such as:
    - Font sizes and weights
    - Color contrasts
    - Spacing and padding
-5. Add hover effects for interactive elements
-6. Include responsive design for mobile devices
-7. Use CSS variables for easy theme customization
+   - Hover effects for interactive elements
+5. Keep the CSS minimal and avoid conflicts with existing styles
+6. Use CSS variables defined in the standard CSS where applicable
 
 ## Output Format:
-Provide only the CSS code within a code block:
-```css
+Provide only the ADDITIONAL custom CSS code within a code block (no duplicates):
+${TT}css
 /* Custom Presentation Styles */
-```
+$TT
         """.trimIndent()
 
     newTask.add(MarkdownUtil.renderMarkdown("### Step 2: Generating Custom CSS", ui = ui))
@@ -315,7 +321,7 @@ Provide only the CSS code within a code block:
     newTask.add(MarkdownUtil.renderMarkdown("### Generated Files Preview", ui = ui))
     filesToWrite.forEach { (filename, content) ->
       newTask.add(MarkdownUtil.renderMarkdown("#### $filename", ui = ui))
-      newTask.add(MarkdownUtil.renderMarkdown("```${getFileExtension(filename)}\n$content\n```", ui = ui))
+      newTask.add(MarkdownUtil.renderMarkdown("$TT${getFileExtension(filename)}\n$content\n${TT}", ui = ui))
     }
 
     try {
@@ -356,7 +362,7 @@ Provide only the CSS code within a code block:
   private fun extractCodeFromResponse(response: String, vararg languages: String): String {
     // Try to extract code from code blocks with specified languages
     for (lang in languages) {
-      val codeBlockRegex = "```$lang\\s*([\\s\\S]*?)```".toRegex()
+      val codeBlockRegex = "$TT$lang\\s*([\\s\\S]*?)${TT}".toRegex()
       val match = codeBlockRegex.find(response)
       if (match != null) {
         return match.groupValues[1].trim()
@@ -364,7 +370,7 @@ Provide only the CSS code within a code block:
     }
 
     // Try generic code block
-    val genericBlockRegex = "```\\s*([\\s\\S]*?)```".toRegex()
+    val genericBlockRegex = "$TT\\s*([\\s\\S]*?)${TT}".toRegex()
     val genericMatch = genericBlockRegex.find(response)
     if (genericMatch != null) {
       return genericMatch.groupValues[1].trim()

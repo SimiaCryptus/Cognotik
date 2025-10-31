@@ -33,8 +33,12 @@
 }
 
 .reveal .slides section {
-    height: 100%;
-    padding: 20px;
+    height: auto;
+    min-height: 100vh;
+    padding: clamp(1rem, 3vw, 2rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .reveal .progress {

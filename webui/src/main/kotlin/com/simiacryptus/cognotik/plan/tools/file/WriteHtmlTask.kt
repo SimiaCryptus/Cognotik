@@ -57,10 +57,6 @@ class WriteHtmlTask(
         return "WriteHtmlTaskExecutionConfigData: file must have .html extension, got: $htmlFile"
       }
 
-      // Validate task description is provided
-      if (task_description.isNullOrBlank()) {
-        return "WriteHtmlTaskExecutionConfigData: task_description cannot be null or blank"
-      }
       // Validate image count
       if (image_count < 0 || image_count > 10) {
         image_count = image_count.coerceIn(0, 10)

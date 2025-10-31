@@ -110,9 +110,7 @@
                 </action>
             </group>
 
-
-<!--
-            <group id="cognotik.ui.ProjectMenu.Tasks"
+<group id="cognotik.ui.ProjectMenu.Tasks"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
                    text="⚡ Single Tasks"
@@ -121,9 +119,15 @@
                         text="📝 File Modification"
                         description="Modify or create files with AI assistance using custom configuration">
                 </action>
+                <action class="cognotik.actions.task.WriteHtmlAction"
+                        text="🌐 Generate HTML Page"
+                        description="Create a complete HTML page with embedded CSS and JavaScript, optionally with AI-generated images">
+                </action>
+                <action class="cognotik.actions.task.GeneratePresentationAction"
+                        text="📊 Generate Presentation"
+                        description="Create a complete Reveal.js presentation with speaker notes and optional AI-generated images">
+                </action>
             </group>
--->
-
 
             <group id="cognotik.ui.ProjectMenu.Agents"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"

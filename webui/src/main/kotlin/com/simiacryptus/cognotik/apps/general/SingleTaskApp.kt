@@ -26,7 +26,8 @@ abstract class SingleTaskApp(
   applicationName: String = "Single Task App",
   showMenubar: Boolean = false,
   private val taskType: TaskType<*, *>,
-  private val taskConfig: TaskExecutionConfig
+  private val taskConfig: TaskExecutionConfig,
+  val instanceFn: ((ApiChatModel) -> ChatInterface)?
 ) : ApplicationServer(
   applicationName = applicationName,
   path = path,
@@ -48,7 +49,7 @@ abstract class SingleTaskApp(
   ): SocketManager {
     val socketManager = super.newSession(user, session)
     val settings = getSettings(session, user, OrchestrationConfig::class.java)
-
+    OrchestrationConfig.instanceFn = instanceFn
     socketManager.newTask(cancelable = false, root = true).expandable(
       "Session Info", """
 Session ID: `${session}`
@@ -65,10 +66,7 @@ Task Type: `${taskType.name}`
 
           """.renderMarkdown()
     )
-
-    // Execute the task immediately
-    executeTask(session, user, socketManager, settings)
-
+    socketManager.pool.submit { executeTask(session, user, socketManager, settings) }
     return socketManager
   }
 
