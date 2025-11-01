@@ -310,13 +310,13 @@ abstract class SocketManager(
 
     fun onWebSocketText(socket: ChatSocket, message: String) {
 
-        log.debug(
-            "Received WebSocket message ({} bytes): {} from socket: {} (id: {})",
-            message.length,
-            message,
-            socket,
-            System.identityHashCode(socket)
-        )
+//        log.debug(
+//            "Received WebSocket message ({} bytes): {} from socket: {} (id: {})",
+//            message.length,
+//            message,
+//            socket,
+//            System.identityHashCode(socket)
+//        )
 
         val maxMessageLength = 1000000
         if (message.length > maxMessageLength) {
@@ -337,7 +337,7 @@ abstract class SocketManager(
                 return
             }
             if (trimmed.contains("\"type\":\"ping\"") || trimmed.contains("\"type\":\"heartbeat\"")) {
-                log.debug("Received heartbeat ping - sending pong response.")
+                //log.debug("Received heartbeat ping - sending pong response.")
                 try {
                     socket.remote.sendString("{\"type\":\"pong\"}")
                 } catch (e: Exception) {
