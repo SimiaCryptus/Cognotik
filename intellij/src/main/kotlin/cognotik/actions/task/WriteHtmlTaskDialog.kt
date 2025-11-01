@@ -160,6 +160,10 @@ class WriteHtmlTaskDialog(
 
         if (htmlFileField.text.isBlank()) {
             return com.intellij.openapi.ui.ValidationInfo("HTML file path is required", htmlFileField)
+        } else {
+          if (htmlFileField.text.let { root.resolve(it) }.exists()) {
+            return com.intellij.openapi.ui.ValidationInfo("HTML file path must not exist", htmlFileField)
+          }
         }
 
         if (!htmlFileField.text.endsWith(".html", ignoreCase = true)) {
