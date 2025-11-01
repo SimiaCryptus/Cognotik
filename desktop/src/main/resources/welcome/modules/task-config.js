@@ -437,6 +437,97 @@ class TaskConfigManager {
                 description: 'Evaluate moral implications and make ethical decisions',
                 category: 'Reasoning',
                 configFields: []
+            },
+            {
+                id: 'ArticleGeneration',
+                name: 'Article Generation',
+                description: 'Generate well-structured articles and blog posts',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'PersuasiveEssay',
+                name: 'Persuasive Essay',
+                description: 'Write compelling persuasive essays and arguments',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'BusinessProposal',
+                name: 'Business Proposal',
+                description: 'Create professional business proposals',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'EmailCampaign',
+                name: 'Email Campaign',
+                description: 'Generate email marketing campaigns',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'InteractiveStory',
+                name: 'Interactive Story',
+                description: 'Create interactive narrative experiences',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'JournalismReasoning',
+                name: 'Journalism Reasoning',
+                description: 'Apply journalistic analysis and reporting techniques',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'TechnicalExplanation',
+                name: 'Technical Explanation',
+                description: 'Generate clear technical documentation and explanations',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'TutorialGeneration',
+                name: 'Tutorial Generation',
+                description: 'Create step-by-step tutorials and guides',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'ReportGeneration',
+                name: 'Report Generation',
+                description: 'Generate comprehensive reports and summaries',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'Scriptwriting',
+                name: 'Scriptwriting',
+                description: 'Write scripts for videos, plays, and performances',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'GenerateImage',
+                name: 'Generate Image',
+                description: 'Generate images using AI image generation',
+                category: 'File Operations',
+                configFields: []
+            },
+            {
+                id: 'CommandSession',
+                name: 'Command Session Task',
+                description: 'Execute a series of commands in a session',
+                category: 'Execution & Automation',
+                configFields: []
+            },
+            {
+                id: 'SubPlanning',
+                name: 'Sub-Planning',
+                description: 'Create and execute sub-plans within a larger plan',
+                category: 'Planning & Orchestration',
+                configFields: []
             }
         ];
     }
