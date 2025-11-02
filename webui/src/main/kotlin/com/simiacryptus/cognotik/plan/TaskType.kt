@@ -206,7 +206,10 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
       taskConstructors.toMap()
     }
 
-    fun values() = values(TaskType::class.java)
+    fun values(): List<TaskType<*, *>> {
+      @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization
+      return values(TaskType::class.java)
+    }
 
     fun getImpl(
       orchestrationConfig: OrchestrationConfig, planTask: TaskExecutionConfig?

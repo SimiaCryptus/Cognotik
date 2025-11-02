@@ -1,0 +1,3406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive visualization of extendable strategies in AI-assisted application development">
+    <title>Extendable Strategies - Interactive Documentation</title>
+    <!-- CSS will be added here -->
+
+    <style>
+        /* ============================================
+           CSS RESET & BASE STYLES
+           ============================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            /* Color Palette */
+            --primary-color: #2563eb;
+            --primary-dark: #1e40af;
+            --primary-light: #3b82f6;
+            --secondary-color: #7c3aed;
+            --secondary-dark: #6d28d9;
+            --accent-color: #10b981;
+            --accent-dark: #059669;
+        
+            /* Neutral Colors */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --bg-dark: #0f172a;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --border-light: #f1f5f9;
+        
+            /* Status Colors */
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --info-color: #3b82f6;
+        
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --gradient-hero: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        
+            /* Typography */
+            --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        
+            /* Spacing */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+            --spacing-3xl: 4rem;
+        
+            /* Border Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-2xl: 1.5rem;
+        
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        
+            /* Transitions */
+            --transition-fast: 150ms ease-in-out;
+            --transition-base: 250ms ease-in-out;
+            --transition-slow: 350ms ease-in-out;
+        
+            /* Z-index */
+            --z-dropdown: 1000;
+            --z-sticky: 1020;
+            --z-fixed: 1030;
+            --z-modal-backdrop: 1040;
+            --z-modal: 1050;
+            --z-tooltip: 1070;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+        
+        body {
+            font-family: var(--font-primary);
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* ============================================
+           NAVIGATION HEADER
+           ============================================ */
+        
+        .main-header {
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: var(--z-sticky);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .main-nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--spacing-md) var(--spacing-xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--spacing-xl);
+        }
+        
+        .nav-brand {
+            flex-shrink: 0;
+        }
+        
+        .brand-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .brand-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: var(--spacing-lg);
+            align-items: center;
+        }
+        
+        .nav-item {
+            position: relative;
+        }
+        
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.9375rem;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-base);
+            display: block;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary-color);
+            background-color: var(--bg-tertiary);
+        }
+        
+        .nav-link:active {
+            transform: scale(0.98);
+        }
+        
+        .nav-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 0.375rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: var(--spacing-sm);
+        }
+        
+        .hamburger-line {
+            width: 1.5rem;
+            height: 2px;
+            background-color: var(--text-primary);
+            border-radius: 2px;
+            transition: all var(--transition-base);
+        }
+        
+        /* ============================================
+           HERO SECTION
+           ============================================ */
+        
+        .hero-section {
+            background: var(--gradient-hero);
+            color: white;
+            padding: var(--spacing-3xl) var(--spacing-xl);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="60" height="60" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h60v60H0z" fill="none"/><path d="M30 0v60M0 30h60" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: var(--spacing-lg);
+            line-height: 1.2;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hero-description {
+            font-size: 1.125rem;
+            line-height: 1.7;
+            margin-bottom: var(--spacing-2xl);
+            opacity: 0.95;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            transition: all var(--transition-base);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 0.9375rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--spacing-2xl) var(--spacing-xl);
+        }
+        
+        .content-section {
+            background-color: var(--bg-primary);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+            margin-bottom: var(--spacing-2xl);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .section-intro {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* ============================================
+           SCALING SECTION
+           ============================================ */
+        
+        .comparison-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .comparison-card {
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            border: 2px solid var(--border-color);
+            transition: all var(--transition-base);
+        }
+        
+        .linear-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #fbbf24;
+        }
+        
+        .multiplicative-card {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-color: var(--primary-color);
+        }
+        
+        .comparison-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .comparison-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .formula-display {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            text-align: center;
+        }
+        
+        .formula {
+            font-family: var(--font-mono);
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .comparison-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        
+        .comparison-item {
+            padding-left: var(--spacing-lg);
+            position: relative;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .comparison-item::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        /* ============================================
+           CALCULATOR WIDGET
+           ============================================ */
+        
+        .calculator-widget {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid var(--primary-light);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .calculator-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+            text-align: center;
+        }
+        
+        .calculator-description {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .calculator-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .input-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+        }
+        
+        .input-field {
+            padding: var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-family: var(--font-mono);
+            font-weight: 600;
+            transition: all var(--transition-base);
+            background-color: var(--bg-primary);
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .calculator-results {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        
+        .result-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .result-display:last-child {
+            border-bottom: none;
+        }
+        
+        .result-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .result-value {
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .calculate-button {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md) var(--spacing-xl);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .calculate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .calculate-button:active {
+            transform: translateY(0);
+        }
+        
+        /* ============================================
+           VISUALIZATION
+           ============================================ */
+        
+        .visualization-container {
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .visualization-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-lg);
+            text-align: center;
+        }
+        
+        .chart-container {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .growth-chart {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-xl);
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .legend-color {
+            width: 1.5rem;
+            height: 0.75rem;
+            border-radius: var(--radius-sm);
+        }
+        
+        .linear-color {
+            background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+        }
+        
+        .strategy-color {
+            background: var(--gradient-primary);
+        }
+        
+        .legend-label {
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        /* ============================================
+           EXPLANATION GRID
+           ============================================ */
+        
+        .explanation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .explanation-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            text-align: center;
+            transition: all var(--transition-base);
+        }
+        
+        .explanation-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-color);
+        }
+        
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .card-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        /* ============================================
+           STRATEGIES SECTION
+           ============================================ */
+        
+        .strategy-tabs {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xl);
+            border-bottom: 2px solid var(--border-color);
+            overflow-x: auto;
+            padding-bottom: var(--spacing-sm);
+        }
+        
+        .tab-button {
+            background: none;
+            border: none;
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all var(--transition-base);
+            white-space: nowrap;
+        }
+        
+        .tab-button:hover {
+            color: var(--primary-color);
+            background-color: var(--bg-tertiary);
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+        }
+        
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .strategy-category {
+            display: none;
+        }
+        
+        .strategy-category.active {
+            display: block;
+        }
+        
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: var(--spacing-xl);
+        }
+        
+        .strategy-card {
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            transition: all var(--transition-base);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .strategy-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary-color);
+        }
+        
+        .featured-card {
+            grid-column: span 2;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #fbbf24;
+        }
+        
+        .strategy-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+        
+        .strategy-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            flex: 1;
+        }
+        
+        .strategy-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .strategy-badge.highlight {
+            background: var(--accent-color);
+        }
+        
+        .strategy-purpose {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+            line-height: 1.6;
+        }
+        
+        .strategy-details {
+            display: flex;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+        
+        .detail-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-value {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .strategy-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            flex-grow: 1;
+        }
+        
+        .feature-item {
+            padding-left: var(--spacing-lg);
+            position: relative;
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+        
+        .feature-item::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+        
+        .expand-button {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            font-weight: 600;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            margin-top: auto;
+        }
+        
+        .expand-button:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* Task Categories */
+        .task-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .task-category-item {
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+        }
+        
+        .category-name {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .category-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .category-list li {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            padding-left: var(--spacing-md);
+            position: relative;
+        }
+        
+        .category-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+        
+        /* Crawler Flow Diagram */
+        .crawler-flow-diagram {
+            margin-bottom: var(--spacing-2xl);
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid var(--accent-color);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+        }
+        
+        .diagram-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            color: var(--text-primary);
+        }
+        
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+        
+        .flow-stage {
+            background: var(--bg-primary);
+            border: 2px solid var(--accent-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            text-align: center;
+            min-width: 180px;
+            transition: all var(--transition-base);
+        }
+        
+        .flow-stage:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .stage-number {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin: 0 auto var(--spacing-md);
+        }
+        
+        .stage-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .stage-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        
+        .flow-arrow {
+            font-size: 2rem;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+        
+        /* ============================================
+           PRINCIPLES SECTION
+           ============================================ */
+        
+        .principles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .principle-card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            text-align: center;
+            transition: all var(--transition-base);
+        }
+        
+        .principle-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--secondary-color);
+        }
+        
+        .principle-icon {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .principle-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .principle-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        /* Best Practices Accordion */
+        .best-practices-container {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+        }
+        
+        .practices-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-xl);
+            text-align: center;
+            color: var(--text-primary);
+        }
+        
+        .accordion {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        
+        .accordion-item {
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all var(--transition-base);
+        }
+        
+        .accordion-item:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .accordion-header {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: var(--spacing-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+        
+        .accordion-header:hover {
+            background: var(--bg-tertiary);
+        }
+        
+        .accordion-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: left;
+        }
+        
+        .accordion-icon {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            transition: transform var(--transition-base);
+        }
+        
+        .accordion-item.active .accordion-icon {
+            transform: rotate(45deg);
+        }
+        
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height var(--transition-slow);
+        }
+        
+        .accordion-item.active .accordion-content {
+            max-height: 500px;
+        }
+        
+        .accordion-content p {
+            padding: 0 var(--spacing-lg) var(--spacing-lg);
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        
+        /* ============================================
+           HISTORICAL SECTION
+           ============================================ */
+        
+        .timeline-container {
+            position: relative;
+            padding: var(--spacing-xl) 0;
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--gradient-primary);
+            transform: translateX(-50%);
+        }
+        
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: var(--spacing-2xl);
+            position: relative;
+        }
+        
+        .timeline-item:nth-child(odd) {
+            flex-direction: row;
+        }
+        
+        .timeline-item:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+        
+        .timeline-marker {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            border: 4px solid var(--bg-primary);
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+        }
+        
+        .timeline-marker.ancient {
+            background: #f59e0b;
+        }
+        
+        .timeline-marker.industrial {
+            background: #3b82f6;
+        }
+        
+        .timeline-marker.modern {
+            background: #10b981;
+        }
+        
+        .timeline-content {
+            width: calc(50% - 3rem);
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-base);
+        }
+        
+        .timeline-content:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-color);
+        }
+        
+        .timeline-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .timeline-period {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .timeline-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        /* Analogy Examples */
+        .analogy-examples {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #fbbf24;
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+        }
+        
+        .examples-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            color: var(--text-primary);
+        }
+        
+        .analogy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .analogy-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            transition: all var(--transition-base);
+        }
+        
+        .analogy-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .analogy-name {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .analogy-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        /* ============================================
+           MODAL
+           ============================================ */
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: var(--z-modal-backdrop);
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-xl);
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-container {
+            background: var(--bg-primary);
+            border-radius: var(--radius-xl);
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: var(--shadow-2xl);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: var(--spacing-lg);
+            right: var(--spacing-lg);
+            background: var(--bg-secondary);
+            border: none;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-base);
+            color: var(--text-secondary);
+            z-index: 1;
+        }
+        
+        .modal-close:hover {
+            background: var(--error-color);
+            color: white;
+            transform: rotate(90deg);
+        }
+        
+        .modal-content {
+            padding: var(--spacing-2xl);
+        }
+        
+        /* ============================================
+           FOOTER
+           ============================================ */
+        
+        .main-footer {
+            background: var(--bg-dark);
+            color: white;
+            margin-top: var(--spacing-3xl);
+        }
+        
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--spacing-3xl) var(--spacing-xl);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-2xl);
+        }
+        
+        .footer-section {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        
+        .footer-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .footer-text {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+        
+        .footer-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .footer-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color var(--transition-base);
+        }
+        
+        .footer-link:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: var(--spacing-xl);
+            text-align: center;
+        }
+        
+        .copyright {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.875rem;
+        }
+        
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+        
+        @media (max-width: 1024px) {
+            .featured-card {
+                grid-column: span 1;
+            }
+        
+            .timeline-container::before {
+                left: 1.5rem;
+            }
+        
+            .timeline-item,
+            .timeline-item:nth-child(even) {
+                flex-direction: row;
+                padding-left: 4rem;
+            }
+        
+            .timeline-marker {
+                left: 1.5rem;
+                transform: translateX(0);
+            }
+        
+            .timeline-content {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            :root {
+                font-size: 14px;
+            }
+        
+            .main-nav {
+                flex-wrap: wrap;
+            }
+        
+            .nav-menu {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                gap: 0;
+                margin-top: var(--spacing-md);
+            }
+        
+            .nav-menu.active {
+                display: flex;
+            }
+        
+            .nav-link {
+                padding: var(--spacing-md);
+                border-radius: 0;
+                border-bottom: 1px solid var(--border-color);
+            }
+        
+            .nav-toggle {
+                display: flex;
+            }
+        
+            .hero-title {
+                font-size: 2rem;
+            }
+        
+            .hero-description {
+                font-size: 1rem;
+            }
+        
+            .section-title {
+                font-size: 1.5rem;
+            }
+        
+            .comparison-container,
+            .calculator-inputs {
+                grid-template-columns: 1fr;
+            }
+        
+            .strategy-grid {
+                grid-template-columns: 1fr;
+            }
+        
+            .flow-container {
+                flex-direction: column;
+            }
+        
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        
+            .task-categories {
+                grid-template-columns: 1fr;
+            }
+        
+            .principles-grid {
+                grid-template-columns: 1fr;
+            }
+        
+            .modal-container {
+                max-width: 100%;
+                border-radius: var(--radius-lg);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .main-content {
+                padding: var(--spacing-lg) var(--spacing-md);
+            }
+        
+            .content-section {
+                padding: var(--spacing-lg);
+            }
+        
+            .hero-section {
+                padding: var(--spacing-2xl) var(--spacing-md);
+            }
+        
+            .hero-stats {
+                grid-template-columns: 1fr;
+            }
+        
+            .calculator-widget,
+            .crawler-flow-diagram,
+            .best-practices-container,
+            .analogy-examples {
+                padding: var(--spacing-lg);
+            }
+        }
+        
+        /* ============================================
+           UTILITY CLASSES
+           ============================================ */
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .mt-0 { margin-top: 0; }
+        .mt-1 { margin-top: var(--spacing-sm); }
+        .mt-2 { margin-top: var(--spacing-md); }
+        .mt-3 { margin-top: var(--spacing-lg); }
+        .mt-4 { margin-top: var(--spacing-xl); }
+        
+        .mb-0 { margin-bottom: 0; }
+        .mb-1 { margin-bottom: var(--spacing-sm); }
+        .mb-2 { margin-bottom: var(--spacing-md); }
+        .mb-3 { margin-bottom: var(--spacing-lg); }
+        .mb-4 { margin-bottom: var(--spacing-xl); }
+        
+        /* ============================================
+           ANIMATIONS
+           ============================================ */
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* ============================================
+           PRINT STYLES
+           ============================================ */
+        
+        @media print {
+            .main-header,
+            .nav-toggle,
+            .expand-button,
+            .calculate-button,
+            .modal-overlay,
+            .main-footer {
+                display: none;
+            }
+        
+            .content-section {
+                box-shadow: none;
+                page-break-inside: avoid;
+            }
+        
+            body {
+                background: white;
+            }
+        }
+    </style>
+<!-- Generated Images:
+     - multiplicative-growth-visualization.png: A modern, clean data visualization showing two contrasting growth curves on a graph. The left side shows a gentle linear upward slope in muted blue (#6B7280) representing traditional development. The right side shows an exponential curve in vibrant gradient colors (from #3B82F6 to #8B5CF6) representing strategy-based growth. The background should be white with subtle grid lines. Include axis labels: X-axis "Code Additions" and Y-axis "Total Capabilities". The exponential curve should dramatically diverge from the linear one around the midpoint. Add subtle mathematical notation: "Σ" near the linear line and "Π" near the exponential curve. Style: minimalist, professional, tech-focused with clean lines and modern typography.
+     - orthogonal-strategies-diagram.png: An abstract 3D isometric illustration showing four intersecting dimensional planes or axes in a coordinate system. Each axis should be a different color: deep blue (#2563EB), purple (#7C3AED), emerald green (#059669), and orange (#EA580C). The axes should intersect at a central glowing point, with translucent geometric shapes (cubes, spheres) floating at various intersection points to represent different strategy combinations. The background should be a soft gradient from light gray to white. Include subtle connection lines between intersection points to show composability. Style: modern, geometric, slightly futuristic with a clean tech aesthetic and soft shadows.
+     - strategy-pattern-architecture.png: A technical architecture diagram showing a modular system design. At the center, place a hexagonal core labeled "Strategy Interface" in dark blue (#1E40AF). Surrounding it in a circular arrangement, show 8 connected rectangular modules in different colors representing different strategy implementations (API Providers, Chat Models, Task Types, etc.). Each module should have a plug-like connector pointing toward the center. Use thin connecting lines with small circular nodes. The background should be white with a subtle blueprint-style grid pattern. Include small icons within each module: a cloud for API, a chat bubble for models, a checklist for tasks. Style: clean, professional, software architecture diagram with a modern flat design aesthetic.
+     - ai-collaboration-concept.png: An artistic representation of human-AI collaboration in software development. Show a split composition: on the left, a stylized human silhouette in gradient blue (#3B82F6 to #1E40AF) working at a minimalist desk with a laptop. On the right, an abstract AI representation using geometric neural network patterns in purple and pink gradients (#8B5CF6 to #EC4899). Between them, show flowing data streams, code snippets, and geometric shapes representing ideas flowing bidirectionally. The background should transition from cool blue on the left to warm purple on the right. Include subtle binary code patterns and mathematical symbols floating in the space. Style: modern, semi-abstract, inspirational tech illustration with smooth gradients and clean lines.
+     - scaling-calculator-interface.png: A mockup of an elegant calculator interface with a dark mode aesthetic. Show a rounded rectangular panel with a dark navy background (#0F172A) and soft shadows. Display four horizontal slider controls with glowing blue accent colors (#3B82F6), each labeled with strategy categories (API Providers: 8, Chat Models: 12, Task Types: 26, Processing Strategies: 5). Below the sliders, show three large result displays with numbers in bright cyan (#06B6D4): "12,480" as the main result, "+1,560 (+12.5%)" and "+480 (+3.8%)" as secondary metrics. Include a prominent calculate button at the bottom in gradient blue. Style: modern UI design, glassmorphism effects, high contrast, professional dashboard aesthetic.
+     - historical-timeline-illustration.png: A horizontal timeline visualization showing the evolution of interoperability from ancient to modern times. Create five distinct sections from left to right: 1) Ancient trade (silk road caravan silhouette in sepia tones), 2) Industrial revolution (gear and factory silhouette in bronze), 3) Railway era (steam train silhouette in iron gray), 4) Container shipping (cargo ship silhouette in steel blue), 5) Digital age (network nodes and connections in electric blue). Connect them with a flowing timeline ribbon in gradient colors transitioning from warm browns to cool blues. The background should be a soft cream color with subtle texture. Include date markers: 200 BCE, 1798, 1840s, 1956, 1983. Style: historical infographic, clean and educational, with a modern minimalist approach to vintage subjects.
+     - emergent-capabilities-network.png: An abstract network visualization showing emergent properties from strategy combinations. Create a complex web of interconnected nodes on a dark background (#0A0E27). Show three layers: bottom layer with 8 large nodes in blue (#3B82F6) representing base strategies, middle layer with 26 medium nodes in purple (#8B5CF6) representing combinations, and top layer with numerous small glowing nodes in cyan (#06B6D4) and pink (#EC4899) representing emergent capabilities. Connect nodes with thin, glowing lines that pulse with energy. Some connections should be brighter than others to show active pathways. Add a subtle particle effect around the most connected nodes. Include a soft glow effect around clusters. Style: futuristic, data visualization, network graph aesthetic with bioluminescent qualities and depth.
+-->
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="main-header">
+        <nav class="main-nav">
+            <div class="nav-brand">
+                <h1 class="brand-title">Extendable Strategies</h1>
+                <p class="brand-subtitle">AI-Assisted Development Framework</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#overview" class="nav-link">Overview</a></li>
+                <li class="nav-item"><a href="#scaling" class="nav-link">Strategic Scaling</a></li>
+                <li class="nav-item"><a href="#strategies" class="nav-link">Strategies</a></li>
+                <li class="nav-item"><a href="#principles" class="nav-link">Principles</a></li>
+                <li class="nav-item"><a href="#calculator" class="nav-link">Calculator</a></li>
+            </ul>
+            <button class="nav-toggle" aria-label="Toggle navigation">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="overview">
+        <div class="hero-content">
+            <h2 class="hero-title">Multiplicative Growth Through Orthogonal Strategies</h2>
+            <p class="hero-description">
+                Discover how strategy patterns enable exponential capability expansion 
+                through AI-assisted development, transforming linear code additions into 
+                multiplicative value creation.
+            </p>
+            <img src="ai-collaboration-concept.png" alt="Human-AI collaboration in software development showing bidirectional flow of ideas and code between developer and AI system" class="hero-image">
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <span class="stat-number">26+</span>
+                    <span class="stat-label">Task Types</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">12,480</span>
+                    <span class="stat-label">Configurations</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">0.25</span>
+                    <span class="stat-label">Capabilities/Line</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Container -->
+    <main class="main-content">
+        
+        <!-- Strategic Scaling Section -->
+        <section class="content-section scaling-section" id="scaling">
+            <div class="section-header">
+                <h2 class="section-title">Strategic Scaling: The Multiplicative Advantage</h2>
+                <p class="section-intro">
+                    Understanding how strategy patterns create exponential growth from linear code additions
+                </p>
+            </div>
+
+            <img src="multiplicative-growth-visualization.png" alt="Graph comparing linear growth versus exponential multiplicative growth in software capabilities, showing dramatic divergence between traditional and strategy-based approaches" class="section-hero-image">
+
+            <!-- Scaling Comparison -->
+            <div class="comparison-container">
+                <div class="comparison-card linear-card">
+                    <h3 class="comparison-title">Linear Scaling (Traditional)</h3>
+                    <div class="formula-display">
+                        <code class="formula">Capability = Σ Features</code>
+                    </div>
+                    <ul class="comparison-list">
+                        <li class="comparison-item">10 features = 10 units</li>
+                        <li class="comparison-item">Add 1 feature = +10% growth</li>
+                        <li class="comparison-item">Diminishing returns over time</li>
+                    </ul>
+                </div>
+
+                <div class="comparison-card multiplicative-card">
+                    <h3 class="comparison-title">Multiplicative Scaling (Strategy Pattern)</h3>
+                    <div class="formula-display">
+                        <code class="formula">Capability = Π Strategy Families</code>
+                    </div>
+                    <ul class="comparison-list">
+                        <li class="comparison-item">8 × 12 × 26 × 5 = 12,480 configs</li>
+                        <li class="comparison-item">Add 1 provider = +12.5% growth</li>
+                        <li class="comparison-item">Increasing returns over time</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Interactive Calculator -->
+            <div class="calculator-widget" id="calculator">
+                <h3 class="calculator-title">Strategy Scaling Calculator</h3>
+                <p class="calculator-description">
+                    Calculate the multiplicative impact of adding new strategies
+                </p>
+                
+                <img src="scaling-calculator-interface.png" alt="Dark mode calculator interface showing sliders for API Providers, Chat Models, Task Types, and Processing Strategies with real-time calculation results" class="calculator-preview">
+                
+                <div class="calculator-inputs">
+                    <div class="input-group">
+                        <label for="api-providers" class="input-label">API Providers</label>
+                        <input type="number" id="api-providers" class="input-field" value="8" min="1" max="50">
+                    </div>
+                    <div class="input-group">
+                        <label for="chat-models" class="input-label">Chat Models</label>
+                        <input type="number" id="chat-models" class="input-field" value="12" min="1" max="50">
+                    </div>
+                    <div class="input-group">
+                        <label for="task-types" class="input-label">Task Types</label>
+                        <input type="number" id="task-types" class="input-field" value="26" min="1" max="100">
+                    </div>
+                    <div class="input-group">
+                        <label for="processing-strategies" class="input-label">Processing Strategies</label>
+                        <input type="number" id="processing-strategies" class="input-field" value="5" min="1" max="50">
+                    </div>
+                </div>
+
+                <div class="calculator-results">
+                    <div class="result-display">
+                        <span class="result-label">Total Configurations:</span>
+                        <span class="result-value" id="total-configs">12,480</span>
+                    </div>
+                    <div class="result-display">
+                        <span class="result-label">Add 1 Provider Impact:</span>
+                        <span class="result-value" id="provider-impact">+1,560 (+12.5%)</span>
+                    </div>
+                    <div class="result-display">
+                        <span class="result-label">Add 1 Task Type Impact:</span>
+                        <span class="result-value" id="task-impact">+480 (+3.8%)</span>
+                    </div>
+                </div>
+
+                <button class="calculate-button" id="calculate-btn">Recalculate</button>
+            </div>
+
+            <!-- Growth Visualization -->
+            <div class="visualization-container">
+                <h3 class="visualization-title">Real-World Growth Pattern</h3>
+                <div class="chart-container">
+                    <canvas id="growth-chart" class="growth-chart"></canvas>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <span class="legend-color linear-color"></span>
+                        <span class="legend-label">Traditional Approach</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color strategy-color"></span>
+                        <span class="legend-label">Strategy-Based Approach</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Why Strategies Scale -->
+            <div class="explanation-grid">
+                <div class="explanation-card">
+                    <div class="card-icon">⊥</div>
+                    <h4 class="card-title">Orthogonal Independence</h4>
+                    <p class="card-description">
+                        Each strategy family operates independently along its own dimension, 
+                        allowing any strategy to combine with any other without conflicts.
+                    </p>
+                    <img src="orthogonal-strategies-diagram.png" alt="3D isometric diagram showing four intersecting dimensional axes representing independent strategy families with glowing intersection points" class="card-illustration">
+                </div>
+
+                <div class="explanation-card">
+                    <div class="card-icon">🔗</div>
+                    <h4 class="card-title">Composability</h4>
+                    <p class="card-description">
+                        Strategies combine to create new capabilities, with each combination 
+                        representing a distinct, functional configuration.
+                    </p>
+                    <img src="strategy-pattern-architecture.png" alt="Technical architecture diagram showing modular strategy system with central interface and surrounding implementation modules connected by plug-like connectors" class="card-illustration">
+                </div>
+
+                <div class="explanation-card">
+                    <div class="card-icon">✨</div>
+                    <h4 class="card-title">Emergent Capabilities</h4>
+                    <p class="card-description">
+                        New capabilities emerge from strategy combinations that weren't 
+                        explicitly programmed, creating exponential value.
+                    </p>
+                    <img src="emergent-capabilities-network.png" alt="Network visualization showing interconnected nodes in multiple layers representing base strategies, combinations, and emergent capabilities with glowing connections" class="card-illustration">
+                </div>
+            </div>
+        </section>
+
+        <!-- Strategies Catalog Section -->
+        <section class="content-section strategies-section" id="strategies">
+            <div class="section-header">
+                <h2 class="section-title">Strategy Catalog</h2>
+                <p class="section-intro">
+                    Explore the comprehensive collection of extendable strategies
+                </p>
+            </div>
+
+            <!-- Strategy Category Tabs -->
+            <div class="strategy-tabs">
+                <button class="tab-button active" data-category="model">Model Providers</button>
+                <button class="tab-button" data-category="interop">Interoperability</button>
+                <button class="tab-button" data-category="task">Task Planning</button>
+                <button class="tab-button" data-category="crawler">Crawler</button>
+            </div>
+
+            <!-- Model Provider Strategies -->
+            <div class="strategy-category active" data-category="model">
+                <div class="strategy-grid">
+                    
+                    <!-- API Provider Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">API Provider Strategy</h3>
+                            <span class="strategy-badge">Core</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Manages different AI service providers with a unified interface
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Providers:</span>
+                                <span class="detail-value">8+</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">APIProvider.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">Dynamic registration</li>
+                            <li class="feature-item">Unified interface</li>
+                            <li class="feature-item">Runtime provider selection</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="api-provider">
+                            Learn More
+                        </button>
+                    </article>
+
+                    <!-- Chat Model Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Chat Model Strategy</h3>
+                            <span class="strategy-badge">Core</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Manages chat/conversation models with unified interface
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Models:</span>
+                                <span class="detail-value">12+</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">ChatModel.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">Token accounting</li>
+                            <li class="feature-item">Cost calculation</li>
+                            <li class="feature-item">Provider agnostic</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="chat-model">
+                            Learn More
+                        </button>
+                    </article>
+
+                    <!-- Embedding Model Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Embedding Model Strategy</h3>
+                            <span class="strategy-badge">Specialized</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Manages embedding/vector models for semantic operations
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">EmbeddingModel.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">Vector generation</li>
+                            <li class="feature-item">Semantic search</li>
+                            <li class="feature-item">Batch processing</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="embedding-model">
+                            Learn More
+                        </button>
+                    </article>
+
+                    <!-- Image Model Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Image Model Strategy</h3>
+                            <span class="strategy-badge">Specialized</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Manages image generation models with quality levels
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">ImageModel.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">Flexible pricing</li>
+                            <li class="feature-item">Quality levels</li>
+                            <li class="feature-item">Size constraints</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="image-model">
+                            Learn More
+                        </button>
+                    </article>
+
+                </div>
+            </div>
+
+            <!-- Interoperability Strategies -->
+            <div class="strategy-category" data-category="interop">
+                <div class="strategy-grid">
+                    
+                    <!-- Patch Processor Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Patch Processor Strategy</h3>
+                            <span class="strategy-badge">Code Modification</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Different algorithms for applying code changes with fuzzy matching
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Processors:</span>
+                                <span class="detail-value">5</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">PatchProcessor.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">Fuzzy matching levels</li>
+                            <li class="feature-item">Full replacement option</li>
+                            <li class="feature-item">Thermodynamic matching</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="patch-processor">
+                            Learn More
+                        </button>
+                    </article>
+
+                    <!-- Document Reader Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Document Reader Strategy</h3>
+                            <span class="strategy-badge">Data Input</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Read various document formats with unified interface
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Formats:</span>
+                                <span class="detail-value">8+</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">DocumentReader.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">PDF, Word, Excel support</li>
+                            <li class="feature-item">Paginated reading</li>
+                            <li class="feature-item">HTML and email parsing</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="document-reader">
+                            Learn More
+                        </button>
+                    </article>
+
+                    <!-- Type Describer Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Type Describer Strategy</h3>
+                            <span class="strategy-badge">AI Integration</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Generate human-readable type descriptions for AI prompts
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">TypeDescriber.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">API documentation generation</li>
+                            <li class="feature-item">Type-aware prompts</li>
+                            <li class="feature-item">Polymorphic support</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="type-describer">
+                            Learn More
+                        </button>
+                    </article>
+
+                    <!-- Code Runtime Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Code Runtime Strategy</h3>
+                            <span class="strategy-badge">Execution</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Execute code in different languages with unified interface
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Languages:</span>
+                                <span class="detail-value">4+</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">CodeRuntime.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">Kotlin, JavaScript, Python</li>
+                            <li class="feature-item">Syntax validation</li>
+                            <li class="feature-item">Symbol management</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="code-runtime">
+                            Learn More
+                        </button>
+                    </article>
+
+                </div>
+            </div>
+
+            <!-- Task Planning Strategies -->
+            <div class="strategy-category" data-category="task">
+                <div class="strategy-grid">
+                    
+                    <!-- Task Type Strategy -->
+                    <article class="strategy-card featured-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Task Type Strategy</h3>
+                            <span class="strategy-badge">Core</span>
+                            <span class="strategy-badge highlight">26+ Types</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Extensible task execution system supporting specialized operations
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Task Types:</span>
+                                <span class="detail-value">26+</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">TaskType.kt</span>
+                            </div>
+                        </div>
+                        
+                        <div class="task-categories">
+                            <div class="task-category-item">
+                                <h4 class="category-name">Reasoning Tasks</h4>
+                                <ul class="category-list">
+                                    <li>Chain of Thought</li>
+                                    <li>Causal Inference</li>
+                                    <li>Counterfactual Analysis</li>
+                                    <li>Analogical Reasoning</li>
+                                    <li>Systems Thinking</li>
+                                </ul>
+                            </div>
+                            <div class="task-category-item">
+                                <h4 class="category-name">Writing Tasks</h4>
+                                <ul class="category-list">
+                                    <li>Article Generation</li>
+                                    <li>Persuasive Essay</li>
+                                    <li>Business Proposal</li>
+                                    <li>Technical Explanation</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <button class="expand-button" data-strategy="task-type">
+                            Explore All Task Types
+                        </button>
+                    </article>
+
+                    <!-- Cognitive Mode Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Cognitive Mode Strategy</h3>
+                            <span class="strategy-badge">Planning</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Different reasoning and planning approaches for AI execution
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Modes:</span>
+                                <span class="detail-value">4</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">CognitiveMode.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">Chat Mode (simple)</li>
+                            <li class="feature-item">Adaptive Mode (flexible)</li>
+                            <li class="feature-item">Waterfall Mode (sequential)</li>
+                            <li class="feature-item">Hierarchical Mode (nested)</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="cognitive-mode">
+                            Learn More
+                        </button>
+                    </article>
+
+                </div>
+            </div>
+
+            <!-- Crawler Strategies -->
+            <div class="strategy-category" data-category="crawler">
+                
+                <!-- Crawler Flow Diagram -->
+                <div class="crawler-flow-diagram">
+                    <h3 class="diagram-title">Crawler Strategy Flow</h3>
+                    <div class="flow-container">
+                        <div class="flow-stage">
+                            <div class="stage-number">1</div>
+                            <h4 class="stage-title">Seeding</h4>
+                            <p class="stage-description">Select seed strategy and get initial URLs</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="stage-number">2</div>
+                            <h4 class="stage-title">Fetching</h4>
+                            <p class="stage-description">Select fetch strategy and retrieve content</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="stage-number">3</div>
+                            <h4 class="stage-title">Processing</h4>
+                            <p class="stage-description">Process pages and extract data</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="stage-number">4</div>
+                            <h4 class="stage-title">Continuation</h4>
+                            <p class="stage-description">Decide whether to continue crawling</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="strategy-grid">
+                    
+                    <!-- Fetch Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Fetch Strategy</h3>
+                            <span class="strategy-badge">Web Crawling</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Different methods for retrieving web content
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Methods:</span>
+                                <span class="detail-value">2</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">FetchMethod.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">Selenium (full browser)</li>
+                            <li class="feature-item">HttpClient (lightweight)</li>
+                            <li class="feature-item">JavaScript execution</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="fetch-strategy">
+                            Learn More
+                        </button>
+                    </article>
+
+                    <!-- Seed Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Seed Strategy</h3>
+                            <span class="strategy-badge">Web Crawling</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Generate initial URLs from various search sources
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Sources:</span>
+                                <span class="detail-value">10+</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">SeedMethod.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">Google, Bing, DuckDuckGo</li>
+                            <li class="feature-item">Scholar, Patents, News</li>
+                            <li class="feature-item">Amazon, eBay integration</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="seed-strategy">
+                            Learn More
+                        </button>
+                    </article>
+
+                    <!-- Page Processing Strategy -->
+                    <article class="strategy-card">
+                        <div class="strategy-header">
+                            <h3 class="strategy-name">Page Processing Strategy</h3>
+                            <span class="strategy-badge">Web Crawling</span>
+                        </div>
+                        <p class="strategy-purpose">
+                            Define how crawled pages are analyzed and integrated
+                        </p>
+                        <div class="strategy-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Processors:</span>
+                                <span class="detail-value">5</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">PageProcessingStrategy.kt</span>
+                            </div>
+                        </div>
+                        <ul class="strategy-features">
+                            <li class="feature-item">Default Summarizer</li>
+                            <li class="feature-item">Fact Checking</li>
+                            <li class="feature-item">Schema Extraction</li>
+                            <li class="feature-item">Data Table Accumulation</li>
+                        </ul>
+                        <button class="expand-button" data-strategy="page-processing">
+                            Learn More
+                        </button>
+                    </article>
+
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Design Principles Section -->
+        <section class="content-section principles-section" id="principles">
+            <div class="section-header">
+                <h2 class="section-title">Design Principles & Best Practices</h2>
+                <p class="section-intro">
+                    Core principles that make strategies extensible and maintainable
+                </p>
+            </div>
+
+            <div class="principles-grid">
+                
+                <article class="principle-card">
+                    <div class="principle-icon">🔓</div>
+                    <h3 class="principle-title">Open/Closed Principle</h3>
+                    <p class="principle-description">
+                        Strategies are open for extension but closed for modification. 
+                        New implementations can be added without changing existing code.
+                    </p>
+                </article>
+
+                <article class="principle-card">
+                    <div class="principle-icon">🎯</div>
+                    <h3 class="principle-title">Strategy Pattern</h3>
+                    <p class="principle-description">
+                        Each strategy family defines an interface and multiple implementations, 
+                        allowing runtime selection based on requirements.
+                    </p>
+                </article>
+
+                <article class="principle-card">
+                    <div class="principle-icon">🔌</div>
+                    <h3 class="principle-title">Dynamic Registration</h3>
+                    <p class="principle-description">
+                        Strategies use dynamic registration, allowing plugins to add new 
+                        implementations at runtime without recompilation.
+                    </p>
+                </article>
+
+                <article class="principle-card">
+                    <div class="principle-icon">🛡️</div>
+                    <h3 class="principle-title">Type Safety</h3>
+                    <p class="principle-description">
+                        Generic types ensure compile-time safety while maintaining flexibility 
+                        for different strategy implementations.
+                    </p>
+                </article>
+
+                <article class="principle-card">
+                    <div class="principle-icon">📦</div>
+                    <h3 class="principle-title">Separation of Concerns</h3>
+                    <p class="principle-description">
+                        Each strategy focuses on a single responsibility, making the system 
+                        modular, testable, and maintainable.
+                    </p>
+                </article>
+
+                <article class="principle-card">
+                    <div class="principle-icon">🤖</div>
+                    <h3 class="principle-title">AI-First Design</h3>
+                    <p class="principle-description">
+                        Strategies are designed to work seamlessly with AI-assisted development 
+                        tools for documentation, generation, and refactoring.
+                    </p>
+                </article>
+
+            </div>
+
+            <!-- Best Practices Accordion -->
+            <div class="best-practices-container">
+                <h3 class="practices-title">Best Practices for Extension</h3>
+                
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <button class="accordion-header">
+                            <span class="accordion-title">Follow Existing Patterns</span>
+                            <span class="accordion-icon">+</span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>Study existing implementations before creating new ones. Use AI tools to analyze patterns across multiple implementations and extract common conventions.</p>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header">
+                            <span class="accordion-title">Register Properly</span>
+                            <span class="accordion-icon">+</span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>Use the registration mechanisms provided (e.g., register() methods) to ensure your strategy is discoverable and properly integrated into the system.</p>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header">
+                            <span class="accordion-title">Handle Errors Gracefully</span>
+                            <span class="accordion-icon">+</span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>Implement proper error handling and validation. Provide meaningful error messages and fail gracefully when possible.</p>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header">
+                            <span class="accordion-title">Document Thoroughly</span>
+                            <span class="accordion-icon">+</span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>Provide clear documentation for new strategies. Consider using AI to generate initial documentation based on exemplar implementations.</p>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header">
+                            <span class="accordion-title">Leverage AI Assistance</span>
+                            <span class="accordion-icon">+</span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>Use AI to analyze existing implementations, generate documentation standards, create new implementations from specifications, and apply refactorings consistently.</p>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header">
+                            <span class="accordion-title">Maintain Consistency</span>
+                            <span class="accordion-icon">+</span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>When managing many implementations, use AI to ensure consistent naming conventions, uniform utility function usage, synchronized documentation, and similar code structure.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Historical Context Section -->
+        <section class="content-section historical-section">
+            <div class="section-header">
+                <h2 class="section-title">Historical Context: Interoperability & Analogies</h2>
+                <p class="section-intro">
+                    Understanding the timeless principles behind strategy patterns
+                </p>
+            </div>
+
+            <img src="historical-timeline-illustration.png" alt="Historical timeline showing evolution of interoperability from ancient trade routes through industrial revolution to modern digital networks" class="timeline-hero-image">
+
+            <div class="timeline-container">
+                <div class="timeline-item">
+                    <div class="timeline-marker ancient"></div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-title">Ancient Trade Routes</h3>
+                        <span class="timeline-period">~200 BCE</span>
+                        <p class="timeline-description">
+                            The Silk Road succeeded through standardized measurements, weights, 
+                            and exchange protocols—early interoperability standards.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker industrial"></div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-title">Interchangeable Parts</h3>
+                        <span class="timeline-period">1798</span>
+                        <p class="timeline-description">
+                            Eli Whitney's manufacturing innovation: components from different 
+                            makers could work together—the birth of modular design.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker industrial"></div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-title">Railway Standards</h3>
+                        <span class="timeline-period">1840s</span>
+                        <p class="timeline-description">
+                            Standard gauge tracks (4 ft 8.5 in) allowed trains and cargo to 
+                            move seamlessly across different railway companies.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker modern"></div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-title">Container Shipping</h3>
+                        <span class="timeline-period">1956</span>
+                        <p class="timeline-description">
+                            ISO container standards revolutionized global trade by making cargo 
+                            interoperable across ships, trains, and trucks.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker modern"></div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-title">TCP/IP Protocol</h3>
+                        <span class="timeline-period">1983</span>
+                        <p class="timeline-description">
+                            Standardized network protocols enabled different computer systems 
+                            to communicate—the foundation of the internet.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analogy-examples">
+                <h3 class="examples-title">Analogies in Scientific Discovery</h3>
+                <div class="analogy-grid">
+                    <div class="analogy-card">
+                        <h4 class="analogy-name">Maxwell's Electromagnetic Theory</h4>
+                        <p class="analogy-description">
+                            Used mechanical analogies (rotating cells, idle wheels) to develop 
+                            equations describing electromagnetic phenomena.
+                        </p>
+                    </div>
+                    <div class="analogy-card">
+                        <h4 class="analogy-name">Bohr's Atomic Model</h4>
+                        <p class="analogy-description">
+                            Used the solar system as an analogy to explain atomic structure, 
+                            providing crucial intuition despite later refinement.
+                        </p>
+                    </div>
+                    <div class="analogy-card">
+                        <h4 class="analogy-name">Darwin's Evolution</h4>
+                        <p class="analogy-description">
+                            Used artificial selection (breeding) as an analogy to understand 
+                            natural selection in the wild.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Strategy Detail Modal -->
+    <div class="modal-overlay" id="strategy-modal">
+        <div class="modal-container">
+            <button class="modal-close" aria-label="Close modal">&times;</button>
+            <div class="modal-content" id="modal-content">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3 class="footer-title">About</h3>
+                <p class="footer-text">
+                    Interactive documentation for understanding and extending strategy patterns 
+                    in AI-assisted application development.
+                </p>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-title">Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="#overview" class="footer-link">Overview</a></li>
+                    <li><a href="#scaling" class="footer-link">Strategic Scaling</a></li>
+                    <li><a href="#strategies" class="footer-link">Strategies</a></li>
+                    <li><a href="#principles" class="footer-link">Principles</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-title">Resources</h3>
+                <ul class="footer-links">
+                    <li><a href="#calculator" class="footer-link">Scaling Calculator</a></li>
+                    <li><a href="#" class="footer-link">GitHub Repository</a></li>
+                    <li><a href="#" class="footer-link">API Documentation</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="copyright">© 2024 Extendable Strategies Framework. Built with AI-assisted development.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript will be added here -->
+
+    <script>
+        // ============================================================================
+        // EXTENDABLE STRATEGIES - INTERACTIVE DOCUMENTATION
+        // Main JavaScript for interactivity and dynamic content
+        // ============================================================================
+        
+        // ============================================================================
+        // UTILITY FUNCTIONS
+        // ============================================================================
+        
+        /**
+         * Debounce function to limit rate of function execution
+         * @param {Function} func - Function to debounce
+         * @param {number} wait - Wait time in milliseconds
+         * @returns {Function} Debounced function
+         */
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        /**
+         * Smooth scroll to element with offset for fixed header
+         * @param {string} targetId - ID of target element
+         */
+        function smoothScrollTo(targetId) {
+            const element = document.querySelector(targetId);
+            if (element) {
+                const headerOffset = 80;
+                const elementPosition = element.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        }
+        
+        /**
+         * Format number with commas for readability
+         * @param {number} num - Number to format
+         * @returns {string} Formatted number
+         */
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        
+        // ============================================================================
+        // NAVIGATION
+        // ============================================================================
+        
+        /**
+         * Initialize navigation functionality
+         */
+        function initNavigation() {
+            const navToggle = document.querySelector('.nav-toggle');
+            const navMenu = document.querySelector('.nav-menu');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const header = document.querySelector('.main-header');
+        
+            // Mobile menu toggle
+            if (navToggle) {
+                navToggle.addEventListener('click', () => {
+                    navToggle.classList.toggle('active');
+                    navMenu.classList.toggle('active');
+                    document.body.classList.toggle('nav-open');
+                });
+            }
+        
+            // Smooth scroll for navigation links
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href');
+                    smoothScrollTo(targetId);
+        
+                    // Close mobile menu if open
+                    if (navMenu.classList.contains('active')) {
+                        navToggle.classList.remove('active');
+                        navMenu.classList.remove('active');
+                        document.body.classList.remove('nav-open');
+                    }
+        
+                    // Update active state
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                });
+            });
+        
+            // Header scroll effect
+            let lastScroll = 0;
+            window.addEventListener('scroll', () => {
+                const currentScroll = window.pageYOffset;
+        
+                if (currentScroll <= 0) {
+                    header.classList.remove('scroll-up');
+                    header.classList.remove('scrolled');
+                    return;
+                }
+        
+                if (currentScroll > lastScroll && !header.classList.contains('scroll-down')) {
+                    // Scrolling down
+                    header.classList.remove('scroll-up');
+                    header.classList.add('scroll-down');
+                } else if (currentScroll < lastScroll && header.classList.contains('scroll-down')) {
+                    // Scrolling up
+                    header.classList.remove('scroll-down');
+                    header.classList.add('scroll-up');
+                }
+        
+                if (currentScroll > 100) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+        
+                lastScroll = currentScroll;
+            });
+        
+            // Update active nav link on scroll
+            const sections = document.querySelectorAll('section[id]');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (window.pageYOffset >= sectionTop - 150) {
+                        current = section.getAttribute('id');
+                    }
+                });
+        
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        }
+        
+        // ============================================================================
+        // CALCULATOR FUNCTIONALITY
+        // ============================================================================
+        
+        /**
+         * Initialize the strategy scaling calculator
+         */
+        function initCalculator() {
+            const inputs = {
+                apiProviders: document.getElementById('api-providers'),
+                chatModels: document.getElementById('chat-models'),
+                taskTypes: document.getElementById('task-types'),
+                processingStrategies: document.getElementById('processing-strategies')
+            };
+        
+            const outputs = {
+                totalConfigs: document.getElementById('total-configs'),
+                providerImpact: document.getElementById('provider-impact'),
+                taskImpact: document.getElementById('task-impact')
+            };
+        
+            const calculateButton = document.getElementById('calculate-btn');
+        
+            /**
+             * Calculate and update all results
+             */
+            function calculate() {
+                const values = {
+                    apiProviders: parseInt(inputs.apiProviders.value) || 0,
+                    chatModels: parseInt(inputs.chatModels.value) || 0,
+                    taskTypes: parseInt(inputs.taskTypes.value) || 0,
+                    processingStrategies: parseInt(inputs.processingStrategies.value) || 0
+                };
+        
+                // Calculate total configurations
+                const total = values.apiProviders * values.chatModels * 
+                             values.taskTypes * values.processingStrategies;
+        
+                // Calculate impact of adding one provider
+                const newProviderTotal = (values.apiProviders + 1) * values.chatModels * 
+                                        values.taskTypes * values.processingStrategies;
+                const providerIncrease = newProviderTotal - total;
+                const providerPercent = total > 0 ? ((providerIncrease / total) * 100).toFixed(1) : 0;
+        
+                // Calculate impact of adding one task type
+                const newTaskTotal = values.apiProviders * values.chatModels * 
+                                   (values.taskTypes + 1) * values.processingStrategies;
+                const taskIncrease = newTaskTotal - total;
+                const taskPercent = total > 0 ? ((taskIncrease / total) * 100).toFixed(1) : 0;
+        
+                // Update displays with animation
+                animateValue(outputs.totalConfigs, total);
+                outputs.providerImpact.textContent = `+${formatNumber(providerIncrease)} (+${providerPercent}%)`;
+                outputs.taskImpact.textContent = `+${formatNumber(taskIncrease)} (+${taskPercent}%)`;
+        
+                // Add pulse animation to results
+                outputs.totalConfigs.parentElement.classList.add('pulse');
+                setTimeout(() => {
+                    outputs.totalConfigs.parentElement.classList.remove('pulse');
+                }, 600);
+            }
+        
+            /**
+             * Animate number change
+             * @param {HTMLElement} element - Element to animate
+             * @param {number} endValue - Target value
+             */
+            function animateValue(element, endValue) {
+                const startValue = parseInt(element.textContent.replace(/,/g, '')) || 0;
+                const duration = 500;
+                const startTime = performance.now();
+        
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+            
+                    // Easing function for smooth animation
+                    const easeOutQuad = progress * (2 - progress);
+                    const currentValue = Math.floor(startValue + (endValue - startValue) * easeOutQuad);
+            
+                    element.textContent = formatNumber(currentValue);
+        
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    } else {
+                        element.textContent = formatNumber(endValue);
+                    }
+                }
+        
+                requestAnimationFrame(update);
+            }
+        
+            // Add event listeners to inputs
+            Object.values(inputs).forEach(input => {
+                input.addEventListener('input', debounce(calculate, 300));
+            });
+        
+            // Calculate button
+            if (calculateButton) {
+                calculateButton.addEventListener('click', calculate);
+            }
+        
+            // Initial calculation
+            calculate();
+        }
+        
+        // ============================================================================
+        // GROWTH CHART VISUALIZATION
+        // ============================================================================
+        
+        /**
+         * Initialize the growth comparison chart
+         */
+        function initGrowthChart() {
+            const canvas = document.getElementById('growth-chart');
+            if (!canvas) return;
+        
+            const ctx = canvas.getContext('2d');
+        
+            // Set canvas size
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = 400;
+        
+            // Data points
+            const dataPoints = [
+                { features: 0, linear: 0, strategy: 0 },
+                { features: 10, linear: 10, strategy: 100 },
+                { features: 20, linear: 20, strategy: 400 },
+                { features: 30, linear: 30, strategy: 900 },
+                { features: 40, linear: 40, strategy: 1600 },
+                { features: 50, linear: 50, strategy: 2500 },
+                { features: 60, linear: 60, strategy: 3600 },
+                { features: 70, linear: 70, strategy: 4900 },
+                { features: 80, linear: 80, strategy: 6400 },
+                { features: 90, linear: 90, strategy: 8100 },
+                { features: 100, linear: 100, strategy: 10000 }
+            ];
+        
+            const padding = 60;
+            const chartWidth = canvas.width - padding * 2;
+            const chartHeight = canvas.height - padding * 2;
+        
+            // Find max values for scaling
+            const maxFeatures = Math.max(...dataPoints.map(d => d.features));
+            const maxValue = Math.max(...dataPoints.map(d => Math.max(d.linear, d.strategy)));
+        
+            /**
+             * Convert data coordinates to canvas coordinates
+             */
+            function toCanvasX(features) {
+                return padding + (features / maxFeatures) * chartWidth;
+            }
+        
+            function toCanvasY(value) {
+                return canvas.height - padding - (value / maxValue) * chartHeight;
+            }
+        
+            /**
+             * Draw the chart
+             */
+            function drawChart() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+                // Draw grid
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.lineWidth = 1;
+        
+                // Vertical grid lines
+                for (let i = 0; i <= 10; i++) {
+                    const x = padding + (i / 10) * chartWidth;
+                    ctx.beginPath();
+                    ctx.moveTo(x, padding);
+                    ctx.lineTo(x, canvas.height - padding);
+                    ctx.stroke();
+                }
+        
+                // Horizontal grid lines
+                for (let i = 0; i <= 10; i++) {
+                    const y = padding + (i / 10) * chartHeight;
+                    ctx.beginPath();
+                    ctx.moveTo(padding, y);
+                    ctx.lineTo(canvas.width - padding, y);
+                    ctx.stroke();
+                }
+        
+                // Draw axes
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(padding, padding);
+                ctx.lineTo(padding, canvas.height - padding);
+                ctx.lineTo(canvas.width - padding, canvas.height - padding);
+                ctx.stroke();
+        
+                // Draw axis labels
+                ctx.fillStyle = '#333';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+        
+                // X-axis label
+                ctx.fillText('Features Added', canvas.width / 2, canvas.height - 20);
+        
+                // Y-axis label
+                ctx.save();
+                ctx.translate(20, canvas.height / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText('Total Capabilities', 0, 0);
+                ctx.restore();
+        
+                // Draw linear line
+                ctx.strokeStyle = '#3498db';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                dataPoints.forEach((point, index) => {
+                    const x = toCanvasX(point.features);
+                    const y = toCanvasY(point.linear);
+                    if (index === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                ctx.stroke();
+        
+                // Draw strategy line
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                dataPoints.forEach((point, index) => {
+                    const x = toCanvasX(point.features);
+                    const y = toCanvasY(point.strategy);
+                    if (index === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                ctx.stroke();
+        
+                // Draw data points
+                dataPoints.forEach(point => {
+                    // Linear points
+                    ctx.fillStyle = '#3498db';
+                    ctx.beginPath();
+                    ctx.arc(toCanvasX(point.features), toCanvasY(point.linear), 5, 0, Math.PI * 2);
+                    ctx.fill();
+        
+                    // Strategy points
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.beginPath();
+                    ctx.arc(toCanvasX(point.features), toCanvasY(point.strategy), 5, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+        
+                // Draw tick marks and labels
+                ctx.fillStyle = '#666';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+        
+                // X-axis ticks
+                for (let i = 0; i <= 10; i++) {
+                    const x = padding + (i / 10) * chartWidth;
+                    const value = (i / 10) * maxFeatures;
+                    ctx.fillText(Math.round(value), x, canvas.height - padding + 20);
+                }
+        
+                // Y-axis ticks
+                ctx.textAlign = 'right';
+                for (let i = 0; i <= 10; i++) {
+                    const y = canvas.height - padding - (i / 10) * chartHeight;
+                    const value = (i / 10) * maxValue;
+                    ctx.fillText(Math.round(value), padding - 10, y + 5);
+                }
+            }
+        
+            // Draw initial chart
+            drawChart();
+        
+            // Redraw on window resize
+            window.addEventListener('resize', debounce(() => {
+                canvas.width = container.clientWidth;
+                drawChart();
+            }, 250));
+        }
+        
+        // ============================================================================
+        // STRATEGY TABS
+        // ============================================================================
+        
+        /**
+         * Initialize strategy category tabs
+         */
+        function initStrategyTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const strategyCategories = document.querySelectorAll('.strategy-category');
+        
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const category = button.getAttribute('data-category');
+        
+                    // Update active button
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+        
+                    // Update visible category
+                    strategyCategories.forEach(cat => {
+                        if (cat.getAttribute('data-category') === category) {
+                            cat.classList.add('active');
+                            // Trigger entrance animation
+                            cat.style.animation = 'none';
+                            setTimeout(() => {
+                                cat.style.animation = 'fadeInUp 0.5s ease-out';
+                            }, 10);
+                        } else {
+                            cat.classList.remove('active');
+                        }
+                    });
+                });
+            });
+        }
+        
+        // ============================================================================
+        // STRATEGY MODAL
+        // ============================================================================
+        
+        /**
+         * Strategy detail data
+         */
+        const strategyDetails = {
+            'api-provider': {
+                title: 'API Provider Strategy',
+                description: 'Manages different AI service providers with a unified interface, enabling seamless switching between providers.',
+                implementations: [
+                    'OpenAI', 'Anthropic', 'Google', 'AWS', 'Groq', 'Perplexity', 'ModelsLab', 'Mistral'
+                ],
+                codeExample: `// Register a new API provider
+        APIProvider.register(
+            name = "CustomProvider",
+            baseUrl = "https://api.custom.com",
+            authHeader = "X-API-Key"
+        )
+        
+        // Use the provider
+        val response = apiProvider.chat(
+            model = "custom-model",
+            messages = listOf(message)
+        )`,
+                benefits: [
+                    'Vendor independence',
+                    'Easy A/B testing',
+                    'Fallback mechanisms',
+                    'Cost optimization'
+                ]
+            },
+            'chat-model': {
+                title: 'Chat Model Strategy',
+                description: 'Manages chat/conversation models with unified interface, token accounting, and cost calculation.',
+                implementations: [
+                    'GPT-4', 'GPT-3.5', 'Claude-3', 'Claude-2', 'Gemini Pro', 'Llama-2', 'Mixtral', 'Command'
+                ],
+                codeExample: `// Select and use a chat model
+        val model = ChatModel.get("gpt-4")
+        val response = model.chat(
+            messages = conversationHistory,
+            temperature = 0.7
+        )
+        
+        // Get usage statistics
+        val tokens = response.usage.totalTokens
+        val cost = model.calculateCost(tokens)`,
+                benefits: [
+                    'Model comparison',
+                    'Cost tracking',
+                    'Token management',
+                    'Performance monitoring'
+                ]
+            },
+            'task-type': {
+                title: 'Task Type Strategy',
+                description: 'Extensible task execution system supporting 26+ specialized operations from reasoning to creative writing.',
+                implementations: [
+                    'Chain of Thought', 'Causal Inference', 'Counterfactual Analysis', 'Analogical Reasoning',
+                    'Systems Thinking', 'Article Generation', 'Persuasive Essay', 'Business Proposal',
+                    'Technical Explanation', 'Creative Story', 'Code Review', 'Data Analysis'
+                ],
+                codeExample: `// Define a new task type
+        TaskType.register(
+            name = "SentimentAnalysis",
+            description = "Analyze emotional tone",
+            systemPrompt = "You are a sentiment analyzer...",
+            userPromptTemplate = "Analyze: {text}"
+        )
+        
+        // Execute the task
+        val result = taskExecutor.execute(
+            taskType = "SentimentAnalysis",
+            input = userText
+        )`,
+                benefits: [
+                    'Specialized prompts',
+                    'Consistent execution',
+                    'Easy extension',
+                    'Reusable patterns'
+                ]
+            },
+            'patch-processor': {
+                title: 'Patch Processor Strategy',
+                description: 'Different algorithms for applying code changes with varying levels of fuzzy matching tolerance.',
+                implementations: [
+                    'IterativePatchUtil', 'FuzzyPatchUtil', 'ApxPatchUtil', 'FullPatchUtil', 'ThermodynamicPatchUtil'
+                ],
+                codeExample: `// Apply a code patch with fuzzy matching
+        val processor = PatchProcessor.get("FuzzyPatchUtil")
+        val result = processor.apply(
+            original = sourceCode,
+            patch = aiGeneratedPatch,
+            tolerance = 0.8
+        )
+        
+        if (result.success) {
+            saveFile(result.modifiedCode)
+        }`,
+                benefits: [
+                    'Handles AI imprecision',
+                    'Multiple strategies',
+                    'Fallback options',
+                    'Robust modifications'
+                ]
+            },
+            'fetch-strategy': {
+                title: 'Fetch Strategy',
+                description: 'Different methods for retrieving web content, from lightweight HTTP to full browser automation.',
+                implementations: [
+                    'Selenium (Full Browser)', 'HttpClient (Lightweight)'
+                ],
+                codeExample: `// Configure fetch strategy
+        val fetcher = FetchStrategy.create(
+            method = FetchMethod.SELENIUM,
+            options = FetchOptions(
+                executeJavaScript = true,
+                waitForDynamic = true,
+                timeout = 30000
+            )
+        )
+        
+        val content = fetcher.fetch(url)`,
+                benefits: [
+                    'JavaScript support',
+                    'Dynamic content',
+                    'Performance options',
+                    'Flexible retrieval'
+                ]
+            },
+            'seed-strategy': {
+                title: 'Seed Strategy',
+                description: 'Generate initial URLs from various search sources including Google, Bing, academic databases, and e-commerce.',
+                implementations: [
+                    'Google Search', 'Bing Search', 'DuckDuckGo', 'Google Scholar', 'Google Patents',
+                    'Google News', 'Amazon', 'eBay', 'YouTube', 'Reddit'
+                ],
+                codeExample: `// Generate seed URLs from multiple sources
+        val seeder = SeedStrategy.create(
+            sources = listOf(
+                SearchSource.GOOGLE,
+                SearchSource.SCHOLAR,
+                SearchSource.NEWS
+            )
+        )
+        
+        val urls = seeder.generateSeeds(
+            query = "AI development patterns",
+            maxResults = 50
+        )`,
+                benefits: [
+                    'Multiple sources',
+                    'Diverse results',
+                    'Targeted searches',
+                    'Comprehensive coverage'
+                ]
+            },
+            'page-processing': {
+                title: 'Page Processing Strategy',
+                description: 'Define how crawled pages are analyzed and integrated into your knowledge base.',
+                implementations: [
+                    'Default Summarizer', 'Fact Checker', 'Schema Extractor', 'Data Table Accumulator', 'Link Analyzer'
+                ],
+                codeExample: `// Define custom page processor
+        val processor = PageProcessor.create(
+            strategy = ProcessingStrategy.SCHEMA_EXTRACTOR,
+            config = ProcessorConfig(
+                extractMetadata = true,
+                generateSummary = true,
+                identifyEntities = true
+            )
+        )
+        
+        val result = processor.process(pageContent)`,
+                benefits: [
+                    'Custom analysis',
+                    'Data extraction',
+                    'Knowledge building',
+                    'Flexible processing'
+                ]
+            }
+        };
+        
+        /**
+         * Initialize strategy detail modals
+         */
+        function initStrategyModals() {
+            const modal = document.getElementById('strategy-modal');
+            const modalContent = document.getElementById('modal-content');
+            const closeButton = document.querySelector('.modal-close');
+            const expandButtons = document.querySelectorAll('.expand-button');
+        
+            /**
+             * Show modal with strategy details
+             * @param {string} strategyKey - Key for strategy details
+             */
+            function showModal(strategyKey) {
+                const details = strategyDetails[strategyKey];
+                if (!details) return;
+        
+                // Build modal content
+                const content = `
+                    <h2 class="modal-title">${details.title}</h2>
+                    <p class="modal-description">${details.description}</p>
+            
+                    <div class="modal-section">
+                        <h3 class="modal-section-title">Implementations</h3>
+                        <div class="implementation-tags">
+                            ${details.implementations.map(impl => 
+                                `<span class="implementation-tag">${impl}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+        
+                    <div class="modal-section">
+                        <h3 class="modal-section-title">Code Example</h3>
+                        <pre class="code-block"><code>${details.codeExample}</code></pre>
+                    </div>
+        
+                    <div class="modal-section">
+                        <h3 class="modal-section-title">Key Benefits</h3>
+                        <ul class="benefits-list">
+                            ${details.benefits.map(benefit => 
+                                `<li class="benefit-item">${benefit}</li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                `;
+        
+                modalContent.innerHTML = content;
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        
+            /**
+             * Hide modal
+             */
+            function hideModal() {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        
+            // Add click listeners to expand buttons
+            expandButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const strategyKey = button.getAttribute('data-strategy');
+                    showModal(strategyKey);
+                });
+            });
+        
+            // Close button
+            if (closeButton) {
+                closeButton.addEventListener('click', hideModal);
+            }
+        
+            // Click outside to close
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideModal();
+                }
+            });
+        
+            // Escape key to close
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('active')) {
+                    hideModal();
+                }
+            });
+        }
+        
+        // ============================================================================
+        // ACCORDION
+        // ============================================================================
+        
+        /**
+         * Initialize accordion functionality
+         */
+        function initAccordion() {
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+        
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const accordionItem = header.parentElement;
+                    const accordionContent = accordionItem.querySelector('.accordion-content');
+                    const icon = header.querySelector('.accordion-icon');
+        
+                    // Toggle active state
+                    const isActive = accordionItem.classList.contains('active');
+        
+                    // Close all accordion items
+                    document.querySelectorAll('.accordion-item').forEach(item => {
+                        item.classList.remove('active');
+                        item.querySelector('.accordion-icon').textContent = '+';
+                    });
+        
+                    // Open clicked item if it wasn't active
+                    if (!isActive) {
+                        accordionItem.classList.add('active');
+                        icon.textContent = '−';
+                    }
+                });
+            });
+        }
+        
+        // ============================================================================
+        // SCROLL ANIMATIONS
+        // ============================================================================
+        
+        /**
+         * Initialize scroll-triggered animations
+         */
+        function initScrollAnimations() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -100px 0px'
+            };
+        
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                        // Optionally unobserve after animation
+                        // observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+        
+            // Observe elements
+            const animatedElements = document.querySelectorAll(`
+                .stat-card,
+                .comparison-card,
+                .explanation-card,
+                .strategy-card,
+                .principle-card,
+                .timeline-item,
+                .analogy-card
+            `);
+        
+            animatedElements.forEach(el => {
+                observer.observe(el);
+            });
+        }
+        
+        // ============================================================================
+        // FOOTER LINKS
+        // ============================================================================
+        
+        /**
+         * Initialize footer link functionality
+         */
+        function initFooterLinks() {
+            const footerLinks = document.querySelectorAll('.footer-link');
+        
+            footerLinks.forEach(link => {
+                if (link.getAttribute('href').startsWith('#')) {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetId = link.getAttribute('href');
+                        smoothScrollTo(targetId);
+                    });
+                }
+            });
+        }
+        
+        // ============================================================================
+        // HERO STATS ANIMATION
+        // ============================================================================
+        
+        /**
+         * Animate hero statistics on page load
+         */
+        function initHeroStats() {
+            const statNumbers = document.querySelectorAll('.stat-number');
+        
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const target = entry.target;
+                        const finalValue = target.textContent;
+                
+                        // Only animate numbers
+                        if (!isNaN(parseFloat(finalValue))) {
+                            const numericValue = parseFloat(finalValue.replace(/[^0-9.]/g, ''));
+                            const suffix = finalValue.replace(/[0-9.]/g, '');
+                    
+                            let current = 0;
+                            const increment = numericValue / 50;
+                            const duration = 1500;
+                            const stepTime = duration / 50;
+                    
+                            const timer = setInterval(() => {
+                                current += increment;
+                                if (current >= numericValue) {
+                                    target.textContent = finalValue;
+                                    clearInterval(timer);
+                                } else {
+                                    target.textContent = Math.floor(current) + suffix;
+                                }
+                            }, stepTime);
+                        }
+                
+                        observer.unobserve(target);
+                    }
+                });
+            }, { threshold: 0.5 });
+        
+            statNumbers.forEach(stat => observer.observe(stat));
+        }
+        
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+        
+        /**
+         * Initialize all functionality when DOM is ready
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Initializing Extendable Strategies Interactive Documentation...');
+        
+            // Initialize all modules
+            initNavigation();
+            initCalculator();
+            initGrowthChart();
+            initStrategyTabs();
+            initStrategyModals();
+            initAccordion();
+            initScrollAnimations();
+            initFooterLinks();
+            initHeroStats();
+        
+            console.log('Initialization complete!');
+        });
+        
+        // ============================================================================
+        // WINDOW LOAD EVENT
+        // ============================================================================
+        
+        /**
+         * Additional initialization after all resources are loaded
+         */
+        window.addEventListener('load', () => {
+            // Add loaded class to body for CSS transitions
+            document.body.classList.add('loaded');
+        });
+        
+        // ============================================================================
+        // ERROR HANDLING
+        // ============================================================================
+        
+        /**
+         * Global error handler
+         */
+        window.addEventListener('error', (event) => {
+            console.error('JavaScript Error:', event.error);
+        });
+        
+        /**
+         * Unhandled promise rejection handler
+         */
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled Promise Rejection:', event.reason);
+        });
+    </script>
+</body>
+</html>

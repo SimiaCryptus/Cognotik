@@ -162,6 +162,10 @@ class GeneratePresentationTaskDialog(
 
         if (!htmlFileField.text.endsWith(".html", ignoreCase = true)) {
             return com.intellij.openapi.ui.ValidationInfo("File must have .html extension", htmlFileField)
+        } else {
+          if (htmlFileField.text.let { root.resolve(it) }.exists()) {
+            return com.intellij.openapi.ui.ValidationInfo("HTML file path must not exist", htmlFileField)
+          }
         }
 
         return null
