@@ -23,7 +23,7 @@ import javax.imageio.ImageIO
 class IllustrateDocumentTask(
   orchestrationConfig: OrchestrationConfig,
   planTask: IllustrateDocumentTaskExecutionConfigData?
- ) : AbstractFileTask<IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData>(orchestrationConfig, planTask) {
+) : AbstractFileTask<IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
   data class ImageSuggestion(
     @Description("Descriptive name for the image file (without extension)")
@@ -67,6 +67,10 @@ class IllustrateDocumentTask(
     val autoInsert: Boolean = true,
     @Description("Additional instructions to append to image generation prompts (e.g., style preferences, constraints)")
     val imageInstructions: String? = null,
+    @Description("Directive for the image composer on how to generate images (e.g., 'Generate a background wallpaper', 'Create hero images', 'Focus on technical diagrams')")
+    val composerDirective: String? = null,
+    @Description("Directive for the image integrator on how to insert images (e.g., 'Insert as page background', 'Place in sidebars', 'Create galleries')")
+    val integratorDirective: String? = null,
     task_description: String? = null,
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
@@ -126,7 +130,7 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
   ) {
     val startTime = System.currentTimeMillis()
     val documentFile = executionConfig?.files?.firstOrNull()
-    
+
     if (documentFile == null) {
       val errorMsg = "CONFIGURATION ERROR: No document file specified"
       log.error(errorMsg)
@@ -156,23 +160,34 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
       // Read document content
       val documentContent = documentPath.toFile().readText()
       val isMarkdown = documentFile.endsWith(".md", ignoreCase = true)
-      
+
       task.add(MarkdownUtil.renderMarkdown("## Illustrating Document: `$documentFile`", ui = ui))
       task.add(MarkdownUtil.renderMarkdown("**Format:** ${if (isMarkdown) "Markdown" else "HTML"}", ui = ui))
       task.add(MarkdownUtil.renderMarkdown("**Max Images:** $maxImages", ui = ui))
       task.add(MarkdownUtil.renderMarkdown("**Image Format:** $imageFormat", ui = ui))
+      if (!executionConfig.composerDirective.isNullOrBlank()) {
+        task.add(MarkdownUtil.renderMarkdown("**Composer Directive:** ${executionConfig.composerDirective}", ui = ui))
+      }
+      if (!executionConfig.integratorDirective.isNullOrBlank()) {
+        task.add(MarkdownUtil.renderMarkdown("**Integrator Directive:** ${executionConfig.integratorDirective}", ui = ui))
+      }
 
       // Step 1: Analyze document and suggest images
       log.info("Analyzing document to suggest images")
       task.add(MarkdownUtil.renderMarkdown("### 🔍 Analyzing Document", ui = ui))
       task.add(MarkdownUtil.renderMarkdown("Identifying sections that would benefit from visual enhancement...", ui = ui))
 
-      val analysisPrompt = buildAnalysisPrompt(documentContent, maxImages, isMarkdown)
-      
+      val analysisPrompt = buildAnalysisPrompt(
+        documentContent,
+        maxImages,
+        isMarkdown,
+        executionConfig.composerDirective
+      )
+
       val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
       val parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task)
       val defaultChatter = api.getChildClient(task)
-      
+
       val analysisAgent = ParsedAgent(
         resultClass = DocumentAnalysis::class.java,
         prompt = analysisPrompt,
@@ -190,13 +205,15 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
       // Display suggestions
       task.add(MarkdownUtil.renderMarkdown("### 📋 Planned Images", ui = ui))
       suggestions.forEachIndexed { index, suggestion ->
-        task.add(MarkdownUtil.renderMarkdown(
-          """
+        task.add(
+          MarkdownUtil.renderMarkdown(
+            """
           |**${index + 1}. ${suggestion.imageName}**
           |- Location: ${suggestion.insertionPoint}
           |- Caption: ${suggestion.caption}
           """.trimMargin(), ui = ui
-        ))
+          )
+        )
       }
 
       // Step 2: Generate images
@@ -212,20 +229,26 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
       val generatedImages = mutableListOf<Triple<String, String, ImageSuggestion>>()
       val documentFolder = documentPath.parent
 
-suggestions.forEachIndexed { index, suggestion ->
+      suggestions.forEachIndexed { index, suggestion ->
         try {
           task.add(MarkdownUtil.renderMarkdown("#### Generating: ${suggestion.imageName}", ui = ui))
-          
-          // Append supplemental instructions if provided
-          val enhancedPrompt = if (!executionConfig.imageInstructions.isNullOrBlank()) {
-            "${suggestion.imagePrompt}\n\nAdditional instructions: ${executionConfig.imageInstructions}"
-          } else {
-            suggestion.imagePrompt
+
+          // Build enhanced prompt with all supplemental instructions
+          val enhancedPrompt = buildString {
+            append(suggestion.imagePrompt)
+
+            if (!executionConfig.composerDirective.isNullOrBlank()) {
+              append("\n\nComposer Directive: ${executionConfig.composerDirective}")
+            }
+
+            if (!executionConfig.imageInstructions.isNullOrBlank()) {
+              append("\n\nAdditional Instructions: ${executionConfig.imageInstructions}")
+            }
           }
-          
+
           val result = imageAgent.answer(listOf(ImageAndText(enhancedPrompt)))
           val generatedImage = result.image
-          
+
           // Save image with descriptive name
           val sanitizedName = suggestion.imageName
             .replace(Regex("[^a-zA-Z0-9_-]"), "_")
@@ -233,36 +256,37 @@ suggestions.forEachIndexed { index, suggestion ->
             .trim('_')
           val imageFileName = "${sanitizedName}.$imageFormat"
           val imagePath = documentFolder.resolve(imageFileName)
-          
+
           ImageIO.write(generatedImage, imageFormat, imagePath.toFile())
           log.info("Saved image: $imageFileName")
-          
+
           // Display preview
           val previewFile = task.resolve(imageFileName)
           ImageIO.write(generatedImage, imageFormat, previewFile!!)
           val previewLink = task.linkTo(imageFileName)
           task.add("""<a href="$previewLink" target="_blank"><img src="$previewLink" style="max-width: 400px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" /></a>""")
           task.add(MarkdownUtil.renderMarkdown("✅ Saved as `$imageFileName`", ui = ui))
-          
+
           generatedImages.add(Triple(imageFileName, imagePath.toString(), suggestion))
-          
+
         } catch (e: Exception) {
           log.error("Failed to generate image: ${suggestion.imageName}", e)
           task.add(MarkdownUtil.renderMarkdown("❌ Failed to generate: ${suggestion.imageName} - ${e.message}", ui = ui))
         }
       }
 
-      // Step 3: Insert image references into document (if enabled)
+// Step 3: Insert image references into document (if enabled)
       if (autoInsert && generatedImages.isNotEmpty()) {
         log.info("Inserting image references into document")
         task.add(MarkdownUtil.renderMarkdown("### 📝 Updating Document", ui = ui))
-        
+
         val updatedContent = insertImageReferences(
           documentContent,
           generatedImages,
-          isMarkdown
+          isMarkdown,
+          executionConfig.integratorDirective
         )
-        
+
         // Save updated document
         documentPath.toFile().writeText(updatedContent)
         task.add(MarkdownUtil.renderMarkdown("✅ Document updated with ${generatedImages.size} image references", ui = ui))
@@ -300,7 +324,7 @@ suggestions.forEachIndexed { index, suggestion ->
       val duration = System.currentTimeMillis() - startTime
       log.error("IllustrateDocumentTask failed after ${duration}ms for: $documentFile", e)
       task.error(e)
-      
+
       val errorOutput = buildString {
         appendLine("# Error Illustrating Document")
         appendLine()
@@ -310,7 +334,7 @@ suggestions.forEachIndexed { index, suggestion ->
         appendLine()
         appendLine("**Type:** ${e.javaClass.simpleName}")
       }
-      
+
       task.safeComplete("Document illustration failed: ${e.message}", log)
       resultFn(errorOutput)
     }
@@ -319,14 +343,25 @@ suggestions.forEachIndexed { index, suggestion ->
   private fun buildAnalysisPrompt(
     documentContent: String,
     maxImages: Int,
-    isMarkdown: Boolean
+    isMarkdown: Boolean,
+    composerDirective: String?
   ): String {
     val formatInfo = if (isMarkdown) "Markdown" else "HTML"
-    
-    return """
-You are a document enhancement expert. Analyze this $formatInfo document and suggest images that would enhance its content.
+    val directiveSection = if (!composerDirective.isNullOrBlank()) {
+      """
+## Composer Directive:
+${composerDirective}
+**Important:** Follow this directive when suggesting images and creating prompts.
+      """.trimIndent()
+    } else {
+      ""
+    }
 
-## Document Content:
+    return """
+ You are a document enhancement expert. Analyze this $formatInfo document and suggest images that would enhance its content.
+${directiveSection}
+
+ ## Document Content:
 ```
 ${documentContent.take(10000)}
 ```
@@ -360,37 +395,133 @@ Generate suggestions now.
   private fun insertImageReferences(
     content: String,
     images: List<Triple<String, String, ImageSuggestion>>,
-    isMarkdown: Boolean
+    isMarkdown: Boolean,
+    integratorDirective: String?
   ): String {
     var updatedContent = content
+    // Check if integrator directive specifies special handling
+    val isBackgroundWallpaper = integratorDirective?.contains("background", ignoreCase = true) == true ||
+        integratorDirective?.contains("wallpaper", ignoreCase = true) == true
+    val isSidebar = integratorDirective?.contains("sidebar", ignoreCase = true) == true
+    val isGallery = integratorDirective?.contains("gallery", ignoreCase = true) == true
+    // Handle special integration modes
+    if (isBackgroundWallpaper && !isMarkdown) {
+      // For HTML, add CSS background
+      val firstImage = images.firstOrNull()
+      if (firstImage != null) {
+        val (fileName, _, suggestion) = firstImage
+        val styleTag = """
+<style>
+  body {
+    background-image: url('$fileName');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+  }
+</style>
+        """.trimIndent()
+        // Insert style tag in head or at beginning
+        val headEnd = updatedContent.indexOf("</head>", ignoreCase = true)
+        if (headEnd >= 0) {
+          updatedContent = updatedContent.substring(0, headEnd) + styleTag + updatedContent.substring(headEnd)
+        } else {
+          updatedContent = styleTag + updatedContent
+        }
+        // Add remaining images normally
+        images.drop(1).forEach { (fileName, _, suggestion) ->
+          updatedContent = insertSingleImage(updatedContent, fileName, suggestion, isMarkdown)
+        }
+        return updatedContent
+      }
+    }
+    if (isGallery) {
+      // Create a gallery section
+      val galleryHtml = buildGallerySection(images, isMarkdown)
+      // Append gallery at the end
+      updatedContent += "\n\n$galleryHtml\n\n"
+      return updatedContent
+    }
 
     images.forEach { (fileName, _, suggestion) ->
-      val insertionPoint = suggestion.insertionPoint
-      val caption = suggestion.caption
-
-      // Create image reference based on format
-      val imageReference = if (isMarkdown) {
-        "\n\n![${caption}]($fileName)\n\n"
-      } else {
-        "\n\n<figure>\n  <img src=\"$fileName\" alt=\"${caption.replace("\"", "\\\"")}\" />\n  <figcaption>$caption</figcaption>\n</figure>\n\n"
-      }
-
-      // Try to find insertion point
-      val insertionIndex = findInsertionPoint(updatedContent, insertionPoint)
-
-      if (insertionIndex >= 0) {
-        updatedContent = updatedContent.substring(0, insertionIndex) +
-                        imageReference +
-                        updatedContent.substring(insertionIndex)
-        log.debug("Inserted image reference for $fileName at position $insertionIndex")
-      } else {
-        log.warn("Could not find insertion point for $fileName: $insertionPoint")
-        // Append at the end as fallback
-        updatedContent += imageReference
-      }
+      updatedContent = insertSingleImage(updatedContent, fileName, suggestion, isMarkdown, isSidebar)
     }
 
     return updatedContent
+  }
+
+  private fun insertSingleImage(
+    content: String,
+    fileName: String,
+    suggestion: ImageSuggestion,
+    isMarkdown: Boolean,
+    isSidebar: Boolean = false
+  ): String {
+    val insertionPoint = suggestion.insertionPoint
+    val caption = suggestion.caption
+    // Create image reference based on format and mode
+    val imageReference = when {
+      isSidebar && !isMarkdown -> {
+        "\n\n<aside style=\"float: right; margin: 1em; max-width: 300px;\">\n  <img src=\"$fileName\" alt=\"${
+          caption.replace(
+            "\"",
+            "\\\""
+          )
+        }\" style=\"width: 100%;\" />\n  <p style=\"font-size: 0.9em; font-style: italic;\">$caption</p>\n</aside>\n\n"
+      }
+
+      isMarkdown -> {
+        "\n\n![${caption}]($fileName)\n\n"
+      }
+
+      else -> {
+        "\n\n<figure>\n  <img src=\"$fileName\" alt=\"${caption.replace("\"", "\\\"")}\" />\n  <figcaption>$caption</figcaption>\n</figure>\n\n"
+      }
+    }
+    // Try to find insertion point
+    val insertionIndex = findInsertionPoint(content, insertionPoint)
+    return if (insertionIndex >= 0) {
+      val result = content.substring(0, insertionIndex) +
+          imageReference +
+          content.substring(insertionIndex)
+      log.debug("Inserted image reference for $fileName at position $insertionIndex")
+      result
+    } else {
+      log.warn("Could not find insertion point for $fileName: $insertionPoint")
+      // Append at the end as fallback
+      content + imageReference
+    }
+  }
+
+  private fun buildGallerySection(
+    images: List<Triple<String, String, ImageSuggestion>>,
+    isMarkdown: Boolean
+  ): String {
+    return if (isMarkdown) {
+      buildString {
+        appendLine("## Image Gallery")
+        appendLine()
+        images.forEach { (fileName, _, suggestion) ->
+          appendLine("### ${suggestion.caption}")
+          appendLine()
+          appendLine("![${suggestion.caption}]($fileName)")
+          appendLine()
+        }
+      }
+    } else {
+      buildString {
+        appendLine("<section class=\"image-gallery\">")
+        appendLine("  <h2>Image Gallery</h2>")
+        appendLine("  <div style=\"display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1em;\">")
+        images.forEach { (fileName, _, suggestion) ->
+          appendLine("    <figure>")
+          appendLine("      <img src=\"$fileName\" alt=\"${suggestion.caption.replace("\"", "\\\"")}\" style=\"width: 100%; height: auto;\" />")
+          appendLine("      <figcaption>${suggestion.caption}</figcaption>")
+          appendLine("    </figure>")
+        }
+        appendLine("  </div>")
+        appendLine("</section>")
+      }
+    }
   }
 
   private fun findInsertionPoint(content: String, insertionPoint: String): Int {

@@ -166,6 +166,21 @@ class IllustrateDocumentAction : BaseAction() {
       wrapStyleWord = true
       toolTipText = "Additional instructions for image generation (e.g., 'Use a minimalist style', 'Include company branding colors')"
     }
+    private val composerDirectiveField = com.intellij.ui.components.JBTextArea().apply {
+      text = ""
+      rows = 3
+      lineWrap = true
+      wrapStyleWord = true
+      toolTipText = "Directives for the image composer (e.g., 'Generate a background wallpaper', 'Create hero images', 'Focus on technical diagrams')"
+    }
+    private val integratorDirectiveField = com.intellij.ui.components.JBTextArea().apply {
+      text = ""
+      rows = 3
+      lineWrap = true
+      wrapStyleWord = true
+      toolTipText = "Directives for the image integrator (e.g., 'Insert as page background', 'Place images in sidebars', 'Create image galleries')"
+    }
+
 
     private val taskDescriptionField = com.intellij.ui.components.JBTextArea().apply {
       text = "Illustrate document: ${documentFile.name}"
@@ -239,10 +254,23 @@ class IllustrateDocumentAction : BaseAction() {
           .align(Align.FILL)
           .comment("Additional instructions to append to all image generation prompts (optional)")
       }
+      group("Advanced Directives") {
+        row("Composer Directive:") {
+          scrollCell(composerDirectiveField)
+            .align(Align.FILL)
+            .comment("Instructions for how to compose and generate images (e.g., 'Generate a background wallpaper for the page', 'Create hero images for each section')")
+        }
+        row("Integrator Directive:") {
+          scrollCell(integratorDirectiveField)
+            .align(Align.FILL)
+            .comment("Instructions for how to integrate images into the document (e.g., 'Insert as CSS background', 'Create floating sidebars', 'Build image galleries')")
+        }
+      }
 
-//      row("Task Description:") {
-//        scrollCell(taskDescriptionField)
-//          .align(Align.FILL)
+
+      //      row("Task Description:") {
+      //        scrollCell(taskDescriptionField)
+      //          .align(Align.FILL)
 //          .comment("Describe what you want to achieve with this illustration task")
 //      }
 
@@ -304,6 +332,8 @@ class IllustrateDocumentAction : BaseAction() {
         imageFormat = imageFormatCombo.selectedItem as String,
         autoInsert = autoInsertCheckbox.isSelected,
         imageInstructions = imageInstructionsField.text.takeIf { it.isNotBlank() },
+        composerDirective = composerDirectiveField.text.takeIf { it.isNotBlank() },
+        integratorDirective = integratorDirectiveField.text.takeIf { it.isNotBlank() },
         task_description = taskDescriptionField.text,
         state = TaskState.Pending
       )
