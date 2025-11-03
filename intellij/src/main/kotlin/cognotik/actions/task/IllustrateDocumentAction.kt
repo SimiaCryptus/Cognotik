@@ -11,7 +11,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBCheckBox
-import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
@@ -21,7 +20,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.file.GeneratePresentationTask
+import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -39,20 +38,24 @@ import javax.swing.JSlider
 import javax.swing.JSpinner
 import javax.swing.SpinnerNumberModel
 
-class GeneratePresentationAction : BaseAction() {
+class IllustrateDocumentAction : BaseAction() {
 
   override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
   override fun isEnabled(event: AnActionEvent): Boolean {
     if (!super.isEnabled(event)) return false
-    if (event.getSelectedFiles().isEmpty() && event.getSelectedFolder() == null) return false
-    return true
+    val selectedFile = event.getSelectedFile()
+    if (selectedFile == null) return false
+    val fileName = selectedFile.name.lowercase()
+    return fileName.endsWith(".md") || fileName.endsWith(".html")
   }
 
   override fun handle(e: AnActionEvent) {
     val root = getProjectRoot(e) ?: return
-    val relatedFiles = getFiles(e)
-    val dialog = GeneratePresentationTaskDialog(
-      e.project, root, relatedFiles
+    val selectedFile = e.getSelectedFile() ?: return
+
+    val dialog = IllustrateDocumentTaskDialog(
+      e.project, root, selectedFile.toFile
     )
 
     if (dialog.showAndGet()) {
@@ -60,21 +63,20 @@ class GeneratePresentationAction : BaseAction() {
         val taskConfig = dialog.getTaskConfig()
         val orchestrationConfig = dialog.getOrchestrationConfig()
 
-        UITools.runAsync(e.project, "Initializing Presentation Generation Task", true) { progress ->
-          initializeTask(e, progress, orchestrationConfig, taskConfig, root)
+        UITools.runAsync(e.project, "Initializing Document Illustration Task", true) { progress ->
+          initializeTask(progress, orchestrationConfig, taskConfig, root)
         }
       } catch (ex: Exception) {
-        log.error("Failed to initialize presentation generation task", ex)
+        log.error("Failed to initialize document illustration task", ex)
         UITools.showError(e.project, "Failed to initialize task: ${ex.message}")
       }
     }
   }
 
   private fun initializeTask(
-    e: AnActionEvent,
     progress: ProgressIndicator,
     orchestrationConfig: OrchestrationConfig,
-    taskConfig: GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData,
+    taskConfig: IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData,
     root: File
   ) {
     progress.text = "Setting up session..."
@@ -83,7 +85,7 @@ class GeneratePresentationAction : BaseAction() {
     DataStorage.sessionPaths[session] = root
 
     progress.text = "Starting server..."
-    setupTaskSession(session, orchestrationConfig, taskConfig, root)
+    setupTaskSession(session, orchestrationConfig, taskConfig)
 
     Thread {
       Thread.sleep(500)
@@ -98,13 +100,15 @@ class GeneratePresentationAction : BaseAction() {
   }
 
   private fun setupTaskSession(
-    session: Session, orchestrationConfig: OrchestrationConfig, taskConfig: GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData, root: File
+    session: Session,
+    orchestrationConfig: OrchestrationConfig,
+    taskConfig: IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData
   ) {
     val app = object : SingleTaskApp(
-      applicationName = "Presentation Generation Task",
-      path = "/generatePresentationTask",
+      applicationName = "Document Illustration Task",
+      path = "/illustrateDocumentTask",
       showMenubar = false,
-      taskType = GeneratePresentationTask.GeneratePresentation,
+      taskType = IllustrateDocumentTask.IllustrateDocument,
       taskConfig = taskConfig,
       instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
     ) {
@@ -114,10 +118,13 @@ class GeneratePresentationAction : BaseAction() {
     app.getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
     SessionProxyServer.chats[session] = app
     ApplicationServer.appInfoMap[session] = AppInfoData(
-      applicationName = "Presentation Generation Task", inputCnt = 0, stickyInput = false, showMenubar = false
+      applicationName = "Document Illustration Task",
+      inputCnt = 0,
+      stickyInput = false,
+      showMenubar = false
     )
     SessionProxyServer.metadataStorage.setSessionName(
-      null, session, "Presentation Generation @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+      null, session, "Document Illustration @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
     )
   }
 
@@ -128,49 +135,55 @@ class GeneratePresentationAction : BaseAction() {
     }
   }
 
-  class GeneratePresentationTaskDialog(
+  class IllustrateDocumentTaskDialog(
     project: Project?,
     private val root: File,
-    val relatedFiles: List<File>
+    private val documentFile: File
   ) : DialogWrapper(project) {
 
-    private val taskDescriptionArea = JBTextArea(8, 40).apply {
+    private val documentPathField = JBTextField().apply {
+      text = documentFile.relativeTo(root).path
+      isEditable = false
+      toolTipText = "Document to illustrate (Markdown or HTML)"
+    }
+
+    private val maxImagesSpinner = JSpinner(SpinnerNumberModel(5, 1, 20, 1)).apply {
+      toolTipText = "Maximum number of images to generate (1-20)"
+    }
+
+    private val imageFormatCombo = ComboBox(arrayOf("png", "jpg", "jpeg")).apply {
+      selectedItem = "png"
+      toolTipText = "Image format for generated files"
+    }
+
+    private val autoInsertCheckbox = JBCheckBox("Automatically insert image references", true).apply {
+      toolTipText = "Insert image references into the document at appropriate locations"
+    }
+    private val imageInstructionsField = com.intellij.ui.components.JBTextArea().apply {
+      text = ""
+      rows = 3
       lineWrap = true
       wrapStyleWord = true
-      toolTipText = "Describe the presentation including topic, key points, target audience, and desired style"
+      toolTipText = "Additional instructions for image generation (e.g., 'Use a minimalist style', 'Include company branding colors')"
     }
 
-    private val htmlFileField = JBTextField().apply {
-      toolTipText = "Path for the HTML presentation file to create (must end with .html)"
-      text = "${relatedFiles.firstOrNull()?.nameWithoutExtension?.let { "${it}_presentation" } ?: "presentation"}.html"
+    private val taskDescriptionField = com.intellij.ui.components.JBTextArea().apply {
+      text = "Illustrate document: ${documentFile.name}"
+      rows = 3
+      lineWrap = true
+      wrapStyleWord = true
+      toolTipText = "Description of the illustration task"
     }
 
-    private val relatedFilesField = JBTextField().apply {
-      toolTipText = "Comma-separated list of related files to consider for context (e.g., reference materials)"
-      text = relatedFiles.joinToString(", ") { it.relativeTo(root).path }
-    }
-
-    private val generateImagesCheckbox = JBCheckBox("Generate images for key slides", false).apply {
-      toolTipText = "Use AI to generate images for important slides in the presentation"
-      addActionListener {
-        imageCountSpinner.isEnabled = isSelected
-        imageModelCombo.isEnabled = isSelected
-      }
-    }
-
-    private val imageCountSpinner = JSpinner(SpinnerNumberModel(5, 1, 10, 1)).apply {
-      toolTipText = "Maximum number of images to generate (1-10)"
-      isEnabled = false
-    }
 
     private val visibleModelsCache by lazy { getVisibleModels() }
 
-    private val modelCombo = ComboBox(
+    private val textModelCombo = ComboBox(
       visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()
     ).apply {
       maximumSize = Dimension(200, 30)
       selectedItem = AppSettingsState.instance.smartModel?.model?.modelName
-      toolTipText = "AI model to use for generating presentation content"
+      toolTipText = "AI model for analyzing document and generating image prompts"
     }
 
     private val imageModelCombo = ComboBox(
@@ -181,71 +194,69 @@ class GeneratePresentationAction : BaseAction() {
     ).apply {
       maximumSize = Dimension(200, 30)
       selectedItem = AppSettingsState.instance.imageChatModel?.model?.modelName
-      toolTipText = "AI model to use for generating images"
-      isEnabled = false
+      toolTipText = "AI model for generating images"
     }
 
-    private val temperatureSlider = JSlider(0, 100, 70).apply {
+    private val temperatureSlider = JSlider(0, 100, 50).apply {
       addChangeListener {
         temperatureLabel.text = "%.2f".format(value / 100.0)
       }
     }
 
-    private val temperatureLabel = javax.swing.JLabel("0.70")
-
-    private val autoFixCheckbox = JBCheckBox("Auto-apply generated presentation", false).apply {
-      toolTipText = "Automatically write the generated presentation files without manual confirmation"
-    }
+    private val temperatureLabel = javax.swing.JLabel("0.50")
 
     init {
       init()
-      title = "Configure Presentation Generation Task"
+      title = "Configure Document Illustration Task"
     }
 
     override fun createCenterPanel(): JComponent = panel {
-      group("Presentation Configuration") {
-        row("HTML File:") {
-          cell(htmlFileField)
+      group("Document Configuration") {
+        row("Document File:") {
+          cell(documentPathField)
             .align(Align.FILL)
-            .comment("Output path for the presentation file (e.g., presentation.html, slides/demo.html)")
+            .comment("The Markdown or HTML document to illustrate")
         }
 
-        row("Presentation Description:") {
-          scrollCell(taskDescriptionArea)
-            .align(Align.FILL)
-            .comment("Describe the presentation topic, key points, target audience, number of slides, and style preferences")
-            .resizableColumn()
-        }.resizableRow()
+        row("Max Images:") {
+          cell(maxImagesSpinner)
+            .comment("Maximum number of images to generate (1-20)")
+        }
 
-        row("Related Files:") {
-          cell(relatedFilesField)
-            .align(Align.FILL)
-            .comment("Additional files for context (optional)")
+        row("Image Format:") {
+          cell(imageFormatCombo)
+            .comment("File format for generated images")
         }
       }
 
-      group("Image Generation") {
-        row {
-          cell(generateImagesCheckbox)
-        }
+      row {
+        cell(autoInsertCheckbox)
+          .comment("Automatically insert image references at appropriate locations in the document")
+      }
 
-        row("Maximum Images:") {
-          cell(imageCountSpinner)
-            .comment("Maximum number of images to generate for key slides (1-10)")
+      row("Image Instructions:") {
+        scrollCell(imageInstructionsField)
+          .align(Align.FILL)
+          .comment("Additional instructions to append to all image generation prompts (optional)")
+      }
+
+//      row("Task Description:") {
+//        scrollCell(taskDescriptionField)
+//          .align(Align.FILL)
+//          .comment("Describe what you want to achieve with this illustration task")
+//      }
+
+      group("Model Settings") {
+        row("Text Model:") {
+          cell(textModelCombo)
+            .align(Align.FILL)
+            .comment("AI model for document analysis and image prompt generation")
         }
 
         row("Image Model:") {
           cell(imageModelCombo)
             .align(Align.FILL)
-            .comment("AI model for image generation")
-        }
-      }
-
-      group("Model Settings") {
-        row("Text Model:") {
-          cell(modelCombo)
-            .align(Align.FILL)
-            .comment("AI model for generating presentation content")
+            .comment("AI model for generating images")
         }
 
         row("Temperature:") {
@@ -254,47 +265,53 @@ class GeneratePresentationAction : BaseAction() {
             .comment("Higher values = more creative, lower = more focused")
           cell(temperatureLabel)
         }
+      }
 
+      group("About") {
         row {
-          cell(autoFixCheckbox)
+          text(
+            """
+                    This task will:
+                    <ul>
+                    <li>Analyze your document to identify sections that would benefit from images</li>
+                    <li>Generate contextually appropriate images using AI</li>
+                    <li>Save images with descriptive names in the document's folder</li>
+                    <li>Optionally insert image references at appropriate locations</li>
+                    </ul>
+                """.trimIndent()
+          )
         }
       }
     }
 
     override fun doValidate(): com.intellij.openapi.ui.ValidationInfo? {
-      if (htmlFileField.text.isBlank()) {
-        return com.intellij.openapi.ui.ValidationInfo("HTML file path is required", htmlFileField)
+      if (!documentFile.exists()) {
+        return com.intellij.openapi.ui.ValidationInfo("Document file does not exist", documentPathField)
       }
 
-      if (!htmlFileField.text.endsWith(".html", ignoreCase = true)) {
-        return com.intellij.openapi.ui.ValidationInfo("File must have .html extension", htmlFileField)
-      } else {
-        if (htmlFileField.text.let { root.resolve(it) }.exists()) {
-          return com.intellij.openapi.ui.ValidationInfo("HTML file path must not exist", htmlFileField)
-        }
+      val fileName = documentFile.name.lowercase()
+      if (!fileName.endsWith(".md") && !fileName.endsWith(".html")) {
+        return com.intellij.openapi.ui.ValidationInfo("Document must be .md or .html file", documentPathField)
       }
 
       return null
     }
 
-    fun getTaskConfig(): GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData {
-      val relatedFiles = relatedFilesField.text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-        .takeIf { it.isNotEmpty() }
-
-      return GeneratePresentationTask.GeneratePresentationTaskExecutionConfigData(
-        files = listOf(htmlFileField.text),
-        related_files = relatedFiles,
-        task_description = taskDescriptionArea.text,
-        generate_images = generateImagesCheckbox.isSelected,
-        image_model = imageModelCombo.selectedItem as? String ?: "DallE3",
-        max_images = imageCountSpinner.value as Int,
+    fun getTaskConfig(): IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData {
+      return IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData(
+        files = listOf(documentFile.relativeTo(root).path),
+        maxImages = maxImagesSpinner.value as Int,
+        imageFormat = imageFormatCombo.selectedItem as String,
+        autoInsert = autoInsertCheckbox.isSelected,
+        imageInstructions = imageInstructionsField.text.takeIf { it.isNotBlank() },
+        task_description = taskDescriptionField.text,
         state = TaskState.Pending
       )
     }
 
     fun getOrchestrationConfig(): OrchestrationConfig {
-      val selectedModel = modelCombo.selectedItem as? String
-      val model = selectedModel?.let { modelName ->
+      val selectedTextModel = textModelCombo.selectedItem as? String
+      val textModel = selectedTextModel?.let { modelName ->
         visibleModelsCache.find { it.modelName == modelName }?.toApiChatModel()
       }
 
@@ -304,14 +321,14 @@ class GeneratePresentationAction : BaseAction() {
       }
 
       return OrchestrationConfig(
-        defaultModel = model ?: AppSettingsState.instance.smartModel
+        defaultModel = textModel ?: AppSettingsState.instance.smartModel
         ?: throw IllegalStateException("No model configured"),
         parsingModel = AppSettingsState.instance.fastModel
           ?: throw IllegalStateException("Fast model not configured"),
         imageChatModel = imageModel ?: AppSettingsState.instance.imageChatModel
         ?: throw IllegalStateException("No image model configured"),
         temperature = temperatureSlider.value / 100.0,
-        autoFix = autoFixCheckbox.isSelected,
+        autoFix = false,
         workingDir = root.absolutePath,
         shellCmd = listOf(
           if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"

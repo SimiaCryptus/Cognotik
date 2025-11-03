@@ -127,6 +127,10 @@
                         text="📊 Generate Presentation"
                         description="Create a complete Reveal.js presentation with speaker notes and optional AI-generated images">
                 </action>
+                <action class="cognotik.actions.task.IllustrateDocumentAction"
+                        text="🖼️ Illustrate Document"
+                        description="Generate illustrative images for a document based on its content, enhancing visual appeal and comprehension">
+                </action>
             </group>
 
             <group id="cognotik.ui.ProjectMenu.Agents"
