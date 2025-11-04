@@ -22,6 +22,7 @@ import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Compani
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
 import com.simiacryptus.cognotik.plan.tools.writing.*
+import com.simiacryptus.cognotik.plan.tools.writing.ResearchPaperGenerationTask.Companion.ResearchPaperGeneration
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -50,6 +51,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
         register(taskType)
       }
 
+      registerConstructor(ResearchPaperGeneration) { settings, task ->
+        ResearchPaperGenerationTask(settings, task)
+      }
       registerConstructor(ChainOfThought) { settings, task ->
         ChainOfThoughtTask(settings, task)
       }
