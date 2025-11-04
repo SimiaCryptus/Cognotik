@@ -22,6 +22,7 @@ import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
@@ -50,7 +51,7 @@ class IllustrateDocumentAction : BaseAction() {
     return fileName.endsWith(".md") || fileName.endsWith(".html")
   }
 
-  override fun handle(e: AnActionEvent) {
+override fun handle(e: AnActionEvent) {
     val root = getProjectRoot(e) ?: return
     val selectedFile = e.getSelectedFile() ?: return
 
@@ -63,8 +64,11 @@ class IllustrateDocumentAction : BaseAction() {
         val taskConfig = dialog.getTaskConfig()
         val orchestrationConfig = dialog.getOrchestrationConfig()
 
+        val session = Session.newGlobalID()
+        DataStorage.sessionPaths[session] = root
+
         UITools.runAsync(e.project, "Initializing Document Illustration Task", true) { progress ->
-          initializeTask(progress, orchestrationConfig, taskConfig, root)
+          initializeTask(progress, orchestrationConfig, taskConfig, session)
         }
       } catch (ex: Exception) {
         log.error("Failed to initialize document illustration task", ex)
@@ -77,26 +81,22 @@ class IllustrateDocumentAction : BaseAction() {
     progress: ProgressIndicator,
     orchestrationConfig: OrchestrationConfig,
     taskConfig: IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData,
-    root: File
+    session: Session
   ) {
-    progress.text = "Setting up session..."
-    val session = Session.newGlobalID()
 
-    DataStorage.sessionPaths[session] = root
 
     progress.text = "Starting server..."
     setupTaskSession(session, orchestrationConfig, taskConfig)
 
-    Thread {
+    progress.text = "Opening browser..."
+    try {
       Thread.sleep(500)
-      try {
-        val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
-        log.info("Opening browser to $uri")
-        browse(uri)
-      } catch (e: Throwable) {
-        log.warn("Error opening browser", e)
-      }
-    }.start()
+      val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+      log.info("Opening browser to $uri")
+      browse(uri)
+    } catch (e: Throwable) {
+      log.warn("Error opening browser", e)
+    }
   }
 
   private fun setupTaskSession(
@@ -358,7 +358,7 @@ class IllustrateDocumentAction : BaseAction() {
         imageChatModel = imageModel ?: AppSettingsState.instance.imageChatModel
         ?: throw IllegalStateException("No image model configured"),
         temperature = temperatureSlider.value / 100.0,
-        autoFix = false,
+        autoFix = true,
         workingDir = root.absolutePath,
         shellCmd = listOf(
           if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
@@ -367,11 +367,9 @@ class IllustrateDocumentAction : BaseAction() {
     }
 
     private fun getVisibleModels() =
-      ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+      fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
         apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
-          model.provider == apiData.provider &&
-              model.modelName?.isNotBlank() == true &&
-              PlanConfigDialog.isVisible(model)
+            model.provider == apiData.provider && model.modelName.isNotBlank() && PlanConfigDialog.isVisible(model)
         } ?: listOf()
       }.distinctBy { it.modelName }.sortedBy { "${it.provider?.name} - ${it.modelName}" }
   }
