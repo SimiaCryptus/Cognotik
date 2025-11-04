@@ -1,5 +1,5 @@
 // UI management module
-class UIManager {
+ class UIManager {
     constructor(dependencies = {}) {
         this.document = dependencies.document || document;
         this.appState = dependencies.appState;
@@ -9,6 +9,11 @@ class UIManager {
 
     setupTooltips() {
         console.log('[setupTooltips] Called');
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            console.log('[setupTooltips] DOM not ready yet, deferring setup');
+            return;
+        }
 
         this.document.querySelectorAll('.tooltip').forEach(tooltip => {
             tooltip.addEventListener('click', (e) => {
@@ -26,7 +31,7 @@ class UIManager {
         });
 
         this.document.addEventListener('click', (e) => {
-            if (!e.target.closest('.tooltip')) {
+            if (!e.target.closest('.tooltip') && !e.target.closest('.tooltiptext')) {
                 console.log('[setupTooltips] Clicked outside tooltip, closing all');
                 this.document.querySelectorAll('.tooltip.active').forEach(tooltip => {
                     tooltip.classList.remove('active');
