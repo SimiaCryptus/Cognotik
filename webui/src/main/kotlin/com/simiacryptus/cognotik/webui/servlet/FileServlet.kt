@@ -96,11 +96,19 @@ abstract class FileServlet : HttpServlet() {
                     req.contextPath + req.servletPath.removeSuffix("/*")
                         .removeSuffix("/") + "/" + req.pathInfo.split("/").firstOrNull { it.isNotBlank() }
 
-                val files = file.listFiles()
+val files = file.listFiles()
                     ?.filter { it.isFile }
                     ?.sortedBy { it.name }
                     ?.joinToString("") {
-                        """<li><a class="item-link" href="${it.name}"><span class="icon">📄</span>${it.name}</a></li>"""
+                        val fileName = it.name
+                        val baseLink = """<a class="item-link" href="${fileName}"><span class="icon">📄</span>${fileName}</a>"""
+                        val htmlLink = if (fileName.endsWith(".md")) {
+                            val htmlFileName = fileName.substringBeforeLast(".") + ".html"
+                            """ <a class="item-link" href="${htmlFileName}" style="margin-left: 0.5rem; font-size: 0.85rem;"><span class="icon">🌐</span>View as HTML</a>"""
+                        } else {
+                            ""
+                        }
+                        """<li style="display: flex; align-items: center;">$baseLink$htmlLink</li>"""
                     } ?: ""
                 val folders = file.listFiles()
                     ?.filter { !it.isFile }
