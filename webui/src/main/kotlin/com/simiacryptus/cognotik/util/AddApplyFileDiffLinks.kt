@@ -147,7 +147,6 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
     self.apply {
       val initiator = getInitiatorPattern()
       if (response.contains(initiator) && !response.split(initiator, 2)[1].contains("\n```(?![^\n])".toRegex())) {
-
         return@instrument instrument(
           self = self,
           root = root,
@@ -160,13 +159,14 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
 
       val codeBlocks = processor.extractCodeBlocks(response)
       val codeBlocksWithHeaders = codeBlocks.mapIndexed { index, (lang, code) ->
-        val header = findHeaderForBlock(response, lang, code, index) ?: defaultFile
-        Triple(header, lang, code)
+        val headerForBlock = findHeaderForBlock(response, lang, code, index)
+        Triple(
+          if (headerForBlock != null) {
+            headerForBlock
+          } else {
+            defaultFile
+          }, lang, code)
       }
-
-      val headerPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
-
-      val headers = headerPattern.findAll(response).map { it.range to it.groupValues[1] }.toList()
 
       val newFileBlocks = codeBlocksWithHeaders.filter { (header, lang, code) ->
         try {
@@ -232,14 +232,19 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
   }
 
   private fun findHeaderForBlock(response: String, lang: String, code: String, blockIndex: Int): String? {
-    val blockPosition = "(?s)```.*?${Regex.escape(code)}".toRegex().find(response)?.range?.first ?: return null
+    val blockPosition = Regex.escape(code).toRegex().find(response)?.range?.first
+    if (blockPosition == null) {
+      return null
+    }
     val markdownHeaderPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
     val fileHeaderPattern = """(?m)^(?:─+|-+)\s*\nFile:\s*(.+?)\s*\n(?:─+|-+)\s*""".toRegex()
     val headers = mutableListOf<Pair<IntRange, String>>()
-    markdownHeaderPattern.findAll(response).forEach { match ->
+    val markdownMatches = markdownHeaderPattern.findAll(response).toList().toTypedArray()
+    markdownMatches.forEach { match ->
       headers.add(match.range to normalizeFilename(match.groupValues[1]))
     }
-    fileHeaderPattern.findAll(response).forEach { match ->
+    val fileHeaderMatches = fileHeaderPattern.findAll(response).toList().toTypedArray()
+    fileHeaderMatches.forEach { match ->
       headers.add(match.range to normalizeFilename(match.groupValues[1]))
     }
     val maxByOrNull = headers.filter { it.first.last <= blockPosition }.maxByOrNull { it.first.last }
