@@ -188,13 +188,13 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         }
       }
 
-      val withPatchLinks: String = patchBlocks.foldIndexed(response) { index, markdown, (header, lang, diffValue) ->
+      val withPatchLinks: String = patchBlocks.reversed().fold(response) { markdown, (header, lang, diffValue) ->
         val filename = resolver(root, normalizeFilename(header ?: ""))
-        if (filename.isNullOrBlank()) return@foldIndexed markdown
+        if (filename.isNullOrBlank()) return@fold markdown
         val newValue = renderDiffBlock(root, filename, diffValue, handle, self, shouldAutoApply)
         val startOfMatch = markdown.indexOf(diffValue)
         if (startOfMatch < 0) {
-          return@foldIndexed markdown
+          return@fold markdown
         }
         val endOfMatch = startOfMatch + diffValue.length
         val precedingText = markdown.substring(0, startOfMatch)
@@ -243,7 +243,9 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
       headers.add(match.range to normalizeFilename(match.groupValues[1]))
     }
     val maxByOrNull = headers.filter { it.first.last <= blockPosition }.maxByOrNull { it.first.last }
-    return maxByOrNull?.second
+    val str = maxByOrNull?.second
+    if(null != str) return str
+    return null
   }
 
   protected open fun normalizeFilename(filename: String): String {

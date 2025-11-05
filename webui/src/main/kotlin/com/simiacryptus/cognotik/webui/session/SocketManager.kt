@@ -107,10 +107,10 @@ abstract class SocketManager(
         try {
             val operationID = randomID(root)
             val responseContents = divInitializer(operationID, cancelable)
-            log.debug(
-                "Creating new task with operationID: {}\n\t{}",
-                operationID, Thread.currentThread().stackTrace.joinToString("\n\t")
-            )
+//            log.debug(
+//                "Creating new task with operationID: {}\n\t{}",
+//                operationID, Thread.currentThread().stackTrace.joinToString("\n\t")
+//            )
             trafficLog.debug("Creating new task with operationID: {}", operationID)
             send(responseContents)
             return SessionTask(
