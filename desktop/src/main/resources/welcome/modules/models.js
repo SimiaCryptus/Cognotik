@@ -8,35 +8,6 @@ class ModelManager {
     }
 
 
-    populateModelSelections() {
-        console.log('[populateModelSelections] Called');
-
-        const modelSelect = this.document.getElementById('model-selection');
-        const parsingModelSelect = this.document.getElementById('parsing-model');
-        const imageModelSelect = this.document.getElementById('image-model-selection');
-
-        if (!modelSelect || !parsingModelSelect) {
-            console.warn('[populateModelSelections] Model select elements not found.');
-            return;
-        }
-        // Ensure we have appState and availableModels
-        const currentModels = this.getAvailableModels();
-        if (!this.appState || !currentModels) {
-            console.warn('[populateModelSelections] Missing required dependencies.');
-            return;
-        }
-
-
-        const savedDefaultModel = this.appState.taskSettings.defaultModel;
-        const savedParsingModel = this.appState.taskSettings.parsingModel;
-        const savedImageModel = this.appState.taskSettings.imageModel;
-
-        this.clearModelSelections(modelSelect, parsingModelSelect, imageModelSelect);
-        this.addAvailableModels(modelSelect, parsingModelSelect, imageModelSelect);
-
-        this.setSelectedModels(modelSelect, parsingModelSelect, savedDefaultModel, imageModelSelect, savedParsingModel, savedImageModel);
-    }
-
     clearModelSelections(modelSelect, parsingModelSelect, imageModelSelect) {
         modelSelect.innerHTML = '';
         parsingModelSelect.innerHTML = '';
@@ -64,6 +35,35 @@ class ModelManager {
         if (modelSelect.options.length === 0) {
             this.addDefaultOptions(modelSelect, parsingModelSelect, imageModelSelect);
         }
+    }
+
+    populateModelSelections() {
+        console.log('[populateModelSelections] Called');
+
+        const modelSelect = this.document.getElementById('model-selection');
+        const parsingModelSelect = this.document.getElementById('parsing-model');
+        const imageModelSelect = this.document.getElementById('image-model');
+
+        if (!modelSelect || !parsingModelSelect) {
+            console.warn('[populateModelSelections] Model select elements not found.');
+            return;
+        }
+        // Ensure we have appState and availableModels
+        const currentModels = this.getAvailableModels();
+        if (!this.appState || !currentModels) {
+            console.warn('[populateModelSelections] Missing required dependencies.');
+            return;
+        }
+
+
+        const savedDefaultModel = this.appState.taskSettings.defaultModel;
+        const savedParsingModel = this.appState.taskSettings.parsingModel;
+        const savedImageModel = this.appState.taskSettings.imageModel;
+
+        this.clearModelSelections(modelSelect, parsingModelSelect, imageModelSelect);
+        this.addAvailableModels(modelSelect, parsingModelSelect, imageModelSelect);
+
+        this.setSelectedModels(modelSelect, parsingModelSelect, savedDefaultModel, imageModelSelect, savedParsingModel, savedImageModel);
     }
 
     addModelOption(modelSelect, parsingModelSelect, imageModelSelect, model, provider) {

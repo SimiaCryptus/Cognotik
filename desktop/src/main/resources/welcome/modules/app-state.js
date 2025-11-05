@@ -35,6 +35,7 @@ class AppState {
         return {
             defaultModel: 'GPT4o',
             parsingModel: 'GPT4oMini',
+            imageModel: '',
             workingDir: '',
             temperature: 0.3,
             autoFix: false,

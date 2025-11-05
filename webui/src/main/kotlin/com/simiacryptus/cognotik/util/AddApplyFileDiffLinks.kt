@@ -301,7 +301,6 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
       .trim()
   }
 
-
   private fun SocketManager.renderNewFile(
     root: Path,
     filename: String,
