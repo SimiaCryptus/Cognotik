@@ -11,8 +11,10 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 
 class AdversarialReasoningTask(
   orchestrationConfig: OrchestrationConfig,
@@ -625,7 +627,8 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
-      val (link, file) = Pair(task.linkTo("adversarial_transcript.md"), task.resolve("adversarial_transcript.md"))
+      val transcriptFile = "adversarial_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+      val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
       val transcriptStream = file?.outputStream()
       task.complete(
         "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

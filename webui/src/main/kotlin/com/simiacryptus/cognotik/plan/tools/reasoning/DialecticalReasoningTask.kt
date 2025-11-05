@@ -13,8 +13,10 @@ import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 
 class DialecticalReasoningTask(
   orchestrationConfig: OrchestrationConfig,
@@ -793,7 +795,8 @@ Be comprehensive yet concise in your final integration.
 
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
-      val (link, file) = Pair(task.linkTo("dialectical_transcript.md"), task.resolve("dialectical_transcript.md"))
+        val transcriptFile = "dialectical_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
       val transcriptStream = file?.outputStream()
       task.complete(
         "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

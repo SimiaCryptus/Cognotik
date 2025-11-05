@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.resolve
+import com.simiacryptus.cognotik.webui.session.resolveSessionFile
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
@@ -130,7 +130,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
   private fun record(socketManager: SocketManager, data: Any): String {
     val relativePath = UUID.randomUUID().toString() + ".json"
     require(relativePath.isNotBlank()) { "File path cannot be blank" }
-    socketManager.resolve(relativePath)?.writeText(data.toJson())
+    socketManager.resolveSessionFile(relativePath)?.writeText(data.toJson())
     return "<a href='fileIndex/${socketManager.sessionId}/$relativePath' target='_blank' class='verbose'>Patch Data</a>"
   }
 

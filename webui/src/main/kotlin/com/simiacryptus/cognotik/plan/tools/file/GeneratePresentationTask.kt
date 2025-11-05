@@ -380,7 +380,8 @@ $TT
   }
 
   private fun transcript(task: SessionTask, slideContent: String, presentationTitle: String): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     if (markdownTranscript != null) {
       try {
@@ -476,7 +477,7 @@ Style: Clean, modern, professional presentation aesthetic
           val result = imageAgent.answer(listOf(ImageAndText(imagePrompt)))
           val image = result.image
           // Save image
-          val imageFile = task.resolve(imageFilename)!!
+          val imageFile = task.resolveDataFile(imageFilename)!!
           ImageIO.write(image, "png", imageFile)
           imageMap[slideIndex] = imageFilename
           newTask.add(

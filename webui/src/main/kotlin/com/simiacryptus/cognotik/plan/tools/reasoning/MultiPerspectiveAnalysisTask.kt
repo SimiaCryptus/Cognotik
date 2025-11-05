@@ -9,6 +9,8 @@ import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
+import java.text.SimpleDateFormat
+import java.util.Date
 
 class MultiPerspectiveAnalysisTask(
   orchestrationConfig: OrchestrationConfig,
@@ -324,7 +326,8 @@ Provide a comprehensive synthesis that integrates all perspectives.
 
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
-      val (link, file) = Pair(task.linkTo("analysis_transcript.md"), task.resolve("analysis_transcript.md"))
+      val transcriptFile = "analysis_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+      val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
       val transcriptStream = file?.outputStream()
       task.complete(
         "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

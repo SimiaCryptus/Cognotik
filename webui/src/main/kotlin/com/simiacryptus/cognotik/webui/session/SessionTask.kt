@@ -311,14 +311,16 @@ open class SessionTask(
         }
     }
 
-  fun createFile(relativePath: String) = Pair(linkTo(relativePath), resolve(relativePath))
+  fun createFile(relativePath: String) = Pair(linkTo(relativePath), resolveSessionFile(relativePath))
 
   fun linkTo(relativePath: String): String {
     require(relativePath.isNotBlank()) { "File path cannot be blank" }
     return "fileIndex/${ui.sessionId}/$relativePath"
   }
 
-  fun resolve(relativePath: String) = this.ui.resolve(relativePath)
+    fun resolveSessionFile(relativePath: String) = this.ui.resolveSessionFile(relativePath)
+
+    fun resolveDataFile(relativePath: String) = this.ui.resolveDataFile(relativePath)
 
   fun update() = send()
 
@@ -356,7 +358,7 @@ fun ChatInterface.getChildClient(task: SessionTask): ChatInterface {
 
 fun SessionTask.newLogStream(): BufferedOutputStream {
   val relativePath = ".logs/api-${UUID.randomUUID()}.log"
-  val pair = Pair<kotlin.String, java.io.File?>(this@newLogStream.linkTo(relativePath), this@newLogStream.resolve(relativePath))
+  val pair = Pair<kotlin.String, java.io.File?>(this@newLogStream.linkTo(relativePath), this@newLogStream.resolveSessionFile(relativePath))
     val createFile = pair.second ?: throw IllegalStateException("Failed to create log file")
     val buffered = createFile.outputStream().buffered()
     buffered.write("API Logging Started\n".toByteArray())
@@ -367,8 +369,32 @@ fun SessionTask.newLogStream(): BufferedOutputStream {
     verbose("""API log: <a href='${pair.first}' target='_blank'><pre>${createFile.absolutePath}</pre></a>""")
     return buffered
 }
-
-fun SocketManager.resolve(relativePath: String): File? {
+fun SocketManager.resolveDataFile(relativePath: String): File? {
+    require(relativePath.isNotBlank()) { "File path cannot be blank" }
+    require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
+    return dataStorage?.getDataDir(
+        owner,
+        sessionId
+    )?.let { dir ->
+        val resolve = if (dir.exists()) {
+            dir.resolve(relativePath)
+        } else {
+            if (!dir.mkdirs()) {
+                throw RuntimeException("Failed to create directory: ${dir.absolutePath}")
+            }
+            val resolve = dir.resolve(relativePath)
+            resolve.parentFile?.let { parent ->
+                if (!parent.exists()) {
+                    if (!parent.mkdirs()) SessionTask.Companion.log.warn("Failed to create parent directory: {}", parent.absolutePath)
+                }
+            }
+            SessionTask.Companion.log.debug("Successfully created file path: {}", resolve.absolutePath)
+            resolve
+        }
+        resolve
+    }
+}
+fun SocketManager.resolveSessionFile(relativePath: String): File? {
   require(relativePath.isNotBlank()) { "File path cannot be blank" }
   require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
   return dataStorage?.getSessionDir(

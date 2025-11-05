@@ -254,7 +254,7 @@ Output format: PNG image
             )
           )
           val image = result.image
-          val imageFile = task.resolve(filename)
+          val imageFile = task.resolveDataFile(filename)
           ImageIO.write(image, "png", imageFile)
           generatedImages.add(filename to description)
           val imageLink = task.linkTo(filename)

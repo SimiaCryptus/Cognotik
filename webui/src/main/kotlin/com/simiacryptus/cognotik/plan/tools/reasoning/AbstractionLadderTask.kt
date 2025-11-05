@@ -12,6 +12,8 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
 
 class AbstractionLadderTask(
   orchestrationConfig: OrchestrationConfig, planTask: AbstractionLadderTaskExecutionConfigData?
@@ -482,7 +484,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
 
   private fun initializeDetailedOutput(task: SessionTask): FileOutputStream? {
     return try {
-      val (link, file) = Pair(task.linkTo("abstraction_ladder_analysis.md"), task.resolve("abstraction_ladder_analysis.md"))
+      val (link, file) = Pair(task.linkTo("abstraction_ladder_analysis.md"), task.resolveDataFile("abstraction_ladder_analysis.md"))
       val outputStream = file?.outputStream()
       task.complete(
         "Writing detailed analysis to <a href='$link' target='_blank'>$link</a> " +
@@ -498,7 +500,9 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
   }
 
   private fun generateSummaryMessage(task: SessionTask, duration: Long, concept: String, levels: Int, direction: String): String {
-    val (link, _) = Pair(task.linkTo("abstraction_ladder_analysis.md"), task.resolve("abstraction_ladder_analysis.md"))
+
+    val transcriptFile = "abstraction_ladder_analysis_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
     return """
       Abstraction Ladder analysis complete for '$concept' with $levels levels in $direction direction(s).
       **Duration:** ${duration / 1000}s
@@ -507,7 +511,8 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

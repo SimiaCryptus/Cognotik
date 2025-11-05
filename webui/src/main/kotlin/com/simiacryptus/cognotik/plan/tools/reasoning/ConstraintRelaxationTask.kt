@@ -136,7 +136,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     val tabs = TabbedDisplay(task)
-    val (transcriptLink, transcriptFile) = Pair(task.linkTo("constraint_relaxation_transcript.md"), task.resolve("constraint_relaxation_transcript.md"))
+    val (transcriptLink, transcriptFile) = Pair(task.linkTo("constraint_relaxation_transcript.md"), task.resolveDataFile("constraint_relaxation_transcript.md"))
     val transcript = transcriptFile?.outputStream()
     val overviewTask = task.ui.newTask(false)
     tabs["Overview"] = overviewTask.placeholder
@@ -501,7 +501,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
       val finalResult = solutionBuilder.toString()
       // Write detailed output to file
-      val (detailedLink, detailedFile) = Pair(task.linkTo("constraint_relaxation_detailed.md"), task.resolve("constraint_relaxation_detailed.md"))
+      val (detailedLink, detailedFile) = Pair(task.linkTo("constraint_relaxation_detailed.md"), task.resolveDataFile("constraint_relaxation_detailed.md"))
       detailedFile?.outputStream()?.use { stream ->
         stream.write(finalResult.toByteArray())
       }

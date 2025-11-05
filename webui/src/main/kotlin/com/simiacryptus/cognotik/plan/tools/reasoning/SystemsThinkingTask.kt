@@ -10,8 +10,10 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 
 class SystemsThinkingTask(
   orchestrationConfig: OrchestrationConfig,
@@ -627,7 +629,8 @@ $simulationAnalysis
       )
       task.update()
 
-      val (transcriptLink, _) = Pair(task.linkTo("systems_thinking_transcript.md"), task.resolve("systems_thinking_transcript.md"))
+      val relativePath = "systems_thinking_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+      val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveDataFile(relativePath))
       task.safeComplete(
         "Systems thinking analysis completed in ${duration / 1000}s. " +
             "View detailed transcript: <a href='$transcriptLink' target='_blank'>markdown</a> " +
@@ -778,7 +781,8 @@ Provide clear, actionable insights grounded in systems thinking principles.
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
@@ -790,7 +794,8 @@ Provide clear, actionable insights grounded in systems thinking principles.
 
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
-      val (link, file) = Pair(task.linkTo("systems_thinking_transcript.md"), task.resolve("systems_thinking_transcript.md"))
+      val relativePath = "systems_thinking_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+      val (link, file) = Pair(task.linkTo(relativePath), task.resolveDataFile(relativePath))
       val transcriptStream = file?.outputStream()
       task.complete(
         "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

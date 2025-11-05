@@ -1275,7 +1275,7 @@ ${description.indent("  ")}
       """)))
       val image = result.image
       // Save image to file
-      val imageFile = task.resolve(filename)!!
+      val imageFile = task.resolveDataFile(filename)!!
       ImageIO.write(image, "png", imageFile)
       log.debug("Saved image to: ${imageFile.absolutePath}")
       // Create display link
