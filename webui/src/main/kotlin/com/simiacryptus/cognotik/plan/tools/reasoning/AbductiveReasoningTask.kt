@@ -499,7 +499,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       val totalTime = System.currentTimeMillis() - startTime
 
       val transcriptFile = "analysis_summary_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-      val (summaryLink, summaryFile = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
+      val (summaryLink, summaryFile) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
       val finalSummary = buildString {
         appendLine("# Abductive Reasoning Summary")
         appendLine()

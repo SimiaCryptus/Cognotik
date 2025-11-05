@@ -426,6 +426,7 @@ function setupWizardNavigation() {
         // Save task settings
         appState.updateTaskSetting('defaultModel', document.getElementById('model-selection')?.value);
         appState.updateTaskSetting('parsingModel', document.getElementById('parsing-model')?.value);
+        appState.updateTaskSetting('imageModel', document.getElementById('image-model')?.value);
         appState.updateTaskSetting('workingDir', document.getElementById('working-dir')?.value);
         appState.updateTaskSetting('temperature', parseFloat(document.getElementById('temperature')?.value));
         appState.updateTaskSetting('autoFix', document.getElementById('auto-fix')?.checked);

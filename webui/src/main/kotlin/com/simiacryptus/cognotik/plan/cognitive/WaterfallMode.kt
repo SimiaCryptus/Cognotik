@@ -17,6 +17,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
+import java.text.SimpleDateFormat
+import java.util.Date
 
 /**
  * A cognitive mode that implements the traditional plan-ahead strategy.
