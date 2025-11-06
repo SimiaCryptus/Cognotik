@@ -630,7 +630,7 @@ $simulationAnalysis
       task.update()
 
       val relativePath = "systems_thinking_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-      val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveDataFile(relativePath))
+      val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
       task.safeComplete(
         "Systems thinking analysis completed in ${duration / 1000}s. " +
             "View detailed transcript: <a href='$transcriptLink' target='_blank'>markdown</a> " +
@@ -782,7 +782,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
 
   private fun transcript(task: SessionTask): FileOutputStream? {
     val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
@@ -795,7 +795,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
       val relativePath = "systems_thinking_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-      val (link, file) = Pair(task.linkTo(relativePath), task.resolveDataFile(relativePath))
+      val (link, file) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
       val transcriptStream = file?.outputStream()
       task.complete(
         "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

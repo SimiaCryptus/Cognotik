@@ -2,10 +2,10 @@ package com.simiacryptus.cognotik.plan.tools.graph
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
-import java.io.FileOutputStream
 
 class SoftwareGraphPlanningTask(
   orchestrationConfig: OrchestrationConfig, planTask: GraphBasedPlanningTaskExecutionConfigData?
@@ -36,7 +36,7 @@ class SoftwareGraphPlanningTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val markdownTranscript = transcript(task)
+    val markdownTranscript = task.transcript()
     val inputFile = (orchestrationConfig.absoluteWorkingDir?.let { File(it) } ?: File(".")).resolve(
       when {
         !executionConfig?.input_graph_file.isNullOrBlank() -> executionConfig.input_graph_file
@@ -87,19 +87,6 @@ class SoftwareGraphPlanningTask(
     }
     markdownTranscript?.write(executionSummary.toByteArray())
     resultFn(planSummary + "\n\n" + executionSummary)
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
 

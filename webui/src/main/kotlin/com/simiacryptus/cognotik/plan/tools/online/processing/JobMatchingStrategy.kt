@@ -71,7 +71,7 @@ class JobMatchingStrategy : DefaultSummarizerStrategy() {
     @Description("Job title/position name")
     val job_title: String? = null,
     @Description("Company/organization name")
-    val company: String = "",
+    val company: String? = null,
     @Description("Primary job location (city, state, country)")
     val location: String? = null,
     @Description("Additional locations or service areas")
@@ -427,7 +427,7 @@ class JobMatchingStrategy : DefaultSummarizerStrategy() {
     writeToTranscript(context, "**Saving detailed job report...**\n")
 
     val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
-    val companySafe = jobAnalysis.company.replace(Regex("[^a-zA-Z0-9]"), "_").take(30)
+    val companySafe = jobAnalysis.company?.replace(Regex("[^a-zA-Z0-9]"), "_")?.take(30) ?: "UnknownCompany"
     val titleSafe = jobAnalysis.job_title?.replace(Regex("[^a-zA-Z0-9]"), "_")?.take(30)
 
     val reportDir = File(context.webSearchDir, "job_matches")

@@ -233,7 +233,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting TechnicalExplanationTask for topic: '${executionConfig?.topic}'")
-    val markdownTranscript = transcript(task)
+    val markdownTranscript = task.transcript()
     val userMessages = messages.filter { it.isNotBlank() }
 
     // Validate configuration
@@ -1040,20 +1040,6 @@ Provide the complete revised explanation.
         }
       }
     }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
 

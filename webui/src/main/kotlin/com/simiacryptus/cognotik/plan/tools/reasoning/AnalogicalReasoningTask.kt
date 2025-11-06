@@ -174,7 +174,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
       val tabs = TabbedDisplay(task)
       val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
       // Initialize transcript
-      transcriptStream = initializeTranscript(task)
+      transcriptStream = task.transcript()
       transcriptStream?.let { stream ->
         writeTranscriptHeader(stream, sourceDomain, targetProblem, numAnalogies, validateMappings)
       }
@@ -640,23 +640,6 @@ Provide a brief validation assessment.
       appendLine("## Recommended Approach")
       appendLine()
 
-    }
-  }
-
-  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
-    return try {
-      val (link, file) = task.createFile("reasoning_transcript.md")
-      val transcriptStream = file?.outputStream()
-      task.complete(
-        "Writing detailed transcript to <a href='$link' target='_blank'>$link</a> " +
-            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-      )
-      log.info("Initialized transcript file: $link")
-      transcriptStream
-    } catch (e: Exception) {
-      log.error("Failed to initialize transcript", e)
-      null
     }
   }
 

@@ -796,7 +796,7 @@ Be comprehensive yet concise in your final integration.
   private fun initializeTranscript(task: SessionTask): FileOutputStream? {
     return try {
         val transcriptFile = "dialectical_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
+        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
       val transcriptStream = file?.outputStream()
       task.complete(
         "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

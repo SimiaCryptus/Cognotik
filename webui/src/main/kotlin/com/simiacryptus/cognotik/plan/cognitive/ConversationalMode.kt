@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -59,7 +60,7 @@ open class ConversationalMode(
     log.debug(
       "ConversationalMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}", RuntimeException()
     )
-    transcriptStream = transcript(task)
+    transcriptStream = task.transcript()
     log.debug(
       "Task configurations: ${
         orchestrationConfig.taskSettings.values.joinToString(", ") {
@@ -351,20 +352,6 @@ open class ConversationalMode(
     val topics: Map<String, List<String>>? = emptyMap()
   )
 
-
-  /**
-   * Creates and initializes a transcript file for the conversation
-   */
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(".md")
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
 
   /**
    * Writes content to the transcript file if available

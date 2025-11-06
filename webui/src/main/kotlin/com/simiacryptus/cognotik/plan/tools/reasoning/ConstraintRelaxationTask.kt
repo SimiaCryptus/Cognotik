@@ -136,8 +136,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
     val tabs = TabbedDisplay(task)
-    val (transcriptLink, transcriptFile) = Pair(task.linkTo("constraint_relaxation_transcript.md"), task.resolveDataFile("constraint_relaxation_transcript.md"))
-    val transcript = transcriptFile?.outputStream()
+    val transcript = task.transcript("constraint_relaxation")
     val overviewTask = task.ui.newTask(false)
     tabs["Overview"] = overviewTask.placeholder
 
@@ -178,11 +177,6 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
     }
     transcript?.write(overviewContent.toByteArray())
     overviewTask.add(overviewContent.renderMarkdown)
-    task.complete(
-      "Writing transcript to <a href='$transcriptLink' target='_blank'>$transcriptLink</a> " +
-          "<a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-          "<a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-    )
     task.update()
 
     val priorContext = getPriorCode(agent.executionState)
@@ -501,7 +495,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
       val finalResult = solutionBuilder.toString()
       // Write detailed output to file
-      val (detailedLink, detailedFile) = Pair(task.linkTo("constraint_relaxation_detailed.md"), task.resolveDataFile("constraint_relaxation_detailed.md"))
+      val (detailedLink, detailedFile) = Pair(task.linkTo("constraint_relaxation_detailed.md"), task.resolveUserFile("constraint_relaxation_detailed.md"))
       detailedFile?.outputStream()?.use { stream ->
         stream.write(finalResult.toByteArray())
       }

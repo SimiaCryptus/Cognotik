@@ -111,17 +111,6 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     return textExtensions.contains(file.extension.lowercase())
   }
 
-  protected fun transcript(task: SessionTask): FileOutputStream? {
-    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
-          "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-          "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
 
 
   companion object {

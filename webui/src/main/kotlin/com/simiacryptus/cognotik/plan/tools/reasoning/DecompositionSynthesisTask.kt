@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -191,7 +192,12 @@ class DecompositionSynthesisTask(
     // Create tabbed display for organized output
     val tabs = TabbedDisplay(task)
     val ui = task.ui
-    val transcriptStream = initializeTranscript(task)
+    val transcriptStream = try {
+      task.transcript("decomposition_transcript")
+    } catch (e: Exception) {
+      log.error("Failed to initialize transcript", e)
+      null
+    }
     val api = orchestrationConfig.defaultChatter ?: run {
       log.error("No default chatter available")
       task.complete("ERROR: No API available")
@@ -720,23 +726,6 @@ class DecompositionSynthesisTask(
       }
     }
 
-  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
-    return try {
-      val (link, file) = task.createFile("decomposition_transcript.md")
-      val transcriptStream = file?.outputStream()
-      task.complete(
-        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
-            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-      )
-      log.info("Initialized transcript file: $link")
-      transcriptStream
-    } catch (e: Exception) {
-      log.error("Failed to initialize transcript", e)
-      null
-    }
-  }
-
   private fun writeToTranscript(stream: FileOutputStream, content: String) {
     try {
       stream.write(content.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
@@ -1038,19 +1027,5 @@ class DecompositionSynthesisTask(
 
     return validation!!
   }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
-
 
 }

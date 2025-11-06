@@ -10,13 +10,13 @@ import com.simiacryptus.cognotik.embedding.EmbedderClient
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.file.Files
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -89,7 +89,7 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
     val threadPool = Executors.newFixedThreadPool(
       Runtime.getRuntime().availableProcessors().coerceAtMost(8)
     )
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     try {
       transcript?.write("# Vector Search Task\n\n".toByteArray())
       transcript?.write("## Search Configuration\n\n".toByteArray())
@@ -325,19 +325,6 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
     val record: DocumentRecord,
     val distance: Double
   )
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
 
 
   companion object {

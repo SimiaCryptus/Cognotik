@@ -122,7 +122,7 @@ GenerateImage - Create images using AI image generation models
       // Display the generated image
       task.add(MarkdownUtil.renderMarkdown("### Generated Image Preview", ui = task.ui))
       val filename = "preview_" + UUID.randomUUID() + ".png"
-      ImageIO.write(generatedImage, "png", task.resolveDataFile(filename)!!)
+      ImageIO.write(generatedImage, "png", task.resolveUserFile(filename)!!)
       val previewLink = task.linkTo(filename)
       task.add("""<a href="$previewLink" target="_blank"><img src="$previewLink" style="max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" /></a>""")
 

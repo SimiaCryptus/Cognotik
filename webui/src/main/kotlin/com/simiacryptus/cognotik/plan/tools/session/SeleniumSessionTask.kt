@@ -185,10 +185,10 @@ class SeleniumSessionTask(
           executionConfig.sessionId?.let { id -> activeSessions[id] = newSession }
         }
       if (executionConfig.createTranscript) {
-        transcriptStream = createTranscript(task)
+        transcriptStream = task.transcript("Selenium Session")
         transcriptStream?.write("# Selenium Session Transcript\n\n".toByteArray())
       }
-      log.info("Starting Selenium session ${executionConfig.sessionId ?: "temporary"} for URL: ${executionConfig.url} with timeout ${executionConfig.timeout}ms")
+     log.debug("Starting Selenium session ${executionConfig.sessionId ?: "temporary"} for URL: ${executionConfig.url} with timeout ${executionConfig.timeout}ms")
       selenium.setScriptTimeout(executionConfig.timeout)
 
 
@@ -321,7 +321,7 @@ class SeleniumSessionTask(
 
   private fun createTranscript(task: SessionTask): FileOutputStream? {
     val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

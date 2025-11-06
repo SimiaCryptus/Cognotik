@@ -1043,7 +1043,7 @@ Provide the complete revised email body only.
       log.info("EmailCampaignTask completed: emails=${generatedEmails.size}, words=$totalWords, time=${totalTime}ms")
       transcript?.close()
 
-      val (transcriptLink, _) = Pair(task.linkTo("campaign_summary.md"), task.resolveDataFile("campaign_summary.md"))
+      val (transcriptLink, _) = Pair(task.linkTo("campaign_summary.md"), task.resolveUserFile("campaign_summary.md"))
       task.safeComplete(
         "Email campaign generation complete: ${generatedEmails.size} emails, $totalWords words in ${totalTime / 1000}s. Full details: <a href='$transcriptLink' target='_blank'>transcript</a>",
         log
@@ -1142,7 +1142,7 @@ Provide the complete revised email body only.
 
   private fun transcript(task: SessionTask): FileOutputStream? {
     val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

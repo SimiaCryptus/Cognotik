@@ -245,7 +245,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
 
   private fun transcript(task: SessionTask): FileOutputStream? {
     val transcriptFile = "journalism_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
@@ -1153,7 +1153,7 @@ Be concise, authoritative, and focused on journalistic value.
 
         // Write full analysis to file
         val transcriptFile = "journalism_analysis_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveDataFile(transcriptFile))
+        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         file?.writeText(finalResult, StandardCharsets.UTF_8)
 
         val summaryMessage = buildString {

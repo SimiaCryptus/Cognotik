@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -85,7 +86,7 @@ CausalInference - Identify causal relationships and root causes
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     val startTime = System.currentTimeMillis()
     log.info("Starting CausalInference task for effect: ${executionConfig?.observed_effect}")
     // Create transcript file for logging the analysis
@@ -99,7 +100,7 @@ CausalInference - Identify causal relationships and root causes
       resultFn(formatResultMessage(task, transcript, errorMsg))
       return
     }
-    markdownTranscript = transcript(task)
+    markdownTranscript = task.transcript()
 
     // Validate configuration
     executionConfig?.validate()?.let { validationError ->
@@ -595,19 +596,6 @@ Generate the causal analysis now:
     val mermaidBlockRegex = "```mermaid\\s*([\\s\\S]*?)```".toRegex()
     val match = mermaidBlockRegex.find(response)
     return match?.groupValues?.get(1)?.trim() ?: ""
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
   companion object {

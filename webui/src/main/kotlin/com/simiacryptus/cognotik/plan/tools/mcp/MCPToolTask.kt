@@ -87,7 +87,7 @@ class MCPToolTask(
 
     task.add("Executing MCP tool: $toolName on server: $serverName")
     val transcriptStream = if (typeConfig.generate_transcript) {
-      transcript(task)
+      task.transcript()
     } else null
 
     task.add("Arguments: ${JsonUtil.toJson(arguments)}")
@@ -272,18 +272,6 @@ class MCPToolTask(
       ""
     }
   }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("mcp_tool_transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(".md")
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
-
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(MCPToolTask::class.java)

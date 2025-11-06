@@ -159,7 +159,7 @@ Brainstorming - Generate and analyze multiple solution options
 
     try {
       // Initialize transcript
-      transcriptStream = transcript(task)
+      transcriptStream = task.transcript()
       transcriptStream?.write("# Brainstorming Session Transcript\n\n".toByteArray())
       transcriptStream?.write("**Input Files:** ${executionConfig?.input_files?.joinToString(", ") ?: "none"}\n\n".toByteArray())
       transcriptStream?.write("**Problem Statement:** $problemStatement\n\n".toByteArray())
@@ -566,20 +566,6 @@ Brainstorming - Generate and analyze multiple solution options
       resultFn(errorOutput)
     }
   }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
-
 
   private fun buildBrainstormPrompt(
     problemStatement: String,

@@ -106,7 +106,7 @@ class ChainOfThoughtTask(
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting ChainOfThoughtTask with problem: '${executionConfig?.problem_statement}'")
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     val inputFileContent = getInputFileCode()
 
     val problemStatement = executionConfig?.problem_statement
@@ -753,19 +753,6 @@ class ChainOfThoughtTask(
         ""
       }
     }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(ChainOfThoughtTask::class.java)
