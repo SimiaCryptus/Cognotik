@@ -23,201 +23,203 @@ import java.nio.file.StandardOpenOption
 
 abstract class FileServlet : HttpServlet() {
 
-    abstract fun getDir(
-        req: HttpServletRequest,
-    ): File
+  abstract fun getDir(
+    req: HttpServletRequest,
+  ): File?
 
-    override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        log.info("Received GET request for path: ${req.pathInfo ?: req.servletPath}")
-        val pathSegments = parsePath(req.pathInfo ?: req.servletPath ?: "/")
-        val dir = getDir(req)
-        log.info("Serving directory: ${dir.absolutePath}")
-        val file = getFile(dir, pathSegments, req)
-        log.info("Resolved file path: ${file.absolutePath}")
+  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+    log.info("Received GET request for path: ${req.pathInfo ?: req.servletPath}")
+    val pathSegments = parsePath(req.pathInfo ?: req.servletPath ?: "/")
+    val dir = getDir(req)
+    val file = dir?.let { getFile(it, pathSegments, req) }
 
+    when {
+      false == file?.exists() -> {
+        // Check if this is a request for HTML or PDF with an equivalent .md file
+        val fileName = file.name
         when {
-            !file.exists() -> {
-                // Check if this is a request for HTML or PDF with an equivalent .md file
-                val fileName = file.name
-                when {
-                    (fileName.endsWith(".html") || fileName.endsWith(".pdf")) -> {
-                        val mdFile = File(file.parentFile, fileName.substringBeforeLast(".") + ".md")
-                        if (mdFile.exists() && mdFile.isFile) {
-                            log.info("Found markdown file, rendering: ${mdFile.absolutePath}")
-                            renderMarkdown(mdFile, resp, fileName.endsWith(".pdf"))
-                        } else {
-                            log.warn("File not found: ${file.absolutePath}")
-                            resp.status = HttpServletResponse.SC_NOT_FOUND
-                            resp.writer.write("File not found")
-                        }
-                    }
-
-                    else -> {
-                        log.warn("File not found: ${file.absolutePath}")
-                        resp.status = HttpServletResponse.SC_NOT_FOUND
-                        resp.writer.write("File not found")
-                    }
-                }
+          (fileName.endsWith(".html") || fileName.endsWith(".pdf")) -> {
+            val mdFile = File(file.parentFile, fileName.substringBeforeLast(".") + ".md")
+            if (mdFile.exists() && mdFile.isFile) {
+              log.info("Found markdown file, rendering: ${mdFile.absolutePath}")
+              renderMarkdown(mdFile, resp, fileName.endsWith(".pdf"))
+            } else {
+              log.warn("File not found: ${file.absolutePath}")
+              resp.status = HttpServletResponse.SC_NOT_FOUND
+              resp.writer.write("File not found")
             }
+          }
 
-            file.isFile -> {
-                log.info("File found: ${file.absolutePath}")
-                var channel = channelCache.get(file)
-                while (!channel.isOpen) {
-                    log.warn("FileChannel is not open, refreshing cache for file: ${file.absolutePath}")
-                    channelCache.refresh(file)
-                    channel = channelCache.get(file)
-                }
-                try {
-                    if (channel.size() > 1024 * 1024 * 1) {
-                        log.info("File is large, using writeLarge method for file: ${file.absolutePath}")
-                        writeLarge(channel, resp, file, req)
-                    } else {
-                        log.info("File is small, using writeSmall method for file: ${file.absolutePath}")
-                        writeSmall(channel, resp, file, req)
-                    }
-                } finally {
-
-                }
-            }
-
-            req.pathInfo?.endsWith("/") == false -> {
-                log.info("Redirecting to directory path: ${req.requestURI + "/"}")
-                resp.sendRedirect(req.requestURI + "/")
-            }
-
-            else -> {
-                log.info("Listing directory contents for: ${file.absolutePath}")
-                resp.contentType = "text/html"
-                resp.characterEncoding = "UTF-8"
-                resp.status = HttpServletResponse.SC_OK
-                val currentPathString = pathSegments.drop(1).joinToString("/")
-                val servletPathBase =
-                    req.contextPath + req.servletPath.removeSuffix("/*")
-                        .removeSuffix("/") + "/" + req.pathInfo.split("/").firstOrNull { it.isNotBlank() }
-
-val files = file.listFiles()
-                    ?.filter { it.isFile }
-                    ?.sortedBy { it.name }
-                    ?.joinToString("") {
-                        val fileName = it.name
-                        val baseLink = """<a class="item-link" href="${fileName}"><span class="icon">📄</span>${fileName}</a>"""
-                        val htmlLink = if (fileName.endsWith(".md")) {
-                            val htmlFileName = fileName.substringBeforeLast(".") + ".html"
-                            """ <a class="item-link" href="${htmlFileName}" style="margin-left: 0.5rem; font-size: 0.85rem;"><span class="icon">🌐</span>View as HTML</a>"""
-                        } else {
-                            ""
-                        }
-                        """<li style="display: flex; align-items: center;">$baseLink$htmlLink</li>"""
-                    } ?: ""
-                val folders = file.listFiles()
-                    ?.filter { !it.isFile }
-                    ?.sortedBy { it.name }
-                    ?.joinToString("") {
-                        """<li><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a></li>"""
-                    } ?: ""
-                resp.writer.write(
-                    directoryHTML(
-                        currentPathString,
-                        servletPathBase,
-                        getZipLink(req, currentPathString),
-                        folders,
-                        files
-                    )
-                )
-            }
+          else -> {
+            log.warn("File not found: ${file.absolutePath}")
+            resp.status = HttpServletResponse.SC_NOT_FOUND
+            resp.writer.write("File not found")
+          }
         }
-    }
-    // getFile should construct the file path using all pathSegments relative to the base dir
+      }
 
-    open fun getFile(dir: File, pathSegments: List<String>, req: HttpServletRequest) =
-        File(dir, pathSegments.drop(1).joinToString("/"))
-
-    private fun writeSmall(channel: FileChannel, resp: HttpServletResponse, file: File, req: HttpServletRequest) {
-        log.info("Writing small file: ${file.absolutePath}")
-        resp.contentType = getMimeType(file.name)
-        resp.status = HttpServletResponse.SC_OK
-        val async = req.startAsync()
-        resp.outputStream.apply {
-            setWriteListener(object : WriteListener {
-                val buffer = ByteArray(16 * 1024)
-                val byteBuffer = ByteBuffer.wrap(buffer)
-                override fun onWritePossible() {
-                    while (isReady) {
-                        byteBuffer.clear()
-                        val readBytes = channel.read(byteBuffer)
-                        if (readBytes == -1) {
-                            log.info("Completed writing small file: ${file.absolutePath}")
-                            async.complete()
-                            channelCache.put(file, channel)
-                            return
-                        }
-                        write(buffer, 0, readBytes)
-                    }
-                }
-
-                override fun onError(throwable: Throwable) {
-                    log.error("Error writing small file: ${file.absolutePath}", throwable)
-                    channelCache.put(file, channel)
-                }
-            })
+      true == file?.isFile -> {
+        log.info("File found: ${file.absolutePath}")
+        var channel = channelCache.get(file)
+        while (!channel.isOpen) {
+          log.warn("FileChannel is not open, refreshing cache for file: ${file.absolutePath}")
+          channelCache.refresh(file)
+          channel = channelCache.get(file)
         }
-    }
-
-    private fun writeLarge(
-        channel: FileChannel,
-        resp: HttpServletResponse,
-        file: File,
-        req: HttpServletRequest
-    ) {
-        log.info("Writing large file: ${file.absolutePath}")
-        val mappedByteBuffer: MappedByteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
-        resp.contentType = getMimeType(file.name)
-        resp.status = HttpServletResponse.SC_OK
-        val async = req.startAsync()
-        resp.outputStream.apply {
-            setWriteListener(object : WriteListener {
-                val buffer = ByteArray(256 * 1024)
-                override fun onWritePossible() {
-                    while (isReady) {
-                        val start = mappedByteBuffer.position()
-                        val attemptedReadSize = buffer.size.coerceAtMost(mappedByteBuffer.remaining())
-                        mappedByteBuffer.get(buffer, 0, attemptedReadSize)
-                        val end = mappedByteBuffer.position()
-                        val readBytes = end - start
-                        if (readBytes == 0) {
-                            log.info("Completed writing large file: ${file.absolutePath}")
-                            async.complete()
-                            channelCache.put(file, channel)
-                            return
-                        }
-                        write(buffer, 0, readBytes)
-                    }
-                }
-
-                override fun onError(throwable: Throwable) {
-                    log.error("Error writing large file: ${file.absolutePath}", throwable)
-                    channelCache.put(file, channel)
-                }
-            })
-        }
-    }
-
-    private fun renderMarkdown(mdFile: File, resp: HttpServletResponse, asPdf: Boolean) {
         try {
-            val markdownContent = mdFile.readText()
-            val options = MutableDataSet()
-            val parser = Parser.builder(options).build()
-            val document = parser.parse(markdownContent)
-            val renderer = HtmlRenderer.builder(options).build()
-            val html = renderer.render(document)
+          if (channel.size() > 1024 * 1024 * 1) {
+            log.info("File is large, using writeLarge method for file: ${file.absolutePath}")
+            writeLarge(channel, resp, file, req)
+          } else {
+            log.info("File is small, using writeSmall method for file: ${file.absolutePath}")
+            writeSmall(channel, resp, file, req)
+          }
+        } finally {
 
-            if (asPdf) {
-                val outputStream = ByteArrayOutputStream()
-                val baseUri = mdFile.parentFile.toURI().toString()
+        }
+      }
 
-                // Wrap HTML with proper structure for PDF conversion
-                val fullHtml = """
+      req.pathInfo?.endsWith("/") == false -> {
+        log.info("Redirecting to directory path: ${req.requestURI + "/"}")
+        resp.sendRedirect(req.requestURI + "/")
+      }
+
+      else -> {
+        resp.contentType = "text/html"
+        resp.characterEncoding = "UTF-8"
+        resp.status = HttpServletResponse.SC_OK
+        val currentPathString = pathSegments.drop(1).joinToString("/")
+        val servletPathBase =
+          req.contextPath + req.servletPath.removeSuffix("/*")
+            .removeSuffix("/") + "/" + req.pathInfo.split("/").firstOrNull { it.isNotBlank() }
+
+        val (files, folders) = listContents(file, req)
+        resp.writer.write(
+          directoryHTML(
+            currentPathString,
+            servletPathBase,
+            getZipLink(req, currentPathString),
+            folders,
+            files
+          )
+        )
+      }
+    }
+  }
+
+  open fun listContents(file: File?, req: HttpServletRequest): Pair<String, String> {
+    val files = file?.listFiles()
+      ?.filter { it.isFile }
+      ?.sortedBy { it.name }
+      ?.joinToString("") {
+        val fileName = it.name
+        val baseLink = """<a class="item-link" href="${fileName}"><span class="icon">📄</span>${fileName}</a>"""
+        val htmlLink = if (fileName.endsWith(".md")) {
+          val htmlFileName = fileName.substringBeforeLast(".") + ".html"
+          """ <a class="item-link" href="${htmlFileName}" style="margin-left: 0.5rem; font-size: 0.85rem;"><span class="icon">🌐</span>View as HTML</a>"""
+        } else {
+          ""
+        }
+        """<li style="display: flex; align-items: center;">$baseLink$htmlLink</li>"""
+      } ?: ""
+    val folders = file?.listFiles()
+      ?.filter { !it.isFile }
+      ?.sortedBy { it.name }
+      ?.joinToString("") {
+        """<li><a class="item-link" href="${it.name}/"><span class="icon">📁</span>${it.name}</a></li>"""
+      } ?: ""
+    return Pair(files, folders)
+  }
+  // getFile should construct the file path using all pathSegments relative to the base dir
+
+  open fun getFile(dir: File, pathSegments: List<String>, req: HttpServletRequest) =
+    File(dir, pathSegments.drop(1).joinToString("/"))
+
+  private fun writeSmall(channel: FileChannel, resp: HttpServletResponse, file: File, req: HttpServletRequest) {
+    log.info("Writing small file: ${file.absolutePath}")
+    resp.contentType = getMimeType(file.name)
+    resp.status = HttpServletResponse.SC_OK
+    val async = req.startAsync()
+    resp.outputStream.apply {
+      setWriteListener(object : WriteListener {
+        val buffer = ByteArray(16 * 1024)
+        val byteBuffer = ByteBuffer.wrap(buffer)
+        override fun onWritePossible() {
+          while (isReady) {
+            byteBuffer.clear()
+            val readBytes = channel.read(byteBuffer)
+            if (readBytes == -1) {
+              log.info("Completed writing small file: ${file.absolutePath}")
+              async.complete()
+              channelCache.put(file, channel)
+              return
+            }
+            write(buffer, 0, readBytes)
+          }
+        }
+
+        override fun onError(throwable: Throwable) {
+          log.error("Error writing small file: ${file.absolutePath}", throwable)
+          channelCache.put(file, channel)
+        }
+      })
+    }
+  }
+
+  private fun writeLarge(
+    channel: FileChannel,
+    resp: HttpServletResponse,
+    file: File,
+    req: HttpServletRequest
+  ) {
+    log.info("Writing large file: ${file.absolutePath}")
+    val mappedByteBuffer: MappedByteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
+    resp.contentType = getMimeType(file.name)
+    resp.status = HttpServletResponse.SC_OK
+    val async = req.startAsync()
+    resp.outputStream.apply {
+      setWriteListener(object : WriteListener {
+        val buffer = ByteArray(256 * 1024)
+        override fun onWritePossible() {
+          while (isReady) {
+            val start = mappedByteBuffer.position()
+            val attemptedReadSize = buffer.size.coerceAtMost(mappedByteBuffer.remaining())
+            mappedByteBuffer.get(buffer, 0, attemptedReadSize)
+            val end = mappedByteBuffer.position()
+            val readBytes = end - start
+            if (readBytes == 0) {
+              log.info("Completed writing large file: ${file.absolutePath}")
+              async.complete()
+              channelCache.put(file, channel)
+              return
+            }
+            write(buffer, 0, readBytes)
+          }
+        }
+
+        override fun onError(throwable: Throwable) {
+          log.error("Error writing large file: ${file.absolutePath}", throwable)
+          channelCache.put(file, channel)
+        }
+      })
+    }
+  }
+
+  private fun renderMarkdown(mdFile: File, resp: HttpServletResponse, asPdf: Boolean) {
+    try {
+      val markdownContent = mdFile.readText()
+      val options = MutableDataSet()
+      val parser = Parser.builder(options).build()
+      val document = parser.parse(markdownContent)
+      val renderer = HtmlRenderer.builder(options).build()
+      val html = renderer.render(document)
+
+      if (asPdf) {
+        val outputStream = ByteArrayOutputStream()
+        val baseUri = mdFile.parentFile.toURI().toString()
+
+        // Wrap HTML with proper structure for PDF conversion
+        val fullHtml = """
                     <!DOCTYPE html>
                     <html>
                     <head>
@@ -234,80 +236,80 @@ val files = file.listFiles()
                     </html>
                 """.trimIndent()
 
-                PdfRendererBuilder()
-                    .withHtmlContent(fullHtml, baseUri)
-                    .toStream(outputStream)
-                    .run()
+        PdfRendererBuilder()
+          .withHtmlContent(fullHtml, baseUri)
+          .toStream(outputStream)
+          .run()
 
-                val byteArray = outputStream.toByteArray()
-                resp.contentType = "application/pdf"
-                resp.status = HttpServletResponse.SC_OK
-                resp.outputStream.write(byteArray)
-            } else {
-                resp.contentType = "text/html"
-                resp.characterEncoding = "UTF-8"
-                resp.status = HttpServletResponse.SC_OK
-                resp.writer.write(html)
-            }
-        } catch (e: Exception) {
-            log.error("Error rendering markdown file: ${mdFile.absolutePath}", e)
-            resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-            resp.writer.write("Error rendering markdown: ${e.message}")
-        }
+        val byteArray = outputStream.toByteArray()
+        resp.contentType = "application/pdf"
+        resp.status = HttpServletResponse.SC_OK
+        resp.outputStream.write(byteArray)
+      } else {
+        resp.contentType = "text/html"
+        resp.characterEncoding = "UTF-8"
+        resp.status = HttpServletResponse.SC_OK
+        resp.writer.write(html)
+      }
+    } catch (e: Exception) {
+      log.error("Error rendering markdown file: ${mdFile.absolutePath}", e)
+      resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+      resp.writer.write("Error rendering markdown: ${e.message}")
+    }
+  }
+
+
+  private fun getMimeType(fileName: String): String {
+    return when {
+      fileName.endsWith(".js") -> "application/javascript"
+      fileName.endsWith(".mjs") -> "application/javascript"
+      fileName.endsWith(".log") -> "text/plain"
+      else -> MimeTypes.getDefaultMimeByExtension(fileName) ?: "application/octet-stream"
+    }
+  }
+
+  open fun getZipLink(
+    req: HttpServletRequest,
+    filePath: String
+  ): String = ""
+
+
+  private fun generateBreadcrumbs(currentPath: String, servletBaseHref: String): String {
+    val parts = currentPath.split("/").filter { it.isNotEmpty() }
+    val breadcrumbs = StringBuilder()
+    val rootLink = if (servletBaseHref.endsWith("/")) servletBaseHref else "$servletBaseHref/"
+
+    // Root breadcrumb
+    if (parts.isEmpty()) {
+      breadcrumbs.append("""<li class="breadcrumb-item active" aria-current="page" style="color: #495057;">Root</li>""")
+    } else {
+      breadcrumbs.append("""<li class="breadcrumb-item" style="padding-right: .5rem;"><a href="$rootLink" style="color: #0d6efd; text-decoration:none;">Root</a></li>""")
     }
 
+    var accumulatedPath = ""
+    for ((index, part) in parts.withIndex()) {
+      accumulatedPath += "$part/"
+      // Separator
+      if (index >= 0) { // Always add separator if there are parts after Root
+        breadcrumbs.append("""<li style="padding-right: .5rem; color: #6c757d;">/</li>""")
+      }
 
-    private fun getMimeType(fileName: String): String {
-        return when {
-            fileName.endsWith(".js") -> "application/javascript"
-            fileName.endsWith(".mjs") -> "application/javascript"
-            fileName.endsWith(".log") -> "text/plain"
-            else -> MimeTypes.getDefaultMimeByExtension(fileName) ?: "application/octet-stream"
-        }
+      if (index < parts.size - 1) {
+        breadcrumbs.append("""<li class="breadcrumb-item" style="padding-right: .5rem;"><a href="$rootLink$accumulatedPath" style="color: #0d6efd; text-decoration:none;">$part</a></li>""")
+      } else {
+        breadcrumbs.append("""<li class="breadcrumb-item active" aria-current="page" style="color: #495057;">$part</li>""")
+      }
     }
+    return breadcrumbs.toString()
+  }
 
-    open fun getZipLink(
-        req: HttpServletRequest,
-        filePath: String
-    ): String = ""
-
-
-    private fun generateBreadcrumbs(currentPath: String, servletBaseHref: String): String {
-        val parts = currentPath.split("/").filter { it.isNotEmpty() }
-        val breadcrumbs = StringBuilder()
-        val rootLink = if (servletBaseHref.endsWith("/")) servletBaseHref else "$servletBaseHref/"
-
-        // Root breadcrumb
-        if (parts.isEmpty()) {
-            breadcrumbs.append("""<li class="breadcrumb-item active" aria-current="page" style="color: #495057;">Root</li>""")
-        } else {
-            breadcrumbs.append("""<li class="breadcrumb-item" style="padding-right: .5rem;"><a href="$rootLink" style="color: #0d6efd; text-decoration:none;">Root</a></li>""")
-        }
-
-        var accumulatedPath = ""
-        for ((index, part) in parts.withIndex()) {
-            accumulatedPath += "$part/"
-            // Separator
-            if (index >= 0) { // Always add separator if there are parts after Root
-                breadcrumbs.append("""<li style="padding-right: .5rem; color: #6c757d;">/</li>""")
-            }
-
-            if (index < parts.size - 1) {
-                breadcrumbs.append("""<li class="breadcrumb-item" style="padding-right: .5rem;"><a href="$rootLink$accumulatedPath" style="color: #0d6efd; text-decoration:none;">$part</a></li>""")
-            } else {
-                breadcrumbs.append("""<li class="breadcrumb-item active" aria-current="page" style="color: #495057;">$part</li>""")
-            }
-        }
-        return breadcrumbs.toString()
-    }
-
-    private fun directoryHTML(
-        currentPath: String,
-        servletBaseHref: String,
-        zipLink: String,
-        folders: String,
-        files: String
-    ) = """
+  private fun directoryHTML(
+    currentPath: String,
+    servletBaseHref: String,
+    zipLink: String,
+    folders: String,
+    files: String
+  ) = """
     |<!DOCTYPE html>
     |<html lang="en">
     |<head>
@@ -460,51 +462,51 @@ val files = file.listFiles()
     |</html>
     """.trimMargin()
 
-    companion object {
-        val log = LoggerFactory.getLogger(FileServlet::class.java)
-        fun parsePath(path: String): List<String> {
-            val pathSegments = path.split("/").filter { it.isNotBlank() }
-            pathSegments.forEach {
-                when {
-                    it == ".." -> throw IllegalArgumentException("Invalid path")
-                    it.any {
-                        when {
-                            it == ':' -> true
-                            it == '/' -> true
-                            it == '~' -> true
-                            it == '\\' -> true
-                            it.code < 32 -> true
-                            it.code > 126 -> true
-                            else -> false
-                        }
-                    } -> throw IllegalArgumentException("Invalid path")
-                }
+  companion object {
+    val log = LoggerFactory.getLogger(FileServlet::class.java)
+    fun parsePath(path: String): List<String> {
+      val pathSegments = path.split("/").filter { it.isNotBlank() }
+      pathSegments.forEach {
+        when {
+          it == ".." -> throw IllegalArgumentException("Invalid path")
+          it.any {
+            when {
+              it == ':' -> true
+              it == '/' -> true
+              it == '~' -> true
+              it == '\\' -> true
+              it.code < 32 -> true
+              it.code > 126 -> true
+              else -> false
             }
-            return pathSegments
+          } -> throw IllegalArgumentException("Invalid path")
         }
-
-        val channelCache: LoadingCache<File, FileChannel> = CacheBuilder
-            .newBuilder().maximumSize(100)
-            .expireAfterAccess(10, java.util.concurrent.TimeUnit.SECONDS)
-            .removalListener(RemovalListener<File, FileChannel> { notification ->
-                log.info("Closing FileChannel for file: ${notification.key}")
-                try {
-                    val channel = notification.value
-                    if (channel == null) {
-                        log.error("FileChannel is null for file: ${notification.key}")
-                    } else {
-                        channel.close()
-                        log.info("Successfully closed FileChannel for file: ${notification.key}")
-                    }
-                } catch (e: Throwable) {
-                    log.error("Error closing FileChannel for file: ${notification.key}", e)
-                }
-            }).build(object : CacheLoader<File, FileChannel>() {
-                override fun load(key: File): FileChannel {
-                    log.info("Opening FileChannel for file: ${key.absolutePath}")
-                    return FileChannel.open(key.toPath(), StandardOpenOption.READ)
-                }
-            })
+      }
+      return pathSegments
     }
+
+    val channelCache: LoadingCache<File, FileChannel> = CacheBuilder
+      .newBuilder().maximumSize(100)
+      .expireAfterAccess(10, java.util.concurrent.TimeUnit.SECONDS)
+      .removalListener(RemovalListener<File, FileChannel> { notification ->
+        log.info("Closing FileChannel for file: ${notification.key}")
+        try {
+          val channel = notification.value
+          if (channel == null) {
+            log.error("FileChannel is null for file: ${notification.key}")
+          } else {
+            channel.close()
+            log.info("Successfully closed FileChannel for file: ${notification.key}")
+          }
+        } catch (e: Throwable) {
+          log.error("Error closing FileChannel for file: ${notification.key}", e)
+        }
+      }).build(object : CacheLoader<File, FileChannel>() {
+        override fun load(key: File): FileChannel {
+          log.info("Opening FileChannel for file: ${key.absolutePath}")
+          return FileChannel.open(key.toPath(), StandardOpenOption.READ)
+        }
+      })
+  }
 
 }

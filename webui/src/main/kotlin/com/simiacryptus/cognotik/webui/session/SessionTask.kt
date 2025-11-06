@@ -311,14 +311,14 @@ open class SessionTask(
     }
   }
 
-  fun createFile(relativePath: String) = Pair(linkTo(relativePath), resolveSessionFile(relativePath))
+  fun createFile(relativePath: String) = Pair(linkTo(relativePath), resolveSystemFile(relativePath))
 
   fun linkTo(relativePath: String): String {
     require(relativePath.isNotBlank()) { "File path cannot be blank" }
     return "fileIndex/${ui.sessionId}/$relativePath"
   }
 
-  fun resolveSessionFile(relativePath: String) = this.ui.resolveSessionFile(relativePath)
+  fun resolveSystemFile(relativePath: String) = this.ui.resolveSystemFile(relativePath)
 
   fun resolveUserFile(relativePath: String) = this.ui.resolveUserFile(relativePath)
 
@@ -356,23 +356,23 @@ fun ChatInterface.getChildClient(task: SessionTask): ChatInterface {
   return childClient
 }
 
-fun SessionTask.newLogStream(): BufferedOutputStream {
+fun SessionTask.newLogStream(name: String = """API log"""): BufferedOutputStream {
   val relativePath = ".logs/api-${UUID.randomUUID()}.log"
-  val (file, createFile) = Pair(this@newLogStream.linkTo(relativePath), this@newLogStream.resolveSessionFile(relativePath))
+  val (file, createFile) = Pair(this@newLogStream.linkTo(relativePath), this@newLogStream.resolveSystemFile(relativePath))
   val buffered = createFile?.outputStream()?.buffered() ?: throw RuntimeException("Failed to create log file at path: $relativePath")
   buffered.write("API Logging Started\n".toByteArray())
   buffered.write("Stack Trace:\n".toByteArray())
   Thread.currentThread().stackTrace.forEach { element ->
     buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
   }
-  verbose("""API log: <a href='${file}' target='_blank'><pre>${createFile.absolutePath}</pre></a>""")
+  verbose("""$name: <a href='${file}' target='_blank'><pre>${createFile.absolutePath}</pre></a>""")
   return buffered
 }
 
 fun SocketManager.resolveUserFile(relativePath: String): File? {
   require(relativePath.isNotBlank()) { "File path cannot be blank" }
   require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
-  return dataStorage?.getDataDir(
+  return dataStorage?.getSessionDir(
     owner,
     sessionId
   )?.let { dir ->
@@ -395,10 +395,10 @@ fun SocketManager.resolveUserFile(relativePath: String): File? {
   }
 }
 
-fun SocketManager.resolveSessionFile(relativePath: String): File? {
+fun SocketManager.resolveSystemFile(relativePath: String): File? {
   require(relativePath.isNotBlank()) { "File path cannot be blank" }
   require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
-  return dataStorage?.getSessionDir(
+  return dataStorage?.getDataDir(
     owner,
     sessionId
   )?.let { dir ->
