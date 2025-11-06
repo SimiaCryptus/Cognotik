@@ -15,6 +15,8 @@ import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.text.SimpleDateFormat
+import java.util.Date
 import kotlin.io.path.exists
 
 abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
@@ -109,16 +111,6 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     return textExtensions.contains(file.extension.lowercase())
   }
 
-  protected fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
-          "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-          "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
 
 
   companion object {

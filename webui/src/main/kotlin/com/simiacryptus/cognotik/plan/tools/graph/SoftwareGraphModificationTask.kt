@@ -48,7 +48,7 @@ class SoftwareGraphModificationTask(
     orchestrationConfig: OrchestrationConfig
   ) {
     val typeConfig = typeConfig ?: throw RuntimeException()
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     val graphModificationActor = ParsedAgent(
       name = "SoftwareGraphModification",
       resultClass = SoftwareNodeType.SoftwareGraph::class.java,
@@ -161,19 +161,4 @@ class SoftwareGraphModificationTask(
     resultFn(summary)
   }
 
-  companion object {
-    private fun transcript(task: SessionTask): FileOutputStream? {
-      val (link, file) = task.createFile("transcript.md")
-      val markdownTranscript = file?.outputStream()
-      task.complete(
-        "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-          link.removeSuffix(
-            ".md"
-          )
-        }.pdf' target='_blank'>pdf</a>"
-      )
-      return markdownTranscript
-    }
-
-  }
 }

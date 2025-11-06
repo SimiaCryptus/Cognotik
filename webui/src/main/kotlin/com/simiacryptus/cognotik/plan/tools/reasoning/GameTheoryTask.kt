@@ -9,8 +9,10 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 
 class GameTheoryTask(
   orchestrationConfig: OrchestrationConfig,
@@ -947,7 +949,8 @@ Generate the game structure analysis now:
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> " +

@@ -275,7 +275,85 @@ class TaskConfigManager {
                 name: 'Meta-Cognitive Reflection',
                 description: 'Reflect on thinking process and strategies',
                 category: 'Reasoning',
-                configFields: []
+                configFields: [
+                    {
+                        id: 'construct_narrative',
+                        label: 'Construct Narrative',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Construct a coherent narrative from the elements'
+                    },
+                    {
+                        id: 'identify_plot_points',
+                        label: 'Identify Plot Points',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Identify key plot points and story arcs'
+                    },
+                    {
+                        id: 'predict_outcomes',
+                        label: 'Predict Outcomes',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Predict narrative outcomes and resolutions'
+                    },
+                    {
+                        id: 'alternatives',
+                        label: 'Alternative Narratives',
+                        type: 'number',
+                        min: 1,
+                        max: 10,
+                        default: 3,
+                        tooltip: 'Number of narrative paths to explore (1-10)'
+                    },
+                    {
+                        id: 'analyze_motivations',
+                        label: 'Analyze Motivations',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Analyze character motivations and stakeholder perspectives'
+                    },
+                    {
+                        id: 'find_inconsistencies',
+                        label: 'Find Inconsistencies',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Identify narrative inconsistencies or gaps'
+                    },
+                    {
+                        id: 'generate_images',
+                        label: 'Generate Images',
+                        type: 'checkbox',
+                        default: false,
+                        tooltip: 'Generate images for key narrative elements'
+                    },
+                    {
+                        id: 'image_model',
+                        label: 'Image Model',
+                        type: 'select',
+                        options: ['DallE3', 'DallE2'],
+                        default: 'DallE3',
+                        tooltip: 'Image generation model to use'
+                    },
+                    {
+                        id: 'image_width',
+                        label: 'Image Width',
+                        type: 'number',
+                        min: 256,
+                        max: 2048,
+                        default: 1024,
+                        tooltip: 'Width of generated images in pixels (256-2048)'
+                    },
+                    {
+                        id: 'image_height',
+                        label: 'Image Height',
+                        type: 'number',
+                        min: 256,
+                        max: 2048,
+                        default: 1024,
+                        tooltip: 'Height of generated images in pixels (256-2048)'
+                    }
+                ]
             },
             {
                 id: 'MultiPerspectiveAnalysis',
@@ -408,20 +486,142 @@ class TaskConfigManager {
                 name: 'Temporal Reasoning',
                 description: 'Reason about time-dependent relationships',
                 category: 'Reasoning',
-                configFields: []
+                configFields: [
+                    {
+                        id: 'target_word_count',
+                        label: 'Target Word Count',
+                        type: 'number',
+                        min: 500,
+                        max: 50000,
+                        default: 5000,
+                        tooltip: 'Target word count for the complete narrative (500-50000)'
+                    },
+                    {
+                        id: 'number_of_acts',
+                        label: 'Number of Acts',
+                        type: 'number',
+                        min: 1,
+                        max: 7,
+                        default: 3,
+                        tooltip: 'Number of acts in the narrative structure (typically 3 or 5)'
+                    },
+                    {
+                        id: 'scenes_per_act',
+                        label: 'Scenes Per Act',
+                        type: 'number',
+                        min: 1,
+                        max: 10,
+                        default: 3,
+                        tooltip: 'Average number of scenes per act (1-10)'
+                    },
+                    {
+                        id: 'writing_style',
+                        label: 'Writing Style',
+                        type: 'select',
+                        options: ['literary', 'thriller', 'technical', 'conversational', 'academic', 'journalistic'],
+                        default: 'literary',
+                        tooltip: 'Writing style for the narrative'
+                    },
+                    {
+                        id: 'point_of_view',
+                        label: 'Point of View',
+                        type: 'select',
+                        options: ['first person', 'second person', 'third person limited', 'third person omniscient'],
+                        default: 'third person limited',
+                        tooltip: 'Narrative point of view'
+                    },
+                    {
+                        id: 'tone',
+                        label: 'Tone',
+                        type: 'select',
+                        options: ['dramatic', 'humorous', 'suspenseful', 'reflective', 'optimistic', 'dark', 'neutral'],
+                        default: 'dramatic',
+                        tooltip: 'Overall tone of the narrative'
+                    },
+                    {
+                        id: 'detailed_descriptions',
+                        label: 'Detailed Descriptions',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Include detailed scene descriptions'
+                    },
+                    {
+                        id: 'include_dialogue',
+                        label: 'Include Dialogue',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Include character dialogue in scenes'
+                    },
+                    {
+                        id: 'show_internal_thoughts',
+                        label: 'Show Internal Thoughts',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Show internal character thoughts and feelings'
+                    },
+                    {
+                        id: 'revision_passes',
+                        label: 'Revision Passes',
+                        type: 'number',
+                        min: 0,
+                        max: 5,
+                        default: 1,
+                        tooltip: 'Number of revision passes for each scene (0-5)'
+                    },
+                    {
+                        id: 'generate_scene_images',
+                        label: 'Generate Scene Images',
+                        type: 'checkbox',
+                        default: false,
+                        tooltip: 'Generate images for each scene'
+                    },
+                    {
+                        id: 'generate_cover_image',
+                        label: 'Generate Cover Image',
+                        type: 'checkbox',
+                        default: false,
+                        tooltip: 'Generate a cover image for the narrative'
+                    },
+                    {
+                        id: 'image_model',
+                        label: 'Image Model',
+                        type: 'select',
+                        options: ['DallE3', 'DallE2'],
+                        default: 'DallE3',
+                        tooltip: 'Image generation model to use'
+                    },
+                    {
+                        id: 'image_width',
+                        label: 'Image Width',
+                        type: 'number',
+                        min: 256,
+                        max: 2048,
+                        default: 1024,
+                        tooltip: 'Width of generated images in pixels (256-2048)'
+                    },
+                    {
+                        id: 'image_height',
+                        label: 'Image Height',
+                        type: 'number',
+                        min: 256,
+                        max: 2048,
+                        default: 1024,
+                        tooltip: 'Height of generated images in pixels (256-2048)'
+                    }
+                ]
             },
             {
                 id: 'NarrativeReasoning',
                 name: 'Narrative Reasoning',
                 description: 'Understand and analyze narrative structures',
-                category: 'Reasoning',
+                category: 'Writing',
                 configFields: []
             },
             {
                 id: 'NarrativeGeneration',
                 name: 'Narrative Generation',
                 description: 'Generate coherent narrative content',
-                category: 'Reasoning',
+                category: 'Writing',
                 configFields: []
             },
             {
@@ -527,7 +727,30 @@ class TaskConfigManager {
                 name: 'Sub-Planning',
                 description: 'Create and execute sub-plans within a larger plan',
                 category: 'Planning & Orchestration',
-                configFields: []
+                configFields: [
+                    {
+                        id: 'purpose',
+                        label: 'Purpose',
+                        type: 'textarea',
+                        placeholder: 'Describe the specific purpose or use case for this sub-planning configuration',
+                        tooltip: 'Supplemental description of the purpose of this configuration',
+                        rows: 3
+                    },
+                    {
+                        id: 'cognitiveMode',
+                        label: 'Cognitive Mode',
+                        type: 'select',
+                        options: ['Waterfall', 'Adaptive', 'Parallel', 'Iterative', 'Exploratory'],
+                        default: 'Waterfall',
+                        tooltip: 'Cognitive strategy to use for sub-planning'
+                    },
+                    {
+                        id: 'taskSettings',
+                        label: 'Sub-Task Configurations',
+                        type: 'subtasks',
+                        tooltip: 'Configure which task types are available within sub-plans'
+                    }
+                ]
             }
         ];
     }
@@ -600,11 +823,12 @@ class TaskConfigManager {
         });
     }
 
-// Create modal HTML
+    // Create modal HTML
     createTaskConfigModal(taskType, existingConfig) {
         const modal = this.document.createElement('div');
         modal.className = 'modal';
         modal.id = 'task-config-modal';
+        modal.dataset.taskType = taskType.id;
 
         // Default config name to task type name if not provided
         const configName = existingConfig?.name || taskType.id;
@@ -629,7 +853,7 @@ class TaskConfigManager {
                     <p class="task-description">${taskType.description}</p>
                     
                     <div class="form-section">
-<div class="form-group">
+                        <div class="form-group">
                             <label for="task-config-name">Configuration Name:</label>
                             <input type="text" id="task-config-name" class="form-control" 
                                    value="${configName}" 
@@ -659,6 +883,11 @@ class TaskConfigManager {
 
         // Populate model dropdown
         this.populateTaskModelDropdown(modal, configModel);
+        
+        // Set up sub-tasks event handlers if this is a SubPlanning task
+        if (taskType.id === 'SubPlanning') {
+            this.setupSubTasksHandlers(modal, existingConfig);
+        }
 
         return modal;
     }
@@ -690,9 +919,13 @@ class TaskConfigManager {
                 inputHtml = `<input type="checkbox" id="task-field-${field.id}" ${checked}>`;
                 break;
             case 'textarea':
-                const textValue = Array.isArray(value) ? value.join('\n') : value;
-                inputHtml = `<textarea id="task-field-${field.id}" class="form-control" rows="5" 
+                const textValue = Array.isArray(value) ? value.join('\n') : (value || '');
+                const rows = field.rows || 5;
+                inputHtml = `<textarea id="task-field-${field.id}" class="form-control" rows="${rows}" 
                                       placeholder="${field.placeholder || ''}">${textValue}</textarea>`;
+                break;
+            case 'subtasks':
+                inputHtml = this.createSubTasksField(field, value);
                 break;
         }
 
@@ -707,13 +940,216 @@ class TaskConfigManager {
         `;
     }
 
+    // Create sub-tasks configuration field
+    createSubTasksField(field, existingSubTasks) {
+        const subTasks = existingSubTasks || {};
+        let html = `
+            <div class="subtasks-container" id="task-field-${field.id}">
+                <div class="subtasks-info">
+                    <p>Configure which task types are available within sub-plans. 
+                    Each task type can have its own configuration that will be used 
+                    when executing within a sub-plan context.</p>
+                </div>
+                <div class="subtasks-list" id="subtasks-list">
+        `;
+
+        // Add existing sub-tasks
+        for (const [key, config] of Object.entries(subTasks)) {
+            const taskTypeName = key.includes('_') ? key.split('_')[0] : key;
+            const taskType = this.getTaskType(taskTypeName);
+            if (taskType) {
+                html += this.createSubTaskItem(key, taskType, config);
+            }
+        }
+
+        html += `
+                </div>
+                <div class="subtasks-actions">
+                    <button type="button" class="button secondary add-subtask">Add Sub-Task</button>
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    // Create a sub-task list item
+    createSubTaskItem(key, taskType, config) {
+        const displayName = config.name || 'Default';
+        return `
+            <div class="subtask-item" data-key="${key}">
+                <div class="subtask-info">
+                    <strong>${taskType.name}</strong> - ${displayName}
+                    <br>
+                    <small>${taskType.description}</small>
+                </div>
+                <div class="subtask-actions">
+                    <button type="button" class="button small edit-subtask" data-key="${key}">Edit</button>
+                    <button type="button" class="button small secondary delete-subtask" data-key="${key}">Delete</button>
+                </div>
+            </div>
+        `;
+    }
+    // Set up event handlers for sub-tasks management
+    setupSubTasksHandlers(modal, existingConfig) {
+        // Initialize sub-tasks data on modal
+        modal.subTasksData = existingConfig?.taskSettings || {};
+        const addBtn = modal.querySelector('.add-subtask');
+        const subtasksList = modal.querySelector('#subtasks-list');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                this.showTaskTypeSelectionDialog().then(taskType => {
+                    if (taskType) {
+                        this.showTaskConfigDialog(taskType.id).then(config => {
+                            const key = config.name ? `${taskType.id}_${config.name}` : taskType.id;
+                            modal.subTasksData[key] = config;
+                            // Add to list
+                            const itemHtml = this.createSubTaskItem(key, taskType, config);
+                            subtasksList.insertAdjacentHTML('beforeend', itemHtml);
+                            // Attach event handlers to new item
+                            this.attachSubTaskItemHandlers(modal, subtasksList.lastElementChild);
+                        }).catch(() => {
+                            // User cancelled config dialog
+                        });
+                    }
+                }).catch(() => {
+                    // User cancelled task type selection
+                });
+            });
+        }
+        // Attach handlers to existing items
+        subtasksList.querySelectorAll('.subtask-item').forEach(item => {
+            this.attachSubTaskItemHandlers(modal, item);
+        });
+    }
+    // Attach event handlers to a sub-task item
+    attachSubTaskItemHandlers(modal, item) {
+        const key = item.dataset.key;
+        const editBtn = item.querySelector('.edit-subtask');
+        const deleteBtn = item.querySelector('.delete-subtask');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                const config = modal.subTasksData[key];
+                const taskTypeName = key.includes('_') ? key.split('_')[0] : key;
+                const taskType = this.getTaskType(taskTypeName);
+                if (taskType && config) {
+                    this.showTaskConfigDialog(taskType.id, config).then(updatedConfig => {
+                        const newKey = updatedConfig.name ? `${taskType.id}_${updatedConfig.name}` : taskType.id;
+                        // Remove old key if changed
+                        if (key !== newKey) {
+                            delete modal.subTasksData[key];
+                        }
+                        modal.subTasksData[newKey] = updatedConfig;
+                        // Update item
+                        const newItemHtml = this.createSubTaskItem(newKey, taskType, updatedConfig);
+                        const tempDiv = this.document.createElement('div');
+                        tempDiv.innerHTML = newItemHtml;
+                        const newItem = tempDiv.firstElementChild;
+                        item.replaceWith(newItem);
+                        this.attachSubTaskItemHandlers(modal, newItem);
+                    }).catch(() => {
+                        // User cancelled
+                    });
+                }
+            });
+        }
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                const config = modal.subTasksData[key];
+                const displayName = config?.name || 'Default';
+                const taskTypeName = key.includes('_') ? key.split('_')[0] : key;
+                if (confirm(`Delete sub-task configuration '${displayName}' for ${taskTypeName}?`)) {
+                    delete modal.subTasksData[key];
+                    item.remove();
+                }
+            });
+        }
+    }
+    // Show task type selection dialog
+    showTaskTypeSelectionDialog() {
+        return new Promise((resolve, reject) => {
+            const modal = this.document.createElement('div');
+            modal.className = 'modal';
+            modal.id = 'task-type-selection-modal';
+            const categories = this.getTaskCategories();
+            let categoriesHtml = '';
+            categories.forEach(category => {
+                const tasks = this.getTasksByCategory(category);
+                categoriesHtml += `
+                    <div class="task-category">
+                        <h4>${category}</h4>
+                        <div class="task-list">
+                `;
+                tasks.forEach(task => {
+                    categoriesHtml += `
+                        <div class="task-type-option" data-task-id="${task.id}">
+                            <strong>${task.name}</strong>
+                            <p>${task.description}</p>
+                        </div>
+                    `;
+                });
+                categoriesHtml += `
+                        </div>
+                    </div>
+                `;
+            });
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 700px;">
+                    <div class="modal-header">
+                        <h3>Select Task Type</h3>
+                        <span class="close-task-type-modal">&times;</span>
+                    </div>
+                    <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+                        ${categoriesHtml}
+                    </div>
+                    <div class="modal-footer">
+                        <button class="button secondary cancel-task-type">Cancel</button>
+                    </div>
+                </div>
+            `;
+            this.document.body.appendChild(modal);
+            modal.style.display = 'block';
+            const cleanup = () => {
+                modal.remove();
+            };
+            // Handle task selection
+            modal.querySelectorAll('.task-type-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const taskId = option.dataset.taskId;
+                    const taskType = this.getTaskType(taskId);
+                    cleanup();
+                    resolve(taskType);
+                });
+            });
+            // Handle cancel
+            const cancelBtn = modal.querySelector('.cancel-task-type');
+            const closeBtn = modal.querySelector('.close-task-type-modal');
+            cancelBtn.addEventListener('click', () => {
+                cleanup();
+                reject(new Error('Cancelled'));
+            });
+            closeBtn.addEventListener('click', () => {
+                cleanup();
+                reject(new Error('Cancelled'));
+            });
+            // Close on outside click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    cleanup();
+                    reject(new Error('Cancelled'));
+                }
+            });
+        });
+    }
+
+
     // Populate model dropdown with available models
     populateTaskModelDropdown(modal, selectedModel) {
         const modelSelect = modal.querySelector('#task-config-model');
         if (!modelSelect) return;
 
         const addedModels = new Set();
-        
+
         if (this.appState.apiSettings && this.appState.apiSettings.apiKeys) {
             for (const [provider, key] of Object.entries(this.appState.apiSettings.apiKeys)) {
                 if (key && this.availableModels[provider]) {
@@ -735,7 +1171,7 @@ class TaskConfigManager {
         }
     }
 
-// Collect configuration from modal
+    // Collect configuration from modal
     collectTaskConfig(modal, taskType) {
         const nameInput = modal.querySelector('#task-config-name').value.trim();
         const config = {
@@ -760,6 +1196,9 @@ class TaskConfigManager {
                         config[field.id] = element.value.split('\n')
                             .map(line => line.trim())
                             .filter(line => line.length > 0);
+                    } else if (field.type === 'subtasks') {
+                        // Get sub-tasks data from modal
+                        config[field.id] = modal.subTasksData || {};
                     } else {
                         config[field.id] = element.value;
                     }
@@ -770,7 +1209,7 @@ class TaskConfigManager {
         return config;
     }
 
-// Validate task configuration
+    // Validate task configuration
     validateTaskConfig(config, taskType) {
         // Validate name
         if (!config.name) {
@@ -791,7 +1230,7 @@ class TaskConfigManager {
         if (taskType.configFields) {
             for (const field of taskType.configFields) {
                 const value = config[field.id];
-                
+
                 if (field.type === 'number' && value !== undefined) {
                     if (field.min !== undefined && value < field.min) {
                         this.notificationService.showNotification(
@@ -820,6 +1259,6 @@ class TaskConfigManager {
     }
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { TaskConfigManager };
+ if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {TaskConfigManager};
 }

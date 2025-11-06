@@ -22,19 +22,21 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.BufferedWriter
 import java.io.File
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 import javax.imageio.ImageIO
 
-class NarrativeGenerationTask(
+open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerationTaskExecutionConfigData>(
   orchestrationConfig: OrchestrationConfig,
-  planTask: NarrativeGenerationTaskExecutionConfigData?
-) : NarrativeReasoningTask<NarrativeGenerationTask.NarrativeGenerationTaskExecutionConfigData, TaskTypeConfig>(
+  planTask: T?
+) : NarrativeReasoningTask<T, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
 
-  class NarrativeGenerationTaskExecutionConfigData(
+  open class NarrativeGenerationTaskExecutionConfigData(
     @Description("The subject or scenario to develop into a full narrative")
     subject: String? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the narrative")
@@ -720,7 +722,8 @@ Provide the revised scene content only.
   }
 
   private fun transcript(task: SessionTask): BufferedWriter? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
@@ -796,7 +799,7 @@ Provide the revised scene content only.
       val result = imageAgent.answer(listOf(ImageAndText(coverPrompt)))
       val image = result.image
       // Save image
-      val imageFile = task.resolve("00_cover_image.png")!!
+      val imageFile = task.resolveUserFile("00_cover_image.png")!!
       ImageIO.write(image, "png", imageFile)
       log.debug("Saved cover image to: ${imageFile.absolutePath}")
       // Create display link
@@ -869,7 +872,7 @@ Provide the revised scene content only.
       val image = result.image
       // Save image
       val relativePath = "scene_${sceneNumber}_image.png"
-      val imageFile = task.resolve(relativePath)!!
+      val imageFile = task.resolveUserFile(relativePath)!!
       ImageIO.write(image, "png", imageFile)
       log.debug("Saved scene image to: ${imageFile.absolutePath}")
       // Create display link

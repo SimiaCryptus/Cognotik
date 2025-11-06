@@ -255,7 +255,7 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
                     ImageIO.write(generatedImage, imageFormat, imagePath.toFile())
                     log.info("Saved image: $imageFileName")
 
-                    val previewFile = task.resolve(imageFileName)
+                    val previewFile = task.resolveUserFile(imageFileName)
                     ImageIO.write(generatedImage, imageFormat, previewFile!!)
                     val previewLink = task.linkTo(imageFileName)
                     task.add("""<a href="$previewLink" target="_blank"><img src="$previewLink" style="max-width: 400px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" /></a>""")

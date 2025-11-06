@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -124,7 +125,7 @@ class WriteHtmlTask(
     }
 
     val newTask = task.ui.newTask(false)
-    val transcriptStream = transcript(newTask)
+    val transcriptStream = newTask.transcript("html_generation_${htmlFile.substringBeforeLast(".")}")
     val transcriptWriter = transcriptStream?.bufferedWriter()
 
     val toInput = { it: String -> listOf(it) }
@@ -254,7 +255,7 @@ Output format: PNG image
             )
           )
           val image = result.image
-          val imageFile = task.resolve(filename)
+          val imageFile = task.resolveUserFile(filename)
           ImageIO.write(image, "png", imageFile)
           generatedImages.add(filename to description)
           val imageLink = task.linkTo(filename)

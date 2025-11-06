@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -150,7 +151,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
     val ui = task.ui
     val tabs = TabbedDisplay(task)
     // Create transcript file
-    val transcript = initializeTranscript(task)
+    val transcript = task.transcript()
     transcript?.let { stream ->
       stream.write("# Probabilistic Reasoning Analysis Transcript\n\n".toByteArray())
       stream.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
@@ -629,32 +630,6 @@ Consider both the strength of evidence and its reliability.
       }
     } catch (e: Exception) {
       log.error("Failed to write input files section to transcript", e)
-    }
-  }
-
-  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
-    return try {
-      val (link, file) = task.createFile("reasoning_transcript.md")
-      val transcriptStream = file?.outputStream()
-      task.complete(
-        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
-            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-      )
-      log.info("Initialized transcript file: $link")
-      transcriptStream
-    } catch (e: Exception) {
-      log.error("Failed to initialize transcript", e)
-      null
-    }
-  }
-
-  private fun writeToTranscript(stream: FileOutputStream, content: String) {
-    try {
-      stream.write(content.toByteArray(StandardCharsets.UTF_8))
-      stream.flush()
-    } catch (e: Exception) {
-      log.error("Failed to write to transcript", e)
     }
   }
 

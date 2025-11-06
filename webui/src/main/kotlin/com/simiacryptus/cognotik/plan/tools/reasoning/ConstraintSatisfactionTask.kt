@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -130,7 +131,7 @@ class ConstraintSatisfactionTask(
       val searchStrategy = executionConfig.search_strategy
       val maxIterations = executionConfig.max_iterations
       // Initialize transcript
-      transcriptStream = initializeTranscript(task)
+      transcriptStream = task.transcript()
       transcriptStream?.let { stream ->
         writeTranscriptHeader(stream, problemDescription, hardConstraints, softConstraints, searchStrategy, maxIterations)
       }
@@ -358,36 +359,6 @@ class ConstraintSatisfactionTask(
     } finally {
       transcriptStream?.flush()
       transcriptStream?.close()
-    }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
-
-  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
-    return try {
-      val (link, file) = task.createFile("constraint_solution_transcript.md")
-      val transcriptStream = file?.outputStream()
-      task.complete(
-        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
-            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-      )
-      log.info("Initialized transcript file: $link")
-      transcriptStream
-    } catch (e: Exception) {
-      log.error("Failed to initialize transcript", e)
-      null
     }
   }
 

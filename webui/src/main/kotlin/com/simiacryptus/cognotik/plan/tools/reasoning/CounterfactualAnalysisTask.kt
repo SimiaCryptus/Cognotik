@@ -103,7 +103,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
     }
 
     val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     transcript?.write("# Counterfactual Analysis Transcript\n\n".toByteArray())
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
 
@@ -415,17 +415,6 @@ $priorCode
   } catch (e: Exception) {
     log.warn("Failed to extract content from ${file.name}", e)
     "Error reading file: ${e.message}"
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(".md")
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
 

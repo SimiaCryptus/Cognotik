@@ -15,6 +15,8 @@ import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.text.SimpleDateFormat
+import java.util.Date
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 
@@ -399,7 +401,8 @@ class DataTableCompilationTask(
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

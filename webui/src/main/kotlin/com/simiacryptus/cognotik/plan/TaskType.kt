@@ -51,6 +51,18 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
         register(taskType)
       }
 
+      registerConstructor(GameLevelDesignTask.GameLevelDesign) { settings, task ->
+        GameLevelDesignTask(settings, task)
+      }
+      registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign) { settings, task ->
+        GameNarrativeDesignTask(settings, task)
+      }
+      registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign) { settings, task ->
+        GameMechanicsDesignTask(settings, task)
+      }
+      registerConstructor(GameEconomyTask.GameEconomy) { settings, task ->
+        GameEconomyTask(settings, task)
+      }
       registerConstructor(ResearchPaperGeneration) { settings, task ->
         ResearchPaperGenerationTask(settings, task)
       }

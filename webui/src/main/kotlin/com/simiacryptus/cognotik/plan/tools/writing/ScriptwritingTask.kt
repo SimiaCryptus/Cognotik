@@ -19,8 +19,10 @@ import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 
 class ScriptwritingTask(
   orchestrationConfig: OrchestrationConfig,
@@ -1077,7 +1079,8 @@ Provide the complete revised script with all formatting intact.
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

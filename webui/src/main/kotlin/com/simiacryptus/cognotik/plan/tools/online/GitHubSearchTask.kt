@@ -14,6 +14,8 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.text.SimpleDateFormat
+import java.util.Date
 
 class GitHubSearchTask(
   orchestrationConfig: OrchestrationConfig,
@@ -106,7 +108,8 @@ class GitHubSearchTask(
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

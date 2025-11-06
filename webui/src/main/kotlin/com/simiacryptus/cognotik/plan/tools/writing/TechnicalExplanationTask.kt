@@ -18,8 +18,10 @@ import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 
 class TechnicalExplanationTask(
   orchestrationConfig: OrchestrationConfig,
@@ -231,7 +233,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting TechnicalExplanationTask for topic: '${executionConfig?.topic}'")
-    val markdownTranscript = transcript(task)
+    val markdownTranscript = task.transcript()
     val userMessages = messages.filter { it.isNotBlank() }
 
     // Validate configuration
@@ -1038,19 +1040,6 @@ Provide the complete revised explanation.
         }
       }
     }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
 

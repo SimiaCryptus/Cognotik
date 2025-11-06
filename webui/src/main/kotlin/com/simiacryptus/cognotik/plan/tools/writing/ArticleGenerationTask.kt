@@ -12,13 +12,13 @@ import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.extractD
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -193,7 +193,7 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
 
     val tabs = TabbedDisplay(task)
     // Create transcript file
-    val transcript = transcript(task)
+    val transcript = task.transcript("transcript")
     transcript?.let { out ->
       out.write("# Article Generation Transcript\n\n".toByteArray())
       out.write("**Story Topic:** $storyTopic\n\n".toByteArray())
@@ -743,20 +743,6 @@ Make each snippet:
 
   private fun isTextFile(file: File): Boolean {
     return textExtensions.contains(file.extension.lowercase())
-  }
-
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
 

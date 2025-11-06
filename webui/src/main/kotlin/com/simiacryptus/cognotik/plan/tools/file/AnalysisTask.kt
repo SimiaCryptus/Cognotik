@@ -17,6 +17,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.text.SimpleDateFormat
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
@@ -77,7 +78,7 @@ class AnalysisTask(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
-    val transcript = transcript(task)
+    val transcript = task.transcript("transcript")
 
     val toInput = { it: String ->
       messages + listOf(
@@ -150,19 +151,6 @@ class AnalysisTask(
       ).call()
     transcript?.close()
     resultFn(inquiryResult ?: "(no response)")
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
 

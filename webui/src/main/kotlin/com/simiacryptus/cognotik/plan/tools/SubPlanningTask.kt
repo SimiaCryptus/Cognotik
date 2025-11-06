@@ -12,6 +12,8 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
 
 class SubPlanningTask(
   orchestrationConfig: OrchestrationConfig, planTask: SubPlanningTaskExecutionConfigData?
@@ -283,7 +285,8 @@ class SubPlanningTask(
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

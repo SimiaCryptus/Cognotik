@@ -256,7 +256,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
   ) {
     try {
       val startTime = System.currentTimeMillis()
-      val transcript = transcript(task)
+      val transcript = task.transcript()
       log.info("Starting LateralThinkingTask for problem='${executionConfig?.problem?.take(50)}...', techniques=${executionConfig?.techniques}")
 
       val problem = executionConfig?.problem
@@ -799,20 +799,6 @@ Provide a structured evaluation.
       resultFn("ERROR: ${e.message}")
     }
   }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
-
 
   private fun getTechniqueDescription(technique: String): String {
     return when (technique.lowercase()) {

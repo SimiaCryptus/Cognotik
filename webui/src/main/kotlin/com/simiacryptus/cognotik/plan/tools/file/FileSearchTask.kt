@@ -3,12 +3,12 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.extractDocumentContent
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.util.regex.Pattern
@@ -76,7 +76,7 @@ ${
   ) {
     val searchResults = performSearch()
     val formattedResults = formatSearchResults(searchResults)
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     transcript?.write(formattedResults.toByteArray())
     transcript?.close()
     task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui))
@@ -328,19 +328,6 @@ ${
     }
 
     return sb.toString().take(maxLength) // Final safeguard
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("search_transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing search transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
 

@@ -13,8 +13,10 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 import kotlin.math.max
 import kotlin.math.min
 
@@ -701,7 +703,8 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
           )
         } points in ${totalTime / 1000}s"
       )
-      val (link, _) = Pair(task.linkTo("optimization_results.md"), task.resolve("optimization_results.md"))
+      val transcriptFile = "optimization_results_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+      val (link, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
       val summaryMessage = buildString {
         appendLine("Optimization complete: improved by ${String.format("%.1f", bestVariant.score.overall_score - initialEvaluation.overall_score)} points")
         appendLine()
@@ -727,7 +730,8 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

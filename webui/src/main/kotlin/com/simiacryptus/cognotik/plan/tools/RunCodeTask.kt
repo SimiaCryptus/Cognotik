@@ -7,13 +7,13 @@ import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
-import java.io.FileOutputStream
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
@@ -63,7 +63,7 @@ class RunCodeTask(
     orchestrationConfig: OrchestrationConfig
   ) {
     val autoRunCounter = AtomicInteger(0)
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     val semaphore = Semaphore(0)
     val typeConfig = typeConfig ?: throw RuntimeException()
     val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
@@ -176,19 +176,6 @@ class RunCodeTask(
       transcript?.write("\n## Task Completed\n".toByteArray())
       transcript?.close()
     }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
   companion object {

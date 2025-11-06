@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.plan.tools.online.processing.PageProcessingStra
 import com.simiacryptus.cognotik.plan.tools.online.processing.PageProcessingStrategy.ProcessingContext
 import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.plan.tools.online.seed.SeedMethod
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -227,7 +228,12 @@ class CrawlerAgentTask(
     var transcriptStream: FileOutputStream? = null
     try {
       transcriptStream = if (typeConfig?.generate_transcript != false) {
-        initializeTranscript(task)
+        try {
+          task.transcript("crawler_transcript")
+        } catch (e: Exception) {
+          log.error("Failed to initialize transcript", e)
+          null
+        }
       } else null
       val chatInterface = (
           typeConfig?.model?.let { this@CrawlerAgentTask.orchestrationConfig.instance(it) }
@@ -559,21 +565,6 @@ class CrawlerAgentTask(
       log.error("Unhandled exception in CrawlerAgentTask", e)
       task.error(e)
       return "Error: ${e.javaClass.simpleName} - ${e.message ?: "Unknown error"}"
-    }
-  }
-
-  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
-    return try {
-      val (link, file) = task.createFile("crawler_transcript.md")
-      val transcriptStream = file?.outputStream()
-      task.complete(
-        "Writing transcript to <a href='$link' target='_blank'>$link</a> " + "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> "
-      )
-      log.info("Initialized transcript file: $link")
-      transcriptStream
-    } catch (e: Exception) {
-      log.error("Failed to initialize transcript", e)
-      null
     }
   }
 

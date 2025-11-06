@@ -8,13 +8,13 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.time.LocalDateTime
@@ -193,7 +193,7 @@ class PersuasiveEssayTask(
     val startTime = System.currentTimeMillis()
     log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}', input_files: ${executionConfig?.input_files?.size ?: 0}")
     // Create transcript file
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     transcript?.let { stream ->
       stream.write("# Persuasive Essay Generation Transcript\n\n".toByteArray())
       stream.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
@@ -1087,19 +1087,6 @@ Provide the complete revised essay.
         }
       }
     }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
 

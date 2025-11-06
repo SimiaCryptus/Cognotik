@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -93,7 +94,7 @@ open class HierarchicalPlanningMode(
     task.echo("User: $userMessage".renderMarkdown())
     // Initialize transcript
     transcriptTask = task.linkedTask("Transcript")
-    transcriptStream = transcript(transcriptTask!!)
+    transcriptStream = transcriptTask!!.transcript()
     logToSession("# Goal-Oriented Planning Session Transcript\n")
     logToSession("**User Request:** $userMessage\n")
     logToSession("**Started:** ${java.time.LocalDateTime.now()}\n\n")
@@ -569,19 +570,6 @@ open class HierarchicalPlanningMode(
       task.add("Task execution failed: ${e.message}".renderMarkdown())
       "Task execution failed: ${e.message}"
     }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>".renderMarkdown()
-    )
-    return markdownTranscript
   }
 
 

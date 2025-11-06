@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -127,7 +128,7 @@ ${
     val semaphore = Semaphore(0)
     val completionNotes = mutableListOf<String>()
     // Initialize transcript for this task
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     transcript?.let { stream ->
       stream.write("# File Modification Task Transcript\n\n".toByteArray())
       Retryable(task = task) {

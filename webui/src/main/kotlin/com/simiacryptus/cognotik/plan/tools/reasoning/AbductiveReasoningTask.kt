@@ -16,8 +16,10 @@ import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 
 class AbductiveReasoningTask(
   orchestrationConfig: OrchestrationConfig,
@@ -492,10 +494,12 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         }.renderMarkdown
       )
       task.update()
-
       // Final summary
       val totalTime = System.currentTimeMillis() - startTime
-      val (summaryLink, summaryFile) = Pair(task.linkTo("analysis_summary.md"), task.resolve("analysis_summary.md"))
+
+      val transcriptFile = "analysis_summary_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+
+      val (summaryLink, summaryFile) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
       val finalSummary = buildString {
         appendLine("# Abductive Reasoning Summary")
         appendLine()
@@ -881,7 +885,8 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

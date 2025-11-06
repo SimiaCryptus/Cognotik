@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
@@ -16,6 +17,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.FileOutputStream
 import java.io.OutputStream
+import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
@@ -79,7 +81,7 @@ open class ChatSocketManager(
     }
   protected val chatMessages = mutableListOf<ModelSchema.ChatMessage>()
 
-  val markdownTranscript by lazy { transcript(newTask()) }
+  val markdownTranscript by lazy { newTask().transcript() }
 
   override fun onRun(userMessage: String, socket: ChatSocket) {
 
@@ -115,19 +117,6 @@ open class ChatSocketManager(
       log.info("Error in chat", e)
       task.error(e)
     }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
   private fun innerRun(

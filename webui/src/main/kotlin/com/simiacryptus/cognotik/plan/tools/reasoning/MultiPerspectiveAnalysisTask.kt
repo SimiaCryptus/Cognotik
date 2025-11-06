@@ -9,6 +9,8 @@ import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
+import java.text.SimpleDateFormat
+import java.util.Date
 
 class MultiPerspectiveAnalysisTask(
   orchestrationConfig: OrchestrationConfig,
@@ -151,7 +153,7 @@ class MultiPerspectiveAnalysisTask(
     val perspectiveResults = mutableMapOf<String, String>()
 
     try {
-      transcriptStream = initializeTranscript(task)
+      transcriptStream = task.transcript("multi_perspective_analysis")
       transcriptStream?.let { stream ->
         writeToTranscript(stream, "# Multi-Perspective Analysis Transcript\n\n")
         writeToTranscript(stream, "**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}\n\n")
@@ -320,23 +322,6 @@ Provide a comprehensive synthesis that integrates all perspectives.
 
     task.safeComplete("Multi-perspective analysis complete.", log)
     resultFn(finalResult)
-  }
-
-  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
-    return try {
-      val (link, file) = Pair(task.linkTo("analysis_transcript.md"), task.resolve("analysis_transcript.md"))
-      val transcriptStream = file?.outputStream()
-      task.complete(
-        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
-            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-      )
-      log.info("Initialized transcript file: $link")
-      transcriptStream
-    } catch (e: Exception) {
-      log.error("Failed to initialize transcript", e)
-      null
-    }
   }
 
   private fun writeToTranscript(stream: FileOutputStream, content: String) {

@@ -17,8 +17,10 @@ import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 
 open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoningTaskExecutionConfigData, U : TaskTypeConfig>(
   orchestrationConfig: OrchestrationConfig,
@@ -242,7 +244,8 @@ JournalismReasoning - Investigate stories through journalistic principles and me
   }
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("journalism_transcript.md"), task.resolve("journalism_transcript.md"))
+    val transcriptFile = "journalism_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
@@ -1149,7 +1152,8 @@ Be concise, authoritative, and focused on journalistic value.
         log.info("JournalismReasoningTask completed: total_time=${totalTime}ms, output_size=${finalResult.length} chars")
 
         // Write full analysis to file
-        val (link, file) = Pair(task.linkTo("journalism_analysis.md"), task.resolve("journalism_analysis.md"))
+        val transcriptFile = "journalism_analysis_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         file?.writeText(finalResult, StandardCharsets.UTF_8)
 
         val summaryMessage = buildString {

@@ -83,7 +83,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
     val startTime = System.currentTimeMillis()
     log.info("Starting FiniteStateMachineTask for concept: '${executionConfig?.concept_to_model}'")
     // Initialize transcript
-    transcriptStream = transcript(task)
+    transcriptStream = task.transcript()
     if (transcriptStream == null) {
       log.error("Failed to initialize transcript stream")
     }
@@ -798,19 +798,6 @@ Format as a clear table or structured list.
     }
 
     return ""
-  }
-
-  private fun transcript(task: SessionTask): java.io.FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
   private fun writeToTranscript(content: String) {

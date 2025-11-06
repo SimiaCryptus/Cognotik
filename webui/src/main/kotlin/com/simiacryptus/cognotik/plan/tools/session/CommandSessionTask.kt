@@ -2,10 +2,10 @@ package com.simiacryptus.cognotik.plan.tools.session
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.BufferedReader
-import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.util.concurrent.ConcurrentHashMap
@@ -100,7 +100,7 @@ class CommandSessionTask(
     }
     task.add(uiOutput.toString())
     task.update()
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     var process: Process? = null
     try {
       cleanupInactiveSessions()
@@ -193,14 +193,4 @@ class CommandSessionTask(
     return outputBuffer.toString()
   }
 
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(".md")
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
 }

@@ -10,8 +10,10 @@ import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 
 class SocraticDialogueTask(
   orchestrationConfig: OrchestrationConfig,
@@ -602,7 +604,8 @@ Provide a structured synthesis.
   }
 
   private fun createTranscriptFile(task: SessionTask): Pair<String, FileOutputStream?> {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${

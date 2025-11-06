@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -15,6 +16,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
 import javax.imageio.ImageIO
 
 private const val TT = """```"""
@@ -313,7 +316,7 @@ $TT
     filesToWrite.add(htmlFile to htmlStructure)
     filesToWrite.add("presentation.css" to (standardCss + "\n\n" + cssCode))
     // Generate transcript
-    val transcriptStream = transcript(task, slideContent, presentationTitle)
+    val transcriptStream = task.transcript("${presentationTitle.replace(Regex("[^a-zA-Z0-9]"), "_")}_presentation")
     transcriptStream?.close()
 
 
@@ -379,47 +382,6 @@ $TT
     return ""
   }
 
-  private fun transcript(task: SessionTask, slideContent: String, presentationTitle: String): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
-    val markdownTranscript = file?.outputStream()
-    if (markdownTranscript != null) {
-      try {
-        // Write transcript header
-        markdownTranscript.write("# $presentationTitle - Transcript\n\n".toByteArray())
-        markdownTranscript.write("Generated: ${java.time.LocalDateTime.now()}\n\n".toByteArray())
-        markdownTranscript.write("---\n\n".toByteArray())
-        // Extract content from slides
-        val sectionRegex = "<section[^>]*>(.*?)</section>".toRegex(RegexOption.DOT_MATCHES_ALL)
-        val sections = sectionRegex.findAll(slideContent)
-        var slideNumber = 0
-        sections.forEach { section ->
-          slideNumber++
-          val sectionContent = section.groupValues[1]
-          // Extract heading
-          val headingRegex = "<h[1-6][^>]*>(.*?)</h[1-6]>".toRegex(RegexOption.DOT_MATCHES_ALL)
-          val heading = headingRegex.find(sectionContent)?.groupValues?.get(1)?.replace(Regex("<[^>]+>"), "")?.trim()
-          // Extract speaker notes
-          val notesRegex = "<aside[^>]*class=\"notes\"[^>]*>(.*?)</aside>".toRegex(RegexOption.DOT_MATCHES_ALL)
-          val notes = notesRegex.find(sectionContent)?.groupValues?.get(1)?.replace(Regex("<[^>]+>"), "")?.trim()
-          markdownTranscript.write("## Slide $slideNumber${if (heading != null) ": $heading" else ""}\n\n".toByteArray())
-          if (notes != null && notes.isNotEmpty()) {
-            markdownTranscript.write("$notes\n\n".toByteArray())
-          }
-        }
-      } catch (e: Exception) {
-        log.error("Error writing transcript", e)
-      }
-      task.complete(
-        "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-          link.removeSuffix(
-            ".md"
-          )
-        }.pdf' target='_blank'>pdf</a>"
-      )
-    }
-    return markdownTranscript
-  }
-
   private fun generateSlideImages(
     slideContent: String,
     task: SessionTask,
@@ -476,7 +438,7 @@ Style: Clean, modern, professional presentation aesthetic
           val result = imageAgent.answer(listOf(ImageAndText(imagePrompt)))
           val image = result.image
           // Save image
-          val imageFile = task.resolve(imageFilename)!!
+          val imageFile = task.resolveUserFile(imageFilename)!!
           ImageIO.write(image, "png", imageFile)
           imageMap[slideIndex] = imageFilename
           newTask.add(

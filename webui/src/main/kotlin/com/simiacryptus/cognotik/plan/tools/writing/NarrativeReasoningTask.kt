@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -20,7 +21,6 @@ import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.time.LocalDateTime
@@ -254,19 +254,6 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
         """.trimIndent()
   }
 
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("narrative_transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
-
 
   override fun run(
     agent: TaskOrchestrator,
@@ -334,7 +321,7 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
     task.ui
     val tabs = TabbedDisplay(task)
     // Initialize transcript
-    val transcriptStream = transcript(task)
+    val transcriptStream = task.transcript()
     val transcriptWriter = transcriptStream?.bufferedWriter()
     transcriptWriter?.appendLine("# Narrative Reasoning Analysis Transcript")
     transcriptWriter?.appendLine("**Subject:** $subject")
@@ -1275,7 +1262,7 @@ ${description.indent("  ")}
       """)))
       val image = result.image
       // Save image to file
-      val imageFile = task.resolve(filename)!!
+      val imageFile = task.resolveUserFile(filename)!!
       ImageIO.write(image, "png", imageFile)
       log.debug("Saved image to: ${imageFile.absolutePath}")
       // Create display link

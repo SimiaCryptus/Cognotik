@@ -9,13 +9,13 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -220,7 +220,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting ResearchPaperGenerationTask for topic: '${executionConfig?.research_topic}'")
-    val markdownTranscript = transcript(task)
+    val markdownTranscript = task.transcript()
 
     // Read input from messages parameter
     val messageContext = messages.filter { it.isNotBlank() }.joinToString("\n\n")
@@ -1076,19 +1076,6 @@ Provide the complete revised paper.
     } catch (e2: Exception) {
       "Error reading file: ${e2.message}"
     }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("research_transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing detailed research paper to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
   companion object {

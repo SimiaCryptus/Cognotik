@@ -16,8 +16,10 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Date
 
 class BusinessProposalTask(
   orchestrationConfig: OrchestrationConfig,
@@ -332,8 +334,8 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
     orchestrationConfig: OrchestrationConfig
   ) {
     // Create transcript file
-    val transcriptStream = transcript(task)
-    val proposalStream = proposalFile(task)
+    val transcriptStream = task.transcript("transcript")
+    val proposalStream = task.transcript("proposal")
     transcriptStream?.let { stream ->
       stream.write("# Business Proposal Generation Transcript\n\n".toByteArray())
       stream.write("**Proposal:** ${executionConfig?.proposal_title}\n".toByteArray())
@@ -1537,8 +1539,10 @@ Provide the complete revised proposal.
         appendLine()
         appendLine("## Output Files")
         appendLine()
-        val (proposalLink, _) = Pair(task.linkTo("proposal.md"), task.resolve("proposal.md"))
-        val (transcriptLink, _) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
+        val proposalFile = "proposal_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val (proposalLink, _) = Pair(task.linkTo(proposalFile), task.resolveUserFile(proposalFile))
+        val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val (transcriptLink, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         appendLine("- **Complete Proposal:** [View](${proposalLink}) | [HTML](${proposalLink.removeSuffix(".md")}.html) | [PDF](${proposalLink.removeSuffix(".md")}.pdf)")
         appendLine("- **Transcript:** [View](${transcriptLink}) | [HTML](${transcriptLink.removeSuffix(".md")}.html) | [PDF](${transcriptLink.removeSuffix(".md")}.pdf)")
         appendLine()
@@ -1660,23 +1664,7 @@ Provide the complete revised proposal.
       }
   }
 
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("transcript.md"), task.resolve("transcript.md"))
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(".md")
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
 
-  private fun proposalFile(task: SessionTask): FileOutputStream? {
-    val (link, file) = Pair(task.linkTo("proposal.md"), task.resolve("proposal.md"))
-    val proposalStream = file?.outputStream()
-    log.info("Initialized proposal file: $link")
-    return proposalStream
-  }
 
 
   companion object {

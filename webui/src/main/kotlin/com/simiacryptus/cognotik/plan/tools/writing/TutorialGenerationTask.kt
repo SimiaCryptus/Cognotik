@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -260,7 +261,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
   ) {
     val startTime = System.currentTimeMillis()
     log.info("Starting TutorialGenerationTask for goal: '${executionConfig?.goal}'")
-    val transcript = transcript(task)
+    val transcript = task.transcript()
     val tutorialOutputFile = createTutorialOutputFile(task)
 
     // Validate configuration
@@ -1282,17 +1283,6 @@ Make suggestions:
         }
       }
     }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(".md")
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
   companion object {

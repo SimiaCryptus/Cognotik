@@ -4,13 +4,13 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -145,7 +145,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
 
     val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
     val ui = task.ui
-    val transcript = transcript(task)
+    val transcript = task.transcript()
 
     try {
       // Create tabbed display for organized output
@@ -548,19 +548,6 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
       task.safeComplete("Analysis failed: ${e.message}", log)
       resultFn("ERROR: Temporal reasoning analysis failed - ${e.message}")
     }
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val (link, file) = task.createFile("transcript.md")
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
   }
 
 
