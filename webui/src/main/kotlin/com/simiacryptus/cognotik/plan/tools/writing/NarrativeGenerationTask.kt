@@ -28,15 +28,15 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import javax.imageio.ImageIO
 
-class NarrativeGenerationTask(
+open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerationTaskExecutionConfigData>(
   orchestrationConfig: OrchestrationConfig,
-  planTask: NarrativeGenerationTaskExecutionConfigData?
-) : NarrativeReasoningTask<NarrativeGenerationTask.NarrativeGenerationTaskExecutionConfigData, TaskTypeConfig>(
+  planTask: T?
+) : NarrativeReasoningTask<T, TaskTypeConfig>(
   orchestrationConfig,
   planTask
 ) {
 
-  class NarrativeGenerationTaskExecutionConfigData(
+  open class NarrativeGenerationTaskExecutionConfigData(
     @Description("The subject or scenario to develop into a full narrative")
     subject: String? = null,
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the narrative")

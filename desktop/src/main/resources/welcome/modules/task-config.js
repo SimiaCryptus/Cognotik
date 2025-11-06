@@ -275,7 +275,85 @@ class TaskConfigManager {
                 name: 'Meta-Cognitive Reflection',
                 description: 'Reflect on thinking process and strategies',
                 category: 'Reasoning',
-                configFields: []
+                configFields: [
+                    {
+                        id: 'construct_narrative',
+                        label: 'Construct Narrative',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Construct a coherent narrative from the elements'
+                    },
+                    {
+                        id: 'identify_plot_points',
+                        label: 'Identify Plot Points',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Identify key plot points and story arcs'
+                    },
+                    {
+                        id: 'predict_outcomes',
+                        label: 'Predict Outcomes',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Predict narrative outcomes and resolutions'
+                    },
+                    {
+                        id: 'alternatives',
+                        label: 'Alternative Narratives',
+                        type: 'number',
+                        min: 1,
+                        max: 10,
+                        default: 3,
+                        tooltip: 'Number of narrative paths to explore (1-10)'
+                    },
+                    {
+                        id: 'analyze_motivations',
+                        label: 'Analyze Motivations',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Analyze character motivations and stakeholder perspectives'
+                    },
+                    {
+                        id: 'find_inconsistencies',
+                        label: 'Find Inconsistencies',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Identify narrative inconsistencies or gaps'
+                    },
+                    {
+                        id: 'generate_images',
+                        label: 'Generate Images',
+                        type: 'checkbox',
+                        default: false,
+                        tooltip: 'Generate images for key narrative elements'
+                    },
+                    {
+                        id: 'image_model',
+                        label: 'Image Model',
+                        type: 'select',
+                        options: ['DallE3', 'DallE2'],
+                        default: 'DallE3',
+                        tooltip: 'Image generation model to use'
+                    },
+                    {
+                        id: 'image_width',
+                        label: 'Image Width',
+                        type: 'number',
+                        min: 256,
+                        max: 2048,
+                        default: 1024,
+                        tooltip: 'Width of generated images in pixels (256-2048)'
+                    },
+                    {
+                        id: 'image_height',
+                        label: 'Image Height',
+                        type: 'number',
+                        min: 256,
+                        max: 2048,
+                        default: 1024,
+                        tooltip: 'Height of generated images in pixels (256-2048)'
+                    }
+                ]
             },
             {
                 id: 'MultiPerspectiveAnalysis',
@@ -408,20 +486,142 @@ class TaskConfigManager {
                 name: 'Temporal Reasoning',
                 description: 'Reason about time-dependent relationships',
                 category: 'Reasoning',
-                configFields: []
+                configFields: [
+                    {
+                        id: 'target_word_count',
+                        label: 'Target Word Count',
+                        type: 'number',
+                        min: 500,
+                        max: 50000,
+                        default: 5000,
+                        tooltip: 'Target word count for the complete narrative (500-50000)'
+                    },
+                    {
+                        id: 'number_of_acts',
+                        label: 'Number of Acts',
+                        type: 'number',
+                        min: 1,
+                        max: 7,
+                        default: 3,
+                        tooltip: 'Number of acts in the narrative structure (typically 3 or 5)'
+                    },
+                    {
+                        id: 'scenes_per_act',
+                        label: 'Scenes Per Act',
+                        type: 'number',
+                        min: 1,
+                        max: 10,
+                        default: 3,
+                        tooltip: 'Average number of scenes per act (1-10)'
+                    },
+                    {
+                        id: 'writing_style',
+                        label: 'Writing Style',
+                        type: 'select',
+                        options: ['literary', 'thriller', 'technical', 'conversational', 'academic', 'journalistic'],
+                        default: 'literary',
+                        tooltip: 'Writing style for the narrative'
+                    },
+                    {
+                        id: 'point_of_view',
+                        label: 'Point of View',
+                        type: 'select',
+                        options: ['first person', 'second person', 'third person limited', 'third person omniscient'],
+                        default: 'third person limited',
+                        tooltip: 'Narrative point of view'
+                    },
+                    {
+                        id: 'tone',
+                        label: 'Tone',
+                        type: 'select',
+                        options: ['dramatic', 'humorous', 'suspenseful', 'reflective', 'optimistic', 'dark', 'neutral'],
+                        default: 'dramatic',
+                        tooltip: 'Overall tone of the narrative'
+                    },
+                    {
+                        id: 'detailed_descriptions',
+                        label: 'Detailed Descriptions',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Include detailed scene descriptions'
+                    },
+                    {
+                        id: 'include_dialogue',
+                        label: 'Include Dialogue',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Include character dialogue in scenes'
+                    },
+                    {
+                        id: 'show_internal_thoughts',
+                        label: 'Show Internal Thoughts',
+                        type: 'checkbox',
+                        default: true,
+                        tooltip: 'Show internal character thoughts and feelings'
+                    },
+                    {
+                        id: 'revision_passes',
+                        label: 'Revision Passes',
+                        type: 'number',
+                        min: 0,
+                        max: 5,
+                        default: 1,
+                        tooltip: 'Number of revision passes for each scene (0-5)'
+                    },
+                    {
+                        id: 'generate_scene_images',
+                        label: 'Generate Scene Images',
+                        type: 'checkbox',
+                        default: false,
+                        tooltip: 'Generate images for each scene'
+                    },
+                    {
+                        id: 'generate_cover_image',
+                        label: 'Generate Cover Image',
+                        type: 'checkbox',
+                        default: false,
+                        tooltip: 'Generate a cover image for the narrative'
+                    },
+                    {
+                        id: 'image_model',
+                        label: 'Image Model',
+                        type: 'select',
+                        options: ['DallE3', 'DallE2'],
+                        default: 'DallE3',
+                        tooltip: 'Image generation model to use'
+                    },
+                    {
+                        id: 'image_width',
+                        label: 'Image Width',
+                        type: 'number',
+                        min: 256,
+                        max: 2048,
+                        default: 1024,
+                        tooltip: 'Width of generated images in pixels (256-2048)'
+                    },
+                    {
+                        id: 'image_height',
+                        label: 'Image Height',
+                        type: 'number',
+                        min: 256,
+                        max: 2048,
+                        default: 1024,
+                        tooltip: 'Height of generated images in pixels (256-2048)'
+                    }
+                ]
             },
             {
                 id: 'NarrativeReasoning',
                 name: 'Narrative Reasoning',
                 description: 'Understand and analyze narrative structures',
-                category: 'Reasoning',
+                category: 'Writing',
                 configFields: []
             },
             {
                 id: 'NarrativeGeneration',
                 name: 'Narrative Generation',
                 description: 'Generate coherent narrative content',
-                category: 'Reasoning',
+                category: 'Writing',
                 configFields: []
             },
             {
