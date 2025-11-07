@@ -1,7 +1,7 @@
 fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
 version = properties("libraryVersion")
-W
+
 plugins {
   kotlin("jvm") // Version is applied globally via settings.gradle.kts
   id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
