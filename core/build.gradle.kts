@@ -1,8 +1,9 @@
 group = providers.gradleProperty("cognotikGroup").get()
-version = providers.gradleProperty("cognotikVersion").get()
+ version = providers.gradleProperty("cognotikVersion").get()
 
- plugins {
+plugins {
     `java-library`
+    kotlin("jvm")
     `maven-publish`
     signing
 }
@@ -50,10 +51,10 @@ dependencies {
 
 
     compileOnly(libs.asm)
-    compileOnly(kotlin("stdlib"))
-    compileOnly(libs.kotlinx.coroutines)
+    implementation(kotlin("stdlib"))
+    implementation(libs.kotlinx.coroutines)
 
-    testImplementation(kotlin("script-runtime"))
+    testImplementation(libs.kotlin.script.runtime)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
@@ -81,11 +82,18 @@ dependencies {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
     testImplementation(libs.mockito)
+// Ensure Kotlin compilation happens before Java compilation
+tasks.named("compileJava") {
+    dependsOn(tasks.named("compileKotlin"))
+}
+tasks.named("compileTestJava") {
+    dependsOn(tasks.named("compileTestKotlin"))
+}
 
 }
 
 
-java {
+ java {
   withJavadocJar()
   withSourcesJar()
 }

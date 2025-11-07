@@ -5,21 +5,18 @@ rootProject.name = "Cognotik"
         gradlePluginPortal()
         google()
         mavenCentral()
+    plugins {
+        id("org.jetbrains.kotlin.plugin.spring") version "2.2.20" apply false
+    }
     }
 }
 
- plugins {
+plugins {
     id("org.jetbrains.kotlin.jvm") version "2.2.20" apply false
     id("org.gradle.toolchains.foojay-resolver-convention") version ("0.8.0")
     id("com.github.ben-manes.versions") version "0.53.0" apply false
     id("com.android.application") version "8.9.3" apply false
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
-// Ensure Java 17 toolchain is used
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
-}
 }
 
 include(":jo-penai")
