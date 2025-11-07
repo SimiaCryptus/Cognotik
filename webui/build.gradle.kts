@@ -3,6 +3,8 @@ version = providers.gradleProperty("libraryVersion").get()
 
 plugins {
     `java-library`
+    `maven-publish`
+    signing
     id("com.github.node-gradle.node") version "7.0.1"
 }
 
