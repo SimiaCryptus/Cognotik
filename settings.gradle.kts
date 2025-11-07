@@ -24,11 +24,11 @@ include(":core")
 include(":groovy")
 include(":kotlin")
 include(":webui")
-//include(":desktop")
+include(":desktop")
 //include(":experiment:newssite")
 
 if (System.getenv("CI") == null || System.getenv("ANDROID_HOME") != null) {
 //    include(":android")
 }
-//include(":intellij")
+include(":intellij")
 //include(":demo")
