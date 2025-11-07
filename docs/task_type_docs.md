@@ -7,9 +7,12 @@
 
 #### Description
 
-The `RunCodeTask` is designed to execute code snippets within a controlled environment, allowing users to solve problems or accomplish goals using a code
-interpreter. It leverages a `CodeAgent` to interact with a specified runtime, capture its output, and provide feedback. This task is particularly useful for
-scenarios requiring dynamic code execution, testing small logic blocks, or integrating scripting capabilities into a larger plan.
+The `RunCodeTask` is designed to execute code snippets within a controlled environment, allowing users to solve problems
+or accomplish goals using a code
+interpreter. It leverages a `CodeAgent` to interact with a specified runtime, capture its output, and provide feedback.
+This task is particularly useful for
+scenarios requiring dynamic code execution, testing small logic blocks, or integrating scripting capabilities into a
+larger plan.
 
 Key features include:
 
@@ -22,19 +25,22 @@ Key features include:
 #### When to Use
 
 * Use this task when you need to execute a piece of code (e.g., Groovy, Kotlin) and observe its direct output.
-* This is suitable for prototyping, testing small functions, or performing data transformations that can be expressed as code.
-* Use this task to run a script that interacts with the file system or external tools, provided the `workingDir` and `env` are correctly configured.
-* When a plan requires a step that involves programmatic logic that isn't a full-fledged application, `RunCodeTask` can provide that capability.
+* This is suitable for prototyping, testing small functions, or performing data transformations that can be expressed as
+  code.
+* Use this task to run a script that interacts with the file system or external tools, provided the `workingDir` and
+  `env` are correctly configured.
+* When a plan requires a step that involves programmatic logic that isn't a full-fledged application, `RunCodeTask` can
+  provide that capability.
 
 #### Execution Configuration (`RunCodeTaskExecutionConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter           | Type           | Required | Default | Description                                     |
-|:--------------------|:---------------|:---------|:--------|:------------------------------------------------|
-| `goal`              | `String`       | No       | `null`  | The task or goal to be accomplished.            |
-| `workingDir`        | `String`       | No       | `null`  | The relative file path of the working directory. |
-| `task_description`  | `String`       | No       | `null`  | A human-readable description of this step.      |
+| Parameter           | Type           | Required | Default | Description                                                       |
+|:--------------------|:---------------|:---------|:--------|:------------------------------------------------------------------|
+| `goal`              | `String`       | No       | `null`  | The task or goal to be accomplished.                              |
+| `workingDir`        | `String`       | No       | `null`  | The relative file path of the working directory.                  |
+| `task_description`  | `String`       | No       | `null`  | A human-readable description of this step.                        |
 | `task_dependencies` | `List<String>` | No       | `[]`    | A list of task IDs that must be completed before this one starts. |
 
 **Example (Plan Snippet):**
@@ -63,41 +69,51 @@ These parameters are set by an administrator in the global `OrchestrationConfig`
 
 #### Description
 
-The `RunCodeTask` is a specialized task designed for executing code dynamically within various runtime environments. Its primary purpose is to solve user
-requests by generating and running code, providing interactive feedback, and optionally attempting to automatically fix issues. This task is crucial for
-integrating dynamic logic and computations directly into complex workflows managed by the Cognitive Task Planning Framework.
+The `RunCodeTask` is a specialized task designed for executing code dynamically within various runtime environments. Its
+primary purpose is to solve user
+requests by generating and running code, providing interactive feedback, and optionally attempting to automatically fix
+issues. This task is crucial for
+integrating dynamic logic and computations directly into complex workflows managed by the Cognitive Task Planning
+Framework.
 
 Key features include:
 
-* **Multiple Runtime Support:** Capable of executing code in different environments (e.g., Kotlin, Python) via the `CodeRuntimes` enum, with Kotlin as the
+* **Multiple Runtime Support:** Capable of executing code in different environments (e.g., Kotlin, Python) via the
+  `CodeRuntimes` enum, with Kotlin as the
   default if no specific runtime is provided.
-* **Interactive Execution:** Offers interactive feedback during code execution, allowing users to review results, revise code, or provide further input. It
+* **Interactive Execution:** Offers interactive feedback during code execution, allowing users to review results, revise
+  code, or provide further input. It
   supports both manual and automatic execution modes.
-* **Auto-Fix Capability:** When enabled in the orchestration configuration, the task can automatically analyze code execution failures and attempt to generate
+* **Auto-Fix Capability:** When enabled in the orchestration configuration, the task can automatically analyze code
+  execution failures and attempt to generate
   and apply fixes. This feature includes a limit on automatic retries to prevent infinite loops.
-* **Integration with CodingAgent:** Extends the `CodingAgent` class, leveraging its capabilities for sophisticated code generation. It correctly passes
+* **Integration with CodingAgent:** Extends the `CodingAgent` class, leveraging its capabilities for sophisticated code
+  generation. It correctly passes
   environment variables and working directories to the runtime and supports temperature control for AI model responses.
 
 #### When to Use
 
-* Use this task when you need to execute a code snippet (e.g., in Kotlin or Python) to perform calculations, process data, or implement specific logic within a
+* Use this task when you need to execute a code snippet (e.g., in Kotlin or Python) to perform calculations, process
+  data, or implement specific logic within a
   plan.
-* This is ideal for scenarios where the AI needs to dynamically generate and run code to achieve a goal, especially when interactive feedback or automatic error
+* This is ideal for scenarios where the AI needs to dynamically generate and run code to achieve a goal, especially when
+  interactive feedback or automatic error
   correction is desired.
-* To integrate custom scripts or programming logic directly into an automated workflow, allowing for flexible and powerful task execution.
+* To integrate custom scripts or programming logic directly into an automated workflow, allowing for flexible and
+  powerful task execution.
 * When you want to test or validate code generated by other tasks in a controlled environment.
 
 #### Execution Configuration (`RunCodeTaskConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter           | Type             | Required | Default | Description                                                              |
-|:--------------------|:-----------------|:---------|:--------|:-------------------------------------------------------------------------|
-| `goal`              | `String`         | Yes      | `null`  | The task or goal to be accomplished by the code execution.               |
-| `workingDir`        | `String`         | No       | `null`  | The relative file path of the working directory for code execution.      |
-| `task_description`  | `String`         | No       | `null`  | A human-readable description of what this task does.                     |
-| `task_dependencies` | `List<String>`   | No       | `[]`    | List of task IDs that must complete before this task can start.          |
-| `state`             | `TaskState`      | No       | `null`  | Current state of the task execution (primarily for internal tracking).   |
+| Parameter           | Type           | Required | Default | Description                                                            |
+|:--------------------|:---------------|:---------|:--------|:-----------------------------------------------------------------------|
+| `goal`              | `String`       | Yes      | `null`  | The task or goal to be accomplished by the code execution.             |
+| `workingDir`        | `String`       | No       | `null`  | The relative file path of the working directory for code execution.    |
+| `task_description`  | `String`       | No       | `null`  | A human-readable description of what this task does.                   |
+| `task_dependencies` | `List<String>` | No       | `[]`    | List of task IDs that must complete before this task can start.        |
+| `state`             | `TaskState`    | No       | `null`  | Current state of the task execution (primarily for internal tracking). |
 
 **Example (Plan Snippet):**
 
@@ -115,12 +131,12 @@ These parameters are specified when the task is added to a plan.
 
 These parameters are set by an administrator in the global `OrchestrationConfig` to define the task's default behavior.
 
-| Parameter     | Type            | Required | Default                    | Description                                                              |
-|:--------------|:----------------|:---------|:---------------------------|:-------------------------------------------------------------------------|
-| `task_type`   | `String`        | Yes      | `TaskType.RunCodeTask.name`| The type identifier for this task.                                       |
-| `codeRuntime` | `CodeRuntimes`  | No       | `null`                     | The default runtime environment to use (e.g., `KotlinRuntime`, `PythonRuntime`). If `null`, it defaults to Kotlin. |
-| `enabled`     | `Boolean`       | No       | `true`                     | Whether this task type is enabled for use in plans.                      |
-| `model`       | `ApiChatModel`  | No       | `null`                     | The AI model to use for generating code. If `null`, it defaults to the system's `defaultChatter`. |
+| Parameter     | Type           | Required | Default                     | Description                                                                                                        |
+|:--------------|:---------------|:---------|:----------------------------|:-------------------------------------------------------------------------------------------------------------------|
+| `task_type`   | `String`       | Yes      | `TaskType.RunCodeTask.name` | The type identifier for this task.                                                                                 |
+| `codeRuntime` | `CodeRuntimes` | No       | `null`                      | The default runtime environment to use (e.g., `KotlinRuntime`, `PythonRuntime`). If `null`, it defaults to Kotlin. |
+| `enabled`     | `Boolean`      | No       | `true`                      | Whether this task type is enabled for use in plans.                                                                |
+| `model`       | `ApiChatModel` | No       | `null`                      | The AI model to use for generating code. If `null`, it defaults to the system's `defaultChatter`.                  |
 
 **Example (`OrchestrationConfig` Snippet):**
 
@@ -141,7 +157,8 @@ These parameters are set by an administrator in the global `OrchestrationConfig`
 
 #### Output
 
-The task produces a formatted string containing the details of the code execution. This output is structured to clearly present the generated code, its return
+The task produces a formatted string containing the details of the code execution. This output is structured to clearly
+present the generated code, its return
 value, and any console output.
 
 The output format is as follows:
@@ -233,10 +250,10 @@ These parameters are specified when the task is added to a plan.
 
 These parameters are set by an administrator in the global `OrchestrationConfig` to define the task's default behavior.
 
-| Parameter | Type | Required | Default | Description |
-|:---|:---|:---|:---|:---|
-| `model` | `ApiChatModel` | No | `null` | The AI model to use for generating fixes. Defaults to the system's `defaultChatter`. |
-| `commandAutoFixCommands` | `MutableList<String>` | No | `[]` | List of command executables that can be used for auto-fixing. This acts as a security whitelist. |
+| Parameter                | Type                  | Required | Default | Description                                                                                      |
+|:-------------------------|:----------------------|:---------|:--------|:-------------------------------------------------------------------------------------------------|
+| `model`                  | `ApiChatModel`        | No       | `null`  | The AI model to use for generating fixes. Defaults to the system's `defaultChatter`.             |
+| `commandAutoFixCommands` | `MutableList<String>` | No       | `[]`    | List of command executables that can be used for auto-fixing. This acts as a security whitelist. |
 
 **Example (`OrchestrationConfig` Snippet):**
 
@@ -260,13 +277,15 @@ These parameters are set by an administrator in the global `OrchestrationConfig`
 
 #### Output
 
-If all commands execute successfully (or are successfully patched), the task returns the string `"All Commands completed"`. If a command fails and cannot be
+If all commands execute successfully (or are successfully patched), the task returns the string
+`"All Commands completed"`. If a command fails and cannot be
 fixed, or if the user chooses to ignore the error, it returns an error message like `"Error: <exitCode>"`.
 
 #### Related Tasks
 
 * **RunCodeTask:** Use for running code or shell commands when automatic error fixing is not required.
-* **FileModificationTask:** A task focused on applying specific file changes, which `SelfHealingTask` might internally generate.
+* **FileModificationTask:** A task focused on applying specific file changes, which `SelfHealingTask` might internally
+  generate.
 * **CmdPatchApp:** The underlying application used by `SelfHealingTask` to execute commands and apply patches.
 
 # tools\SelfHealingTask.md
@@ -278,8 +297,10 @@ fixed, or if the user chooses to ignore the error, it returns an error message l
 
 #### Description
 
-The `SelfHealingTask` is a powerful tool for executing shell commands that might fail, such as build scripts, linters, or test runners. When a command fails (
-i.e., returns a non-zero exit code), the task captures the output, analyzes the error, and attempts to generate and apply a code patch to fix the underlying
+The `SelfHealingTask` is a powerful tool for executing shell commands that might fail, such as build scripts, linters,
+or test runners. When a command fails (
+i.e., returns a non-zero exit code), the task captures the output, analyzes the error, and attempts to generate and
+apply a code patch to fix the underlying
 issue. It then re-runs the command to verify the fix.
 
 This is ideal for automating CI/CD pipelines, code maintenance, and complex build processes. Key features include:
@@ -288,25 +309,28 @@ This is ideal for automating CI/CD pipelines, code maintenance, and complex buil
 * **Multiple Command Support**: Can execute multiple commands sequentially.
 * **Configurable Working Directories**: Each command can have its own working directory relative to the project root.
 * **Command Aliasing**: Maps command aliases to actual executable paths for security and flexibility.
-* **Interactive Error Handling**: Provides options to ignore errors when auto-fix fails, allowing for manual intervention.
+* **Interactive Error Handling**: Provides options to ignore errors when auto-fix fails, allowing for manual
+  intervention.
 
 #### When to Use
 
-* Use this task to run a build process (e.g., `mvn install`, `gradle build`, `npm run build`) and automatically fix compilation errors or other build-related
+* Use this task to run a build process (e.g., `mvn install`, `gradle build`, `npm run build`) and automatically fix
+  compilation errors or other build-related
   issues.
 * Use it to run a test suite (e.g., `npm test`, `pytest`) and have the AI attempt to fix failing tests.
-* This is the right choice for any script or command where failures are possible and you want to attempt an automated recovery, reducing manual debugging
+* This is the right choice for any script or command where failures are possible and you want to attempt an automated
+  recovery, reducing manual debugging
   effort.
 
 #### Execution Configuration (`SelfHealingTaskConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter | Type | Required | Default | Description |
-|:---|:---|:---|:---|:---|
-| `commands` | `List<CommandWithWorkingDir>` | Yes | `[]` | A list of commands to be executed. Each `CommandWithWorkingDir` specifies the `command` (as a list of strings, e.g., `["npm", "test"]`) and an optional `workingDir` (relative path from the project root). |
-| `task_description` | `String` | No | `null` | A human-readable description of the task's purpose within the plan. |
-| `task_dependencies` | `List<String>` | No | `[]` | A list of task IDs that must be completed successfully before this task starts. |
+| Parameter           | Type                          | Required | Default | Description                                                                                                                                                                                                 |
+|:--------------------|:------------------------------|:---------|:--------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `commands`          | `List<CommandWithWorkingDir>` | Yes      | `[]`    | A list of commands to be executed. Each `CommandWithWorkingDir` specifies the `command` (as a list of strings, e.g., `["npm", "test"]`) and an optional `workingDir` (relative path from the project root). |
+| `task_description`  | `String`                      | No       | `null`  | A human-readable description of the task's purpose within the plan.                                                                                                                                         |
+| `task_dependencies` | `List<String>`                | No       | `[]`    | A list of task IDs that must be completed successfully before this task starts.                                                                                                                             |
 
 **Example (Plan Snippet):**
 
@@ -335,12 +359,13 @@ These parameters are specified when the task is added to a plan.
 
 #### Type Configuration (`SelfHealingTaskSettings`)
 
-These parameters are set by an administrator in the global `OrchestrationConfig` to define the task's default behavior and security.
+These parameters are set by an administrator in the global `OrchestrationConfig` to define the task's default behavior
+and security.
 
-| Parameter | Type | Required | Default | Description |
-|:---|:---|:---|:---|:---|
-| `model` | `ApiChatModel` | No | `null` | The AI model to use for analyzing errors and generating fixes. If not specified, it defaults to the system's `defaultChatter` model. |
-| `commandAutoFixCommands` | `List<String>` | No | `[]` | A security whitelist of command executables that the AI is allowed to use for auto-fixing. Full paths should be provided for reliable execution (e.g., `"/usr/bin/npm"`). |
+| Parameter                | Type           | Required | Default | Description                                                                                                                                                               |
+|:-------------------------|:---------------|:---------|:--------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `model`                  | `ApiChatModel` | No       | `null`  | The AI model to use for analyzing errors and generating fixes. If not specified, it defaults to the system's `defaultChatter` model.                                      |
+| `commandAutoFixCommands` | `List<String>` | No       | `[]`    | A security whitelist of command executables that the AI is allowed to use for auto-fixing. Full paths should be provided for reliable execution (e.g., `"/usr/bin/npm"`). |
 
 **Example (`OrchestrationConfig` Snippet):**
 
@@ -365,15 +390,19 @@ These parameters are set by an administrator in the global `OrchestrationConfig`
 
 #### Output
 
-If all configured commands execute successfully (either initially or after successful auto-fixing), the task returns the string `"All Commands completed"`. If a
-command fails and the auto-fix mechanism is unable to resolve the issue, or if the user chooses to ignore the error, the task will return an error message
+If all configured commands execute successfully (either initially or after successful auto-fixing), the task returns the
+string `"All Commands completed"`. If a
+command fails and the auto-fix mechanism is unable to resolve the issue, or if the user chooses to ignore the error, the
+task will return an error message
 indicating the failure, typically including the exit code (e.g., `"Error: <exitCode>"`).
 
 #### Related Tasks
 
-* **`RunCodeTask`**: Use for executing interpreted code snippets (e.g., Kotlin, Python) directly within the agent's environment, without external shell
+* **`RunCodeTask`**: Use for executing interpreted code snippets (e.g., Kotlin, Python) directly within the agent's
+  environment, without external shell
   commands.
-* **`FileModificationTask`**: Use when the primary goal is to modify files based on a description, rather than executing commands with auto-fix.
+* **`FileModificationTask`**: Use when the primary goal is to modify files based on a description, rather than executing
+  commands with auto-fix.
 * **`CmdPatchApp`**: This task internally delegates to `CmdPatchApp` for its core command execution and patching logic.
 
 # tools\SubPlanningTask.kt
@@ -385,41 +414,53 @@ indicating the failure, typically including the exit code (e.g., `"Error: <exitC
 
 #### Description
 
-The `SubPlanningTask` is a powerful mechanism for breaking down complex problems into smaller, more manageable sub-problems, each of which can be solved using
-its own planning strategy. It enables recursive planning and execution, allowing for sophisticated multi-stage problem-solving.
+The `SubPlanningTask` is a powerful mechanism for breaking down complex problems into smaller, more manageable
+sub-problems, each of which can be solved using
+its own planning strategy. It enables recursive planning and execution, allowing for sophisticated multi-stage
+problem-solving.
 
 Key features include:
 
-* **Configurable Cognitive Strategies:** Sub-plans can utilize different cognitive modes (e.g., Adaptive, Hierarchical, Conversational) than the parent plan,
+* **Configurable Cognitive Strategies:** Sub-plans can utilize different cognitive modes (e.g., Adaptive, Hierarchical,
+  Conversational) than the parent plan,
   allowing for tailored problem-solving approaches.
-* **Multiple Recursion Levels:** Supports nested sub-plans up to a configured depth, facilitating the decomposition of highly intricate tasks.
-* **Context Propagation:** Relevant context and prior task results are automatically passed down to the sub-plans, ensuring continuity and informed
+* **Multiple Recursion Levels:** Supports nested sub-plans up to a configured depth, facilitating the decomposition of
+  highly intricate tasks.
+* **Context Propagation:** Relevant context and prior task results are automatically passed down to the sub-plans,
+  ensuring continuity and informed
   decision-making.
-* **Automatic Result Aggregation and Summarization:** The results from all sub-tasks are collected, aggregated, and, if extensive, summarized by an AI model to
+* **Automatic Result Aggregation and Summarization:** The results from all sub-tasks are collected, aggregated, and, if
+  extensive, summarized by an AI model to
   provide a concise overview.
-* **Flexible Task Settings:** Allows for task-specific configurations to be defined for the sub-plan, enabling fine-grained control over its execution.
+* **Flexible Task Settings:** Allows for task-specific configurations to be defined for the sub-plan, enabling
+  fine-grained control over its execution.
 * **Purpose-Driven Planning:** A supplemental purpose can be provided to guide the sub-planner's focus.
 
-This task is particularly useful for tackling complex, multi-faceted problems that benefit from a structured, recursive approach to problem-solving.
+This task is particularly useful for tackling complex, multi-faceted problems that benefit from a structured, recursive
+approach to problem-solving.
 
 #### When to Use
 
-* Use this task when a large, complex goal needs to be broken down into a series of smaller, interdependent planning steps.
-* When you want to apply a specific cognitive strategy (e.g., a more detailed hierarchical plan) to a particular part of a broader task.
-* To recursively solve problems where the output of one planning stage informs the next, allowing for dynamic adaptation.
+* Use this task when a large, complex goal needs to be broken down into a series of smaller, interdependent planning
+  steps.
+* When you want to apply a specific cognitive strategy (e.g., a more detailed hierarchical plan) to a particular part of
+  a broader task.
+* To recursively solve problems where the output of one planning stage informs the next, allowing for dynamic
+  adaptation.
 * For orchestrating multi-stage tasks that require structured problem decomposition and execution.
-* When you need to isolate a sub-problem and solve it with a different set of available tools or models than the main plan.
+* When you need to isolate a sub-problem and solve it with a different set of available tools or models than the main
+  plan.
 
 #### Execution Configuration (`SubPlanningTaskExecutionConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter         | Type           | Required | Default | Description                                            |
-|:------------------|:---------------|:---------|:--------|:-------------------------------------------------------|
-| `planning_goal`   | `String`       | Yes      | `null`  | The goal or objective for the sub-planning task.       |
-| `context`         | `List<String>` | No       | `null`  | Context information to provide to the sub-planner.     |
-| `task_description`| `String`       | No       | `null`  | A human-readable description of this step. (Can act as fallback for `planning_goal`) |
-| `task_dependencies`| `List<String>` | No       | `[]`    | A list of task IDs that must be completed before this one starts. |
+| Parameter           | Type           | Required | Default | Description                                                                          |
+|:--------------------|:---------------|:---------|:--------|:-------------------------------------------------------------------------------------|
+| `planning_goal`     | `String`       | Yes      | `null`  | The goal or objective for the sub-planning task.                                     |
+| `context`           | `List<String>` | No       | `null`  | Context information to provide to the sub-planner.                                   |
+| `task_description`  | `String`       | No       | `null`  | A human-readable description of this step. (Can act as fallback for `planning_goal`) |
+| `task_dependencies` | `List<String>` | No       | `[]`    | A list of task IDs that must be completed before this one starts.                    |
 
 **Example (Plan Snippet):**
 
@@ -439,12 +480,12 @@ These parameters are specified when the task is added to a plan.
 
 These parameters are set by an administrator in the global `OrchestrationConfig` to define the task's default behavior.
 
-| Parameter         | Type                      | Required | Default       | Description                                            |
-|:------------------|:--------------------------|:---------|:--------------|:-------------------------------------------------------|
-| `cognitiveMode`   | `CognitiveModeStrategies` | No       | `null`        | Cognitive strategy to use for sub-planning (overrides default). |
-| `taskSettings`    | `Map<String, TaskTypeConfig>` | No       | `empty map`   | Task-specific configurations available within sub-plans. |
-| `purpose`         | `String`                  | No       | `""`          | Supplemental description of the purpose of this configuration. |
-| `model`           | `ApiChatModel`            | No       | `null`        | The AI model to use for generating summaries within the sub-plan. Defaults to the system's `defaultChatter`. |
+| Parameter       | Type                          | Required | Default     | Description                                                                                                  |
+|:----------------|:------------------------------|:---------|:------------|:-------------------------------------------------------------------------------------------------------------|
+| `cognitiveMode` | `CognitiveModeStrategies`     | No       | `null`      | Cognitive strategy to use for sub-planning (overrides default).                                              |
+| `taskSettings`  | `Map<String, TaskTypeConfig>` | No       | `empty map` | Task-specific configurations available within sub-plans.                                                     |
+| `purpose`       | `String`                      | No       | `""`        | Supplemental description of the purpose of this configuration.                                               |
+| `model`         | `ApiChatModel`                | No       | `null`      | The AI model to use for generating summaries within the sub-plan. Defaults to the system's `defaultChatter`. |
 
 **Example (`OrchestrationConfig` Snippet):**
 
@@ -482,65 +523,82 @@ The task returns a markdown-formatted string. This output includes:
 
 * A main header indicating "Sub-Planning Results" or "Sub-Planning Summary".
 * The original `planning_goal`.
-* If the combined results from sub-tasks are short (under 5000 characters), the raw combined results are returned directly.
-* If the combined results are extensive, a concise AI-generated summary is provided, highlighting key findings, accomplishments, issues, and next steps.
-* In the case of a generated summary, a collapsible `<details>` section containing the full, raw combined results from all sub-tasks is also included.
+* If the combined results from sub-tasks are short (under 5000 characters), the raw combined results are returned
+  directly.
+* If the combined results are extensive, a concise AI-generated summary is provided, highlighting key findings,
+  accomplishments, issues, and next steps.
+* In the case of a generated summary, a collapsible `<details>` section containing the full, raw combined results from
+  all sub-tasks is also included.
 * If an error occurs during sub-planning, an error message like `"Error in sub-planning: <error message>"` is returned.
 
 #### Related Tasks
 
 * **`UnifiedPlanApp` / `UnifiedPlanAction`:** The general planning tasks that can initiate a `SubPlanningTask`.
-* **`HierarchicalPlanningMode` / `AdaptivePlanningMode` / `ConversationalMode`:** These are the cognitive strategies that can be specified for use within a
+* **`HierarchicalPlanningMode` / `AdaptivePlanningMode` / `ConversationalMode`:** These are the cognitive strategies
+  that can be specified for use within a
   `SubPlanningTask`.
-* **`AnalysisTask`:** Can be used to further process or analyze the summary or full results generated by the `SubPlanningTask`.
+* **`AnalysisTask`:** Can be used to further process or analyze the summary or full results generated by the
+  `SubPlanningTask`.
 
 # tools\file\AnalysisTask.kt
 
 ### Task: Analysis
 
 **Category:** Information Retrieval & Analysis
-**Summary:** Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.
+**Summary:** Directly answer questions or provide insights using the LLM, optionally referencing files, with optional
+user feedback and iteration.
 
 #### Description
 
-The `AnalysisTask` is designed to leverage the power of Large Language Models (LLMs) to directly answer specific questions or provide comprehensive insights on
-a given topic. It can optionally incorporate content from specified project files, making it highly versatile for tasks requiring information retrieval and
-synthesis. Unlike tasks that produce side effects (like modifying files or executing commands), this task focuses solely on generating a detailed report,
+The `AnalysisTask` is designed to leverage the power of Large Language Models (LLMs) to directly answer specific
+questions or provide comprehensive insights on
+a given topic. It can optionally incorporate content from specified project files, making it highly versatile for tasks
+requiring information retrieval and
+synthesis. Unlike tasks that produce side effects (like modifying files or executing commands), this task focuses solely
+on generating a detailed report,
 explanation, or set of answers.
 
 Key features include:
 
 * **Direct Inquiry:** Formulate specific questions or define a clear goal for the LLM to address.
-* **Optional File Input:** Provide a list of files (supporting glob patterns like `**/*.kt`) for the LLM to examine, allowing it to draw insights directly from
+* **Optional File Input:** Provide a list of files (supporting glob patterns like `**/*.kt`) for the LLM to examine,
+  allowing it to draw insights directly from
   your codebase or documentation.
-* **Content Extraction:** Automatically extracts text content from various non-text file formats (e.g., PDF, HTML) if `extractContent` is enabled, ensuring the
+* **Content Extraction:** Automatically extracts text content from various non-text file formats (e.g., PDF, HTML) if
+  `extractContent` is enabled, ensuring the
   LLM has access to all relevant information.
-* **Interactive or Non-Interactive Modes:** Can operate in a non-interactive mode for one-shot answers or an interactive mode that supports user feedback and
+* **Interactive or Non-Interactive Modes:** Can operate in a non-interactive mode for one-shot answers or an interactive
+  mode that supports user feedback and
   iterative refinement of the inquiry and response.
-* **No Side Effects:** Guarantees that the task will not modify any files or execute external commands, making it safe for analysis and reporting.
+* **No Side Effects:** Guarantees that the task will not modify any files or execute external commands, making it safe
+  for analysis and reporting.
 * **Comprehensive Output:** Generates well-organized markdown reports, explanations, and recommendations.
 
 #### When to Use
 
-* Use this task when you need to get direct answers to specific questions about your project, code, or any general topic.
-* Ideal for generating comprehensive reports, overviews, or explanations based on a set of input files (e.g., "Summarize the architecture described in these
+* Use this task when you need to get direct answers to specific questions about your project, code, or any general
+  topic.
+* Ideal for generating comprehensive reports, overviews, or explanations based on a set of input files (e.g., "Summarize
+  the architecture described in these
   design documents").
-* Use it for technical Q&A, code reviews (e.g., "Explain the purpose of `CognotikActivity.kt` and suggest improvements"), or architectural analysis without
+* Use it for technical Q&A, code reviews (e.g., "Explain the purpose of `CognotikActivity.kt` and suggest
+  improvements"), or architectural analysis without
   making any changes to the codebase.
-* When you need to understand a complex problem or concept and want the LLM to compile information and insights from various sources.
+* When you need to understand a complex problem or concept and want the LLM to compile information and insights from
+  various sources.
 
 #### Execution Configuration (`AnalysisTaskExecutionConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter           | Type           | Required | Default | Description                                                              |
-|:--------------------|:---------------|:---------|:--------|:-------------------------------------------------------------------------|
-| `inquiry_questions` | `List<String>` | No       | `null`  | The specific questions or topics to be addressed in the inquiry.         |
-| `inquiry_goal`      | `String`       | No       | `null`  | The goal or purpose of the inquiry.                                      |
+| Parameter           | Type           | Required | Default | Description                                                                             |
+|:--------------------|:---------------|:---------|:--------|:----------------------------------------------------------------------------------------|
+| `inquiry_questions` | `List<String>` | No       | `null`  | The specific questions or topics to be addressed in the inquiry.                        |
+| `inquiry_goal`      | `String`       | No       | `null`  | The goal or purpose of the inquiry.                                                     |
 | `input_files`       | `List<String>` | No       | `null`  | The specific files (or file patterns, e.g. `**/*.kt`) to be used as input for the task. |
-| `extractContent`    | `Boolean`      | No       | `false` | Whether to extract text content from non-text files (PDF, HTML, etc.).   |
-| `task_description`  | `String`       | No       | `null`  | A human-readable description of this step.                               |
-| `task_dependencies` | `List<String>` | No       | `[]`    | A list of task IDs that must be completed before this one starts.        |
+| `extractContent`    | `Boolean`      | No       | `false` | Whether to extract text content from non-text files (PDF, HTML, etc.).                  |
+| `task_description`  | `String`       | No       | `null`  | A human-readable description of this step.                                              |
+| `task_dependencies` | `List<String>` | No       | `[]`    | A list of task IDs that must be completed before this one starts.                       |
 
 **Example (Plan Snippet):**
 
@@ -566,12 +624,12 @@ These parameters are specified when the task is added to a plan.
 
 These parameters are set by an administrator in the global `OrchestrationConfig` to define the task's default behavior.
 
-| Parameter         | Type           | Required | Default    | Description                                                              |
-|:------------------|:---------------|:---------|:-----------|:-------------------------------------------------------------------------|
-| `non_interactive` | `Boolean`      | No       | `true`     | Enable non-interactive mode to skip user feedback and iteration.         |
-| `task_type`       | `String`       | Yes      | `"Analysis"` | The type identifier for this task.                                       |
-| `name`            | `String`       | No       | `null`     | An optional name for this specific task type configuration.              |
-| `model`           | `ApiChatModel` | No       | `null`     | The AI model to use for generating insights. Defaults to the system's `defaultChatter`. |
+| Parameter         | Type           | Required | Default      | Description                                                                             |
+|:------------------|:---------------|:---------|:-------------|:----------------------------------------------------------------------------------------|
+| `non_interactive` | `Boolean`      | No       | `true`       | Enable non-interactive mode to skip user feedback and iteration.                        |
+| `task_type`       | `String`       | Yes      | `"Analysis"` | The type identifier for this task.                                                      |
+| `name`            | `String`       | No       | `null`       | An optional name for this specific task type configuration.                             |
+| `model`           | `ApiChatModel` | No       | `null`       | The AI model to use for generating insights. Defaults to the system's `defaultChatter`. |
 
 **Example (`OrchestrationConfig` Snippet):**
 
@@ -591,18 +649,24 @@ These parameters are set by an administrator in the global `OrchestrationConfig`
 
 #### Output
 
-The task returns a string containing the comprehensive information and insights generated by the LLM in response to the inquiry. This output is typically
-formatted as a markdown report, including key concepts, relevant technologies, best practices, and any potential challenges or considerations. If no response is
+The task returns a string containing the comprehensive information and insights generated by the LLM in response to the
+inquiry. This output is typically
+formatted as a markdown report, including key concepts, relevant technologies, best practices, and any potential
+challenges or considerations. If no response is
 generated, it returns `"(no response)"`.
 
 #### Related Tasks
 
-* **`FileSearchTask`**: Use this task to locate relevant files based on content or patterns before feeding them into an `AnalysisTask`.
-* **`GenerateDocumentationAction` (IntelliJ Plugin)**: A specialized action for generating documentation for specific code elements, which might internally use
+* **`FileSearchTask`**: Use this task to locate relevant files based on content or patterns before feeding them into an
+  `AnalysisTask`.
+* **`GenerateDocumentationAction` (IntelliJ Plugin)**: A specialized action for generating documentation for specific
+  code elements, which might internally use
   analysis-like capabilities.
-* **`CodeChatAction` (IntelliJ Plugin)**: For interactive discussions about code snippets within the IDE, similar to the interactive mode of `AnalysisTask` but
+* **`CodeChatAction` (IntelliJ Plugin)**: For interactive discussions about code snippets within the IDE, similar to the
+  interactive mode of `AnalysisTask` but
   focused on smaller contexts.
-* **`RunCodeTask`**: If the analysis requires executing code or scripts to gather information, `RunCodeTask` would be a prerequisite or complementary task.
+* **`RunCodeTask`**: If the analysis requires executing code or scripts to gather information, `RunCodeTask` would be a
+  prerequisite or complementary task.
 
 # tools\file\FileModificationTask.kt
 
@@ -613,8 +677,10 @@ generated, it returns `"(no response)"`.
 
 #### Description
 
-The `FileModificationTask` is designed to intelligently create new source files or modify existing ones, ensuring high code quality and adherence to project
-standards. It leverages an AI model to generate precise code changes based on specified requirements and context. The task can operate in both automated and
+The `FileModificationTask` is designed to intelligently create new source files or modify existing ones, ensuring high
+code quality and adherence to project
+standards. It leverages an AI model to generate precise code changes based on specified requirements and context. The
+task can operate in both automated and
 manual approval modes, presenting proposed changes in a clear diff format for easy review.
 
 Key features include:
@@ -631,7 +697,8 @@ Key features include:
 #### When to Use
 
 * Use this task when you need the AI to generate or modify code files based on a description or a problem.
-* This is ideal for implementing new features, refactoring existing code, or fixing bugs by directly altering source files.
+* This is ideal for implementing new features, refactoring existing code, or fixing bugs by directly altering source
+  files.
 * When you want to provide the AI with context from related files or even git diffs to inform its modifications.
 * When you need to ensure that generated code adheres to project conventions and is well-documented.
 
@@ -646,47 +713,57 @@ These parameters are specified when the task is added to a plan.
 ### Task: FileModificationTask
 
 **Category:** File Operations
-**Summary:** Create new files or modify existing code with AI-powered assistance, ensuring code quality and project standards.
+**Summary:** Create new files or modify existing code with AI-powered assistance, ensuring code quality and project
+standards.
 
 #### Description
 
-The `FileModificationTask` is a specialized task designed for intelligent, AI-assisted code generation and modification. It extends `AbstractFileTask` and
-provides robust capabilities for both creating new files and altering existing ones, all while striving to maintain high code quality and adherence to project
+The `FileModificationTask` is a specialized task designed for intelligent, AI-assisted code generation and modification.
+It extends `AbstractFileTask` and
+provides robust capabilities for both creating new files and altering existing ones, all while striving to maintain high
+code quality and adherence to project
 conventions.
 
-This task streamlines automated or semi-automated code changes by leveraging AI to generate precise modifications. It supports proper diff generation, optional
+This task streamlines automated or semi-automated code changes by leveraging AI to generate precise modifications. It
+supports proper diff generation, optional
 Git integration for contextual awareness, and mechanisms for both automatic application and manual approval of changes.
 
 Key features include:
 
-* **AI-Powered Code Generation**: Utilizes a `ChatAgent` to generate accurate and context-aware code modifications based on specified requirements.
+* **AI-Powered Code Generation**: Utilizes a `ChatAgent` to generate accurate and context-aware code modifications based
+  on specified requirements.
 * **Diff Format Support**: Presents proposed changes in a standard diff format, making review straightforward.
-* **Git Integration**: Can optionally include Git diffs against HEAD to provide crucial version control context for the AI.
-* **Dual Mode Operation**: Supports both fully automated application of changes (`autoFix` mode) and workflows requiring manual user approval.
+* **Git Integration**: Can optionally include Git diffs against HEAD to provide crucial version control context for the
+  AI.
+* **Dual Mode Operation**: Supports both fully automated application of changes (`autoFix` mode) and workflows requiring
+  manual user approval.
 * **Multi-File Operations**: Capable of handling complex modifications that span across multiple files within a project.
-* **Code Quality Maintenance**: Designed to preserve existing coding standards and project conventions during modifications.
+* **Code Quality Maintenance**: Designed to preserve existing coding standards and project conventions during
+  modifications.
 * **Comprehensive Documentation**: Aims to provide clear rationale and context for all generated changes.
 
 #### When to Use
 
 * Use this task when you need to add new functionality by creating one or more new code files.
-* This is the ideal choice for modifying existing code, such as refactoring, adding features, or fixing bugs, with AI assistance.
+* This is the ideal choice for modifying existing code, such as refactoring, adding features, or fixing bugs, with AI
+  assistance.
 * Employ this task when you want to automate code changes but still require a clear diff for review or manual approval.
-* Use it when the AI needs to understand the current state of a file, including recent Git changes, to make informed modifications.
+* Use it when the AI needs to understand the current state of a file, including recent Git changes, to make informed
+  modifications.
 
 #### Execution Configuration (`FileModificationTaskConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter | Type | Required | Default | Description |
-|:---|:---|:---|:---|:---|
-| `files` | `List<String>` | Yes | `null` | List of files to be modified or created. If empty, a configuration error will occur. |
-| `related_files` | `List<String>` | No | `[]` | Additional files to provide as context to the AI, without directly modifying them. |
-| `extractContent` | `Boolean` | No | `false` | Whether to extract the content of the specified `files` for AI processing. |
-| `modifications` | `Any` | No | `null` | Specific instructions or details about the modifications to be made. This acts as a direct prompt to the AI. |
-| `includeGitDiff` | `Boolean` | No | `false` | If `true`, includes the Git diff against HEAD for the specified files, providing additional context to the AI. |
-| `task_description` | `String` | No | `null` | A human-readable description of the modification task's purpose. |
-| `task_dependencies` | `List<String>` | No | `[]` | A list of task IDs that must be completed before this one starts. |
+| Parameter           | Type           | Required | Default | Description                                                                                                    |
+|:--------------------|:---------------|:---------|:--------|:---------------------------------------------------------------------------------------------------------------|
+| `files`             | `List<String>` | Yes      | `null`  | List of files to be modified or created. If empty, a configuration error will occur.                           |
+| `related_files`     | `List<String>` | No       | `[]`    | Additional files to provide as context to the AI, without directly modifying them.                             |
+| `extractContent`    | `Boolean`      | No       | `false` | Whether to extract the content of the specified `files` for AI processing.                                     |
+| `modifications`     | `Any`          | No       | `null`  | Specific instructions or details about the modifications to be made. This acts as a direct prompt to the AI.   |
+| `includeGitDiff`    | `Boolean`      | No       | `false` | If `true`, includes the Git diff against HEAD for the specified files, providing additional context to the AI. |
+| `task_description`  | `String`       | No       | `null`  | A human-readable description of the modification task's purpose.                                               |
+| `task_dependencies` | `List<String>` | No       | `[]`    | A list of task IDs that must be completed before this one starts.                                              |
 
 **Example (Plan Snippet):**
 
@@ -712,9 +789,9 @@ These parameters are specified when the task is added to a plan.
 
 These parameters are set by an administrator in the global `OrchestrationConfig` to define the task's default behavior.
 
-| Parameter | Type | Required | Default | Description |
-|:---|:---|:---|:---|:---|
-| `model` | `ApiChatModel` | No | `null` | The AI model to use for generating code modifications. Defaults to the system's `defaultChatter`. |
+| Parameter | Type           | Required | Default | Description                                                                                       |
+|:----------|:---------------|:---------|:--------|:--------------------------------------------------------------------------------------------------|
+| `model`   | `ApiChatModel` | No       | `null`  | The AI model to use for generating code modifications. Defaults to the system's `defaultChatter`. |
 
 **Example (`OrchestrationConfig` Snippet):**
 
@@ -733,14 +810,17 @@ These parameters are set by an administrator in the global `OrchestrationConfig`
 
 #### Output
 
-The task returns a string summarizing the outcome of the file modification process. This string typically indicates whether the changes were successfully
-applied (either automatically or manually approved) and may include links to the modified or newly created files. In case of configuration errors or
+The task returns a string summarizing the outcome of the file modification process. This string typically indicates
+whether the changes were successfully
+applied (either automatically or manually approved) and may include links to the modified or newly created files. In
+case of configuration errors or
 unresolvable issues, it will return an error message.
 
 #### Related Tasks
 
 * **`AbstractFileTask`**: The base class for all file-related operations, providing common utilities and structure.
-* **`FileSearchTask`**: Use this task to search for files or content within the project, which can then inform a `FileModificationTask`.
+* **`FileSearchTask`**: Use this task to search for files or content within the project, which can then inform a
+  `FileModificationTask`.
 * **`TaskOrchestrator`**: The central system responsible for managing and executing tasks within a plan.
 * **`ChatAgent`**: The underlying AI interface used by `FileModificationTask` for generating code and diffs.
 
@@ -753,9 +833,12 @@ unresolvable issues, it will return an error message.
 
 #### Description
 
-The `FileSearchTask` is designed to efficiently search for specific patterns within files across your project. It provides detailed results, including
-configurable context lines around each match, making it easy to understand the surrounding code or text. This task is versatile, supporting both simple
-substring searches and complex regular expressions, and can even extract and search content from non-textual documents like PDFs and HTML files.
+The `FileSearchTask` is designed to efficiently search for specific patterns within files across your project. It
+provides detailed results, including
+configurable context lines around each match, making it easy to understand the surrounding code or text. This task is
+versatile, supporting both simple
+substring searches and complex regular expressions, and can even extract and search content from non-textual documents
+like PDFs and HTML files.
 
 Key features include:
 
@@ -768,24 +851,26 @@ Key features include:
 
 #### When to Use
 
-* Use this task when you need to find specific text, code snippets, configuration entries, or log messages across multiple files in your project.
+* Use this task when you need to find specific text, code snippets, configuration entries, or log messages across
+  multiple files in your project.
 * To locate all occurrences of a variable, function call, or error message within your codebase.
 * When you need to understand the context in which a particular pattern appears, rather than just knowing if it exists.
-* To search through documentation or other non-code assets (like PDFs or HTML files) for keywords, by enabling content extraction.
+* To search through documentation or other non-code assets (like PDFs or HTML files) for keywords, by enabling content
+  extraction.
 
 #### Execution Configuration (`FileSearchTask.SearchTaskExecutionConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter          | Type                | Required | Default | Description                                                               |
-|:-------------------|:--------------------|:---------|:--------|:--------------------------------------------------------------------------|
-| `search_pattern`   | `String`            | Yes      | `""`    | The search pattern (substring or regex) to look for in the files.         |
-| `is_regex`         | `Boolean`           | No       | `false` | Whether the search pattern is a regex (`true`) or a substring (`false`).  |
-| `context_lines`    | `Int`               | No       | `2`     | The number of context lines to include before and after each match.       |
-| `input_files`      | `List<String>`      | No       | `null`  | The specific files (or file patterns, e.g., `**/*.kt`) to be searched. If `null`, all available files are considered. |
-| `extractContent`   | `Boolean`           | No       | `false` | Whether to extract and search text content from non-text files (PDF, HTML, etc.). |
-| `task_description` | `String`            | No       | `null`  | A human-readable description of this step.                                |
-| `task_dependencies`| `List<String>`      | No       | `[]`    | A list of task IDs that must be completed before this one starts.         |
+| Parameter           | Type           | Required | Default | Description                                                                                                           |
+|:--------------------|:---------------|:---------|:--------|:----------------------------------------------------------------------------------------------------------------------|
+| `search_pattern`    | `String`       | Yes      | `""`    | The search pattern (substring or regex) to look for in the files.                                                     |
+| `is_regex`          | `Boolean`      | No       | `false` | Whether the search pattern is a regex (`true`) or a substring (`false`).                                              |
+| `context_lines`     | `Int`          | No       | `2`     | The number of context lines to include before and after each match.                                                   |
+| `input_files`       | `List<String>` | No       | `null`  | The specific files (or file patterns, e.g., `**/*.kt`) to be searched. If `null`, all available files are considered. |
+| `extractContent`    | `Boolean`      | No       | `false` | Whether to extract and search text content from non-text files (PDF, HTML, etc.).                                     |
+| `task_description`  | `String`       | No       | `null`  | A human-readable description of this step.                                                                            |
+| `task_dependencies` | `List<String>` | No       | `[]`    | A list of task IDs that must be completed before this one starts.                                                     |
 
 **Example (Plan Snippet):**
 
@@ -806,7 +891,8 @@ These parameters are specified when the task is added to a plan.
 
 #### Type Configuration (`FileSearchTaskTypeConfig`)
 
-The `FileSearchTask` uses the generic `TaskTypeConfig` and does not define any specific type-level configuration parameters beyond its `task_type` identifier.
+The `FileSearchTask` uses the generic `TaskTypeConfig` and does not define any specific type-level configuration
+parameters beyond its `task_type` identifier.
 
 **Example (`OrchestrationConfig` Snippet):**
 
@@ -823,10 +909,14 @@ The `FileSearchTask` uses the generic `TaskTypeConfig` and does not define any s
 
 #### Output
 
-The task returns a Markdown-formatted string containing the search results. The output begins with a main header, followed by a summary of the total matches
-found and the number of files containing matches. Each file with results is then presented with a sub-header, and within each file, blocks of matching lines are
-shown. Each block includes the starting and ending line numbers, and the actual lines of code/text are displayed within a Markdown code block. Lines that
-contain a match are prefixed with a `>` character. If the results exceed a certain length limit, a truncation message will be appended.
+The task returns a Markdown-formatted string containing the search results. The output begins with a main header,
+followed by a summary of the total matches
+found and the number of files containing matches. Each file with results is then presented with a sub-header, and within
+each file, blocks of matching lines are
+shown. Each block includes the starting and ending line numbers, and the actual lines of code/text are displayed within
+a Markdown code block. Lines that
+contain a match are prefixed with a `>` character. If the results exceed a certain length limit, a truncation message
+will be appended.
 
 **Example Output Snippet:**
 
@@ -860,9 +950,12 @@ Found 2 match(es) in 1 file(s).
 
 #### Related Tasks
 
-* **`FileModificationTask`**: Use this task to apply changes to files based on a description or pattern, often after identifying areas with `FileSearchTask`.
-* **`AnalysisTask`**: Can be used to analyze the output of `FileSearchTask` (e.g., to summarize findings, count specific types of matches, or identify trends).
-* **`KnowledgeIndexingTask` / `VectorSearchTask`**: For performing semantic searches based on the meaning of content rather than explicit patterns, useful for
+* **`FileModificationTask`**: Use this task to apply changes to files based on a description or pattern, often after
+  identifying areas with `FileSearchTask`.
+* **`AnalysisTask`**: Can be used to analyze the output of `FileSearchTask` (e.g., to summarize findings, count specific
+  types of matches, or identify trends).
+* **`KnowledgeIndexingTask` / `VectorSearchTask`**: For performing semantic searches based on the meaning of content
+  rather than explicit patterns, useful for
   broader information retrieval.
 
 # tools\file\FileSearchTask.md
@@ -870,17 +963,23 @@ Found 2 match(es) in 1 file(s).
 ### Task: FileSearchTask
 
 **Category:** File Operations
-**Summary:** Performs pattern-based searches across project files with contextual results, supporting substring and regex patterns.
+**Summary:** Performs pattern-based searches across project files with contextual results, supporting substring and
+regex patterns.
 
 #### Description
 
-The `FileSearchTask` is a specialized tool designed to efficiently search for specific patterns or text across various files within a project. It provides
-comprehensive search capabilities, allowing users to employ either simple substring matching or complex regular expressions. A key feature is its ability to
+The `FileSearchTask` is a specialized tool designed to efficiently search for specific patterns or text across various
+files within a project. It provides
+comprehensive search capabilities, allowing users to employ either simple substring matching or complex regular
+expressions. A key feature is its ability to
 present search results with surrounding context, making it easier to understand the relevance of each match.
 
-This task is capable of extracting and searching content from a wide range of file types, including non-text documents like PDFs and HTML files, when configured
-to do so. It also supports filtering searches to specific files or patterns using glob syntax, and automatically respects `.llmignore` files to avoid searching
-irrelevant content. The results are presented in an organized, readable markdown format, complete with line numbers and visual indicators for matched lines.
+This task is capable of extracting and searching content from a wide range of file types, including non-text documents
+like PDFs and HTML files, when configured
+to do so. It also supports filtering searches to specific files or patterns using glob syntax, and automatically
+respects `.llmignore` files to avoid searching
+irrelevant content. The results are presented in an organized, readable markdown format, complete with line numbers and
+visual indicators for matched lines.
 
 #### When to Use
 
@@ -894,16 +993,16 @@ irrelevant content. The results are presented in an organized, readable markdown
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter | Type | Required | Default | Description |
-|:---|:---|:---|:---|:---|
-| `search_pattern` | `String` | Yes | `""` | The search pattern (substring or regex) to look for in the files. |
-| `is_regex` | `Boolean` | No | `false` | Whether the search pattern is a regex (`true`) or a substring (`false`). |
-| `context_lines` | `Int` | No | `2` | The number of context lines to include before and after each match. |
-| `input_files` | `List<String>` | No | `null` | The specific files (or file patterns using glob syntax) to be searched. If `null`, all project files are considered. |
-| `extractContent` | `Boolean` | No | `false` | Whether to extract and search text content from non-text files (e.g., PDF, HTML, DOCX). |
-| `task_description` | `String` | No | `null` | Optional description of the task. |
-| `task_dependencies` | `List<String>` | No | `null` | Optional list of task dependencies. |
-| `state` | `TaskState` | No | `null` | Current state of the task (internal use). |
+| Parameter           | Type           | Required | Default | Description                                                                                                          |
+|:--------------------|:---------------|:---------|:--------|:---------------------------------------------------------------------------------------------------------------------|
+| `search_pattern`    | `String`       | Yes      | `""`    | The search pattern (substring or regex) to look for in the files.                                                    |
+| `is_regex`          | `Boolean`      | No       | `false` | Whether the search pattern is a regex (`true`) or a substring (`false`).                                             |
+| `context_lines`     | `Int`          | No       | `2`     | The number of context lines to include before and after each match.                                                  |
+| `input_files`       | `List<String>` | No       | `null`  | The specific files (or file patterns using glob syntax) to be searched. If `null`, all project files are considered. |
+| `extractContent`    | `Boolean`      | No       | `false` | Whether to extract and search text content from non-text files (e.g., PDF, HTML, DOCX).                              |
+| `task_description`  | `String`       | No       | `null`  | Optional description of the task.                                                                                    |
+| `task_dependencies` | `List<String>` | No       | `null`  | Optional list of task dependencies.                                                                                  |
+| `state`             | `TaskState`    | No       | `null`  | Current state of the task (internal use).                                                                            |
 
 **Example (Plan Snippet):**
 
@@ -922,7 +1021,8 @@ These parameters are specified when the task is added to a plan.
 
 #### Type Configuration (`FileSearchTaskTypeConfig`)
 
-There are no specific type configuration parameters for `FileSearchTask` that can be set in the global `OrchestrationConfig`. Its behavior is primarily
+There are no specific type configuration parameters for `FileSearchTask` that can be set in the global
+`OrchestrationConfig`. Its behavior is primarily
 controlled through the `SearchTaskConfigData` parameters provided during execution.
 
 #### Output
@@ -952,9 +1052,9 @@ Found 3 match(es) in 2 file(s).
     10: class ExampleClass {
 
 > 11:     // TODO: Implement this method
-12:     fun doSomething() {
-13:         println("Not implemented")
-14:     }
+> 12:     fun doSomething() {
+> 13:         println("Not implemented")
+> 14:     }
 
 ```
 
@@ -967,8 +1067,8 @@ Found 3 match(es) in 2 file(s).
     26:         val result = calculate()
 
 > 27:         // TODO: Add error handling
-28:         return result
-29:     }
+> 28:         return result
+> 29:     }
 
 ```
 
@@ -985,7 +1085,7 @@ Found 3 match(es) in 2 file(s).
 
 > 7:     fun testSomething() {
 > 8:         // TODO: Write actual test
-9:         assertTrue(true)
+> 9:         assertTrue(true)
 
 ```
 ```
@@ -993,7 +1093,8 @@ Found 3 match(es) in 2 file(s).
 #### Related Tasks
 
 * **`AnalysisTask`**: Can be used to further process or summarize the markdown output generated by `FileSearchTask`.
-* **`FileModificationTask`**: After identifying relevant code sections with `FileSearchTask`, `FileModificationTask` could be used to apply changes.
+* **`FileModificationTask`**: After identifying relevant code sections with `FileSearchTask`, `FileModificationTask`
+  could be used to apply changes.
 
 # tools\file\GeneratePresentationTask.kt
 
@@ -1004,38 +1105,47 @@ Found 3 match(es) in 2 file(s).
 
 #### Description
 
-The `GeneratePresentationTask` is designed to create professional, self-contained Reveal.js presentations, complete with speaker notes, custom styling, and
-interactive elements. It leverages AI to generate the presentation structure and content based on a detailed description provided by the user.
+The `GeneratePresentationTask` is designed to create professional, self-contained Reveal.js presentations, complete with
+speaker notes, custom styling, and
+interactive elements. It leverages AI to generate the presentation structure and content based on a detailed description
+provided by the user.
 
 Key features include:
 
-* **Comprehensive Generation:** Produces a full HTML presentation file, including the Reveal.js framework, custom CSS, and JavaScript for initialization and
+* **Comprehensive Generation:** Produces a full HTML presentation file, including the Reveal.js framework, custom CSS,
+  and JavaScript for initialization and
   interactivity.
 * **Speaker Notes:** Each slide includes an `<aside class="notes">` element for detailed speaker notes.
-* **Custom Styling:** Generates a `presentation.css` file to enhance the default Reveal.js theme with custom styles, ensuring a professional and responsive
+* **Custom Styling:** Generates a `presentation.css` file to enhance the default Reveal.js theme with custom styles,
+  ensuring a professional and responsive
   design.
-* **Interactive Controls:** Includes UI elements for autoplay and voice selection, enhancing the presentation experience.
+* **Interactive Controls:** Includes UI elements for autoplay and voice selection, enhancing the presentation
+  experience.
 * **Contextual Generation:** Can incorporate content from `related_files` to inform the presentation's creation.
-* **Review and Approval:** The generated files are presented for review before being written to disk, allowing for interactive approval or revision.
+* **Review and Approval:** The generated files are presented for review before being written to disk, allowing for
+  interactive approval or revision.
 
 #### When to Use
 
-* Use this task when you need to create a new presentation from a textual description, specifying the topic, key points, target audience, and desired style.
-* To quickly generate a structured and visually appealing presentation using the Reveal.js framework for web-based delivery.
-* When you want to include detailed speaker notes, custom styling, and interactive elements (like autoplay and voice selection) in your presentation.
+* Use this task when you need to create a new presentation from a textual description, specifying the topic, key points,
+  target audience, and desired style.
+* To quickly generate a structured and visually appealing presentation using the Reveal.js framework for web-based
+  delivery.
+* When you want to include detailed speaker notes, custom styling, and interactive elements (like autoplay and voice
+  selection) in your presentation.
 * To transform existing research, documentation, or other content into a presentable format for an audience.
 
 #### Execution Configuration (`GeneratePresentationTaskExecutionConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter           | Type           | Required | Default         | Description                                                                                             |
-|:--------------------|:---------------|:---------|:----------------|:--------------------------------------------------------------------------------------------------------|
-| `files`             | `List<String>` | Yes      | `[]`            | The HTML presentation file to be created (relative path, must end with .html). Only the first file is used. |
-| `related_files`     | `List<String>` | No       | `[]`            | Additional files for context (e.g., existing presentations, reference materials).                       |
-| `task_description`  | `String`       | No       | `null`          | Detailed description of the presentation including topic, key points, target audience, and desired style. |
-| `task_dependencies` | `List<String>` | No       | `[]`            | A list of task IDs that must be completed before this one starts.                                       |
-| `state`             | `TaskState`    | No       | `TaskState.Pending` | The current state of the task (e.g., Pending, Running, Complete, Failed).                               |
+| Parameter           | Type           | Required | Default             | Description                                                                                                 |
+|:--------------------|:---------------|:---------|:--------------------|:------------------------------------------------------------------------------------------------------------|
+| `files`             | `List<String>` | Yes      | `[]`                | The HTML presentation file to be created (relative path, must end with .html). Only the first file is used. |
+| `related_files`     | `List<String>` | No       | `[]`                | Additional files for context (e.g., existing presentations, reference materials).                           |
+| `task_description`  | `String`       | No       | `null`              | Detailed description of the presentation including topic, key points, target audience, and desired style.   |
+| `task_dependencies` | `List<String>` | No       | `[]`                | A list of task IDs that must be completed before this one starts.                                           |
+| `state`             | `TaskState`    | No       | `TaskState.Pending` | The current state of the task (e.g., Pending, Running, Complete, Failed).                                   |
 
 **Example (Plan Snippet):**
 
@@ -1055,7 +1165,8 @@ These parameters are specified when the task is added to a plan.
 
 #### Type Configuration (`GeneratePresentationTypeConfig`)
 
-This task uses the globally configured `defaultChatter` for its AI model. It does not define any specific type-level parameters within its own `TaskTypeConfig`.
+This task uses the globally configured `defaultChatter` for its AI model. It does not define any specific type-level
+parameters within its own `TaskTypeConfig`.
 
 **Example (`OrchestrationConfig` Snippet):**
 
@@ -1084,17 +1195,22 @@ Upon successful execution, the task generates and writes the following files to 
 * `presentation.js`: A standard JavaScript file for Reveal.js functionality.
 * `reveal_init.js`: A JavaScript file for initializing the Reveal.js presentation.
 
-The task returns a string indicating the successful creation of these files, e.g., "Successfully wrote new_features_overview.html, presentation.css,
-presentation.js, reveal_init.js". In cases of configuration errors (e.g., no file specified, incorrect file extension) or issues during file writing, an error
+The task returns a string indicating the successful creation of these files, e.g., "Successfully wrote
+new_features_overview.html, presentation.css,
+presentation.js, reveal_init.js". In cases of configuration errors (e.g., no file specified, incorrect file extension)
+or issues during file writing, an error
 message is returned. The generated files are also displayed in the UI for user review and approval before being saved.
 
 #### Related Tasks
 
-* **`FileModificationTask`**: Use this task to modify existing presentation files or other documents, rather than generating new ones from scratch.
+* **`FileModificationTask`**: Use this task to modify existing presentation files or other documents, rather than
+  generating new ones from scratch.
 * **`WriteHtmlTask`**: A more general task for writing arbitrary HTML content to a specified file.
-* **`AnalysisTask`**: Can be used to analyze the content of the generated presentation, speaker notes, or related files for quality assurance or further
+* **`AnalysisTask`**: Can be used to analyze the content of the generated presentation, speaker notes, or related files
+  for quality assurance or further
   processing.
-* **`GenerateRelatedFileAction`**: For generating other types of related files (e.g., documentation, code) based on existing context.
+* **`GenerateRelatedFileAction`**: For generating other types of related files (e.g., documentation, code) based on
+  existing context.
 
 # tools\file\WriteHtmlTask.kt
 
@@ -1105,8 +1221,10 @@ message is returned. The generated files are also displayed in the UI for user r
 
 #### Description
 
-The `WriteHtmlTask` is designed to generate comprehensive, self-contained HTML files, including embedded CSS and JavaScript, based on a detailed description.
-This task streamlines the creation of web pages or components by handling the full structure, styling, and interactivity within a single output file.
+The `WriteHtmlTask` is designed to generate comprehensive, self-contained HTML files, including embedded CSS and
+JavaScript, based on a detailed description.
+This task streamlines the creation of web pages or components by handling the full structure, styling, and interactivity
+within a single output file.
 
 Key features include:
 
@@ -1114,28 +1232,32 @@ Key features include:
 * **Embedded Styling:** Integrates CSS rules directly within `<style>` tags in the `<head>` section.
 * **Embedded Interactivity:** Embeds JavaScript code within `<script>` tags, typically before the closing `</body>` tag.
 * **Modern Best Practices:** Incorporates responsive design considerations and modern web development patterns.
-* **Contextual Generation:** Can leverage content from `related_files` to inform the generation process, such as existing templates or design guidelines.
-* **Interactive Approval:** Presents the generated HTML for review, allowing for user acceptance before writing to disk, or can be configured for
+* **Contextual Generation:** Can leverage content from `related_files` to inform the generation process, such as
+  existing templates or design guidelines.
+* **Interactive Approval:** Presents the generated HTML for review, allowing for user acceptance before writing to disk,
+  or can be configured for
   auto-application.
 
 #### When to Use
 
-* Use this task when you need to generate a new, self-contained HTML page or web component from a high-level description.
+* Use this task when you need to generate a new, self-contained HTML page or web component from a high-level
+  description.
 * To quickly prototype a user interface (UI) or a specific section of a web page.
-* When the goal is to produce a single HTML file that includes all necessary CSS and JavaScript without external dependencies.
+* When the goal is to produce a single HTML file that includes all necessary CSS and JavaScript without external
+  dependencies.
 * To ensure consistent HTML5 structure, embedded styling, and interactive scripts in a generated web asset.
 
 #### Execution Configuration (`WriteHtmlTaskExecutionConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter           | Type           | Required | Default         | Description                                                                                             |
-|:--------------------|:---------------|:---------|:----------------|:--------------------------------------------------------------------------------------------------------|
-| `files`             | `List<String>` | Yes      | `[]`            | The HTML file(s) to be created (relative path, must end with `.html`). Only the first file is used.    |
-| `related_files`     | `List<String>` | No       | `[]`            | Additional files for context (e.g., existing HTML templates, related files) to inform the generation.   |
-| `task_description`  | `String`       | Yes      | `null`          | Detailed description of the HTML page to create, including layout, styling, and functionality requirements. |
-| `task_dependencies` | `List<String>` | No       | `[]`            | A list of task IDs that must be completed before this one starts.                                       |
-| `state`             | `TaskState`    | No       | `TaskState.Pending` | The current state of the task (e.g., Pending, Running, Completed, Failed).                              |
+| Parameter           | Type           | Required | Default             | Description                                                                                                 |
+|:--------------------|:---------------|:---------|:--------------------|:------------------------------------------------------------------------------------------------------------|
+| `files`             | `List<String>` | Yes      | `[]`                | The HTML file(s) to be created (relative path, must end with `.html`). Only the first file is used.         |
+| `related_files`     | `List<String>` | No       | `[]`                | Additional files for context (e.g., existing HTML templates, related files) to inform the generation.       |
+| `task_description`  | `String`       | Yes      | `null`              | Detailed description of the HTML page to create, including layout, styling, and functionality requirements. |
+| `task_dependencies` | `List<String>` | No       | `[]`                | A list of task IDs that must be completed before this one starts.                                           |
+| `state`             | `TaskState`    | No       | `TaskState.Pending` | The current state of the task (e.g., Pending, Running, Completed, Failed).                                  |
 
 **Example (Plan Snippet):**
 
@@ -1155,7 +1277,8 @@ These parameters are specified when the task is added to a plan.
 
 #### Type Configuration (`TaskTypeConfig`)
 
-This task uses the generic `TaskTypeConfig` and does not define any task-specific type-level configurations beyond those inherited from the base
+This task uses the generic `TaskTypeConfig` and does not define any task-specific type-level configurations beyond those
+inherited from the base
 `TaskTypeConfig`.
 
 **Example (`OrchestrationConfig` Snippet):**
@@ -1176,25 +1299,31 @@ This task uses the generic `TaskTypeConfig` and does not define any task-specifi
 
 #### Output
 
-The task's primary output is the creation of the specified HTML file on disk, containing the generated HTML structure, embedded CSS, and embedded JavaScript.
+The task's primary output is the creation of the specified HTML file on disk, containing the generated HTML structure,
+embedded CSS, and embedded JavaScript.
 
 The `resultFn` will return a string indicating the outcome:
 
 * `"Successfully wrote <filename.html>"` if the file is created successfully.
 * `"CONFIGURATION ERROR: No HTML file specified"` if the `files` list is empty.
-* `"CONFIGURATION ERROR: File must have .html extension: <filename>"` if the specified file does not have a `.html` extension.
+* `"CONFIGURATION ERROR: File must have .html extension: <filename>"` if the specified file does not have a `.html`
+  extension.
 * `"ERROR: Failed to generate HTML structure"` if the AI fails to produce a valid HTML structure.
-* `"ERROR: Failed to generate valid HTML content"` if the final combination of HTML, CSS, and JS results in invalid content.
+* `"ERROR: Failed to generate valid HTML content"` if the final combination of HTML, CSS, and JS results in invalid
+  content.
 * `"ERROR: <exception message>"` if an unexpected error occurs during file writing.
 
-Additionally, the UI will display a link to the newly created file: `<a href="<link_to_file>"><filename.html></a> created`.
+Additionally, the UI will display a link to the newly created file:
+`<a href="<link_to_file>"><filename.html></a> created`.
 
 #### Related Tasks
 
 * **`FileModificationTask`:** Use this task to modify existing files rather than creating new ones from scratch.
-* **`CreateFileFromDescriptionAction`:** A more general task for generating any type of file based on a description, without the specific HTML/CSS/JS embedding
+* **`CreateFileFromDescriptionAction`:** A more general task for generating any type of file based on a description,
+  without the specific HTML/CSS/JS embedding
   logic.
-* **`GenerateDocumentationAction`:** If the goal is to generate documentation, which might include HTML output, this task is more specialized for that purpose.
+* **`GenerateDocumentationAction`:** If the goal is to generate documentation, which might include HTML output, this
+  task is more specialized for that purpose.
 
 # tools\knowledge\KnowledgeIndexingTask.kt
 
@@ -1205,11 +1334,15 @@ Additionally, the UI will display a link to the newly created file: `<a href="<l
 
 #### Description
 
-The `KnowledgeIndexingTask` is designed to process and index various types of files, including documentation and source code, to enable semantic search
-capabilities. It breaks down content into manageable chunks, generates embeddings for these chunks using a specified AI model, and stores them for efficient
-retrieval. This task supports parallel processing to handle large volumes of files and provides progress tracking and reporting.
+The `KnowledgeIndexingTask` is designed to process and index various types of files, including documentation and source
+code, to enable semantic search
+capabilities. It breaks down content into manageable chunks, generates embeddings for these chunks using a specified AI
+model, and stores them for efficient
+retrieval. This task supports parallel processing to handle large volumes of files and provides progress tracking and
+reporting.
 
-This is a foundational task for building AI agents that can understand and retrieve information from a given codebase or document set based on meaning, rather
+This is a foundational task for building AI agents that can understand and retrieve information from a given codebase or
+document set based on meaning, rather
 than just keywords.
 
 Key features include:
@@ -1222,24 +1355,26 @@ Key features include:
 
 #### When to Use
 
-* Use this task when you need to prepare a collection of files (e.g., project documentation, source code, log files) to be semantically searchable by an AI
+* Use this task when you need to prepare a collection of files (e.g., project documentation, source code, log files) to
+  be semantically searchable by an AI
   agent.
 * Execute this task before using a `VectorSearchTask` to query your knowledge base.
-* To build a comprehensive knowledge base from diverse file types, allowing AI to answer questions or generate insights based on the indexed content.
+* To build a comprehensive knowledge base from diverse file types, allowing AI to answer questions or generate insights
+  based on the indexed content.
 
 #### Execution Configuration (`KnowledgeIndexingTaskExecutionConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter           | Type          | Required | Default                               | Description                                                              |
-|:--------------------|:--------------|:---------|:--------------------------------------|:-------------------------------------------------------------------------|
-| `file_paths`        | `List<String>`| Yes      | `null`                                | The file paths to process and index.                                     |
-| `parsing_type`      | `String`      | No       | `"document"`                          | The type of parsing to use: `'document'` or `'code'`.                    |
-| `chunk_size`        | `Double`      | No       | `0.1`                                 | The chunk size for splitting documents (a value between 0.0 and 1.0).    |
-| `embedding_model`   | `String`      | No       | `"nomic-embed-text"`                  | The embedding model to use for indexing. Defaults to Ollama's NomicEmbedText. |
-| `task_description`  | `String`      | No       | `null`                                | A human-readable description of the task's purpose.                      |
-| `task_dependencies` | `List<String>`| No       | `[]`                                  | A list of task IDs that must be completed before this one starts.        |
-| `state`             | `TaskState`   | No       | `null`                                | The current state of the task.                                           |
+| Parameter           | Type           | Required | Default              | Description                                                                   |
+|:--------------------|:---------------|:---------|:---------------------|:------------------------------------------------------------------------------|
+| `file_paths`        | `List<String>` | Yes      | `null`               | The file paths to process and index.                                          |
+| `parsing_type`      | `String`       | No       | `"document"`         | The type of parsing to use: `'document'` or `'code'`.                         |
+| `chunk_size`        | `Double`       | No       | `0.1`                | The chunk size for splitting documents (a value between 0.0 and 1.0).         |
+| `embedding_model`   | `String`       | No       | `"nomic-embed-text"` | The embedding model to use for indexing. Defaults to Ollama's NomicEmbedText. |
+| `task_description`  | `String`       | No       | `null`               | A human-readable description of the task's purpose.                           |
+| `task_dependencies` | `List<String>` | No       | `[]`                 | A list of task IDs that must be completed before this one starts.             |
+| `state`             | `TaskState`    | No       | `null`               | The current state of the task.                                                |
 
 **Example (Plan Snippet):**
 
@@ -1277,8 +1412,10 @@ This task does not define any specific type configuration parameters beyond the 
 
 #### Output
 
-The task returns a markdown-formatted string summarizing the indexing process. This includes a header indicating completion, the configuration parameters used (
-embedding model, parsing type, chunk size), and a list of all files that were successfully processed. If no valid files are found, it returns a markdown message
+The task returns a markdown-formatted string summarizing the indexing process. This includes a header indicating
+completion, the configuration parameters used (
+embedding model, parsing type, chunk size), and a list of all files that were successfully processed. If no valid files
+are found, it returns a markdown message
 indicating that no files could be found at the specified paths.
 
 #### Related Tasks
@@ -1295,9 +1432,12 @@ indicating that no files could be found at the specified paths.
 
 #### Description
 
-The `KnowledgeIndexingTask` is a specialized task designed to process and index various types of files, creating searchable vector representations of their
-content. This enables efficient knowledge retrieval and semantic search functionalities within AI-powered applications. It leverages embedding models to
-transform document content into a format suitable for vector databases, facilitating advanced querying beyond simple keyword matching.
+The `KnowledgeIndexingTask` is a specialized task designed to process and index various types of files, creating
+searchable vector representations of their
+content. This enables efficient knowledge retrieval and semantic search functionalities within AI-powered applications.
+It leverages embedding models to
+transform document content into a format suitable for vector databases, facilitating advanced querying beyond simple
+keyword matching.
 
 Key features include:
 
@@ -1309,20 +1449,23 @@ Key features include:
 
 #### When to Use
 
-* Use this task when you need to prepare a collection of documents (e.g., PDFs, text files, codebases) for semantic search.
-* This is ideal for building a knowledge base that AI agents can query to find relevant information based on meaning, not just keywords.
-* Employ this task to create vector embeddings of project documentation, research papers, or source code to enable intelligent information retrieval.
+* Use this task when you need to prepare a collection of documents (e.g., PDFs, text files, codebases) for semantic
+  search.
+* This is ideal for building a knowledge base that AI agents can query to find relevant information based on meaning,
+  not just keywords.
+* Employ this task to create vector embeddings of project documentation, research papers, or source code to enable
+  intelligent information retrieval.
 
 #### Execution Configuration (`KnowledgeIndexingTaskConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter         | Type            | Required | Default | Description                                     |
-|:------------------|:----------------|:---------|:--------|:------------------------------------------------|
-| `file_paths`      | `List<String>`  | Yes      | `null`  | List of file paths to process and index.        |
-| `task_description`| `String?`       | No       | `null`  | Optional human-readable description of the task. |
-| `task_dependencies`| `List<String>?` | No       | `[]`    | Optional list of dependent task identifiers.    |
-| `state`           | `TaskState?`    | No       | `null`  | Current state of the task (for internal use).   |
+| Parameter           | Type            | Required | Default | Description                                      |
+|:--------------------|:----------------|:---------|:--------|:-------------------------------------------------|
+| `file_paths`        | `List<String>`  | Yes      | `null`  | List of file paths to process and index.         |
+| `task_description`  | `String?`       | No       | `null`  | Optional human-readable description of the task. |
+| `task_dependencies` | `List<String>?` | No       | `[]`    | Optional list of dependent task identifiers.     |
+| `state`             | `TaskState?`    | No       | `null`  | Current state of the task (for internal use).    |
 
 **Example (Plan Snippet):**
 
@@ -1340,8 +1483,10 @@ These parameters are specified when the task is added to a plan.
 
 #### Type Configuration (`KnowledgeIndexingTaskTypeConfig`)
 
-Currently, there are no configurable parameters for `KnowledgeIndexingTask` at the `OrchestrationConfig` level. The embedding model (
-`EmbeddingModel.OllamaNomadic`) is hardcoded, and options like parsing type (document/code) and chunk size, while mentioned in the prompt segment, are not
+Currently, there are no configurable parameters for `KnowledgeIndexingTask` at the `OrchestrationConfig` level. The
+embedding model (
+`EmbeddingModel.OllamaNomadic`) is hardcoded, and options like parsing type (document/code) and chunk size, while
+mentioned in the prompt segment, are not
 exposed as configurable parameters in the current implementation.
 
 **Example (`OrchestrationConfig` Snippet):**
@@ -1381,8 +1526,10 @@ The task generates markdown-formatted output detailing the outcome of the indexi
 
 #### Related Tasks
 
-* **`VectorSearchTask`:** Use this task to perform semantic queries against the knowledge base created by `KnowledgeIndexingTask`.
-* **`DocumentParserApp`:** A related application that can parse various document types, which might be used as a precursor to indexing.
+* **`VectorSearchTask`:** Use this task to perform semantic queries against the knowledge base created by
+  `KnowledgeIndexingTask`.
+* **`DocumentParserApp`:** A related application that can parse various document types, which might be used as a
+  precursor to indexing.
 
 # tools\knowledge\VectorSearchTask.kt
 
@@ -1393,26 +1540,35 @@ The task generates markdown-formatted output detailing the outcome of the indexi
 
 #### Description
 
-The `VectorSearchTask` performs semantic search across indexed content using AI embeddings. It allows users to find documents or code snippets that are
+The `VectorSearchTask` performs semantic search across indexed content using AI embeddings. It allows users to find
+documents or code snippets that are
 semantically similar to specified queries, leveraging the power of vector databases.
 
 Key features include:
 
 * **Semantic Matching:** Utilizes AI embeddings (e.g., from OpenAI, Ollama) for advanced semantic similarity matching.
-* **Positive and Negative Queries:** Supports both positive queries (what to look for) and negative queries (what to avoid), enabling more nuanced searches.
-* **Configurable Metrics:** Allows selection of different distance types (Euclidean, Manhattan, Cosine) to define similarity.
-* **Filtering Capabilities:** Includes options for filtering results by minimum content length and by requiring specific regular expression patterns to be
+* **Positive and Negative Queries:** Supports both positive queries (what to look for) and negative queries (what to
+  avoid), enabling more nuanced searches.
+* **Configurable Metrics:** Allows selection of different distance types (Euclidean, Manhattan, Cosine) to define
+  similarity.
+* **Filtering Capabilities:** Includes options for filtering results by minimum content length and by requiring specific
+  regular expression patterns to be
   present in the content.
-* **Ranked Results with Context:** Returns a ranked list of the most relevant results, providing file paths, content summaries, and metadata for each.
+* **Ranked Results with Context:** Returns a ranked list of the most relevant results, providing file paths, content
+  summaries, and metadata for each.
 
 #### When to Use
 
-* Use this task when you need to find documents, code, or other text content that is semantically similar to a given query, rather than relying solely on
+* Use this task when you need to find documents, code, or other text content that is semantically similar to a given
+  query, rather than relying solely on
   keyword matching.
-* To refine search results by specifying concepts or topics that should be present (positive queries) and those that should be excluded (negative queries).
+* To refine search results by specifying concepts or topics that should be present (positive queries) and those that
+  should be excluded (negative queries).
 * To retrieve relevant information from a large, indexed corpus, such as a codebase, documentation, or research papers.
-* When you want to find code examples or architectural patterns related to a specific concept, even if the exact keywords are not present.
-* To filter search results based on content characteristics like minimum length or the presence of specific patterns (e.g., "must contain 'Kotlin' and '
+* When you want to find code examples or architectural patterns related to a specific concept, even if the exact
+  keywords are not present.
+* To filter search results based on content characteristics like minimum length or the presence of specific patterns (
+  e.g., "must contain 'Kotlin' and '
   suspend'").
 
 #### Execution Configuration (`VectorSearchTaskExecutionConfigData`)
@@ -1426,13 +1582,17 @@ These parameters are specified when the task is added to a plan.
 ### Task: VectorSearchTask
 
 **Category:** Knowledge & Search
-**Summary:** Performs semantic similarity searches using vector embeddings to find content semantically similar to provided query strings.
+**Summary:** Performs semantic similarity searches using vector embeddings to find content semantically similar to
+provided query strings.
 
 #### Description
 
-The `VectorSearchTask` is a specialized task designed to leverage vector embeddings for semantic search. It efficiently scans through pre-indexed document
-embeddings to identify and rank content that is semantically similar to a given set of positive queries, while also allowing for the exclusion of content
-matching negative queries. This task is crucial for enabling advanced content discovery and analysis within the Cognotik framework.
+The `VectorSearchTask` is a specialized task designed to leverage vector embeddings for semantic search. It efficiently
+scans through pre-indexed document
+embeddings to identify and rank content that is semantically similar to a given set of positive queries, while also
+allowing for the exclusion of content
+matching negative queries. This task is crucial for enabling advanced content discovery and analysis within the Cognotik
+framework.
 
 Key features include:
 
@@ -1445,10 +1605,12 @@ Key features include:
 
 #### When to Use
 
-* Use this task when you need to find documents or content that are conceptually similar to a given phrase or topic, rather than just keyword matches.
+* Use this task when you need to find documents or content that are conceptually similar to a given phrase or topic,
+  rather than just keyword matches.
 * This is ideal for content discovery across large, diverse document sets where semantic understanding is important.
 * Employ this task to identify potential duplicates or highly related information based on meaning.
-* Utilize it for filtered searches, combining semantic similarity with specific content requirements (e.g., minimum length, presence of certain keywords via
+* Utilize it for filtered searches, combining semantic similarity with specific content requirements (e.g., minimum
+  length, presence of certain keywords via
   regex).
 * Leverage negative queries to explicitly exclude documents discussing particular topics while searching for others.
 
@@ -1467,25 +1629,31 @@ These parameters are specified when the task is added to a plan.
 
 #### Description
 
-The `CrawlerAgentTask` is designed to automate web research by searching, fetching, and analyzing web page content. It can be seeded with a Google search query
-or a list of direct URLs. The task then crawls the specified pages, extracts information based on a detailed content query, and can optionally follow links to
+The `CrawlerAgentTask` is designed to automate web research by searching, fetching, and analyzing web page content. It
+can be seeded with a Google search query
+or a list of direct URLs. The task then crawls the specified pages, extracts information based on a detailed content
+query, and can optionally follow links to
 deepen the research. All results are saved locally for future reference, and a comprehensive summary can be generated.
 
 Key features include:
 
 * **Flexible Seeding:** Start crawling from Google search results or a predefined list of URLs.
 * **Content Fetching:** Utilizes various methods (e.g., HTTP client, Selenium) to retrieve page content.
-* **Intelligent Analysis:** Employs an AI model to process page content according to a specified query, extracting key insights, facts, and conclusions.
-* **Link Following:** Automatically discovers and queues new links from analyzed pages for deeper exploration, respecting depth limits and domain restrictions.
+* **Intelligent Analysis:** Employs an AI model to process page content according to a specified query, extracting key
+  insights, facts, and conclusions.
+* **Link Following:** Automatically discovers and queues new links from analyzed pages for deeper exploration,
+  respecting depth limits and domain restrictions.
 * **Robots.txt Compliance:** Can be configured to respect `robots.txt` rules and crawl delays.
-* **Output Management:** Saves raw content and analysis results to a local `.websearch` directory and provides a consolidated summary.
+* **Output Management:** Saves raw content and analysis results to a local `.websearch` directory and provides a
+  consolidated summary.
 
 #### When to Use
 
 * Use this task when you need to gather information from the web based on a specific topic or search query.
 * When you have a list of specific URLs (e.g., articles, documentation pages) that you want to analyze and summarize.
 * When you need to extract structured data, key insights, or answers to specific questions from web pages.
-* When you want to automatically explore related content by following links found on initial pages, up to a certain depth.
+* When you want to automatically explore related content by following links found on initial pages, up to a certain
+  depth.
 * To generate a comprehensive report or summary of web-based research.
 
 #### Execution Configuration (`CrawlerTaskExecutionConfigData`)
@@ -1503,8 +1671,10 @@ These parameters are specified when the task is added to a plan.
 
 #### Description
 
-The `GitHubSearchTask` performs comprehensive searches across various content types on GitHub. It allows users to query for repositories, code snippets,
-commits, issues, topics, or users, and retrieve structured results. The task leverages the GitHub API, requiring a valid GitHub API token configured in user
+The `GitHubSearchTask` performs comprehensive searches across various content types on GitHub. It allows users to query
+for repositories, code snippets,
+commits, issues, topics, or users, and retrieve structured results. The task leverages the GitHub API, requiring a valid
+GitHub API token configured in user
 settings.
 
 Key features include:
@@ -1519,20 +1689,21 @@ Key features include:
 
 * Use this task when you need to find specific code snippets, repositories, commits, issues, topics, or users on GitHub.
 * To gather information about open-source projects, identify relevant code examples, or research user activity.
-* When you need to programmatically query GitHub and process the results within a larger plan, such as finding a library for a specific function or researching
+* When you need to programmatically query GitHub and process the results within a larger plan, such as finding a library
+  for a specific function or researching
   common solutions to a problem.
 
 #### Execution Configuration (`GitHubSearchTaskExecutionConfigData`)
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter      | Type     | Required | Default          | Description                                                               |
-| :------------- | :------- | :------- | :--------------- | :------------------------------------------------------------------------ |
-| `search_query` | `String` | No       | `""` (empty string) | The search query to use for GitHub search.                                |
-| `search_type`  | `String` | No       | `"repositories"` | The type of GitHub search to perform (code, commits, issues, repositories, topics, users). |
-| `per_page`     | `Int`    | No       | `30`             | The number of results to return (maximum 100).                            |
-| `sort`         | `String` | No       | `null`           | Optional sort order for results (e.g., `stars`, `forks`, `updated`).      |
-| `order`        | `String` | No       | `null`           | Optional sort direction (`asc` or `desc`).                                |
+| Parameter      | Type     | Required | Default             | Description                                                                                |
+|:---------------|:---------|:---------|:--------------------|:-------------------------------------------------------------------------------------------|
+| `search_query` | `String` | No       | `""` (empty string) | The search query to use for GitHub search.                                                 |
+| `search_type`  | `String` | No       | `"repositories"`    | The type of GitHub search to perform (code, commits, issues, repositories, topics, users). |
+| `per_page`     | `Int`    | No       | `30`                | The number of results to return (maximum 100).                                             |
+| `sort`         | `String` | No       | `null`              | Optional sort order for results (e.g., `stars`, `forks`, `updated`).                       |
+| `order`        | `String` | No       | `null`              | Optional sort direction (`asc` or `desc`).                                                 |
 
 **Example (Plan Snippet):**
 
@@ -1550,7 +1721,8 @@ These parameters are specified when the task is added to a plan.
 
 #### Type Configuration (`TaskTypeConfig`)
 
-The `GitHubSearchTask` uses the generic `TaskTypeConfig` and does not define any specific type-level configuration parameters beyond those inherited from the
+The `GitHubSearchTask` uses the generic `TaskTypeConfig` and does not define any specific type-level configuration
+parameters beyond those inherited from the
 base task type. The GitHub API token is managed via user settings, not through `OrchestrationConfig`.
 
 **Example (`OrchestrationConfig` Snippet):**
@@ -1568,7 +1740,8 @@ base task type. The GitHub API token is managed via user settings, not through `
 
 #### Output
 
-The task returns a formatted Markdown string containing the search results. This output includes the total number of results and a list of the top 10 results,
+The task returns a formatted Markdown string containing the search results. This output includes the total number of
+results and a list of the top 10 results,
 with details specific to the `search_type`. For example:
 
 * **Repositories:** Full name, description, stars, forks, and a link to GitHub.
@@ -1581,8 +1754,10 @@ with details specific to the `search_type`. For example:
 #### Related Tasks
 
 * **`VectorSearchTask`:** Use for searching internal knowledge bases or indexed documents using semantic similarity.
-* **`GoogleSearch` / `SearchAPISearch`:** Use for general web searches when information is not expected to be exclusively on GitHub.
-* **`CrawlerAgentTask`:** Use for more in-depth web crawling and information extraction from specific websites, beyond simple search queries.
+* **`GoogleSearch` / `SearchAPISearch`:** Use for general web searches when information is not expected to be
+  exclusively on GitHub.
+* **`CrawlerAgentTask`:** Use for more in-depth web crawling and information extraction from specific websites, beyond
+  simple search queries.
 
 # tools\session\CommandSessionTask.kt
 
@@ -1593,24 +1768,32 @@ with details specific to the `search_type`. For example:
 
 #### Description
 
-The `CommandSession` task creates and manages a persistent command-line session (e.g., bash, python). This allows for stateful interactions where commands can
-build on the results of previous ones. The system maintains a pool of active sessions, with a maximum of 10 concurrent sessions to manage resources.
+The `CommandSession` task creates and manages a persistent command-line session (e.g., bash, python). This allows for
+stateful interactions where commands can
+build on the results of previous ones. The system maintains a pool of active sessions, with a maximum of 10 concurrent
+sessions to manage resources.
 
 Key features include:
 
 * **Start any interactive process:** Specify the command to run (e.g., `listOf("bash", "-i")`).
 * **Send inputs:** Provide a list of commands to be executed sequentially in the session.
-* **Stateful Sessions:** Reuse sessions by providing a `sessionId`. The environment (variables, current directory) persists between tasks using the same ID.
-* **Manage Session Lifecycle:** Sessions can be explicitly closed or will be cleaned up automatically if inactive or explicitly requested.
+* **Stateful Sessions:** Reuse sessions by providing a `sessionId`. The environment (variables, current directory)
+  persists between tasks using the same ID.
+* **Manage Session Lifecycle:** Sessions can be explicitly closed or will be cleaned up automatically if inactive or
+  explicitly requested.
 
 #### When to Use
 
-* Use this task when you need to interact with a command-line interpreter (like `bash`, `python`, `node`) where subsequent commands depend on the state
+* Use this task when you need to interact with a command-line interpreter (like `bash`, `python`, `node`) where
+  subsequent commands depend on the state
   established by previous ones.
-* This is ideal for running a series of commands in a specific environment, such as configuring a database, setting up a development environment, or running a
+* This is ideal for running a series of commands in a specific environment, such as configuring a database, setting up a
+  development environment, or running a
   sequence of build steps that modify the environment.
-* Use it to maintain a persistent shell session across multiple planning steps, allowing for complex, multi-stage operations. For example, you might start a
-  Python interpreter, define variables, and then in a subsequent `CommandSession` task, use those variables or define functions.
+* Use it to maintain a persistent shell session across multiple planning steps, allowing for complex, multi-stage
+  operations. For example, you might start a
+  Python interpreter, define variables, and then in a subsequent `CommandSession` task, use those variables or define
+  functions.
 
 #### Execution Configuration (`CommandSessionTaskExecutionConfigData`)
 
@@ -1627,8 +1810,10 @@ These parameters are specified when the task is added to a plan.
 
 #### Description
 
-The `RunShellCommandTask` is designed to execute shell commands within a controlled environment and capture their output. It provides a secure way to interact
-with the underlying system, allowing for specified working directories and timeouts. This task is particularly useful for running system utilities, scripts, or
+The `RunShellCommandTask` is designed to execute shell commands within a controlled environment and capture their
+output. It provides a secure way to interact
+with the underlying system, allowing for specified working directories and timeouts. This task is particularly useful
+for running system utilities, scripts, or
 external programs where direct shell interaction is required.
 
 Key features include:
@@ -1641,7 +1826,8 @@ Key features include:
 
 #### When to Use
 
-* Use this task when you need to execute a specific shell command (e.g., `ls -l`, `git status`, `docker ps`) and retrieve its output.
+* Use this task when you need to execute a specific shell command (e.g., `ls -l`, `git status`, `docker ps`) and
+  retrieve its output.
 * To run scripts or binaries that are not directly interpreted by the AI (e.g., `python script.py`, `node app.js`).
 * For tasks requiring direct interaction with the file system or external tools via the command line.
 * When you need to capture the exact standard output and standard error of a command for further processing or display.
@@ -1651,13 +1837,13 @@ Key features include:
 
 These parameters are specified when the task is added to a plan.
 
-| Parameter          | Type     | Required | Default | Description                                            |
-|:-------------------|:---------|:---------|:--------|:-------------------------------------------------------|
-| `command`          | `String` | No       | `null`  | The shell command to be executed. If not provided, the AI will infer it from the task description. |
-| `workingDir`       | `String` | No       | `null`  | The relative file path of the working directory where the command will be executed. Defaults to the project's absolute working directory. |
-| `timeoutMinutes`   | `Long`   | No       | `15`    | Timeout in minutes for command execution. If the command exceeds this duration, it will be terminated. |
-| `task_description` | `String` | No       | `null`  | A human-readable description of this specific step within the plan. |
-| `task_dependencies`| `List<String>` | No | `[]`    | A list of task IDs that must be completed successfully before this task can start. |
+| Parameter           | Type           | Required | Default | Description                                                                                                                               |
+|:--------------------|:---------------|:---------|:--------|:------------------------------------------------------------------------------------------------------------------------------------------|
+| `command`           | `String`       | No       | `null`  | The shell command to be executed. If not provided, the AI will infer it from the task description.                                        |
+| `workingDir`        | `String`       | No       | `null`  | The relative file path of the working directory where the command will be executed. Defaults to the project's absolute working directory. |
+| `timeoutMinutes`    | `Long`         | No       | `15`    | Timeout in minutes for command execution. If the command exceeds this duration, it will be terminated.                                    |
+| `task_description`  | `String`       | No       | `null`  | A human-readable description of this specific step within the plan.                                                                       |
+| `task_dependencies` | `List<String>` | No       | `[]`    | A list of task IDs that must be completed successfully before this task can start.                                                        |
 
 **Example (Plan Snippet):**
 
@@ -1674,9 +1860,9 @@ These parameters are specified when the task is added to a plan.
 
 These parameters are set by an administrator in the global `OrchestrationConfig` to define the task's default behavior.
 
-| Parameter          | Type           | Required | Default | Description                                            |
-|:-------------------|:---------------|:---------|:--------|:-------------------------------------------------------|
-| `model`            | `ApiChatModel` | No       | `null`  | The AI model to use for generating the shell command or interpreting its output. Defaults to the system's `defaultChatter`. |
+| Parameter | Type           | Required | Default | Description                                                                                                                 |
+|:----------|:---------------|:---------|:--------|:----------------------------------------------------------------------------------------------------------------------------|
+| `model`   | `ApiChatModel` | No       | `null`  | The AI model to use for generating the shell command or interpreting its output. Defaults to the system's `defaultChatter`. |
 
 **Example (`OrchestrationConfig` Snippet):**
 
@@ -1695,7 +1881,8 @@ These parameters are set by an administrator in the global `OrchestrationConfig`
 
 #### Output
 
-The task returns a formatted string containing the executed command, its standard output, and standard error. This output is structured for clarity and can be
+The task returns a formatted string containing the executed command, its standard output, and standard error. This
+output is structured for clarity and can be
 used as input for subsequent tasks (e.g., an `AnalysisTask` to parse the results or check for specific conditions).
 
 Example Output Format:
@@ -1707,18 +1894,23 @@ Example Output Format:
 ```
 
 <executed_command_string>
+
 ```
 
 ### Result
 
 ```
+
 <standard_output_from_command>
+
 ```
 
 ### Output
 
 ```
+
 <standard_error_from_command>
+
 ```
 
 #### Related Tasks
@@ -1793,8 +1985,10 @@ These parameters are specified when the task is added to a plan.
 
 #### Type Configuration (`TaskTypeConfig`)
 
-The `SeleniumSessionTask` uses the generic `TaskTypeConfig` for its type configuration. This means it inherits common settings applicable to all task types,
-such as the `model` to use for internal reasoning if the task itself involves AI interactions (though this specific task primarily executes browser commands).
+The `SeleniumSessionTask` uses the generic `TaskTypeConfig` for its type configuration. This means it inherits common
+settings applicable to all task types,
+such as the `model` to use for internal reasoning if the task itself involves AI interactions (though this specific task
+primarily executes browser commands).
 No specific parameters are defined within `SeleniumSessionTask` for `TaskTypeConfig`.
 
 **Example (`OrchestrationConfig` Snippet):**
@@ -1820,8 +2014,10 @@ The task returns a detailed Markdown string summarizing the Selenium session's e
 * The initial and final URLs of the browser session.
 * The session ID (temporary or specified).
 * Browser information.
-* A breakdown of each executed JavaScript command, including the command itself and its result (truncated to 5000 characters if long).
-* The final page source (HTML) of the loaded page, which can be simplified and configured based on `includeCssData`, `simplifyStructure`, `keepObjectIds`, and
+* A breakdown of each executed JavaScript command, including the command itself and its result (truncated to 5000
+  characters if long).
+* The final page source (HTML) of the loaded page, which can be simplified and configured based on `includeCssData`,
+  `simplifyStructure`, `keepObjectIds`, and
   `preserveWhitespace` parameters.
 * Any errors encountered during command execution or page source retrieval.
 
@@ -1829,6 +2025,8 @@ This comprehensive output allows for subsequent analysis or further actions base
 
 #### Related Tasks
 
-* **`CrawlerAgentTask`:** For more advanced and autonomous web crawling and data extraction, often involving navigating multiple pages and making decisions.
+* **`CrawlerAgentTask`:** For more advanced and autonomous web crawling and data extraction, often involving navigating
+  multiple pages and making decisions.
 * **`RunShellCommandTask`:** For executing shell commands directly on the system, without requiring browser interaction.
-* **`FileModificationTask`:** If the goal is to modify local files based on information gathered from web content using Selenium.
+* **`FileModificationTask`:** If the goal is to modify local files based on information gathered from web content using
+  Selenium.

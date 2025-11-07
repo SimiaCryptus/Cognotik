@@ -13,6 +13,7 @@
     transition: all 0.2s ease;
     transform: translateY(-1px);
 }
+
 #autoplayButton:active {
     transform: translateY(0);
     max-width: 80%;
@@ -134,6 +135,7 @@
     cursor: pointer;
     min-width: 150px;
 }
+
 #voiceSelect:hover {
     background: rgba(26, 26, 46, 1);
     border-color: #667eea;

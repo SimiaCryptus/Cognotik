@@ -1,72 +1,75 @@
 package com.simiacryptus.cognotik.diff
 
 enum class PatchProcessors : PatchProcessor {
-  // Full replacement - no patching, just replace entire content
-  FullReplacement {
-    override val label = "FullReplacement"
-    override val matcher = FullReplacementProcessor()
-    override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
-    override fun getInitiatorPattern() = matcher.getInitiatorPattern()
-  },
+    // Full replacement - no patching, just replace entire content
+    FullReplacement {
+        override val label = "FullReplacement"
+        override val matcher = FullReplacementProcessor()
+        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
+    },
 
-  // Thermodynamic mode - DNA-like binding energy approach
-  Thermodynamic {
-    override val label = "Thermodynamic"
-    override val matcher = ThermodynamicPatchMatcher(
-      temperature = 1.0,
-      cooperativityBonus = 2.0,
-      entropyPenalty = 1.0
-    )
-    override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
-    override fun getInitiatorPattern() = matcher.getInitiatorPattern()
-  },
+    // Thermodynamic mode - DNA-like binding energy approach
+    Thermodynamic {
+        override val label = "Thermodynamic"
+        override val matcher = ThermodynamicPatchMatcher(
+            temperature = 1.0,
+            cooperativityBonus = 2.0,
+            entropyPenalty = 1.0
+        )
 
-  // Strict mode - exact matching only, no fuzzy logic
-  Strict {
-    override val label = "Strict"
-    override val matcher = FuzzyPatchMatcher(
-      enableFuzzyMatching = false,
-      enableSnippetPatching = false,
-      contextSize = 5
-    )
-    override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
-    override fun getInitiatorPattern() = matcher.getInitiatorPattern()
-  },
+        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
+    },
 
-  // Lenient mode - maximum fuzzy matching
-  Lenient {
-    override val label = "Lenient"
-    override val matcher = FuzzyPatchMatcher(
-      enableFuzzyMatching = true,
-      levenshteinThresholdDivisor = 2, // Very lenient
-      minLineLengthForFuzzyMatch = 3,
-      enableSnippetPatching = true,
-      snippetMatchThreshold = 0.6, // Lower threshold
-      requireAnchorMatch = false,
-      contextSize = 2
-    )
-    override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
-    override fun getInitiatorPattern() = matcher.getInitiatorPattern()
-  },
+    // Strict mode - exact matching only, no fuzzy logic
+    Strict {
+        override val label = "Strict"
+        override val matcher = FuzzyPatchMatcher(
+            enableFuzzyMatching = false,
+            enableSnippetPatching = false,
+            contextSize = 5
+        )
 
-  // Default/Fuzzy - balanced configuration
-  Fuzzy {
-    override val label = "Fuzzy"
-    override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
-    override fun getInitiatorPattern() = matcher.getInitiatorPattern()
-    override val matcher = FuzzyPatchMatcher()
-  };
+        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
+    },
 
-  override val label: String get() = matcher.label
+    // Lenient mode - maximum fuzzy matching
+    Lenient {
+        override val label = "Lenient"
+        override val matcher = FuzzyPatchMatcher(
+            enableFuzzyMatching = true,
+            levenshteinThresholdDivisor = 2, // Very lenient
+            minLineLengthForFuzzyMatch = 3,
+            enableSnippetPatching = true,
+            snippetMatchThreshold = 0.6, // Lower threshold
+            requireAnchorMatch = false,
+            contextSize = 2
+        )
 
-  protected abstract val matcher: PatchProcessor
+        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
+    },
 
-  override val patchFormatPrompt: String
-    get() = matcher.patchFormatPrompt
+    // Default/Fuzzy - balanced configuration
+    Fuzzy {
+        override val label = "Fuzzy"
+        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
+        override val matcher = FuzzyPatchMatcher()
+    };
 
-  override fun generatePatch(oldCode: String, newCode: String) =
-    matcher.generatePatch(oldCode, newCode)
+    override val label: String get() = matcher.label
 
-  override fun applyPatch(source: String, patch: String) =
-    matcher.applyPatch(source, patch)
+    protected abstract val matcher: PatchProcessor
+
+    override val patchFormatPrompt: String
+        get() = matcher.patchFormatPrompt
+
+    override fun generatePatch(oldCode: String, newCode: String) =
+        matcher.generatePatch(oldCode, newCode)
+
+    override fun applyPatch(source: String, patch: String) =
+        matcher.applyPatch(source, patch)
 }

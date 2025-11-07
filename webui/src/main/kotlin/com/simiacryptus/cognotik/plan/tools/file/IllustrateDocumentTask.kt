@@ -273,15 +273,17 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
                 }
             }
             task.add(MarkdownUtil.renderMarkdown("### 📝 Generating Document Patches", ui = ui))
-            task.complete(generateImageInsertionPatches(
-                documentContent,
-                generatedImages,
-                isMarkdown,
-                executionConfig.integratorDirective,
-                task,
-                defaultChatter,
-                documentFile
-            ) ?: "")
+            task.complete(
+                generateImageInsertionPatches(
+                    documentContent,
+                    generatedImages,
+                    isMarkdown,
+                    executionConfig.integratorDirective,
+                    task,
+                    defaultChatter,
+                    documentFile
+                ) ?: ""
+            )
             val totalTime = System.currentTimeMillis() - startTime
             val summary = buildString {
                 appendLine("# Document Illustration Complete")

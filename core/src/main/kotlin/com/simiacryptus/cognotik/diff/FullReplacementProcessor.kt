@@ -6,9 +6,9 @@ import com.simiacryptus.cognotik.util.LoggerFactory
  * A processor that handles full file replacement instead of patching.
  * This is useful when changes are extensive or when patching would be more complex.
  */
- class FullReplacementProcessor : PatchProcessor {
- override val label = "FullReplacement"
-    
+class FullReplacementProcessor : PatchProcessor {
+    override val label = "FullReplacement"
+
     override val patchFormatPrompt = """
       Response should provide the complete updated file content within ```code blocks.
       Each code block should be preceded by a header that identifies the file being modified.
@@ -42,17 +42,19 @@ import com.simiacryptus.cognotik.util.LoggerFactory
       });
       ```
       """.trimIndent()
-  override fun getInitiatorPattern(): Regex {
-    return "(?s)```\\w*\n".toRegex()
-  }
-  override fun extractCodeBlocks(response: String): List<Pair<String, String>> {
-    val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex()
-    return codeblockPattern.findAll(response).map { match ->
-      val language = match.groupValues[1]
-      val code = match.groupValues[2].trim()
-      language to code
-    }.toList()
-  }
+
+    override fun getInitiatorPattern(): Regex {
+        return "(?s)```\\w*\n".toRegex()
+    }
+
+    override fun extractCodeBlocks(response: String): List<Pair<String, String>> {
+        val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex()
+        return codeblockPattern.findAll(response).map { match ->
+            val language = match.groupValues[1]
+            val code = match.groupValues[2].trim()
+            language to code
+        }.toList()
+    }
 
     override fun generatePatch(oldCode: String, newCode: String): String {
         log.debug("Generating full replacement patch")

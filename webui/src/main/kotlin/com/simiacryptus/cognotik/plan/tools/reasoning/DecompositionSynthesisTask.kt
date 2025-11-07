@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -16,22 +15,22 @@ import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicInteger
 
 class DecompositionSynthesisTask(
-  orchestrationConfig: OrchestrationConfig,
-  planTask: DecompositionSynthesisTaskExecutionConfigData?
+    orchestrationConfig: OrchestrationConfig,
+    planTask: DecompositionSynthesisTaskExecutionConfigData?
 ) : AbstractTask<DecompositionSynthesisTask.DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig>(
-  orchestrationConfig,
-  planTask
+    orchestrationConfig,
+    planTask
 ) {
-  val maxDescriptionLength = 1000
+    val maxDescriptionLength = 1000
 
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(DecompositionSynthesisTask::class.java)
-    val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
-      "DecompositionSynthesis",
-      DecompositionSynthesisTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Decompose complex problems and synthesize solutions",
-      """
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(DecompositionSynthesisTask::class.java)
+        val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
+            "DecompositionSynthesis",
+            DecompositionSynthesisTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Decompose complex problems and synthesize solutions",
+            """
               Decomposes complex problems into manageable subproblems, solves them, and synthesizes solutions.
               <ul>
                 <li>Multiple decomposition strategies (functional, temporal, spatial, hierarchical)</li>
@@ -42,116 +41,116 @@ class DecompositionSynthesisTask(
                 <li>Implements divide-and-conquer reasoning</li>
               </ul>
             """
+        )
+    }
+
+    class DecompositionSynthesisTaskExecutionConfigData(
+        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+        val input_files: List<String>? = null,
+        @Description("Whether to include file context in the analysis")
+        val include_file_context: Boolean = true,
+        @Description("The complex problem to decompose")
+        val complex_problem: String? = null,
+        @Description("Decomposition strategy: 'functional', 'temporal', 'spatial', 'hierarchical'")
+        val decomposition_strategy: String = "functional",
+        @Description("Maximum decomposition depth")
+        val max_depth: Int = 3,
+        @Description("Whether to synthesize solutions from subproblems")
+        val synthesize_solution: Boolean = true,
+        @Description("Whether to validate synthesis coherence")
+        val validate_coherence: Boolean = true,
+        @Description("Additional files for context")
+        val related_files: List<String>? = null,
+        task_description: String? = null,
+        task_dependencies: List<String>? = null,
+        state: TaskState? = TaskState.Pending,
+    ) : TaskExecutionConfig(
+        task_type = DecompositionSynthesis.name,
+        task_description = task_description,
+        task_dependencies = task_dependencies?.toMutableList(),
+        state = state
     )
-  }
 
-  class DecompositionSynthesisTaskExecutionConfigData(
-    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    val input_files: List<String>? = null,
-    @Description("Whether to include file context in the analysis")
-    val include_file_context: Boolean = true,
-    @Description("The complex problem to decompose")
-    val complex_problem: String? = null,
-    @Description("Decomposition strategy: 'functional', 'temporal', 'spatial', 'hierarchical'")
-    val decomposition_strategy: String = "functional",
-    @Description("Maximum decomposition depth")
-    val max_depth: Int = 3,
-    @Description("Whether to synthesize solutions from subproblems")
-    val synthesize_solution: Boolean = true,
-    @Description("Whether to validate synthesis coherence")
-    val validate_coherence: Boolean = true,
-    @Description("Additional files for context")
-    val related_files: List<String>? = null,
-    task_description: String? = null,
-    task_dependencies: List<String>? = null,
-    state: TaskState? = TaskState.Pending,
-  ) : TaskExecutionConfig(
-    task_type = DecompositionSynthesis.name,
-    task_description = task_description,
-    task_dependencies = task_dependencies?.toMutableList(),
-    state = state
-  )
-
-  data class ProblemDecomposition(
-    @Description("List of subproblems identified")
-    val subproblems: List<Subproblem> = emptyList(),
-    @Description("Rationale for this decomposition")
-    val decomposition_rationale: String = "",
-    @Description("Dependencies between subproblems")
-    val dependencies: Map<String, List<String>> = emptyMap()
-  ) : ValidatedObject {
-    override fun validate(): String? {
-      if (subproblems.isEmpty()) return "ProblemDecomposition must have at least one subproblem"
-      if (decomposition_rationale.isBlank()) return "ProblemDecomposition must have a decomposition_rationale"
-      return ValidatedObject.validateFields(this)
+    data class ProblemDecomposition(
+        @Description("List of subproblems identified")
+        val subproblems: List<Subproblem> = emptyList(),
+        @Description("Rationale for this decomposition")
+        val decomposition_rationale: String = "",
+        @Description("Dependencies between subproblems")
+        val dependencies: Map<String, List<String>> = emptyMap()
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (subproblems.isEmpty()) return "ProblemDecomposition must have at least one subproblem"
+            if (decomposition_rationale.isBlank()) return "ProblemDecomposition must have a decomposition_rationale"
+            return ValidatedObject.validateFields(this)
+        }
     }
-  }
 
-  data class Subproblem(
-    @Description("Unique identifier for this subproblem")
-    val id: String = "",
-    @Description("Description of the subproblem")
-    val description: String = "",
-    @Description("Estimated complexity (1-10)")
-    val complexity: Int = 5,
-    @Description("Whether this can be further decomposed")
-    val can_decompose: Boolean = false
-  ) : ValidatedObject {
-    override fun validate(): String? {
-      if (id.isBlank()) return "Subproblem must have an id"
-      if (description.isBlank()) return "Subproblem must have a description"
-      if (complexity !in 1..10) return "Subproblem complexity must be between 1 and 10, got $complexity"
-      return null
+    data class Subproblem(
+        @Description("Unique identifier for this subproblem")
+        val id: String = "",
+        @Description("Description of the subproblem")
+        val description: String = "",
+        @Description("Estimated complexity (1-10)")
+        val complexity: Int = 5,
+        @Description("Whether this can be further decomposed")
+        val can_decompose: Boolean = false
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (id.isBlank()) return "Subproblem must have an id"
+            if (description.isBlank()) return "Subproblem must have a description"
+            if (complexity !in 1..10) return "Subproblem complexity must be between 1 and 10, got $complexity"
+            return null
+        }
     }
-  }
 
-  data class SubproblemSolution(
-    @Description("The subproblem ID being solved")
-    val subproblem_id: String = "",
-    @Description("The solution to this subproblem")
-    val solution: String = "",
-    @Description("Confidence in this solution (0-1)")
-    val confidence: Double = 0.0
-  ) : ValidatedObject {
-    override fun validate(): String? {
-      if (subproblem_id.isBlank()) return "SubproblemSolution must have a subproblem_id"
-      if (solution.isBlank()) return "SubproblemSolution must have a solution"
-      if (confidence !in 0.0..1.0) return "SubproblemSolution confidence must be between 0 and 1, got $confidence"
-      return null
+    data class SubproblemSolution(
+        @Description("The subproblem ID being solved")
+        val subproblem_id: String = "",
+        @Description("The solution to this subproblem")
+        val solution: String = "",
+        @Description("Confidence in this solution (0-1)")
+        val confidence: Double = 0.0
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (subproblem_id.isBlank()) return "SubproblemSolution must have a subproblem_id"
+            if (solution.isBlank()) return "SubproblemSolution must have a solution"
+            if (confidence !in 0.0..1.0) return "SubproblemSolution confidence must be between 0 and 1, got $confidence"
+            return null
+        }
     }
-  }
 
-  data class SynthesizedSolution(
-    @Description("The complete synthesized solution")
-    val solution: String = "",
-    @Description("How subproblem solutions were integrated")
-    val synthesis_approach: String = "",
-    @Description("Overall confidence in the solution (0-1)")
-    val confidence: Double = 0.0
-  ) : ValidatedObject {
-    override fun validate(): String? {
-      if (solution.isBlank()) return "SynthesizedSolution must have a solution"
-      if (synthesis_approach.isBlank()) return "SynthesizedSolution must have a synthesis_approach"
-      if (confidence !in 0.0..1.0) return "SynthesizedSolution confidence must be between 0 and 1, got $confidence"
-      return null
+    data class SynthesizedSolution(
+        @Description("The complete synthesized solution")
+        val solution: String = "",
+        @Description("How subproblem solutions were integrated")
+        val synthesis_approach: String = "",
+        @Description("Overall confidence in the solution (0-1)")
+        val confidence: Double = 0.0
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (solution.isBlank()) return "SynthesizedSolution must have a solution"
+            if (synthesis_approach.isBlank()) return "SynthesizedSolution must have a synthesis_approach"
+            if (confidence !in 0.0..1.0) return "SynthesizedSolution confidence must be between 0 and 1, got $confidence"
+            return null
+        }
     }
-  }
 
-  data class CoherenceValidation(
-    @Description("Whether the solution is coherent")
-    val is_coherent: Boolean = false,
-    @Description("Issues found in the synthesis")
-    val issues: List<String> = emptyList(),
-    @Description("Suggestions for improvement")
-    val suggestions: List<String> = emptyList()
-  ) : ValidatedObject {
-    override fun validate(): String? {
-      return ValidatedObject.validateFields(this)
+    data class CoherenceValidation(
+        @Description("Whether the solution is coherent")
+        val is_coherent: Boolean = false,
+        @Description("Issues found in the synthesis")
+        val issues: List<String> = emptyList(),
+        @Description("Suggestions for improvement")
+        val suggestions: List<String> = emptyList()
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            return ValidatedObject.validateFields(this)
+        }
     }
-  }
 
-  override fun promptSegment(): String {
-    return """
+    override fun promptSegment(): String {
+        return """
  DecompositionSynthesis - Break down complex problems into subproblems and synthesize integrated solutions
   ** Optionally, list input files (supports glob patterns) to be examined for context
   ** Problem: ${executionConfig?.complex_problem?.take(100) ?: "Not specified"}
@@ -169,523 +168,551 @@ class DecompositionSynthesisTask(
   ** Returns: Final synthesized solution or concatenated subproblem solutions
   ** Implements divide-and-conquer reasoning approach
         """.trimIndent()
-  }
-
-  override fun run(
-    agent: TaskOrchestrator,
-    messages: List<String>,
-    task: SessionTask,
-    resultFn: (String) -> Unit,
-    orchestrationConfig: OrchestrationConfig
-  ) {
-    val startTime = System.currentTimeMillis()
-    log.info("Starting DecompositionSynthesisTask with problem: ${executionConfig?.complex_problem?.take(maxDescriptionLength)}")
-
-    val problem = executionConfig?.complex_problem
-    if (problem.isNullOrBlank()) {
-      log.error("No problem specified in execution config")
-      task.complete("CONFIGURATION ERROR: No problem specified")
-      resultFn("CONFIGURATION ERROR: No problem specified")
-      return
     }
 
-    // Create tabbed display for organized output
-    val tabs = TabbedDisplay(task)
-    val ui = task.ui
-    val transcriptStream = try {
-      task.transcript("decomposition_transcript")
-    } catch (e: Exception) {
-      log.error("Failed to initialize transcript", e)
-      null
-    }
-    val api = orchestrationConfig.defaultChatter ?: run {
-      log.error("No default chatter available")
-      task.complete("ERROR: No API available")
-      resultFn("ERROR: No API available")
-      return
-    }
-
-
-    // Overview tab
-    val overviewTask = ui.newTask(false)
-    tabs["Overview"] = overviewTask.placeholder
-
-    val overviewContent = buildString {
-      appendLine("# Decomposition & Synthesis Analysis")
-      appendLine()
-      appendLine("**Problem:** ${problem.take(maxDescriptionLength)}${if (problem.length > maxDescriptionLength) "..." else ""}")
-      appendLine()
-      appendLine("**Strategy:** ${executionConfig.decomposition_strategy}")
-      appendLine("**Max Depth:** ${executionConfig.max_depth}")
-      appendLine("**Synthesize Solution:** ${executionConfig.synthesize_solution}")
-      appendLine("**Validate Coherence:** ${executionConfig.validate_coherence}")
-      appendLine()
-      appendLine("---")
-      appendLine()
-      appendLine("## Progress")
-      appendLine()
-      appendLine("⏳ Starting decomposition analysis...")
-    }
-    overviewTask.add(overviewContent.renderMarkdown)
-    transcriptStream?.let { writeToTranscript(it, overviewContent) }
-    task.update()
-
-    try {
-      // Step 3: Build context from related files and dependencies
-      log.debug("Building context from related files and dependencies")
-      // Get context from related files and dependencies
-      val context = buildContext(agent, root)
-      // Context tab
-      val contextTask = ui.newTask(false)
-      tabs["Context"] = contextTask.placeholder
-      contextTask.add(buildString {
-        appendLine("# Task Context")
-        appendLine()
-        appendLine("The following context, derived from previous tasks and related files, will be used to inform the analysis.")
-        appendLine()
-        appendLine("---")
-        appendLine()
-        appendLine(context)
-      }.renderMarkdown)
-      transcriptStream?.let {
-        writeToTranscript(it, buildString {
-          appendLine("# Task Context")
-          appendLine()
-          appendLine(context)
-        })
-      }
-      task.update()
-
-      // Update overview with context info
-      overviewTask.add(buildString {
-        appendLine()
-        appendLine("✅ Context built successfully")
-        appendLine()
-      }.renderMarkdown)
-      transcriptStream?.let { writeToTranscript(it, "\n✅ Context built successfully\n\n") }
-      task.update()
-      // Step 4: Decompose the problem
-      // Decomposition tab
-      val decompositionTask = ui.newTask(false)
-      tabs["Decomposition"] = decompositionTask.placeholder
-      decompositionTask.add(buildString {
-        appendLine("# Problem Decomposition")
-        appendLine()
-        appendLine("⏳ Analyzing problem structure...")
-        appendLine()
-        appendLine("**Strategy:** ${executionConfig.decomposition_strategy}")
-        appendLine("**Max Depth:** ${executionConfig.max_depth}")
-      }.renderMarkdown)
-      task.update()
-      transcriptStream?.let {
-        writeToTranscript(it, buildString {
-          appendLine("# Problem Decomposition")
-          appendLine()
-          appendLine("**Strategy:** ${executionConfig.decomposition_strategy}")
-          appendLine("**Max Depth:** ${executionConfig.max_depth}")
-        })
-      }
-      log.info("Starting problem decomposition with strategy: ${executionConfig.decomposition_strategy}")
-
-      val decomposition = decomposeProblem(
-        problem = problem,
-        strategy = executionConfig.decomposition_strategy,
-        maxDepth = executionConfig.max_depth,
-        currentDepth = 0,
-        context = context,
-        api = api
-      )
-      log.info("Decomposition completed: ${decomposition.subproblems.size} subproblems identified")
-
-      decompositionTask.add(buildString {
-        appendLine()
-        appendLine("✅ Decomposition complete!")
-        appendLine()
-        appendLine("---")
-        appendLine()
-        appendLine("## Results")
-        appendLine()
-        appendLine("**Rationale:** ${decomposition.decomposition_rationale}")
-        appendLine()
-        appendLine("### Subproblems Identified (${decomposition.subproblems.size})")
-        appendLine()
-        decomposition.subproblems.forEachIndexed { index, subproblem ->
-          appendLine("${index + 1}. **${subproblem.id}**: ${subproblem.description}")
-          appendLine("   - Complexity: ${subproblem.complexity}/10")
-          appendLine("   - Can Decompose Further: ${if (subproblem.can_decompose) "Yes" else "No"}")
-          appendLine()
-        }
-        appendLine("### Dependencies")
-        appendLine()
-        if (decomposition.dependencies.isEmpty()) {
-          appendLine("*No dependencies identified - subproblems can be solved independently*")
-        } else {
-          decomposition.dependencies.entries.forEach { (id, deps) ->
-            appendLine("- **$id** depends on: ${deps.joinToString(", ")}")
-          }
-        }
-        appendLine()
-      }.renderMarkdown)
-      task.update()
-      transcriptStream?.let {
-        writeToTranscript(it, buildString {
-          appendLine()
-          appendLine("## Decomposition Results")
-          appendLine()
-          appendLine("**Rationale:** ${decomposition.decomposition_rationale}")
-          appendLine()
-          appendLine("### Subproblems (${decomposition.subproblems.size})")
-          decomposition.subproblems.forEachIndexed { index, subproblem ->
-            appendLine("${index + 1}. **${subproblem.id}**: ${subproblem.description}")
-            appendLine("   - Complexity: ${subproblem.complexity}/10")
-          }
-          appendLine()
-          appendLine("### Dependencies")
-          if (decomposition.dependencies.isEmpty()) {
-            appendLine("*No dependencies*")
-          } else {
-            decomposition.dependencies.entries.forEach { (id, deps) -> appendLine("- **$id** → ${deps.joinToString(", ")}") }
-          }
-        })
-      }
-      // Step 5: Solve all subproblems
-
-      // Update overview
-      overviewTask.add(buildString {
-        appendLine("✅ Decomposition complete: ${decomposition.subproblems.size} subproblems identified")
-        appendLine()
-      }.renderMarkdown)
-      transcriptStream?.let { writeToTranscript(it, "\n✅ Decomposition complete: ${decomposition.subproblems.size} subproblems\n\n") }
-      task.update()
-
-      // Subproblem Solutions tab
-      val solutionsTask = ui.newTask(false)
-      tabs["Subproblem Solutions"] = solutionsTask.placeholder
-      solutionsTask.add(buildString {
-        appendLine("# Subproblem Solutions")
-        appendLine()
-        appendLine("⏳ Solving ${decomposition.subproblems.size} subproblems...")
-        appendLine()
-      }.renderMarkdown)
-      task.update()
-      transcriptStream?.let {
-        writeToTranscript(it, buildString {
-          appendLine("# Subproblem Solutions")
-          appendLine()
-          appendLine("Solving ${decomposition.subproblems.size} subproblems...")
-        })
-      }
-
-      val solvedCount = AtomicInteger(0)
-      log.info("Starting to solve ${decomposition.subproblems.size} subproblems")
-      val solutions = solveSubproblems(
-        decomposition = decomposition,
-        context = context,
-        task = solutionsTask,
-        api = api,
-        progressCallback = { subproblemId, solution ->
-          val count = solvedCount.incrementAndGet()
-          log.debug("Solved subproblem $count/${decomposition.subproblems.size}: $subproblemId")
-          solutionsTask.add(buildString {
-            appendLine()
-            appendLine("### ${count}. ${subproblemId}")
-            appendLine()
-            appendLine("**Confidence:** ${(solution.confidence * 100).toInt()}%")
-            appendLine()
-            appendLine(solution.solution)
-            appendLine()
-            appendLine("---")
-            appendLine()
-            appendLine("**Progress:** ${count}/${decomposition.subproblems.size} subproblems solved")
-            appendLine()
-          }.renderMarkdown)
-          task.update()
-          transcriptStream?.let {
-            writeToTranscript(it, buildString {
-              appendLine()
-              appendLine("## ${count}. ${subproblemId}")
-              appendLine()
-              appendLine("**Confidence:** ${(solution.confidence * 100).toInt()}%")
-              appendLine()
-              appendLine(solution.solution)
-            })
-          }
-
-          // Update overview
-          overviewTask.add(buildString {
-            appendLine("⏳ Solving subproblems: ${count}/${decomposition.subproblems.size}")
-            appendLine()
-          }.renderMarkdown)
-          task.update()
-        }
-      )
-
-      solutionsTask.add(buildString {
-        appendLine()
-        appendLine("✅ All subproblems solved!")
-        appendLine()
-        appendLine("**Average Confidence:** ${(solutions.map { it.confidence }.average() * 100).toInt()}%")
-        appendLine()
-      }.renderMarkdown)
-      task.update()
-      transcriptStream?.let {
-        writeToTranscript(it, buildString {
-          appendLine()
-          appendLine("✅ All subproblems solved! Average confidence: ${(solutions.map { it.confidence }.average() * 100).toInt()}%")
-        })
-      }
-      // Step 6: Synthesize solution (if requested)
-
-      // Update overview
-      overviewTask.add(buildString {
-        appendLine("✅ All ${solutions.size} subproblems solved")
-        appendLine()
-      }.renderMarkdown)
-      transcriptStream?.let { writeToTranscript(it, "\n✅ All ${solutions.size} subproblems solved\n\n") }
-      task.update()
-
-      val finalResult = if (executionConfig.synthesize_solution) {
-        // Synthesis tab
-        val synthesisTask = ui.newTask(false)
-        tabs["Synthesis"] = synthesisTask.placeholder
-        synthesisTask.add(buildString {
-          appendLine("# Solution Synthesis")
-          appendLine()
-          appendLine("⏳ Integrating ${solutions.size} subproblem solutions...")
-          appendLine()
-        }.renderMarkdown)
-        task.update()
-        transcriptStream?.let {
-          writeToTranscript(it, buildString {
-            appendLine("# Solution Synthesis")
-            appendLine()
-            appendLine("Integrating ${solutions.size} subproblem solutions...")
-          })
-        }
-        log.info("Starting solution synthesis from ${solutions.size} subproblem solutions")
-        val synthesized = synthesizeSolution(
-          problem = problem,
-          decomposition = decomposition,
-          solutions = solutions,
-          context = context,
-          api = api
+    override fun run(
+        agent: TaskOrchestrator,
+        messages: List<String>,
+        task: SessionTask,
+        resultFn: (String) -> Unit,
+        orchestrationConfig: OrchestrationConfig
+    ) {
+        val startTime = System.currentTimeMillis()
+        log.info(
+            "Starting DecompositionSynthesisTask with problem: ${
+                executionConfig?.complex_problem?.take(
+                    maxDescriptionLength
+                )
+            }"
         )
-        log.info("Solution synthesis completed with confidence: ${synthesized.confidence}")
 
-        synthesisTask.add(buildString {
-          appendLine()
-          appendLine("✅ Synthesis complete!")
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("## Synthesized Solution")
-          appendLine()
-          appendLine("**Synthesis Approach:** ${synthesized.synthesis_approach}")
-          appendLine()
-          appendLine("**Overall Confidence:** ${(synthesized.confidence * 100).toInt()}%")
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine(synthesized.solution)
-          appendLine()
-        }.renderMarkdown)
-        task.update()
-        transcriptStream?.let {
-          writeToTranscript(it, buildString {
-            appendLine()
-            appendLine("## Synthesized Solution")
-            appendLine()
-            appendLine("**Synthesis Approach:** ${synthesized.synthesis_approach}")
-            appendLine("**Confidence:** ${(synthesized.confidence * 100).toInt()}%")
-            appendLine()
-            appendLine(synthesized.solution)
-          })
+        val problem = executionConfig?.complex_problem
+        if (problem.isNullOrBlank()) {
+            log.error("No problem specified in execution config")
+            task.complete("CONFIGURATION ERROR: No problem specified")
+            resultFn("CONFIGURATION ERROR: No problem specified")
+            return
         }
 
-        // Update overview
-        overviewTask.add(buildString {
-          appendLine("✅ Solution synthesized (confidence: ${(synthesized.confidence * 100).toInt()}%)")
-          appendLine()
-        }.renderMarkdown)
-        task.update()
-        transcriptStream?.let { writeToTranscript(it, "\n✅ Solution synthesized (confidence: ${(synthesized.confidence * 100).toInt()}%)\n\n") }
-        // Step 7: Validate coherence (if requested)
+        // Create tabbed display for organized output
+        val tabs = TabbedDisplay(task)
+        val ui = task.ui
+        val transcriptStream = try {
+            task.transcript("decomposition_transcript")
+        } catch (e: Exception) {
+            log.error("Failed to initialize transcript", e)
+            null
+        }
+        val api = orchestrationConfig.defaultChatter ?: run {
+            log.error("No default chatter available")
+            task.complete("ERROR: No API available")
+            resultFn("ERROR: No API available")
+            return
+        }
 
-        // Validate coherence if requested
-        if (executionConfig.validate_coherence) {
-          // Validation tab
-          val validationTask = ui.newTask(false)
-          tabs["Validation"] = validationTask.placeholder
-          validationTask.add(buildString {
-            appendLine("# Coherence Validation")
-            appendLine()
-            appendLine("⏳ Validating solution coherence...")
-            appendLine()
-          }.renderMarkdown)
-          task.update()
-          transcriptStream?.let {
-            writeToTranscript(it, buildString {
-              appendLine("# Coherence Validation")
-              appendLine()
-            })
-          }
-          log.info("Starting coherence validation")
-          val validation = validateCoherence(
-            problem = problem,
-            synthesized = synthesized,
-            solutions = solutions,
-            api = api
-          )
-          log.info("Validation completed: coherent=${validation.is_coherent}, issues=${validation.issues.size}")
 
-          validationTask.add(buildString {
+        // Overview tab
+        val overviewTask = ui.newTask(false)
+        tabs["Overview"] = overviewTask.placeholder
+
+        val overviewContent = buildString {
+            appendLine("# Decomposition & Synthesis Analysis")
             appendLine()
-            appendLine("✅ Validation complete!")
+            appendLine("**Problem:** ${problem.take(maxDescriptionLength)}${if (problem.length > maxDescriptionLength) "..." else ""}")
+            appendLine()
+            appendLine("**Strategy:** ${executionConfig.decomposition_strategy}")
+            appendLine("**Max Depth:** ${executionConfig.max_depth}")
+            appendLine("**Synthesize Solution:** ${executionConfig.synthesize_solution}")
+            appendLine("**Validate Coherence:** ${executionConfig.validate_coherence}")
             appendLine()
             appendLine("---")
             appendLine()
-            appendLine("## Results")
+            appendLine("## Progress")
             appendLine()
-            appendLine("**Is Coherent:** ${if (validation.is_coherent) "✅ Yes" else "❌ No"}")
-            appendLine()
-            if (validation.issues.isNotEmpty()) {
-              appendLine("### Issues Found (${validation.issues.size})")
-              appendLine()
-              validation.issues.forEach { issue ->
-                appendLine("- ⚠️ $issue")
-              }
-              appendLine()
-            }
-            if (validation.suggestions.isNotEmpty()) {
-              appendLine("### Suggestions for Improvement (${validation.suggestions.size})")
-              appendLine()
-              validation.suggestions.forEach { suggestion ->
-                appendLine("- 💡 $suggestion")
-              }
-              appendLine()
-            }
-            if (validation.issues.isEmpty() && validation.suggestions.isEmpty()) {
-              appendLine("*No issues or suggestions - solution is coherent and complete*")
-              appendLine()
-            }
-          }.renderMarkdown)
-          task.update()
-          transcriptStream?.let {
-            writeToTranscript(it, buildString {
-              appendLine()
-              appendLine("## Validation Results")
-              appendLine()
-              appendLine("**Is Coherent:** ${if (validation.is_coherent) "Yes" else "No"}")
-              if (validation.issues.isNotEmpty()) {
+            appendLine("⏳ Starting decomposition analysis...")
+        }
+        overviewTask.add(overviewContent.renderMarkdown)
+        transcriptStream?.let { writeToTranscript(it, overviewContent) }
+        task.update()
+
+        try {
+            // Step 3: Build context from related files and dependencies
+            log.debug("Building context from related files and dependencies")
+            // Get context from related files and dependencies
+            val context = buildContext(agent, root)
+            // Context tab
+            val contextTask = ui.newTask(false)
+            tabs["Context"] = contextTask.placeholder
+            contextTask.add(buildString {
+                appendLine("# Task Context")
                 appendLine()
-                appendLine("### Issues (${validation.issues.size})")
-                validation.issues.forEach { appendLine("- $it") }
-              }
-              if (validation.suggestions.isNotEmpty()) {
+                appendLine("The following context, derived from previous tasks and related files, will be used to inform the analysis.")
                 appendLine()
-                appendLine("### Suggestions (${validation.suggestions.size})")
-                validation.suggestions.forEach { appendLine("- $it") }
-              }
-            })
-          }
+                appendLine("---")
+                appendLine()
+                appendLine(context)
+            }.renderMarkdown)
+            transcriptStream?.let {
+                writeToTranscript(it, buildString {
+                    appendLine("# Task Context")
+                    appendLine()
+                    appendLine(context)
+                })
+            }
+            task.update()
 
-          // Update overview
-          overviewTask.add(buildString {
-            appendLine("✅ Validation complete: ${if (validation.is_coherent) "coherent" else "issues found"}")
-            appendLine()
-          }.renderMarkdown)
-          task.update()
-          transcriptStream?.let { writeToTranscript(it, "\n✅ Validation complete\n\n") }
+            // Update overview with context info
+            overviewTask.add(buildString {
+                appendLine()
+                appendLine("✅ Context built successfully")
+                appendLine()
+            }.renderMarkdown)
+            transcriptStream?.let { writeToTranscript(it, "\n✅ Context built successfully\n\n") }
+            task.update()
+            // Step 4: Decompose the problem
+            // Decomposition tab
+            val decompositionTask = ui.newTask(false)
+            tabs["Decomposition"] = decompositionTask.placeholder
+            decompositionTask.add(buildString {
+                appendLine("# Problem Decomposition")
+                appendLine()
+                appendLine("⏳ Analyzing problem structure...")
+                appendLine()
+                appendLine("**Strategy:** ${executionConfig.decomposition_strategy}")
+                appendLine("**Max Depth:** ${executionConfig.max_depth}")
+            }.renderMarkdown)
+            task.update()
+            transcriptStream?.let {
+                writeToTranscript(it, buildString {
+                    appendLine("# Problem Decomposition")
+                    appendLine()
+                    appendLine("**Strategy:** ${executionConfig.decomposition_strategy}")
+                    appendLine("**Max Depth:** ${executionConfig.max_depth}")
+                })
+            }
+            log.info("Starting problem decomposition with strategy: ${executionConfig.decomposition_strategy}")
+
+            val decomposition = decomposeProblem(
+                problem = problem,
+                strategy = executionConfig.decomposition_strategy,
+                maxDepth = executionConfig.max_depth,
+                currentDepth = 0,
+                context = context,
+                api = api
+            )
+            log.info("Decomposition completed: ${decomposition.subproblems.size} subproblems identified")
+
+            decompositionTask.add(buildString {
+                appendLine()
+                appendLine("✅ Decomposition complete!")
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## Results")
+                appendLine()
+                appendLine("**Rationale:** ${decomposition.decomposition_rationale}")
+                appendLine()
+                appendLine("### Subproblems Identified (${decomposition.subproblems.size})")
+                appendLine()
+                decomposition.subproblems.forEachIndexed { index, subproblem ->
+                    appendLine("${index + 1}. **${subproblem.id}**: ${subproblem.description}")
+                    appendLine("   - Complexity: ${subproblem.complexity}/10")
+                    appendLine("   - Can Decompose Further: ${if (subproblem.can_decompose) "Yes" else "No"}")
+                    appendLine()
+                }
+                appendLine("### Dependencies")
+                appendLine()
+                if (decomposition.dependencies.isEmpty()) {
+                    appendLine("*No dependencies identified - subproblems can be solved independently*")
+                } else {
+                    decomposition.dependencies.entries.forEach { (id, deps) ->
+                        appendLine("- **$id** depends on: ${deps.joinToString(", ")}")
+                    }
+                }
+                appendLine()
+            }.renderMarkdown)
+            task.update()
+            transcriptStream?.let {
+                writeToTranscript(it, buildString {
+                    appendLine()
+                    appendLine("## Decomposition Results")
+                    appendLine()
+                    appendLine("**Rationale:** ${decomposition.decomposition_rationale}")
+                    appendLine()
+                    appendLine("### Subproblems (${decomposition.subproblems.size})")
+                    decomposition.subproblems.forEachIndexed { index, subproblem ->
+                        appendLine("${index + 1}. **${subproblem.id}**: ${subproblem.description}")
+                        appendLine("   - Complexity: ${subproblem.complexity}/10")
+                    }
+                    appendLine()
+                    appendLine("### Dependencies")
+                    if (decomposition.dependencies.isEmpty()) {
+                        appendLine("*No dependencies*")
+                    } else {
+                        decomposition.dependencies.entries.forEach { (id, deps) ->
+                            appendLine(
+                                "- **$id** → ${
+                                    deps.joinToString(
+                                        ", "
+                                    )
+                                }"
+                            )
+                        }
+                    }
+                })
+            }
+            // Step 5: Solve all subproblems
+
+            // Update overview
+            overviewTask.add(buildString {
+                appendLine("✅ Decomposition complete: ${decomposition.subproblems.size} subproblems identified")
+                appendLine()
+            }.renderMarkdown)
+            transcriptStream?.let {
+                writeToTranscript(
+                    it,
+                    "\n✅ Decomposition complete: ${decomposition.subproblems.size} subproblems\n\n"
+                )
+            }
+            task.update()
+
+            // Subproblem Solutions tab
+            val solutionsTask = ui.newTask(false)
+            tabs["Subproblem Solutions"] = solutionsTask.placeholder
+            solutionsTask.add(buildString {
+                appendLine("# Subproblem Solutions")
+                appendLine()
+                appendLine("⏳ Solving ${decomposition.subproblems.size} subproblems...")
+                appendLine()
+            }.renderMarkdown)
+            task.update()
+            transcriptStream?.let {
+                writeToTranscript(it, buildString {
+                    appendLine("# Subproblem Solutions")
+                    appendLine()
+                    appendLine("Solving ${decomposition.subproblems.size} subproblems...")
+                })
+            }
+
+            val solvedCount = AtomicInteger(0)
+            log.info("Starting to solve ${decomposition.subproblems.size} subproblems")
+            val solutions = solveSubproblems(
+                decomposition = decomposition,
+                context = context,
+                task = solutionsTask,
+                api = api,
+                progressCallback = { subproblemId, solution ->
+                    val count = solvedCount.incrementAndGet()
+                    log.debug("Solved subproblem $count/${decomposition.subproblems.size}: $subproblemId")
+                    solutionsTask.add(buildString {
+                        appendLine()
+                        appendLine("### ${count}. ${subproblemId}")
+                        appendLine()
+                        appendLine("**Confidence:** ${(solution.confidence * 100).toInt()}%")
+                        appendLine()
+                        appendLine(solution.solution)
+                        appendLine()
+                        appendLine("---")
+                        appendLine()
+                        appendLine("**Progress:** ${count}/${decomposition.subproblems.size} subproblems solved")
+                        appendLine()
+                    }.renderMarkdown)
+                    task.update()
+                    transcriptStream?.let {
+                        writeToTranscript(it, buildString {
+                            appendLine()
+                            appendLine("## ${count}. ${subproblemId}")
+                            appendLine()
+                            appendLine("**Confidence:** ${(solution.confidence * 100).toInt()}%")
+                            appendLine()
+                            appendLine(solution.solution)
+                        })
+                    }
+
+                    // Update overview
+                    overviewTask.add(buildString {
+                        appendLine("⏳ Solving subproblems: ${count}/${decomposition.subproblems.size}")
+                        appendLine()
+                    }.renderMarkdown)
+                    task.update()
+                }
+            )
+
+            solutionsTask.add(buildString {
+                appendLine()
+                appendLine("✅ All subproblems solved!")
+                appendLine()
+                appendLine("**Average Confidence:** ${(solutions.map { it.confidence }.average() * 100).toInt()}%")
+                appendLine()
+            }.renderMarkdown)
+            task.update()
+            transcriptStream?.let {
+                writeToTranscript(it, buildString {
+                    appendLine()
+                    appendLine(
+                        "✅ All subproblems solved! Average confidence: ${
+                            (solutions.map { it.confidence }.average() * 100).toInt()
+                        }%"
+                    )
+                })
+            }
+            // Step 6: Synthesize solution (if requested)
+
+            // Update overview
+            overviewTask.add(buildString {
+                appendLine("✅ All ${solutions.size} subproblems solved")
+                appendLine()
+            }.renderMarkdown)
+            transcriptStream?.let { writeToTranscript(it, "\n✅ All ${solutions.size} subproblems solved\n\n") }
+            task.update()
+
+            val finalResult = if (executionConfig.synthesize_solution) {
+                // Synthesis tab
+                val synthesisTask = ui.newTask(false)
+                tabs["Synthesis"] = synthesisTask.placeholder
+                synthesisTask.add(buildString {
+                    appendLine("# Solution Synthesis")
+                    appendLine()
+                    appendLine("⏳ Integrating ${solutions.size} subproblem solutions...")
+                    appendLine()
+                }.renderMarkdown)
+                task.update()
+                transcriptStream?.let {
+                    writeToTranscript(it, buildString {
+                        appendLine("# Solution Synthesis")
+                        appendLine()
+                        appendLine("Integrating ${solutions.size} subproblem solutions...")
+                    })
+                }
+                log.info("Starting solution synthesis from ${solutions.size} subproblem solutions")
+                val synthesized = synthesizeSolution(
+                    problem = problem,
+                    decomposition = decomposition,
+                    solutions = solutions,
+                    context = context,
+                    api = api
+                )
+                log.info("Solution synthesis completed with confidence: ${synthesized.confidence}")
+
+                synthesisTask.add(buildString {
+                    appendLine()
+                    appendLine("✅ Synthesis complete!")
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("## Synthesized Solution")
+                    appendLine()
+                    appendLine("**Synthesis Approach:** ${synthesized.synthesis_approach}")
+                    appendLine()
+                    appendLine("**Overall Confidence:** ${(synthesized.confidence * 100).toInt()}%")
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine(synthesized.solution)
+                    appendLine()
+                }.renderMarkdown)
+                task.update()
+                transcriptStream?.let {
+                    writeToTranscript(it, buildString {
+                        appendLine()
+                        appendLine("## Synthesized Solution")
+                        appendLine()
+                        appendLine("**Synthesis Approach:** ${synthesized.synthesis_approach}")
+                        appendLine("**Confidence:** ${(synthesized.confidence * 100).toInt()}%")
+                        appendLine()
+                        appendLine(synthesized.solution)
+                    })
+                }
+
+                // Update overview
+                overviewTask.add(buildString {
+                    appendLine("✅ Solution synthesized (confidence: ${(synthesized.confidence * 100).toInt()}%)")
+                    appendLine()
+                }.renderMarkdown)
+                task.update()
+                transcriptStream?.let {
+                    writeToTranscript(
+                        it,
+                        "\n✅ Solution synthesized (confidence: ${(synthesized.confidence * 100).toInt()}%)\n\n"
+                    )
+                }
+                // Step 7: Validate coherence (if requested)
+
+                // Validate coherence if requested
+                if (executionConfig.validate_coherence) {
+                    // Validation tab
+                    val validationTask = ui.newTask(false)
+                    tabs["Validation"] = validationTask.placeholder
+                    validationTask.add(buildString {
+                        appendLine("# Coherence Validation")
+                        appendLine()
+                        appendLine("⏳ Validating solution coherence...")
+                        appendLine()
+                    }.renderMarkdown)
+                    task.update()
+                    transcriptStream?.let {
+                        writeToTranscript(it, buildString {
+                            appendLine("# Coherence Validation")
+                            appendLine()
+                        })
+                    }
+                    log.info("Starting coherence validation")
+                    val validation = validateCoherence(
+                        problem = problem,
+                        synthesized = synthesized,
+                        solutions = solutions,
+                        api = api
+                    )
+                    log.info("Validation completed: coherent=${validation.is_coherent}, issues=${validation.issues.size}")
+
+                    validationTask.add(buildString {
+                        appendLine()
+                        appendLine("✅ Validation complete!")
+                        appendLine()
+                        appendLine("---")
+                        appendLine()
+                        appendLine("## Results")
+                        appendLine()
+                        appendLine("**Is Coherent:** ${if (validation.is_coherent) "✅ Yes" else "❌ No"}")
+                        appendLine()
+                        if (validation.issues.isNotEmpty()) {
+                            appendLine("### Issues Found (${validation.issues.size})")
+                            appendLine()
+                            validation.issues.forEach { issue ->
+                                appendLine("- ⚠️ $issue")
+                            }
+                            appendLine()
+                        }
+                        if (validation.suggestions.isNotEmpty()) {
+                            appendLine("### Suggestions for Improvement (${validation.suggestions.size})")
+                            appendLine()
+                            validation.suggestions.forEach { suggestion ->
+                                appendLine("- 💡 $suggestion")
+                            }
+                            appendLine()
+                        }
+                        if (validation.issues.isEmpty() && validation.suggestions.isEmpty()) {
+                            appendLine("*No issues or suggestions - solution is coherent and complete*")
+                            appendLine()
+                        }
+                    }.renderMarkdown)
+                    task.update()
+                    transcriptStream?.let {
+                        writeToTranscript(it, buildString {
+                            appendLine()
+                            appendLine("## Validation Results")
+                            appendLine()
+                            appendLine("**Is Coherent:** ${if (validation.is_coherent) "Yes" else "No"}")
+                            if (validation.issues.isNotEmpty()) {
+                                appendLine()
+                                appendLine("### Issues (${validation.issues.size})")
+                                validation.issues.forEach { appendLine("- $it") }
+                            }
+                            if (validation.suggestions.isNotEmpty()) {
+                                appendLine()
+                                appendLine("### Suggestions (${validation.suggestions.size})")
+                                validation.suggestions.forEach { appendLine("- $it") }
+                            }
+                        })
+                    }
+
+                    // Update overview
+                    overviewTask.add(buildString {
+                        appendLine("✅ Validation complete: ${if (validation.is_coherent) "coherent" else "issues found"}")
+                        appendLine()
+                    }.renderMarkdown)
+                    task.update()
+                    transcriptStream?.let { writeToTranscript(it, "\n✅ Validation complete\n\n") }
+                }
+
+                synthesized.solution
+            } else {
+                log.info("Skipping synthesis, returning individual subproblem solutions")
+                overviewTask.add("ℹ️ Synthesis skipped - returning individual solutions\n\n".renderMarkdown)
+                // Just return the subproblem solutions
+                solutions.joinToString("\n\n") { "${it.subproblem_id}:\n${it.solution}" }
+            }
+            // Step 8: Finalize and return results
+
+            // Final summary in overview
+            val totalTime = System.currentTimeMillis() - startTime
+            log.info("DecompositionSynthesisTask completed successfully in ${totalTime}ms")
+
+            overviewTask.add(buildString {
+                appendLine("---")
+                appendLine()
+                appendLine("## ✅ Analysis Complete!")
+                appendLine()
+                appendLine("**Total Time:** ${totalTime / 1000} seconds")
+                appendLine("**Subproblems Identified:** ${decomposition.subproblems.size}")
+                appendLine("**Solutions Generated:** ${solutions.size}")
+                appendLine("**Average Confidence:** ${(solutions.map { it.confidence }.average() * 100).toInt()}%")
+                if (executionConfig.synthesize_solution) {
+                    appendLine("**Synthesis:** ✅ Complete")
+                }
+                if (executionConfig.validate_coherence) {
+                    appendLine("**Validation:** ✅ Complete")
+                }
+                appendLine()
+            }.renderMarkdown)
+            task.update()
+            transcriptStream?.let {
+                writeToTranscript(it, buildString {
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("## Analysis Complete")
+                    appendLine()
+                    appendLine("**Total Time:** ${totalTime / 1000}s")
+                    appendLine("**Subproblems:** ${decomposition.subproblems.size}")
+                    appendLine("**Solutions:** ${solutions.size}")
+                    appendLine("**Avg Confidence:** ${(solutions.map { it.confidence }.average() * 100).toInt()}%")
+                })
+            }
+
+            val summary =
+                "Decomposition & Synthesis completed: ${decomposition.subproblems.size} subproblems, ${solutions.size} solutions in ${totalTime / 1000}s"
+            task.complete(summary)
+            resultFn(finalResult)
+
+        } catch (e: Exception) {
+            transcriptStream?.let { writeToTranscript(it, "\n\n## ERROR\n\n${e.message}\n") }
+            log.error("Error in decomposition synthesis", e)
+            task.error(e)
+
+            // Update overview with error
+            overviewTask.add(buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ❌ Error")
+                appendLine()
+                appendLine("**Error Type:** ${e.javaClass.simpleName}")
+                appendLine("**Message:** ${e.message ?: "Unknown error"}")
+                appendLine()
+            }.renderMarkdown)
+            task.update()
+
+            resultFn("ERROR: ${e.message}")
+        } finally {
+            transcriptStream?.flush()
+            transcriptStream?.close()
+            log.debug("Transcript closed")
         }
-
-        synthesized.solution
-      } else {
-        log.info("Skipping synthesis, returning individual subproblem solutions")
-        overviewTask.add("ℹ️ Synthesis skipped - returning individual solutions\n\n".renderMarkdown)
-        // Just return the subproblem solutions
-        solutions.joinToString("\n\n") { "${it.subproblem_id}:\n${it.solution}" }
-      }
-      // Step 8: Finalize and return results
-
-      // Final summary in overview
-      val totalTime = System.currentTimeMillis() - startTime
-      log.info("DecompositionSynthesisTask completed successfully in ${totalTime}ms")
-
-      overviewTask.add(buildString {
-        appendLine("---")
-        appendLine()
-        appendLine("## ✅ Analysis Complete!")
-        appendLine()
-        appendLine("**Total Time:** ${totalTime / 1000} seconds")
-        appendLine("**Subproblems Identified:** ${decomposition.subproblems.size}")
-        appendLine("**Solutions Generated:** ${solutions.size}")
-        appendLine("**Average Confidence:** ${(solutions.map { it.confidence }.average() * 100).toInt()}%")
-        if (executionConfig.synthesize_solution) {
-          appendLine("**Synthesis:** ✅ Complete")
-        }
-        if (executionConfig.validate_coherence) {
-          appendLine("**Validation:** ✅ Complete")
-        }
-        appendLine()
-      }.renderMarkdown)
-      task.update()
-      transcriptStream?.let {
-        writeToTranscript(it, buildString {
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("## Analysis Complete")
-          appendLine()
-          appendLine("**Total Time:** ${totalTime / 1000}s")
-          appendLine("**Subproblems:** ${decomposition.subproblems.size}")
-          appendLine("**Solutions:** ${solutions.size}")
-          appendLine("**Avg Confidence:** ${(solutions.map { it.confidence }.average() * 100).toInt()}%")
-        })
-      }
-
-      val summary =
-        "Decomposition & Synthesis completed: ${decomposition.subproblems.size} subproblems, ${solutions.size} solutions in ${totalTime / 1000}s"
-      task.complete(summary)
-      resultFn(finalResult)
-
-    } catch (e: Exception) {
-      transcriptStream?.let { writeToTranscript(it, "\n\n## ERROR\n\n${e.message}\n") }
-      log.error("Error in decomposition synthesis", e)
-      task.error(e)
-
-      // Update overview with error
-      overviewTask.add(buildString {
-        appendLine()
-        appendLine("---")
-        appendLine()
-        appendLine("## ❌ Error")
-        appendLine()
-        appendLine("**Error Type:** ${e.javaClass.simpleName}")
-        appendLine("**Message:** ${e.message ?: "Unknown error"}")
-        appendLine()
-      }.renderMarkdown)
-      task.update()
-
-      resultFn("ERROR: ${e.message}")
-    } finally {
-      transcriptStream?.flush()
-      transcriptStream?.close()
-      log.debug("Transcript closed")
     }
-  }
 
-  private fun buildContext(agent: TaskOrchestrator, root: java.nio.file.Path): String {
-    log.debug("Building context from related files and prior code")
-    val priorCode = getPriorCode(agent.executionState)
-    val relatedFiles = executionConfig?.related_files?.joinToString("\n") { "- $it" } ?: ""
-    val fileContext = if (executionConfig?.include_file_context == true) {
-      getInputFileCode(root)
-    } else {
-      ""
-    }
+    private fun buildContext(agent: TaskOrchestrator, root: java.nio.file.Path): String {
+        log.debug("Building context from related files and prior code")
+        val priorCode = getPriorCode(agent.executionState)
+        val relatedFiles = executionConfig?.related_files?.joinToString("\n") { "- $it" } ?: ""
+        val fileContext = if (executionConfig?.include_file_context == true) {
+            getInputFileCode(root)
+        } else {
+            ""
+        }
 
 
-    return """
+        return """
             |## Context
             |
             |### Related Files
@@ -697,54 +724,54 @@ class DecompositionSynthesisTask(
             |### Previous Task Results
             |$priorCode
         """.trimMargin()
-  }
+    }
 
-  private fun getInputFileCode(root: java.nio.file.Path): String = (executionConfig?.input_files ?: listOf())
-    .flatMap { pattern: String ->
-      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
-      (FileSelectionUtils.filteredWalk(root.toFile()) {
-        when {
-          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-          matcher.matches(root.relativize(it.toPath())) -> true
-          it.isDirectory -> true
-          else -> false
+    private fun getInputFileCode(root: java.nio.file.Path): String = (executionConfig?.input_files ?: listOf())
+        .flatMap { pattern: String ->
+            val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+            (FileSelectionUtils.filteredWalk(root.toFile()) {
+                when {
+                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+                    matcher.matches(root.relativize(it.toPath())) -> true
+                    it.isDirectory -> true
+                    else -> false
+                }
+            })
+        }.filter { file ->
+            file.isFile && file.exists()
         }
-      })
-    }.filter { file ->
-      file.isFile && file.exists()
-    }
-    .distinct()
-    .sortedBy { it }
-    .joinToString("\n\n") { relativePath ->
-      val file = root.toFile().resolve(relativePath)
-      try {
-        val content = file.readText()
-        "# $relativePath\n\n```\n$content\n```"
-      } catch (e: Throwable) {
-        log.warn("Error reading file: $relativePath", e)
-        ""
-      }
+        .distinct()
+        .sortedBy { it }
+        .joinToString("\n\n") { relativePath ->
+            val file = root.toFile().resolve(relativePath)
+            try {
+                val content = file.readText()
+                "# $relativePath\n\n```\n$content\n```"
+            } catch (e: Throwable) {
+                log.warn("Error reading file: $relativePath", e)
+                ""
+            }
+        }
+
+    private fun writeToTranscript(stream: FileOutputStream, content: String) {
+        try {
+            stream.write(content.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            stream.flush()
+        } catch (e: Exception) {
+            log.error("Failed to write to transcript", e)
+        }
     }
 
-  private fun writeToTranscript(stream: FileOutputStream, content: String) {
-    try {
-      stream.write(content.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
-      stream.flush()
-    } catch (e: Exception) {
-      log.error("Failed to write to transcript", e)
-    }
-  }
-
-  private fun decomposeProblem(
-    problem: String,
-    strategy: String,
-    maxDepth: Int,
-    currentDepth: Int,
-    context: String,
-    api: ChatInterface
-  ): ProblemDecomposition {
-    log.debug("Decomposing problem at depth $currentDepth/$maxDepth using $strategy strategy")
-    val prompt = """
+    private fun decomposeProblem(
+        problem: String,
+        strategy: String,
+        maxDepth: Int,
+        currentDepth: Int,
+        context: String,
+        api: ChatInterface
+    ): ProblemDecomposition {
+        log.debug("Decomposing problem at depth $currentDepth/$maxDepth using $strategy strategy")
+        val prompt = """
             |You are an expert systems analyst. Your task is to decompose the following complex problem using a $strategy decomposition strategy.
             |
             |**Problem**: $problem
@@ -770,62 +797,62 @@ class DecompositionSynthesisTask(
             |Also identify dependencies between subproblems (which must be solved first).
         """.trimMargin()
 
-    val decompositionAgent = ParsedAgent(
-      resultClass = ProblemDecomposition::class.java,
-      prompt = prompt,
-      model = api,
-      parsingChatter = orchestrationConfig.parsingChatter,
-    )
+        val decompositionAgent = ParsedAgent(
+            resultClass = ProblemDecomposition::class.java,
+            prompt = prompt,
+            model = api,
+            parsingChatter = orchestrationConfig.parsingChatter,
+        )
 
-    val decomposition = decompositionAgent.answer(listOf(problem)).obj
-    // Validate the decomposition
-    decomposition.validate()?.let { error ->
-      log.error("Decomposition validation failed: $error")
-      throw IllegalArgumentException("Invalid decomposition: $error")
-    }
-
-    return decomposition
-  }
-
-  private fun solveSubproblems(
-    decomposition: ProblemDecomposition,
-    context: String,
-    task: SessionTask,
-    api: ChatInterface,
-    progressCallback: (String, SubproblemSolution) -> Unit = { _, _ -> }
-  ): List<SubproblemSolution> {
-    log.debug("Starting to solve ${decomposition.subproblems.size} subproblems")
-    val solutions = mutableListOf<SubproblemSolution>()
-    val solvedIds = mutableSetOf<String>()
-
-    // Solve in dependency order, handling circular dependencies
-    val (sortedSubproblems, circularDeps) = topologicalSortWithCycleDetection(decomposition)
-
-    if (circularDeps.isNotEmpty()) {
-      log.warn("Circular dependencies detected and resolved: ${circularDeps.joinToString(", ")}")
-      task.add(buildString {
-        appendLine()
-        appendLine("⚠️ **Warning**: Circular dependencies detected and automatically resolved:")
-        appendLine()
-        circularDeps.forEach { cycle ->
-          appendLine("- $cycle")
+        val decomposition = decompositionAgent.answer(listOf(problem)).obj
+        // Validate the decomposition
+        decomposition.validate()?.let { error ->
+            log.error("Decomposition validation failed: $error")
+            throw IllegalArgumentException("Invalid decomposition: $error")
         }
-        appendLine()
-        appendLine("Dependencies have been adjusted to allow execution to proceed.")
-        appendLine()
-      }.renderMarkdown)
-      task.update()
+
+        return decomposition
     }
 
-    log.info("Solving ${sortedSubproblems.size} subproblems in dependency order")
+    private fun solveSubproblems(
+        decomposition: ProblemDecomposition,
+        context: String,
+        task: SessionTask,
+        api: ChatInterface,
+        progressCallback: (String, SubproblemSolution) -> Unit = { _, _ -> }
+    ): List<SubproblemSolution> {
+        log.debug("Starting to solve ${decomposition.subproblems.size} subproblems")
+        val solutions = mutableListOf<SubproblemSolution>()
+        val solvedIds = mutableSetOf<String>()
 
-    for (subproblem in sortedSubproblems) {
-      log.debug("Solving subproblem: ${subproblem.id} - ${subproblem.description}")
-      val dependencySolutions = decomposition.dependencies[subproblem.id]
-        ?.mapNotNull { depId -> solutions.find { it.subproblem_id == depId } }
-        ?: emptyList()
+        // Solve in dependency order, handling circular dependencies
+        val (sortedSubproblems, circularDeps) = topologicalSortWithCycleDetection(decomposition)
 
-      val prompt = """
+        if (circularDeps.isNotEmpty()) {
+            log.warn("Circular dependencies detected and resolved: ${circularDeps.joinToString(", ")}")
+            task.add(buildString {
+                appendLine()
+                appendLine("⚠️ **Warning**: Circular dependencies detected and automatically resolved:")
+                appendLine()
+                circularDeps.forEach { cycle ->
+                    appendLine("- $cycle")
+                }
+                appendLine()
+                appendLine("Dependencies have been adjusted to allow execution to proceed.")
+                appendLine()
+            }.renderMarkdown)
+            task.update()
+        }
+
+        log.info("Solving ${sortedSubproblems.size} subproblems in dependency order")
+
+        for (subproblem in sortedSubproblems) {
+            log.debug("Solving subproblem: ${subproblem.id} - ${subproblem.description}")
+            val dependencySolutions = decomposition.dependencies[subproblem.id]
+                ?.mapNotNull { depId -> solutions.find { it.subproblem_id == depId } }
+                ?: emptyList()
+
+            val prompt = """
                 |You are a meticulous and expert problem solver. Your task is to solve the following subproblem, considering all provided context and dependencies.
                 |
                 |**Subproblem ID**: ${subproblem.id}
@@ -836,102 +863,102 @@ class DecompositionSynthesisTask(
                 |$context
                 |
                 |${
-        if (dependencySolutions.isNotEmpty()) {
-          """
+                if (dependencySolutions.isNotEmpty()) {
+                    """
                     |**Dependency Solutions**:
                     |${
-            dependencySolutions.joinToString("\n\n") {
-              "- ${it.subproblem_id}: ${it.solution}"
-            }
-          }
+                        dependencySolutions.joinToString("\n\n") {
+                            "- ${it.subproblem_id}: ${it.solution}"
+                        }
+                    }
                     """.trimMargin()
-        } else ""
-      }
+                } else ""
+            }
                 |
                 |Provide a detailed solution to this subproblem.
                 |Include your confidence level (0-1) in the solution.
             """.trimMargin()
 
-      val solutionAgent = ParsedAgent(
-        resultClass = SubproblemSolution::class.java,
-        prompt = prompt,
-        model = api,
-        parsingChatter = orchestrationConfig.parsingChatter,
-      )
+            val solutionAgent = ParsedAgent(
+                resultClass = SubproblemSolution::class.java,
+                prompt = prompt,
+                model = api,
+                parsingChatter = orchestrationConfig.parsingChatter,
+            )
 
-      val solution = solutionAgent.answer(listOf(subproblem.description)).obj
-      // Validate the solution
-      solution.validate()?.let { error ->
-        log.error("Solution validation failed for ${subproblem.id}: $error")
-        throw IllegalArgumentException("Invalid solution for ${subproblem.id}: $error")
-      }
+            val solution = solutionAgent.answer(listOf(subproblem.description)).obj
+            // Validate the solution
+            solution.validate()?.let { error ->
+                log.error("Solution validation failed for ${subproblem.id}: $error")
+                throw IllegalArgumentException("Invalid solution for ${subproblem.id}: $error")
+            }
 
-      val finalSolution = solution.copy(subproblem_id = subproblem.id)
-      solutions.add(finalSolution)
-      solvedIds.add(subproblem.id)
-      // Call progress callback
-      progressCallback(subproblem.id, finalSolution)
-    }
-
-    return solutions
-  }
-
-  private fun topologicalSortWithCycleDetection(decomposition: ProblemDecomposition): Pair<List<Subproblem>, List<String>> {
-    log.debug("Performing topological sort with cycle detection")
-    val sorted = mutableListOf<Subproblem>()
-    val visited = mutableSetOf<String>()
-    val visiting = mutableSetOf<String>()
-    val circularDependencies = mutableListOf<String>()
-    val brokenEdges = mutableSetOf<Pair<String, String>>()
-    // Create a mutable copy of dependencies that we can modify
-    val adjustedDependencies = decomposition.dependencies.mapValues { it.value.toMutableList() }.toMutableMap()
-
-    fun visit(id: String, path: List<String> = emptyList()) {
-      if (id in visited) return
-
-      if (id in visiting) {
-        // Circular dependency detected - find the cycle
-        val cycleStart = path.indexOf(id)
-        val cycle = path.subList(cycleStart, path.size) + id
-        val cycleDesc = cycle.joinToString(" → ")
-        circularDependencies.add(cycleDesc)
-        log.warn("Circular dependency detected: $cycleDesc")
-
-        // Break the cycle by removing the edge that closes the loop
-        val lastInCycle = path.last()
-        adjustedDependencies[lastInCycle]?.remove(id)
-        brokenEdges.add(lastInCycle to id)
-        log.info("Breaking dependency: $lastInCycle → $id")
-        return
-      }
-
-      visiting.add(id)
-      val newPath = path + id
-      adjustedDependencies[id]?.forEach { depId ->
-        if (depId to id !in brokenEdges) {
-          visit(depId, newPath)
+            val finalSolution = solution.copy(subproblem_id = subproblem.id)
+            solutions.add(finalSolution)
+            solvedIds.add(subproblem.id)
+            // Call progress callback
+            progressCallback(subproblem.id, finalSolution)
         }
-      }
-      visiting.remove(id)
-      visited.add(id)
 
-      decomposition.subproblems.find { it.id == id }?.let { sorted.add(it) }
+        return solutions
     }
 
-    decomposition.subproblems.forEach { visit(it.id) }
-    log.debug("Topological sort complete: ${sorted.size} subproblems, ${circularDependencies.size} cycles detected")
-    return sorted to circularDependencies
-  }
+    private fun topologicalSortWithCycleDetection(decomposition: ProblemDecomposition): Pair<List<Subproblem>, List<String>> {
+        log.debug("Performing topological sort with cycle detection")
+        val sorted = mutableListOf<Subproblem>()
+        val visited = mutableSetOf<String>()
+        val visiting = mutableSetOf<String>()
+        val circularDependencies = mutableListOf<String>()
+        val brokenEdges = mutableSetOf<Pair<String, String>>()
+        // Create a mutable copy of dependencies that we can modify
+        val adjustedDependencies = decomposition.dependencies.mapValues { it.value.toMutableList() }.toMutableMap()
 
-  private fun synthesizeSolution(
-    problem: String,
-    decomposition: ProblemDecomposition,
-    solutions: List<SubproblemSolution>,
-    context: String,
-    api: ChatInterface
-  ): SynthesizedSolution {
-    log.debug("Synthesizing solution from ${solutions.size} subproblem solutions")
-    val prompt = """
+        fun visit(id: String, path: List<String> = emptyList()) {
+            if (id in visited) return
+
+            if (id in visiting) {
+                // Circular dependency detected - find the cycle
+                val cycleStart = path.indexOf(id)
+                val cycle = path.subList(cycleStart, path.size) + id
+                val cycleDesc = cycle.joinToString(" → ")
+                circularDependencies.add(cycleDesc)
+                log.warn("Circular dependency detected: $cycleDesc")
+
+                // Break the cycle by removing the edge that closes the loop
+                val lastInCycle = path.last()
+                adjustedDependencies[lastInCycle]?.remove(id)
+                brokenEdges.add(lastInCycle to id)
+                log.info("Breaking dependency: $lastInCycle → $id")
+                return
+            }
+
+            visiting.add(id)
+            val newPath = path + id
+            adjustedDependencies[id]?.forEach { depId ->
+                if (depId to id !in brokenEdges) {
+                    visit(depId, newPath)
+                }
+            }
+            visiting.remove(id)
+            visited.add(id)
+
+            decomposition.subproblems.find { it.id == id }?.let { sorted.add(it) }
+        }
+
+        decomposition.subproblems.forEach { visit(it.id) }
+        log.debug("Topological sort complete: ${sorted.size} subproblems, ${circularDependencies.size} cycles detected")
+        return sorted to circularDependencies
+    }
+
+    private fun synthesizeSolution(
+        problem: String,
+        decomposition: ProblemDecomposition,
+        solutions: List<SubproblemSolution>,
+        context: String,
+        api: ChatInterface
+    ): SynthesizedSolution {
+        log.debug("Synthesizing solution from ${solutions.size} subproblem solutions")
+        val prompt = """
             |You are a master synthesizer of information. Your task is to create a single, coherent solution to the original problem by integrating the provided subproblem solutions.
             |
             |**Original Problem**: $problem
@@ -940,16 +967,16 @@ class DecompositionSynthesisTask(
             |
             |**Subproblem Solutions**:
             |${
-      solutions.joinToString("\n\n") { sol ->
-        """
+            solutions.joinToString("\n\n") { sol ->
+                """
                 |### ${sol.subproblem_id}
                 |${decomposition.subproblems.find { it.id == sol.subproblem_id }?.description}
                 |
                 |**Solution**: ${sol.solution}
                 |**Confidence**: ${sol.confidence}
                 """.trimMargin()
-      }
-    }
+            }
+        }
             |
             |**Context**:
             |$context
@@ -962,31 +989,31 @@ class DecompositionSynthesisTask(
             |5. Includes an overall confidence assessment
         """.trimMargin()
 
-    val synthesisAgent = ParsedAgent(
-      resultClass = SynthesizedSolution::class.java,
-      prompt = prompt,
-      model = api,
-      parsingChatter = orchestrationConfig.parsingChatter,
-    )
+        val synthesisAgent = ParsedAgent(
+            resultClass = SynthesizedSolution::class.java,
+            prompt = prompt,
+            model = api,
+            parsingChatter = orchestrationConfig.parsingChatter,
+        )
 
-    val synthesized: SynthesizedSolution = synthesisAgent.answer(listOf(problem)).obj
-    // Validate the synthesized solution
-    synthesized.validate()?.let { error ->
-      log.error("Synthesis validation failed: $error")
-      throw IllegalArgumentException("Invalid synthesis: $error")
+        val synthesized: SynthesizedSolution = synthesisAgent.answer(listOf(problem)).obj
+        // Validate the synthesized solution
+        synthesized.validate()?.let { error ->
+            log.error("Synthesis validation failed: $error")
+            throw IllegalArgumentException("Invalid synthesis: $error")
+        }
+
+        return synthesized!!
     }
 
-    return synthesized!!
-  }
-
-  private fun validateCoherence(
-    problem: String,
-    synthesized: SynthesizedSolution,
-    solutions: List<SubproblemSolution>,
-    api: ChatInterface
-  ): CoherenceValidation {
-    log.debug("Validating coherence of synthesized solution")
-    val prompt = """
+    private fun validateCoherence(
+        problem: String,
+        synthesized: SynthesizedSolution,
+        solutions: List<SubproblemSolution>,
+        api: ChatInterface
+    ): CoherenceValidation {
+        log.debug("Validating coherence of synthesized solution")
+        val prompt = """
             |You are a critical reviewer and quality assurance specialist. Your task is to validate the coherence of the synthesized solution.
             |
             |**Original Problem**: $problem
@@ -1011,21 +1038,21 @@ class DecompositionSynthesisTask(
             |- Suggestions for improvement
         """.trimMargin()
 
-    val validationAgent = ParsedAgent(
-      resultClass = CoherenceValidation::class.java,
-      prompt = prompt,
-      model = api,
-      parsingChatter = orchestrationConfig.parsingChatter,
-    )
+        val validationAgent = ParsedAgent(
+            resultClass = CoherenceValidation::class.java,
+            prompt = prompt,
+            model = api,
+            parsingChatter = orchestrationConfig.parsingChatter,
+        )
 
-    val validation: CoherenceValidation = validationAgent.answer(listOf(synthesized.solution)).obj
-    // Validate the validation result
-    validation.validate()?.let { error ->
-      log.error("Validation result validation failed: $error")
-      throw IllegalArgumentException("Invalid validation result: $error")
+        val validation: CoherenceValidation = validationAgent.answer(listOf(synthesized.solution)).obj
+        // Validate the validation result
+        validation.validate()?.let { error ->
+            log.error("Validation result validation failed: $error")
+            throw IllegalArgumentException("Invalid validation result: $error")
+        }
+
+        return validation!!
     }
-
-    return validation!!
-  }
 
 }

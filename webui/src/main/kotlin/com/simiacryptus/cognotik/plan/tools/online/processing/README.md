@@ -2,29 +2,36 @@
 
 ## Overview
 
-This package provides a flexible and powerful framework for web crawling, content extraction, and intelligent data processing. It combines AI-powered analysis with configurable processing strategies to extract structured information from websites.
+This package provides a flexible and powerful framework for web crawling, content extraction, and intelligent data
+processing. It combines AI-powered analysis with configurable processing strategies to extract structured information
+from websites.
 
 ## Core Components
 
 ### Page Processing Strategies
 
-The package implements a strategy pattern for processing web pages, allowing different extraction and analysis approaches:
+The package implements a strategy pattern for processing web pages, allowing different extraction and analysis
+approaches:
 
 #### 1. **DefaultSummarizerStrategy**
+
 Basic content analysis and summarization strategy.
 
 **Use Cases:**
+
 - General web content analysis
 - Research and information gathering
 - Content summarization
 
 **Features:**
+
 - AI-powered content transformation
 - Automatic link extraction
 - Markdown-formatted output
 - Chunked processing for large pages
 
 **Configuration:**
+
 ```json
 {
   "task_description": "Analyze content and provide insights",
@@ -33,20 +40,24 @@ Basic content analysis and summarization strategy.
 ```
 
 #### 2. **FactCheckingStrategy**
+
 Verifies claims against web content with evidence tracking.
 
 **Use Cases:**
+
 - Claim verification
 - Research validation
 - Source credibility assessment
 
 **Features:**
+
 - Multi-source evidence collection
 - Confidence scoring
 - Supporting/contradicting evidence tracking
 - Automatic termination when sufficient evidence is gathered
 
 **Configuration:**
+
 ```json
 {
   "claims_to_verify": ["Claim 1", "Claim 2"],
@@ -57,6 +68,7 @@ Verifies claims against web content with evidence tracking.
 ```
 
 **Example:**
+
 ```kotlin
 val config = FactCheckingConfig(
   claims_to_verify = listOf(
@@ -69,14 +81,17 @@ val config = FactCheckingConfig(
 ```
 
 #### 3. **JobMatchingStrategy**
+
 Analyzes job postings and matches them against candidate profiles.
 
 **Use Cases:**
+
 - Job search automation
 - Resume matching
 - Application material generation
 
 **Features:**
+
 - Automatic job posting detection
 - Multi-dimensional matching (skills, location, salary, work arrangement)
 - Cover letter generation
@@ -85,6 +100,7 @@ Analyzes job postings and matches them against candidate profiles.
 - Salary range analysis
 
 **Configuration:**
+
 ```json
 {
   "user_experience": "Your resume/experience summary",
@@ -106,20 +122,24 @@ Analyzes job postings and matches them against candidate profiles.
 ```
 
 **Output:**
+
 - Individual job reports in `job_matches/` directory
 - Cover letters tailored to each position
 - Compatibility scores (skills, location, salary, work arrangement)
 - Application strategy notes
 
 #### 4. **SchemaExtractionStrategy**
+
 Extracts structured data according to user-defined schemas.
 
 **Use Cases:**
+
 - Data mining
 - Structured data extraction
 - API-like data collection from websites
 
 **Features:**
+
 - Custom JSON schema definition
 - Automatic data validation
 - Deduplication
@@ -127,6 +147,7 @@ Extracts structured data according to user-defined schemas.
 - Confidence-based filtering
 
 **Configuration:**
+
 ```json
 {
   "schema_definition": "{\"name\": \"string\", \"price\": \"number\"}",
@@ -141,6 +162,7 @@ Extracts structured data according to user-defined schemas.
 ```
 
 **Example Schema:**
+
 ```json
 {
   "product_name": "string",
@@ -155,20 +177,24 @@ Extracts structured data according to user-defined schemas.
 ```
 
 **Output:**
+
 - `aggregated_data.json` - All extracted data
 - `aggregated_data_pretty.json` - Pretty-printed version
 - `extraction_metadata.json` - Extraction statistics
 
 #### 5. **DataTableAccumulationStrategy**
+
 Builds comprehensive datasets from web pages with configurable columns.
 
 **Use Cases:**
+
 - Competitive analysis
 - Market research
 - Price comparison
 - Feature matrices
 
 **Features:**
+
 - Configurable column definitions
 - Type validation
 - Data normalization
@@ -177,6 +203,7 @@ Builds comprehensive datasets from web pages with configurable columns.
 - Row deduplication
 
 **Configuration:**
+
 ```json
 {
   "column_names": "Product,Price,Rating,Availability",
@@ -206,6 +233,7 @@ Builds comprehensive datasets from web pages with configurable columns.
 ```
 
 **Output:**
+
 - `data_table.csv` / `.json` / `.md` - Exported table
 - Column statistics
 - Data quality metrics
@@ -264,24 +292,30 @@ enum class ProcessingStrategyType {
 ## Common Features
 
 ### Early Termination
+
 All strategies support early termination based on:
+
 - Target achievement (e.g., finding N job matches)
 - Confidence thresholds
 - Evidence sufficiency
 - Custom strategy-specific conditions
 
 ### Link Extraction
+
 Intelligent link prioritization based on:
+
 - Relevance scoring
 - Content analysis
 - Strategy-specific criteria
 
 ### Progress Tracking
+
 - Real-time transcript updates
 - Processing statistics
 - Error handling and reporting
 
 ### Output Formats
+
 - Markdown reports
 - JSON data exports
 - CSV tables
@@ -393,33 +427,38 @@ if (error != null) {
 ## Best Practices
 
 1. **Choose the Right Strategy**
-  - Use `DefaultSummarizer` for general content analysis
-  - Use `JobMatching` for recruitment automation
-  - Use `SchemaExtraction` for structured data mining
-  - Use `FactChecking` for claim verification
-  - Use `DataTableAccumulation` for comparative datasets
+
+- Use `DefaultSummarizer` for general content analysis
+- Use `JobMatching` for recruitment automation
+- Use `SchemaExtraction` for structured data mining
+- Use `FactChecking` for claim verification
+- Use `DataTableAccumulation` for comparative datasets
 
 2. **Configure Appropriately**
-  - Set realistic confidence thresholds
-  - Define clear extraction criteria
-  - Use deduplication for large datasets
-  - Set page limits to control costs
+
+- Set realistic confidence thresholds
+- Define clear extraction criteria
+- Use deduplication for large datasets
+- Set page limits to control costs
 
 3. **Monitor Progress**
-  - Check transcript streams for real-time updates
-  - Review metadata for extraction statistics
-  - Handle early termination gracefully
+
+- Check transcript streams for real-time updates
+- Review metadata for extraction statistics
+- Handle early termination gracefully
 
 4. **Handle Errors**
-  - Implement retry logic for transient failures
-  - Log errors for debugging
-  - Validate configurations before execution
+
+- Implement retry logic for transient failures
+- Log errors for debugging
+- Validate configurations before execution
 
 5. **Optimize Performance**
-  - Use appropriate page limits
-  - Enable deduplication when needed
-  - Set confidence thresholds to filter noise
-  - Leverage early termination
+
+- Use appropriate page limits
+- Enable deduplication when needed
+- Set confidence thresholds to filter noise
+- Leverage early termination
 
 ## Output Structure
 
@@ -444,6 +483,7 @@ output/
 ## Thread Safety
 
 All strategies use thread-safe data structures:
+
 - `ConcurrentHashMap` for shared state
 - `AtomicInteger` for counters
 - Synchronized file I/O

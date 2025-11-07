@@ -7,11 +7,13 @@ The Cognotik framework provides two specialized agents for working with images i
 1. **ImageGenerationAgent** - Generates images from text prompts
 2. **ImageModificationAgent** - Analyzes and modifies existing images using multimodal models
 
-Both agents integrate seamlessly with the chat system and support proper file management, display, and transcript recording.
+Both agents integrate seamlessly with the chat system and support proper file management, display, and transcript
+recording.
 
 ## ImageGenerationAgent
 
 ### Purpose
+
 Converts user text requests into optimized image generation prompts and renders the resulting images.
 
 ### Basic Usage
@@ -45,20 +47,21 @@ println(result.text)   // Optimized prompt used
 
 ### Configuration Parameters
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `prompt` | String | System prompt for prompt optimization | "Transform the user request..." |
-| `name` | String? | Agent identifier | null |
-| `textModel` | ChatInterface | Model for prompt refinement | Required |
-| `imageModel` | ImageModel? | Image generation model | Required |
-| `imageClient` | ImageClientInterface? | API client | Required |
-| `temperature` | Double | Creativity level (0.0-1.0) | 0.3 |
-| `width` | Int | Output image width | 1024 |
-| `height` | Int | Output image height | 1024 |
+| Parameter     | Type                  | Description                           | Default                         |
+|---------------|-----------------------|---------------------------------------|---------------------------------|
+| `prompt`      | String                | System prompt for prompt optimization | "Transform the user request..." |
+| `name`        | String?               | Agent identifier                      | null                            |
+| `textModel`   | ChatInterface         | Model for prompt refinement           | Required                        |
+| `imageModel`  | ImageModel?           | Image generation model                | Required                        |
+| `imageClient` | ImageClientInterface? | API client                            | Required                        |
+| `temperature` | Double                | Creativity level (0.0-1.0)            | 0.3                             |
+| `width`       | Int                   | Output image width                    | 1024                            |
+| `height`      | Int                   | Output image height                   | 1024                            |
 
 ## ImageModificationAgent
 
 ### Purpose
+
 Analyzes and modifies images based on text instructions using multimodal chat models.
 
 ### Basic Usage
@@ -432,11 +435,13 @@ class ImageEnabledChatSocketManager(
 ## Best Practices
 
 ### 1. File Management
+
 - Always use `task.createFile()` to ensure proper session isolation
 - Use descriptive filenames with timestamps or UUIDs
 - Clean up temporary files when sessions end
 
 ### 2. Display Optimization
+
 ```kotlin
 // Responsive image display
 fun responsiveImageHtml(link: String, alt: String) = """
@@ -448,11 +453,13 @@ fun responsiveImageHtml(link: String, alt: String) = """
 ```
 
 ### 3. Transcript Integration
+
 - Always write images to transcript with context
 - Use relative links for portability
 - Include both markdown and HTML formats
 
 ### 4. Error Handling
+
 ```kotlin
 fun safeImageGeneration(
     agent: ImageGenerationAgent,
@@ -470,6 +477,7 @@ fun safeImageGeneration(
 ```
 
 ### 5. Performance Considerations
+
 - Cache generated images when appropriate
 - Use thumbnails for galleries
 - Implement lazy loading for large image sets
@@ -478,6 +486,7 @@ fun safeImageGeneration(
 ## Advanced Features
 
 ### Batch Image Generation
+
 ```kotlin
 fun generateImageBatch(
     prompts: List<String>,
@@ -499,6 +508,7 @@ fun generateImageBatch(
 ```
 
 ### Image Comparison View
+
 ```kotlin
 fun compareImages(
     original: BufferedImage,

@@ -2,7 +2,9 @@
 
 ## Overview
 
-The `online` package provides a comprehensive framework for web crawling, content extraction, and intelligent data processing. It combines AI-powered analysis with configurable processing strategies to extract structured information from websites, making it ideal for research, data mining, competitive analysis, and automated information gathering.
+The `online` package provides a comprehensive framework for web crawling, content extraction, and intelligent data
+processing. It combines AI-powered analysis with configurable processing strategies to extract structured information
+from websites, making it ideal for research, data mining, competitive analysis, and automated information gathering.
 
 ## Architecture
 
@@ -31,6 +33,7 @@ online/
 The main orchestrator that coordinates all crawling operations.
 
 **Key Features:**
+
 - Intelligent URL queue management with priority-based processing
 - Concurrent page processing with configurable parallelism
 - Automatic link discovery and depth-limited crawling
@@ -64,6 +67,7 @@ data class CrawlerTaskTypeConfig(
 Provides multiple strategies for discovering initial URLs to crawl.
 
 **Available Methods:**
+
 - **DirectUrls**: Use provided URLs directly
 - **GoogleProxy**: Quick Google searches via proxy
 - **GoogleSearch**: Full Google Custom Search API integration
@@ -76,10 +80,12 @@ See [seed/README.md](seed/README.md) for detailed documentation.
 Handles content retrieval from URLs with multiple strategies.
 
 **Available Methods:**
+
 - **HttpClient**: Fast, efficient HTTP-based fetching (default)
 - **Selenium**: Browser-based rendering for JavaScript-heavy sites
 
 **Supported Content Types:**
+
 - HTML pages
 - PDF documents
 - Microsoft Office files (DOC, DOCX, XLS, XLSX, PPT, PPTX)
@@ -412,23 +418,27 @@ task.typeConfig = CrawlerTaskTypeConfig(
 ### Common Issues
 
 **No results returned:**
+
 - Check search query or direct URLs
 - Verify API credentials (for Google/SearchAPI methods)
 - Check domain restrictions
 - Review transcript for errors
 
 **Too many errors:**
+
 - Reduce concurrent processing
 - Check network connectivity
 - Verify target sites are accessible
 - Review robots.txt compliance
 
 **Memory issues:**
+
 - Reduce `max_queue_size`
 - Lower `max_pages_per_task`
 - Decrease `concurrent_page_processing`
 
 **Slow performance:**
+
 - Increase `concurrent_page_processing`
 - Use `HttpClient` instead of `Selenium`
 - Reduce `max_depth`

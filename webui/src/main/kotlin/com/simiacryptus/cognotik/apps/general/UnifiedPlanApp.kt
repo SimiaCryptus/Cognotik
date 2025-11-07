@@ -28,10 +28,10 @@ import java.util.concurrent.Executors
  * This allows for switching between different planning and execution strategies.
  */
 abstract class UnifiedPlanApp(
-  path: String,
-  applicationName: String = "Unified Planning App",
-  showMenubar: Boolean = true,
-  var useExpansionSyntax: Boolean = true,
+    path: String,
+    applicationName: String = "Unified Planning App",
+    showMenubar: Boolean = true,
+    var useExpansionSyntax: Boolean = true,
 ) : ApplicationServer(
     applicationName = applicationName,
     path = path,
@@ -78,8 +78,8 @@ abstract class UnifiedPlanApp(
         val socketManager = super.newSession(user, session)
         val settings = getSettings(session, user, OrchestrationConfig::class.java)
         useExpansionSyntax = when (settings?.cognitiveMode) {
-          CognitiveModeStrategies.Chat -> true
-          else -> false
+            CognitiveModeStrategies.Chat -> true
+            else -> false
         }
         if (useExpansionSyntax) {
             socketManager.newTask(cancelable = false, root = true).expandable(

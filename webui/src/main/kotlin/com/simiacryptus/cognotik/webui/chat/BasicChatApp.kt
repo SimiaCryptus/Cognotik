@@ -42,7 +42,8 @@ class BasicChatApp(
     ) as T
 
     override fun newSession(user: User?, session: Session): SocketManager {
-        (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session) ?: SessionProxyServer.agents[session])?.apply {
+        (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
+            ?: SessionProxyServer.agents[session])?.apply {
             return this;
         }
         val user = user ?: throw IllegalArgumentException("User must be provided for chat session")

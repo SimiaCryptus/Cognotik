@@ -16,56 +16,56 @@ import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Date
+import java.util.*
 
 class DialecticalReasoningTask(
-  orchestrationConfig: OrchestrationConfig,
-  planTask: DialecticalReasoningTaskExecutionConfigData?
+    orchestrationConfig: OrchestrationConfig,
+    planTask: DialecticalReasoningTaskExecutionConfigData?
 ) : AbstractTask<DialecticalReasoningTask.DialecticalReasoningTaskExecutionConfigData, TaskTypeConfig>(
-  orchestrationConfig,
-  planTask
+    orchestrationConfig,
+    planTask
 ) {
 
-  protected val codeFiles = mutableMapOf<Path, String>()
-  val maxDescriptionLength = 5000
+    protected val codeFiles = mutableMapOf<Path, String>()
+    val maxDescriptionLength = 5000
 
-  class DialecticalReasoningTaskExecutionConfigData(
-    @Description("The thesis statement or position to analyze")
-    val thesis: String? = null,
-    @Description("The antithesis statement or opposing position")
-    val antithesis: String? = null,
-    @Description("Context or domain for the dialectical analysis")
-    val context: String? = null,
-    @Description("Number of synthesis levels to iterate through (1-5)")
-    val synthesis_levels: Int = 3,
-    @Description("Whether to preserve strengths from both sides in synthesis")
-    val preserve_strengths: Boolean = true,
-    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    val input_files: List<String>? = null,
-    @Description("Additional files for context")
-    val related_files: List<String>? = null,
-    task_dependencies: List<String>? = null,
-    state: TaskState? = TaskState.Pending,
-  ) : TaskExecutionConfig(
-    task_type = DialecticalReasoning.name,
-    task_description = "Dialectical analysis: '$thesis' vs '$antithesis'",
-    task_dependencies = task_dependencies?.toMutableList(),
-    state = state
-  ), ValidatedObject {
-    override fun validate(): String? {
-      if (thesis.isNullOrBlank()) return "Thesis must not be blank"
-      if (antithesis.isNullOrBlank()) return "Antithesis must not be blank"
-      if (synthesis_levels !in 1..5) return "Synthesis levels must be between 1 and 5, got: $synthesis_levels"
-      if (thesis == antithesis) return "Thesis and antithesis must be different"
-      if (thesis.length > 5000) return "Thesis is too long (max 5000 characters)"
-      if (antithesis.length > 5000) return "Antithesis is too long (max 5000 characters)"
-      if (context != null && context.length > 10000) return "Context is too long (max 10000 characters)"
-      return ValidatedObject.validateFields(this)
+    class DialecticalReasoningTaskExecutionConfigData(
+        @Description("The thesis statement or position to analyze")
+        val thesis: String? = null,
+        @Description("The antithesis statement or opposing position")
+        val antithesis: String? = null,
+        @Description("Context or domain for the dialectical analysis")
+        val context: String? = null,
+        @Description("Number of synthesis levels to iterate through (1-5)")
+        val synthesis_levels: Int = 3,
+        @Description("Whether to preserve strengths from both sides in synthesis")
+        val preserve_strengths: Boolean = true,
+        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+        val input_files: List<String>? = null,
+        @Description("Additional files for context")
+        val related_files: List<String>? = null,
+        task_dependencies: List<String>? = null,
+        state: TaskState? = TaskState.Pending,
+    ) : TaskExecutionConfig(
+        task_type = DialecticalReasoning.name,
+        task_description = "Dialectical analysis: '$thesis' vs '$antithesis'",
+        task_dependencies = task_dependencies?.toMutableList(),
+        state = state
+    ), ValidatedObject {
+        override fun validate(): String? {
+            if (thesis.isNullOrBlank()) return "Thesis must not be blank"
+            if (antithesis.isNullOrBlank()) return "Antithesis must not be blank"
+            if (synthesis_levels !in 1..5) return "Synthesis levels must be between 1 and 5, got: $synthesis_levels"
+            if (thesis == antithesis) return "Thesis and antithesis must be different"
+            if (thesis.length > 5000) return "Thesis is too long (max 5000 characters)"
+            if (antithesis.length > 5000) return "Antithesis is too long (max 5000 characters)"
+            if (context != null && context.length > 10000) return "Context is too long (max 10000 characters)"
+            return ValidatedObject.validateFields(this)
+        }
     }
-  }
 
-  override fun promptSegment(): String {
-    return """
+    override fun promptSegment(): String {
+        return """
 DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesis
   ** Specify thesis and antithesis statements representing opposing positions
   ** Provide context to ground the dialectical analysis
@@ -77,66 +77,66 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
   ** Iterates to progressively higher levels of understanding
   ** Produces structured dialectical analysis with final synthesis
         """.trimIndent()
-  }
-
-  override fun run(
-    agent: TaskOrchestrator,
-    messages: List<String>,
-    task: SessionTask,
-    resultFn: (String) -> Unit,
-    orchestrationConfig: OrchestrationConfig
-  ) {
-    val startTime = System.currentTimeMillis()
-    var stepStartTime = startTime
-    var transcriptStream: FileOutputStream? = null
-    log.info("Starting DialecticalReasoningTask")
-
-    val thesis = executionConfig?.thesis
-    val antithesis = executionConfig?.antithesis
-
-    if (thesis.isNullOrBlank() || antithesis.isNullOrBlank()) {
-      log.error("Both thesis and antithesis must be specified")
-      task.safeComplete("CONFIGURATION ERROR: Both thesis and antithesis must be specified", log)
-      resultFn("CONFIGURATION ERROR: Both thesis and antithesis must be specified")
-      return
     }
 
-    val context = executionConfig.context ?: "general domain"
-    val synthesisLevels = executionConfig.synthesis_levels.coerceIn(1, 5)
-    val preserveStrengths = executionConfig.preserve_strengths
+    override fun run(
+        agent: TaskOrchestrator,
+        messages: List<String>,
+        task: SessionTask,
+        resultFn: (String) -> Unit,
+        orchestrationConfig: OrchestrationConfig
+    ) {
+        val startTime = System.currentTimeMillis()
+        var stepStartTime = startTime
+        var transcriptStream: FileOutputStream? = null
+        log.info("Starting DialecticalReasoningTask")
 
-    log.info("Configuration: thesis='$thesis', antithesis='$antithesis', context='$context', levels=$synthesisLevels, preserveStrengths=$preserveStrengths")
+        val thesis = executionConfig?.thesis
+        val antithesis = executionConfig?.antithesis
 
-    val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
-    val ui = task.ui
-    val tabs = TabbedDisplay(task)
-    transcriptStream = initializeTranscript(task)
+        if (thesis.isNullOrBlank() || antithesis.isNullOrBlank()) {
+            log.error("Both thesis and antithesis must be specified")
+            task.safeComplete("CONFIGURATION ERROR: Both thesis and antithesis must be specified", log)
+            resultFn("CONFIGURATION ERROR: Both thesis and antithesis must be specified")
+            return
+        }
 
-    // Overview tab
-    val overviewTask = ui.newTask(false)
-    tabs["Overview"] = overviewTask.placeholder
+        val context = executionConfig.context ?: "general domain"
+        val synthesisLevels = executionConfig.synthesis_levels.coerceIn(1, 5)
+        val preserveStrengths = executionConfig.preserve_strengths
 
-    val overviewContent = buildString {
-      appendLine("# Dialectical Reasoning Analysis")
-      appendLine()
-      appendLine("**Context:** $context")
-      appendLine()
-      appendLine("**Synthesis Levels:** $synthesisLevels")
-      appendLine()
-      appendLine("**Preserve Strengths:** ${if (preserveStrengths) "Yes" else "No"}")
-      appendLine()
-      appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
-      appendLine()
-      appendLine("---")
-      appendLine()
-      appendLine("## Progress")
-      appendLine()
-      appendLine("*Initializing dialectical analysis...*")
-    }
-    overviewTask.add(overviewContent.renderMarkdown)
-    task.update()
-    transcriptStream?.write(
-      """
+        log.info("Configuration: thesis='$thesis', antithesis='$antithesis', context='$context', levels=$synthesisLevels, preserveStrengths=$preserveStrengths")
+
+        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val ui = task.ui
+        val tabs = TabbedDisplay(task)
+        transcriptStream = initializeTranscript(task)
+
+        // Overview tab
+        val overviewTask = ui.newTask(false)
+        tabs["Overview"] = overviewTask.placeholder
+
+        val overviewContent = buildString {
+            appendLine("# Dialectical Reasoning Analysis")
+            appendLine()
+            appendLine("**Context:** $context")
+            appendLine()
+            appendLine("**Synthesis Levels:** $synthesisLevels")
+            appendLine()
+            appendLine("**Preserve Strengths:** ${if (preserveStrengths) "Yes" else "No"}")
+            appendLine()
+            appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+            appendLine()
+            appendLine("---")
+            appendLine()
+            appendLine("## Progress")
+            appendLine()
+            appendLine("*Initializing dialectical analysis...*")
+        }
+        overviewTask.add(overviewContent.renderMarkdown)
+        task.update()
+        transcriptStream?.write(
+            """
       |# Dialectical Reasoning Analysis
       |
       |**Context:** $context
@@ -147,77 +147,77 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
       |---
       |
     """.trimMargin().toByteArray()
-    )
+        )
 
-    val priorContext = getPriorCode(agent.executionState)
-    val relatedFilesContent = getRelatedFilesContent()
-    val inputFilesContent = getInputFileCode()
+        val priorContext = getPriorCode(agent.executionState)
+        val relatedFilesContent = getRelatedFilesContent()
+        val inputFilesContent = getInputFileCode()
 
-    if (priorContext.isNotBlank() || relatedFilesContent.isNotBlank()) {
-      val contextTask = ui.newTask(false)
-      tabs["Context"] = contextTask.placeholder
-      contextTask.add(
-        buildString {
-          appendLine("# Context Information")
-          appendLine()
-          if (priorContext.isNotBlank()) {
-            appendLine("## Prior Task Results")
-            appendLine()
-            appendLine(priorContext.truncateForDisplay())
-            appendLine()
-          }
-          if (relatedFilesContent.isNotBlank()) {
-            appendLine("## Related Files")
-            appendLine()
-            appendLine(relatedFilesContent.truncateForDisplay())
-          }
-        }.renderMarkdown
-      )
-      task.update()
-      transcriptStream?.write(
-        """
+        if (priorContext.isNotBlank() || relatedFilesContent.isNotBlank()) {
+            val contextTask = ui.newTask(false)
+            tabs["Context"] = contextTask.placeholder
+            contextTask.add(
+                buildString {
+                    appendLine("# Context Information")
+                    appendLine()
+                    if (priorContext.isNotBlank()) {
+                        appendLine("## Prior Task Results")
+                        appendLine()
+                        appendLine(priorContext.truncateForDisplay())
+                        appendLine()
+                    }
+                    if (relatedFilesContent.isNotBlank()) {
+                        appendLine("## Related Files")
+                        appendLine()
+                        appendLine(relatedFilesContent.truncateForDisplay())
+                    }
+                }.renderMarkdown
+            )
+            task.update()
+            transcriptStream?.write(
+                """
         |## Context Information
         |
       """.trimMargin().toByteArray()
-      )
-      if (priorContext.isNotBlank()) {
-        transcriptStream?.write("### Prior Task Results\n\n${priorContext.truncateForDisplay()}\n\n".toByteArray())
-      }
-      if (relatedFilesContent.isNotBlank()) {
-        transcriptStream?.write("### Related Files\n\n${relatedFilesContent.truncateForDisplay()}\n\n".toByteArray())
-      }
-      transcriptStream?.write("---\n\n".toByteArray())
-      if (inputFilesContent.isNotBlank()) {
-        transcriptStream?.write("### Input Files\n\n${inputFilesContent.truncateForDisplay()}\n\n".toByteArray())
-      }
-      transcriptStream?.write("---\n\n".toByteArray())
-    }
+            )
+            if (priorContext.isNotBlank()) {
+                transcriptStream?.write("### Prior Task Results\n\n${priorContext.truncateForDisplay()}\n\n".toByteArray())
+            }
+            if (relatedFilesContent.isNotBlank()) {
+                transcriptStream?.write("### Related Files\n\n${relatedFilesContent.truncateForDisplay()}\n\n".toByteArray())
+            }
+            transcriptStream?.write("---\n\n".toByteArray())
+            if (inputFilesContent.isNotBlank()) {
+                transcriptStream?.write("### Input Files\n\n${inputFilesContent.truncateForDisplay()}\n\n".toByteArray())
+            }
+            transcriptStream?.write("---\n\n".toByteArray())
+        }
 
-    // Concise output for final result
-    val resultBuilder = StringBuilder()
-    resultBuilder.append("# Dialectical Analysis\n\n")
-    resultBuilder.append("**Context:** $context\n\n")
+        // Concise output for final result
+        val resultBuilder = StringBuilder()
+        resultBuilder.append("# Dialectical Analysis\n\n")
+        resultBuilder.append("**Context:** $context\n\n")
 
 
-    try {
-      // Step 1: Analyze Thesis
-      log.info("Analyzing thesis")
-      val thesisTask = ui.newTask(false)
-      tabs["Thesis"] = thesisTask.placeholder
+        try {
+            // Step 1: Analyze Thesis
+            log.info("Analyzing thesis")
+            val thesisTask = ui.newTask(false)
+            tabs["Thesis"] = thesisTask.placeholder
 
-      thesisTask.add(
-        buildString {
-          appendLine("# Thesis Analysis")
-          appendLine()
-          appendLine("**Statement:** $thesis")
-          appendLine()
-          appendLine("*Analyzing...*")
-        }.renderMarkdown
-      )
-      task.update()
+            thesisTask.add(
+                buildString {
+                    appendLine("# Thesis Analysis")
+                    appendLine()
+                    appendLine("**Statement:** $thesis")
+                    appendLine()
+                    appendLine("*Analyzing...*")
+                }.renderMarkdown
+            )
+            task.update()
 
-      val thesisAgent = ChatAgent(
-        prompt = """
+            val thesisAgent = ChatAgent(
+                prompt = """
 You are analyzing a thesis statement in a dialectical reasoning process.
 
 Context: $context
@@ -237,17 +237,17 @@ Provide:
 
 Be thorough and objective in your analysis.
         """.trimIndent(),
-        model = api,
-        temperature = 0.5
-      )
+                model = api,
+                temperature = 0.5
+            )
 
-      val thesisAnalysis = thesisAgent.answer(listOf("Analyze the thesis statement."))
+            val thesisAnalysis = thesisAgent.answer(listOf("Analyze the thesis statement."))
 
-      val thesisTime = System.currentTimeMillis() - stepStartTime
-      log.info("Thesis analysis completed in ${thesisTime}ms: ${thesisAnalysis.length} characters")
-      stepStartTime = System.currentTimeMillis()
-      transcriptStream?.write(
-        """
+            val thesisTime = System.currentTimeMillis() - stepStartTime
+            log.info("Thesis analysis completed in ${thesisTime}ms: ${thesisAnalysis.length} characters")
+            stepStartTime = System.currentTimeMillis()
+            transcriptStream?.write(
+                """
         |## Thesis Analysis
         |
         |**Statement:** $thesis
@@ -259,50 +259,50 @@ Be thorough and objective in your analysis.
         |---
         |
       """.trimMargin().toByteArray()
-      )
+            )
 
-      thesisTask.add(
-        buildString {
-          appendLine()
-          appendLine("## Analysis")
-          appendLine()
-          appendLine(thesisAnalysis)
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("**Status:** ✅ Complete (${thesisTime / 1000.0}s)")
-        }.renderMarkdown
-      )
-      task.update()
+            thesisTask.add(
+                buildString {
+                    appendLine()
+                    appendLine("## Analysis")
+                    appendLine()
+                    appendLine(thesisAnalysis)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete (${thesisTime / 1000.0}s)")
+                }.renderMarkdown
+            )
+            task.update()
 
-      overviewTask.add(
-        buildString {
-          appendLine()
-          appendLine("✅ Thesis analysis complete")
-          appendLine()
-          appendLine("*Analyzing antithesis...*")
-        }.renderMarkdown
-      )
-      task.update()
+            overviewTask.add(
+                buildString {
+                    appendLine()
+                    appendLine("✅ Thesis analysis complete")
+                    appendLine()
+                    appendLine("*Analyzing antithesis...*")
+                }.renderMarkdown
+            )
+            task.update()
 
-      // Step 2: Analyze Antithesis
-      log.info("Analyzing antithesis")
-      val antithesisTask = ui.newTask(false)
-      tabs["Antithesis"] = antithesisTask.placeholder
+            // Step 2: Analyze Antithesis
+            log.info("Analyzing antithesis")
+            val antithesisTask = ui.newTask(false)
+            tabs["Antithesis"] = antithesisTask.placeholder
 
-      antithesisTask.add(
-        buildString {
-          appendLine("# Antithesis Analysis")
-          appendLine()
-          appendLine("**Statement:** $antithesis")
-          appendLine()
-          appendLine("*Analyzing...*")
-        }.renderMarkdown
-      )
-      task.update()
+            antithesisTask.add(
+                buildString {
+                    appendLine("# Antithesis Analysis")
+                    appendLine()
+                    appendLine("**Statement:** $antithesis")
+                    appendLine()
+                    appendLine("*Analyzing...*")
+                }.renderMarkdown
+            )
+            task.update()
 
-      val antithesisAgent = ChatAgent(
-        prompt = """
+            val antithesisAgent = ChatAgent(
+                prompt = """
 You are analyzing an antithesis statement in a dialectical reasoning process.
 
 Context: $context
@@ -326,17 +326,17 @@ Provide:
 
 Be thorough and objective in your analysis.
         """.trimIndent(),
-        model = api,
-        temperature = 0.5
-      )
+                model = api,
+                temperature = 0.5
+            )
 
-      val antithesisAnalysis = antithesisAgent.answer(listOf("Analyze the antithesis statement."))
+            val antithesisAnalysis = antithesisAgent.answer(listOf("Analyze the antithesis statement."))
 
-      val antithesisTime = System.currentTimeMillis() - stepStartTime
-      log.info("Antithesis analysis completed in ${antithesisTime}ms: ${antithesisAnalysis.length} characters")
-      stepStartTime = System.currentTimeMillis()
-      transcriptStream?.write(
-        """
+            val antithesisTime = System.currentTimeMillis() - stepStartTime
+            log.info("Antithesis analysis completed in ${antithesisTime}ms: ${antithesisAnalysis.length} characters")
+            stepStartTime = System.currentTimeMillis()
+            transcriptStream?.write(
+                """
         |## Antithesis Analysis
         |
         |**Statement:** $antithesis
@@ -348,48 +348,48 @@ Be thorough and objective in your analysis.
         |---
         |
       """.trimMargin().toByteArray()
-      )
+            )
 
-      antithesisTask.add(
-        buildString {
-          appendLine()
-          appendLine("## Analysis")
-          appendLine()
-          appendLine(antithesisAnalysis)
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("**Status:** ✅ Complete (${antithesisTime / 1000.0}s)")
-        }.renderMarkdown
-      )
-      task.update()
+            antithesisTask.add(
+                buildString {
+                    appendLine()
+                    appendLine("## Analysis")
+                    appendLine()
+                    appendLine(antithesisAnalysis)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete (${antithesisTime / 1000.0}s)")
+                }.renderMarkdown
+            )
+            task.update()
 
-      overviewTask.add(
-        buildString {
-          appendLine()
-          appendLine("✅ Antithesis analysis complete")
-          appendLine()
-          appendLine("*Exploring contradictions...*")
-        }.renderMarkdown
-      )
-      task.update()
+            overviewTask.add(
+                buildString {
+                    appendLine()
+                    appendLine("✅ Antithesis analysis complete")
+                    appendLine()
+                    appendLine("*Exploring contradictions...*")
+                }.renderMarkdown
+            )
+            task.update()
 
-      // Step 3: Explore Contradictions
-      log.info("Exploring contradictions and tensions")
-      val contradictionsTask = ui.newTask(false)
-      tabs["Contradictions"] = contradictionsTask.placeholder
+            // Step 3: Explore Contradictions
+            log.info("Exploring contradictions and tensions")
+            val contradictionsTask = ui.newTask(false)
+            tabs["Contradictions"] = contradictionsTask.placeholder
 
-      contradictionsTask.add(
-        buildString {
-          appendLine("# Contradictions & Tensions")
-          appendLine()
-          appendLine("*Analyzing...*")
-        }.renderMarkdown
-      )
-      task.update()
+            contradictionsTask.add(
+                buildString {
+                    appendLine("# Contradictions & Tensions")
+                    appendLine()
+                    appendLine("*Analyzing...*")
+                }.renderMarkdown
+            )
+            task.update()
 
-      val contradictionsAgent = ChatAgent(
-        prompt = """
+            val contradictionsAgent = ChatAgent(
+                prompt = """
 You are exploring the contradictions and tensions between thesis and antithesis in a dialectical process.
 
 Context: $context
@@ -412,17 +412,17 @@ Your task is to identify and explore:
 
 Be thorough in exploring the dialectical tension.
         """.trimIndent(),
-        model = api,
-        temperature = 0.6
-      )
+                model = api,
+                temperature = 0.6
+            )
 
-      val contradictionsAnalysis = contradictionsAgent.answer(listOf("Explore the contradictions and tensions."))
+            val contradictionsAnalysis = contradictionsAgent.answer(listOf("Explore the contradictions and tensions."))
 
-      val contradictionsTime = System.currentTimeMillis() - stepStartTime
-      log.info("Contradictions analysis completed in ${contradictionsTime}ms: ${contradictionsAnalysis.length} characters")
-      stepStartTime = System.currentTimeMillis()
-      transcriptStream?.write(
-        """
+            val contradictionsTime = System.currentTimeMillis() - stepStartTime
+            log.info("Contradictions analysis completed in ${contradictionsTime}ms: ${contradictionsAnalysis.length} characters")
+            stepStartTime = System.currentTimeMillis()
+            transcriptStream?.write(
+                """
         |## Contradictions & Tensions
         |
         |$contradictionsAnalysis
@@ -432,56 +432,56 @@ Be thorough in exploring the dialectical tension.
         |---
         |
       """.trimMargin().toByteArray()
-      )
+            )
 
-      contradictionsTask.add(
-        buildString {
-          appendLine()
-          appendLine("## Analysis")
-          appendLine()
-          appendLine(contradictionsAnalysis)
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("**Status:** ✅ Complete (${contradictionsTime / 1000.0}s)")
-        }.renderMarkdown
-      )
-      task.update()
+            contradictionsTask.add(
+                buildString {
+                    appendLine()
+                    appendLine("## Analysis")
+                    appendLine()
+                    appendLine(contradictionsAnalysis)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete (${contradictionsTime / 1000.0}s)")
+                }.renderMarkdown
+            )
+            task.update()
 
-      overviewTask.add(
-        buildString {
-          appendLine()
-          appendLine("✅ Contradictions explored")
-          appendLine()
-          appendLine("*Generating synthesis (Level 1)...*")
-        }.renderMarkdown
-      )
-      task.update()
+            overviewTask.add(
+                buildString {
+                    appendLine()
+                    appendLine("✅ Contradictions explored")
+                    appendLine()
+                    appendLine("*Generating synthesis (Level 1)...*")
+                }.renderMarkdown
+            )
+            task.update()
 
-      // Step 4: Iterative Synthesis
-      var currentThesis = thesis
-      var currentAntithesis = antithesis
-      var currentThesisAnalysis = thesisAnalysis
-      var currentAntithesisAnalysis = antithesisAnalysis
-      var previousSynthesis = ""
-      val synthesisResults = mutableListOf<String>()
+            // Step 4: Iterative Synthesis
+            var currentThesis = thesis
+            var currentAntithesis = antithesis
+            var currentThesisAnalysis = thesisAnalysis
+            var currentAntithesisAnalysis = antithesisAnalysis
+            var previousSynthesis = ""
+            val synthesisResults = mutableListOf<String>()
 
-      for (level in 1..synthesisLevels) {
-        log.info("Generating synthesis level $level of $synthesisLevels")
-        val synthesisTask = ui.newTask(false)
-        tabs["Synthesis L$level"] = synthesisTask.placeholder
+            for (level in 1..synthesisLevels) {
+                log.info("Generating synthesis level $level of $synthesisLevels")
+                val synthesisTask = ui.newTask(false)
+                tabs["Synthesis L$level"] = synthesisTask.placeholder
 
-        synthesisTask.add(
-          buildString {
-            appendLine("# Synthesis - Level $level")
-            appendLine()
-            appendLine("*Generating higher-level synthesis...*")
-          }.renderMarkdown
-        )
-        task.update()
+                synthesisTask.add(
+                    buildString {
+                        appendLine("# Synthesis - Level $level")
+                        appendLine()
+                        appendLine("*Generating higher-level synthesis...*")
+                    }.renderMarkdown
+                )
+                task.update()
 
-        val synthesisPrompt = if (level == 1) {
-          """
+                val synthesisPrompt = if (level == 1) {
+                    """
 You are generating a dialectical synthesis that transcends the opposition between thesis and antithesis.
 
 Context: $context
@@ -514,8 +514,8 @@ Provide:
 
 Be creative and insightful in finding the higher-level synthesis.
           """.trimIndent()
-        } else {
-          """
+                } else {
+                    """
 You are generating a higher-level dialectical synthesis (Level $level).
 
 Context: $context
@@ -541,20 +541,20 @@ Provide:
 
 Aim for progressively deeper insight and integration.
           """.trimIndent()
-        }
+                }
 
-        val synthesisAgent = ChatAgent(
-          prompt = synthesisPrompt,
-          model = api,
-          temperature = 0.7
-        )
+                val synthesisAgent = ChatAgent(
+                    prompt = synthesisPrompt,
+                    model = api,
+                    temperature = 0.7
+                )
 
-        val synthesis = synthesisAgent.answer(listOf("Generate the synthesis."))
-        val synthesisTime = System.currentTimeMillis() - stepStartTime
-        log.info("Synthesis level $level completed in ${synthesisTime}ms: ${synthesis.length} characters")
-        stepStartTime = System.currentTimeMillis()
-        transcriptStream?.write(
-          """
+                val synthesis = synthesisAgent.answer(listOf("Generate the synthesis."))
+                val synthesisTime = System.currentTimeMillis() - stepStartTime
+                log.info("Synthesis level $level completed in ${synthesisTime}ms: ${synthesis.length} characters")
+                stepStartTime = System.currentTimeMillis()
+                transcriptStream?.write(
+                    """
           |## Synthesis - Level $level
           |
           |$synthesis
@@ -564,61 +564,61 @@ Aim for progressively deeper insight and integration.
           |---
           |
         """.trimMargin().toByteArray()
-        )
+                )
 
-        synthesisResults.add(synthesis)
-        previousSynthesis = synthesis
+                synthesisResults.add(synthesis)
+                previousSynthesis = synthesis
 
 
-        // Add to concise result only for first and last levels
-        if (level == 1 || level == synthesisLevels) {
-          resultBuilder.append("### Synthesis Level $level\n\n")
-          resultBuilder.append("${synthesis.truncateForDisplay(maxDescriptionLength)}\n\n")
-        }
+                // Add to concise result only for first and last levels
+                if (level == 1 || level == synthesisLevels) {
+                    resultBuilder.append("### Synthesis Level $level\n\n")
+                    resultBuilder.append("${synthesis.truncateForDisplay(maxDescriptionLength)}\n\n")
+                }
 
-        synthesisTask.add(
-          buildString {
-            appendLine()
-            appendLine("## Result")
-            appendLine()
-            appendLine(synthesis)
-            appendLine()
-            appendLine("---")
-            appendLine()
-            appendLine("**Status:** ✅ Complete (${synthesisTime / 1000.0}s)")
-          }.renderMarkdown
-        )
-        task.update()
+                synthesisTask.add(
+                    buildString {
+                        appendLine()
+                        appendLine("## Result")
+                        appendLine()
+                        appendLine(synthesis)
+                        appendLine()
+                        appendLine("---")
+                        appendLine()
+                        appendLine("**Status:** ✅ Complete (${synthesisTime / 1000.0}s)")
+                    }.renderMarkdown
+                )
+                task.update()
 
-        overviewTask.add(
-          buildString {
-            appendLine()
-            appendLine("✅ Synthesis Level $level complete")
-            if (level < synthesisLevels) {
-              appendLine()
-              appendLine("*Generating synthesis (Level ${level + 1})...*")
+                overviewTask.add(
+                    buildString {
+                        appendLine()
+                        appendLine("✅ Synthesis Level $level complete")
+                        if (level < synthesisLevels) {
+                            appendLine()
+                            appendLine("*Generating synthesis (Level ${level + 1})...*")
+                        }
+                    }.renderMarkdown
+                )
+                task.update()
             }
-          }.renderMarkdown
-        )
-        task.update()
-      }
 
-      // Step 5: Final Integration
-      log.info("Generating final integration")
-      val integrationTask = ui.newTask(false)
-      tabs["Final Integration"] = integrationTask.placeholder
+            // Step 5: Final Integration
+            log.info("Generating final integration")
+            val integrationTask = ui.newTask(false)
+            tabs["Final Integration"] = integrationTask.placeholder
 
-      integrationTask.add(
-        buildString {
-          appendLine("# Final Integration")
-          appendLine()
-          appendLine("*Synthesizing all levels...*")
-        }.renderMarkdown
-      )
-      task.update()
+            integrationTask.add(
+                buildString {
+                    appendLine("# Final Integration")
+                    appendLine()
+                    appendLine("*Synthesizing all levels...*")
+                }.renderMarkdown
+            )
+            task.update()
 
-      val integrationAgent = ChatAgent(
-        prompt = """
+            val integrationAgent = ChatAgent(
+                prompt = """
 You are providing a final integration of the entire dialectical reasoning process.
 
 Context: $context
@@ -639,17 +639,17 @@ Your task is to provide a final integration that:
 
 Be comprehensive yet concise in your final integration.
         """.trimIndent(),
-        model = api,
-        temperature = 0.6
-      )
+                model = api,
+                temperature = 0.6
+            )
 
-      val finalIntegration = integrationAgent.answer(listOf("Provide the final integration."))
+            val finalIntegration = integrationAgent.answer(listOf("Provide the final integration."))
 
-      val integrationTime = System.currentTimeMillis() - stepStartTime
-      log.info("Final integration completed in ${integrationTime}ms: ${finalIntegration.length} characters")
-      // stepStartTime = System.currentTimeMillis() // Not needed for the last step
-      transcriptStream?.write(
-        """
+            val integrationTime = System.currentTimeMillis() - stepStartTime
+            log.info("Final integration completed in ${integrationTime}ms: ${finalIntegration.length} characters")
+            // stepStartTime = System.currentTimeMillis() // Not needed for the last step
+            transcriptStream?.write(
+                """
         |## Final Integration
         |
         |$finalIntegration
@@ -659,48 +659,52 @@ Be comprehensive yet concise in your final integration.
         |---
         |
       """.trimMargin().toByteArray()
-      )
+            )
 
-      resultBuilder.append("## Final Integration\n\n")
-      resultBuilder.append(finalIntegration)
+            resultBuilder.append("## Final Integration\n\n")
+            resultBuilder.append(finalIntegration)
 
-      integrationTask.add(
-        buildString {
-          appendLine()
-          appendLine("## Result")
-          appendLine()
-          appendLine(finalIntegration)
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("**Status:** ✅ Complete (${integrationTime / 1000.0}s)")
-        }.renderMarkdown
-      )
-      task.update()
+            integrationTask.add(
+                buildString {
+                    appendLine()
+                    appendLine("## Result")
+                    appendLine()
+                    appendLine(finalIntegration)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete (${integrationTime / 1000.0}s)")
+                }.renderMarkdown
+            )
+            task.update()
 
-      val totalTime = System.currentTimeMillis() - startTime
-      log.info("DialecticalReasoningTask completed: total_time=${totalTime}ms, synthesis_levels=$synthesisLevels, output_size=${resultBuilder.length} chars")
+            val totalTime = System.currentTimeMillis() - startTime
+            log.info("DialecticalReasoningTask completed: total_time=${totalTime}ms, synthesis_levels=$synthesisLevels, output_size=${resultBuilder.length} chars")
 
-      // Update overview with completion
-      overviewTask.add(
-        buildString {
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("## ✅ Dialectical Analysis Complete")
-          appendLine()
-          appendLine("**Total Time:** ${totalTime / 1000.0}s")
-          appendLine()
-          appendLine("**Synthesis Levels:** $synthesisLevels")
-          appendLine()
-          appendLine("**Total Output:** ${resultBuilder.length} characters")
-          appendLine()
-          appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
-        }.renderMarkdown
-      )
-      task.update()
-      transcriptStream?.write(
-        """
+            // Update overview with completion
+            overviewTask.add(
+                buildString {
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("## ✅ Dialectical Analysis Complete")
+                    appendLine()
+                    appendLine("**Total Time:** ${totalTime / 1000.0}s")
+                    appendLine()
+                    appendLine("**Synthesis Levels:** $synthesisLevels")
+                    appendLine()
+                    appendLine("**Total Output:** ${resultBuilder.length} characters")
+                    appendLine()
+                    appendLine(
+                        "**Completed:** ${
+                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        }"
+                    )
+                }.renderMarkdown
+            )
+            task.update()
+            transcriptStream?.write(
+                """
         |
         |## Summary
         |
@@ -710,32 +714,35 @@ Be comprehensive yet concise in your final integration.
         |**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
         |
       """.trimMargin().toByteArray()
-      )
-      transcriptStream?.close()
+            )
+            transcriptStream?.close()
 
 
-      task.safeComplete("Completed dialectical analysis with $synthesisLevels synthesis levels in ${totalTime / 1000}s", log)
-      resultFn(resultBuilder.toString())
+            task.safeComplete(
+                "Completed dialectical analysis with $synthesisLevels synthesis levels in ${totalTime / 1000}s",
+                log
+            )
+            resultFn(resultBuilder.toString())
 
-    } catch (e: Exception) {
-      log.error("Error during dialectical reasoning", e)
-      task.error(e)
+        } catch (e: Exception) {
+            log.error("Error during dialectical reasoning", e)
+            task.error(e)
 
-      overviewTask.add(
-        buildString {
-          appendLine()
-          appendLine("---")
-          appendLine()
-          appendLine("## ❌ Error Occurred")
-          appendLine()
-          appendLine("**Error:** ${e.message}")
-          appendLine()
-          appendLine("**Type:** ${e.javaClass.simpleName}")
-        }.renderMarkdown
-      )
-      task.update()
-      transcriptStream?.write(
-        """
+            overviewTask.add(
+                buildString {
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("## ❌ Error Occurred")
+                    appendLine()
+                    appendLine("**Error:** ${e.message}")
+                    appendLine()
+                    appendLine("**Type:** ${e.javaClass.simpleName}")
+                }.renderMarkdown
+            )
+            task.update()
+            transcriptStream?.write(
+                """
         |
         |## ❌ Error Occurred
         |
@@ -743,103 +750,103 @@ Be comprehensive yet concise in your final integration.
         |**Type:** ${e.javaClass.simpleName}
         |
       """.trimMargin().toByteArray()
-      )
-      transcriptStream?.close()
+            )
+            transcriptStream?.close()
 
 
-      val errorOutput = buildString {
-        appendLine("# Error in Dialectical Reasoning")
-        appendLine()
-        appendLine("**Thesis:** $thesis")
-        appendLine()
-        appendLine("**Antithesis:** $antithesis")
-        appendLine()
-        appendLine("**Error:** ${e.message}")
-        if (resultBuilder.isNotEmpty()) {
-          appendLine()
-          appendLine("## Partial Results")
-          appendLine()
-          appendLine(resultBuilder.toString())
+            val errorOutput = buildString {
+                appendLine("# Error in Dialectical Reasoning")
+                appendLine()
+                appendLine("**Thesis:** $thesis")
+                appendLine()
+                appendLine("**Antithesis:** $antithesis")
+                appendLine()
+                appendLine("**Error:** ${e.message}")
+                if (resultBuilder.isNotEmpty()) {
+                    appendLine()
+                    appendLine("## Partial Results")
+                    appendLine()
+                    appendLine(resultBuilder.toString())
+                }
+            }
+            resultFn(errorOutput)
         }
-      }
-      resultFn(errorOutput)
     }
-  }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
-    .flatMap { pattern: String ->
-      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-      (FileSelectionUtils.filteredWalk(root.toFile()) {
-        when {
-          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-          matcher.matches(root.relativize(it.toPath())) -> true
-          it.isDirectory -> true
-          else -> false
+    private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+        .flatMap { pattern: String ->
+            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+            (FileSelectionUtils.filteredWalk(root.toFile()) {
+                when {
+                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+                    matcher.matches(root.relativize(it.toPath())) -> true
+                    it.isDirectory -> true
+                    else -> false
+                }
+            })
+        }.filter { file ->
+            file.isFile && file.exists()
         }
-      })
-    }.filter { file ->
-      file.isFile && file.exists()
-    }
-    .distinct()
-    .sortedBy { it }
-    .joinToString("\n\n") { relativePath ->
-      val file = root.toFile().resolve(relativePath)
-      try {
-        val content = codeFiles[file.toPath()] ?: file.readText()
-        "# $relativePath\n\n```\n$content\n```"
-      } catch (e: Throwable) {
-        log.warn("Error reading file: $relativePath", e)
-        ""
-      }
-    }
-
-  private fun initializeTranscript(task: SessionTask): FileOutputStream? {
-    return try {
-        val transcriptFile = "dialectical_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-      val transcriptStream = file?.outputStream()
-      task.complete(
-        "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
-            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-      )
-      log.info("Initialized transcript file: $link")
-      transcriptStream
-    } catch (e: Exception) {
-      log.error("Failed to initialize transcript", e)
-      null
-    }
-  }
-
-  private fun getRelatedFilesContent(): String {
-    val relatedFiles = executionConfig?.related_files ?: return ""
-
-    return relatedFiles.flatMap { pattern ->
-      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-      val files = mutableListOf<String>()
-      root.toFile().walkTopDown().forEach { file ->
-        if (file.isFile && matcher.matches(root.relativize(file.toPath()))) {
-          try {
-            val relativePath = root.relativize(file.toPath()).toString()
-            val content = file.readText()
-            files.add("### $relativePath\n\n```\n$content\n```")
-          } catch (e: Exception) {
-            log.warn("Error reading file: ${file.name}", e)
-          }
+        .distinct()
+        .sortedBy { it }
+        .joinToString("\n\n") { relativePath ->
+            val file = root.toFile().resolve(relativePath)
+            try {
+                val content = codeFiles[file.toPath()] ?: file.readText()
+                "# $relativePath\n\n```\n$content\n```"
+            } catch (e: Throwable) {
+                log.warn("Error reading file: $relativePath", e)
+                ""
+            }
         }
-      }
-      files
-    }.joinToString("\n\n")
-  }
 
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(DialecticalReasoningTask::class.java)
-    val DialecticalReasoning = TaskType(
-      "DialecticalReasoning",
-      DialecticalReasoningTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Resolve contradictions through thesis-antithesis-synthesis",
-      """
+    private fun initializeTranscript(task: SessionTask): FileOutputStream? {
+        return try {
+            val transcriptFile = "dialectical_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+            val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
+            val transcriptStream = file?.outputStream()
+            task.complete(
+                "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
+                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+                        "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+            )
+            log.info("Initialized transcript file: $link")
+            transcriptStream
+        } catch (e: Exception) {
+            log.error("Failed to initialize transcript", e)
+            null
+        }
+    }
+
+    private fun getRelatedFilesContent(): String {
+        val relatedFiles = executionConfig?.related_files ?: return ""
+
+        return relatedFiles.flatMap { pattern ->
+            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+            val files = mutableListOf<String>()
+            root.toFile().walkTopDown().forEach { file ->
+                if (file.isFile && matcher.matches(root.relativize(file.toPath()))) {
+                    try {
+                        val relativePath = root.relativize(file.toPath()).toString()
+                        val content = file.readText()
+                        files.add("### $relativePath\n\n```\n$content\n```")
+                    } catch (e: Exception) {
+                        log.warn("Error reading file: ${file.name}", e)
+                    }
+                }
+            }
+            files
+        }.joinToString("\n\n")
+    }
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(DialecticalReasoningTask::class.java)
+        val DialecticalReasoning = TaskType(
+            "DialecticalReasoning",
+            DialecticalReasoningTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Resolve contradictions through thesis-antithesis-synthesis",
+            """
               Applies dialectical reasoning to resolve contradictions and find higher-level synthesis.
               <ul>
                 <li>Analyzes thesis and antithesis positions thoroughly</li>
@@ -851,6 +858,6 @@ Be comprehensive yet concise in your final integration.
                 <li>Useful for architectural debates, requirement conflicts, and design philosophy</li>
               </ul>
             """
-    )
-  }
+        )
+    }
 }

@@ -29,7 +29,7 @@ abstract class PatchApp(
     val parsingModel: ChatInterface,
     private val promptPrefix: String = """The following command was run and produced an error:""",
     val processor: PatchProcessor,
-    ) : ApplicationServer(
+) : ApplicationServer(
     applicationName = "Magic Code Fixer",
     path = "/fixCmd",
     showMenubar = false,

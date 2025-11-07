@@ -1,13 +1,12 @@
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\ArticleGenerationTask.kt
 
-
 ## ArticleGenerationTask Documentation
-
 
 ### Overview
 
-`ArticleGenerationTask` is a comprehensive journalistic article generation system that extends `JournalismReasoningTask` to produce publication-ready articles. It combines investigative journalism analysis with structured article writing, supporting multiple formats, styles, and publication targets.
-
+`ArticleGenerationTask` is a comprehensive journalistic article generation system that extends `JournalismReasoningTask`
+to produce publication-ready articles. It combines investigative journalism analysis with structured article writing,
+supporting multiple formats, styles, and publication targets.
 
 ### Key Features
 
@@ -18,7 +17,6 @@
 - **Quality improvement through revision passes**
 - **Comprehensive transcript generation**
 - **Real-time progress tracking with tabbed interface**
-
 
 ### Data Flow
 
@@ -46,7 +44,6 @@ graph TD
     style K fill:#fce4ec
     style M fill:#f1f8e9
 ```
-
 
 ### Configuration Data Model
 
@@ -110,7 +107,6 @@ classDiagram
     GeneratedArticle --> SocialSnippets
 ```
 
-
 ### Execution Flow
 
 ```mermaid
@@ -166,50 +162,43 @@ sequenceDiagram
     Task->>User: Return summary result
 ```
 
-
 ### Configuration Parameters
-
 
 #### Core Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `story_topic` | String | Required | The main topic or event to write about |
-| `input_files` | List<String> | [] | File patterns (glob) to use as reference material |
-| `journalism_elements` | Map | {} | Who, what, when, where, why, how details |
-
+| Parameter             | Type         | Default  | Description                                       |
+|-----------------------|--------------|----------|---------------------------------------------------|
+| `story_topic`         | String       | Required | The main topic or event to write about            |
+| `input_files`         | List<String> | []       | File patterns (glob) to use as reference material |
+| `journalism_elements` | Map          | {}       | Who, what, when, where, why, how details          |
 
 #### Article Specifications
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `target_word_count` | int | 1000 | Desired article length in words |
-| `article_format` | String | "news" | Format: news, feature, investigative, opinion, profile |
-| `writing_style` | String | "AP style" | Style: AP style, narrative, analytical, conversational |
-| `target_publication` | String | "general news" | Publication type (affects tone/depth) |
-
+| Parameter            | Type   | Default        | Description                                            |
+|----------------------|--------|----------------|--------------------------------------------------------|
+| `target_word_count`  | int    | 1000           | Desired article length in words                        |
+| `article_format`     | String | "news"         | Format: news, feature, investigative, opinion, profile |
+| `writing_style`      | String | "AP style"     | Style: AP style, narrative, analytical, conversational |
+| `target_publication` | String | "general news" | Publication type (affects tone/depth)                  |
 
 #### Content Options
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `include_quotes` | boolean | true | Include direct quotes from sources |
-| `include_data` | boolean | true | Include statistics and data |
-| `include_expert_analysis` | boolean | true | Include expert interpretation |
-| `include_context` | boolean | true | Include background and history |
-
+| Parameter                 | Type    | Default | Description                        |
+|---------------------------|---------|---------|------------------------------------|
+| `include_quotes`          | boolean | true    | Include direct quotes from sources |
+| `include_data`            | boolean | true    | Include statistics and data        |
+| `include_expert_analysis` | boolean | true    | Include expert interpretation      |
+| `include_context`         | boolean | true    | Include background and history     |
 
 #### Quality & Output
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `revision_passes` | int | 1 | Number of editorial revision passes |
-| `generate_headlines` | boolean | true | Generate headline and subheadline |
-| `generate_social_snippets` | boolean | false | Generate social media snippets |
-
+| Parameter                  | Type    | Default | Description                         |
+|----------------------------|---------|---------|-------------------------------------|
+| `revision_passes`          | int     | 1       | Number of editorial revision passes |
+| `generate_headlines`       | boolean | true    | Generate headline and subheadline   |
+| `generate_social_snippets` | boolean | false   | Generate social media snippets      |
 
 ### Output Structure
-
 
 #### GeneratedArticle Object
 
@@ -232,7 +221,6 @@ sequenceDiagram
 }
 ```
 
-
 #### SocialSnippets Object
 
 ```json
@@ -243,9 +231,7 @@ sequenceDiagram
 }
 ```
 
-
 ### Usage Example
-
 
 #### Basic Configuration
 
@@ -264,7 +250,6 @@ val config = ArticleGenerationTaskExecutionConfigData(
 )
 ```
 
-
 #### With Input Files
 
 ```kotlin
@@ -282,7 +267,6 @@ val config = ArticleGenerationTaskExecutionConfigData(
     revision_passes = 3
 )
 ```
-
 
 #### With Journalism Elements
 
@@ -303,11 +287,10 @@ val config = ArticleGenerationTaskExecutionConfigData(
 )
 ```
 
-
 ### Execution Phases
 
-
 #### Phase 1: Journalism Investigation
+
 - Inherits from `JournalismReasoningTask`
 - Performs comprehensive analysis
 - Verifies facts and identifies perspectives
@@ -315,8 +298,8 @@ val config = ArticleGenerationTaskExecutionConfigData(
 - Finds information gaps
 - Generates alternative angles
 
-
 #### Phase 2: Article Structure
+
 - Creates detailed outline
 - Defines headline and subheadline
 - Plans lede (opening paragraph)
@@ -324,8 +307,8 @@ val config = ArticleGenerationTaskExecutionConfigData(
 - Specifies key points per section
 - Estimates word count distribution
 
-
 #### Phase 3: Article Writing
+
 - Writes complete article following structure
 - Integrates quotes and data
 - Maintains journalistic standards
@@ -333,14 +316,13 @@ val config = ArticleGenerationTaskExecutionConfigData(
 - Includes proper attribution
 - Performs optional revision passes
 
-
 #### Phase 4: Social Media (Optional)
+
 - Creates platform-specific snippets
 - Optimizes for Twitter (280 chars)
 - Crafts Facebook post (conversational)
 - Writes LinkedIn snippet (professional)
 - Includes relevant hashtags
-
 
 ### Validation Rules
 
@@ -360,7 +342,6 @@ graph TD
     style H fill:#c8e6c9
 ```
 
-
 ### Error Handling
 
 The task implements comprehensive error handling:
@@ -379,7 +360,6 @@ graph TD
     style H fill:#fff9c4
 ```
 
-
 ### Performance Metrics
 
 The task tracks and reports:
@@ -390,16 +370,13 @@ The task tracks and reports:
 - **Execution Time**: Total time in seconds
 - **Revision Passes**: Number of quality improvement iterations
 
-
 ### Output Artifacts
-
 
 #### Generated Files
 
 1. **Article Draft** - Full article with formatting
 2. **Transcript** - Complete execution log (Markdown)
 3. **Social Snippets** - Platform-specific content (if enabled)
-
 
 #### UI Tabs
 
@@ -408,13 +385,12 @@ The task tracks and reports:
 - **Article Draft** - Final article content
 - **Social Media** - Platform snippets (if enabled)
 
-
 ### Best Practices
-
 
 #### Configuration
 
 ✅ **DO:**
+
 - Specify clear, detailed story topics
 - Include relevant journalism elements
 - Set realistic word count targets
@@ -422,38 +398,38 @@ The task tracks and reports:
 - Enable revision passes for important articles
 
 ❌ **DON'T:**
+
 - Leave story_topic blank
 - Set negative revision passes
 - Use incompatible format/style combinations
 - Ignore input file patterns
 - Skip validation before execution
 
-
 #### Input Files
 
 ✅ **DO:**
+
 - Use glob patterns for flexibility
 - Include diverse source materials
 - Provide context documents
 - Use standard file formats
 
 ❌ **DON'T:**
+
 - Include binary files without extraction
 - Use overly broad patterns
 - Mix unrelated source materials
 - Exceed reasonable file sizes
 
-
 ### Troubleshooting
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| "Invalid configuration type" | Wrong config class | Verify ArticleGenerationTaskExecutionConfigData |
-| "No story topic specified" | Empty story_topic | Provide clear, specific topic |
-| "API validation failed" | Missing API key | Configure API credentials |
-| "Word count mismatch" | LLM variation | Increase revision passes |
-| "File not found" | Invalid glob pattern | Verify file paths and patterns |
-
+| Issue                        | Cause                | Solution                                        |
+|------------------------------|----------------------|-------------------------------------------------|
+| "Invalid configuration type" | Wrong config class   | Verify ArticleGenerationTaskExecutionConfigData |
+| "No story topic specified"   | Empty story_topic    | Provide clear, specific topic                   |
+| "API validation failed"      | Missing API key      | Configure API credentials                       |
+| "Word count mismatch"        | LLM variation        | Increase revision passes                        |
+| "File not found"             | Invalid glob pattern | Verify file paths and patterns                  |
 
 ### Integration Points
 
@@ -475,7 +451,6 @@ graph LR
     style G fill:#fff3e0
 ```
 
-
 ### Related Tasks
 
 - **JournalismReasoningTask** - Base class for journalism analysis
@@ -485,14 +460,13 @@ graph LR
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\BusinessProposalTask.kt
 
-
 ## Business Proposal Task - User Documentation
-
 
 ### Overview
 
-The **BusinessProposalTask** is a comprehensive tool for generating professional business proposals with integrated financial analysis, risk assessment, and competitive positioning. It uses AI agents to create multi-section proposals tailored to specific stakeholder needs and proposal types.
-
+The **BusinessProposalTask** is a comprehensive tool for generating professional business proposals with integrated
+financial analysis, risk assessment, and competitive positioning. It uses AI agents to create multi-section proposals
+tailored to specific stakeholder needs and proposal types.
 
 ### Key Features
 
@@ -505,65 +479,57 @@ The **BusinessProposalTask** is a comprehensive tool for generating professional
 - 🔄 **Revision Passes** - Optional quality improvement iterations
 - 📊 **Multiple Formats** - Outputs Markdown, HTML, and PDF
 
-
 ### Configuration Parameters
-
 
 #### Required Parameters
 
-| Parameter | Type | Description | Example |
-|-----------|------|-------------|---------|
-| `proposal_title` | String | The title or name of the proposal | "Cloud Migration Initiative" |
-| `objective` | String | The primary goal of the proposal | "Migrate on-premises infrastructure to cloud" |
-
+| Parameter        | Type   | Description                       | Example                                       |
+|------------------|--------|-----------------------------------|-----------------------------------------------|
+| `proposal_title` | String | The title or name of the proposal | "Cloud Migration Initiative"                  |
+| `objective`      | String | The primary goal of the proposal  | "Migrate on-premises infrastructure to cloud" |
 
 #### Proposal Type & Scope
 
-| Parameter | Type | Default | Options |
-|-----------|------|---------|---------|
-| `proposal_type` | String | "project" | project, investment, grant, partnership, rfp_response |
-| `proposing_organization` | String | null | Your organization name |
-| `target_word_count` | Integer | 3000 | Recommended: 2000-5000 |
-
+| Parameter                | Type    | Default   | Options                                               |
+|--------------------------|---------|-----------|-------------------------------------------------------|
+| `proposal_type`          | String  | "project" | project, investment, grant, partnership, rfp_response |
+| `proposing_organization` | String  | null      | Your organization name                                |
+| `target_word_count`      | Integer | 3000      | Recommended: 2000-5000                                |
 
 #### Stakeholder Configuration
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `decision_makers` | List[String] | Key people who will evaluate the proposal |
-| `stakeholders` | Map[String, String] | Stakeholder names and their interests |
-| `urgency_level` | String | critical, high, moderate, low |
-| `tone` | String | formal, professional, persuasive, collaborative |
-
+| Parameter         | Type                | Description                                     |
+|-------------------|---------------------|-------------------------------------------------|
+| `decision_makers` | List[String]        | Key people who will evaluate the proposal       |
+| `stakeholders`    | Map[String, String] | Stakeholder names and their interests           |
+| `urgency_level`   | String              | critical, high, moderate, low                   |
+| `tone`            | String              | formal, professional, persuasive, collaborative |
 
 #### Financial & Timeline
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
+| Parameter      | Type   | Description                             |
+|----------------|--------|-----------------------------------------|
 | `budget_range` | String | e.g., "$50,000-$100,000" or "under $1M" |
-| `timeline` | String | e.g., "6 months" or "2024-2025" |
-
+| `timeline`     | String | e.g., "6 months" or "2024-2025"         |
 
 #### Analysis Components (Boolean Flags)
 
-| Parameter | Default | Purpose |
-|-----------|---------|---------|
-| `include_roi_analysis` | true | Financial projections and ROI calculations |
-| `include_risk_assessment` | true | Risk identification and mitigation |
-| `include_competitive_analysis` | true | Alternatives comparison |
-| `include_timeline_milestones` | true | Project phases and critical path |
-| `include_resource_requirements` | true | Team and resource needs |
-| `include_appendices` | true | Supporting documents section |
-
+| Parameter                       | Default | Purpose                                    |
+|---------------------------------|---------|--------------------------------------------|
+| `include_roi_analysis`          | true    | Financial projections and ROI calculations |
+| `include_risk_assessment`       | true    | Risk identification and mitigation         |
+| `include_competitive_analysis`  | true    | Alternatives comparison                    |
+| `include_timeline_milestones`   | true    | Project phases and critical path           |
+| `include_resource_requirements` | true    | Team and resource needs                    |
+| `include_appendices`            | true    | Supporting documents section               |
 
 #### Content Control
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `revision_passes` | Integer | 1 | Number of quality improvement iterations (0-5) |
-| `related_files` | List[String] | null | Research files to incorporate |
-| `input_files` | List[String] | null | File patterns (e.g., `**/*.kt`) for context |
-
+| Parameter         | Type         | Default | Description                                    |
+|-------------------|--------------|---------|------------------------------------------------|
+| `revision_passes` | Integer      | 1       | Number of quality improvement iterations (0-5) |
+| `related_files`   | List[String] | null    | Research files to incorporate                  |
+| `input_files`     | List[String] | null    | File patterns (e.g., `**/*.kt`) for context    |
 
 ### Execution Flow
 
@@ -611,7 +577,6 @@ graph TD
     
     D --> AD["End: Error"]
 ```
-
 
 ### Data Flow Architecture
 
@@ -678,7 +643,6 @@ graph LR
     style Q fill:#fce4ec
 ```
 
-
 ### Agent Interaction Pattern
 
 ```mermaid
@@ -736,7 +700,6 @@ sequenceDiagram
     Task-->>User: Return final result
 ```
 
-
 ### Data Structure Hierarchy
 
 ```mermaid
@@ -793,7 +756,6 @@ graph TD
     K --> K2["critical_path"]
 ```
 
-
 ### Output Structure
 
 ```mermaid
@@ -830,9 +792,7 @@ graph TD
     E --> E10["Phase 10: Final Assembly"]
 ```
 
-
 ### Usage Examples
-
 
 #### Example 1: Project Proposal
 
@@ -856,7 +816,6 @@ graph TD
 }
 ```
 
-
 #### Example 2: Grant Proposal
 
 ```json
@@ -877,7 +836,6 @@ graph TD
   "revision_passes": 1
 }
 ```
-
 
 #### Example 3: RFP Response
 
@@ -901,112 +859,107 @@ graph TD
 }
 ```
 
-
 ### Output Files
 
 The task generates multiple output files in the session directory:
 
-
 #### 1. **proposal.md** (Main Deliverable)
+
 - Complete proposal in Markdown format
 - Includes all sections, analysis, and appendices
 - Easily convertible to HTML and PDF
 
-
 #### 2. **transcript.md** (Generation Log)
+
 - Detailed log of all generation phases
 - Timestamps and progress indicators
 - Useful for auditing and understanding decisions
 
-
 #### 3. **proposal.html** (Web Version)
+
 - Formatted HTML version for web viewing
 - Professional styling and navigation
 - Shareable via email or web link
 
-
 #### 4. **proposal.pdf** (Print Version)
+
 - Print-ready PDF format
 - Professional layout and formatting
 - Suitable for formal submission
 
-
 ### Performance Metrics
 
-| Metric | Typical Value | Range |
-|--------|---------------|-------|
-| Generation Time | 2-5 minutes | 1-10 minutes |
-| Word Count | 3000-4000 | 2000-5000+ |
-| Number of Sections | 8-10 | 6-12 |
-| API Calls | 10-15 | 8-20 |
-| File Size (Markdown) | 50-150 KB | 30-300 KB |
-
+| Metric               | Typical Value | Range        |
+|----------------------|---------------|--------------|
+| Generation Time      | 2-5 minutes   | 1-10 minutes |
+| Word Count           | 3000-4000     | 2000-5000+   |
+| Number of Sections   | 8-10          | 6-12         |
+| API Calls            | 10-15         | 8-20         |
+| File Size (Markdown) | 50-150 KB     | 30-300 KB    |
 
 ### Best Practices
 
-
 #### 1. **Configuration**
+
 - ✅ Provide specific, measurable objectives
 - ✅ List actual decision-makers and stakeholders
 - ✅ Set realistic word count targets
 - ✅ Choose appropriate tone for audience
 
-
 #### 2. **Content Quality**
+
 - ✅ Include related research files for context
 - ✅ Specify input files for technical proposals
 - ✅ Use 2-3 revision passes for important proposals
 - ✅ Review and customize generated content
 
-
 #### 3. **Stakeholder Analysis**
+
 - ✅ Identify all key decision-makers
 - ✅ Map stakeholder interests and concerns
 - ✅ Tailor messaging to each stakeholder group
 - ✅ Address objections proactively
 
-
 #### 4. **Financial Projections**
+
 - ✅ Provide realistic budget ranges
 - ✅ Include detailed cost breakdowns
 - ✅ Specify expected benefits and timelines
 - ✅ Calculate conservative ROI estimates
 
-
 #### 5. **Risk Management**
+
 - ✅ Identify realistic risks
 - ✅ Provide concrete mitigation strategies
 - ✅ Assess probability and impact
 - ✅ Show preparedness and planning
 
-
 ### Troubleshooting
 
-
 #### Issue: Proposal is too short
+
 **Solution:** Increase `target_word_count` or add more sections via analysis flags
 
-
 #### Issue: Content doesn't match tone
+
 **Solution:** Adjust `tone` parameter and increase `revision_passes`
 
-
 #### Issue: Missing stakeholder perspectives
+
 **Solution:** Populate `decision_makers` and `stakeholders` fields more completely
 
-
 #### Issue: Financial analysis seems unrealistic
+
 **Solution:** Provide specific `budget_range` and include context files with financial data
 
-
 #### Issue: Timeline doesn't align with budget
-**Solution:** Ensure `timeline` and `budget_range` are realistic and aligned
 
+**Solution:** Ensure `timeline` and `budget_range` are realistic and aligned
 
 ### Advanced Features
 
-
 #### Context Integration
+
 ```json
 {
   "related_files": [
@@ -1021,17 +974,18 @@ The task generates multiple output files in the session directory:
 }
 ```
 
-
 #### Multi-Pass Revision
+
 ```json
 {
   "revision_passes": 3
 }
 ```
+
 Each pass refines language, flow, and persuasiveness.
 
-
 #### Comprehensive Analysis
+
 ```json
 {
   "include_roi_analysis": true,
@@ -1043,10 +997,10 @@ Each pass refines language, flow, and persuasiveness.
 }
 ```
 
-
 ### Integration with Other Tasks
 
 The BusinessProposalTask can be combined with:
+
 - **FileModificationTask** - Update proposal files
 - **GenerateDocumentationTask** - Create supporting docs
 - **ArticleGenerationTask** - Expand sections
@@ -1060,14 +1014,13 @@ The BusinessProposalTask can be combined with:
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\EmailCampaignTask.kt
 
-
 ## EmailCampaignTask User Documentation
-
 
 ### Overview
 
-The **EmailCampaignTask** is a comprehensive email marketing automation tool that generates complete, production-ready email sequences. It combines strategic planning, content generation, and quality refinement to create cohesive multi-email campaigns tailored to specific marketing goals.
-
+The **EmailCampaignTask** is a comprehensive email marketing automation tool that generates complete, production-ready
+email sequences. It combines strategic planning, content generation, and quality refinement to create cohesive
+multi-email campaigns tailored to specific marketing goals.
 
 #### Key Capabilities
 
@@ -1080,60 +1033,53 @@ The **EmailCampaignTask** is a comprehensive email marketing automation tool tha
 
 ---
 
-
 ### Configuration Guide
-
 
 #### Basic Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `campaign_goal` | String | Required | The primary objective of the email campaign |
-| `subject_matter` | String | Required | The product, service, or topic being promoted |
-| `target_audience` | String | "general audience" | Demographics, role, and pain points of recipients |
-| `campaign_type` | String | "nurture" | Type: `welcome_series`, `nurture`, `sales`, `re_engagement`, `newsletter`, `event_promotion` |
-| `num_emails` | Int | 3 | Number of emails in sequence (1-10) |
-
+| Parameter         | Type   | Default            | Description                                                                                  |
+|-------------------|--------|--------------------|----------------------------------------------------------------------------------------------|
+| `campaign_goal`   | String | Required           | The primary objective of the email campaign                                                  |
+| `subject_matter`  | String | Required           | The product, service, or topic being promoted                                                |
+| `target_audience` | String | "general audience" | Demographics, role, and pain points of recipients                                            |
+| `campaign_type`   | String | "nurture"          | Type: `welcome_series`, `nurture`, `sales`, `re_engagement`, `newsletter`, `event_promotion` |
+| `num_emails`      | Int    | 3                  | Number of emails in sequence (1-10)                                                          |
 
 #### Campaign Strategy Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `brand_voice` | String | "professional" | Tone: `professional`, `friendly`, `casual`, `authoritative`, `playful` |
-| `primary_cta` | String | "learn_more" | Main action: `schedule_demo`, `download_resource`, `make_purchase`, `register_event` |
-| `send_intervals` | List[Int] | null | Days between emails (e.g., `[1, 3, 7]` = day 1, 4, 11) |
-
+| Parameter        | Type      | Default        | Description                                                                          |
+|------------------|-----------|----------------|--------------------------------------------------------------------------------------|
+| `brand_voice`    | String    | "professional" | Tone: `professional`, `friendly`, `casual`, `authoritative`, `playful`               |
+| `primary_cta`    | String    | "learn_more"   | Main action: `schedule_demo`, `download_resource`, `make_purchase`, `register_event` |
+| `send_intervals` | List[Int] | null           | Days between emails (e.g., `[1, 3, 7]` = day 1, 4, 11)                               |
 
 #### Subject Line Configuration
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `generate_subject_variants` | Boolean | true | Create A/B test variants |
-| `subject_variants_count` | Int | 3 | Variants per email (1-5) |
-| `max_subject_length` | Int | 60 | Character limit (20-100) |
-| `use_emoji` | Boolean | false | Include emoji in subject lines |
-
+| Parameter                   | Type    | Default | Description                    |
+|-----------------------------|---------|---------|--------------------------------|
+| `generate_subject_variants` | Boolean | true    | Create A/B test variants       |
+| `subject_variants_count`    | Int     | 3       | Variants per email (1-5)       |
+| `max_subject_length`        | Int     | 60      | Character limit (20-100)       |
+| `use_emoji`                 | Boolean | false   | Include emoji in subject lines |
 
 #### Email Content Configuration
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `body_length` | String | "medium" | Length: `short` (<150 words), `medium` (150-300), `long` (>300) |
-| `include_personalization` | Boolean | true | Add tokens like `{{first_name}}`, `{{company}}` |
-| `include_preview_text` | Boolean | true | Inbox preview snippet (40-90 chars) |
-| `include_ps` | Boolean | true | Add P.S. section to emails |
-| `revision_passes` | Int | 1 | Quality refinement iterations (0-5) |
-
+| Parameter                 | Type    | Default  | Description                                                     |
+|---------------------------|---------|----------|-----------------------------------------------------------------|
+| `body_length`             | String  | "medium" | Length: `short` (<150 words), `medium` (150-300), `long` (>300) |
+| `include_personalization` | Boolean | true     | Add tokens like `{{first_name}}`, `{{company}}`                 |
+| `include_preview_text`    | Boolean | true     | Inbox preview snippet (40-90 chars)                             |
+| `include_ps`              | Boolean | true     | Add P.S. section to emails                                      |
+| `revision_passes`         | Int     | 1        | Quality refinement iterations (0-5)                             |
 
 #### Context Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `input_files` | List[String] | null | File patterns for brand context (e.g., `**/*.md`) |
-| `related_files` | List[String] | null | Specific files with brand guidelines |
+| Parameter       | Type         | Default | Description                                       |
+|-----------------|--------------|---------|---------------------------------------------------|
+| `input_files`   | List[String] | null    | File patterns for brand context (e.g., `**/*.md`) |
+| `related_files` | List[String] | null    | Specific files with brand guidelines              |
 
 ---
-
 
 ### Workflow Phases
 
@@ -1156,12 +1102,12 @@ graph TD
     style G fill:#c8e6c9
 ```
 
-
 #### Phase 1: Campaign Strategy Development
 
 **Objective**: Establish the strategic foundation for the entire campaign
 
 **Process**:
+
 1. Analyzes campaign goal and subject matter
 2. Considers target audience and campaign type
 3. Develops overall positioning and approach
@@ -1173,6 +1119,7 @@ graph TD
 **Output**: `CampaignStrategy` object with strategic framework
 
 **Example Strategy Output**:
+
 ```
 Strategy: "Position as trusted advisor through educational content"
 Key Messages:
@@ -1187,24 +1134,25 @@ Progression Logic: "Build trust → Educate → Demonstrate → Convince → Con
 
 ---
 
-
 #### Phase 2: Email Sequence Outline
 
 **Objective**: Create detailed structure for each email
 
 **Process**:
+
 1. For each email in sequence:
-   - Defines specific purpose and goal
-   - Establishes main message/theme
-   - Lists 3-5 key points to cover
-   - Specifies call-to-action
-   - Sets emotional tone
-   - Connects to previous email (if applicable)
-   - Estimates word count
+    - Defines specific purpose and goal
+    - Establishes main message/theme
+    - Lists 3-5 key points to cover
+    - Specifies call-to-action
+    - Sets emotional tone
+    - Connects to previous email (if applicable)
+    - Estimates word count
 
 **Output**: List of `EmailOutline` objects
 
 **Example Outline**:
+
 ```
 Email 1: "Welcome & Problem Recognition"
   Purpose: Establish connection and set expectations
@@ -1220,15 +1168,14 @@ Email 1: "Welcome & Problem Recognition"
 
 ---
 
-
 #### Phase 3: Email Generation
 
 **Objective**: Write complete, production-ready emails
 
 **Process for each email**:
 
-
 ##### 3a. Subject Line Generation
+
 ```mermaid
 graph LR
     A["Email Purpose"] -->|Input| B["Subject Line Agent"]
@@ -1246,14 +1193,15 @@ graph LR
 ```
 
 **Subject Line Approaches**:
+
 - **Curiosity**: "The one thing most [audience] miss about [topic]"
 - **Benefit**: "How to [benefit] in [timeframe]"
 - **Urgency**: "Only [X] spots left for [offer]"
 - **Question**: "Are you making this [topic] mistake?"
 - **Direct**: "[Specific benefit] for [audience]"
 
-
 ##### 3b. Email Body Generation
+
 ```mermaid
 graph TD
     A["Email Outline"] -->|Input| B["Email Body Agent"]
@@ -1276,6 +1224,7 @@ graph TD
 ```
 
 **Email Structure**:
+
 ```
 1. Preview Text (40-90 chars)
    └─ Appears in inbox before subject line
@@ -1301,12 +1250,12 @@ graph TD
 
 ---
 
-
 #### Phase 4: Revision (Optional)
 
 **Objective**: Refine and improve email quality
 
 **Process** (repeated for each revision pass):
+
 1. Reviews each email for clarity and conciseness
 2. Enhances persuasive impact
 3. Improves flow and transitions
@@ -1315,6 +1264,7 @@ graph TD
 6. Validates brand voice consistency
 
 **Maintains**:
+
 - All key points and messages
 - Word count targets
 - Personalization tokens
@@ -1322,12 +1272,12 @@ graph TD
 
 ---
 
-
 #### Phase 5: Final Assembly
 
 **Objective**: Compile complete campaign with all variants and documentation
 
 **Output Components**:
+
 1. **Campaign Overview**: Goals, audience, configuration
 2. **Strategy Summary**: Approach, key messages, progression
 3. **Complete Email Sequence**: All emails with variants
@@ -1336,7 +1286,6 @@ graph TD
 6. **Campaign Metrics**: Word counts, duration, complexity
 
 ---
-
 
 ### Data Flow Diagram
 
@@ -1391,9 +1340,7 @@ graph TB
 
 ---
 
-
 ### Usage Examples
-
 
 #### Example 1: SaaS Product Launch Campaign
 
@@ -1416,6 +1363,7 @@ graph TB
 ```
 
 **Expected Output**:
+
 - 4 emails over 11 days
 - 3 subject line variants per email (12 total)
 - ~900-1200 total words
@@ -1423,7 +1371,6 @@ graph TB
 - 2 revision passes for quality
 
 ---
-
 
 #### Example 2: E-commerce Re-engagement Campaign
 
@@ -1445,6 +1392,7 @@ graph TB
 ```
 
 **Expected Output**:
+
 - 3 emails over 7 days
 - Friendly, casual tone with emoji
 - Shorter emails (~400-450 total words)
@@ -1452,7 +1400,6 @@ graph TB
 - P.S. sections with urgency
 
 ---
-
 
 #### Example 3: Educational Newsletter Series
 
@@ -1475,6 +1422,7 @@ graph TB
 ```
 
 **Expected Output**:
+
 - 5 weekly emails
 - Authoritative, educational tone
 - Longer-form content (~2000+ total words)
@@ -1483,9 +1431,7 @@ graph TB
 
 ---
 
-
 ### Output Structure
-
 
 #### Campaign Transcript
 
@@ -1558,9 +1504,7 @@ The task generates a comprehensive markdown transcript containing:
 
 ---
 
-
 ### Best Practices
-
 
 #### 1. Subject Line Optimization
 
@@ -1576,28 +1520,29 @@ graph LR
 ```
 
 **Tips**:
+
 - Test 2-3 variants per email
 - Measure open rates for 24-48 hours
 - Apply winning patterns to future campaigns
 - Keep under 60 characters for mobile
 - Avoid spam trigger words
 
-
 #### 2. Personalization Strategy
 
 **Effective Tokens**:
+
 - `{{first_name}}` - Most impactful
 - `{{company}}` - Industry relevance
 - `{{role}}` - Job-specific messaging
 - `{{location}}` - Regional offers
 
 **Implementation**:
+
 ```
 "Hi {{first_name}},
 
 At {{company}}, we know that {{role}}s face unique challenges..."
 ```
-
 
 #### 3. Call-to-Action Progression
 
@@ -1611,24 +1556,25 @@ Email 3: "Start Free Trial" (high commitment)
 Email 4: "Schedule Consultation" (highest commitment)
 ```
 
-
 #### 4. Send Timing
 
 **Recommended Intervals**:
+
 - **Welcome Series**: Day 0, 1, 3, 7
 - **Nurture Campaign**: Day 0, 3, 7, 14
 - **Sales Campaign**: Day 0, 2, 5, 10
 - **Re-engagement**: Day 0, 5, 10
 
 **Optimal Send Times**:
+
 - Tuesday-Thursday: 10 AM - 2 PM
 - Avoid: Monday morning, Friday afternoon
 - Test: Segment by timezone
 
-
 #### 5. Content Guidelines
 
 **Email Body Best Practices**:
+
 - Keep paragraphs to 2-3 sentences
 - Use short lines (40-50 characters)
 - Include white space for readability
@@ -1638,47 +1584,47 @@ Email 4: "Schedule Consultation" (highest commitment)
 - Make CTA specific and action-oriented
 
 **Word Count Targets**:
+
 - **Short**: 100-150 words (quick reads)
 - **Medium**: 150-300 words (balanced)
 - **Long**: 300+ words (detailed/educational)
 
 ---
 
-
 ### Troubleshooting
-
 
 #### Issue: Generated emails feel generic
 
 **Solution**:
+
 1. Provide more specific `target_audience` details
 2. Include brand context files via `input_files`
 3. Increase `revision_passes` to 2-3
 4. Specify `brand_voice` more precisely
 5. Add related brand guidelines via `related_files`
 
-
 #### Issue: Subject lines are too similar
 
 **Solution**:
+
 1. Increase `subject_variants_count` to 4-5
 2. Ensure `generate_subject_variants` is true
 3. Vary `use_emoji` setting
 4. Provide more specific campaign context
 
-
 #### Issue: Emails are too long/short
 
 **Solution**:
+
 1. Adjust `body_length` setting
 2. Modify `num_emails` to spread content
 3. Adjust `send_intervals` for pacing
 4. Review generated word counts in output
 
-
 #### Issue: Personalization tokens not working
 
 **Solution**:
+
 1. Verify `include_personalization` is true
 2. Check email platform supports tokens
 3. Ensure token format: `{{token_name}}`
@@ -1686,31 +1632,33 @@ Email 4: "Schedule Consultation" (highest commitment)
 
 ---
 
-
 ### Integration Guide
-
 
 #### Email Platform Integration
 
 **Mailchimp**:
+
 ```
 Personalization: *|FNAME|*, *|COMPANY|*
 Subject Line: *|FNAME|*, check this out
 ```
 
 **HubSpot**:
+
 ```
 Personalization: {{contact.firstname}}, {{company}}
 Subject Line: {{contact.firstname}}, we have something special
 ```
 
 **Klaviyo**:
+
 ```
 Personalization: {{first_name}}, {{company}}
 Subject Line: {{first_name}}, exclusive offer inside
 ```
 
 **Custom Platform**:
+
 ```
 Personalization: {{first_name}}, {{company}}, {{email}}
 Subject Line: {{first_name}}, your personalized offer
@@ -1718,19 +1666,16 @@ Subject Line: {{first_name}}, your personalized offer
 
 ---
 
-
 ### Performance Metrics
-
 
 #### Expected Results by Campaign Type
 
-| Metric | Welcome | Nurture | Sales | Re-engagement |
-|--------|---------|---------|-------|---------------|
-| Avg Open Rate | 45-55% | 25-35% | 20-30% | 15-25% |
-| Avg Click Rate | 5-10% | 2-5% | 2-4% | 1-3% |
-| Conversion Rate | 2-5% | 0.5-2% | 1-3% | 0.5-1.5% |
-| Unsubscribe Rate | <0.5% | <0.3% | <0.3% | <0.5% |
-
+| Metric           | Welcome | Nurture | Sales  | Re-engagement |
+|------------------|---------|---------|--------|---------------|
+| Avg Open Rate    | 45-55%  | 25-35%  | 20-30% | 15-25%        |
+| Avg Click Rate   | 5-10%   | 2-5%    | 2-4%   | 1-3%          |
+| Conversion Rate  | 2-5%    | 0.5-2%  | 1-3%   | 0.5-1.5%      |
+| Unsubscribe Rate | <0.5%   | <0.3%   | <0.3%  | <0.5%         |
 
 #### Optimization Checklist
 
@@ -1747,9 +1692,7 @@ Subject Line: {{first_name}}, your personalized offer
 
 ---
 
-
 ### Advanced Features
-
 
 #### Custom Brand Context
 
@@ -1769,7 +1712,6 @@ Provide specific files to influence email tone and messaging:
 }
 ```
 
-
 #### Multi-Pass Revision
 
 Enable multiple revision passes for higher quality:
@@ -1781,15 +1723,14 @@ Enable multiple revision passes for higher quality:
 ```
 
 **Revision Focus**:
+
 - Pass 1: Clarity and flow
 - Pass 2: Persuasive impact
 - Pass 3: Brand voice consistency
 
 ---
 
-
 ### Support & Resources
-
 
 #### Common Questions
 
@@ -1810,12 +1751,14 @@ A: Track open rates, click rates, conversions, and unsubscribes. Compare against
 
 ---
 
-
 ### Conclusion
 
-The EmailCampaignTask provides a complete, AI-powered solution for generating professional email campaigns. By following the configuration guidelines and best practices outlined in this documentation, you can create high-performing email sequences that drive engagement and conversions.
+The EmailCampaignTask provides a complete, AI-powered solution for generating professional email campaigns. By following
+the configuration guidelines and best practices outlined in this documentation, you can create high-performing email
+sequences that drive engagement and conversions.
 
 For optimal results:
+
 1. ✅ Provide clear, specific campaign goals
 2. ✅ Define target audience characteristics
 3. ✅ Include brand context and guidelines
@@ -1825,14 +1768,13 @@ For optimal results:
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\InteractiveStoryTask.kt
 
-
 ## InteractiveStoryTask User Documentation
-
 
 ### Overview
 
-The **InteractiveStoryTask** is a sophisticated tool for generating complete choose-your-own-adventure narratives with branching paths, multiple endings, and state tracking. It creates immersive interactive stories suitable for entertainment, education, training scenarios, and game development.
-
+The **InteractiveStoryTask** is a sophisticated tool for generating complete choose-your-own-adventure narratives with
+branching paths, multiple endings, and state tracking. It creates immersive interactive stories suitable for
+entertainment, education, training scenarios, and game development.
 
 ### Key Features
 
@@ -1844,82 +1786,76 @@ The **InteractiveStoryTask** is a sophisticated tool for generating complete cho
 - 📝 **Customizable Style** - Supports various genres, tones, and writing styles
 - 🚫 **No Dead Ends** - Ensures all narrative paths lead to meaningful conclusions
 
-
 ### Configuration Parameters
-
 
 #### Story Premise & Genre
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `premise` | String | Required | The starting scenario or hook for your story |
-| `genre` | String | "fantasy" | Story genre (fantasy, sci-fi, mystery, horror, romance, etc.) |
-| `target_audience` | String | "young_adult" | Intended audience (children, young_adult, adult) |
-| `tone` | String | "serious" | Story tone (lighthearted, serious, dark, humorous) |
-| `writing_style` | String | "descriptive" | Narrative style (descriptive, action-packed, dialogue-heavy, introspective) |
-| `point_of_view` | String | "second_person" | POV perspective (second_person, first_person, third_person) |
-
+| Parameter         | Type   | Default         | Description                                                                 |
+|-------------------|--------|-----------------|-----------------------------------------------------------------------------|
+| `premise`         | String | Required        | The starting scenario or hook for your story                                |
+| `genre`           | String | "fantasy"       | Story genre (fantasy, sci-fi, mystery, horror, romance, etc.)               |
+| `target_audience` | String | "young_adult"   | Intended audience (children, young_adult, adult)                            |
+| `tone`            | String | "serious"       | Story tone (lighthearted, serious, dark, humorous)                          |
+| `writing_style`   | String | "descriptive"   | Narrative style (descriptive, action-packed, dialogue-heavy, introspective) |
+| `point_of_view`   | String | "second_person" | POV perspective (second_person, first_person, third_person)                 |
 
 #### Story Structure
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `num_decision_points` | Integer | 5 | Number of major decision points (1-20) |
-| `choices_per_decision` | Integer | 3 | Number of choices at each decision (2-5) |
-| `num_endings` | Integer | 3 | Number of distinct endings (1-10) |
-| `segment_word_count` | Integer | 300 | Target words per story segment (100-1000) |
-
+| Parameter              | Type    | Default | Description                               |
+|------------------------|---------|---------|-------------------------------------------|
+| `num_decision_points`  | Integer | 5       | Number of major decision points (1-20)    |
+| `choices_per_decision` | Integer | 3       | Number of choices at each decision (2-5)  |
+| `num_endings`          | Integer | 3       | Number of distinct endings (1-10)         |
+| `segment_word_count`   | Integer | 300     | Target words per story segment (100-1000) |
 
 #### Advanced Features
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `track_state_variables` | Boolean | true | Enable state variable tracking |
-| `state_variables` | List[String] | null | Variables to track (health, reputation, gold, ally_trust, etc.) |
-| `prevent_dead_ends` | Boolean | true | Ensure all paths lead to meaningful endings |
-| `track_consequences` | Boolean | true | Track impacts of choices across the story |
-| `optimize_replay_value` | Boolean | true | Create significantly different experiences per playthrough |
-| `input_files` | List[String] | null | File patterns for context (supports glob patterns like `**/*.kt`) |
-
+| Parameter               | Type         | Default | Description                                                       |
+|-------------------------|--------------|---------|-------------------------------------------------------------------|
+| `track_state_variables` | Boolean      | true    | Enable state variable tracking                                    |
+| `state_variables`       | List[String] | null    | Variables to track (health, reputation, gold, ally_trust, etc.)   |
+| `prevent_dead_ends`     | Boolean      | true    | Ensure all paths lead to meaningful endings                       |
+| `track_consequences`    | Boolean      | true    | Track impacts of choices across the story                         |
+| `optimize_replay_value` | Boolean      | true    | Create significantly different experiences per playthrough        |
+| `input_files`           | List[String] | null    | File patterns for context (supports glob patterns like `**/*.kt`) |
 
 ### Generation Process
 
 The task executes in five phases:
 
-
 #### Phase 1: Story Structure Planning
+
 - Creates high-level outline with title and opening concept
 - Designs decision tree architecture
 - Maps connections between decision points and endings
 - Defines state variables and their initial values
 
-
 #### Phase 2: Opening Segment
+
 - Writes compelling opening (~300 words by default)
 - Establishes setting, atmosphere, and protagonist
 - Hooks the reader immediately
 - Sets up the initial situation
 
-
 #### Phase 3: Decision Points
+
 - Generates narrative for each decision point
 - Presents meaningful choices with distinct consequences
 - Tracks state changes from each choice
 - Ensures narrative flow between segments
 
-
 #### Phase 4: Endings
+
 - Creates distinct conclusions for each ending type
 - Reflects consequences of player choices
 - Provides satisfying closure
 - Honors the journey taken
 
-
 #### Phase 5: Interactive Map
+
 - Compiles complete playable story
 - Shows all paths and connections
 - Provides statistics and replay information
-
 
 ### Data Flow Diagram
 
@@ -1950,7 +1886,6 @@ graph TD
     style F fill:#f1f8e9
     style G fill:#e0f2f1
 ```
-
 
 ### Story Structure Diagram
 
@@ -1989,7 +1924,6 @@ graph TD
     style END2 fill:#ffcdd2,stroke:#c62828,stroke-width:2px
     style END3 fill:#ffe0b2,stroke:#e65100,stroke-width:2px
 ```
-
 
 ### State Variable Tracking
 
@@ -2032,7 +1966,6 @@ graph LR
     style G3 fill:#fff9c4
 ```
 
-
 ### Choice Consequence Flow
 
 ```mermaid
@@ -2060,7 +1993,6 @@ graph TD
     style END2 fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
     style END3 fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
 ```
-
 
 ### Output Structure
 
@@ -2091,9 +2023,7 @@ graph TD
     style SUMMPDF fill:#fff9c4,stroke:#f57f17
 ```
 
-
 ### Usage Examples
-
 
 #### Example 1: Fantasy Adventure
 
@@ -2112,7 +2042,6 @@ graph TD
   "optimize_replay_value": true
 }
 ```
-
 
 #### Example 2: Science Fiction Mystery
 
@@ -2133,7 +2062,6 @@ graph TD
 }
 ```
 
-
 #### Example 3: Interactive Training Scenario
 
 ```json
@@ -2152,7 +2080,6 @@ graph TD
 }
 ```
 
-
 ### Output Statistics
 
 The task generates comprehensive statistics:
@@ -2164,114 +2091,112 @@ The task generates comprehensive statistics:
 - **Generation Time** - Total processing duration
 - **Tracked Variables** - Number of state variables monitored
 
-
 ### Best Practices
 
-
 #### 1. **Premise Clarity**
+
 - Write specific, compelling premises
 - Avoid vague or overly broad starting scenarios
 - Include enough context for the AI to understand the setting
 
-
 #### 2. **Configuration Balance**
+
 - 5-7 decision points works well for most stories
 - 3-4 choices per decision maintains manageability
 - 2-4 endings provides good variety without overwhelming complexity
 
-
 #### 3. **State Variables**
+
 - Choose 3-5 variables for optimal tracking
 - Use meaningful names (health, reputation, trust, etc.)
 - Ensure variables affect story outcomes
 
-
 #### 4. **Genre & Tone Consistency**
+
 - Match writing style to genre
 - Ensure tone aligns with target audience
 - POV should match narrative style
 
-
 #### 5. **Input Context**
+
 - Provide relevant files for better story grounding
 - Use glob patterns for flexible file selection
 - Context helps maintain consistency
-
 
 ### Validation Rules
 
 The task validates all configurations:
 
-| Field | Validation |
-|-------|-----------|
-| `premise` | Must not be null or blank |
-| `num_decision_points` | Must be 1-20 |
-| `choices_per_decision` | Must be 2-5 |
-| `num_endings` | Must be 1-10 |
-| `segment_word_count` | Must be 100-1000 |
-| `genre` | Must not be blank |
-| `point_of_view` | Must not be blank |
-| `input_files` | Patterns must not be blank |
-
+| Field                  | Validation                 |
+|------------------------|----------------------------|
+| `premise`              | Must not be null or blank  |
+| `num_decision_points`  | Must be 1-20               |
+| `choices_per_decision` | Must be 2-5                |
+| `num_endings`          | Must be 1-10               |
+| `segment_word_count`   | Must be 100-1000           |
+| `genre`                | Must not be blank          |
+| `point_of_view`        | Must not be blank          |
+| `input_files`          | Patterns must not be blank |
 
 ### Troubleshooting
 
-
 #### Issue: Story feels disconnected
+
 **Solution:** Provide more context via input files or ensure premise is detailed enough
 
-
 #### Issue: Choices don't feel meaningful
+
 **Solution:** Enable state variable tracking and ensure variables affect story outcomes
 
-
 #### Issue: Too many similar endings
+
 **Solution:** Increase `num_endings` or provide more specific ending type guidance
 
-
 #### Issue: Generation takes too long
-**Solution:** Reduce `num_decision_points` or `segment_word_count`
 
+**Solution:** Reduce `num_decision_points` or `segment_word_count`
 
 ### Advanced Features
 
-
 #### Consequence Tracking
+
 When enabled, the system ensures that:
+
 - Choices have immediate and long-term impacts
 - State variables change meaningfully
 - Paths converge logically
 - All endings feel earned
 
-
 #### Replay Value Optimization
+
 The system creates significantly different experiences by:
+
 - Varying narrative content based on choices
 - Changing available options based on state
 - Creating multiple distinct endings
 - Ensuring no two playthroughs feel identical
 
-
 #### Dead End Prevention
+
 The system ensures:
+
 - All decision paths lead to an ending
 - No narrative branches terminate prematurely
 - All endings are meaningful and satisfying
 - Player choices always matter
 
-
 ### Output Files
 
-
 #### story_map.md
+
 Complete interactive story with all paths, choices, and endings in a playable format.
 
-
 #### story_summary.md
+
 Generation summary including statistics, configuration, and quick reference guide.
 
-
 #### transcript.md
+
 Detailed transcript of all five generation phases with intermediate outputs.
 
 ---
@@ -2280,14 +2205,13 @@ Detailed transcript of all five generation phases with intermediate outputs.
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\JournalismReasoningTask.kt
 
-
 ## JournalismReasoningTask User Documentation
-
 
 ### Overview
 
-The **JournalismReasoningTask** is a comprehensive investigative journalism tool that applies professional journalistic standards and methods to analyze stories. It systematically investigates topics through fact-checking, perspective analysis, context research, bias detection, and editorial synthesis.
-
+The **JournalismReasoningTask** is a comprehensive investigative journalism tool that applies professional journalistic
+standards and methods to analyze stories. It systematically investigates topics through fact-checking, perspective
+analysis, context research, bias detection, and editorial synthesis.
 
 #### Key Features
 
@@ -2301,32 +2225,28 @@ The **JournalismReasoningTask** is a comprehensive investigative journalism tool
 
 ---
 
-
 ### Configuration Parameters
-
 
 #### Required Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
+| Parameter     | Type   | Description                             |
+|---------------|--------|-----------------------------------------|
 | `story_topic` | String | The story topic or event to investigate |
-
 
 #### Optional Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `input_files` | List[String] | null | Glob patterns for input files to analyze |
-| `journalism_elements` | Map | {} | Key journalism elements (who, what, when, where, why, how) |
-| `verify_facts` | Boolean | true | Enable fact verification |
-| `identify_perspectives` | Boolean | true | Identify multiple perspectives |
-| `analyze_context` | Boolean | true | Analyze background and context |
-| `identify_biases` | Boolean | true | Detect biases and balance issues |
-| `find_gaps` | Boolean | true | Find information gaps |
-| `alternative_angles` | Integer | 3 | Number of story angles to explore (1-10) |
-| `assess_newsworthiness` | Boolean | true | Assess news value |
-| `include_file_content` | Boolean | false | Include file content in analysis |
-
+| Parameter               | Type         | Default | Description                                                |
+|-------------------------|--------------|---------|------------------------------------------------------------|
+| `input_files`           | List[String] | null    | Glob patterns for input files to analyze                   |
+| `journalism_elements`   | Map          | {}      | Key journalism elements (who, what, when, where, why, how) |
+| `verify_facts`          | Boolean      | true    | Enable fact verification                                   |
+| `identify_perspectives` | Boolean      | true    | Identify multiple perspectives                             |
+| `analyze_context`       | Boolean      | true    | Analyze background and context                             |
+| `identify_biases`       | Boolean      | true    | Detect biases and balance issues                           |
+| `find_gaps`             | Boolean      | true    | Find information gaps                                      |
+| `alternative_angles`    | Integer      | 3       | Number of story angles to explore (1-10)                   |
+| `assess_newsworthiness` | Boolean      | true    | Assess news value                                          |
+| `include_file_content`  | Boolean      | false   | Include file content in analysis                           |
 
 #### Example Configuration
 
@@ -2354,7 +2274,6 @@ The **JournalismReasoningTask** is a comprehensive investigative journalism tool
 ```
 
 ---
-
 
 ### Data Flow Diagram
 
@@ -2400,7 +2319,6 @@ graph TD
 ```
 
 ---
-
 
 ### Investigation Pipeline
 
@@ -2469,9 +2387,7 @@ sequenceDiagram
 
 ---
 
-
 ### Data Structure Diagrams
-
 
 #### Fact Verification Structure
 
@@ -2494,7 +2410,6 @@ classDiagram
     FactChecks "1" *-- "*" FactCheck
 ```
 
-
 #### Source Perspective Structure
 
 ```mermaid
@@ -2515,7 +2430,6 @@ classDiagram
     
     SourcePerspectives "1" *-- "*" SourcePerspective
 ```
-
 
 #### Story Angle Structure
 
@@ -2538,7 +2452,6 @@ classDiagram
     StoryAngles "1" *-- "*" StoryAngle
 ```
 
-
 #### Information Gap Structure
 
 ```mermaid
@@ -2560,9 +2473,7 @@ classDiagram
 
 ---
 
-
 ### Output Structure
-
 
 #### Generated Files
 
@@ -2584,7 +2495,6 @@ classDiagram
     ├── Timestamps
     └── Completion status
 ```
-
 
 #### Output Example
 
@@ -2626,9 +2536,7 @@ The coverage emphasizes environmental benefits while underrepresenting business 
 
 ---
 
-
 ### Validation Rules
-
 
 #### Configuration Validation
 
@@ -2647,7 +2555,6 @@ graph TD
     style G fill:#ffcdd2
     style H fill:#c8e6c9
 ```
-
 
 #### Data Validation
 
@@ -2672,9 +2579,7 @@ graph TD
 
 ---
 
-
 ### Usage Examples
-
 
 #### Example 1: Basic Investigation
 
@@ -2688,7 +2593,6 @@ graph TD
 ```
 
 **Output:** Comprehensive analysis with verified facts, multiple perspectives, and historical context.
-
 
 #### Example 2: Deep Investigative Analysis
 
@@ -2716,7 +2620,6 @@ graph TD
 
 **Output:** Multi-faceted investigation with document analysis, bias detection, and editorial recommendations.
 
-
 #### Example 3: Quick Fact-Check
 
 ```json
@@ -2735,7 +2638,6 @@ graph TD
 
 ---
 
-
 ### Performance Characteristics
 
 ```mermaid
@@ -2751,18 +2653,16 @@ graph LR
     style B3 fill:#ffccbc
 ```
 
-
 #### Typical Execution Times
 
-| Configuration | Steps | Estimated Time |
-|---------------|-------|-----------------|
-| Minimal | 1-2 | 30-60s |
-| Standard | 4-5 | 2-3 min |
-| Comprehensive | 6-7 | 4-6 min |
-| With File Analysis | 6-7 + I/O | 5-10 min |
+| Configuration      | Steps     | Estimated Time |
+|--------------------|-----------|----------------|
+| Minimal            | 1-2       | 30-60s         |
+| Standard           | 4-5       | 2-3 min        |
+| Comprehensive      | 6-7       | 4-6 min        |
+| With File Analysis | 6-7 + I/O | 5-10 min       |
 
 ---
-
 
 ### Error Handling
 
@@ -2788,9 +2688,7 @@ graph TD
 
 ---
 
-
 ### Best Practices
-
 
 #### ✅ Do's
 
@@ -2800,7 +2698,6 @@ graph TD
 - ✅ Enable all analysis steps for comprehensive investigation
 - ✅ Review generated transcript for quality assurance
 - ✅ Use alternative angles for editorial planning
-
 
 #### ❌ Don'ts
 
@@ -2812,7 +2709,6 @@ graph TD
 - ❌ Overlook bias analysis findings
 
 ---
-
 
 ### Integration Points
 
@@ -2841,20 +2737,18 @@ graph TB
 
 ---
 
-
 ### Troubleshooting
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| Empty results | No story topic | Provide clear story_topic |
-| Incomplete analysis | Steps disabled | Enable required analysis steps |
-| File not found | Invalid glob pattern | Verify glob pattern syntax |
-| Slow execution | Large file set | Reduce input files or disable file content |
-| API errors | Rate limiting | Reduce alternative_angles or wait |
-| Validation errors | Invalid data | Check configuration parameters |
+| Issue               | Cause                | Solution                                   |
+|---------------------|----------------------|--------------------------------------------|
+| Empty results       | No story topic       | Provide clear story_topic                  |
+| Incomplete analysis | Steps disabled       | Enable required analysis steps             |
+| File not found      | Invalid glob pattern | Verify glob pattern syntax                 |
+| Slow execution      | Large file set       | Reduce input files or disable file content |
+| API errors          | Rate limiting        | Reduce alternative_angles or wait          |
+| Validation errors   | Invalid data         | Check configuration parameters             |
 
 ---
-
 
 ### Summary
 
@@ -2872,14 +2766,13 @@ Perfect for investigative reporting, fact-checking, editorial planning, and comp
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\NarrativeGenerationTask.kt
 
-
 ## NarrativeGenerationTask User Documentation
-
 
 ### Overview
 
-The **NarrativeGenerationTask** is an advanced narrative generation system that creates complete, publication-ready stories from a subject or scenario. It extends the `NarrativeReasoningTask` to produce full narratives with consistent style, character development, and structured storytelling.
-
+The **NarrativeGenerationTask** is an advanced narrative generation system that creates complete, publication-ready
+stories from a subject or scenario. It extends the `NarrativeReasoningTask` to produce full narratives with consistent
+style, character development, and structured storytelling.
 
 #### Key Capabilities
 
@@ -2892,59 +2785,52 @@ The **NarrativeGenerationTask** is an advanced narrative generation system that 
 
 ---
 
-
 ### Configuration Parameters
-
 
 #### Core Narrative Settings
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `subject` | String | Required | The subject or scenario to develop into a full narrative |
-| `input_files` | List[String] | Optional | File patterns (e.g., `**/*.kt`) to use as context |
-| `narrative_elements` | Map[String, Any] | Optional | Characters, setting, conflict, timeline, etc. |
-
+| Parameter            | Type             | Default  | Description                                              |
+|----------------------|------------------|----------|----------------------------------------------------------|
+| `subject`            | String           | Required | The subject or scenario to develop into a full narrative |
+| `input_files`        | List[String]     | Optional | File patterns (e.g., `**/*.kt`) to use as context        |
+| `narrative_elements` | Map[String, Any] | Optional | Characters, setting, conflict, timeline, etc.            |
 
 #### Structure Configuration
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `target_word_count` | Int | 5000 | Total desired word count for the complete narrative |
-| `number_of_acts` | Int | 3 | Number of acts in the story structure |
-| `scenes_per_act` | Int | 3 | Average number of scenes per act |
-
+| Parameter           | Type | Default | Description                                         |
+|---------------------|------|---------|-----------------------------------------------------|
+| `target_word_count` | Int  | 5000    | Total desired word count for the complete narrative |
+| `number_of_acts`    | Int  | 3       | Number of acts in the story structure               |
+| `scenes_per_act`    | Int  | 3       | Average number of scenes per act                    |
 
 #### Writing Style Configuration
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `writing_style` | String | "literary" | Style: `literary`, `thriller`, `technical`, `conversational` |
+| Parameter       | Type   | Default                | Description                                                            |
+|-----------------|--------|------------------------|------------------------------------------------------------------------|
+| `writing_style` | String | "literary"             | Style: `literary`, `thriller`, `technical`, `conversational`           |
 | `point_of_view` | String | "third person limited" | POV: `first person`, `third person limited`, `third person omniscient` |
-| `tone` | String | "dramatic" | Tone: `dramatic`, `humorous`, `suspenseful`, `reflective` |
-
+| `tone`          | String | "dramatic"             | Tone: `dramatic`, `humorous`, `suspenseful`, `reflective`              |
 
 #### Content Options
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `detailed_descriptions` | Boolean | true | Include vivid sensory descriptions |
-| `include_dialogue` | Boolean | true | Include character dialogue |
-| `show_internal_thoughts` | Boolean | true | Show character internal thoughts and feelings |
-| `revision_passes` | Int | 1 | Number of revision passes per scene |
-
+| Parameter                | Type    | Default | Description                                   |
+|--------------------------|---------|---------|-----------------------------------------------|
+| `detailed_descriptions`  | Boolean | true    | Include vivid sensory descriptions            |
+| `include_dialogue`       | Boolean | true    | Include character dialogue                    |
+| `show_internal_thoughts` | Boolean | true    | Show character internal thoughts and feelings |
+| `revision_passes`        | Int     | 1       | Number of revision passes per scene           |
 
 #### Image Generation
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `generate_scene_images` | Boolean | false | Generate images for each scene |
-| `generate_cover_image` | Boolean | false | Generate a cover image for the narrative |
-| `image_model` | String | "DallE3" | Image model: `DallE3`, `DallE2` |
-| `image_width` | Int | 1024 | Width of generated images in pixels |
-| `image_height` | Int | 1024 | Height of generated images in pixels |
+| Parameter               | Type    | Default  | Description                              |
+|-------------------------|---------|----------|------------------------------------------|
+| `generate_scene_images` | Boolean | false    | Generate images for each scene           |
+| `generate_cover_image`  | Boolean | false    | Generate a cover image for the narrative |
+| `image_model`           | String  | "DallE3" | Image model: `DallE3`, `DallE2`          |
+| `image_width`           | Int     | 1024     | Width of generated images in pixels      |
+| `image_height`          | Int     | 1024     | Height of generated images in pixels     |
 
 ---
-
 
 ### Workflow Phases
 
@@ -2962,41 +2848,40 @@ graph TD
     style E fill:#fce4ec
 ```
 
-
 #### Phase 1: Narrative Analysis
+
 - Runs base narrative reasoning analysis
 - Analyzes plot points, character motivations, and story structure
 - Identifies inconsistencies and alternative outcomes
 - Generates foundational understanding of the narrative
 
-
 #### Phase 2: Outline Generation
+
 - Creates detailed scene-by-scene outline
 - Specifies for each scene:
-  - Setting (time and place)
-  - Characters present
-  - Purpose and key events
-  - Emotional arc
-  - Estimated word count
+    - Setting (time and place)
+    - Characters present
+    - Purpose and key events
+    - Emotional arc
+    - Estimated word count
 - Ensures classic story structure (setup → rising action → climax → resolution)
 
-
 #### Phase 3: Scene Generation
+
 - Generates each scene iteratively
 - Provides context from previous scenes to maintain continuity
 - Optional revision passes for quality improvement
 - Generates scene images if enabled
 - Tracks word count and character states
 
-
 #### Phase 4: Final Assembly
+
 - Compiles all scenes into complete narrative
 - Organizes by acts and scenes
 - Generates final statistics
 - Creates publication-ready output
 
 ---
-
 
 ### Data Flow Diagram
 
@@ -3062,7 +2947,6 @@ graph LR
 
 ---
 
-
 ### Configuration Example
 
 ```json
@@ -3094,7 +2978,6 @@ graph LR
 ```
 
 ---
-
 
 ### Output Structure
 
@@ -3143,7 +3026,6 @@ graph TD
 
 ---
 
-
 ### Scene Generation Context Flow
 
 ```mermaid
@@ -3183,11 +3065,10 @@ sequenceDiagram
 
 ---
 
-
 ### Key Classes and Data Structures
 
-
 #### NarrativeGenerationTaskExecutionConfigData
+
 Configuration class containing all parameters for narrative generation.
 
 ```kotlin
@@ -3228,9 +3109,7 @@ data class GeneratedScene(
 
 ---
 
-
 ### Usage Tips
-
 
 #### ✅ Best Practices
 
@@ -3241,7 +3120,6 @@ data class GeneratedScene(
 5. **Enable Revisions for Quality**: Use 1-2 revision passes for better prose quality
 6. **Test with Smaller Narratives First**: Start with 3 acts × 3 scenes before scaling up
 
-
 #### ⚠️ Considerations
 
 - **Generation Time**: Longer narratives take proportionally more time
@@ -3250,19 +3128,17 @@ data class GeneratedScene(
 - **Consistency**: Revision passes improve quality but increase generation time
 - **Memory**: Large narratives with many scenes require more memory
 
-
 #### 🎯 Common Use Cases
 
-| Use Case | Recommended Config |
-|----------|-------------------|
-| Short Story | 3 acts, 3 scenes, 3000 words |
-| Novel Chapter | 5 acts, 5 scenes, 8000 words |
-| Scenario Planning | 3 acts, 4 scenes, 5000 words |
-| User Journey | 3 acts, 3 scenes, 4000 words |
+| Use Case            | Recommended Config           |
+|---------------------|------------------------------|
+| Short Story         | 3 acts, 3 scenes, 3000 words |
+| Novel Chapter       | 5 acts, 5 scenes, 8000 words |
+| Scenario Planning   | 3 acts, 4 scenes, 5000 words |
+| User Journey        | 3 acts, 3 scenes, 4000 words |
 | Technical Narrative | 4 acts, 4 scenes, 6000 words |
 
 ---
-
 
 ### Error Handling
 
@@ -3276,29 +3152,30 @@ The task includes comprehensive error handling:
 
 ---
 
-
 ### Output Examples
 
-
 #### Overview Tab
+
 Shows configuration, progress tracking, and final statistics with completion time and word count metrics.
 
-
 #### Scene Tab
+
 Displays individual scene content with:
+
 - Scene title and setting
 - Full narrative text
 - Key moments summary
 - Character state changes
 - Word count
 
-
 #### Complete Narrative Tab
+
 Full compiled narrative organized by acts, ready for export or publication.
 
-
 #### Transcript
+
 Markdown file with complete generation log, useful for:
+
 - Auditing generation decisions
 - Reviewing intermediate outputs
 - Exporting to HTML/PDF
@@ -3306,10 +3183,10 @@ Markdown file with complete generation log, useful for:
 
 ---
 
-
 ### Integration with Other Tasks
 
 NarrativeGenerationTask extends `NarrativeReasoningTask`, inheriting:
+
 - Plot analysis capabilities
 - Character motivation analysis
 - Inconsistency detection
@@ -3317,6 +3194,7 @@ NarrativeGenerationTask extends `NarrativeReasoningTask`, inheriting:
 - Causal inference
 
 This makes it suitable for:
+
 - Story-driven applications
 - Scenario planning systems
 - Interactive fiction generation
@@ -3325,14 +3203,13 @@ This makes it suitable for:
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\NarrativeReasoningTask.kt
 
-
 ## NarrativeReasoningTask User Documentation
-
 
 ### Overview
 
-The **NarrativeReasoningTask** is an advanced analytical tool that examines complex scenarios through narrative structures and storytelling frameworks. It transforms raw scenario data into coherent narratives, identifies critical plot points, analyzes stakeholder motivations, and predicts potential outcomes.
-
+The **NarrativeReasoningTask** is an advanced analytical tool that examines complex scenarios through narrative
+structures and storytelling frameworks. It transforms raw scenario data into coherent narratives, identifies critical
+plot points, analyzes stakeholder motivations, and predicts potential outcomes.
 
 #### Key Use Cases
 
@@ -3344,40 +3221,35 @@ The **NarrativeReasoningTask** is an advanced analytical tool that examines comp
 
 ---
 
-
 ### Configuration Guide
-
 
 #### Basic Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `subject` | String | ✅ Yes | The main topic or scenario to analyze (e.g., "Customer onboarding process") |
-| `input_files` | List[String] | ❌ No | File patterns to include (e.g., `["**/*.md", "docs/**/*.txt"]`) |
-| `additional_context` | String | ❌ No | Extra information to guide the analysis |
-
+| Parameter            | Type         | Required | Description                                                                 |
+|----------------------|--------------|----------|-----------------------------------------------------------------------------|
+| `subject`            | String       | ✅ Yes    | The main topic or scenario to analyze (e.g., "Customer onboarding process") |
+| `input_files`        | List[String] | ❌ No     | File patterns to include (e.g., `["**/*.md", "docs/**/*.txt"]`)             |
+| `additional_context` | String       | ❌ No     | Extra information to guide the analysis                                     |
 
 #### Analysis Options
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `construct_narrative` | Boolean | `true` | Build a coherent story from elements |
-| `identify_plot_points` | Boolean | `true` | Find key narrative moments and turning points |
-| `predict_outcomes` | Boolean | `true` | Generate alternative scenarios and resolutions |
-| `analyze_motivations` | Boolean | `true` | Examine character/stakeholder drivers |
-| `find_inconsistencies` | Boolean | `true` | Detect gaps and contradictions |
-| `alternatives` | Integer | `3` | Number of outcome scenarios (1-10) |
-
+| Parameter              | Type    | Default | Description                                    |
+|------------------------|---------|---------|------------------------------------------------|
+| `construct_narrative`  | Boolean | `true`  | Build a coherent story from elements           |
+| `identify_plot_points` | Boolean | `true`  | Find key narrative moments and turning points  |
+| `predict_outcomes`     | Boolean | `true`  | Generate alternative scenarios and resolutions |
+| `analyze_motivations`  | Boolean | `true`  | Examine character/stakeholder drivers          |
+| `find_inconsistencies` | Boolean | `true`  | Detect gaps and contradictions                 |
+| `alternatives`         | Integer | `3`     | Number of outcome scenarios (1-10)             |
 
 #### Image Generation
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `generate_images` | Boolean | `false` | Create visual representations |
-| `image_model` | String | `"DallE3"` | Model for image generation |
-| `image_width` | Integer | `1024` | Image width in pixels (256-2048) |
-| `image_height` | Integer | `1024` | Image height in pixels (256-2048) |
-
+| Parameter         | Type    | Default    | Description                       |
+|-------------------|---------|------------|-----------------------------------|
+| `generate_images` | Boolean | `false`    | Create visual representations     |
+| `image_model`     | String  | `"DallE3"` | Model for image generation        |
+| `image_width`     | Integer | `1024`     | Image width in pixels (256-2048)  |
+| `image_height`    | Integer | `1024`     | Image height in pixels (256-2048) |
 
 #### Narrative Elements
 
@@ -3394,7 +3266,6 @@ The **NarrativeReasoningTask** is an advanced analytical tool that examines comp
 ```
 
 ---
-
 
 ### Data Flow Architecture
 
@@ -3438,7 +3309,6 @@ graph TD
 ```
 
 ---
-
 
 ### Processing Pipeline
 
@@ -3498,15 +3368,14 @@ sequenceDiagram
 
 ---
 
-
 ### Analysis Workflow
-
 
 #### Step 1: Narrative Construction
 
 **Purpose**: Create a coherent story from scenario elements
 
 **Output Structure**:
+
 ```kotlin
 data class ParsedNarrative(
     val title: String,           // Story title
@@ -3518,6 +3387,7 @@ data class ParsedNarrative(
 ```
 
 **Example Output**:
+
 ```
 Title: "The Great Resource Reallocation"
 Summary: "A team navigates organizational change..."
@@ -3531,12 +3401,12 @@ Tone: "Professional yet hopeful"
 
 ---
 
-
 #### Step 2: Plot Points Analysis
 
 **Purpose**: Identify critical narrative moments and turning points
 
 **Output Structure**:
+
 ```kotlin
 data class PlotPoint(
     val type: String,                    // "Inciting Incident", "Climax", etc.
@@ -3548,6 +3418,7 @@ data class PlotPoint(
 ```
 
 **Plot Point Types**:
+
 - **Inciting Incident**: Event that starts the story
 - **First Plot Point**: Initial complication
 - **Midpoint**: Story shifts direction
@@ -3556,12 +3427,12 @@ data class PlotPoint(
 
 ---
 
-
 #### Step 3: Character Motivation Analysis
 
 **Purpose**: Understand stakeholder perspectives and drivers
 
 **Output Structure**:
+
 ```kotlin
 data class CharacterAnalysis(
     val name: String,                    // Character/stakeholder name
@@ -3574,6 +3445,7 @@ data class CharacterAnalysis(
 ```
 
 **Analysis Dimensions**:
+
 - Psychological motivations
 - Organizational goals
 - Personal conflicts
@@ -3581,12 +3453,12 @@ data class CharacterAnalysis(
 
 ---
 
-
 #### Step 4: Outcome Prediction
 
 **Purpose**: Explore alternative scenarios and resolutions
 
 **Output Structure**:
+
 ```kotlin
 data class NarrativeOutcome(
     val scenario: String,                // Description of outcome
@@ -3598,6 +3470,7 @@ data class NarrativeOutcome(
 ```
 
 **Scenario Types**:
+
 - Most likely outcome
 - Best case scenario
 - Worst case scenario
@@ -3605,12 +3478,12 @@ data class NarrativeOutcome(
 
 ---
 
-
 #### Step 5: Inconsistency Detection
 
 **Purpose**: Identify gaps, contradictions, and unrealistic elements
 
 **Output Structure**:
+
 ```kotlin
 data class NarrativeInconsistency(
     val type: String,                    // Type of issue
@@ -3622,6 +3495,7 @@ data class NarrativeInconsistency(
 ```
 
 **Inconsistency Types**:
+
 - Logical contradictions
 - Timeline gaps
 - Character behavior mismatches
@@ -3629,7 +3503,6 @@ data class NarrativeInconsistency(
 - Unrealistic assumptions
 
 ---
-
 
 ### Output Files
 
@@ -3651,9 +3524,7 @@ All analysis results are saved to `.narrative_analysis/` directory:
 
 ---
 
-
 ### Example Usage
-
 
 #### Scenario: Customer Onboarding Process
 
@@ -3679,6 +3550,7 @@ All analysis results are saved to `.narrative_analysis/` directory:
 ```
 
 **Expected Insights**:
+
 - Narrative arc of customer journey
 - Critical moments (first login, first success, etc.)
 - Stakeholder motivations and conflicts
@@ -3687,9 +3559,7 @@ All analysis results are saved to `.narrative_analysis/` directory:
 
 ---
 
-
 ### Advanced Features
-
 
 #### Image Generation
 
@@ -3703,15 +3573,16 @@ graph LR
 ```
 
 **Generated Images**:
+
 - Main narrative visualization
 - Key plot point scenes
 - Character portraits
 - Setting/environment depictions
 
-
 #### Transcript Management
 
 Automatic transcript generation captures:
+
 - Configuration details
 - Analysis steps and timing
 - Key findings
@@ -3720,18 +3591,17 @@ Automatic transcript generation captures:
 
 ---
 
-
 ### Best Practices
 
-
 #### 1. **Clear Subject Definition**
+
 ```
 ✅ Good: "Customer journey through mobile app signup and first purchase"
 ❌ Poor: "Mobile app"
 ```
 
-
 #### 2. **Rich Narrative Elements**
+
 ```json
 {
   "characters": ["Specific roles/personas"],
@@ -3742,33 +3612,31 @@ Automatic transcript generation captures:
 }
 ```
 
-
 #### 3. **Relevant Input Files**
+
 - Include documentation, requirements, user stories
 - Use glob patterns for flexibility
 - Keep file sizes reasonable
 
-
 #### 4. **Balanced Configuration**
+
 - Enable all analysis steps for comprehensive view
 - Use 3-5 alternative scenarios for good coverage
 - Generate images for stakeholder presentations
 
 ---
 
-
 ### Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Analysis takes too long | Reduce `alternatives` count or disable image generation |
-| Inconsistencies not found | Provide more detailed narrative elements |
-| Images not generating | Check image model availability and API quota |
-| Files not reading | Verify glob patterns and file permissions |
-| API errors | Check API key and model availability |
+| Issue                     | Solution                                                |
+|---------------------------|---------------------------------------------------------|
+| Analysis takes too long   | Reduce `alternatives` count or disable image generation |
+| Inconsistencies not found | Provide more detailed narrative elements                |
+| Images not generating     | Check image model availability and API quota            |
+| Files not reading         | Verify glob patterns and file permissions               |
+| API errors                | Check API key and model availability                    |
 
 ---
-
 
 ### Integration Points
 
@@ -3789,7 +3657,6 @@ graph TB
 
 ---
 
-
 ### Performance Metrics
 
 - **Typical Analysis Time**: 2-5 minutes (depending on complexity)
@@ -3798,7 +3665,6 @@ graph TB
 - **Image Generation**: +30-60 seconds per image
 
 ---
-
 
 ### Related Tasks
 
@@ -3809,14 +3675,13 @@ graph TB
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\PersuasiveEssayTask.kt
 
-
 ## PersuasiveEssayTask User Documentation
-
 
 ### Overview
 
-The **PersuasiveEssayTask** is a comprehensive tool for generating well-structured, rhetorically sophisticated persuasive essays. It guides users through a seven-phase process to create compelling arguments tailored to specific audiences and purposes.
-
+The **PersuasiveEssayTask** is a comprehensive tool for generating well-structured, rhetorically sophisticated
+persuasive essays. It guides users through a seven-phase process to create compelling arguments tailored to specific
+audiences and purposes.
 
 ### Key Features
 
@@ -3828,37 +3693,32 @@ The **PersuasiveEssayTask** is a comprehensive tool for generating well-structur
 - 🎭 **Audience Customization**: Tailor tone and content to specific target audiences
 - 💬 **Counterargument Handling**: Automatically addresses opposing viewpoints with rebuttals
 
-
 ### Configuration Parameters
-
 
 #### Required Parameters
 
-| Parameter | Type | Description | Example |
-|-----------|------|-------------|---------|
-| `thesis` | String | The main position or claim to argue for | "Remote work increases productivity and employee satisfaction" |
-
+| Parameter | Type   | Description                             | Example                                                        |
+|-----------|--------|-----------------------------------------|----------------------------------------------------------------|
+| `thesis`  | String | The main position or claim to argue for | "Remote work increases productivity and employee satisfaction" |
 
 #### Optional Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `target_audience` | String | "general public" | Who the essay addresses: "academics", "policymakers", "business leaders", "general public" |
-| `tone` | String | "formal" | Writing style: "formal", "conversational", "passionate", "analytical" |
-| `target_word_count` | Integer | 1500 | Desired essay length in words |
-| `num_arguments` | Integer | 3 | Number of main arguments (1-10) |
-| `include_counterarguments` | Boolean | true | Whether to address opposing viewpoints |
-| `use_rhetorical_devices` | Boolean | true | Whether to employ ethos, pathos, logos |
-| `include_evidence` | Boolean | true | Whether to include statistics and citations |
-| `use_analogies` | Boolean | true | Whether to use examples and analogies |
-| `call_to_action` | String | "strong" | Type of conclusion: "strong", "moderate", "reflective", "none" |
-| `revision_passes` | Integer | 1 | Number of editing passes (0-5) |
-| `input_files` | List[String] | null | Glob patterns for research files (e.g., `["**/*.md", "docs/**"]`) |
-| `related_files` | List[String] | null | Specific files to incorporate as research |
-
+| Parameter                  | Type         | Default          | Description                                                                                |
+|----------------------------|--------------|------------------|--------------------------------------------------------------------------------------------|
+| `target_audience`          | String       | "general public" | Who the essay addresses: "academics", "policymakers", "business leaders", "general public" |
+| `tone`                     | String       | "formal"         | Writing style: "formal", "conversational", "passionate", "analytical"                      |
+| `target_word_count`        | Integer      | 1500             | Desired essay length in words                                                              |
+| `num_arguments`            | Integer      | 3                | Number of main arguments (1-10)                                                            |
+| `include_counterarguments` | Boolean      | true             | Whether to address opposing viewpoints                                                     |
+| `use_rhetorical_devices`   | Boolean      | true             | Whether to employ ethos, pathos, logos                                                     |
+| `include_evidence`         | Boolean      | true             | Whether to include statistics and citations                                                |
+| `use_analogies`            | Boolean      | true             | Whether to use examples and analogies                                                      |
+| `call_to_action`           | String       | "strong"         | Type of conclusion: "strong", "moderate", "reflective", "none"                             |
+| `revision_passes`          | Integer      | 1                | Number of editing passes (0-5)                                                             |
+| `input_files`              | List[String] | null             | Glob patterns for research files (e.g., `["**/*.md", "docs/**"]`)                          |
+| `related_files`            | List[String] | null             | Specific files to incorporate as research                                                  |
 
 ### Usage Examples
-
 
 #### Example 1: Academic Argument
 
@@ -3876,7 +3736,6 @@ The **PersuasiveEssayTask** is a comprehensive tool for generating well-structur
 }
 ```
 
-
 #### Example 2: Business Proposal
 
 ```json
@@ -3891,7 +3750,6 @@ The **PersuasiveEssayTask** is a comprehensive tool for generating well-structur
   "revision_passes": 1
 }
 ```
-
 
 #### Example 3: Advocacy with Research
 
@@ -3908,16 +3766,13 @@ The **PersuasiveEssayTask** is a comprehensive tool for generating well-structur
 }
 ```
 
-
 ### Output Structure
-
 
 #### Generated Files
 
 1. **persuasive_essay.md** - Complete essay in markdown format
 2. **transcript.md** - Detailed generation transcript with all phases
 3. **HTML & PDF versions** - Auto-converted from markdown
-
 
 #### Essay Structure
 
@@ -3942,7 +3797,6 @@ The **PersuasiveEssayTask** is a comprehensive tool for generating well-structur
    ├── Synthesis of arguments
    └── Call to action
 ```
-
 
 ### Generation Process
 
@@ -3969,7 +3823,6 @@ graph TD
     style H fill:#e8f5e9
     style I fill:#c8e6c9
 ```
-
 
 ### Data Flow Architecture
 
@@ -4012,7 +3865,6 @@ graph LR
     style Output fill:#e8f5e9
 ```
 
-
 ### Rhetorical Devices Integration
 
 The task automatically incorporates classical rhetoric techniques:
@@ -4049,7 +3901,6 @@ graph TB
     style Logos fill:#bbdefb
 ```
 
-
 ### Argument Development Process
 
 ```mermaid
@@ -4075,7 +3926,6 @@ sequenceDiagram
     Task-->>User: Complete with file links
 ```
 
-
 ### Quality Metrics
 
 The task tracks and reports:
@@ -4087,81 +3937,78 @@ The task tracks and reports:
 - **Revision Passes**: Number of quality improvement iterations
 - **Generation Time**: Total time from start to completion
 
-
 ### Best Practices
 
-
 #### 1. **Thesis Clarity**
+
 - Use specific, arguable statements
 - ❌ Avoid: "Climate change is important"
 - ✅ Use: "Climate change requires immediate policy intervention at the national level"
 
-
 #### 2. **Audience Targeting**
+
 - Match tone to audience expertise level
 - Academics: analytical, evidence-heavy
 - General public: conversational, relatable examples
 - Business leaders: ROI-focused, practical benefits
 
-
 #### 3. **Evidence Integration**
+
 - Provide research files for stronger arguments
 - Use glob patterns for multiple file types
 - Include statistics and expert quotes
 
-
 #### 4. **Counterargument Strategy**
+
 - Enable for academic and policy arguments
 - Strengthens credibility through balanced treatment
 - Shows understanding of opposing perspectives
 
-
 #### 5. **Revision Optimization**
+
 - 1-2 passes for most use cases
 - 2-3 passes for high-stakes arguments
 - More than 3 passes shows diminishing returns
 
-
 ### Troubleshooting
-
 
 #### Issue: Generated essay is too short
 
-**Solution**: 
+**Solution**:
+
 - Increase `target_word_count`
 - Increase `num_arguments`
 - Enable `include_counterarguments`
 - Provide more `input_files` for research
 
-
 #### Issue: Arguments lack evidence
 
 **Solution**:
+
 - Set `include_evidence: true`
 - Provide research files via `input_files`
 - Increase `revision_passes` for refinement
 
-
 #### Issue: Tone doesn't match audience
 
 **Solution**:
+
 - Verify `tone` parameter matches audience
 - Increase `revision_passes` for tone adjustment
 - Provide example files showing desired tone
 
-
 #### Issue: Counterarguments too weak
 
 **Solution**:
+
 - Increase `revision_passes`
 - Provide opposing viewpoint research
 - Ensure `use_rhetorical_devices: true`
 
-
 ### Advanced Configuration
 
-
 #### For Academic Papers
+
 ```json
 {
   "tone": "analytical",
@@ -4174,8 +4021,8 @@ The task tracks and reports:
 }
 ```
 
-
 #### For Marketing/Advocacy
+
 ```json
 {
   "tone": "passionate",
@@ -4188,8 +4035,8 @@ The task tracks and reports:
 }
 ```
 
-
 #### For Policy Documents
+
 ```json
 {
   "tone": "formal",
@@ -4202,16 +4049,14 @@ The task tracks and reports:
 }
 ```
 
-
 ### Performance Characteristics
 
-| Configuration | Est. Time | Output Size |
-|---------------|-----------|-------------|
-| Basic (3 args, 1 pass) | 2-3 min | 1500 words |
-| Standard (3 args, 2 passes) | 4-5 min | 1500 words |
-| Comprehensive (5 args, 3 passes) | 8-10 min | 2500 words |
-| With research files | +1-2 min | +500 words |
-
+| Configuration                    | Est. Time | Output Size |
+|----------------------------------|-----------|-------------|
+| Basic (3 args, 1 pass)           | 2-3 min   | 1500 words  |
+| Standard (3 args, 2 passes)      | 4-5 min   | 1500 words  |
+| Comprehensive (5 args, 3 passes) | 8-10 min  | 2500 words  |
+| With research files              | +1-2 min  | +500 words  |
 
 ### Integration with Other Tasks
 
@@ -4224,10 +4069,10 @@ PersuasiveEssayTask can be combined with:
 
 ---
 
-
 ### Support & Resources
 
 For additional help:
+
 - Review generated **transcript.md** for detailed phase-by-phase output
 - Check **HTML preview** for formatting verification
 - Examine **rhetorical_devices** and **persuasive_elements** in output
@@ -4235,14 +4080,13 @@ For additional help:
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\ReportGenerationTask.kt
 
-
 ## ReportGenerationTask Documentation
-
 
 ### Overview
 
-`ReportGenerationTask` is a comprehensive business report generation system that creates professional, data-driven reports with structured analysis, recommendations, and risk assessments. It supports multiple report types and tailors content to specific audiences.
-
+`ReportGenerationTask` is a comprehensive business report generation system that creates professional, data-driven
+reports with structured analysis, recommendations, and risk assessments. It supports multiple report types and tailors
+content to specific audiences.
 
 ### Key Features
 
@@ -4256,9 +4100,7 @@ For additional help:
 - **Quality revision passes** for polished output
 - **Audience-specific tailoring** (executives, team members, stakeholders)
 
-
 ### Configuration
-
 
 #### ReportGenerationTaskExecutionConfigData
 
@@ -4283,7 +4125,6 @@ data class ReportGenerationTaskExecutionConfigData(
     val input_files: List<String>?         // File patterns for input
 )
 ```
-
 
 ### Data Flow
 
@@ -4329,11 +4170,10 @@ graph TD
     style R fill:#a5d6a7
 ```
 
-
 ### Execution Phases
 
-
 #### Phase 1: Data Analysis
+
 Analyzes provided metrics and data points to extract meaningful insights.
 
 ```mermaid
@@ -4350,13 +4190,14 @@ sequenceDiagram
 ```
 
 **Output**: `DataAnalyses` containing:
+
 - Metric name and current value
 - Comparison to previous periods
 - Trend direction (increasing/decreasing/stable)
 - Interpretation and significance level
 
-
 #### Phase 2: Report Outline
+
 Creates structured outline with sections, key points, and visualization suggestions.
 
 ```mermaid
@@ -4376,8 +4217,8 @@ graph LR
     F -->|Each Section| M["Word Count"]
 ```
 
-
 #### Phase 3: Content Generation
+
 Generates each report section with data-driven content.
 
 ```mermaid
@@ -4396,8 +4237,8 @@ graph TD
     H -->|Collect| K["Insights Summary"]
 ```
 
-
 #### Phase 4: Recommendations (Optional)
+
 Generates prioritized, actionable recommendations based on findings.
 
 ```mermaid
@@ -4418,8 +4259,8 @@ graph LR
     F -->|Each| M["Resources"]
 ```
 
-
 #### Phase 5: Risk Assessment (Optional)
+
 Identifies and assesses risks with mitigation strategies.
 
 ```mermaid
@@ -4439,8 +4280,8 @@ graph LR
     E -->|Each| L["Mitigation"]
 ```
 
-
 #### Phase 6: Revision (Optional)
+
 Performs quality improvement passes on the complete report.
 
 ```mermaid
@@ -4458,8 +4299,8 @@ graph TD
     B -->|Focus| K["Formatting"]
 ```
 
-
 #### Phase 7: Final Assembly
+
 Compiles all components into complete report with metadata.
 
 ```mermaid
@@ -4477,11 +4318,10 @@ graph TD
     I -->|Save| K["Transcript File"]
 ```
 
-
 ### Data Structures
 
-
 #### ReportOutline
+
 ```kotlin
 data class ReportOutline(
     val title: String,                              // Report title
@@ -4492,8 +4332,8 @@ data class ReportOutline(
 )
 ```
 
-
 #### ReportSection
+
 ```kotlin
 data class ReportSection(
     val section_number: Int,                        // Order
@@ -4505,8 +4345,8 @@ data class ReportSection(
 )
 ```
 
-
 #### DataAnalysis
+
 ```kotlin
 data class DataAnalysis(
     val metric_name: String,                        // What's being measured
@@ -4518,8 +4358,8 @@ data class DataAnalysis(
 )
 ```
 
-
 #### Recommendation
+
 ```kotlin
 data class Recommendation(
     val priority: String,                           // high/medium/low
@@ -4531,8 +4371,8 @@ data class Recommendation(
 )
 ```
 
-
 #### Risk
+
 ```kotlin
 data class Risk(
     val category: String,                           // operational/financial/strategic/technical
@@ -4542,7 +4382,6 @@ data class Risk(
     val mitigation: String                          // How to address
 )
 ```
-
 
 ### UI Organization
 
@@ -4562,7 +4401,6 @@ graph LR
     K["Revision"] -->|Quality| B
     L["Complete Report"] -->|Final| B
 ```
-
 
 ### Usage Example
 
@@ -4589,7 +4427,6 @@ val task = ReportGenerationTask(orchestrationConfig, config)
 task.run(agent, messages, sessionTask, resultFn, orchestrationConfig)
 ```
 
-
 ### Error Handling
 
 ```mermaid
@@ -4608,14 +4445,12 @@ graph TD
     J -->|Output| K["Final Result"]
 ```
 
-
 ### Performance Considerations
 
 - **Token Usage**: Varies by report complexity and revision passes
 - **Execution Time**: Typically 30-120 seconds depending on phases enabled
 - **Memory**: Accumulates sections in memory; suitable for reports up to 10,000 words
 - **API Calls**: One call per phase (7 maximum) plus revision passes
-
 
 ### Best Practices
 
@@ -4626,20 +4461,18 @@ graph TD
 5. **Specify audience clearly** - Affects tone, depth, and recommendations
 6. **Use related files** - Provide context files for richer analysis
 
-
 ### Supported Report Types
 
-| Type | Use Case | Typical Audience |
-|------|----------|------------------|
-| `status_update` | Regular progress reports | Team members |
-| `quarterly_review` | Periodic performance analysis | Executives |
-| `incident_report` | Problem analysis and resolution | Stakeholders |
-| `performance_analysis` | Detailed metrics evaluation | Executives |
-| `market_research` | Market and competitive analysis | Leadership |
-| `post_mortem` | Incident retrospective | Technical team |
-| `financial_report` | Financial performance | Finance team |
-| `project_summary` | Project completion report | Stakeholders |
-
+| Type                   | Use Case                        | Typical Audience |
+|------------------------|---------------------------------|------------------|
+| `status_update`        | Regular progress reports        | Team members     |
+| `quarterly_review`     | Periodic performance analysis   | Executives       |
+| `incident_report`      | Problem analysis and resolution | Stakeholders     |
+| `performance_analysis` | Detailed metrics evaluation     | Executives       |
+| `market_research`      | Market and competitive analysis | Leadership       |
+| `post_mortem`          | Incident retrospective          | Technical team   |
+| `financial_report`     | Financial performance           | Finance team     |
+| `project_summary`      | Project completion report       | Stakeholders     |
 
 ### Tone Options
 
@@ -4651,14 +4484,13 @@ graph TD
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\ScriptwritingTask.kt
 
-
 ## ScriptwritingTask Documentation
-
 
 ### Overview
 
-The `ScriptwritingTask` is a comprehensive script generation tool that creates production-ready scripts for videos, podcasts, and presentations. It uses AI-powered agents to generate structured, timed scripts with dialogue, visual directions, and production notes.
-
+The `ScriptwritingTask` is a comprehensive script generation tool that creates production-ready scripts for videos,
+podcasts, and presentations. It uses AI-powered agents to generate structured, timed scripts with dialogue, visual
+directions, and production notes.
 
 ### Key Features
 
@@ -4671,9 +4503,7 @@ The `ScriptwritingTask` is a comprehensive script generation tool that creates p
 
 ---
 
-
 ### Configuration
-
 
 #### ScriptwritingTaskExecutionConfigData
 
@@ -4700,7 +4530,6 @@ class ScriptwritingTaskExecutionConfigData(
 )
 ```
 
-
 #### Validation Rules
 
 - `topic`: Must not be null or blank
@@ -4711,9 +4540,7 @@ class ScriptwritingTaskExecutionConfigData(
 
 ---
 
-
 ### Data Models
-
 
 #### ScriptOutline
 
@@ -4730,7 +4557,6 @@ data class ScriptOutline(
 )
 ```
 
-
 #### ScriptSection
 
 Represents a major section within the script:
@@ -4744,7 +4570,6 @@ data class ScriptSection(
     val estimated_duration_seconds: Int     // Section duration
 )
 ```
-
 
 #### ScriptSegment
 
@@ -4765,9 +4590,7 @@ data class ScriptSegment(
 
 ---
 
-
 ### Execution Flow
-
 
 #### Phase 1: Research & Outline
 
@@ -4790,6 +4613,7 @@ graph TD
 ```
 
 **Key Activities:**
+
 1. Validate configuration parameters
 2. Load context from prior tasks
 3. Load related research files
@@ -4799,7 +4623,6 @@ graph TD
 **Output:** `ScriptOutline` with title, sections, key messages, and timing
 
 ---
-
 
 #### Phase 2: Script Writing
 
@@ -4829,20 +4652,20 @@ graph TD
 ```
 
 **Key Activities:**
+
 1. Write opening hook (if enabled)
 2. Write each section with:
-   - Natural, conversational dialogue
-   - Visual directions
-   - B-roll suggestions
-   - Production notes
-   - Key points for graphics
+    - Natural, conversational dialogue
+    - Visual directions
+    - B-roll suggestions
+    - Production notes
+    - Key points for graphics
 3. Write closing with call-to-action
 4. Calculate cumulative timing and word count
 
 **Output:** List of `ScriptSegment` objects with dialogue and metadata
 
 ---
-
 
 #### Phase 3: Revision (Optional)
 
@@ -4862,18 +4685,18 @@ graph TD
 ```
 
 **Key Activities:**
+
 1. Compile complete script from segments
 2. For each revision pass:
-   - Review for flow and pacing
-   - Check dialogue naturalness
-   - Verify timing accuracy
-   - Ensure tone consistency
-   - Refine transitions
+    - Review for flow and pacing
+    - Check dialogue naturalness
+    - Verify timing accuracy
+    - Ensure tone consistency
+    - Refine transitions
 
 **Output:** Refined script with improved flow and timing
 
 ---
-
 
 #### Phase 4: Final Assembly
 
@@ -4895,23 +4718,23 @@ graph TD
 ```
 
 **Key Activities:**
+
 1. Compile all segments into final script
 2. Add timing markers (if enabled)
 3. Include visual directions (if enabled)
 4. Include B-roll suggestions (if enabled)
 5. Include production notes (if enabled)
 6. Calculate statistics:
-   - Total duration
-   - Word count
-   - Average WPM
-   - Duration accuracy
+    - Total duration
+    - Word count
+    - Average WPM
+    - Duration accuracy
 7. Generate production notes tab
 8. Output summary and complete script
 
 **Output:** Complete, production-ready script with all metadata
 
 ---
-
 
 ### Data Flow Diagram
 
@@ -4961,7 +4784,6 @@ graph LR
 
 ---
 
-
 ### UI Structure
 
 The task creates a tabbed interface with the following tabs:
@@ -4984,23 +4806,21 @@ graph TD
     style J fill:#e8f5e9
 ```
 
-
 #### Tab Descriptions
 
-| Tab | Content |
-|-----|---------|
-| **Overview** | Progress summary, configuration, and statistics |
-| **Research Context** | Prior context and related files loaded |
-| **Outline** | Script structure with sections and timing |
-| **Opening** | Opening hook with dialogue and directions |
-| **Section N** | Individual sections with dialogue and metadata |
-| **Closing** | Closing segment with call-to-action |
-| **Revision** | Revision pass summaries |
-| **Complete Script** | Full production-ready script |
+| Tab                  | Content                                         |
+|----------------------|-------------------------------------------------|
+| **Overview**         | Progress summary, configuration, and statistics |
+| **Research Context** | Prior context and related files loaded          |
+| **Outline**          | Script structure with sections and timing       |
+| **Opening**          | Opening hook with dialogue and directions       |
+| **Section N**        | Individual sections with dialogue and metadata  |
+| **Closing**          | Closing segment with call-to-action             |
+| **Revision**         | Revision pass summaries                         |
+| **Complete Script**  | Full production-ready script                    |
 | **Production Notes** | Timing breakdown, B-roll requirements, graphics |
 
 ---
-
 
 ### Timing Calculation
 
@@ -5028,6 +4848,7 @@ graph TD
 ```
 
 **Formula:**
+
 ```
 Target Word Count = Target Duration (minutes) × Words Per Minute
 Duration Accuracy = 100 - (|Actual - Target| / Target × 100)
@@ -5035,7 +4856,6 @@ Average WPM = Total Word Count / (Total Duration / 60)
 ```
 
 ---
-
 
 ### Error Handling
 
@@ -5059,6 +4879,7 @@ graph TD
 ```
 
 **Error Scenarios:**
+
 - Configuration validation failure
 - Missing topic
 - API unavailability
@@ -5067,7 +4888,6 @@ graph TD
 - Segment generation failure
 
 ---
-
 
 ### Usage Example
 
@@ -5101,7 +4921,6 @@ task.run(
 ```
 
 ---
-
 
 ### Output Example
 
@@ -5145,9 +4964,7 @@ Or how your email filters out spam? That's machine learning in action!"
 
 ---
 
-
 ### Best Practices
-
 
 #### Configuration Tips
 
@@ -5156,14 +4973,12 @@ Or how your email filters out spam? That's machine learning in action!"
 3. **Tone**: Choose tone that matches audience expectations
 4. **Revisions**: Use 1-2 passes for most scripts, 3+ for high-stakes content
 
-
 #### Content Tips
 
 1. **Topic**: Be specific and clear about the subject matter
 2. **Audience**: Define target audience precisely for better tone matching
 3. **Context Files**: Include relevant research and background materials
 4. **Related Files**: Link to supporting documentation and resources
-
 
 #### Production Tips
 
@@ -5174,7 +4989,6 @@ Or how your email filters out spam? That's machine learning in action!"
 
 ---
 
-
 ### Performance Considerations
 
 - **API Calls**: 4-6 API calls per script (outline + segments + revisions)
@@ -5184,31 +4998,30 @@ Or how your email filters out spam? That's machine learning in action!"
 
 ---
 
-
 ### Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Script too short | Increase `target_duration_minutes` or reduce `pacing` speed |
-| Script too long | Decrease `target_duration_minutes` or increase `pacing` speed |
-| Poor tone match | Adjust `tone` parameter or provide better context files |
-| Timing inaccurate | Review `pacing` setting and segment duration estimates |
-| Missing elements | Verify corresponding `include_*` flags are enabled |
+| Issue             | Solution                                                      |
+|-------------------|---------------------------------------------------------------|
+| Script too short  | Increase `target_duration_minutes` or reduce `pacing` speed   |
+| Script too long   | Decrease `target_duration_minutes` or increase `pacing` speed |
+| Poor tone match   | Adjust `tone` parameter or provide better context files       |
+| Timing inaccurate | Review `pacing` setting and segment duration estimates        |
+| Missing elements  | Verify corresponding `include_*` flags are enabled            |
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\TechnicalExplanationTask.kt
 
-
 ## TechnicalExplanationTask Documentation
-
 
 ### Overview
 
-The `TechnicalExplanationTask` is a sophisticated task orchestration component that generates clear, audience-appropriate explanations of complex technical topics. It employs a multi-phase approach to break down intricate subjects into digestible, well-structured content tailored to specific audience expertise levels.
-
+The `TechnicalExplanationTask` is a sophisticated task orchestration component that generates clear,
+audience-appropriate explanations of complex technical topics. It employs a multi-phase approach to break down intricate
+subjects into digestible, well-structured content tailored to specific audience expertise levels.
 
 ### Purpose
 
 This task automates the creation of technical documentation by:
+
 - Analyzing complex topics and creating structured outlines
 - Generating content sections with progressive complexity
 - Adapting language and depth to target audiences
@@ -5216,24 +5029,21 @@ This task automates the creation of technical documentation by:
 - Performing iterative refinement for clarity
 - Producing publication-ready technical explanations
 
-
 ### Key Features
 
-| Feature | Description |
-|---------|-------------|
-| **Audience Adaptation** | Tailors content for layperson, beginner, intermediate, expert, manager, software engineer, or data scientist |
-| **Configurable Detail Levels** | Supports high-level overview to comprehensive coverage |
-| **Multiple Formats** | Markdown, Q&A, step-by-step, narrative, or tutorial formats |
-| **Code Examples** | Includes language-specific code snippets with explanations |
-| **Analogies & Metaphors** | Makes complex concepts relatable through comparisons |
-| **Terminology Definition** | Defines essential terms in context |
-| **Visual Descriptions** | Describes diagrams and visual aids |
-| **Comparative Analysis** | Compares with related concepts for clarity |
-| **Iterative Refinement** | Optional revision passes for quality improvement |
-
+| Feature                        | Description                                                                                                  |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------|
+| **Audience Adaptation**        | Tailors content for layperson, beginner, intermediate, expert, manager, software engineer, or data scientist |
+| **Configurable Detail Levels** | Supports high-level overview to comprehensive coverage                                                       |
+| **Multiple Formats**           | Markdown, Q&A, step-by-step, narrative, or tutorial formats                                                  |
+| **Code Examples**              | Includes language-specific code snippets with explanations                                                   |
+| **Analogies & Metaphors**      | Makes complex concepts relatable through comparisons                                                         |
+| **Terminology Definition**     | Defines essential terms in context                                                                           |
+| **Visual Descriptions**        | Describes diagrams and visual aids                                                                           |
+| **Comparative Analysis**       | Compares with related concepts for clarity                                                                   |
+| **Iterative Refinement**       | Optional revision passes for quality improvement                                                             |
 
 ### Configuration Parameters
-
 
 #### TechnicalExplanationTaskExecutionConfigData
 
@@ -5255,7 +5065,6 @@ data class TechnicalExplanationTaskExecutionConfigData(
     val related_files: List<String>?           // Related documentation files
 )
 ```
-
 
 ### Data Flow Diagram
 
@@ -5312,15 +5121,14 @@ graph TD
     style L fill:#FFD700
 ```
 
-
 ### Execution Phases
-
 
 #### Phase 1: Analysis & Outline Creation
 
 **Purpose:** Analyze the topic and create a structured outline
 
 **Process:**
+
 1. Validates configuration parameters
 2. Loads input files and context documentation
 3. Uses `ParsedAgent` to generate `ExplanationOutline`
@@ -5328,6 +5136,7 @@ graph TD
 5. Displays outline with key concepts, terminology, analogies, and code examples
 
 **Output:** Structured outline with:
+
 - Title and overview
 - 3-6 key concepts (ordered logically)
 - 5-10 essential terms
@@ -5335,12 +5144,12 @@ graph TD
 - 3-5 code examples
 - Visual descriptions
 
-
 #### Phase 2: Content Generation
 
 **Purpose:** Write detailed explanation sections for each concept
 
 **Process:**
+
 1. Iterates through each key concept
 2. Builds context from previously written sections
 3. Uses `ParsedAgent` to generate `ExplanationSection`
@@ -5348,51 +5157,53 @@ graph TD
 5. Accumulates content for final assembly
 
 **Output:** For each concept:
+
 - Comprehensive section content
 - Code snippets with explanations
 - Key takeaways
 - Smooth transitions
-
 
 #### Phase 3: Comparative Analysis (Optional)
 
 **Purpose:** Compare with related concepts for clarity
 
 **Process:**
+
 1. Uses `ChatAgent` to identify related concepts
 2. Explains similarities and differences
 3. Clarifies when to use each concept
 4. Helps readers understand boundaries
 
 **Output:** Comparison section with:
+
 - Related concepts identification
 - Similarity analysis
 - Difference highlights
 - Usage guidance
-
 
 #### Phase 4: Iterative Refinement (Optional)
 
 **Purpose:** Improve clarity through multiple revision passes
 
 **Process:**
+
 1. Performs 1-5 revision passes (configurable)
 2. Each pass uses `ChatAgent` to improve:
-   - Language clarity
-   - Logical flow
-   - Analogy effectiveness
-   - Technical accuracy
-   - Audience appropriateness
+    - Language clarity
+    - Logical flow
+    - Analogy effectiveness
+    - Technical accuracy
+    - Audience appropriateness
 3. Maintains all key information and structure
 
 **Output:** Progressively refined explanation
-
 
 #### Phase 5: Final Assembly
 
 **Purpose:** Compile complete, publication-ready explanation
 
 **Process:**
+
 1. Combines all sections with proper formatting
 2. Adds terminology definitions
 3. Includes summary with key takeaways
@@ -5401,12 +5212,12 @@ graph TD
 6. Returns final result
 
 **Output:** Complete explanation with:
+
 - Formatted sections
 - Terminology reference
 - Summary
 - Statistics
 - Transcript file
-
 
 ### Data Structure Diagram
 
@@ -5456,7 +5267,6 @@ graph LR
     style F fill:#FFF4E6
     style G fill:#FFF4E6
 ```
-
 
 ### Audience Guidance Mapping
 
@@ -5508,7 +5318,6 @@ graph TD
     style H fill:#FFE6E6
 ```
 
-
 ### Detail Level Progression
 
 ```mermaid
@@ -5538,7 +5347,6 @@ graph LR
     style C fill:#81C784
     style D fill:#66BB6A
 ```
-
 
 ### Agent Interaction Flow
 
@@ -5571,7 +5379,6 @@ sequenceDiagram
     Task->>Task: Assemble final output
     Task-->>User: Complete explanation
 ```
-
 
 ### Validation Flow
 
@@ -5608,7 +5415,6 @@ graph TD
     style M fill:#90EE90
 ```
 
-
 ### Output Structure
 
 ```mermaid
@@ -5643,7 +5449,6 @@ graph TD
     style G fill:#FFF4E6
 ```
 
-
 ### Error Handling Flow
 
 ```mermaid
@@ -5666,7 +5471,6 @@ graph TD
     style C fill:#90EE90
     style K fill:#FFB6C6
 ```
-
 
 ### Usage Example
 
@@ -5700,7 +5504,6 @@ task.run(
 )
 ```
 
-
 ### Key Takeaways
 
 - **Multi-Phase Approach:** Systematic progression from outline to final assembly
@@ -5713,14 +5516,13 @@ task.run(
 
 # webui\src\main\kotlin\com\simiacryptus\cognotik\plan\tools\writing\TutorialGenerationTask.kt
 
-
 ## TutorialGenerationTask Documentation
-
 
 ### Overview
 
-`TutorialGenerationTask` is a comprehensive tutorial generation system that creates step-by-step instructional content. It orchestrates a multi-phase process to produce publication-ready tutorials with prerequisites, detailed steps, code examples, troubleshooting guides, and learning paths.
-
+`TutorialGenerationTask` is a comprehensive tutorial generation system that creates step-by-step instructional content.
+It orchestrates a multi-phase process to produce publication-ready tutorials with prerequisites, detailed steps, code
+examples, troubleshooting guides, and learning paths.
 
 ### Architecture & Data Flow
 
@@ -5753,7 +5555,6 @@ graph TD
     Z -->|Error| R
 ```
 
-
 ### Configuration Data Model
 
 ```mermaid
@@ -5785,7 +5586,6 @@ classDiagram
     
     TutorialGenerationTaskExecutionConfigData --|> TaskExecutionConfig
 ```
-
 
 ### Output Data Structures
 
@@ -5866,7 +5666,6 @@ classDiagram
     TroubleshootingSection --> TroubleshootingIssue
 ```
 
-
 ### Execution Flow
 
 ```mermaid
@@ -5920,11 +5719,10 @@ sequenceDiagram
     Orchestrator->>User: resultFn(finalResult)
 ```
 
-
 ### Phase Breakdown
 
-
 #### Phase 1: Outline Generation
+
 **Purpose:** Create structured tutorial skeleton
 
 ```mermaid
@@ -5943,8 +5741,8 @@ graph LR
     H -->|Fail| J["Error"]
 ```
 
-
 #### Phase 2: Step Writing
+
 **Purpose:** Generate detailed instructions for each step
 
 ```mermaid
@@ -5966,8 +5764,8 @@ graph TD
     K -->|All Steps| L["Phase 3"]
 ```
 
-
 #### Phase 3: Troubleshooting (Optional)
+
 **Purpose:** Identify and document common problems
 
 ```mermaid
@@ -5984,8 +5782,8 @@ graph LR
     H -->|Phase 4| I["Next Steps"]
 ```
 
-
 #### Phase 4: Next Steps (Optional)
+
 **Purpose:** Suggest continued learning paths
 
 ```mermaid
@@ -6000,8 +5798,8 @@ graph LR
     F --> G
 ```
 
-
 #### Phase 5: Final Assembly
+
 **Purpose:** Compile all components into publication-ready markdown
 
 ```mermaid
@@ -6016,19 +5814,18 @@ graph TD
     G --> H
 ```
 
-
 ### Key Features
 
-
 #### 1. **Multi-Phase Generation**
+
 - Structured outline creation
 - Detailed step-by-step writing
 - Optional troubleshooting section
 - Optional learning path suggestions
 - Final assembly and validation
 
-
 #### 2. **Configurable Output**
+
 ```kotlin
 // Example configuration
 val config = TutorialGenerationTaskExecutionConfigData(
@@ -6043,22 +5840,22 @@ val config = TutorialGenerationTaskExecutionConfigData(
 )
 ```
 
-
 #### 3. **Context Integration**
+
 - Input files support (glob patterns)
 - Related documentation files
 - Prior code context
 - User messages
 
-
 #### 4. **Validation Framework**
+
 - Configuration validation
 - Outline validation
 - Step validation
 - Prerequisite validation
 
-
 #### 5. **Rich Output**
+
 - Markdown formatting
 - Code blocks with language specification
 - Screenshot placeholders
@@ -6066,7 +5863,6 @@ val config = TutorialGenerationTaskExecutionConfigData(
 - Common issues per step
 - Troubleshooting section
 - Next steps and resources
-
 
 ### Usage Example
 
@@ -6097,33 +5893,33 @@ task.run(
 )
 ```
 
-
 ### Output Files
 
-
 #### tutorial.md
+
 Complete, publication-ready tutorial containing:
+
 - Title and description
 - Learning objectives
 - Prerequisites (required and optional)
 - Numbered steps with:
-  - Detailed explanations
-  - Code examples
-  - Expected outcomes
-  - Validation steps
-  - Common issues
+    - Detailed explanations
+    - Code examples
+    - Expected outcomes
+    - Validation steps
+    - Common issues
 - Troubleshooting section (if enabled)
 - Next steps and resources (if enabled)
 
-
 #### transcript.md
+
 Execution transcript containing:
+
 - Configuration summary
 - Phase-by-phase progress
 - Statistics (steps, prerequisites, word count)
 - Timestamps
 - Error logs (if any)
-
 
 ### Error Handling
 
@@ -6138,7 +5934,6 @@ graph TD
     G -->|Return| H["Error Output"]
 ```
 
-
 ### Performance Considerations
 
 - **API Calls:** 2-5 calls (outline + steps + optional sections)
@@ -6146,22 +5941,20 @@ graph TD
 - **Memory:** Accumulates all steps in memory before final assembly
 - **File I/O:** Streaming writes to transcript and output files
 
-
 ### Validation Rules
 
-| Field | Rule |
-|-------|------|
-| `goal` | Must not be null or blank |
-| `estimated_duration` | Must be positive |
-| `target_step_count` | Must be between 3 and 20 |
-| `verbosity` | Must not be blank |
-| `skill_level` | Must not be blank |
-| Step `title` | Must not be blank |
-| Step `explanation` | Must not be blank |
-| Prerequisite `name` | Must not be blank |
-| Problem `problem` | Must not be blank |
-| Problem `solutions` | Must not be empty |
-
+| Field                | Rule                      |
+|----------------------|---------------------------|
+| `goal`               | Must not be null or blank |
+| `estimated_duration` | Must be positive          |
+| `target_step_count`  | Must be between 3 and 20  |
+| `verbosity`          | Must not be blank         |
+| `skill_level`        | Must not be blank         |
+| Step `title`         | Must not be blank         |
+| Step `explanation`   | Must not be blank         |
+| Prerequisite `name`  | Must not be blank         |
+| Problem `problem`    | Must not be blank         |
+| Problem `solutions`  | Must not be empty         |
 
 ### Integration Points
 

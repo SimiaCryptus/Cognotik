@@ -2,12 +2,12 @@ let synth = window.speechSynthesis;
 let isAutoPlaying = false;
 let utterances = [];
 let currentUtteranceIndex = 0;
- const autoplayButton = document.getElementById('autoplayButton');
- const voiceSelect = document.getElementById('voiceSelect');
- const debugLog = [];
+const autoplayButton = document.getElementById('autoplayButton');
+const voiceSelect = document.getElementById('voiceSelect');
+const debugLog = [];
 const VOICE_STORAGE_KEY = 'cognotik-selected-voice';
 
- function handleVideoElements(callback) {
+function handleVideoElements(callback) {
     const currentSlide = Reveal.getCurrentSlide();
     const video = currentSlide.querySelector('video');
     if (video) {
@@ -137,7 +137,7 @@ function listVoices() {
     // Store current selection before rebuilding
     const previousSelection = voiceSelect.value;
     const savedVoice = localStorage.getItem(VOICE_STORAGE_KEY);
-    
+
     voiceSelect.innerHTML = '';
     voices.forEach((voice, index) => {
         log(`Voice ${index}: ${voice.name} (${voice.lang})`);

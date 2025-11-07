@@ -2,22 +2,28 @@
 
 ## Overview
 
-The `seed` package provides various strategies for discovering and collecting initial URLs (seed items) for web crawling operations. It supports multiple search engines and methods for generating starting points for web crawlers.
+The `seed` package provides various strategies for discovering and collecting initial URLs (seed items) for web crawling
+operations. It supports multiple search engines and methods for generating starting points for web crawlers.
 
 ## Components
 
 ### Core Interfaces
 
 #### `SeedStrategy`
+
 The main interface for implementing seed collection strategies. Each strategy must implement:
+
 - `getSeedItems()`: Returns a list of `SeedItem` objects based on task configuration
 - `isEnabled()`: Determines if the strategy is available for use
 
 #### `SeedMethodFactory`
+
 Factory interface for creating `SeedStrategy` instances with proper user context and task configuration.
 
 #### `SeedItem`
+
 Data class representing a discovered URL with metadata:
+
 - `link`: The URL to crawl
 - `title`: Human-readable title
 - `tags`: Optional categorization tags
@@ -27,6 +33,7 @@ Data class representing a discovered URL with metadata:
 ### Seed Methods
 
 #### `DirectUrls`
+
 Directly uses a list of provided URLs without any search or discovery.
 
 **Use Case**: When you have specific URLs to crawl
@@ -34,29 +41,35 @@ Directly uses a list of provided URLs without any search or discovery.
 **Enabled**: Always available
 
 #### `GoogleProxy`
+
 Uses a proxy endpoint to perform Google searches without requiring API credentials.
 
 **Use Case**: Quick Google searches without API setup
 **Configuration**:
+
 - Requires `search_query` in task config
 - Uses environment variable `GOOGLE_SEARCH_PROXY_ENDPOINT` (defaults to AWS endpoint)
   **Enabled**: Always available
   **Limitations**: Returns up to 20 results
 
 #### `GoogleSearch`
+
 Direct integration with Google Custom Search API.
 
 **Use Case**: Production Google searches with full API access
 **Configuration**:
+
 - Requires `search_query` in task config
 - Requires Google API key and Search Engine ID in user settings
   **Enabled**: Only when user has configured Google API credentials
   **Limitations**: Subject to Google API quotas and rate limits
 
 #### `SearchAPISearch`
+
 Base class for SearchAPI.io integrations, supporting multiple search engines:
 
 ##### Available Engines:
+
 - **SearchIO_Google_Search**: Standard Google web search
 - **SearchIO_Google_Maps**: Location-based business search
 - **SearchIO_Google_Scholar**: Academic paper search
@@ -70,6 +83,7 @@ Base class for SearchAPI.io integrations, supporting multiple search engines:
 
 **Use Case**: Unified API for multiple search engines
 **Configuration**:
+
 - Requires `search_query` in task config
 - Requires SearchAPI.io API key in user settings
   **Enabled**: Only when user has configured SearchAPI.io credentials
@@ -98,6 +112,7 @@ if (strategy.isEnabled()) {
 ## Configuration
 
 ### Task Configuration
+
 ```kotlin
 data class CrawlerTaskExecutionConfigData(
     val search_query: String? = null,      // For search-based methods
@@ -106,13 +121,16 @@ data class CrawlerTaskExecutionConfigData(
 ```
 
 ### User Settings
+
 Required API credentials in user settings:
+
 - **Google Search**: API key and Search Engine ID
 - **SearchAPI.io**: API key
 
 ## Error Handling
 
 All seed methods implement robust error handling:
+
 - Invalid URLs are filtered out
 - Missing configuration throws `IllegalArgumentException`
 - API failures throw `RuntimeException` with descriptive messages
@@ -121,6 +139,7 @@ All seed methods implement robust error handling:
 ## Logging
 
 Comprehensive logging at multiple levels:
+
 - **INFO**: Method start/completion, result counts
 - **DEBUG**: Configuration details, parsing steps
 - **WARN**: Invalid data, missing results
@@ -129,31 +148,36 @@ Comprehensive logging at multiple levels:
 ## Best Practices
 
 1. **Choose the Right Method**:
-  - Use `DirectUrls` for known URLs
-  - Use `GoogleProxy` for quick testing
-  - Use `GoogleSearch` for production with API access
-  - Use `SearchAPISearch` variants for specialized searches
+
+- Use `DirectUrls` for known URLs
+- Use `GoogleProxy` for quick testing
+- Use `GoogleSearch` for production with API access
+- Use `SearchAPISearch` variants for specialized searches
 
 2. **Handle Rate Limits**:
-  - Implement delays between requests
-  - Monitor API quotas
-  - Use appropriate result limits
+
+- Implement delays between requests
+- Monitor API quotas
+- Use appropriate result limits
 
 3. **Validate Results**:
-  - Check `isEnabled()` before using a strategy
-  - Handle empty result sets gracefully
-  - Validate URLs before crawling
+
+- Check `isEnabled()` before using a strategy
+- Handle empty result sets gracefully
+- Validate URLs before crawling
 
 4. **Security**:
-  - Store API keys securely in user settings
-  - Never log API keys
-  - Use HTTPS endpoints only
+
+- Store API keys securely in user settings
+- Never log API keys
+- Use HTTPS endpoints only
 
 ## Extension
 
 To add a new seed method:
 
 1. Implement `SeedMethodFactory`:
+
 ```kotlin
 class CustomSearch : SeedMethodFactory {
     override fun createStrategy(task: CrawlerAgentTask, user: User?): SeedStrategy {
@@ -171,6 +195,7 @@ class CustomSearch : SeedMethodFactory {
 ```
 
 2. Add to `SeedMethod` enum:
+
 ```kotlin
 enum class SeedMethod : SeedMethodFactory {
     CustomSearch {

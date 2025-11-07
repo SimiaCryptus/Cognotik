@@ -2,28 +2,25 @@ package com.simiacryptus.cognotik.diff
 
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.commons.text.similarity.LevenshteinDistance
-import kotlin.math.exp
-import kotlin.math.ln
 import kotlin.math.max
-import kotlin.math.min
 
 /**
  * A patch processor based on thermodynamic principles similar to DNA sequence binding.
- * 
+ *
  * This implementation treats patch matching as a molecular binding problem where:
  * - Each line has a "binding energy" based on its similarity to potential matches
  * - The system seeks the lowest free energy configuration (most stable binding)
  * - Temperature parameter controls tolerance for mismatches
  * - Entropy considerations favor contiguous matches
  * - Cooperative binding effects strengthen adjacent matches
- * 
+ *
  * Key thermodynamic concepts:
  * - **Binding Energy (ΔG):** Negative for favorable matches, positive for mismatches
  * - **Temperature (T):** Controls stringency - lower T requires better matches
  * - **Partition Function (Z):** Sum of Boltzmann factors for all possible configurations
  * - **Boltzmann Distribution:** Probability of a configuration ∝ exp(-ΔG/kT)
  * - **Cooperativity:** Adjacent matches stabilize each other (like base stacking in DNA)
- * 
+ *
  * @param temperature Controls matching stringency. Higher values allow more mismatches.
  * @param cooperativityBonus Energy bonus for adjacent matches (simulates base stacking).
  * @param entropyPenalty Energy penalty per gap (simulates entropic cost of loops).
@@ -81,10 +78,10 @@ class ThermodynamicPatchMatcher(
 
         // Calculate binding energy matrix
         val energyMatrix = calculateBindingEnergyMatrix(oldLines, newLines)
-        
+
         // Find optimal alignment using dynamic programming with thermodynamic scoring
         val alignment = findOptimalAlignment(oldLines, newLines, energyMatrix)
-        
+
         // Generate diff from alignment
         return generateDiffFromAlignment(oldLines, newLines, alignment)
     }
@@ -103,7 +100,7 @@ class ThermodynamicPatchMatcher(
 
         // Calculate binding energies for all possible patch positions
         val bindingSites = findBindingSites(sourceLines, patchLines)
-        
+
         if (bindingSites.isEmpty()) {
             log.warn("No suitable binding site found for patch")
             return source
@@ -111,9 +108,9 @@ class ThermodynamicPatchMatcher(
 
         // Select the most stable binding site (lowest free energy)
         val bestSite = bindingSites.minByOrNull { it.freeEnergy }!!
-        
+
         log.info("Applying patch at position ${bestSite.position} with ΔG = ${bestSite.freeEnergy}")
-        
+
         return applyPatchAtSite(sourceLines, patchLines, bestSite)
     }
 
@@ -143,7 +140,7 @@ class ThermodynamicPatchMatcher(
 
     /**
      * Calculates binding energy between two lines using thermodynamic principles.
-     * 
+     *
      * Energy components:
      * - Base pairing: Negative energy for matching characters
      * - Mismatches: Positive energy penalty
@@ -169,18 +166,18 @@ class ThermodynamicPatchMatcher(
 
         val maxLen = max(norm1.length, norm2.length)
         val distance = levenshtein.apply(norm1, norm2)
-        
+
         // Calculate similarity ratio (0 to 1)
         val similarity = 1.0 - (distance.toDouble() / maxLen)
-        
+
         // Convert similarity to binding energy
         // High similarity → negative energy (favorable)
         // Low similarity → positive energy (unfavorable)
         val baseEnergy = -10.0 * similarity * maxLen
-        
+
         // Add entropic penalty for length differences
         val lengthPenalty = entropyPenalty * kotlin.math.abs(norm1.length - norm2.length)
-        
+
         return baseEnergy + lengthPenalty
     }
 
@@ -220,7 +217,7 @@ class ThermodynamicPatchMatcher(
             for (j in 1..n) {
                 // Option 1: Match/mismatch
                 val matchEnergy = dp[i - 1][j - 1] + energyMatrix[i - 1][j - 1]
-                
+
                 // Add cooperativity bonus if previous was also a match
                 val matchWithCooperativity = if (backtrack[i - 1][j - 1] == Move.MATCH) {
                     matchEnergy - cooperativityBonus
@@ -271,14 +268,17 @@ class ThermodynamicPatchMatcher(
                     i--
                     j--
                 }
+
                 Move.DELETE -> {
                     operations.add(AlignmentOp.Delete(i - 1))
                     i--
                 }
+
                 Move.INSERT -> {
                     operations.add(AlignmentOp.Insert(j - 1))
                     j--
                 }
+
                 Move.NONE -> break
             }
         }
@@ -301,9 +301,11 @@ class ThermodynamicPatchMatcher(
                 is AlignmentOp.Match -> {
                     diff.add(DiffLine.Context(oldLines[op.oldIndex]))
                 }
+
                 is AlignmentOp.Delete -> {
                     diff.add(DiffLine.Delete(oldLines[op.oldIndex]))
                 }
+
                 is AlignmentOp.Insert -> {
                     diff.add(DiffLine.Add(newLines[op.newIndex]))
                 }
@@ -330,6 +332,7 @@ class ThermodynamicPatchMatcher(
                 is DiffLine.Context -> {
                     contextBuffer.add(line)
                 }
+
                 else -> {
                     // Flush context buffer with truncation
                     if (contextBuffer.size > contextSize * 2) {
@@ -388,7 +391,7 @@ class ThermodynamicPatchMatcher(
         // Try each possible position in source
         for (pos in 0..sourceLines.size) {
             val energy = calculateBindingSiteEnergy(sourceLines, patchLines, pos)
-            
+
             if (energy < minBindingEnergy) {
                 sites.add(BindingSite(pos, energy))
             }
@@ -473,6 +476,7 @@ class ThermodynamicPatchMatcher(
                     lastWasMatch = energy < 0
                     sourceIdx++
                 }
+
                 PatchLineType.DELETE -> {
                     if (sourceIdx >= sourceLines.size) {
                         return Double.POSITIVE_INFINITY
@@ -482,6 +486,7 @@ class ThermodynamicPatchMatcher(
                     sourceIdx++
                     lastWasMatch = false
                 }
+
                 PatchLineType.ADD -> {
                     // Addition has entropic cost
                     totalEnergy += entropyPenalty
@@ -520,10 +525,12 @@ class ThermodynamicPatchMatcher(
                     result.add(sourceLines[sourceIdx])
                     sourceIdx++
                 }
+
                 PatchLineType.DELETE -> {
                     // Skip source line
                     sourceIdx++
                 }
+
                 PatchLineType.ADD -> {
                     result.add(patchLine.text)
                 }
@@ -549,26 +556,31 @@ class ThermodynamicPatchMatcher(
             .mapNotNull { line ->
                 val trimmed = line.trimStart()
                 when {
-                    trimmed.startsWith("+++") || trimmed.startsWith("---") || 
-                    trimmed.startsWith("@@") -> null
-                    trimmed.startsWith("+") -> 
+                    trimmed.startsWith("+++") || trimmed.startsWith("---") ||
+                            trimmed.startsWith("@@") -> null
+
+                    trimmed.startsWith("+") ->
                         PatchLine(trimmed.substring(1).trim(), PatchLineType.ADD)
-                    trimmed.startsWith("-") -> 
+
+                    trimmed.startsWith("-") ->
                         PatchLine(trimmed.substring(1).trim(), PatchLineType.DELETE)
-                    line.startsWith("  ") -> 
+
+                    line.startsWith("  ") ->
                         PatchLine(line.substring(2), PatchLineType.CONTEXT)
-                    else -> 
+
+                    else ->
                         PatchLine(line, PatchLineType.CONTEXT)
                 }
             }
     }
 
-  override fun getInitiatorPattern(): Regex {
-    return FuzzyPatchMatcher.default.getInitiatorPattern()
-  }
-  override fun extractCodeBlocks(response: String): List<Pair<String, String>> {
-    return FuzzyPatchMatcher.default.extractCodeBlocks(response)
-  }
+    override fun getInitiatorPattern(): Regex {
+        return FuzzyPatchMatcher.default.getInitiatorPattern()
+    }
+
+    override fun extractCodeBlocks(response: String): List<Pair<String, String>> {
+        return FuzzyPatchMatcher.default.extractCodeBlocks(response)
+    }
 
     /**
      * Normalizes a line for comparison.

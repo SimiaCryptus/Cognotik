@@ -18,14 +18,14 @@ import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.webui.chat.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.servlet.FilterHolder
- import org.eclipse.jetty.servlet.ServletHolder
- import org.eclipse.jetty.webapp.WebAppContext
-import jakarta.servlet.MultipartConfigElement
- import org.slf4j.Logger
- import java.io.File
+import org.eclipse.jetty.servlet.ServletHolder
+import org.eclipse.jetty.webapp.WebAppContext
+import org.slf4j.Logger
+import java.io.File
 
 abstract class ApplicationServer(
     final override val applicationName: String,
@@ -57,14 +57,16 @@ abstract class ApplicationServer(
     protected open val userInfo by lazy { ServletHolder("userInfo", UserInfoServlet()) }
     protected open val usageServlet by lazy { ServletHolder("usage", UsageServlet()) }
     protected open val fileZip by lazy { ServletHolder("fileZip", ZipServlet(dataStorage)) }
-    protected open val fileIndex by lazy { 
+    protected open val fileIndex by lazy {
         ServletHolder("fileIndex", SessionFileServlet(dataStorage)).apply {
-            registration.setMultipartConfig(MultipartConfigElement(
-                System.getProperty("java.io.tmpdir"),
-                1024L * 1024L * 50L,  // maxFileSize: 50MB
-                1024L * 1024L * 100L, // maxRequestSize: 100MB
-                1024 * 1024 * 2       // fileSizeThreshold: 2MB
-            ))
+            registration.setMultipartConfig(
+                MultipartConfigElement(
+                    System.getProperty("java.io.tmpdir"),
+                    1024L * 1024L * 50L,  // maxFileSize: 50MB
+                    1024L * 1024L * 100L, // maxRequestSize: 100MB
+                    1024 * 1024 * 2       // fileSizeThreshold: 2MB
+                )
+            )
         }
     }
     protected open val sessionSettingsServlet by lazy { ServletHolder("settings", SessionSettingsServlet(this)) }
@@ -74,7 +76,8 @@ abstract class ApplicationServer(
     protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
 
     override fun newSession(user: User?, session: Session): SocketManager {
-        (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session) ?: SessionProxyServer.agents[session])?.apply { return this; }
+        (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
+            ?: SessionProxyServer.agents[session])?.apply { return this; }
         logger.info(
             "Creating new session: {} for user: {} in application: {}",
             session,
@@ -141,10 +144,15 @@ abstract class ApplicationServer(
         )
         val settingsFile = getSettingsFile(session, userId ?: UserSettingsManager.defaultUser)
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
-        if(settingsFile.exists()) try {
+        if (settingsFile.exists()) try {
             val text = settingsFile.readText()
             var settings: T? = if (settingsFile.exists()) JsonUtil.fromJson(text, clazz) else null
-            logger.debug("Settings file content (class {}):\nRAW:{}\nPARSED:{}", clazz, text.indent("    "), toJson(settings).indent("    "))
+            logger.debug(
+                "Settings file content (class {}):\nRAW:{}\nPARSED:{}",
+                clazz,
+                text.indent("    "),
+                toJson(settings).indent("    ")
+            )
             if (null == settings) {
                 logger.debug("No existing settings found, initializing default settings")
                 val initSettings = initSettings<T>(session)

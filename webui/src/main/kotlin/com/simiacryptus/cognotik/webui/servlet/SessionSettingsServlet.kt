@@ -111,7 +111,7 @@ class SessionSettingsServlet(
                     val user = authenticationManager.getUser(cookie)
                     logger.debug("User identified for settings update: ${user?.id ?: "anonymous"}")
 
-                    val settingsFile = server.getSettingsFile(session, user  ?: UserSettingsManager.defaultUser)
+                    val settingsFile = server.getSettingsFile(session, user ?: UserSettingsManager.defaultUser)
                     settingsFile.parentFile.mkdirs()
                     logger.debug("Saving settings to file: ${settingsFile.absolutePath}")
 

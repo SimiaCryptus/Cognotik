@@ -4,32 +4,34 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.AbstractTask
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Date
+import java.util.*
 
 class EthicalReasoningTask(
-  orchestrationConfig: OrchestrationConfig,
-  planTask: EthicalReasoningTaskExecutionConfigData?
+    orchestrationConfig: OrchestrationConfig,
+    planTask: EthicalReasoningTaskExecutionConfigData?
 ) : AbstractTask<EthicalReasoningTask.EthicalReasoningTaskExecutionConfigData, TaskTypeConfig>(
-  orchestrationConfig,
-  planTask
+    orchestrationConfig,
+    planTask
 ) {
 
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(EthicalReasoningTask::class.java)
-    val EthicalReasoning = TaskType(
-      "EthicalReasoning",
-      EthicalReasoningTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Analyze a dilemma through multiple ethical frameworks to guide decision-making.",
-      """
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(EthicalReasoningTask::class.java)
+        val EthicalReasoning = TaskType(
+            "EthicalReasoning",
+            EthicalReasoningTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Analyze a dilemma through multiple ethical frameworks to guide decision-making.",
+            """
               Provides a structured analysis of a complex ethical problem or decision.
               <ul>
                 <li>Evaluates a dilemma from the perspectives of several established ethical frameworks (e.g., Utilitarianism, Deontology, Virtue Ethics).</li>
@@ -39,46 +41,46 @@ class EthicalReasoningTask(
                 <li>Generates a downloadable transcript in markdown, HTML, and PDF formats.</li>
               </ul>
             """
-    )
-  }
-
-  class EthicalReasoningTaskExecutionConfigData(
-    @Description("A clear description of the ethical problem or decision to be made.")
-    val ethical_dilemma: String? = null,
-    @Description("Optional input files (supports glob patterns) to provide context for the ethical analysis")
-    val input_files: List<String>? = null,
-    @Description("A list of individuals, groups, or entities affected by the decision.")
-    val stakeholders: List<String>? = null,
-    @Description("The ethical frameworks to apply. Options: utilitarianism, deontology, virtue_ethics, care_ethics, rights_based.")
-    val ethical_frameworks: List<String>? = listOf("utilitarianism", "deontology", "virtue_ethics"),
-    @Description("Optional background information or constraints relevant to the dilemma.")
-    val context: String? = null,
-    task_dependencies: List<String>? = null,
-    state: TaskState? = TaskState.Pending,
-  ) : TaskExecutionConfig(
-    task_type = EthicalReasoning.name,
-    task_description = "Analyze ethical dilemma: ${ethical_dilemma?.take(100)}",
-    task_dependencies = task_dependencies?.toMutableList(),
-    state = state
-  ), ValidatedObject {
-    override fun validate(): String? {
-      if (ethical_dilemma.isNullOrBlank()) {
-        return "ethical_dilemma must not be null or blank"
-      }
-      if (stakeholders.isNullOrEmpty()) {
-        return "stakeholders must not be null or empty"
-      }
-      ethical_frameworks?.forEach { framework ->
-        if (framework.isBlank()) {
-          return "Invalid ethical_frameworks entry: must not be blank"
-        }
-      }
-      return ValidatedObject.validateFields(this)
+        )
     }
-  }
 
-  override fun promptSegment(): String {
-    return """
+    class EthicalReasoningTaskExecutionConfigData(
+        @Description("A clear description of the ethical problem or decision to be made.")
+        val ethical_dilemma: String? = null,
+        @Description("Optional input files (supports glob patterns) to provide context for the ethical analysis")
+        val input_files: List<String>? = null,
+        @Description("A list of individuals, groups, or entities affected by the decision.")
+        val stakeholders: List<String>? = null,
+        @Description("The ethical frameworks to apply. Options: utilitarianism, deontology, virtue_ethics, care_ethics, rights_based.")
+        val ethical_frameworks: List<String>? = listOf("utilitarianism", "deontology", "virtue_ethics"),
+        @Description("Optional background information or constraints relevant to the dilemma.")
+        val context: String? = null,
+        task_dependencies: List<String>? = null,
+        state: TaskState? = TaskState.Pending,
+    ) : TaskExecutionConfig(
+        task_type = EthicalReasoning.name,
+        task_description = "Analyze ethical dilemma: ${ethical_dilemma?.take(100)}",
+        task_dependencies = task_dependencies?.toMutableList(),
+        state = state
+    ), ValidatedObject {
+        override fun validate(): String? {
+            if (ethical_dilemma.isNullOrBlank()) {
+                return "ethical_dilemma must not be null or blank"
+            }
+            if (stakeholders.isNullOrEmpty()) {
+                return "stakeholders must not be null or empty"
+            }
+            ethical_frameworks?.forEach { framework ->
+                if (framework.isBlank()) {
+                    return "Invalid ethical_frameworks entry: must not be blank"
+                }
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
+
+    override fun promptSegment(): String {
+        return """
  EthicalReasoning - Analyze a dilemma through multiple ethical frameworks
   ** Optionally specify input files (supports glob patterns) to provide context
   ** Files will be read and included in the analysis
@@ -93,65 +95,69 @@ class EthicalReasoningTask(
      - Product and policy ethics
      - Corporate governance
         """.trimIndent()
-  }
-
-  override fun run(
-    agent: TaskOrchestrator,
-    messages: List<String>,
-    task: SessionTask,
-    resultFn: (String) -> Unit,
-    orchestrationConfig: OrchestrationConfig
-  ) {
-    val startTime = System.currentTimeMillis()
-      messages + super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText=true)
-    log.info("Starting EthicalReasoning task for dilemma: ${executionConfig?.ethical_dilemma?.truncateForDisplay(200)}")
-    // Validate configuration first
-    executionConfig?.validate()?.let { validationError ->
-      val errorMsg = "VALIDATION ERROR: $validationError"
-      log.error(errorMsg)
-      task.safeComplete(errorMsg, log)
-      resultFn(errorMsg)
-      return
     }
 
+    override fun run(
+        agent: TaskOrchestrator,
+        messages: List<String>,
+        task: SessionTask,
+        resultFn: (String) -> Unit,
+        orchestrationConfig: OrchestrationConfig
+    ) {
+        val startTime = System.currentTimeMillis()
+        messages + super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
+        log.info("Starting EthicalReasoning task for dilemma: ${executionConfig?.ethical_dilemma?.truncateForDisplay(200)}")
+        // Validate configuration first
+        executionConfig?.validate()?.let { validationError ->
+            val errorMsg = "VALIDATION ERROR: $validationError"
+            log.error(errorMsg)
+            task.safeComplete(errorMsg, log)
+            resultFn(errorMsg)
+            return
+        }
 
-    val dilemma = executionConfig?.ethical_dilemma
-    if (dilemma.isNullOrBlank()) {
-      val errorMsg = "CONFIGURATION ERROR: No ethical dilemma specified"
-      log.error(errorMsg)
-      task.safeComplete(errorMsg, log)
-      resultFn(errorMsg)
-      return
-    }
-    val stakeholders = executionConfig?.stakeholders
-    if (stakeholders.isNullOrEmpty()) {
-      val errorMsg = "CONFIGURATION ERROR: No stakeholders specified"
-      log.error(errorMsg)
-      task.safeComplete(errorMsg, log)
-      resultFn(errorMsg)
-      return
-    }
-    val frameworks = executionConfig?.ethical_frameworks ?: listOf("utilitarianism", "deontology", "virtue_ethics")
-    val context = executionConfig?.context ?: ""
 
-    val ui = task.ui
-    val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
-    val tabs = TabbedDisplay(task)
-    val transcript = transcript(task)
-    val overviewTask = task.ui.newTask(false)
-    tabs["Overview"] = overviewTask.placeholder
+        val dilemma = executionConfig?.ethical_dilemma
+        if (dilemma.isNullOrBlank()) {
+            val errorMsg = "CONFIGURATION ERROR: No ethical dilemma specified"
+            log.error(errorMsg)
+            task.safeComplete(errorMsg, log)
+            resultFn(errorMsg)
+            return
+        }
+        val stakeholders = executionConfig?.stakeholders
+        if (stakeholders.isNullOrEmpty()) {
+            val errorMsg = "CONFIGURATION ERROR: No stakeholders specified"
+            log.error(errorMsg)
+            task.safeComplete(errorMsg, log)
+            resultFn(errorMsg)
+            return
+        }
+        val frameworks = executionConfig?.ethical_frameworks ?: listOf("utilitarianism", "deontology", "virtue_ethics")
+        val context = executionConfig?.context ?: ""
 
-    try {
-      transcript?.write("# Ethical Reasoning Analysis\n\n".toByteArray())
-      transcript?.write("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n".toByteArray())
-      transcript?.write("**Dilemma:** $dilemma\n\n".toByteArray())
-      transcript?.write("**Stakeholders:** ${stakeholders.joinToString(", ")}\n\n".toByteArray())
-      transcript?.write("**Frameworks:** ${frameworks.joinToString(", ")}\n\n".toByteArray())
-      transcript?.write("---\n\n".toByteArray())
+        val ui = task.ui
+        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val tabs = TabbedDisplay(task)
+        val transcript = transcript(task)
+        val overviewTask = task.ui.newTask(false)
+        tabs["Overview"] = overviewTask.placeholder
 
-      var overviewTaskStatus = overviewTask.add(
-        MarkdownUtil.renderMarkdown(
-          """
+        try {
+            transcript?.write("# Ethical Reasoning Analysis\n\n".toByteArray())
+            transcript?.write(
+                "**Started:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                }\n\n".toByteArray()
+            )
+            transcript?.write("**Dilemma:** $dilemma\n\n".toByteArray())
+            transcript?.write("**Stakeholders:** ${stakeholders.joinToString(", ")}\n\n".toByteArray())
+            transcript?.write("**Frameworks:** ${frameworks.joinToString(", ")}\n\n".toByteArray())
+            transcript?.write("---\n\n".toByteArray())
+
+            var overviewTaskStatus = overviewTask.add(
+                MarkdownUtil.renderMarkdown(
+                    """
             |## Ethical Reasoning Analysis
             |
             |**Dilemma:** ${dilemma.truncateForDisplay()}
@@ -162,41 +168,41 @@ class EthicalReasoningTask(
             |
             |**Status:** 🔄 Initializing analysis...
         """.trimMargin(), ui = ui
-        )
-      )
-      task.update()
+                )
+            )
+            task.update()
 
-      val priorContext = getPriorCode(agent.executionState)
-      val fullContext = buildString {
-        if (priorContext.isNotBlank()) {
-          append("## Context from Previous Tasks\n\n")
-          append(priorContext)
-          append("\n\n")
-        }
-        if (context.isNotBlank()) {
-          append("## Additional Context\n\n")
-          append(context)
-          append("\n\n")
-        }
-      }
+            val priorContext = getPriorCode(agent.executionState)
+            val fullContext = buildString {
+                if (priorContext.isNotBlank()) {
+                    append("## Context from Previous Tasks\n\n")
+                    append(priorContext)
+                    append("\n\n")
+                }
+                if (context.isNotBlank()) {
+                    append("## Additional Context\n\n")
+                    append(context)
+                    append("\n\n")
+                }
+            }
 
-      if (fullContext.isNotBlank()) {
-        val contextTask = task.ui.newTask(false)
-        tabs["Context"] = contextTask.placeholder
-        contextTask.add(MarkdownUtil.renderMarkdown("## Analysis Context\n\n$fullContext", ui = ui))
-        task.update()
-      }
+            if (fullContext.isNotBlank()) {
+                val contextTask = task.ui.newTask(false)
+                tabs["Context"] = contextTask.placeholder
+                contextTask.add(MarkdownUtil.renderMarkdown("## Analysis Context\n\n$fullContext", ui = ui))
+                task.update()
+            }
 
-      // Step 1: Dilemma & Stakeholder Analysis
-      log.debug("Analyzing dilemma and stakeholders")
-      val analysisTask = task.ui.newTask(false)
-      tabs["Dilemma Analysis"] = analysisTask.placeholder
-      val analysisLoading = analysisTask.add(
-        MarkdownUtil.renderMarkdown("## Dilemma & Stakeholder Analysis\n\n🔄 Analyzing...", ui = ui)
-      )
-      task.update()
+            // Step 1: Dilemma & Stakeholder Analysis
+            log.debug("Analyzing dilemma and stakeholders")
+            val analysisTask = task.ui.newTask(false)
+            tabs["Dilemma Analysis"] = analysisTask.placeholder
+            val analysisLoading = analysisTask.add(
+                MarkdownUtil.renderMarkdown("## Dilemma & Stakeholder Analysis\n\n🔄 Analyzing...", ui = ui)
+            )
+            task.update()
 
-      val analysisPrompt = """
+            val analysisPrompt = """
 You are an expert in ethical analysis. Your first task is to deconstruct the provided ethical dilemma and analyze the stakeholders.
 
 **Ethical Dilemma:**
@@ -214,48 +220,53 @@ $fullContext
 Provide a detailed analysis.
       """.trimIndent()
 
-      val chatAgent = ChatAgent(
-        prompt = "",
-        model = api
-      )
-      val dilemmaAnalysis = chatAgent.answer(listOf(analysisPrompt))
-      log.info("Dilemma analysis completed. Length: ${dilemmaAnalysis.length} characters")
-      transcript?.write("## Dilemma & Stakeholder Analysis\n\n".toByteArray())
-      transcript?.write("${dilemmaAnalysis}\n\n".toByteArray())
-      transcript?.write("---\n\n".toByteArray())
+            val chatAgent = ChatAgent(
+                prompt = "",
+                model = api
+            )
+            val dilemmaAnalysis = chatAgent.answer(listOf(analysisPrompt))
+            log.info("Dilemma analysis completed. Length: ${dilemmaAnalysis.length} characters")
+            transcript?.write("## Dilemma & Stakeholder Analysis\n\n".toByteArray())
+            transcript?.write("${dilemmaAnalysis}\n\n".toByteArray())
+            transcript?.write("---\n\n".toByteArray())
 
 
-      analysisLoading?.clear()
-      analysisTask.add(MarkdownUtil.renderMarkdown("## Dilemma & Stakeholder Analysis\n\n$dilemmaAnalysis", ui = ui))
-      task.update()
+            analysisLoading?.clear()
+            analysisTask.add(
+                MarkdownUtil.renderMarkdown(
+                    "## Dilemma & Stakeholder Analysis\n\n$dilemmaAnalysis",
+                    ui = ui
+                )
+            )
+            task.update()
 
-      overviewTaskStatus?.clear()
-      overviewTaskStatus = overviewTask.add(
-        MarkdownUtil.renderMarkdown(
-          """
+            overviewTaskStatus?.clear()
+            overviewTaskStatus = overviewTask.add(
+                MarkdownUtil.renderMarkdown(
+                    """
             |## Ethical Reasoning Analysis
             |
             |**Dilemma:** ${dilemma.truncateForDisplay()}
             |
             |**Status:** 🔄 Applying ethical frameworks...
         """.trimMargin(), ui = ui
-        )
-      )
-      task.update()
+                )
+            )
+            task.update()
 
-      // Step 2: Framework Application
-      val frameworkAnalyses = mutableMapOf<String, String>()
-      for (framework in frameworks) {
-        val capitalizedFramework = framework.replaceFirstChar { it.titlecase() }
-        log.debug("Applying framework: $framework")
-        val frameworkTask = task.ui.newTask(false)
-        tabs["Framework: $capitalizedFramework"] = frameworkTask.placeholder
-        val frameworkLoading = frameworkTask.add(
-          MarkdownUtil.renderMarkdown("## $capitalizedFramework Analysis\n\n🔄 Applying framework...", ui = ui)
-        )
-        task.update()
+            // Step 2: Framework Application
+            val frameworkAnalyses = mutableMapOf<String, String>()
+            for (framework in frameworks) {
+                val capitalizedFramework = framework.replaceFirstChar { it.titlecase() }
+                log.debug("Applying framework: $framework")
+                val frameworkTask = task.ui.newTask(false)
+                tabs["Framework: $capitalizedFramework"] = frameworkTask.placeholder
+                val frameworkLoading = frameworkTask.add(
+                    MarkdownUtil.renderMarkdown("## $capitalizedFramework Analysis\n\n🔄 Applying framework...", ui = ui)
+                )
+                task.update()
 
-        val frameworkPrompt = """
+                val frameworkPrompt = """
 You are an expert specializing in the **$capitalizedFramework** ethical framework.
 Analyze the following dilemma from this specific perspective.
 
@@ -278,29 +289,34 @@ $fullContext
 Provide a clear and structured analysis.
         """.trimIndent()
 
-        val frameworkAnalysis = chatAgent.answer(listOf<String>(frameworkPrompt))
-        frameworkAnalyses[framework] = frameworkAnalysis
-        log.info("$framework analysis completed. Length: ${frameworkAnalysis.length} characters")
-        transcript?.write("## $capitalizedFramework Analysis\n\n".toByteArray())
-        transcript?.write("${frameworkAnalysis}\n\n".toByteArray())
-        transcript?.write("---\n\n".toByteArray())
+                val frameworkAnalysis = chatAgent.answer(listOf<String>(frameworkPrompt))
+                frameworkAnalyses[framework] = frameworkAnalysis
+                log.info("$framework analysis completed. Length: ${frameworkAnalysis.length} characters")
+                transcript?.write("## $capitalizedFramework Analysis\n\n".toByteArray())
+                transcript?.write("${frameworkAnalysis}\n\n".toByteArray())
+                transcript?.write("---\n\n".toByteArray())
 
 
-        frameworkLoading?.clear()
-        frameworkTask.add(MarkdownUtil.renderMarkdown("## $capitalizedFramework Analysis\n\n$frameworkAnalysis", ui = ui))
-        task.update()
-      }
+                frameworkLoading?.clear()
+                frameworkTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        "## $capitalizedFramework Analysis\n\n$frameworkAnalysis",
+                        ui = ui
+                    )
+                )
+                task.update()
+            }
 
-      // Step 3: Synthesis and Recommendation
-      log.debug("Synthesizing framework analyses")
-      val synthesisTask = task.ui.newTask(false)
-      tabs["Synthesis"] = synthesisTask.placeholder
-      val synthesisLoading = synthesisTask.add(
-        MarkdownUtil.renderMarkdown("## Synthesis & Recommendation\n\n🔄 Synthesizing results...", ui = ui)
-      )
-      task.update()
+            // Step 3: Synthesis and Recommendation
+            log.debug("Synthesizing framework analyses")
+            val synthesisTask = task.ui.newTask(false)
+            tabs["Synthesis"] = synthesisTask.placeholder
+            val synthesisLoading = synthesisTask.add(
+                MarkdownUtil.renderMarkdown("## Synthesis & Recommendation\n\n🔄 Synthesizing results...", ui = ui)
+            )
+            task.update()
 
-      val synthesisPrompt = """
+            val synthesisPrompt = """
 You are a master ethicist. Your task is to synthesize the analyses from multiple ethical frameworks to provide a final, balanced recommendation.
 
 **Ethical Dilemma:**
@@ -317,40 +333,44 @@ ${frameworkAnalyses.entries.joinToString("\n\n") { "### ${it.key.replaceFirstCha
 Provide a detailed synthesis and a clear final recommendation.
       """.trimIndent()
 
-      val synthesis = chatAgent.answer(listOf<String>(synthesisPrompt))
-      log.info("Synthesis completed. Length: ${synthesis.length} characters")
-      transcript?.write("## Synthesis & Recommendation\n\n".toByteArray())
-      transcript?.write("${synthesis}\n\n".toByteArray())
-      transcript?.write("---\n\n".toByteArray())
+            val synthesis = chatAgent.answer(listOf<String>(synthesisPrompt))
+            log.info("Synthesis completed. Length: ${synthesis.length} characters")
+            transcript?.write("## Synthesis & Recommendation\n\n".toByteArray())
+            transcript?.write("${synthesis}\n\n".toByteArray())
+            transcript?.write("---\n\n".toByteArray())
 
 
-      synthesisLoading?.clear()
-      synthesisTask.add(MarkdownUtil.renderMarkdown("## Synthesis & Recommendation\n\n$synthesis", ui = ui))
-      task.update()
+            synthesisLoading?.clear()
+            synthesisTask.add(MarkdownUtil.renderMarkdown("## Synthesis & Recommendation\n\n$synthesis", ui = ui))
+            task.update()
 
-      // Final result and overview update
-      val finalRecommendationSummary = chatAgent.answer(
-        listOf<String>(
-          """
+            // Final result and overview update
+            val finalRecommendationSummary = chatAgent.answer(
+                listOf<String>(
+                    """
  Based on the following synthesis, provide a very concise summary (2-3 sentences) of the final recommendation and the key trade-off.
 
  **Synthesis:**
  $synthesis
         """.trimIndent()
-        )
-      )
-      transcript?.write("## Final Recommendation Summary\n\n".toByteArray())
-      transcript?.write("${finalRecommendationSummary}\n\n".toByteArray())
-      transcript?.write("---\n\n".toByteArray())
-      transcript?.write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n".toByteArray())
-      transcript?.flush()
-      transcript?.close()
+                )
+            )
+            transcript?.write("## Final Recommendation Summary\n\n".toByteArray())
+            transcript?.write("${finalRecommendationSummary}\n\n".toByteArray())
+            transcript?.write("---\n\n".toByteArray())
+            transcript?.write(
+                "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                }\n".toByteArray()
+            )
+            transcript?.flush()
+            transcript?.close()
 
 
-      overviewTaskStatus?.clear()
-      overviewTask.add(
-        MarkdownUtil.renderMarkdown(
-          """
+            overviewTaskStatus?.clear()
+            overviewTask.add(
+                MarkdownUtil.renderMarkdown(
+                    """
             |## Ethical Reasoning Analysis
             |
             |**Dilemma:** ${dilemma.truncateForDisplay()}
@@ -364,105 +384,108 @@ Provide a detailed synthesis and a clear final recommendation.
             |### Final Recommendation Summary
             |$finalRecommendationSummary
         """.trimMargin(), ui = ui
-        )
-      )
-      task.update()
+                )
+            )
+            task.update()
 
-      val finalResult = buildString {
-        appendLine("# Ethical Reasoning Summary")
-        appendLine()
-        appendLine("**Dilemma:** ${dilemma.truncateForDisplay()}")
-        appendLine()
-        appendLine("**Recommendation:** $finalRecommendationSummary")
-        appendLine()
-        appendLine("---")
-        appendLine("Detailed analysis is available in the UI tabs.")
-      }
+            val finalResult = buildString {
+                appendLine("# Ethical Reasoning Summary")
+                appendLine()
+                appendLine("**Dilemma:** ${dilemma.truncateForDisplay()}")
+                appendLine()
+                appendLine("**Recommendation:** $finalRecommendationSummary")
+                appendLine()
+                appendLine("---")
+                appendLine("Detailed analysis is available in the UI tabs.")
+            }
 
-      val duration = System.currentTimeMillis() - startTime
-      val summary = "Ethical reasoning analysis completed for dilemma: ${dilemma.truncateForDisplay(200)}"
-      log.info("$summary (duration: ${duration}ms)")
-        val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (transcriptLink, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
+            val duration = System.currentTimeMillis() - startTime
+            val summary = "Ethical reasoning analysis completed for dilemma: ${dilemma.truncateForDisplay(200)}"
+            log.info("$summary (duration: ${duration}ms)")
+            val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+            val (transcriptLink, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
 
-      task.safeComplete(summary, log)
-      resultFn("$finalResult\n\n---\n\nDetailed analysis: [View Transcript]($transcriptLink)")
+            task.safeComplete(summary, log)
+            resultFn("$finalResult\n\n---\n\nDetailed analysis: [View Transcript]($transcriptLink)")
 
-    } catch (e: Exception) {
-      val duration = System.currentTimeMillis() - startTime
-      log.error("EthicalReasoning task failed after ${duration}ms for dilemma: ${dilemma.truncateForDisplay(200)}", e)
-      transcript?.write("\n\n## ERROR\n\n".toByteArray())
-      transcript?.write("**Error:** ${e.message}\n".toByteArray())
-      transcript?.write("**Stack Trace:**\n```\n${e.stackTraceToString()}\n```\n".toByteArray())
-      transcript?.flush()
-      transcript?.close()
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            log.error(
+                "EthicalReasoning task failed after ${duration}ms for dilemma: ${dilemma.truncateForDisplay(200)}",
+                e
+            )
+            transcript?.write("\n\n## ERROR\n\n".toByteArray())
+            transcript?.write("**Error:** ${e.message}\n".toByteArray())
+            transcript?.write("**Stack Trace:**\n```\n${e.stackTraceToString()}\n```\n".toByteArray())
+            transcript?.flush()
+            transcript?.close()
 
-      overviewTask.add(
-        MarkdownUtil.renderMarkdown(
-          """
+            overviewTask.add(
+                MarkdownUtil.renderMarkdown(
+                    """
             |## Ethical Reasoning Analysis
             |
             |**Status:** ❌ Analysis Failed
             |
             |**Error:** ${e.message}
             """.trimMargin(), ui = ui
-        )
-      )
-      task.update()
-      task.error(e)
-      task.safeComplete("Analysis failed: ${e.message}", log)
-      resultFn("ERROR: Ethical reasoning analysis failed - ${e.message}")
+                )
+            )
+            task.update()
+            task.error(e)
+            task.safeComplete("Analysis failed: ${e.message}", log)
+            resultFn("ERROR: Ethical reasoning analysis failed - ${e.message}")
+        }
     }
-  }
 
     private fun isTextFile(file: java.io.File): Boolean {
-    val textExtensions = setOf(
-      "txt",
-      "md",
-      "kt",
-      "java",
-      "js",
-      "ts",
-      "py",
-      "rb",
-      "go",
-      "rs",
-      "c",
-      "cpp",
-      "h",
-      "hpp",
-      "css",
-      "html",
-      "xml",
-      "json",
-      "yaml",
-      "yml",
-      "properties",
-      "gradle",
-      "maven"
-    )
-    return textExtensions.contains(file.extension.lowercase())
-  }
-
-  private fun extractDocumentContent(file: java.io.File) = try {
-    file.getDocumentReader().use { it.getText() }
-  } catch (e: Exception) {
-    log.warn("Failed to extract content from ${file.name}", e)
-    file.readText()
-  }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
+        val textExtensions = setOf(
+            "txt",
+            "md",
+            "kt",
+            "java",
+            "js",
+            "ts",
+            "py",
+            "rb",
+            "go",
+            "rs",
+            "c",
+            "cpp",
+            "h",
+            "hpp",
+            "css",
+            "html",
+            "xml",
+            "json",
+            "yaml",
+            "yml",
+            "properties",
+            "gradle",
+            "maven"
         )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
+        return textExtensions.contains(file.extension.lowercase())
+    }
+
+    private fun extractDocumentContent(file: java.io.File) = try {
+        file.getDocumentReader().use { it.getText() }
+    } catch (e: Exception) {
+        log.warn("Failed to extract content from ${file.name}", e)
+        file.readText()
+    }
+
+    private fun transcript(task: SessionTask): FileOutputStream? {
+        val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
+        val markdownTranscript = file?.outputStream()
+        task.complete(
+            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+                link.removeSuffix(
+                    ".md"
+                )
+            }.pdf' target='_blank'>pdf</a>"
+        )
+        return markdownTranscript
+    }
 
 }

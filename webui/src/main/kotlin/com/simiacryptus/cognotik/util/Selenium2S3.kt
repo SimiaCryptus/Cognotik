@@ -471,10 +471,13 @@ open class Selenium2S3(
             options.addArguments(*args.toTypedArray())
             options.setPageLoadTimeout(Duration.of(90, ChronoUnit.SECONDS))
             return try {
-              ChromeDriver(chromeDriverService, options)
+                ChromeDriver(chromeDriverService, options)
             } catch (e: Exception) {
-              log.warn("Error initializing ChromeDriver with service - Check https://googlechromelabs.github.io/chrome-for-testing/ for ChromeDriver update", e)
-              throw e
+                log.warn(
+                    "Error initializing ChromeDriver with service - Check https://googlechromelabs.github.io/chrome-for-testing/ for ChromeDriver update",
+                    e
+                )
+                throw e
             }
         }
 

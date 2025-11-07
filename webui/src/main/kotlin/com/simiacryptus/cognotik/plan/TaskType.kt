@@ -30,235 +30,240 @@ import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 @JsonDeserialize(using = TaskTypeDeserializer::class)
 @JsonSerialize(using = TaskTypeSerializer::class)
 class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
-  name: String,
-  val executionConfigClass: Class<out T>,
-  val taskSettingsClass: Class<out U>,
-  val description: String? = null,
-  val tooltipHtml: String? = null,
+    name: String,
+    val executionConfigClass: Class<out T>,
+    val taskSettingsClass: Class<out U>,
+    val description: String? = null,
+    val tooltipHtml: String? = null,
 ) : DynamicEnum<TaskType<*, *>>(name) {
 
-  companion object {
+    companion object {
 
-    private val taskConstructors by lazy {
-      val taskConstructors: MutableMap<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>> = mutableMapOf()
+        private val taskConstructors by lazy {
+            val taskConstructors: MutableMap<TaskType<*, *>, (OrchestrationConfig, TaskExecutionConfig?) -> AbstractTask<out TaskExecutionConfig, TaskTypeConfig>> =
+                mutableMapOf()
 
-      fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
-        taskType: TaskType<T, U>, constructor: (OrchestrationConfig, T?) -> AbstractTask<T, U>
-      ) {
-        taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskExecutionConfig? ->
-          constructor(settings, task as T?) as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
+            fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
+                taskType: TaskType<T, U>, constructor: (OrchestrationConfig, T?) -> AbstractTask<T, U>
+            ) {
+                taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskExecutionConfig? ->
+                    constructor(settings, task as T?) as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
+                }
+                register(taskType)
+            }
+
+            registerConstructor(GameLevelDesignTask.GameLevelDesign) { settings, task ->
+                GameLevelDesignTask(settings, task)
+            }
+            registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign) { settings, task ->
+                GameNarrativeDesignTask(settings, task)
+            }
+            registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign) { settings, task ->
+                GameMechanicsDesignTask(settings, task)
+            }
+            registerConstructor(GameEconomyTask.GameEconomy) { settings, task ->
+                GameEconomyTask(settings, task)
+            }
+            registerConstructor(ResearchPaperGeneration) { settings, task ->
+                ResearchPaperGenerationTask(settings, task)
+            }
+            registerConstructor(ChainOfThought) { settings, task ->
+                ChainOfThoughtTask(settings, task)
+            }
+            registerConstructor(Analysis) { settings, task ->
+                AnalysisTask(settings, task)
+            }
+            registerConstructor(CrawlerAgentTask.CrawlerAgent) { settings, task ->
+                CrawlerAgentTask(settings, task)
+            }
+            registerConstructor(FileModification) { settings, task ->
+                FileModificationTask(settings, task)
+            }
+            registerConstructor(FileSearch) { settings, task ->
+                FileSearchTask(settings, task)
+            }
+            registerConstructor(KnowledgeIndexing) { settings, task ->
+                KnowledgeIndexingTask(settings, task)
+            }
+            registerConstructor(GitHubSearchTask.GitHubSearch) { settings, task ->
+                GitHubSearchTask(settings, task)
+            }
+            registerConstructor(RunShellCommandTask.RunShellCommand) { settings, task ->
+                RunShellCommandTask(settings, task)
+            }
+            registerConstructor(RunCodeTask.RunCode) { settings, task ->
+                RunCodeTask(settings, task)
+            }
+            registerConstructor(SeleniumSessionTask.SeleniumSession) { settings, task ->
+                SeleniumSessionTask(settings, task)
+            }
+            registerConstructor(SelfHealingTask.SelfHealing) { settings, task ->
+                SelfHealingTask(settings, task)
+            }
+            registerConstructor(VectorSearch) { settings, task ->
+                VectorSearchTask(settings, task)
+            }
+            registerConstructor(MCPToolTask.MCPTool) { settings, task ->
+                MCPToolTask(settings, task)
+            }
+            registerConstructor(WriteHtmlTask.WriteHtml) { settings, task ->
+                WriteHtmlTask(settings, task)
+            }
+            registerConstructor(GeneratePresentationTask.GeneratePresentation) { settings, task ->
+                GeneratePresentationTask(settings, task)
+            }
+            registerConstructor(MetaCognitiveReflectionTask.MetaCognitiveReflection) { settings, task ->
+                MetaCognitiveReflectionTask(settings, task)
+            }
+            registerConstructor(CausalInferenceTask.CausalInference) { settings, task ->
+                CausalInferenceTask(settings, task)
+            }
+            registerConstructor(AbstractionLadderTask.AbstractionLadder) { settings, task ->
+                AbstractionLadderTask(settings, task)
+            }
+            registerConstructor(CounterfactualAnalysisTask.CounterfactualAnalysis) { settings, task ->
+                CounterfactualAnalysisTask(settings, task)
+            }
+            registerConstructor(AnalogicalReasoningTask.AnalogicalReasoning) { settings, task ->
+                AnalogicalReasoningTask(settings, task)
+            }
+            registerConstructor(SocraticDialogueTask.SocraticDialogue) { settings, task ->
+                SocraticDialogueTask(settings, task)
+            }
+            registerConstructor(MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysis) { settings, task ->
+                MultiPerspectiveAnalysisTask(settings, task)
+            }
+            registerConstructor(ConstraintSatisfactionTask.ConstraintSatisfaction) { settings, task ->
+                ConstraintSatisfactionTask(settings, task)
+            }
+            registerConstructor(DecompositionSynthesisTask.DecompositionSynthesis) { settings, task ->
+                DecompositionSynthesisTask(settings, task)
+            }
+            registerConstructor(BrainstormingTask.Brainstorming) { settings, task ->
+                BrainstormingTask(settings, task)
+            }
+            registerConstructor(FiniteStateMachineTask.FiniteStateMachine) { settings, task ->
+                FiniteStateMachineTask(settings, task)
+            }
+            registerConstructor(GameTheoryTask.GameTheory) { settings, task ->
+                GameTheoryTask(settings, task)
+            }
+            registerConstructor(AbductiveReasoningTask.AbductiveReasoning) { settings, task ->
+                AbductiveReasoningTask(settings, task)
+            }
+            registerConstructor(AdversarialReasoningTask.AdversarialReasoning) { settings, task ->
+                AdversarialReasoningTask(settings, task)
+            }
+            registerConstructor(ConstraintRelaxationTask.ConstraintRelaxation) { settings, task ->
+                ConstraintRelaxationTask(settings, task)
+            }
+            registerConstructor(DialecticalReasoningTask.DialecticalReasoning) { settings, task ->
+                DialecticalReasoningTask(settings, task)
+            }
+            registerConstructor(LateralThinkingTask.LateralThinking) { settings, task ->
+                LateralThinkingTask(settings, task)
+            }
+            registerConstructor(ProbabilisticReasoningTask.ProbabilisticReasoning) { settings, task ->
+                ProbabilisticReasoningTask(settings, task)
+            }
+            registerConstructor(SystemsThinkingTask.SystemsThinking) { settings, task ->
+                SystemsThinkingTask(settings, task)
+            }
+            registerConstructor(TemporalReasoningTask.TemporalReasoning) { settings, task ->
+                TemporalReasoningTask(settings, task)
+            }
+            registerConstructor(NarrativeReasoningTask.NarrativeReasoning) { settings, task ->
+                NarrativeReasoningTask(settings, task)
+            }
+            registerConstructor(NarrativeGenerationTask.NarrativeGeneration) { settings, task ->
+                NarrativeGenerationTask(settings, task)
+            }
+            registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
+                GeneticOptimizationTask(settings, task)
+            }
+            registerConstructor(SubPlanning) { settings, task ->
+                SubPlanningTask(settings, task)
+            }
+            registerConstructor(EthicalReasoningTask.EthicalReasoning) { settings, task ->
+                EthicalReasoningTask(settings, task)
+            }
+            registerConstructor(ArticleGenerationTask.ArticleGeneration) { settings, task ->
+                ArticleGenerationTask(settings, task)
+            }
+            registerConstructor(PersuasiveEssayTask.PersuasiveEssay) { settings, task ->
+                PersuasiveEssayTask(settings, task)
+            }
+            registerConstructor(BusinessProposalTask.BusinessProposal) { settings, task ->
+                BusinessProposalTask(settings, task)
+            }
+            registerConstructor(EmailCampaignTask.EmailCampaign) { settings, task ->
+                EmailCampaignTask(settings, task)
+            }
+            registerConstructor(InteractiveStoryTask.InteractiveStory) { settings, task ->
+                InteractiveStoryTask(settings, task)
+            }
+            registerConstructor(JournalismReasoningTask.JournalismReasoning) { settings, task ->
+                JournalismReasoningTask(settings, task)
+            }
+            registerConstructor(TechnicalExplanationTask.TechnicalExplanation) { settings, task ->
+                TechnicalExplanationTask(settings, task)
+            }
+            registerConstructor(TutorialGenerationTask.TutorialGeneration) { settings, task ->
+                TutorialGenerationTask(settings, task)
+            }
+            registerConstructor(ReportGenerationTask.ReportGeneration) { settings, task ->
+                ReportGenerationTask(settings, task)
+            }
+            registerConstructor(ScriptwritingTask.Scriptwriting) { settings, task ->
+                ScriptwritingTask(settings, task)
+            }
+            registerConstructor(GenerateImageTask.GenerateImage) { settings, task ->
+                GenerateImageTask(settings, task)
+            }
+            registerConstructor(IllustrateDocumentTask.IllustrateDocument) { settings, task ->
+                IllustrateDocumentTask(settings, task)
+            }
+            taskConstructors.toMap()
         }
-        register(taskType)
-      }
 
-      registerConstructor(GameLevelDesignTask.GameLevelDesign) { settings, task ->
-        GameLevelDesignTask(settings, task)
-      }
-      registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign) { settings, task ->
-        GameNarrativeDesignTask(settings, task)
-      }
-      registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign) { settings, task ->
-        GameMechanicsDesignTask(settings, task)
-      }
-      registerConstructor(GameEconomyTask.GameEconomy) { settings, task ->
-        GameEconomyTask(settings, task)
-      }
-      registerConstructor(ResearchPaperGeneration) { settings, task ->
-        ResearchPaperGenerationTask(settings, task)
-      }
-      registerConstructor(ChainOfThought) { settings, task ->
-        ChainOfThoughtTask(settings, task)
-      }
-      registerConstructor(Analysis) { settings, task ->
-        AnalysisTask(settings, task)
-      }
-      registerConstructor(CrawlerAgentTask.CrawlerAgent) { settings, task ->
-        CrawlerAgentTask(settings, task)
-      }
-      registerConstructor(FileModification) { settings, task ->
-        FileModificationTask(settings, task)
-      }
-      registerConstructor(FileSearch) { settings, task ->
-        FileSearchTask(settings, task)
-      }
-      registerConstructor(KnowledgeIndexing) { settings, task ->
-        KnowledgeIndexingTask(settings, task)
-      }
-      registerConstructor(GitHubSearchTask.GitHubSearch) { settings, task ->
-        GitHubSearchTask(settings, task)
-      }
-      registerConstructor(RunShellCommandTask.RunShellCommand) { settings, task ->
-        RunShellCommandTask(settings, task)
-      }
-      registerConstructor(RunCodeTask.RunCode) { settings, task ->
-        RunCodeTask(settings, task)
-      }
-      registerConstructor(SeleniumSessionTask.SeleniumSession) { settings, task ->
-        SeleniumSessionTask(settings, task)
-      }
-      registerConstructor(SelfHealingTask.SelfHealing) { settings, task ->
-        SelfHealingTask(settings, task)
-      }
-      registerConstructor(VectorSearch) { settings, task ->
-        VectorSearchTask(settings, task)
-      }
-      registerConstructor(MCPToolTask.MCPTool) { settings, task ->
-        MCPToolTask(settings, task)
-      }
-      registerConstructor(WriteHtmlTask.WriteHtml) { settings, task ->
-        WriteHtmlTask(settings, task)
-      }
-      registerConstructor(GeneratePresentationTask.GeneratePresentation) { settings, task ->
-        GeneratePresentationTask(settings, task)
-      }
-      registerConstructor(MetaCognitiveReflectionTask.MetaCognitiveReflection) { settings, task ->
-        MetaCognitiveReflectionTask(settings, task)
-      }
-      registerConstructor(CausalInferenceTask.CausalInference) { settings, task ->
-        CausalInferenceTask(settings, task)
-      }
-      registerConstructor(AbstractionLadderTask.AbstractionLadder) { settings, task ->
-        AbstractionLadderTask(settings, task)
-      }
-      registerConstructor(CounterfactualAnalysisTask.CounterfactualAnalysis) { settings, task ->
-        CounterfactualAnalysisTask(settings, task)
-      }
-      registerConstructor(AnalogicalReasoningTask.AnalogicalReasoning) { settings, task ->
-        AnalogicalReasoningTask(settings, task)
-      }
-      registerConstructor(SocraticDialogueTask.SocraticDialogue) { settings, task ->
-        SocraticDialogueTask(settings, task)
-      }
-      registerConstructor(MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysis) { settings, task ->
-        MultiPerspectiveAnalysisTask(settings, task)
-      }
-      registerConstructor(ConstraintSatisfactionTask.ConstraintSatisfaction) { settings, task ->
-        ConstraintSatisfactionTask(settings, task)
-      }
-      registerConstructor(DecompositionSynthesisTask.DecompositionSynthesis) { settings, task ->
-        DecompositionSynthesisTask(settings, task)
-      }
-      registerConstructor(BrainstormingTask.Brainstorming) { settings, task ->
-        BrainstormingTask(settings, task)
-      }
-      registerConstructor(FiniteStateMachineTask.FiniteStateMachine) { settings, task ->
-        FiniteStateMachineTask(settings, task)
-      }
-      registerConstructor(GameTheoryTask.GameTheory) { settings, task ->
-        GameTheoryTask(settings, task)
-      }
-      registerConstructor(AbductiveReasoningTask.AbductiveReasoning) { settings, task ->
-        AbductiveReasoningTask(settings, task)
-      }
-      registerConstructor(AdversarialReasoningTask.AdversarialReasoning) { settings, task ->
-        AdversarialReasoningTask(settings, task)
-      }
-      registerConstructor(ConstraintRelaxationTask.ConstraintRelaxation) { settings, task ->
-        ConstraintRelaxationTask(settings, task)
-      }
-      registerConstructor(DialecticalReasoningTask.DialecticalReasoning) { settings, task ->
-        DialecticalReasoningTask(settings, task)
-      }
-      registerConstructor(LateralThinkingTask.LateralThinking) { settings, task ->
-        LateralThinkingTask(settings, task)
-      }
-      registerConstructor(ProbabilisticReasoningTask.ProbabilisticReasoning) { settings, task ->
-        ProbabilisticReasoningTask(settings, task)
-      }
-      registerConstructor(SystemsThinkingTask.SystemsThinking) { settings, task ->
-        SystemsThinkingTask(settings, task)
-      }
-      registerConstructor(TemporalReasoningTask.TemporalReasoning) { settings, task ->
-        TemporalReasoningTask(settings, task)
-      }
-      registerConstructor(NarrativeReasoningTask.NarrativeReasoning) { settings, task ->
-        NarrativeReasoningTask(settings, task)
-      }
-      registerConstructor(NarrativeGenerationTask.NarrativeGeneration) { settings, task ->
-        NarrativeGenerationTask(settings, task)
-      }
-      registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
-        GeneticOptimizationTask(settings, task)
-      }
-      registerConstructor(SubPlanning) { settings, task ->
-        SubPlanningTask(settings, task)
-      }
-      registerConstructor(EthicalReasoningTask.EthicalReasoning) { settings, task ->
-        EthicalReasoningTask(settings, task)
-      }
-      registerConstructor(ArticleGenerationTask.ArticleGeneration) { settings, task ->
-        ArticleGenerationTask(settings, task)
-      }
-      registerConstructor(PersuasiveEssayTask.PersuasiveEssay) { settings, task ->
-        PersuasiveEssayTask(settings, task)
-      }
-      registerConstructor(BusinessProposalTask.BusinessProposal) { settings, task ->
-        BusinessProposalTask(settings, task)
-      }
-      registerConstructor(EmailCampaignTask.EmailCampaign) { settings, task ->
-        EmailCampaignTask(settings, task)
-      }
-      registerConstructor(InteractiveStoryTask.InteractiveStory) { settings, task ->
-        InteractiveStoryTask(settings, task)
-      }
-      registerConstructor(JournalismReasoningTask.JournalismReasoning) { settings, task ->
-        JournalismReasoningTask(settings, task)
-      }
-      registerConstructor(TechnicalExplanationTask.TechnicalExplanation) { settings, task ->
-        TechnicalExplanationTask(settings, task)
-      }
-      registerConstructor(TutorialGenerationTask.TutorialGeneration) { settings, task ->
-        TutorialGenerationTask(settings, task)
-      }
-      registerConstructor(ReportGenerationTask.ReportGeneration) { settings, task ->
-        ReportGenerationTask(settings, task)
-      }
-      registerConstructor(ScriptwritingTask.Scriptwriting) { settings, task ->
-        ScriptwritingTask(settings, task)
-      }
-      registerConstructor(GenerateImageTask.GenerateImage) { settings, task ->
-        GenerateImageTask(settings, task)
-      }
-      registerConstructor(IllustrateDocumentTask.IllustrateDocument) { settings, task ->
-        IllustrateDocumentTask(settings, task)
-      }
-      taskConstructors.toMap()
+        fun values(): List<TaskType<*, *>> {
+            @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization
+            return values(TaskType::class.java)
+        }
+
+        fun getImpl(
+            orchestrationConfig: OrchestrationConfig, planTask: TaskExecutionConfig?
+        ) = getImpl(
+            orchestrationConfig = orchestrationConfig,
+            taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
+            planTask = planTask)
+
+        fun getImpl(
+            orchestrationConfig: OrchestrationConfig, taskType: TaskType<*, *>, planTask: TaskExecutionConfig? = null
+        ): AbstractTask<out TaskExecutionConfig, TaskTypeConfig> {
+            val constructor = taskConstructors[taskType]
+            if (constructor == null) {
+                throw RuntimeException("Unknown task type: ${taskType.name}")
+            }
+            return constructor(orchestrationConfig, planTask)
+        }
+
+        fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig): List<TaskType<*, *>> {
+            @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization
+            return orchestrationConfig.taskSettings.mapNotNull { x ->
+                valueOf(
+                    x.value.task_type ?: return@mapNotNull null
+                )
+            }
+        }
+
+        fun valueOf(name: String): TaskType<*, *> {
+            @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization
+            return valueOf(TaskType::class.java, name)
+        }
+
+        private fun register(taskType: TaskType<*, *>) = register(TaskType::class.java, taskType)
     }
-
-    fun values(): List<TaskType<*, *>> {
-      @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization
-      return values(TaskType::class.java)
-    }
-
-    fun getImpl(
-      orchestrationConfig: OrchestrationConfig, planTask: TaskExecutionConfig?
-    ) = getImpl(
-      orchestrationConfig = orchestrationConfig,
-      taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
-      planTask = planTask)
-
-    fun getImpl(
-      orchestrationConfig: OrchestrationConfig, taskType: TaskType<*, *>, planTask: TaskExecutionConfig? = null
-    ): AbstractTask<out TaskExecutionConfig, TaskTypeConfig> {
-      val constructor = taskConstructors[taskType]
-      if (constructor == null) {
-        throw RuntimeException("Unknown task type: ${taskType.name}")
-      }
-      return constructor(orchestrationConfig, planTask)
-    }
-
-    fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig): List<TaskType<*, *>> {
-      @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization
-      return orchestrationConfig.taskSettings.mapNotNull { x -> valueOf(x.value.task_type ?: return@mapNotNull null) }
-    }
-
-    fun valueOf(name: String): TaskType<*, *> {
-      @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization
-      return valueOf(TaskType::class.java, name)
-    }
-
-    private fun register(taskType: TaskType<*, *>) = register(TaskType::class.java, taskType)
-  }
 
 }
 
