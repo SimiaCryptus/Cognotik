@@ -1,7 +1,10 @@
 fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
 version = properties("libraryVersion")
-W
+
+
+
+
 plugins {
   kotlin("jvm") // Version is applied globally via settings.gradle.kts
   id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
@@ -36,19 +39,20 @@ subprojects {
             // Explicitly configure Java toolchain
             extensions.configure<JavaPluginExtension> {
                 toolchain {
-                    languageVersion.set(JavaLanguageVersion.of(21))
+                    languageVersion.set(JavaLanguageVersion.of(17))
                 }
             }
         }
     }
-tasks.withType<JavaCompile> {
+    tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")
-        options.release.set(21)
+        // Explicitly set release flag to ensure Java 17 bytecode
+        options.release.set(17)
     }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
             freeCompilerArgs.set(listOf("-Xjsr305=strict"))
             javaParameters.set(true)
         }
@@ -106,14 +110,14 @@ tasks.withType<JavaCompile> {
 
 allprojects {
     // Only apply Java plugin to non-Android projects
-when (name) {
+    when (name) {
         "android" -> { /* Skip Java plugin for Android project */ }
         else -> {
             apply(plugin = "java")
             java {
-                toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
-                sourceCompatibility = JavaVersion.VERSION_21
-                targetCompatibility = JavaVersion.VERSION_21
+                toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
             }
         }
     }

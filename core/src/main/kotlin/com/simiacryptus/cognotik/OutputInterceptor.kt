@@ -1,17 +1,16 @@
 package com.simiacryptus.cognotik
 
- import java.io.ByteArrayOutputStream
- import java.io.IOException
- import java.io.PrintStream
- import java.util.*
- import java.util.concurrent.atomic.AtomicBoolean
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.PrintStream
+import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
- object OutputInterceptor {
+object OutputInterceptor {
     private val originalOut: PrintStream = System.out
     private val originalErr: PrintStream = System.err
     private val isSetup = AtomicBoolean(false)
     private val globalStreamLock = Any()
-    @JvmStatic
 
     fun setupInterceptor() {
         if (isSetup.getAndSet(true)) return
@@ -29,7 +28,6 @@ package com.simiacryptus.cognotik
             return threadLocalBuffer.getOrPut(currentThread) { ByteArrayOutputStream() }
         }
     }
-    @JvmStatic
 
     fun getThreadOutput(): String {
         val outputStream = getThreadOutputStream()
@@ -40,12 +38,10 @@ package com.simiacryptus.cognotik
         }
         return outputStream.toString()
     }
-    @JvmStatic
 
     fun clearThreadOutput() {
         getThreadOutputStream().reset()
     }
-    @JvmStatic
 
     fun clearGlobalOutput() {
         synchronized(globalStreamLock) {

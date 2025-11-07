@@ -1,16 +1,15 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
- import org.gradle.api.tasks.testing.logging.TestLogEvent
- import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
   alias(libs.plugins.shadow)
   application
-  kotlin("jvm")
-  kotlin("plugin.spring")
+  kotlin("plugin.spring") version "1.9.22"
   id("org.springframework.boot") version "3.5.6"
   id("io.spring.dependency-management") version "1.1.7"
- //  id("com.github.node-gradle.node") version "7.0.1"
+//  id("com.github.node-gradle.node") version "7.0.1"
 }
 
 
@@ -28,8 +27,8 @@ repositories {
 }
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_21
-  targetCompatibility = JavaVersion.VERSION_21
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
 }
 
 //node {
@@ -48,23 +47,21 @@ dependencies {
 
   // Force compatible Jackson versions for Spring Boot 3.2.2
   implementation(platform("com.fasterxml.jackson:jackson-bom:2.15.3"))
-  // Cognotik dependencies
-  implementation(project(":core"))
-  implementation(project(":jo-penai"))
 
 
   // Spring Boot
- implementation("org.springframework.boot:spring-boot-starter-webflux")
+  implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("org.springframework.boot:spring-boot-starter-web")
-implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+  implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
   implementation("org.springframework.boot:spring-boot-starter-cache")
-
   // Kotlin Coroutines
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 
+  implementation(project(":jo-penai"))
+  implementation(project(":core"))
   // Spring Boot dependencies
   //  implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 

@@ -50,6 +50,8 @@ dependencies {
 
     compileOnly(kotlin("stdlib"))
     compileOnly(kotlin("reflect"))
+    testImplementation(kotlin("reflect"))
+    testImplementation(kotlin("script-runtime"))
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)

@@ -1,9 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 
- plugins {
+plugins {
     `java-library`
-    kotlin("jvm")
 }
 
 group = "com.simiacryptus"
@@ -60,20 +59,20 @@ dependencies {
     implementation("com.intellij.remoterobot:ide-launcher:${libs.versions.remoterobot.get()}")
 }
 
- java {
+java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
- tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_21)
+        jvmTarget.set(JvmTarget.JVM_17)
         freeCompilerArgs.set(listOf("-Xjsr305=strict"))
     }
 }
 
- tasks.test {
+tasks.test {
     enabled = false
     useJUnitPlatform()
     jvmArgs = listOf(
@@ -84,7 +83,7 @@ dependencies {
     )
 }
 
- tasks {
+tasks {
     compileKotlin {
         destinationDirectory.set(compileJava.get().destinationDirectory)
         doLast {
@@ -123,7 +122,7 @@ dependencies {
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
+            jvmTarget.set(JvmTarget.JVM_17)
             javaParameters.set(true)
         }
     }

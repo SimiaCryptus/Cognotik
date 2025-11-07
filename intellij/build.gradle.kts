@@ -1,9 +1,8 @@
 import org.jetbrains.changelog.Changelog
- import org.jetbrains.changelog.markdownToHTML
- import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
- plugins {
-    kotlin("jvm")
+plugins {
     alias(libs.plugins.intelliJPlatform)
     alias(libs.plugins.changelog)
     alias(libs.plugins.qodana)
@@ -82,13 +81,13 @@ dependencies {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
 }
 
 tasks {
     withType<KotlinCompile> {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
 
@@ -110,6 +109,7 @@ tasks {
     }
     withType<KotlinCompile> {
         compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
             javaParameters.set(true)
         }
     }
