@@ -1,10 +1,10 @@
-group = providers.gradleProperty("cognotikGroup").get()
-version = providers.gradleProperty("cognotikVersion").get()
+val libraryGroup: String by project
+val libraryVersion: String by project
+group = libraryGroup
+version = libraryVersion
 
- plugins {
+plugins {
     `java-library`
-    `maven-publish`
-    signing
 }
 
 repositories {

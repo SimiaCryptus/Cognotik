@@ -1,4 +1,0 @@
-// This file is deprecated - the project uses Kotlin DSL (build.gradle.kts)
-// If you need to execute gradlew commands, use the appropriate script for your OS:
-// - Windows: gradlew.bat
-// - Unix/Mac: ./gradlew

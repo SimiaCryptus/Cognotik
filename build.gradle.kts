@@ -2,28 +2,6 @@ fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
 version = properties("libraryVersion")
 
-
-
-
-plugins {
-  kotlin("jvm") // Version is applied globally via settings.gradle.kts
-  id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
-  jacoco
-  id("io.github.gradle-nexus.publish-plugin")
-}
-
-nexusPublishing {
-  repositories {
-    sonatype {
-      nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-      snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-      username.set(findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME"))
-      password.set(findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD"))
-    }
-  }
-}
-
-
 subprojects {
     apply(plugin = "jacoco")
     repositories {
@@ -36,19 +14,11 @@ subprojects {
         else -> {
             apply(plugin = "java")
             apply(plugin = "kotlin")
-            // Explicitly configure Java toolchain
-            extensions.configure<JavaPluginExtension> {
-                toolchain {
-                    languageVersion.set(JavaLanguageVersion.of(17))
-                }
-            }
         }
     }
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")
-        // Explicitly set release flag to ensure Java 17 bytecode
-        options.release.set(17)
     }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
@@ -205,4 +175,10 @@ tasks {
 repositories {
     gradlePluginPortal()
     mavenCentral()
+}
+
+plugins {
+    kotlin("jvm") // Version is applied globally via settings.gradle.kts
+    id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
+    jacoco
 }
