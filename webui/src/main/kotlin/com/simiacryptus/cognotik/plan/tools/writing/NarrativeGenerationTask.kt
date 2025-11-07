@@ -11,7 +11,6 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
@@ -21,7 +20,6 @@ import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.BufferedWriter
-import java.io.File
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -212,7 +210,8 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
 
     val tabs = TabbedDisplay(task)
     // Get input file context
-    val inputFileContext = getInputFileCode(agent.root.toFile())
+    agent.root.toFile()
+    val inputFileContext = super.getInputFileContent(executionConfig.input_files, root, treatDocumentsAsText=true)
     if (inputFileContext.isNotBlank()) {
       transcript?.write("## Input Files Context\n\n$inputFileContext\n\n")
       transcript?.flush()
@@ -733,40 +732,6 @@ Provide the revised scene content only.
       }.pdf' target='_blank'>pdf</a>"
     )
     return java.io.BufferedWriter(markdownTranscript?.let { java.io.OutputStreamWriter(it) })
-  }
-
-  private fun getInputFileCode(rootFile: File): String {
-    val executionConfig = executionConfig as? NarrativeGenerationTaskExecutionConfigData ?: return ""
-    return (executionConfig.input_files ?: listOf())
-      .flatMap { pattern: String ->
-        val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
-        (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(rootFile) {
-          when {
-            com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-            matcher.matches(rootFile.toPath().relativize(it.toPath())) -> true
-            it.isDirectory -> true
-            else -> false
-          }
-        })
-      }.filter { file ->
-        file.isFile && file.exists()
-      }
-      .distinct()
-      .sortedBy { it }
-      .joinToString("\n\n") { relativePath ->
-        val file = rootFile.resolve(relativePath.name)
-        try {
-          val content = if (!AnalysisTask.isTextFile(file)) {
-            AnalysisTask.extractDocumentContent(file)
-          } else {
-            file.readText()
-          }
-          "# ${relativePath.name}\n\n```\n$content\n```"
-        } catch (e: Throwable) {
-          log.warn("Error reading file: ${relativePath.name}", e)
-          ""
-        }
-      }
   }
 
   private fun generateCoverImage(

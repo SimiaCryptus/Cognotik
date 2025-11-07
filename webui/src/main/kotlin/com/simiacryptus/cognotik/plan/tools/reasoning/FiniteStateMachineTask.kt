@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -766,7 +766,7 @@ Format as a clear table or structured list.
   }
 
   private fun extractDocumentContent(file: File) = try {
-    file.getReader().use { reader ->
+    file.getDocumentReader().use { reader ->
       when (reader) {
         is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
         else -> reader.getText()

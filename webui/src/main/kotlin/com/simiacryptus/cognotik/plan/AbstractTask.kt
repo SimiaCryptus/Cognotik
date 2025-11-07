@@ -1,13 +1,16 @@
 package com.simiacryptus.cognotik.plan
 
+import com.simiacryptus.cognotik.input.getDocumentReader
+import com.simiacryptus.cognotik.input.isDocumentFile
+import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
-import java.io.FileOutputStream
+import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.text.SimpleDateFormat
+import kotlin.io.path.exists
 
 abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
   val orchestrationConfig: OrchestrationConfig,
@@ -59,6 +62,43 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig,
   )
+
+  fun getInputFileContent(
+    files: List<String>?,
+    root: Path,
+    treatDocumentsAsText: Boolean = true,
+  ): String = (files ?: listOf())
+    .flatMap { pattern: String ->
+      if(root.resolve(pattern).exists()) {
+        return@flatMap listOf(root.resolve(pattern).toFile())
+      }
+      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+      (FileSelectionUtils.filteredWalk(root.toFile(), treatDocumentsAsText=treatDocumentsAsText) {
+        when {
+          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+          it.isDirectory -> true
+          !matcher.matches(root.relativize(it.toPath())) -> false
+          else -> true
+        }
+      })
+    }.filter { file ->
+      file.isFile && file.exists()
+    }
+    .distinct()
+    .sortedBy { it }
+    .joinToString("\n\n") { relativePath ->
+      val file = root.toFile().resolve(relativePath)
+      try {
+        if(treatDocumentsAsText && file.isDocumentFile()) {
+          file.getDocumentReader().getText()
+        } else {
+          "# $relativePath\n\n```\n${file.readText()}\n```"
+        }
+      } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
+      }
+    }
 
   companion object {
     val log = LoggerFactory.getLogger(AbstractTask::class.java)

@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.online.fetch
 
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.util.HtmlSimplifier
@@ -148,7 +148,7 @@ class HttpClientFetch : FetchMethodFactory {
 
           // Use DocumentReader to extract text
           val extractedText = try {
-            tempFile.getReader().use { reader ->
+            tempFile.getDocumentReader().use { reader ->
               reader.getText()
             }
           } catch (e: Exception) {

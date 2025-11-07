@@ -402,13 +402,32 @@ function setupWizardNavigation() {
             tempValue.textContent = this.value;
         });
     }
-    // Setup working directory generator
+// Setup working directory generator
     document.getElementById('generate-working-dir')?.addEventListener('click', () => {
         const workingDirInput = document.getElementById('working-dir');
         if (workingDirInput) {
             workingDirInput.value = Utils.generateCognotikWorkingDir();
         }
     });
+    // Setup working directory selector
+    // document.getElementById('select-working-dir')?.addEventListener('click', () => {
+    //     const workingDirInput = document.getElementById('working-dir');
+    //     if (workingDirInput) {
+    //         // Create a file input element to trigger directory selection
+    //         const fileInput = document.createElement('input');
+    //         fileInput.type = 'file';
+    //         fileInput.webkitdirectory = true;
+    //         fileInput.directory = true;
+    //         fileInput.addEventListener('change', (e) => {
+    //             if (e.target.files && e.target.files.length > 0) {
+    //                 // Get the path from the first file's webkitRelativePath
+    //                 const firstFilePath = e.target.files[0].webkitRelativePath;
+    //                 workingDirInput.value = firstFilePath;
+    //             }
+    //         });
+    //         fileInput.click();
+    //     }
+    // });
 
     // Next buttons
     document.getElementById('next-to-task-settings')?.addEventListener('click', () => {

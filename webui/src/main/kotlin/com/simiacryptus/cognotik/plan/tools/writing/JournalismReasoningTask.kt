@@ -5,10 +5,10 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
-import java.nio.file.FileSystems
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -257,32 +256,6 @@ JournalismReasoning - Investigate stories through journalistic principles and me
     return markdownTranscript
   }
 
-  private fun getInputFileContent(): String {
-    val inputFiles = executionConfig?.input_files ?: return ""
-    if (inputFiles.isEmpty() || !executionConfig?.include_file_content!!) {
-      return ""
-    }
-    return inputFiles
-      .flatMap { pattern: String ->
-        val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-        (FileSelectionUtils.filteredWalk(root.toFile()) {
-          when {
-            FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-            matcher.matches(root.relativize(it.toPath())) -> true
-            it.isDirectory -> true
-            else -> false
-          }
-        })
-      }.filter { file ->
-        file.isFile && file.exists()
-      }
-      .distinct()
-      .sortedBy { it }
-      .joinToString("\n\n") { file ->
-        "# ${root.relativize(file.toPath())}\n\n```\n${file.readText()}\n```"
-      }
-  }
-
 
   override fun run(
     agent: TaskOrchestrator,
@@ -364,7 +337,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
       writer.appendLine()
       writer.flush()
       // Include file content if requested
-      val fileContent = getInputFileContent()
+      val fileContent = super.getInputFileContent(executionConfig.input_files, root, treatDocumentsAsText=true)
       if (fileContent.isNotBlank()) {
         writer.appendLine("## Input Files")
         writer.appendLine()

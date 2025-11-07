@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -627,7 +627,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
   }
 
   private fun extractDocumentContent(file: File) = try {
-    file.getReader().use { reader ->
+    file.getDocumentReader().use { reader ->
       reader.getText()
     }
   } catch (e: Exception) {

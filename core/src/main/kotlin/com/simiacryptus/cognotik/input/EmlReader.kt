@@ -107,7 +107,7 @@ class EmlReader(file: File) : DocumentReader {
                 }
             }
             // Use the file extension to determine the appropriate reader
-            val attachmentReader = tempFile.getReader()
+            val attachmentReader = tempFile.getDocumentReader()
             attachmentReader.use {
                 val attachmentText = it.getText()
                 result.appendLine(attachmentText)

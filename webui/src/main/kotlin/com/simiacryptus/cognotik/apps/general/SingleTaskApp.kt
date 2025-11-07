@@ -37,7 +37,7 @@ abstract class SingleTaskApp(
   private val log = LoggerFactory.getLogger(SingleTaskApp::class.java)
 
   override val stickyInput = false
-  override val inputCnt: Int = 0
+  override val inputCnt: Int = 1
 
   @Suppress("UNCHECKED_CAST")
   override fun <T : Any> initSettings(session: Session): T = OrchestrationConfig() as T

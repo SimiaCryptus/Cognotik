@@ -5,17 +5,15 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.nio.file.FileSystems
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -86,9 +84,9 @@ class BusinessProposalTask(
 
     @Description("Related files or research to incorporate")
     val related_files: List<String>? = null,
+
     @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
     val input_files: List<String>? = null,
-
 
     task_description: String? = null,
     task_dependencies: List<String>? = null,
@@ -417,7 +415,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
     val resultBuilder = StringBuilder()
     resultBuilder.append("# Business Proposal: $proposalTitle\n\n")
     // Load input files if specified
-    val inputFileContent = getInputFileContent()
+    val inputFileContent = super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText=true)
     val messagesWithContext = if (inputFileContent.isNotBlank()) {
       messages + listOf(
         "## Input Files Context\n\n$inputFileContent"
@@ -1630,41 +1628,6 @@ Provide the complete revised proposal.
       }
     }
   }
-
-  private fun getInputFileContent(): String {
-    val inputFiles = executionConfig?.input_files ?: return ""
-    if (inputFiles.isEmpty()) return ""
-    log.debug("Loading ${inputFiles.size} input files")
-    return inputFiles
-      .flatMap { pattern: String ->
-        val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-        (FileSelectionUtils.filteredWalk(root.toFile()) {
-          when {
-            FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-            matcher.matches(root.relativize(it.toPath())) -> true
-            it.isDirectory -> true
-            else -> false
-          }
-        })
-      }.filter { file ->
-        file.isFile && file.exists()
-      }
-      .distinct()
-      .filterNotNull()
-      .sortedBy { it }
-      .joinToString("\n\n") { relativePath ->
-        val file = root.toFile().resolve(relativePath)
-        try {
-          val content = file.readText()
-          "# $relativePath\n\n```\n$content\n```"
-        } catch (e: Throwable) {
-          log.warn("Error reading file: $relativePath", e)
-          ""
-        }
-      }
-  }
-
-
 
 
   companion object {

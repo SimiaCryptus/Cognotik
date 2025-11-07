@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.FileSelectionUtils
@@ -16,7 +16,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -1280,7 +1279,7 @@ Generate $numAlternatives ideas using $technique.
   }
 
   private fun extractDocumentContent(file: File) = try {
-    file.getReader().use { reader ->
+    file.getDocumentReader().use { reader ->
       when (reader) {
         is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
         else -> reader.getText()

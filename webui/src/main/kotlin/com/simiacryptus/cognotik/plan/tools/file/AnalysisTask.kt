@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.*
@@ -14,10 +14,8 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.text.SimpleDateFormat
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
@@ -250,7 +248,7 @@ class AnalysisTask(
     }
 
     fun extractDocumentContent(file: File) = try {
-      file.getReader().use { reader ->
+      file.getDocumentReader().use { reader ->
         when (reader) {
           is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
           else -> reader.getText()

@@ -39,7 +39,7 @@ open class AdaptivePlanningMode(
   private val reasoningState = AtomicReference<ReasoningState?>(null)
   private var isRunning = false
   private var transcriptStream: FileOutputStream? = null
-  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+)}""")
+  private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+))}""")
 
   override fun initialize() {
     log.debug("Initializing AutoPlanMode")

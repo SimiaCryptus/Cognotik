@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskExecutionConfig
@@ -10,13 +10,9 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.text.SimpleDateFormat
-import java.util.Date
 import kotlin.io.path.exists
 
 abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
@@ -53,9 +49,9 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
           //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
           when {
             FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-            matcher.matches(root.relativize(it.toPath())) -> true
             it.isDirectory -> true
-            else -> false
+            !matcher.matches(root.relativize(it.toPath())) -> false
+            else -> true
           }
         })
       }
@@ -119,7 +115,7 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
 
     fun extractDocumentContent(file: File): String {
       return try {
-        file.getReader().use { reader ->
+        file.getDocumentReader().use { reader ->
           when (reader) {
             is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
             else -> reader.getText()

@@ -24,7 +24,7 @@ open class DocumentParserApp(
     applicationName: String = "Document Extractor",
     path: String = "/pdfExtractor",
     val parsingModel: ParsingModel<DocumentData>,
-    val reader: (File) -> DocumentReader = { it.getReader() },
+    val reader: (File) -> DocumentReader = { it.getDocumentReader() },
     val fileInputs: List<Path>? = null,
     val fastMode: Boolean = true
 ) : ApplicationServer(

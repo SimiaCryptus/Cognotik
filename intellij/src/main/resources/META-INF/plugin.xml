@@ -10,7 +10,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.simiacryptus.cognotik.PluginStartupActivity"/>
-    <notificationGroup id="Cognotik Feedback" displayType="BALLOON" isLogByDefault="false"/>
+        <notificationGroup id="Cognotik Feedback" displayType="BALLOON" isLogByDefault="false"/>
         <applicationService serviceImplementation="com.simiacryptus.cognotik.config.AppSettingsState"/>
         <applicationConfigurable
                 parentId="tools"
@@ -91,7 +91,7 @@
                     description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
             </action>
 
-<group id="cognotik.ui.ProjectMenu.Modify"
+            <group id="cognotik.ui.ProjectMenu.Modify"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
                    text="🔧 Macros"
@@ -110,7 +110,7 @@
                 </action>
             </group>
 
-<group id="cognotik.ui.ProjectMenu.Tasks"
+            <group id="cognotik.ui.ProjectMenu.Tasks"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
                    text="⚡ Single Tasks"
@@ -131,6 +131,28 @@
                         text="🖼️ Illustrate Document"
                         description="Generate illustrative images for a document based on its content, enhancing visual appeal and comprehension">
                 </action>
+                <group id="cognotik.ui.ProjectMenu.Tasks.More"
+                       class="com.intellij.openapi.actionSystem.DefaultActionGroup"
+                       popup="true"
+                       text="⚡ More"
+                       description="Additional single-task actions">
+                    <action class="cognotik.actions.task.BusinessProposalAction"
+                            text="📈 Business Proposal"
+                            description="Generate a comprehensive business proposal document tailored to your specific needs and objectives">
+                    </action>
+                    <action class="cognotik.actions.task.NarrativeGenerationAction"
+                            text="📖 Narrative Generation"
+                            description="Create engaging narratives or stories based on provided themes, characters, or settings">
+                    </action>
+                    <action class="cognotik.actions.task.PersuasiveEssayAction"
+                            text="📝 Persuasive Essay"
+                            description="Craft a compelling persuasive essay on a given topic, incorporating strong arguments and evidence to support your viewpoint">
+                    </action>
+                    <action class="cognotik.actions.task.ResearchPaperAction"
+                            text="📚 Research Paper"
+                            description="Generate a well-structured research paper complete with citations and references on a specified topic">
+                    </action>
+                </group>
             </group>
 
             <group id="cognotik.ui.ProjectMenu.Agents"

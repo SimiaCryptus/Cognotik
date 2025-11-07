@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.PatchProcessor
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -671,7 +671,7 @@ class CustomFileSetPatchServer(
                     ignoreCase = true
                 ) || file.name.endsWith(".htm", ignoreCase = true) -> {
                     try {
-                        file.getReader().use { reader ->
+                        file.getDocumentReader().use { reader ->
                             reader.getText()
                         }
                     } catch (e: Exception) {

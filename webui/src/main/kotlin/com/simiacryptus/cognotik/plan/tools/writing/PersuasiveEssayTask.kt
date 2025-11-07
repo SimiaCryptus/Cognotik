@@ -5,18 +5,17 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
 import com.simiacryptus.cognotik.plan.transcript
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.nio.charset.StandardCharsets
-import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -268,7 +267,7 @@ class PersuasiveEssayTask(
     try {
       // Gather context
       val priorContext = getPriorCode(agent.executionState)
-      val inputFileContent = getInputFileContent()
+      val inputFileContent = super.getInputFileContent(executionConfig.input_files, root, treatDocumentsAsText=true)
       val contextFiles = getContextFiles()
 
       if (priorContext.isNotBlank() || inputFileContent.isNotBlank() || contextFiles.isNotBlank()) {
@@ -1024,39 +1023,6 @@ Provide the complete revised essay.
         }
       }
       resultFn(errorOutput)
-    }
-  }
-
-  private fun getInputFileContent(): String {
-    val inputFiles = executionConfig?.input_files ?: return ""
-    if (inputFiles.isEmpty()) return ""
-    log.debug("Loading ${inputFiles.size} input files")
-    return buildString {
-      appendLine("## Input Files Content")
-      appendLine()
-      inputFiles.forEach { pattern: String ->
-        try {
-          val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-          val matchedFiles = FileSelectionUtils.filteredWalk(root.toFile()) {
-            when {
-              FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-              matcher.matches(root.relativize(it.toPath())) -> true
-              it.isDirectory -> true
-              else -> false
-            }
-          }.filter { it.isFile && it.exists() }.distinct().sortedBy { it }
-          matchedFiles.forEach { file ->
-            log.debug("Loading input file: ${file.path}")
-            appendLine("### ${root.relativize(file.toPath())}")
-            appendLine("```")
-            appendLine(file.readText().truncateForDisplay(1000))
-            appendLine("```")
-            appendLine()
-          }
-        } catch (e: Exception) {
-          log.warn("Error reading input files matching pattern: $pattern", e)
-        }
-      }
     }
   }
 
