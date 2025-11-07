@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -206,7 +207,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         "goal_alignment" to 0.15
       )
       val constraints = executionConfig?.constraints ?: emptyList()
-      val inputFileContent = getInputFileContent()
+      val inputFileContent = super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText=true)
 
       if (initialText.isNullOrBlank() || optimizationGoal.isNullOrBlank()) {
         log.error("Configuration error: initial_text or optimization_goal is blank")
@@ -741,29 +742,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
       }.pdf' target='_blank'>pdf</a>"
     )
     return markdownTranscript
-  }
-
-  private fun getInputFileContent(): String {
-    return (executionConfig?.input_files ?: listOf())
-      .flatMap { pattern: String ->
-        val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
-        (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
-          when {
-            com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-            matcher.matches(root.relativize(it.toPath())) -> true
-            it.isDirectory -> true
-            else -> false
-          }
-        })
-      }.filter { file ->
-        file.isFile && file.exists()
-      }
-      .distinct()
-      .sortedBy { it }
-      .joinToString("\n\n") { relativePath ->
-        val file = root.toFile().resolve(relativePath)
-        "# $relativePath\n\n${file.readText()}"
-      }
   }
 
 

@@ -2,8 +2,9 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -102,7 +103,7 @@ class EthicalReasoningTask(
     orchestrationConfig: OrchestrationConfig
   ) {
     val startTime = System.currentTimeMillis()
-    messages + getInputFileContent()
+      messages + super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText=true)
     log.info("Starting EthicalReasoning task for dilemma: ${executionConfig?.ethical_dilemma?.truncateForDisplay(200)}")
     // Validate configuration first
     executionConfig?.validate()?.let { validationError ->
@@ -414,40 +415,7 @@ Provide a detailed synthesis and a clear final recommendation.
     }
   }
 
-  private fun getInputFileContent(): List<String> {
-    return (executionConfig?.input_files ?: listOf())
-      .flatMap { pattern: String ->
-        val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
-        (FileSelectionUtils.filteredWalk(root.toFile()) {
-          when {
-            FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-            matcher.matches(root.relativize(it.toPath())) -> true
-            it.isDirectory -> true
-            else -> false
-          }
-        })
-      }.filter { file ->
-        file.isFile && file.exists()
-      }
-      .distinct()
-      .sortedBy { it }
-      .mapNotNull { relativePath ->
-        val file = root.toFile().resolve(relativePath)
-        try {
-          val content = if (!isTextFile(file)) {
-            extractDocumentContent(file)
-          } else {
-            file.readText()
-          }
-          "# ${relativePath}\n\n```\n$content\n```"
-        } catch (e: Throwable) {
-          log.warn("Error reading file: $relativePath", e)
-          null
-        }
-      }
-  }
-
-  private fun isTextFile(file: java.io.File): Boolean {
+    private fun isTextFile(file: java.io.File): Boolean {
     val textExtensions = setOf(
       "txt",
       "md",
@@ -477,7 +445,7 @@ Provide a detailed synthesis and a clear final recommendation.
   }
 
   private fun extractDocumentContent(file: java.io.File) = try {
-    file.getReader().use { it.getText() }
+    file.getDocumentReader().use { it.getText() }
   } catch (e: Exception) {
     log.warn("Failed to extract content from ${file.name}", e)
     file.readText()

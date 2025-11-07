@@ -3,13 +3,13 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
-import java.nio.file.FileSystems
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -203,7 +203,7 @@ class ConstraintSatisfactionTask(
 
 
       val priorCode = getPriorCode(agent.executionState)
-      val inputFileContent = getInputFileContent()
+        val inputFileContent = super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText=true)
 
       val prompt = buildPrompt(
         problemDescription,
@@ -392,34 +392,8 @@ class ConstraintSatisfactionTask(
     }
   }
 
-  private fun getInputFileContent(): String = (executionConfig?.input_files ?: listOf())
-    .flatMap { pattern: String ->
-      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-      (FileSelectionUtils.filteredWalk(root.toFile()) {
-        when {
-          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-          matcher.matches(root.relativize(it.toPath())) -> true
-          it.isDirectory -> true
-          else -> false
-        }
-      })
-    }.filter { file ->
-      file.isFile && file.exists()
-    }
-    .distinct()
-    .sortedBy { it }
-    .joinToString("\n\n") { relativePath ->
-      val file = root.toFile().resolve(relativePath)
-      try {
-        val content = file.readText()
-        "# $relativePath\n\n```\n$content\n```"
-      } catch (e: Throwable) {
-        log.warn("Error reading file: $relativePath", e)
-        ""
-      }
-    }
 
-  private fun buildPrompt(
+    private fun buildPrompt(
     problemDescription: String,
     hardConstraints: List<String>,
     softConstraints: Map<String, Double>,

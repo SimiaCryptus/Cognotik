@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.util
 
+import com.simiacryptus.cognotik.input.isDocumentFile
 import org.apache.commons.text.similarity.LevenshteinDistance
 import java.io.File
 import java.io.InputStream
@@ -18,7 +19,7 @@ fun filteredWalkAsciiTree(
     ): String {
         val sb = StringBuilder()
         val filterFn = if (treatDocumentsAsText) {
-            { file: File -> fn(file) && isDocumentFile(file) }
+            { file: File -> fn(file) && file.isDocumentFile() }
         } else fn
         if (!filterFn(rootFile)) {
             log.debug("Skipping root file for tree: ${rootFile.absolutePath}")
@@ -77,7 +78,7 @@ fun filteredWalkAsciiTree(
         fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
     ): List<File> {
         val filterFn = if (treatDocumentsAsText) {
-            { f: File -> fn(f) || isDocumentFile(f) }
+            { f: File -> fn(f) || f.isDocumentFile() }
         } else fn
         val result = mutableListOf<File>()
         if (filterFn(file)) {
@@ -115,7 +116,7 @@ fun filteredWalkAsciiTree(
             }
             (when {
                 it.name.endsWith(".data") -> arrayOf(it)
-                treatDocumentsAsText && isDocumentFile(it) -> arrayOf(it)
+                treatDocumentsAsText && it.isDocumentFile() -> arrayOf(it)
                 isGitignore(it.toPath()) -> {
                     log.debug("File ignored by gitignore: ${it.absolutePath}")
                     arrayOf()
@@ -156,7 +157,7 @@ fun filteredWalkAsciiTree(
             !file.exists() -> false
             file.isDirectory -> false
             file.name.endsWith(".data") -> true
-            treatDocumentsAsText && isDocumentFile(file) -> true
+            treatDocumentsAsText && file.isDocumentFile() -> true
             file.length() > 100_000_000L -> false // 100MB limit
             isGitignore(file.toPath()) -> false
             isLLMIgnored(file.toPath()) -> false
@@ -382,11 +383,6 @@ fun filteredWalkAsciiTree(
         root.relativize(File(this).toPath()).toString()
     } catch (e: Throwable) {
         this
-    }
-
-    fun isDocumentFile(file: File): Boolean {
-        val extension = file.extension.lowercase(Locale.getDefault())
-        return extension in setOf("pdf", "html", "htm")
     }
 
     fun resolveToRelativePath(root: Path, filename: String): String? {

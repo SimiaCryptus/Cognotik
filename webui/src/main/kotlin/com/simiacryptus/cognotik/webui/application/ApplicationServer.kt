@@ -21,10 +21,11 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.servlet.FilterHolder
-import org.eclipse.jetty.servlet.ServletHolder
-import org.eclipse.jetty.webapp.WebAppContext
-import org.slf4j.Logger
-import java.io.File
+ import org.eclipse.jetty.servlet.ServletHolder
+ import org.eclipse.jetty.webapp.WebAppContext
+import jakarta.servlet.MultipartConfigElement
+ import org.slf4j.Logger
+ import java.io.File
 
 abstract class ApplicationServer(
     final override val applicationName: String,
@@ -56,7 +57,16 @@ abstract class ApplicationServer(
     protected open val userInfo by lazy { ServletHolder("userInfo", UserInfoServlet()) }
     protected open val usageServlet by lazy { ServletHolder("usage", UsageServlet()) }
     protected open val fileZip by lazy { ServletHolder("fileZip", ZipServlet(dataStorage)) }
-    protected open val fileIndex by lazy { ServletHolder("fileIndex", SessionFileServlet(dataStorage)) }
+    protected open val fileIndex by lazy { 
+        ServletHolder("fileIndex", SessionFileServlet(dataStorage)).apply {
+            registration.setMultipartConfig(MultipartConfigElement(
+                System.getProperty("java.io.tmpdir"),
+                1024L * 1024L * 50L,  // maxFileSize: 50MB
+                1024L * 1024L * 100L, // maxRequestSize: 100MB
+                1024 * 1024 * 2       // fileSizeThreshold: 2MB
+            ))
+        }
+    }
     protected open val sessionSettingsServlet by lazy { ServletHolder("settings", SessionSettingsServlet(this)) }
     protected open val sessionShareServlet by lazy { ServletHolder("share", SessionShareServlet(this)) }
     protected open val sessionThreadsServlet by lazy { ServletHolder("threads", SessionThreadsServlet()) }

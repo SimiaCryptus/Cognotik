@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -139,7 +140,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         )
       )
     }
-    val inputFileContent = getInputFileContent()
+    val inputFileContent = super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText=true)
 
 
     val contextFiles = getContextFiles()
@@ -458,36 +459,6 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     }
   }
 
-  private fun getInputFileContent(): String {
-    val inputFiles = executionConfig?.input_files ?: emptyList()
-    if (inputFiles.isEmpty()) return "No input files provided."
-    return inputFiles.flatMap { pattern: String ->
-      val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
-      (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
-        when {
-          com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-          matcher.matches(root.relativize(it.toPath())) -> true
-          it.isDirectory -> true
-          else -> false
-        }
-      })
-    }.filter { file ->
-      file.isFile && file.exists()
-    }
-      .distinct()
-      .filterNotNull()
-      .sortedBy { it }
-      .joinToString("\n\n") { relativePath ->
-        val file = root.toFile().resolve(relativePath)
-        try {
-          val content = file.readText()
-          "# $relativePath\n\n```\n$content\n```"
-        } catch (e: Exception) {
-          log.warn("Error reading file: $relativePath", e)
-          ""
-        }
-      }
-  }
 
   private fun initializeDetailedOutput(task: SessionTask): FileOutputStream? {
     return try {

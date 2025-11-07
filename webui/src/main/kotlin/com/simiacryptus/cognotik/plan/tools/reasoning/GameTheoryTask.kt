@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -56,7 +56,7 @@ class GameTheoryTask(
     }
 
     fun extractDocumentContent(file: java.io.File) = try {
-      file.getReader().use { reader ->
+      file.getDocumentReader().use { reader ->
         when (reader) {
           is com.simiacryptus.cognotik.input.PaginatedDocumentReader ->
             reader.getText(0, reader.getPageCount())

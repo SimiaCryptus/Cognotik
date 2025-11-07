@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.input.getReader
+import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -231,7 +231,7 @@ class MultiCodeChatAction : BaseAction() {
 
         fun readFileContent(file: File): String {
             return try {
-                file.getReader().use { reader ->
+                file.getDocumentReader().use { reader ->
                     reader.getText()
                 }
             } catch (e: Exception) {

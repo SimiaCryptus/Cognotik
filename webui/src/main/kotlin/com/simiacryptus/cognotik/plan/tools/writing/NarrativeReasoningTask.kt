@@ -23,6 +23,7 @@ import org.slf4j.Logger
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.imageio.ImageIO
@@ -284,7 +285,7 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
       return
     }
     // Read input files if specified
-    val inputFileContent = getInputFileContent()
+    val inputFileContent = getInputFileContent(executionConfig?.input_files, agent.root)
     val messageContent = messages.joinToString("\n\n")
     val additionalContext = buildString {
       if (messageContent.isNotBlank()) {
@@ -394,7 +395,6 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
     transcriptWriter?.appendLine("- Find Inconsistencies: $findInconsistencies")
     transcriptWriter?.appendLine()
 
-
     try {
       // Step 1: Construct the main narrative
       if (constructNarrative) {
@@ -406,7 +406,6 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
         tabs["Main Narrative"] = narrativeTask.placeholder
         transcriptWriter?.appendLine("## Step 1: Main Narrative Construction")
         transcriptWriter?.appendLine()
-
 
         narrativeTask.add(
           buildString {
@@ -427,9 +426,6 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
 
  Narrative Elements:
  ${narrativeElements.entries.joinToString("\n") { (key, value) -> "- $key: $value" }}
-${if (additionalContext.isNotBlank()) "Additional Context:\n$additionalContext\n" else ""}
-
-
  ${if (priorContext.isNotBlank()) "Additional Context:\n$priorContext\n" else ""}
 
  Create a structured narrative with:
@@ -1158,33 +1154,6 @@ Be concise but insightful. Focus on actionable insights.
     }
   }
 
-  private fun getInputFileContent(): String = (executionConfig?.input_files ?: listOf())
-    .flatMap { pattern: String ->
-      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-      (FileSelectionUtils.filteredWalk(root.toFile()) {
-        when {
-          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-          matcher.matches(root.relativize(it.toPath())) -> true
-          it.isDirectory -> true
-          else -> false
-        }
-      })
-    }.filter { file ->
-      file.isFile && file.exists()
-    }
-    .distinct()
-    .sortedBy { it }
-    .joinToString("\n\n") { relativePath ->
-      val file = root.toFile().resolve(relativePath)
-      try {
-        val content = file.readText()
-        "# $relativePath\n\n```\n$content\n```"
-      } catch (e: Throwable) {
-        log.warn("Error reading file: $relativePath", e)
-        ""
-      }
-    }
-
   private fun saveAnalysisToFile(
     outputDir: File,
     filename: String,
@@ -1318,3 +1287,4 @@ ${description.indent("  ")}
     )
   }
 }
+

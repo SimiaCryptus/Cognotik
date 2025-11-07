@@ -4,9 +4,15 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
+import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServletRequest
 import java.io.File
 
+@MultipartConfig(
+  fileSizeThreshold = 1024 * 1024 * 2, // 2MB
+  maxFileSize = 1024 * 1024 * 50,      // 50MB
+  maxRequestSize = 1024 * 1024 * 100   // 100MB
+)
 class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet() {
   override fun getDir(req: HttpServletRequest): File? {
     val pathInfo = req.pathInfo ?: req.servletPath

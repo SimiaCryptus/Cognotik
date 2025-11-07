@@ -18,7 +18,7 @@ interface RenderableDocumentReader : DocumentReader {
     fun renderImage(pageIndex: Int, dpi: Float): BufferedImage
 }
 
-fun File.getReader(): DocumentReader = when {
+fun File.getDocumentReader(): DocumentReader = when {
     this.name.endsWith(".pdf", ignoreCase = true) -> PDFReader(this)
     this.name.endsWith(".docx", ignoreCase = true) -> DocxReader(this)
     this.name.endsWith(".doc", ignoreCase = true) -> DocReader(this)
@@ -32,4 +32,12 @@ fun File.getReader(): DocumentReader = when {
     this.name.endsWith(".htm", ignoreCase = true) -> HTMLReader(this)
     this.name.endsWith(".eml", ignoreCase = true) -> EmlReader(this)
     else -> TextReader(this)
+}
+
+fun File.isDocumentFile(): Boolean {
+    val supportedExtensions = listOf(
+        ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt",
+        ".odt", ".rtf", ".html", ".htm", ".eml", ".txt"
+    )
+    return supportedExtensions.any { this.name.endsWith(it, ignoreCase = true) }
 }

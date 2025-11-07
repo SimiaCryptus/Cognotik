@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -207,7 +208,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
       log.debug("Gathering prior context and related files")
       val priorContext = getPriorCode(agent.executionState)
       val contextFiles = getContextFiles()
-      val inputFileContent = getInputFileContent()
+      val inputFileContent = super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText=true)
       transcriptStream?.let { stream ->
         writeToTranscript(stream, "## Input Files Context\n\n$inputFileContent\n\n")
       }
@@ -727,44 +728,6 @@ Provide a brief validation assessment.
     }
   }
 
-  private fun getInputFileContent(): String {
-    val inputFiles = executionConfig?.input_files ?: return ""
-    if (inputFiles.isEmpty()) return ""
-    log.debug("Loading ${inputFiles.size} input files")
-    return buildString {
-      appendLine("## Input Files")
-      appendLine()
-      inputFiles.forEach { pattern: String ->
-        val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
-        try {
-          val files = com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
-            when {
-              com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-              matcher.matches(root.relativize(it.toPath())) -> true
-              it.isDirectory -> true
-              else -> false
-            }
-          }.filter { it.isFile && it.exists() }.distinct().filterNotNull().sortedBy { it }
-          files.forEach { file ->
-            try {
-              val relativePath = root.toFile().toPath().relativize(file.toPath())
-              val content = file.readText().truncateForDisplay(500)
-              appendLine("### $relativePath")
-              appendLine("```")
-              appendLine(content)
-              appendLine("```")
-              appendLine()
-              log.debug("Successfully loaded input file: $relativePath")
-            } catch (e: Exception) {
-              log.warn("Error reading input file: ${file.name}", e)
-            }
-          }
-        } catch (e: Exception) {
-          log.warn("Error processing input file pattern: $pattern", e)
-        }
-      }
-    }
-  }
 
   private fun String.truncateForDisplay(maxLength: Int = 1000): String {
     return if (this.length > maxLength) this.substring(0, maxLength) + "\n...(truncated)" else this
