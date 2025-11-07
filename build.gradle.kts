@@ -2,6 +2,25 @@ fun properties(key: String) = project.findProperty(key).toString()
 group = properties("libraryGroup")
 version = properties("libraryVersion")
 
+plugins {
+  kotlin("jvm") // Version is applied globally via settings.gradle.kts
+  id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
+  jacoco
+  id("io.github.gradle-nexus.publish-plugin")
+}
+
+nexusPublishing {
+  repositories {
+    sonatype {
+      nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+      snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+      username.set(findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME"))
+      password.set(findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD"))
+    }
+  }
+}
+
+
 subprojects {
     apply(plugin = "jacoco")
     repositories {
@@ -14,15 +33,22 @@ subprojects {
         else -> {
             apply(plugin = "java")
             apply(plugin = "kotlin")
+            // Explicitly configure Java toolchain
+            extensions.configure<JavaPluginExtension> {
+                toolchain {
+                    languageVersion.set(JavaLanguageVersion.of(21))
+                }
+            }
         }
     }
-    tasks.withType<JavaCompile> {
+tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")
+        options.release.set(21)
     }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
             freeCompilerArgs.set(listOf("-Xjsr305=strict"))
             javaParameters.set(true)
         }
@@ -80,14 +106,14 @@ subprojects {
 
 allprojects {
     // Only apply Java plugin to non-Android projects
-    when (name) {
+when (name) {
         "android" -> { /* Skip Java plugin for Android project */ }
         else -> {
             apply(plugin = "java")
             java {
-                toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
-                sourceCompatibility = JavaVersion.VERSION_17
-                targetCompatibility = JavaVersion.VERSION_17
+                toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
+                sourceCompatibility = JavaVersion.VERSION_21
+                targetCompatibility = JavaVersion.VERSION_21
             }
         }
     }
@@ -175,10 +201,4 @@ tasks {
 repositories {
     gradlePluginPortal()
     mavenCentral()
-}
-
-plugins {
-    kotlin("jvm") // Version is applied globally via settings.gradle.kts
-    id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
-    jacoco
 }

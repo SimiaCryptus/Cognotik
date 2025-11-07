@@ -1,11 +1,11 @@
-// Keeping findProperty as it might be needed for immediate resolution by other plugins/tasks
-// If not, switch to providers.gradleProperty(key).get()
-// Use providers for consistency with other modules
-group = providers.gradleProperty("libraryGroup").get()
-version = providers.gradleProperty("libraryVersion").get()
+group = providers.gradleProperty("cognotikGroup").get()
+ version = providers.gradleProperty("cognotikVersion").get()
 
 plugins {
     `java-library`
+    kotlin("jvm")
+    `maven-publish`
+    signing
 }
 
 repositories {
@@ -51,10 +51,10 @@ dependencies {
 
 
     compileOnly(libs.asm)
-    compileOnly(kotlin("stdlib"))
-    compileOnly(libs.kotlinx.coroutines)
+    implementation(kotlin("stdlib"))
+    implementation(libs.kotlinx.coroutines)
 
-    testImplementation(kotlin("script-runtime"))
+    testImplementation(libs.kotlin.script.runtime)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
@@ -82,5 +82,74 @@ dependencies {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
     testImplementation(libs.mockito)
+// Ensure Kotlin compilation happens before Java compilation
+tasks.named("compileJava") {
+    dependsOn(tasks.named("compileKotlin"))
+}
+tasks.named("compileTestJava") {
+    dependsOn(tasks.named("compileTestKotlin"))
+}
 
+}
+
+
+ java {
+  withJavadocJar()
+  withSourcesJar()
+}
+
+publishing {
+  publications {
+    create<MavenPublication>("maven") {
+      from(components["java"])
+
+      groupId = project.group.toString()
+      artifactId = "core"
+      version = project.version.toString()
+
+      pom {
+        name.set("Cognotik Core")
+        description.set("Core library for Cognotik AI framework")
+        url.set("https://github.com/SimiaCryptus/Cognotik")
+
+        licenses {
+          license {
+            name.set("The Apache License, Version 2.0")
+            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+          }
+        }
+
+        developers {
+          developer {
+            id.set("simiacryptus")
+            name.set("SimiaCryptus")
+            email.set("simiacryptus@gmail.com")
+          }
+        }
+
+        scm {
+          connection.set("scm:git:git://github.com/SimiaCryptus/Cognotik.git")
+          developerConnection.set("scm:git:ssh://github.com/SimiaCryptus/Cognotik.git")
+          url.set("https://github.com/SimiaCryptus/Cognotik")
+        }
+      }
+    }
+  }
+}
+
+signing {
+  val signingKey = findProperty("signingInMemoryKey")?.toString() ?: System.getenv("SIGNING_KEY")
+  val signingPassword = findProperty("signingInMemoryKeyPassword")?.toString() ?: System.getenv("SIGNING_PASSWORD")
+
+  if (signingKey != null && signingPassword != null) {
+    useInMemoryPgpKeys(signingKey, signingPassword)
+  }
+
+  sign(publishing.publications["maven"])
+}
+
+tasks.javadoc {
+  if (JavaVersion.current().isJava9Compatible) {
+    (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
+  }
 }
