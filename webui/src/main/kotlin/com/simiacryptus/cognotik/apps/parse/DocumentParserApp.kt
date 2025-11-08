@@ -35,7 +35,7 @@ open class DocumentParserApp(
     override val inputCnt = 1
     override val stickyInput: Boolean = false
 
-    override fun newSession(user: User?, session: Session): SocketManager {
+    override fun newSession(user: User, session: Session): SocketManager {
         val ui = super.newSession(user, session)
         val settings = getSettings(session, user, Settings::class.java) ?: Settings()
         val app = this
@@ -59,7 +59,7 @@ open class DocumentParserApp(
         return ui
     }
 
-    override fun userMessage(session: Session, user: User?, userMessage: String, ui: SocketManager) {
+    override fun userMessage(session: Session, user: User, userMessage: String, ui: SocketManager) {
         val settings = getSettings(session, user, Settings::class.java) ?: Settings()
         ui.pool.submit {
             run(

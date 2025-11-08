@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationMana
 import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
@@ -75,7 +76,7 @@ abstract class ApplicationServer(
     protected open val deleteSessionServlet by lazy { ServletHolder("delete", DeleteSessionServlet(this)) }
     protected open val cancelSessionServlet by lazy { ServletHolder("cancel", CancelThreadsServlet()) }
 
-    override fun newSession(user: User?, session: Session): SocketManager {
+    override fun newSession(user: User, session: Session): SocketManager {
         (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
             ?: SessionProxyServer.agents[session])?.apply { return this; }
         logger.info(
@@ -101,7 +102,7 @@ abstract class ApplicationServer(
         ) {
             override fun userMessage(
                 session: Session,
-                user: User?,
+                user: User,
                 userMessage: String,
                 socketManager: ApplicationSocketManager
             ) = this@ApplicationServer.userMessage(
@@ -116,7 +117,7 @@ abstract class ApplicationServer(
 
     open fun userMessage(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         userMessage: String,
         ui: SocketManager
     ) {

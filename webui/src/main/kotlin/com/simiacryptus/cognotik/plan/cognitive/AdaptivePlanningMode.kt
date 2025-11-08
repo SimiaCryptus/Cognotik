@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -26,7 +27,7 @@ open class AdaptivePlanningMode(
     override val task: SessionTask,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
-    override val user: User?,
+    override val user: User = defaultUser,
     private val maxTaskHistoryChars: Int = orchestrationConfig.maxTaskHistoryChars,
     private val maxTasksPerIteration: Int = orchestrationConfig.maxTasksPerIteration,
     private val maxIterations: Int = orchestrationConfig.maxIterations,
@@ -725,7 +726,7 @@ ${JsonUtil.toJson(taskConfig)}
             task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?
+            user: User
         ) = AdaptivePlanningMode(task, orchestrationConfig, session, user)
 
     }

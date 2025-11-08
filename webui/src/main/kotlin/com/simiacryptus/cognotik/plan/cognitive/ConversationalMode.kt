@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -29,7 +30,7 @@ open class ConversationalMode(
     override val task: SessionTask,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
-    override val user: User?,
+    override val user: User = defaultUser,
     var useExpansionSyntax: Boolean = true
 ) : CognitiveMode {
 
@@ -399,7 +400,7 @@ open class ConversationalMode(
 
         override val inputCnt = 1
         override fun getCognitiveMode(
-            task: SessionTask, orchestrationConfig: OrchestrationConfig, session: Session, user: User?
+            task: SessionTask, orchestrationConfig: OrchestrationConfig, session: Session, user: User
         ) = ConversationalMode(task, orchestrationConfig, session, user, useExpansionSyntax = true)
 
         private val messageMaps = ConcurrentHashMap<Session, ConcurrentLinkedQueue<ModelSchema.ChatMessage>>()

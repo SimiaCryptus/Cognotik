@@ -20,6 +20,7 @@ import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -95,7 +96,7 @@ class MultiStepPatchAction : BaseAction() {
 
         override fun userMessage(
             session: Session,
-            user: User?,
+            user: User,
             userMessage: String,
             ui: SocketManager
         ) {
@@ -130,7 +131,7 @@ class MultiStepPatchAction : BaseAction() {
 
     class AutoDevAgent(
         val session: Session,
-        val user: User?,
+        val user: User = defaultUser,
         val ui: SocketManager,
         val model: ChatInterface,
         val parsingModel: ChatInterface,

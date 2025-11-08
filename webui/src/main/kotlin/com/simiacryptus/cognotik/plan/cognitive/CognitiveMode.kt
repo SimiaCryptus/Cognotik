@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.cognitive
 // Register the new mode in the package
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.session.SessionTask
 
@@ -41,7 +42,7 @@ interface CognitiveModeStrategy {
         task: SessionTask,
         orchestrationConfig: OrchestrationConfig,
         session: Session,
-        user: User?
+        user: User = defaultUser
     ): CognitiveMode
 }
 
@@ -53,7 +54,7 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?
+            user: User
         ): CognitiveMode {
             return ConversationalMode(task, orchestrationConfig, session, user)
         }
@@ -65,7 +66,7 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?
+            user: User
         ): CognitiveMode {
             return AdaptivePlanningMode(task, orchestrationConfig, session, user)
         }
@@ -77,7 +78,7 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?
+            user: User
         ): CognitiveMode {
             return WaterfallMode(task, orchestrationConfig, session, user)
         }
@@ -89,7 +90,7 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?
+            user: User
         ): CognitiveMode {
             return HierarchicalPlanningMode(task, orchestrationConfig, session, user)
         }

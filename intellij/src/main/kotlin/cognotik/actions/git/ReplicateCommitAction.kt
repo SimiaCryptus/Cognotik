@@ -182,7 +182,7 @@ class ReplicateCommitAction : BaseAction() {
 
         override fun userMessage(
             session: Session,
-            user: User?,
+            user: User,
             userMessage: String,
             ui: SocketManager
         ) {

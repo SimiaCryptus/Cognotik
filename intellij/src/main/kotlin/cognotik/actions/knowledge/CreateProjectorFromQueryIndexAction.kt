@@ -67,7 +67,7 @@ class CreateProjectorFromQueryIndexAction : BaseAction() {
                     showMenubar = false,
                 ) {
                     override fun newSession(
-                        user: User?,
+                        user: User,
                         session: Session
                     ): SocketManager {
                         val socketManager = super.newSession(user, session)

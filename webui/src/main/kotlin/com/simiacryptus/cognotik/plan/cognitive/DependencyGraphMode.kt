@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategy
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -22,7 +23,7 @@ open class DependencyGraphMode(
     override val task: SessionTask,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
-    override val user: User?,
+    override val user: User = defaultUser,
     private val graphFile: String,
 ) : CognitiveMode {
     private val log = LoggerFactory.getLogger(DependencyGraphMode::class.java)
@@ -322,7 +323,7 @@ open class DependencyGraphMode(
             task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?
+            user: User
         ): CognitiveMode {
             return DependencyGraphMode(task, orchestrationConfig, session, user, graphFile)
         }

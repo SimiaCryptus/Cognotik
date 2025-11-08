@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
@@ -45,7 +46,7 @@ abstract class SingleTaskApp(
     abstract fun instance(model: ApiChatModel): ChatInterface
 
     override fun newSession(
-        user: User?, session: Session
+        user: User, session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
         val settings = getSettings(session, user, OrchestrationConfig::class.java)
@@ -71,7 +72,7 @@ Task Type: `${taskType.name}`
     }
 
     private fun executeTask(
-        session: Session, user: User?, ui: SocketManager, settings: OrchestrationConfig?
+        session: Session, user: User = defaultUser, ui: SocketManager, settings: OrchestrationConfig?
     ) {
         try {
             val orchestrationConfig = settings?.apply {
@@ -109,7 +110,7 @@ Task Type: `${taskType.name}`
     }
 
     override fun userMessage(
-        session: Session, user: User?, userMessage: String, ui: SocketManager
+        session: Session, user: User, userMessage: String, ui: SocketManager
     ) {
         // Single task apps don't accept user messages after initialization
         ui.newTask().error(

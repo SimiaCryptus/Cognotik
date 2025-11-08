@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.plan.PlanUtil.getAllDependencies
 import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
@@ -18,7 +19,7 @@ import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
 class TaskOrchestrator(
-    val user: User?,
+    val user: User = defaultUser,
     val session: Session,
     val dataStorage: StorageInterface,
     val root: Path
@@ -205,7 +206,7 @@ class TaskOrchestrator(
     }
 
     fun copy(
-        user: User? = this.user,
+        user: User = this.user,
         session: Session = this.session,
         dataStorage: StorageInterface = this.dataStorage,
         root: Path = this.root

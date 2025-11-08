@@ -62,7 +62,7 @@ open class ChatSocketManager(
     open val fastTopicParsing: Boolean = true,
     val retriable: Boolean = true,
     val budget: Double,
-) : SocketManager(session, storage, owner = null, applicationClass = applicationClass) {
+) : SocketManager(session, storage, applicationClass = applicationClass) {
 
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     private val messagesLock = Any()

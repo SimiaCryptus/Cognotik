@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -26,7 +27,7 @@ open class HierarchicalPlanningMode(
     override val task: SessionTask,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
-    override val user: User?,
+    override val user: User = defaultUser,
     maxConcurrency: Int = 4,
     private val maxIterations: Int = 200,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
@@ -1215,7 +1216,7 @@ open class HierarchicalPlanningMode(
     companion object : CognitiveModeStrategy {
         override val inputCnt = 1
         override fun getCognitiveMode(
-            task: SessionTask, orchestrationConfig: OrchestrationConfig, session: Session, user: User?
+            task: SessionTask, orchestrationConfig: OrchestrationConfig, session: Session, user: User
         ) = HierarchicalPlanningMode(task, orchestrationConfig, session, user)
 
         private val log = LoggerFactory.getLogger(HierarchicalPlanningMode::class.java)

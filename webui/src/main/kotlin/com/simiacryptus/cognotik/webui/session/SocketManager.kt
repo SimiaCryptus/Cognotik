@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.session
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
 import com.simiacryptus.cognotik.platform.model.StorageInterface
@@ -21,7 +22,7 @@ import java.util.function.Consumer
 abstract class SocketManager(
     val sessionId: Session,
     val dataStorage: StorageInterface? = null,
-    val owner: User? = null,
+    val owner: User = defaultUser,
     private val applicationClass: Class<*>,
 ) {
     private val messageStates = Collections.synchronizedMap(
@@ -552,7 +553,7 @@ abstract class SocketManager(
             if (!cancelable) """$operationID,""" else
                 """$operationID,<button class="cancel-button" data-id="$operationID">&times;</button>"""
 
-        fun getUser(session: org.eclipse.jetty.websocket.api.Session): User? {
+        fun getUser(session: org.eclipse.jetty.websocket.api.Session): User {
             log.debug("Getting user from session: {}", session)
             trafficLog.trace("Getting user from session: {}", session.remoteAddress)
             return try {
@@ -562,7 +563,7 @@ abstract class SocketManager(
                         ?.value)
             } catch (e: Exception) {
                 log.error("Error getting user from session", e)
-                null
+                defaultUser
             }
         }
     }
@@ -572,7 +573,7 @@ abstract class SocketManager(
 class ReadonlySocketManager(
     newSession: Session,
     storageInterface: StorageInterface?,
-    owner: User?,
+    owner: User = defaultUser,
     clazz: Class<*>
 ) : SocketManager(
     sessionId = newSession,

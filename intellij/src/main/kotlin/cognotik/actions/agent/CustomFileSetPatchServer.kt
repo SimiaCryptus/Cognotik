@@ -221,7 +221,7 @@ class CustomFileSetPatchServer(
     }
 
     override fun newSession(
-        user: User?, session: Session
+        user: User, session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
         // Validate configuration early

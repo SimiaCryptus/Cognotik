@@ -41,7 +41,7 @@ class BasicChatApp(
         parsingModel = parsingModel,
     ) as T
 
-    override fun newSession(user: User?, session: Session): SocketManager {
+    override fun newSession(user: User, session: Session): SocketManager {
         (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
             ?: SessionProxyServer.agents[session])?.apply {
             return this;

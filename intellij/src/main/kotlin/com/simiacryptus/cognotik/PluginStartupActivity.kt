@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
@@ -189,7 +190,7 @@ class PluginStartupActivity : ProjectActivity {
             ) = true
         }
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = null
+            override fun getUser(accessToken: String?) = defaultUser
             override fun putUser(accessToken: String, user: User) = user
             override fun logout(accessToken: String, user: User) {}
         }

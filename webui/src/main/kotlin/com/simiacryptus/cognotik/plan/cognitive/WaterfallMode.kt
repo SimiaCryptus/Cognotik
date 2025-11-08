@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.AgentPatterns
 import com.simiacryptus.cognotik.util.Discussable
@@ -27,7 +28,7 @@ open class WaterfallMode(
     override val task: SessionTask,
     override val orchestrationConfig: OrchestrationConfig,
     override val session: Session,
-    override val user: User?
+    override val user: User = defaultUser
 ) : CognitiveMode {
 
     private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
@@ -253,7 +254,7 @@ open class WaterfallMode(
             task: SessionTask,
             orchestrationConfig: OrchestrationConfig,
             session: Session,
-            user: User?
+            user: User
         ) = WaterfallMode(task, orchestrationConfig, session, user)
     }
 }

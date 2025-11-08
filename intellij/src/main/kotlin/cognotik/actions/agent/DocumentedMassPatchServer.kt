@@ -56,7 +56,7 @@ class DocumentedMassPatchServer(
      * @return SocketManager for managing the session
      */
 
-    override fun newSession(user: User?, session: Session): SocketManager {
+    override fun newSession(user: User, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)
         _root = config.project?.basePath?.let { Path.of(it) } ?: Path.of(".")
         val task = socketManager.newTask(cancelable = false, root = true)

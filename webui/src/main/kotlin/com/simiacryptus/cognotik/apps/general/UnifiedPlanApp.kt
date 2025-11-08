@@ -72,7 +72,7 @@ abstract class UnifiedPlanApp(
     abstract fun instance(model: ApiChatModel): ChatInterface
 
     override fun newSession(
-        user: User?,
+        user: User,
         session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
@@ -128,7 +128,7 @@ ${settings?.toJson()}
 
     override fun userMessage(
         session: Session,
-        user: User?,
+        user: User,
         userMessage: String,
         ui: SocketManager
     ) {
@@ -205,7 +205,7 @@ ${settings?.toJson()}
      */
     private fun processMessageWithExpansions(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         userMessage: String,
         ui: SocketManager,
         orchestrationConfig: OrchestrationConfig
@@ -229,7 +229,7 @@ ${settings?.toJson()}
      */
     private fun processMessageRecursive(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,
@@ -271,7 +271,7 @@ ${settings?.toJson()}
      */
     private fun expandRange(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,
@@ -305,7 +305,7 @@ ${settings?.toJson()}
      */
     private fun expandSequence(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,
@@ -331,7 +331,7 @@ ${settings?.toJson()}
      */
     private fun expandParallel(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,
@@ -367,7 +367,7 @@ ${settings?.toJson()}
      */
     private fun expandSequenceItems(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,
