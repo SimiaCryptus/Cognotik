@@ -369,7 +369,8 @@ fun SessionTask.newLogStream(name: String = """API log"""): BufferedOutputStream
     Thread.currentThread().stackTrace.forEach { element ->
         buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
     }
-    verbose("""$name: <a href='${file}' target='_blank'><pre>${createFile.absolutePath}</pre></a>""")
+    verbose("""<a href='${file}' target='_blank'>$name</a>: <input type="text" value="${createFile.absolutePath}" id="file-path-${messageID}"/>
+    """.trimMargin())
     return buffered
 }
 

@@ -108,7 +108,7 @@ class SelfHealingTask(
         Retryable(task = task) {
             val markdownTranscript = transcript(task)
             val task = task.ui.newTask()
-            agent.pool.submit {
+            task.ui.pool.submit {
                 val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
                     ?: orchestrationConfig.defaultChatter).getChildClient(task)
                 CmdPatchApp(

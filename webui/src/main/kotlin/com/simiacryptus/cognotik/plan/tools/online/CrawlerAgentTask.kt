@@ -89,7 +89,6 @@ class CrawlerAgentTask(
         @Description("The search query to use for Google search") val search_query: String? = null,
         @Description("Direct URLs to analyze (comma-separated)") val direct_urls: List<String>? = null,
         @Description("The query considered when processing the content - this should contain a detailed listing of the desired data, evaluation criteria, and filtering priorities used to transform the page into the desired summary") val content_queries: Any? = null,
-        //@Description("Whitespace-separated list of allowed domains/URL prefixes to restrict crawling (optional)") val allowed_domains: String? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -111,12 +110,6 @@ class CrawlerAgentTask(
                     }
                 }
             }
-//      if (!allowed_domains.isNullOrBlank()) {
-//        val domains = allowed_domains.split(Regex("\\s+")).filter { it.isNotBlank() }
-//        if (domains.isEmpty()) {
-//          return "allowed_domains must contain at least one valid domain when specified"
-//        }
-//      }
             return ValidatedObject.validateFields(this)
         }
     }
@@ -285,7 +278,7 @@ class CrawlerAgentTask(
                     executionConfig?.direct_urls?.joinToString(
                         ", "
                     ) ?: ""
-                }', max_pages=${typeConfig.max_pages_per_task ?: (typeConfig.max_pages_per_task ?: 30)}"
+                }', max_pages=${typeConfig.max_pages_per_task ?: typeConfig.max_pages_per_task ?: 30}"
             )
             val webSearchDir = File(agent.root.toFile(), ".websearch")
             if (!webSearchDir.exists()) {
@@ -385,7 +378,7 @@ class CrawlerAgentTask(
             }
 
             val analysisResultsMap = ConcurrentHashMap<Int, String>()
-            val maxPages = typeConfig.max_pages_per_task ?: (typeConfig.max_pages_per_task ?: 30)
+            val maxPages = typeConfig.max_pages_per_task ?: typeConfig.max_pages_per_task ?: 30
             val concurrentProcessing = /*taskConfig?.concurrent_page_processing ?:*/
                 typeConfig.concurrent_page_processing ?: 3
             log.info("Processing configuration: maxPages=$maxPages, concurrentProcessing=$concurrentProcessing")
@@ -418,8 +411,8 @@ class CrawlerAgentTask(
 
             try {
                 val loopIterations = AtomicInteger(0)
-                val maxDepthConfig = typeConfig.max_depth ?: (typeConfig.max_depth ?: 3)
-                val maxQueueSizeConfig = typeConfig.max_queue_size ?: (typeConfig.max_queue_size ?: 100)
+                val maxDepthConfig = typeConfig.max_depth ?: 3
+                val maxQueueSizeConfig = typeConfig.max_queue_size ?: 100
                 log.debug("Starting crawling loop: maxPages=$maxPages, maxErrors=$maxErrors, maxIterations=${1000}")
                 while (shouldContinue(maxPages, errorCount, maxErrors, loopIterations, activeTasks)) {
                     if (loopIterations.get() % 10 == 0) {
@@ -438,7 +431,6 @@ class CrawlerAgentTask(
                     ) {
                         addCrawlTask(
                             queueStats = queueStats,
-                            completionService = completionService,
                             activeTasks = activeTasks,
                             errorCount = errorCount,
                             maxErrors = maxErrors,
@@ -730,7 +722,6 @@ class CrawlerAgentTask(
 
     private fun addCrawlTask(
         queueStats: String,
-        completionService: CompletionService<Unit>,
         activeTasks: MutableSet<String>,
         errorCount: AtomicInteger,
         maxErrors: Int,
@@ -777,7 +768,7 @@ class CrawlerAgentTask(
             return false
         }
 
-        completionService.submit({
+        subTask.ui.pool.submit({
             try {
                 crawlPage(
                     processedCount,
@@ -1113,10 +1104,10 @@ class CrawlerAgentTask(
 
             // Check if URL is restricted by allowed_domains whitelist
             val allowedDomains =
-                ((
+                (
                         (typeConfig.allowed_domains?.split(Regex("\\s+"))?.filter { it.isNotBlank() } ?: listOf())
                         //+ (executionConfig?.allowed_domains?.split(Regex("\\s+")
-                        )?.filter { it.isNotBlank() } ?: listOf()).toSet()
+                        ).filter { it.isNotBlank() }.toSet()
             if (allowedDomains.isNotEmpty()) {
                 val isAllowed = allowedDomains.any { allowedDomainOrPrefix ->
                     val normalizedAllowed = allowedDomainOrPrefix.lowercase().trim()
@@ -1246,7 +1237,6 @@ class CrawlerAgentTask(
                         processedPages.forEachIndexed { index, url ->
                             val status = if (urlContentCache.containsKey(url)) "✅ Success" else "❌ Failed"
                             // Try to find the LinkData for this URL to get more details
-                            val linkData = seenUrls.find { it == url }
                             val depth = "N/A" // We don't track this for completed pages currently
                             val processingTime = "N/A" // We don't track this for completed pages currently
                             val error = "" // We don't track this for completed pages currently

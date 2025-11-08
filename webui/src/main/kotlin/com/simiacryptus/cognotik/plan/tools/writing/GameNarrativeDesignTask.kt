@@ -199,13 +199,33 @@ class GameNarrativeDesignTask(
             }
         }
     }
+    data class NarrativeAct(
+        val act_number: Int = 1,
+        val title: String = "",
+        val description: String = "",
+        val key_events: List<String> = emptyList(),
+        val character_developments: Map<String, String> = emptyMap()
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (act_number < 1) {
+                return "Act number must be positive, got: $act_number"
+            }
+            if (title.isBlank()) {
+                return "Act title must not be blank"
+            }
+            if (description.isBlank()) {
+                return "Act description must not be blank"
+            }
+            return ValidatedObject.validateFields(this)
+        }
+    }
 
     // Data structures for game narrative
     data class GameNarrative(
         val title: String = "",
         val premise: String = "",
         val setting: String = "",
-        val acts: List<NarrativeReasoningTask.NarrativeAct> = emptyList(),
+        val acts: List<NarrativeAct> = emptyList(),
         val characters: List<GameCharacter> = emptyList(),
         val branching_points: List<BranchingPoint> = emptyList(),
         val endings: List<GameEnding> = emptyList(),

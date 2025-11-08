@@ -55,6 +55,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
             return fastModelTree!!
         }
+
         private fun getImageChatModelTree(): Tree {
             if (imageChatModelTree == null) {
                 imageChatModelTree = createModelTree("Image Chat Model", AppSettingsState.instance.imageChatModel)
@@ -73,7 +74,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             val root = DefaultMutableTreeNode(title)
 
             val rootDir = AppSettingsState.pluginHome
-            val userSettings = ApplicationServices.fileApplicationServices(rootDir).userSettingsManager.getUserSettings()
+            val userSettings =
+                ApplicationServices.fileApplicationServices(rootDir).userSettingsManager.getUserSettings()
             val pairs = userSettings.apis.flatMap { apiData ->
                 (apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl) ?: listOf())
                     .map { model -> apiData.provider?.name!! to model }
@@ -115,7 +117,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             tree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
             tree.isRootVisible = false
             tree.showsRootHandles = true
-tree.addTreeSelectionListener {
+            tree.addTreeSelectionListener {
                 val selectedPath = tree.selectionPath
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
@@ -132,6 +134,7 @@ tree.addTreeSelectionListener {
 
                         "Fast Model" -> AppSettingsState.instance.fastModel =
                             ApiChatModel(chatModel, apiData)
+
                         "Image Chat Model" -> AppSettingsState.instance.imageChatModel =
                             ApiChatModel(chatModel, apiData)
                     }
@@ -210,17 +213,20 @@ tree.addTreeSelectionListener {
             sessionPanel.add(JLabel(getMessage("label.activeSessions")), BorderLayout.NORTH)
             sessionPanel.add(JScrollPane(sessionsList), BorderLayout.CENTER)
 
-            val actionPanel = JPanel(GridLayout(1, 2))
+            val actionPanel = JPanel(GridLayout(1, 3))
             val copyButton = JButton(getMessage("action.copyLink"))
             val openButton = JButton(getMessage("action.openLink"))
+            val killButton = JButton(getMessage("action.killSession"))
 
             copyButton.isEnabled = false
             openButton.isEnabled = false
+            killButton.isEnabled = false
 
             sessionsList.addListSelectionListener {
                 val hasSelection = sessionsList.selectedValue != null
                 copyButton.isEnabled = hasSelection
                 openButton.isEnabled = hasSelection
+                killButton.isEnabled = hasSelection
             }
 
             copyButton.addActionListener {
@@ -237,11 +243,33 @@ tree.addTreeSelectionListener {
                     BrowseUtil.browse(URI(getSessionLink(session)))
                 }
             }
+            killButton.addActionListener {
+                val session = sessionsList.selectedValue
+                if (session != null) {
+                    val result = JOptionPane.showConfirmDialog(
+                        panel,
+                        getMessage("dialog.killSession.message", session.sessionId.take(8)),
+                        getMessage("dialog.killSession.title"),
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                    )
+                    if (result == JOptionPane.YES_OPTION) {
+                        kill(session)
+                        updateSessionsList()
+                    }
+                }
+            }
             actionPanel.add(copyButton)
             actionPanel.add(openButton)
+            actionPanel.add(killButton)
             sessionPanel.add(actionPanel, BorderLayout.SOUTH)
             panel.add(sessionPanel, BorderLayout.CENTER)
             return panel
+        }
+
+        private fun kill(session: Session) {
+            ApplicationServices.threadPoolManager.getPool(session, null).shutdownNow()
+            ApplicationServices.threadPoolManager.getScheduledPool(session, null).shutdownNow()
         }
 
         fun updateSessionsList() {
@@ -267,9 +295,17 @@ tree.addTreeSelectionListener {
                                 null,
                                 value
                             )
+
+                        val activeThreads = ApplicationServices.threadPoolManager.getPool(value, null).threadFactory.threads.filter {
+                            when(it.state) {
+                                Thread.State.RUNNABLE -> true
+                                Thread.State.BLOCKED, Thread.State.WAITING, Thread.State.TIMED_WAITING -> false
+                                else -> false
+                            }
+                        }.size
                         when {
                             sessionName.isBlank() -> getDefaultSessionLabel(value)
-                            else -> "$sessionName (${value.sessionId.take(8)})"
+                            else -> "$sessionName (${value.sessionId.take(8)}) [$activeThreads threads]"
                         }
                     } catch (_: Exception) {
                         getDefaultSessionLabel(value)
@@ -296,7 +332,7 @@ tree.addTreeSelectionListener {
             }
         }
 
-init {
+        init {
             AppSettingsState.onSettingsLoadedListeners.add {
                 Thread {
                     statusBar?.updateWidget(ID())
@@ -387,7 +423,7 @@ init {
             }
         }
 
-override fun getPopup(): JBPopup {
+        override fun getPopup(): JBPopup {
             updateSessionsList()
             val panel = JPanel(BorderLayout())
             panel.accessibleContext.accessibleDescription = getMessage("popup.description")
@@ -406,7 +442,10 @@ override fun getPopup(): JBPopup {
 
 
             val usagePanel = JPanel(BorderLayout())
-            usagePanel.add(UsageTable(ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).usageManager), BorderLayout.CENTER)
+            usagePanel.add(
+                UsageTable(ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).usageManager),
+                BorderLayout.CENTER
+            )
 
             tabbedPane.addTab(getMessage("tab.smartModel"), smartModelPanel)
             tabbedPane.addTab(getMessage("tab.fastModel"), fastModelPanel)
@@ -433,7 +472,7 @@ override fun getPopup(): JBPopup {
             return AppSettingsState.instance.smartModel?.model?.modelName ?: "Uninitialized"
         }
 
-override fun getTooltipText() = """
+        override fun getTooltipText() = """
     Smart Model: ${AppSettingsState.instance.smartModel?.model?.modelName ?: "Not configured"}<br/>
     Fast Model: ${AppSettingsState.instance.fastModel?.model?.modelName ?: "Not configured"}<br/>
     Image Chat Model: ${AppSettingsState.instance.imageChatModel?.model?.modelName ?: "Not configured"}<br/>

@@ -48,15 +48,19 @@ class GeneticOptimizationTask(
               </ul>
             """
         )
+        private const val TT = """```"""
     }
 
     class GeneticOptimizationTaskExecutionConfigData(
         @Description("The initial text to optimize (seed for genetic algorithm)")
         val initial_text: String? = null,
-        @Description("Optional input files (or file patterns, e.g. **/*.kt) to be used as context for optimization")
-        val input_files: List<String>? = null,
         @Description("The optimization goal or criteria (e.g., 'clarity and conciseness', 'persuasiveness', 'technical accuracy')")
         val optimization_goal: String? = null,
+        @Description("Evaluation criteria weights (e.g., {'clarity': 0.4, 'conciseness': 0.3, 'impact': 0.3})")
+        val evaluation_weights: Map<String, Double>? = null,
+        @Description("Additional context or constraints for optimization")
+        val constraints: List<String>? = null,
+
         @Description("Number of generations to evolve (default: 5)")
         val num_generations: Int = 5,
         @Description("Population size per generation (default: 6)")
@@ -67,10 +71,7 @@ class GeneticOptimizationTask(
         val mutation_strategies: List<String>? = listOf("rephrase", "simplify", "elaborate"),
         @Description("Whether to enable crossover (combining traits from multiple candidates)")
         val enable_crossover: Boolean = true,
-        @Description("Evaluation criteria weights (e.g., {'clarity': 0.4, 'conciseness': 0.3, 'impact': 0.3})")
-        val evaluation_weights: Map<String, Double>? = null,
-        @Description("Additional context or constraints for optimization")
-        val constraints: List<String>? = null,
+
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -84,8 +85,6 @@ class GeneticOptimizationTask(
             if (initial_text.isNullOrBlank()) {
                 return "initial_text must not be blank"
             }
-            // input_files is optional, so no validation needed
-
             if (optimization_goal.isNullOrBlank()) {
                 return "optimization_goal must not be blank"
             }
@@ -206,8 +205,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 "goal_alignment" to 0.15
             )
             val constraints = executionConfig?.constraints ?: emptyList()
-            val inputFileContent =
-                super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
 
             if (initialText.isNullOrBlank() || optimizationGoal.isNullOrBlank()) {
                 log.error("Configuration error: initial_text or optimization_goal is blank")
@@ -235,12 +232,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                     }"
                 )
-                if (inputFileContent.isNotBlank()) {
-                    appendLine()
-                    appendLine("## Input Context")
-                    appendLine()
-                    appendLine(inputFileContent)
-                }
                 appendLine()
                 appendLine("## Configuration")
                 appendLine()
@@ -267,9 +258,9 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 appendLine()
                 appendLine("## Initial Text")
                 appendLine()
-                appendLine("```")
+                appendLine("$TT")
                 appendLine(initialText)
-                appendLine("```")
+                appendLine("$TT")
                 appendLine()
                 appendLine("---")
                 appendLine()
@@ -286,7 +277,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             val priorContext = getPriorCode(agent.executionState)
             log.debug("Context gathered: length=${priorContext.length}")
 
-            // Initialize population with the seed text
+// Initialize population with the seed text
             var currentPopulation = listOf(
                 EvaluatedVariant(
                     text = initialText,
@@ -298,11 +289,8 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
             // Evaluate initial text
             log.info("Evaluating initial text")
-            val initialEvaluation =
-                evaluateVariant(initialText, optimizationGoal, evaluationWeights, constraints, api, inputFileContent)
-            currentPopulation = listOf(
-                currentPopulation[0].copy(score = initialEvaluation)
-            )
+            val initialEvaluation = evaluateVariant(initialText, optimizationGoal, evaluationWeights, constraints, api)
+            currentPopulation = listOf(currentPopulation[0].copy(score = initialEvaluation))
 
             log.info("Initial evaluation: score=${initialEvaluation.overall_score}")
             transcript?.write("\n\n## Initial Evaluation\n\n".toByteArray(StandardCharsets.UTF_8))
@@ -376,10 +364,11 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                         val mutated =
                             generateMutation(
                                 survivor.text,
+                                survivor.score,
                                 strategy,
                                 optimizationGoal,
                                 constraints,
-                                priorContext + "\n\n" + inputFileContent,
+                                priorContext,
                                 api
                             )
                         if (mutated != null) {
@@ -396,16 +385,17 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                     }
                 }
 
-                // Apply crossover if enabled
                 if (enableCrossover && survivors.size >= 2 && newVariants.size < populationSize) {
                     log.debug("Applying crossover")
                     val crossoverVariant = applyCrossover(
-                        survivors[0].text,
-                        survivors[1].text,
-                        optimizationGoal,
-                        constraints,
-                        api
-                    )
+                            survivors[0].text,
+                            survivors[0].score,
+                            survivors[1].text,
+                            survivors[1].score,
+                            optimizationGoal,
+                            constraints,
+                            api
+                        )
                     if (crossoverVariant != null) {
                         newVariants.add(
                             EvaluatedVariant(
@@ -430,8 +420,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                             optimizationGoal,
                             evaluationWeights,
                             constraints,
-                            api,
-                            inputFileContent
+                            api
                         )
                         variant.copy(score = evaluation)
                     } else {
@@ -447,7 +436,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                     log.info("New best variant found in generation $generation: score=${generationBest.score.overall_score}")
                     bestVariant = generationBest
                 }
-
 
                 // Display generation results
                 val generationResults = buildString {
@@ -486,9 +474,9 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                                 }/100 (${variant.strategy})"
                             )
                             appendLine()
-                            appendLine("```")
+                            appendLine("$TT")
                             appendLine(variant.text)
-                            appendLine("```")
+                            appendLine("$TT")
                             appendLine()
                             appendLine("**Strengths:**")
                             variant.score.strengths.forEach { appendLine("- $it") }
@@ -581,9 +569,9 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 appendLine("## Best Variant Evolution")
                 appendLine()
                 appendLine("### Initial Text (Score: ${String.format("%.1f", initialEvaluation.overall_score)})")
-                appendLine("```")
+                appendLine("$TT")
                 appendLine(initialText)
-                appendLine("```")
+                appendLine("$TT")
                 appendLine()
                 appendLine(
                     "### Final Optimized Text (Score: ${
@@ -593,9 +581,9 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                         )
                     })"
                 )
-                appendLine("```")
+                appendLine("$TT")
                 appendLine(bestVariant.text)
-                appendLine("```")
+                appendLine("$TT")
                 appendLine()
                 appendLine("### Improvement Summary")
                 appendLine()
@@ -651,9 +639,9 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
                 appendLine()
                 appendLine("## Final Optimized Text")
                 appendLine()
-                appendLine("```")
+                appendLine("$TT")
                 appendLine(bestVariant.text)
-                appendLine("```")
+                appendLine("$TT")
                 appendLine()
                 appendLine("## Performance Metrics")
                 appendLine()
@@ -721,18 +709,20 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             val transcriptFile = "optimization_results_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (link, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
             val summaryMessage = buildString {
-                appendLine(
-                    "Optimization complete: improved by ${
-                        String.format(
-                            "%.1f",
-                            bestVariant.score.overall_score - initialEvaluation.overall_score
-                        )
-                    } points"
-                )
+                appendLine("Final Optimized Text")
                 appendLine()
-                appendLine("**Final Score:** ${String.format("%.1f", bestVariant.score.overall_score)}/100")
-                appendLine("**Generations:** $numGenerations")
-                appendLine("**Total Time:** ${totalTime / 1000}s")
+                appendLine("$TT")
+                appendLine(bestVariant.text)
+                appendLine("$TT")
+                appendLine()
+                appendLine("**Strengths:**")
+                bestVariant.score.strengths.forEach { appendLine("- $it") }
+                appendLine()
+                if (bestVariant.score.weaknesses.isNotEmpty()) {
+                    appendLine("**Remaining Areas for Improvement:**")
+                    bestVariant.score.weaknesses.forEach { appendLine("- $it") }
+                    appendLine()
+                }
                 appendLine()
                 appendLine(
                     "Detailed results: <a href='$link' target='_blank'>$link</a> " +
@@ -768,41 +758,38 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
     private fun generateMutation(
         text: String,
+        parentScore: EvaluationScore,
         strategy: String,
         goal: String,
         constraints: List<String>,
         context: String,
         api: ChatInterface
-    ): TextVariant? {
-        try {
-            val constraintsText = if (constraints.isNotEmpty()) {
-                "\n\nConstraints to maintain:\n${constraints.joinToString("\n") { "- $it" }}"
-            } else ""
+    ) = try {
+        ParsedAgent(
+            resultClass = TextVariant::class.java,
+            prompt = """
+ You are a text optimization expert applying genetic algorithm mutations.
 
-            val contextText = if (context.isNotBlank()) {
-                "\n\nAdditional context:\n${context.take(5000)}"
-            } else ""
+ ## Optimization Goal
+ $goal
 
-            val prompt = """
-You are a text optimization expert applying genetic algorithm mutations.
+ ## Mutation Strategy
+ $strategy
+${
+                if (constraints.isNotEmpty()) {
+                    "\n\nConstraints to maintain:\n${constraints.joinToString("\n") { "- $it" }}"
+                } else ""
+            }
+${
+                if (context.isNotBlank()) {
+                    "\n\nAdditional context:\n${context.take(5000)}"
+                } else ""
+            }
 
-## Current Text
-```
-$text
-```
+ ## Instructions
+ Apply the "$strategy" mutation strategy to create a variant of the text that better achieves the optimization goal.
 
-## Optimization Goal
-$goal
-
-## Mutation Strategy
-$strategy
-$constraintsText
-$contextText
-
-## Instructions
-Apply the "$strategy" mutation strategy to create a variant of the text that better achieves the optimization goal.
-
-Mutation strategies:
+ Mutation strategies:
 - **rephrase**: Reword while maintaining meaning, focus on different phrasing
 - **simplify**: Make more concise and easier to understand
 - **elaborate**: Add detail, examples, or explanation
@@ -810,56 +797,118 @@ Mutation strategies:
 - **emphasize**: Strengthen key points or calls to action
 - **soften**: Make tone more gentle or diplomatic
 
-Generate ONE variant that applies this strategy effectively.
-      """.trimIndent()
+ Generate ONE variant that applies this strategy effectively.
+ 
+## Parent Evaluation Feedback
+**Overall Score:** ${String.format("%.1f", parentScore.overall_score)}/100
+**Strengths to Preserve:**
+${parentScore.strengths.joinToString("\n") { "- $it" }}
+**Weaknesses to Address:**
+${parentScore.weaknesses.joinToString("\n") { "- $it" }}
+**Criteria Scores:**
+${
+                parentScore.criteria_scores.entries.joinToString("\n") { (criterion, score) ->
+                    "- $criterion: ${String.format("%.1f", score)}/100"
+                }
+            }
+**Justification:** ${parentScore.justification}
 
-            val mutationParser = ParsedAgent(
-                resultClass = TextVariant::class.java,
-                prompt = prompt,
-                model = api,
-                temperature = 0.8,
-                name = "MutationGenerator",
-                parsingChatter = orchestrationConfig.parsingChatter,
+Use this feedback to guide your mutation:
+- Preserve the strengths identified in the parent
+- Address the weaknesses while applying the mutation strategy
+- Focus on improving the lowest-scoring criteria
+      """.trimIndent(),
+            model = api,
+            temperature = 0.8,
+            name = "MutationGenerator",
+            parsingChatter = orchestrationConfig.parsingChatter,
+        ).answer(
+            listOf(
+                """
+
+ ## Current Text
+$TT
+$text
+```
+
+        """
             )
-
-            val result = mutationParser.answer(listOf(prompt)).obj
-            log.debug("Generated mutation using $strategy: ${result.text.take(50)}...")
-            return result
-
-        } catch (e: Exception) {
-            log.warn("Failed to generate mutation with strategy $strategy", e)
-            return null
-        }
+        ).obj
+    } catch (e: Exception) {
+        log.warn("Failed to generate mutation with strategy $strategy", e)
+        null
     }
 
     private fun applyCrossover(
         text1: String,
+        score1: EvaluationScore,
         text2: String,
+        score2: EvaluationScore,
         goal: String,
         constraints: List<String>,
         api: ChatInterface
-    ): String? {
-        try {
-            val constraintsText = if (constraints.isNotEmpty()) {
-                "\n\nConstraints to maintain:\n${constraints.joinToString("\n") { "- $it" }}"
-            } else ""
+    ) = try {
+        ChatAgent(
+            prompt = "You are a text optimization expert.",
+            model = api,
+            temperature = 0.7
+        ).answer(
+            listOf(
+                """
+ You are a text optimization expert applying genetic algorithm crossover.
 
-            val prompt = """
-You are a text optimization expert applying genetic algorithm crossover.
+                
+Use the evaluation feedback to guide your crossover:
+- Preserve the strengths from both parents
+- Avoid or fix the weaknesses identified in both parents
+- Focus on combining high-scoring aspects from each parent
 
-## Parent Text 1
-```
+ ## Parent Text 1
+$TT
 $text1
 ```
 
+## Parent 1 Evaluation
+**Score:** ${String.format("%.1f", score1.overall_score)}/100
+**Strengths:**
+${score1.strengths.joinToString("\n") { "- $it" }}
+**Weaknesses:**
+${score1.weaknesses.joinToString("\n") { "- $it" }}
+**Criteria Scores:**
+${
+                    score1.criteria_scores.entries.joinToString("\n") { (criterion, score) ->
+                        "- $criterion: ${String.format("%.1f", score)}/100"
+                    }
+                }
+                
 ## Parent Text 2
 ```
 $text2
 ```
 
+## Parent 2 Evaluation
+**Score:** ${String.format("%.1f", score2.overall_score)}/100
+
+**Strengths:**
+${score2.strengths.joinToString("\n") { "- $it" }}
+
+**Weaknesses:**
+${score2.weaknesses.joinToString("\n") { "- $it" }}
+
+**Criteria Scores:**
+${
+                    score2.criteria_scores.entries.joinToString("\n") { (criterion, score) ->
+                        "- $criterion: ${String.format("%.1f", score)}/100"
+                    }
+                }
+
 ## Optimization Goal
 $goal
-$constraintsText
+${
+                    if (constraints.isNotEmpty()) {
+                        "\n\nConstraints to maintain:\n${constraints.joinToString("\n") { "- $it" }}"
+                    } else ""
+                }
 
 ## Instructions
 Create a new variant by combining the best elements from both parent texts.
@@ -868,23 +917,13 @@ Create a new variant by combining the best elements from both parent texts.
 - Ensure the result is better than either parent alone
 - Maintain consistency and flow
 
-Generate the crossover variant now.
+ Generate the crossover variant now.
       """.trimIndent()
-
-            val crossoverAgent = ChatAgent(
-                prompt = "You are a text optimization expert.",
-                model = api,
-                temperature = 0.7
             )
-
-            val result = crossoverAgent.answer(listOf(prompt))
-            log.debug("Generated crossover variant: ${result.take(50)}...")
-            return result
-
-        } catch (e: Exception) {
-            log.warn("Failed to apply crossover", e)
-            return null
-        }
+        )
+    } catch (e: Exception) {
+        log.warn("Failed to apply crossover", e)
+        null
     }
 
     private fun evaluateVariant(
@@ -892,39 +931,33 @@ Generate the crossover variant now.
         goal: String,
         weights: Map<String, Double>,
         constraints: List<String>,
-        api: ChatInterface,
-        inputFileContent: String = ""
-    ): EvaluationScore {
-        try {
-            val constraintsText = if (constraints.isNotEmpty()) {
-                "\n\nConstraints:\n${constraints.joinToString("\n") { "- $it" }}"
-            } else ""
-
-            val weightsText = weights.entries.joinToString("\n") { (criterion, weight) ->
-                "- $criterion (${String.format("%.0f%%", weight * 100)} weight)"
-            }
-            val contextText = if (inputFileContent.isNotBlank()) {
-                "\n\nAdditional context from input files:\n${inputFileContent.take(5000)}"
-            } else {
-                ""
-            }
-
-
-            val prompt = """
+        api: ChatInterface
+    ) = try {
+        ParsedAgent(
+            resultClass = EvaluationScore::class.java,
+            prompt = """
  You are an expert evaluator for text optimization using genetic algorithms.
-$contextText
 
-## Text to Evaluate
-```
-$text
-```
 
 ## Optimization Goal
 $goal
 
 ## Evaluation Criteria
-$weightsText
-$constraintsText
+${
+                weights.entries.joinToString("\n") { (criterion, weight) ->
+                    "- $criterion (${
+                        String.format(
+                            "%.0f%%",
+                            weight * 100
+                        )
+                    } weight)"
+                }
+            }
+${
+                if (constraints.isNotEmpty()) {
+                    "\n\nConstraints:\n${constraints.joinToString("\n") { "- $it" }}"
+                } else ""
+            }
 
 ## Instructions
 Evaluate this text variant against the optimization goal and criteria.
@@ -942,30 +975,30 @@ Also provide:
 4. Brief justification for the scores
 
 Be objective and consistent in your evaluation.
-      """.trimIndent()
+      """.trimIndent(),
+            model = api,
+            temperature = 0.3,
+            name = "VariantEvaluator",
+            parsingChatter = orchestrationConfig.parsingChatter,
+        ).answer(
+            listOf(
+                """
 
-            val evaluationParser = ParsedAgent(
-                resultClass = EvaluationScore::class.java,
-                prompt = prompt,
-                model = api,
-                temperature = 0.3,
-                name = "VariantEvaluator",
-                parsingChatter = orchestrationConfig.parsingChatter,
+## Text to Evaluate
+$TT
+$text
+```
+        """.trimIndent()
             )
-
-            val result = evaluationParser.answer(listOf(prompt)).obj
-            log.debug("Evaluated variant: overall_score=${result.overall_score}")
-            return result
-
-        } catch (e: Exception) {
-            log.warn("Failed to evaluate variant", e)
-            return EvaluationScore(
-                overall_score = 0.0,
-                criteria_scores = weights.keys.associateWith { 0.0 },
-                strengths = emptyList(),
-                weaknesses = listOf("Evaluation failed: ${e.message}"),
-                justification = "Error during evaluation"
-            )
-        }
+        ).obj
+    } catch (e: Exception) {
+        log.warn("Failed to evaluate variant", e)
+        EvaluationScore(
+            overall_score = 0.0,
+            criteria_scores = weights.keys.associateWith { 0.0 },
+            strengths = emptyList(),
+            weaknesses = listOf("Evaluation failed: ${e.message}"),
+            justification = "Error during evaluation"
+        )
     }
 }

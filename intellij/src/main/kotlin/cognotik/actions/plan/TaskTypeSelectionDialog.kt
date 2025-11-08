@@ -137,14 +137,15 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
             "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
             "GameTheory", "FiniteStateMachine", "Brainstorming",
             "ChainOfThought", "MetaCognitiveReflection", "GeneticOptimization",
-            "EthicalReasoning"
+            "EthicalReasoning", "LLMExperiment"
           ) -> "Reasoning"
 
           taskType.name in listOf(
             "NarrativeGeneration", "NarrativeReasoning", "ArticleGeneration",
             "PersuasiveEssay", "TechnicalExplanation", "TutorialGeneration",
             "BusinessProposal", "EmailCampaign", "InteractiveStory",
-            "ReportGeneration", "Scriptwriting", "JournalismReasoning"
+            "ReportGeneration", "Scriptwriting", "JournalismReasoning",
+            "GameLevelDesign", "GameNarrativeDesign", "GameMechanicsDesign"
           ) -> "Writing"
 
           taskType.name in listOf(
