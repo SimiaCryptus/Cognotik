@@ -129,7 +129,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             return
         }
 
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
         // Create transcript file
         val (transcriptLink, transcript) = initializeTranscript(task)
         transcript?.let { stream ->

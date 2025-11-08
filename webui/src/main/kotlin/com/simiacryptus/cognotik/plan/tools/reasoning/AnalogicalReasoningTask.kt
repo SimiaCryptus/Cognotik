@@ -172,7 +172,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
             log.info("Configuration validated successfully")
 
             val tabs = TabbedDisplay(task)
-            val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+            val api = orchestrationConfig.defaultChatter ?: return
             // Initialize transcript
             transcriptStream = task.transcript()
             transcriptStream?.let { stream ->

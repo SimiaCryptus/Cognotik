@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.extractDocumentContent
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
-import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -185,7 +184,7 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
         ).joinToString("\n\n---\n\n")
 
 
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
         // Create transcript file

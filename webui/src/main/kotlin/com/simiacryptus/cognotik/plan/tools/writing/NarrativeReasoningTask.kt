@@ -11,7 +11,6 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
-import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -64,15 +63,15 @@ open class NarrativeReasoningTask<T : NarrativeReasoningTask.NarrativeReasoningT
 
         @Description("Whether to identify narrative inconsistencies or gaps")
         val find_inconsistencies: Boolean = true,
+
         @Description("Whether to generate images for key narrative elements")
         val generate_images: Boolean = false,
-        @Description("Image generation model to use (e.g., 'DallE3', 'DallE2')")
-        val image_model: String = "DallE3",
+
         @Description("Width of generated images in pixels")
         val image_width: Int = 1024,
+
         @Description("Height of generated images in pixels")
         val image_height: Int = 1024,
-
 
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -313,12 +312,12 @@ NarrativeReasoning - Understand scenarios through storytelling and narrative str
                     "analyzeMotivations=$analyzeMotivations, findInconsistencies=$findInconsistencies"
         )
 
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
 
         task.ui
         val tabs = TabbedDisplay(task)
         // Initialize transcript
-        val transcriptStream = task.transcript()
+        val transcriptStream = task.transcript("NarrativeReasoning")
         val transcriptWriter = transcriptStream?.bufferedWriter()
         transcriptWriter?.appendLine("# Narrative Reasoning Analysis Transcript")
         transcriptWriter?.appendLine("**Subject:** $subject")

@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
-import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -278,7 +277,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
             return
         }
 
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: run {
+        val api = orchestrationConfig.defaultChatter ?: run {
             transcript?.close()
             return
         }

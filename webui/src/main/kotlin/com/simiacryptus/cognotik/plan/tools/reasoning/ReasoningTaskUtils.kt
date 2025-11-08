@@ -6,26 +6,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
 /**
- * Validates and retrieves the default chatter API, handling errors consistently.
- * Returns null if validation fails, after logging and updating the task.
- */
-fun validateAndGetApi(
-    orchestrationConfig: OrchestrationConfig,
-    task: SessionTask,
-    log: Logger,
-    resultFn: (String) -> Unit
-): ChatInterface? {
-    val api = orchestrationConfig.defaultChatter
-    if (api == null) {
-        log.error("No default chatter available")
-        task.complete("ERROR: No API available")
-        resultFn("ERROR: No API available")
-        return null
-    }
-    return api
-}
-
-/**
  * Truncates text for display with an ellipsis indicator.
  */
 fun String.truncateForDisplay(maxLength: Int = 10000): String {

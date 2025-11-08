@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
-import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -373,7 +372,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
             return
         }
 
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
 

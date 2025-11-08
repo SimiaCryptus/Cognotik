@@ -146,7 +146,7 @@ class ConstraintSatisfactionTask(
 
 
             val toInput = { it: String -> listOf(it) }
-            val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+            val api = orchestrationConfig.defaultChatter ?: return
             log.info(
                 """
         |Starting Constraint Satisfaction Task:

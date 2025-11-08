@@ -11,7 +11,6 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
-import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -182,7 +181,7 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
                 documentContent, maxImages, isMarkdown, executionConfig.composerDirective
             )
 
-            val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+            val api = orchestrationConfig.defaultChatter ?: return
             val parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task)
             val defaultChatter = api.getChildClient(task)
 

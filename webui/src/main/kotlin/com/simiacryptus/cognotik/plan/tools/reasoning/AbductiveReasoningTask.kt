@@ -132,7 +132,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             return
         }
 
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)

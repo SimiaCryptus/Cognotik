@@ -359,7 +359,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             return
         }
 
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)

@@ -201,7 +201,7 @@ GameTheory - Analyze strategic interactions using game theory
         }
 
         val ui = task.ui
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
         val transcript = transcript(task)
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)

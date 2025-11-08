@@ -137,7 +137,7 @@ class SocraticDialogueTask(
         log.info("Configuration: maxDepth=$maxDepth, challengeAssumptions=$challengeAssumptions, domainConstraints=$domainConstraints")
 
         val ui = task.ui
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
         // Overview tab

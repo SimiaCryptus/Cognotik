@@ -115,7 +115,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         val levels = executionConfig.levels.coerceIn(1, 5)
         val identifyPatterns = executionConfig.identify_patterns
 
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
 
         // Initialize detailed output file
         detailedOutputFile = initializeDetailedOutput(task)

@@ -281,7 +281,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
             log.info("Configuration: techniques=${techniques.size}, numAlternatives=$numAlternatives, evaluateFeasibility=$evaluateFeasibility")
 
-            val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+            val api = orchestrationConfig.defaultChatter ?: return
 
             val tabs = TabbedDisplay(task)
 

@@ -259,7 +259,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
         }
 
         val ui = task.ui
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
         val transcript = transcript(task)
 
         // Create tabbed display for organized output

@@ -137,7 +137,7 @@ class EthicalReasoningTask(
         val context = executionConfig?.context ?: ""
 
         val ui = task.ui
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
         val tabs = TabbedDisplay(task)
         val transcript = transcript(task)
         val overviewTask = task.ui.newTask(false)

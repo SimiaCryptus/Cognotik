@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
-import com.simiacryptus.cognotik.plan.tools.reasoning.validateAndGetApi
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -112,9 +111,6 @@ class GameNarrativeDesignTask(
         revision_passes = 1,
         generate_scene_images = generate_scene_art,
         generate_cover_image = true,
-        image_model = "DallE3",
-        image_width = 1024,
-        image_height = 1024,
         task_dependencies = task_dependencies,
         state = state
     ) {
@@ -209,7 +205,7 @@ class GameNarrativeDesignTask(
         val title: String = "",
         val premise: String = "",
         val setting: String = "",
-        val acts: List<NarrativeAct> = emptyList(),
+        val acts: List<NarrativeReasoningTask.NarrativeAct> = emptyList(),
         val characters: List<GameCharacter> = emptyList(),
         val branching_points: List<BranchingPoint> = emptyList(),
         val endings: List<GameEnding> = emptyList(),
@@ -388,7 +384,7 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
             return
         }
 
-        val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
         val transcript = createTranscript(task, gameTitle)
