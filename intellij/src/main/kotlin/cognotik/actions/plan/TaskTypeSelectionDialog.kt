@@ -137,7 +137,7 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
             "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
             "GameTheory", "FiniteStateMachine", "Brainstorming",
             "ChainOfThought", "MetaCognitiveReflection", "GeneticOptimization",
-            "EthicalReasoning", "LLMExperiment"
+            "EthicalReasoning", "LLMExperiment", "LLMPollSimulation", "GameEconomy"
           ) -> "Reasoning"
 
           taskType.name in listOf(
@@ -145,12 +145,14 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
             "PersuasiveEssay", "TechnicalExplanation", "TutorialGeneration",
             "BusinessProposal", "EmailCampaign", "InteractiveStory",
             "ReportGeneration", "Scriptwriting", "JournalismReasoning",
-            "GameLevelDesign", "GameNarrativeDesign", "GameMechanicsDesign"
+            "GameLevelDesign", "GameNarrativeDesign", "GameMechanicsDesign",
+            "ResearchPaperGenerationTask",
           ) -> "Writing"
 
           taskType.name in listOf(
                 "Analysis", "FileModification", "FileSearch",
-                "WriteHtml", "GeneratePresentation", "GenerateImage"
+                "WriteHtml", "GeneratePresentation", "GenerateImage",
+              "IllustrateDocument",
             ) -> "File Operations"
 
             taskType.name in listOf("VectorSearch", "KnowledgeIndexing") -> "Knowledge Management"

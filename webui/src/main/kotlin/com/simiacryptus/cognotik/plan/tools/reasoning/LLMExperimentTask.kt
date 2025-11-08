@@ -804,14 +804,6 @@ Be specific and reference the data provided.
         } + " (Compressibility: ${String.format("%.2f", compressibility)})"
     }
 
-    open fun compressedStringBits(str: String) : Int {
-        val byteStream = ByteArrayOutputStream()
-        val gzipStream = GZIPOutputStream(byteStream)
-        gzipStream.write(str.toByteArray(Charsets.UTF_8))
-        gzipStream.close()
-        return byteStream.size() * 8 // bits
-    }
-
     private fun generateStatisticalTables(
         results: List<ExperimentalResult>,
         conditions: List<ExperimentalCondition>,
@@ -1326,20 +1318,20 @@ Be specific and reference the data provided.
     }
 
     data class ExperimentalCondition(
-        val temperature: Double,
-        val variables: Map<String, String>,
-        val prompt: String
+        val temperature: Double = 0.0,
+        val variables: Map<String, String> = emptyMap(),
+        val prompt: String = "",
     )
 
     data class ExperimentalResult(
-        val conditionIndex: Int,
-        val repetition: Int,
-        val temperature: Double,
-        val variables: Map<String, String>,
-        val prompt: String,
-        val response: String,
-        val responseTime: Long,
-        val metrics: Map<String, Double>
+        val conditionIndex: Int = 0,
+        val repetition: Int = 0,
+        val temperature: Double = 0.0,
+        val variables: Map<String, String> = emptyMap(),
+        val prompt: String = "",
+        val response: String = "",
+        val responseTime: Long = 0L,
+        val metrics: Map<String, Double> = emptyMap()
     )
 
 
@@ -1366,5 +1358,12 @@ Be specific and reference the data provided.
               <p><strong>Use cases:</strong> Bias studies, cognitive studies, logical performance analysis, consistency testing</p>
             """
         )
+        fun compressedStringBits(str: String): Int {
+            val byteStream = ByteArrayOutputStream()
+            val gzipStream = GZIPOutputStream(byteStream)
+            gzipStream.write(str.toByteArray(Charsets.UTF_8))
+            gzipStream.close()
+            return byteStream.size() * 8 // bits
+        }
     }
 }
