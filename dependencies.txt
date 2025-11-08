@@ -1,0 +1,262 @@
+
+> Task :dependencies
+
+------------------------------------------------------------
+Root project 'Cognotik'
+------------------------------------------------------------
+
+annotationProcessor - Annotation processors and their dependencies for source set 'main'.
+No dependencies
+
+api - API dependencies for 'main'. (n)
+No dependencies
+
+apiDependenciesMetadata
+No dependencies
+
+apiElements - API elements for the 'main' feature. (n)
+No dependencies
+
+apiElements-published (n)
+No dependencies
+
+compileClasspath - Compile classpath for 'main'.
+No dependencies
+
+compileOnly - Compile only dependencies for 'main'. (n)
+No dependencies
+
+compileOnlyDependenciesMetadata
+No dependencies
+
+default - Configuration for default artifacts. (n)
+No dependencies
+
+implementation - Implementation only dependencies for 'main'. (n)
+No dependencies
+
+implementationDependenciesMetadata
+No dependencies
+
+intransitiveDependenciesMetadata
+No dependencies
+
+jacocoAgent - The Jacoco agent to use to get coverage data.
+\--- org.jacoco:org.jacoco.agent:0.8.12
+
+jacocoAnt - The Jacoco ant tasks to use to get execute Gradle tasks.
+\--- org.jacoco:org.jacoco.ant:0.8.12
+     +--- org.jacoco:org.jacoco.core:0.8.12
+     |    +--- org.ow2.asm:asm:9.7
+     |    +--- org.ow2.asm:asm-commons:9.7
+     |    |    +--- org.ow2.asm:asm:9.7
+     |    |    \--- org.ow2.asm:asm-tree:9.7
+     |    |         \--- org.ow2.asm:asm:9.7
+     |    \--- org.ow2.asm:asm-tree:9.7 (*)
+     +--- org.jacoco:org.jacoco.report:0.8.12
+     |    \--- org.jacoco:org.jacoco.core:0.8.12 (*)
+     \--- org.jacoco:org.jacoco.agent:0.8.12
+
+kotlinBouncyCastleConfiguration - Bouncy Castle dependencies used internally for library publishing validation tasks. Not used during compilation.
++--- org.bouncycastle:bcpkix-jdk18on:1.80
+|    \--- org.bouncycastle:bcutil-jdk18on:[1.80,1.81) -> 1.80
+|         \--- org.bouncycastle:bcprov-jdk18on:[1.80,1.81) -> 1.80
+\--- org.bouncycastle:bcpg-jdk18on:1.80
+     \--- org.bouncycastle:bcprov-jdk18on:[1.80,1.81) -> 1.80
+
+kotlinBuildToolsApiClasspath
+\--- org.jetbrains.kotlin:kotlin-build-tools-impl:{strictly 2.2.20} -> 2.2.20
+     +--- org.jetbrains.kotlin:kotlin-build-tools-api:2.2.20
+     +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21
+     |    \--- org.jetbrains:annotations:13.0
+     +--- org.jetbrains.kotlin:kotlin-compiler-embeddable:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-script-runtime:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-reflect:1.6.10 -> 2.2.21
+     |    +--- org.jetbrains.kotlin:kotlin-daemon-embeddable:2.2.20
+     |    \--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0
+     +--- org.jetbrains.kotlin:kotlin-compiler-runner:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-daemon-client:2.2.20
+     |    |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.0.21 -> 2.2.21 (*)
+     |    +--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0
+     |    \--- org.jetbrains.kotlin:kotlin-compiler-embeddable:2.2.20 (*)
+     +--- org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-common:2.2.20
+     |    |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-jvm:2.2.20
+     |    |    +--- org.jetbrains.kotlin:kotlin-script-runtime:2.2.20
+     |    |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     |    |    \--- org.jetbrains.kotlin:kotlin-scripting-common:2.2.20 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable:2.2.20
+     |    |    +--- org.jetbrains.kotlin:kotlin-scripting-common:2.2.20 (*)
+     |    |    +--- org.jetbrains.kotlin:kotlin-scripting-jvm:2.2.20 (*)
+     |    |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     \--- org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable:2.2.20 (*)
+
+kotlinCompilerClasspath
+\--- org.jetbrains.kotlin:kotlin-compiler-embeddable:2.2.20
+     +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21
+     |    \--- org.jetbrains:annotations:13.0
+     +--- org.jetbrains.kotlin:kotlin-script-runtime:2.2.20
+     +--- org.jetbrains.kotlin:kotlin-reflect:1.6.10 -> 2.2.21
+     +--- org.jetbrains.kotlin:kotlin-daemon-embeddable:2.2.20
+     \--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0
+
+kotlinCompilerPluginClasspath
+No dependencies
+
+kotlinCompilerPluginClasspathMain - Kotlin compiler plugins for compilation
+\--- org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.2.20
+     +--- org.jetbrains.kotlin:kotlin-scripting-common:2.2.20
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21
+     |         \--- org.jetbrains:annotations:13.0
+     +--- org.jetbrains.kotlin:kotlin-scripting-jvm:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-script-runtime:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     |    \--- org.jetbrains.kotlin:kotlin-scripting-common:2.2.20 (*)
+     +--- org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-common:2.2.20 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-jvm:2.2.20 (*)
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+
+kotlinCompilerPluginClasspathTest - Kotlin compiler plugins for compilation
+\--- org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.2.20
+     +--- org.jetbrains.kotlin:kotlin-scripting-common:2.2.20
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21
+     |         \--- org.jetbrains:annotations:13.0
+     +--- org.jetbrains.kotlin:kotlin-scripting-jvm:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-script-runtime:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     |    \--- org.jetbrains.kotlin:kotlin-scripting-common:2.2.20 (*)
+     +--- org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-common:2.2.20 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-scripting-jvm:2.2.20 (*)
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+
+kotlinInternalAbiValidation
+\--- org.jetbrains.kotlin:abi-tools:2.2.20
+     +--- org.jetbrains.kotlin:abi-tools-api:2.2.20
+     +--- org.jetbrains.kotlin:kotlin-metadata-jvm:2.2.20
+     |    \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21
+     |         \--- org.jetbrains:annotations:13.0
+     +--- org.jetbrains.kotlin:kotlin-compiler-embeddable:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-script-runtime:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-reflect:1.6.10 -> 2.2.21
+     |    +--- org.jetbrains.kotlin:kotlin-daemon-embeddable:2.2.20
+     |    \--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0
+     \--- io.github.java-diff-utils:java-diff-utils:4.12
+
+kotlinKlibCommonizerClasspath
+\--- org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.2.20
+     +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21
+     |    \--- org.jetbrains:annotations:13.0
+     \--- org.jetbrains.kotlin:kotlin-compiler-embeddable:2.2.20
+          +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+          +--- org.jetbrains.kotlin:kotlin-script-runtime:2.2.20
+          +--- org.jetbrains.kotlin:kotlin-reflect:1.6.10 -> 2.2.21
+          +--- org.jetbrains.kotlin:kotlin-daemon-embeddable:2.2.20
+          \--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0
+
+kotlinNativeCompilerPluginClasspath
+No dependencies
+
+kotlinScriptDef - Script filename extensions discovery classpath configuration (n)
+No dependencies
+
+kotlinScriptDefExtensions
+No dependencies
+
+mainSourceElements - List of source directories contained in the Main SourceSet. (n)
+No dependencies
+
+runtimeClasspath - Runtime classpath of 'main'.
+No dependencies
+
+runtimeElements - Runtime elements for the 'main' feature. (n)
+No dependencies
+
+runtimeElements-published (n)
+No dependencies
+
+runtimeOnly - Runtime only dependencies for 'main'. (n)
+No dependencies
+
+swiftExportClasspath - Runtime classpath for the SwiftExport worker. (n)
+No dependencies
+
+swiftExportClasspathResolvable - Resolves the runtime classpath for the SwiftExport worker.
+\--- org.jetbrains.kotlin:swift-export-embeddable:2.2.20
+     +--- org.checkerframework:checker-qual:3.43.0
+     +--- com.google.errorprone:error_prone_annotations:2.28.0
+     +--- io.opentelemetry:opentelemetry-api:1.41.0
+     |    \--- io.opentelemetry:opentelemetry-context:1.41.0
+     +--- com.github.ben-manes.caffeine:caffeine:2.9.3
+     |    +--- org.checkerframework:checker-qual:3.19.0 -> 3.43.0
+     |    \--- com.google.errorprone:error_prone_annotations:2.10.0 -> 2.28.0
+     +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21
+     |    \--- org.jetbrains:annotations:13.0
+     +--- org.jetbrains.kotlin:kotlin-compiler-embeddable:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> 2.2.21 (*)
+     |    +--- org.jetbrains.kotlin:kotlin-script-runtime:2.2.20
+     |    +--- org.jetbrains.kotlin:kotlin-reflect:1.6.10 -> 2.2.21
+     |    +--- org.jetbrains.kotlin:kotlin-daemon-embeddable:2.2.20
+     |    \--- org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0
+     \--- org.jetbrains.kotlinx:kotlinx-serialization-core:1.7.3
+          \--- org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.7.3
+               +--- org.jetbrains.kotlinx:kotlinx-serialization-bom:1.7.3
+               |    +--- org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.7.3 (c)
+               |    \--- org.jetbrains.kotlinx:kotlinx-serialization-core:1.7.3 (c)
+               \--- org.jetbrains.kotlin:kotlin-stdlib:2.0.20 -> 2.2.21 (*)
+
+testAnnotationProcessor - Annotation processors and their dependencies for source set 'test'.
+No dependencies
+
+testApi - API dependencies for 'test'. (n)
+No dependencies
+
+testApiDependenciesMetadata
+No dependencies
+
+testCompileClasspath - Compile classpath for 'test'.
+No dependencies
+
+testCompileOnly - Compile only dependencies for 'test'. (n)
+No dependencies
+
+testCompileOnlyDependenciesMetadata
+No dependencies
+
+testImplementation - Implementation only dependencies for 'test'. (n)
+No dependencies
+
+testImplementationDependenciesMetadata
+No dependencies
+
+testIntransitiveDependenciesMetadata
+No dependencies
+
+testKotlinScriptDef - Script filename extensions discovery classpath configuration (n)
+No dependencies
+
+testKotlinScriptDefExtensions
+No dependencies
+
+testRuntimeClasspath - Runtime classpath of 'test'.
+No dependencies
+
+testRuntimeOnly - Runtime only dependencies for 'test'. (n)
+No dependencies
+
+(c) - A dependency constraint, not a dependency. The dependency affected by the constraint occurs elsewhere in the tree.
+(*) - Indicates repeated occurrences of a transitive dependency subtree. Gradle expands transitive dependency subtrees only once per project; repeat occurrences only display the root of the subtree, followed by this annotation.
+
+A web-based, searchable dependency report is available by adding the --scan option.
+
+[Incubating] Problems report is available at: file:///home/andrew/code/Cognotik/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 3s
+1 actionable task: 1 executed

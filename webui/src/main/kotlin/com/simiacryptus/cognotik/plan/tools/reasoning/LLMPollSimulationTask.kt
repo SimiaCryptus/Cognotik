@@ -81,7 +81,7 @@ class LLMPollSimulationTask(
                         }
                     }
                     QuestionType.LIKERT_SCALE, QuestionType.RATING -> {
-                        if (question.validation?.get("min") == null || question.validation["max"] == null) {
+                        if (question.min == null || question.max == null) {
                             return "Question '${question.id}' of type ${question.type} must have min and max validation"
                         }
                     }
@@ -94,19 +94,21 @@ class LLMPollSimulationTask(
 
     data class SurveyQuestion(
         @Description("Unique identifier for the question")
-        val id: String,
+        val id: String = UUID.randomUUID().toString(),
         @Description("The question text to present to respondents")
-        val text: String,
+        val text: String = "",
         @Description("Type of question (MULTIPLE_CHOICE, SINGLE_CHOICE, LIKERT_SCALE, etc.)")
-        val type: QuestionType,
-        @Description("Available options for choice-based questions")
-        val options: List<String>? = null,
+        val type: QuestionType = QuestionType.OPEN_ENDED,
         @Description("Whether this question is required")
         val required: Boolean = true,
         @Description("ID of question this depends on (for conditional logic)")
         val conditional_on: String? = null,
-        @Description("Validation rules for the response")
-        val validation: Map<String, Any>? = null
+        @Description("Available options for choice-based questions (required for MULTIPLE_CHOICE, SINGLE_CHOICE, RANKING)")
+        val options: List<String>? = null,
+        @Description("Validation rule: min (required for LIKERT_SCALE, RATING)")
+        val min: Int? = null,
+        @Description("Validation rule: max (required for LIKERT_SCALE, RATING)")
+        val max: Int? = null
     )
 
     enum class QuestionType {
@@ -123,9 +125,9 @@ class LLMPollSimulationTask(
 
     data class RespondentProfile(
         @Description("Unique identifier for the profile")
-        val id: String,
+        val id: String = UUID.randomUUID().toString(),
         @Description("Description of this respondent type")
-        val description: String,
+        val description: String = "",
         @Description("Demographic attributes (age, gender, location, etc.)")
         val demographics: Map<String, String>? = null,
         @Description("Personality traits and characteristics")
@@ -135,22 +137,22 @@ class LLMPollSimulationTask(
     )
 
     data class SimulatedRespondent(
-        val id: String,
-        val profile: RespondentProfile,
-        val demographics: Map<String, String>,
-        val persona_prompt: String
+        val id: String = "",
+        val profile: RespondentProfile = RespondentProfile(),
+        val demographics: Map<String, String> = mapOf(),
+        val persona_prompt: String = ""
     )
 
     data class SurveyResponse(
-        val respondent_id: String,
-        val answers: Map<String, Any>,
-        val demographics: Map<String, String>,
-        val response_time: Long,
+        val respondent_id: String = "",
+        val answers: Map<String, Any> = mapOf(),
+        val demographics: Map<String, String> = mapOf(),
+        val response_time: Long = 0L,
         val reasoning: Map<String, String>? = null
     )
 
     data class ParsedResponse(
-        val answer: Any,
+        val answer: Any? = null,
         val reasoning: String? = null
     )
 
@@ -759,7 +761,7 @@ Instructions:
             // Parse response based on question type
             val parsedResponse = parseResponse(response, question)
 
-            answers[question.id] = parsedResponse.answer
+            answers[question.id] = parsedResponse.answer ?: ""
             if (parsedResponse.reasoning != null) {
                 reasoning[question.id] = parsedResponse.reasoning
             }
@@ -804,16 +806,16 @@ Instructions:
                     appendLine("Provide your answer as a single number (e.g., '2')")
                 }
                 QuestionType.LIKERT_SCALE -> {
-                    val min = question.validation?.get("min") as? Int ?: 1
-                    val max = question.validation?.get("max") as? Int ?: 5
+                    val min = question.min as? Int ?: 1
+                    val max = question.max as? Int ?: 5
                     appendLine("Rate on a scale from $min to $max:")
                     appendLine("$min = Strongly Disagree, $max = Strongly Agree")
                     appendLine()
                     appendLine("Provide your answer as a single number")
                 }
                 QuestionType.RATING -> {
-                    val min = question.validation?.get("min") as? Int ?: 1
-                    val max = question.validation?.get("max") as? Int ?: 10
+                    val min = question.min as? Int ?: 1
+                    val max = question.max as? Int ?: 10
                     appendLine("Rate from $min to $max")
                     appendLine()
                     appendLine("Provide your answer as a single number")
@@ -1030,6 +1032,13 @@ Instructions:
         return crossTabs.toString()
     }
 
+    data class SentimentScore(
+        val positive: Double = 0.0,
+        val negative: Double = 0.0,
+        val neutral: Double = 0.0,
+        val overall: String = "",
+    )
+
     private fun performSentimentAnalysis(
         responses: List<SurveyResponse>,
         questions: List<SurveyQuestion>,
@@ -1046,12 +1055,6 @@ Instructions:
             return sentiment.toString()
         }
 
-        data class SentimentScore(
-            val positive: Double,
-            val negative: Double,
-            val neutral: Double,
-            val overall: String
-        )
 
         val sentimentAgent = ParsedAgent(
             resultClass = SentimentScore::class.java,
@@ -1124,8 +1127,8 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                         val stdDev = calculateStdDev(answers)
 
                         // Check for central tendency bias
-                        val min = question.validation?.get("min") as? Int ?: 1
-                        val max = question.validation?.get("max") as? Int ?: 5
+                        val min = question.min as? Int ?: 1
+                        val max = question.max as? Int ?: 5
                         val midpoint = (min + max) / 2.0
 
                         if (kotlin.math.abs(mean - midpoint) < 0.5) {
@@ -1231,11 +1234,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         task.complete(
-            "Writing poll report to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
+            "Writing poll report to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a>"
         )
         return Pair(link, markdownTranscript)
     }
