@@ -105,13 +105,13 @@
 
         if (type === 'error') {
             console.error(`[showNotification] Error: ${message}`);
-            alert('❌ ' + message);
+            //alert('❌ ' + message);
         } else if (type === 'success') {
             console.log(`[showNotification] Success: ${message}`);
-            alert('✅ ' + message);
+            //alert('✅ ' + message);
         } else {
             console.info(`[showNotification] Info: ${message}`);
-            alert(message);
+            //alert(message);
         }
     }
 }

@@ -146,7 +146,7 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
             "BusinessProposal", "EmailCampaign", "InteractiveStory",
             "ReportGeneration", "Scriptwriting", "JournalismReasoning",
             "GameLevelDesign", "GameNarrativeDesign", "GameMechanicsDesign",
-            "ResearchPaperGenerationTask",
+            "ResearchPaperGeneration",
           ) -> "Writing"
 
           taskType.name in listOf(
@@ -171,11 +171,10 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
     }
 
     private fun updateDescription(taskType: TaskType<*, *>) {
-
-        val htmlContent = buildString {
-            append("<html><body style='font-family: sans-serif; padding: 10px;'>")
-            append("<h3 style='margin-top: 0;'>${taskType.name}</h3>")
-            append("<p><b>Description:</b> ${taskType.description ?: "No description available"}</p>")
+        descriptionPane.text = buildString {
+            this.append("<html><body style='font-family: sans-serif; padding: 10px;'>")
+            this.append("<h3 style='margin-top: 0;'>${taskType.name}</h3>")
+            this.append("<p><b>Description:</b> ${taskType.description ?: "No description available"}</p>")
             taskType.tooltipHtml?.let { html ->
                 // Extract content between body tags or use as-is if no body tags
                 val content = if (html.contains("<body")) {
@@ -185,11 +184,10 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
                 } else {
                     html.replace("<html>", "").replace("</html>", "")
                 }
-                append(content)
+                this.append(content)
             }
-            append("</body></html>")
+            this.append("</body></html>")
         }
-        descriptionPane.text = htmlContent
         descriptionPane.caretPosition = 0
     }
 
