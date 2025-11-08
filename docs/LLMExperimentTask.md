@@ -1,207 +1,47 @@
+# LLMExperimentTask Technical Documentation
+
 ## Overview
 
-The `LLMExperimentTask` is a sophisticated task orchestration component designed to conduct controlled experiments on Large Language Model (LLM) behavior. It enables researchers and developers to systematically test LLM responses under varying conditions, measure performance metrics, and analyze statistical significance of results.
+The `LLMExperimentTask` is a sophisticated experimental framework for conducting controlled experiments on Large Language Model (LLM) behavior. It enables researchers and developers to systematically test LLM responses under varying conditions, collect metrics, and perform statistical analysis on the results.
 
-## Purpose and Use Cases
+## Architecture
 
-### Primary Purpose
-To provide a rigorous, scientifically-sound framework for conducting experiments on LLM behavior, enabling:
-- Bias detection and characterization
-- Cognitive pattern analysis
-- Logical reasoning evaluation
-- Response consistency measurement
-- Performance benchmarking
-
-### Key Use Cases
-
-1. **Bias Studies**: Test for demographic, cultural, or ideological biases in LLM responses
-2. **Cognitive Studies**: Examine reasoning patterns and decision-making processes
-3. **Logical Performance**: Evaluate logical consistency and accuracy
-4. **Consistency Testing**: Measure response stability across conditions
-5. **Custom Experiments**: Design domain-specific experimental protocols
-
-## Architecture Overview
-
-```mermaid
-graph TB
-    subgraph "Task Orchestration Layer"
-        A[LLMExperimentTask] --> B[Configuration Validation]
-        B --> C[Experiment Design]
-    end
-
-    subgraph "Experiment Execution"
-        C --> D[Condition Generation]
-        D --> E[Trial Execution Loop]
-        E --> F[ChatAgent Interaction]
-        F --> G[Metrics Collection]
-    end
-
-    subgraph "Analysis Layer"
-        G --> H[Statistical Analysis]
-        H --> I[Insight Generation]
-        I --> J[Report Generation]
-    end
-
-    subgraph "Output Layer"
-        J --> K[Tabbed UI Display]
-        J --> L[Markdown Transcript]
-        J --> M[HTML/PDF Reports]
-    end
-
-    style A fill:#e1f5ff
-    style F fill:#ffe1e1
-    style H fill:#e1ffe1
-    style K fill:#fff5e1
-```
-
-## Data Flow Architecture
-
-```mermaid
-flowchart LR
-    subgraph Input
-        A[Configuration Data]
-        B[Prompt Template]
-        C[Variables]
-        D[Parameters]
-    end
-
-    subgraph Processing
-        E[Experimental Conditions]
-        F[Trial Results]
-        G[Metrics Data]
-    end
-
-    subgraph Analysis
-        H[Statistical Summaries]
-        I[Comparative Analysis]
-        J[LLM Insights]
-    end
-
-    subgraph Output
-        K[Interactive UI]
-        L[Transcript Files]
-        M[Reports]
-    end
-
-    A --> E
-    B --> E
-    C --> E
-    D --> E
-
-    E --> F
-    F --> G
-
-    G --> H
-    H --> I
-    I --> J
-
-    J --> K
-    J --> L
-    J --> M
-```
-
-## Core Components
-
-### 1. Configuration System
-
-#### LLMExperimentTaskExecutionConfigData
-
-The configuration class defines all experimental parameters:
+### Class Hierarchy
 
 ```mermaid
 classDiagram
+    AbstractTask <|-- LLMExperimentTask
+    TaskExecutionConfig <|-- LLMExperimentTaskExecutionConfigData
+    ValidatedObject <|.. LLMExperimentTaskExecutionConfigData
+
+    class AbstractTask {
+        +OrchestrationConfig orchestrationConfig
+        +TaskExecutionConfig executionConfig
+        +run()
+        +promptSegment()
+    }
+
+    class LLMExperimentTask {
+        +LLMExperimentTaskExecutionConfigData executionConfig
+        +run()
+        +promptSegment()
+        -generateExperimentalConditions()
+        -analyzeResults()
+        -generateStatisticalTables()
+        -calculateMetrics()
+    }
+
     class LLMExperimentTaskExecutionConfigData {
-        +String prompt_template
+        +List~String~ prompt_templates
         +Map~String,List~String~~ prompt_variables
+        +List~String~ metrics
         +List~Double~ temperature_values
         +Int repetitions
-        +String experiment_type
-        +List~String~ metrics
-        +List~String~ search_patterns
         +Boolean statistical_analysis
-        +Int max_tokens
-        +Boolean randomize_order
-        +validate() String?
+        +Double significance_level
+        +validate()
     }
 
-    class ValidatedObject {
-        <<interface>>
-        +validate() String?
-    }
-
-    class TaskExecutionConfig {
-        +String task_type
-        +String task_description
-        +List~String~ task_dependencies
-        +TaskState state
-    }
-
-    LLMExperimentTaskExecutionConfigData --|> TaskExecutionConfig
-    LLMExperimentTaskExecutionConfigData ..|> ValidatedObject
-```
-
-**Configuration Parameters:**
-
-| Parameter | Type | Description | Validation |
-|-----------|------|-------------|------------|
-| `prompt_template` | String | Base prompt with `{variable}` placeholders | Required, non-blank |
-| `prompt_variables` | Map<String, List<String>> | Variables and their possible values | Optional |
-| `temperature_values` | List<Double> | Temperature settings to test | 0.0-2.0, required |
-| `repetitions` | Int | Trials per condition | 1-100 |
-| `experiment_type` | String | Type of experiment | One of: bias_study, cognitive_study, logical_performance, consistency_test, custom |
-| `metrics` | List<String> | Metrics to track | Optional, defaults to response_length, response_time |
-| `search_patterns` | List<String> | Regex patterns to search for | Optional |
-| `statistical_analysis` | Boolean | Enable statistical testing | Default: true |
-| `max_tokens` | Int | Maximum response tokens | 1-4000 |
-| `randomize_order` | Boolean | Randomize condition order | Default: true |
-
-### 2. Experimental Design
-
-#### Condition Generation Process
-
-```mermaid
-flowchart TD
-    A[Start: Generate Conditions] --> B{Variables Defined?}
-    B -->|Yes| C[Generate Variable Combinations]
-    B -->|No| D[Single Variable Set]
-
-    C --> E[Cartesian Product of Variables]
-    E --> F[For Each Temperature Value]
-    D --> F
-
-    F --> G[For Each Variable Combination]
-    G --> H[Substitute Variables in Template]
-    H --> I[Create ExperimentalCondition]
-
-    I --> J{Randomize Order?}
-    J -->|Yes| K[Shuffle Conditions]
-    J -->|No| L[Keep Original Order]
-
-    K --> M[Return Condition List]
-    L --> M
-
-    style A fill:#e1f5ff
-    style M fill:#e1ffe1
-```
-
-**Example:**
-```kotlin
-// Input
-prompt_template = "What is your opinion on {topic} for {demographic}?"
-prompt_variables = {
-    "topic": ["healthcare", "education"],
-    "demographic": ["young adults", "seniors"]
-}
-temperature_values = [0.0, 1.0]
-
-// Output: 8 conditions
-// 2 topics × 2 demographics × 2 temperatures = 8 conditions
-```
-
-#### ExperimentalCondition Data Structure
-
-```mermaid
-classDiagram
     class ExperimentalCondition {
         +Double temperature
         +Map~String,String~ variables
@@ -219,669 +59,768 @@ classDiagram
         +Map~String,Double~ metrics
     }
 
-    ExperimentalCondition "1" --> "*" ExperimentalResult : generates
+    LLMExperimentTask --> ExperimentalCondition
+    LLMExperimentTask --> ExperimentalResult
 ```
 
-### 3. Execution Pipeline
+## Data Flow
 
-#### Main Execution Flow
+### High-Level Experiment Flow
+
+```mermaid
+flowchart TD
+    A[Start Experiment] --> B[Validate Configuration]
+    B --> C{Valid?}
+    C -->|No| D[Return Error]
+    C -->|Yes| E[Create Transcript File]
+    E --> F[Initialize Tabbed Display]
+    F --> G[Generate Experimental Conditions]
+    G --> H[Create Thread Pool]
+    H --> I[Execute Trials Concurrently]
+    I --> J[Collect Results]
+    J --> K[Generate Statistical Analysis]
+    K --> L[Generate Insights via LLM]
+    L --> M[Create Final Report]
+    M --> N[Complete Task]
+
+    style A fill:#90EE90
+    style N fill:#90EE90
+    style D fill:#FFB6C1
+```
+
+### Detailed Execution Flow
 
 ```mermaid
 sequenceDiagram
-    participant O as Orchestrator
-    participant T as LLMExperimentTask
-    participant V as Validator
-    participant G as ConditionGenerator
-    participant E as ExecutionLoop
-    participant A as ChatAgent
-    participant M as MetricsCalculator
-    participant S as StatisticalAnalyzer
-    participant R as ReportGenerator
+    participant User
+    participant Task as LLMExperimentTask
+    participant Config as ExecutionConfig
+    participant CondGen as Condition Generator
+    participant Pool as Thread Pool
+    participant Agent as ChatAgent
+    participant Stats as Statistical Analyzer
+    participant Insights as Insights Generator
 
-    O->>T: run(agent, messages, task)
-    T->>V: validate configuration
-    V-->>T: validation result
+    User->>Task: run()
+    Task->>Config: validate()
+    Config-->>Task: validation result
 
-    alt validation fails
-        T-->>O: return error
-    end
+    alt Invalid Config
+        Task-->>User: Configuration Error
+    else Valid Config
+        Task->>Task: createTranscriptFile()
+        Task->>Task: createTabbedDisplay()
+        Task->>CondGen: generateExperimentalConditions()
+        CondGen-->>Task: List<ExperimentalCondition>
 
-    T->>G: generateExperimentalConditions()
-    G-->>T: List<ExperimentalCondition>
-
-    T->>E: execute trials
-
-    loop for each condition
-        loop for each repetition
-            E->>A: answer(prompt)
-            A-->>E: response
-            E->>M: calculateMetrics(response)
-            M-->>E: metrics map
-            E->>E: store ExperimentalResult
+        loop For each condition
+            loop For each repetition
+                Task->>Pool: submit trial
+                Pool->>Agent: answer(prompt)
+                Agent-->>Pool: response
+                Pool->>Task: ExperimentalResult
+            end
         end
+
+        Task->>Stats: analyzeResults()
+        Stats-->>Task: statistical analysis
+
+        Task->>Stats: generateStatisticalTables()
+        Stats-->>Task: detailed tables
+
+        Task->>Insights: generate insights
+        Insights-->>Task: LLM-generated insights
+
+        Task->>Task: generateFinalReport()
+        Task-->>User: Complete with report link
     end
-
-    E-->>T: List<ExperimentalResult>
-
-    T->>S: analyzeResults(results)
-    S-->>T: statistical analysis
-
-    T->>A: generate insights
-    A-->>T: insights text
-
-    T->>R: generateReport()
-    R-->>T: formatted report
-
-    T-->>O: complete with results
 ```
 
-#### Trial Execution Detail
+## Core Components
+
+### 1. Configuration Data Structure
+
+```mermaid
+graph LR
+    A[LLMExperimentTaskExecutionConfigData] --> B[prompt_templates]
+    A --> C[prompt_variables]
+    A --> D[metrics]
+    A --> E[temperature_values]
+    A --> F[repetitions]
+    A --> G[statistical_analysis]
+    A --> H[significance_level]
+
+    B --> B1[List of template strings]
+    C --> C1[Map: variable name → values]
+    D --> D1[List of metric names]
+    E --> E1[List of temperature values]
+    F --> F1[Integer: 1-100]
+    G --> G1[Boolean flag]
+    H --> H1[Double: 0.0-1.0]
+
+    style A fill:#87CEEB
+    style B fill:#FFE4B5
+    style C fill:#FFE4B5
+    style D fill:#FFE4B5
+    style E fill:#FFE4B5
+    style F fill:#FFE4B5
+    style G fill:#FFE4B5
+    style H fill:#FFE4B5
+```
+
+### 2. Experimental Condition Generation
 
 ```mermaid
 flowchart TD
-    A[Start Trial] --> B[Record Start Time]
-    B --> C[Create ChatAgent with Temperature]
-    C --> D[Send Prompt to Agent]
+    A[Input: Templates, Variables, Temperatures] --> B[Generate Variable Combinations]
+    B --> C{Variables Empty?}
+    C -->|Yes| D[Single Empty Map]
+    C -->|No| E[Cartesian Product of Variable Values]
 
-    D --> E{Success?}
-    E -->|Yes| F[Record Response]
-    E -->|No| G[Log Error]
+    E --> F[For Each Temperature]
+    D --> F
 
-    F --> H[Calculate Response Time]
-    H --> I[Calculate Metrics]
-    I --> J[Create ExperimentalResult]
-
-    G --> K[Create Error Record]
-
-    J --> L[Add to Results List]
-    K --> L
-
-    L --> M[Update Progress UI]
-    M --> N[Write to Transcript]
-    N --> O[End Trial]
-
-    style A fill:#e1f5ff
-    style O fill:#e1ffe1
-    style G fill:#ffe1e1
-```
-
-### 4. Metrics System
-
-#### Metrics Calculation Flow
-
-```mermaid
-flowchart LR
-    A[Response Text] --> B{Metric Type}
-
-    B -->|response_length| C[Count Characters]
-    B -->|word_count| D[Split by Whitespace]
-    B -->|sentence_count| E[Split by Punctuation]
-    B -->|avg_word_length| F[Calculate Average]
-    B -->|uppercase_ratio| G[Count Uppercase/Total]
-    B -->|pattern_*| H[Regex Search]
-
-    C --> I[Metrics Map]
-    D --> I
-    E --> I
-    F --> I
-    G --> I
-    H --> I
-
-    style A fill:#e1f5ff
-    style I fill:#e1ffe1
-```
-
-**Built-in Metrics:**
-
-| Metric | Calculation | Purpose |
-|--------|-------------|---------|
-| `response_length` | Character count | Measure verbosity |
-| `word_count` | Whitespace-delimited tokens | Measure response size |
-| `sentence_count` | Punctuation-delimited segments | Measure complexity |
-| `avg_word_length` | Mean word length | Measure vocabulary complexity |
-| `uppercase_ratio` | Uppercase letters / total letters | Measure emphasis patterns |
-| `pattern_*` | Regex match count | Custom pattern detection |
-
-### 5. Statistical Analysis
-
-#### Analysis Pipeline
-
-```mermaid
-flowchart TD
-    A[Experimental Results] --> B[Group by Temperature]
-    B --> C[Calculate Summary Statistics]
-
-    C --> D[Mean]
-    C --> E[Standard Deviation]
-    C --> F[Min/Max]
-
-    D --> G[Temperature Comparison]
-    E --> G
-    F --> G
-
-    A --> H[Group by Variables]
-    H --> I[Variable Effect Analysis]
-
-    G --> J{Statistical Analysis Enabled?}
-    I --> J
-
-    J -->|Yes| K[Calculate T-Statistics]
-    J -->|No| L[Skip Statistical Tests]
-
-    K --> M[Diversity Analysis]
+    F --> G[For Each Template]
+    G --> H[For Each Variable Combination]
+    H --> I[Substitute Variables in Template]
+    I --> J{Duplicate Check}
+    J -->|Unique| K[Add to Conditions List]
+    J -->|Duplicate| L[Skip]
+    K --> M[Next Combination]
     L --> M
+    M --> N{More Combinations?}
+    N -->|Yes| H
+    N -->|No| O[Return Conditions List]
 
-    M --> N[Generate Analysis Report]
-
-    style A fill:#e1f5ff
-    style N fill:#e1ffe1
+    style A fill:#90EE90
+    style O fill:#90EE90
 ```
 
-#### Statistical Calculations
+**Algorithm Details:**
 
-**Standard Deviation:**
+The condition generation uses a recursive Cartesian product algorithm:
+
 ```kotlin
-fun calculateStdDev(values: List<Double>): Double {
-    if (values.size < 2) return 0.0
-    val mean = values.average()
-    val variance = values.map { (it - mean) * (it - mean) }.average()
-    return sqrt(variance)
-}
-```
+fun generateVariableCombinations(variables: Map<String, List<String>>): List<Map<String, String>> {
+    if (variables.isEmpty()) return listOf(emptyMap())
 
-**T-Statistic (Two-Sample):**
-```kotlin
-fun calculateTStatistic(sample1: List<Double>, sample2: List<Double>): Double {
-    val mean1 = sample1.average()
-    val mean2 = sample2.average()
-    val var1 = sample1.map { (it - mean1) * (it - mean1) }.average()
-    val var2 = sample2.map { (it - mean2) * (it - mean2) }.average()
+    val keys = variables.keys.toList()
+    val values = keys.map { variables[it]!! }
 
-    val pooledStdErr = sqrt(var1 / sample1.size + var2 / sample2.size)
-    return if (pooledStdErr > 0) (mean1 - mean2) / pooledStdErr else 0.0
-}
-```
+    fun combine(index: Int, current: Map<String, String>): List<Map<String, String>> {
+        if (index == keys.size) return listOf(current)
 
-**Diversity Ratio:**
-```
-diversity_ratio = unique_responses / total_responses
-```
-
-### 6. User Interface System
-
-#### Tabbed Display Architecture
-
-```mermaid
-graph TB
-    subgraph "TabbedDisplay"
-        A[Overview Tab] --> B[Experiment Summary]
-        A --> C[Progress Tracking]
-
-        D[Progress Tab] --> E[Condition Details]
-        D --> F[Trial Results]
-        D --> G[Real-time Updates]
-
-        H[Analysis Tab] --> I[Statistical Summaries]
-        H --> J[Comparative Analysis]
-        H --> K[Significance Tests]
-
-        L[Insights Tab] --> M[LLM-Generated Insights]
-        L --> N[Patterns & Trends]
-        L --> O[Recommendations]
-    end
-
-    style A fill:#e1f5ff
-    style D fill:#ffe1e1
-    style H fill:#e1ffe1
-    style L fill:#fff5e1
-```
-
-#### UI Update Flow
-
-```mermaid
-sequenceDiagram
-    participant E as Execution Loop
-    participant O as Overview Task
-    participant P as Progress Task
-    participant A as Analysis Task
-    participant I as Insights Task
-    participant U as UI System
-
-    E->>O: Initial status
-    O->>U: update()
-
-    loop for each condition
-        E->>P: Condition start
-        P->>U: update()
-
-        loop for each trial
-            E->>P: Trial result
-            P->>U: update()
-        end
-
-        E->>P: Condition summary
-        P->>U: update()
-        E->>O: Progress update
-        O->>U: update()
-    end
-
-    E->>A: Statistical analysis
-    A->>U: update()
-
-    E->>I: Generated insights
-    I->>U: update()
-
-    E->>O: Final summary
-    O->>U: update()
-```
-
-### 7. Report Generation
-
-#### Transcript File Structure
-
-```mermaid
-flowchart TD
-    A[Transcript File] --> B[Header Section]
-    B --> C[Experiment Type]
-    B --> D[Timestamp]
-    B --> E[Configuration]
-
-    A --> F[Experimental Design]
-    F --> G[Prompt Template]
-    F --> H[Variables]
-    F --> I[Parameters]
-
-    A --> J[Condition Results]
-    J --> K[Condition 1]
-    J --> L[Condition 2]
-    J --> M[Condition N]
-
-    K --> N[Repetition Results]
-    K --> O[Condition Summary]
-
-    A --> P[Statistical Analysis]
-    P --> Q[Summary Statistics]
-    P --> R[Variable Effects]
-    P --> S[Significance Tests]
-
-    A --> T[Insights Section]
-    T --> U[Key Findings]
-    T --> V[Recommendations]
-
-    A --> W[Footer]
-    W --> X[Completion Time]
-    W --> Y[Total Statistics]
-
-    style A fill:#e1f5ff
-    style J fill:#ffe1e1
-    style P fill:#e1ffe1
-    style T fill:#fff5e1
-```
-
-#### Report Generation Flow
-
-```mermaid
-sequenceDiagram
-    participant T as Task
-    participant F as FileSystem
-    participant M as MarkdownWriter
-    participant C as ContentGenerator
-    participant R as Renderer
-
-    T->>F: Create transcript file
-    F-->>T: FileOutputStream
-
-    T->>M: Write header
-    M->>F: Write to file
-
-    loop for each condition
-        T->>C: Generate condition content
-        C-->>T: Markdown content
-        T->>M: Write condition section
-        M->>F: Write to file
-    end
-
-    T->>C: Generate analysis
-    C-->>T: Analysis content
-    T->>M: Write analysis section
-    M->>F: Write to file
-
-    T->>C: Generate insights
-    C-->>T: Insights content
-    T->>M: Write insights section
-    M->>F: Write to file
-
-    T->>M: Write footer
-    M->>F: Write to file
-    M->>F: Close file
-
-    T->>R: Generate HTML/PDF
-    R->>F: Create rendered versions
-```
-
-## Detailed Process Flows
-
-### Complete Experiment Lifecycle
-
-```mermaid
-stateDiagram-v2
-    [*] --> Initialization
-
-    Initialization --> Validation
-    Validation --> DesignGeneration: Valid
-    Validation --> Error: Invalid
-
-    DesignGeneration --> ConditionSetup
-    ConditionSetup --> TrialExecution
-
-    state TrialExecution {
-        [*] --> NextCondition
-        NextCondition --> NextRepetition
-        NextRepetition --> ExecuteTrial
-        ExecuteTrial --> CollectMetrics
-        CollectMetrics --> StoreResult
-        StoreResult --> UpdateUI
-        UpdateUI --> NextRepetition: More reps
-        UpdateUI --> ConditionSummary: Condition complete
-        ConditionSummary --> NextCondition: More conditions
-        ConditionSummary --> [*]: All complete
+        val results = mutableListOf<Map<String, String>>()
+        values[index].forEach { value ->
+            results.addAll(combine(index + 1, current + (keys[index] to value)))
+        }
+        return results
     }
 
-    TrialExecution --> Analysis
-    Analysis --> InsightGeneration
-    InsightGeneration --> ReportGeneration
-    ReportGeneration --> Completion
-
-    Error --> [*]
-    Completion --> [*]
+    return combine(0, emptyMap())
+}
 ```
 
-### Error Handling Flow
+### 3. Trial Execution Pipeline
+
+```mermaid
+flowchart TD
+    A[Experimental Condition] --> B[Create ChatAgent with Temperature]
+    B --> C[Submit to Thread Pool]
+    C --> D[Execute Trial]
+    D --> E[Measure Start Time]
+    E --> F[Call agent.answer]
+    F --> G[Receive Response]
+    G --> H[Measure End Time]
+    H --> I[Calculate Response Time]
+    I --> J[Calculate Metrics via LLM]
+    J --> K[Create ExperimentalResult]
+    K --> L{Success?}
+    L -->|Yes| M[Add to Results]
+    L -->|No| N[Increment Failed Trials]
+    M --> O[Update Progress]
+    N --> O
+    O --> P[Write to Transcript]
+
+    style A fill:#87CEEB
+    style K fill:#FFE4B5
+    style M fill:#90EE90
+    style N fill:#FFB6C1
+```
+
+### 4. Metrics Calculation Flow
+
+```mermaid
+sequenceDiagram
+    participant Task
+    participant ParsedAgent
+    participant LLM
+    participant Result
+
+    Task->>ParsedAgent: calculateMetrics(metrics, response)
+    ParsedAgent->>ParsedAgent: Create evaluation prompt
+    ParsedAgent->>LLM: Evaluate response on metrics
+    LLM-->>ParsedAgent: MetricRatings object
+    ParsedAgent->>ParsedAgent: Extract ratings map
+    ParsedAgent->>ParsedAgent: Match metric names (fuzzy)
+    ParsedAgent-->>Task: Map<String, Double>
+    Task->>Result: Store in ExperimentalResult
+```
+
+**Metric Rating Structure:**
+
+```mermaid
+classDiagram
+    class MetricRating {
+        +Double score
+        +String reasoning
+    }
+
+    class MetricRatings {
+        +Map~String,MetricRating~ ratings
+    }
+
+    class ExperimentalResult {
+        +Map~String,Double~ metrics
+    }
+
+    MetricRatings --> MetricRating
+    ExperimentalResult --> MetricRatings : extracts scores
+```
+
+## Statistical Analysis
+
+### 5. Analysis Pipeline
+
+```mermaid
+flowchart TD
+    A[All Experimental Results] --> B[Group by Temperature]
+    A --> C[Group by Variables]
+
+    B --> D[Calculate Descriptive Stats]
+    D --> D1[Mean, SD, Min, Max, Median, CV]
+
+    C --> E[Calculate Variable Effects]
+    E --> E1[Mean, SD, 95% CI per value]
+
+    B --> F{Multiple Temperatures?}
+    F -->|Yes| G[Pairwise T-Tests]
+    F -->|No| H[Skip Comparisons]
+
+    G --> G1[Calculate t-statistic]
+    G1 --> G2[Calculate p-value]
+    G2 --> G3[Calculate Cohen's d]
+    G3 --> G4[Determine Significance]
+
+    C --> I{Multiple Variable Values?}
+    I -->|Yes| J[Variable Pairwise Tests]
+    I -->|No| K[Skip]
+
+    A --> L[Calculate Correlation Matrix]
+    L --> L1[Pearson Correlation for all metric pairs]
+
+    D1 --> M[Generate Statistical Tables]
+    E1 --> M
+    G4 --> M
+    J --> M
+    L1 --> M
+
+    M --> N[Format as Markdown Tables]
+    N --> O[Return Analysis Report]
+
+    style A fill:#87CEEB
+    style O fill:#90EE90
+```
+
+### 6. Statistical Tables Generation
+
+```mermaid
+graph TD
+    A[generateStatisticalTables] --> B[Table 1: Descriptive Statistics by Temperature]
+    A --> C[Table 2: Pairwise Temperature Comparisons]
+    A --> D[Table 3: Variable Effects Analysis]
+    A --> E[Table 4: Correlation Matrix]
+    A --> F[Table 5: Effect Sizes Summary]
+
+    B --> B1[For each temperature]
+    B1 --> B2[For each metric]
+    B2 --> B3[Calculate: Mean, SD, Min, Max, Median, CV]
+
+    C --> C1[For each temperature pair]
+    C1 --> C2[For each metric]
+    C2 --> C3[Calculate: t-stat, p-value, Cohen's d]
+
+    D --> D1[For each variable]
+    D1 --> D2[For each value]
+    D2 --> D3[Calculate: Mean, SD, 95% CI]
+    D1 --> D4[Pairwise comparisons]
+
+    E --> E1[For each metric pair]
+    E1 --> E2[Calculate Pearson correlation]
+
+    F --> F1[For each comparison]
+    F1 --> F2[Calculate Cohen's d]
+    F2 --> F3[Interpret effect size]
+
+    style A fill:#87CEEB
+```
+
+### 7. T-Test Calculation
+
+```mermaid
+flowchart TD
+    A[Two Samples] --> B[Calculate Means]
+    B --> C[Calculate Variances]
+    C --> D[Calculate Pooled Standard Error]
+    D --> E[Calculate t-statistic]
+    E --> F[t = mean_diff / pooled_SE]
+    F --> G[Calculate Degrees of Freedom]
+    G --> H[df = n1 + n2 - 2]
+    H --> I[Approximate p-value]
+    I --> J{df > 30?}
+    J -->|Yes| K[Use Normal Approximation]
+    J -->|No| L[Use Conservative Adjustment]
+    K --> M[Calculate using erf function]
+    L --> M
+    M --> N[Return p-value]
+
+    style A fill:#87CEEB
+    style N fill:#90EE90
+```
+
+**Mathematical Formulas:**
+
+1. **T-Statistic:**
+   ```
+   t = (μ₁ - μ₂) / √(σ₁²/n₁ + σ₂²/n₂)
+   ```
+
+2. **Cohen's d:**
+   ```
+   d = (μ₁ - μ₂) / σ_pooled
+   where σ_pooled = √((σ₁² + σ₂²) / 2)
+   ```
+
+3. **Coefficient of Variation:**
+   ```
+   CV = σ / μ
+   ```
+
+4. **Pearson Correlation:**
+   ```
+   r = Σ((x - μₓ)(y - μᵧ)) / √(Σ(x - μₓ)² × Σ(y - μᵧ)²)
+   ```
+
+### 8. Response Diversity Calculation
+
+```mermaid
+flowchart TD
+    A[List of Results] --> B[For each result A]
+    B --> C[For each other result B]
+    C --> D[Compress A alone]
+    C --> E[Compress B alone]
+    C --> F[Compress A+B concatenated]
+    D --> G[Calculate: size_A + size_B / size_AB]
+    E --> G
+    F --> G
+    G --> H[Average across all pairs]
+    H --> I{Compressibility Score}
+    I -->|< 1.1| J[High Diversity]
+    I -->|1.1-1.5| K[Moderate Diversity]
+    I -->|> 1.5| L[Low Diversity]
+
+    style A fill:#87CEEB
+    style J fill:#90EE90
+    style K fill:#FFE4B5
+    style L fill:#FFB6C1
+```
+
+**Diversity Interpretation:**
+- **Compressibility ≈ 1.0**: Responses are highly unique (incompressible together)
+- **Compressibility ≈ 2.0**: Responses are nearly identical (highly compressible)
+
+## Output Generation
+
+### 9. Tabbed Display Structure
+
+```mermaid
+graph TD
+    A[TabbedDisplay] --> B[Overview Tab]
+    A --> C[Progress Tab]
+    A --> D[Statistical Tables Tab]
+    A --> E[Analysis Tab]
+    A --> F[Insights Tab]
+
+    B --> B1[Experiment Design Summary]
+    B --> B2[Progress Updates]
+    B --> B3[Completion Status]
+
+    C --> C1[Condition-by-Condition Progress]
+    C --> C2[Trial Completion Stats]
+    C --> C3[Condition Summaries]
+
+    D --> D1[Table 1: Descriptive Stats]
+    D --> D2[Table 2: Pairwise Comparisons]
+    D --> D3[Table 3: Variable Effects]
+    D --> D4[Table 4: Correlation Matrix]
+    D --> D5[Table 5: Effect Sizes]
+
+    E --> E1[Summary Statistics]
+    E --> E2[Temperature Effects]
+    E --> E3[Variable Effects]
+    E --> E4[Response Diversity]
+
+    F --> F1[LLM-Generated Insights]
+    F --> F2[Key Patterns]
+    F --> F3[Recommendations]
+
+    style A fill:#87CEEB
+```
+
+### 10. Transcript File Generation
+
+```mermaid
+sequenceDiagram
+    participant Task
+    participant File as Transcript File
+    participant Writer as BufferedWriter
+
+    Task->>File: Create transcript file
+    Task->>Writer: Open buffered writer
+
+    Writer->>File: Write experiment design
+    Writer->>File: Write start timestamp
+
+    loop For each condition
+        Writer->>File: Write condition header
+        Writer->>File: Write variables and prompt
+
+        loop For each repetition
+            Writer->>File: Write repetition number
+            Writer->>File: Write response time
+            Writer->>File: Write response preview
+        end
+
+        Writer->>File: Write condition summary
+    end
+
+    Writer->>File: Write statistical tables
+    Writer->>File: Write analysis
+    Writer->>File: Write insights
+    Writer->>File: Write completion timestamp
+    Writer->>File: Write summary statistics
+
+    Writer->>File: Close file
+    Task->>Task: Generate HTML/PDF versions
+```
+
+## Concurrency Model
+
+### 11. Thread Pool Execution
+
+```mermaid
+flowchart TD
+    A[Main Thread] --> B[Create Thread Pool]
+    B --> C[For Each Condition]
+    C --> D[Submit N Repetitions to Pool]
+    D --> E[Thread Pool]
+
+    E --> F1[Worker Thread 1]
+    E --> F2[Worker Thread 2]
+    E --> F3[Worker Thread 3]
+    E --> F4[Worker Thread N]
+
+    F1 --> G1[Execute Trial]
+    F2 --> G2[Execute Trial]
+    F3 --> G3[Execute Trial]
+    F4 --> G4[Execute Trial]
+
+    G1 --> H[Collect Results Thread-Safe]
+    G2 --> H
+    G3 --> H
+    G4 --> H
+
+    H --> I[ConcurrentHashMap]
+    I --> J[Wait for All Futures]
+    J --> K{All Complete?}
+    K -->|Yes| L[Process Next Condition]
+    K -->|No| J
+    L --> M{More Conditions?}
+    M -->|Yes| C
+    M -->|No| N[Analyze All Results]
+
+    style A fill:#87CEEB
+    style E fill:#FFE4B5
+    style I fill:#90EE90
+```
+
+**Thread Safety Mechanisms:**
+
+1. **ConcurrentHashMap**: Thread-safe storage for results
+2. **AtomicInteger**: Thread-safe counters for completed/failed trials
+3. **Synchronized blocks**: For transcript writing
+4. **Future.get()**: Ensures all trials complete before proceeding
+
+## Error Handling
+
+### 12. Error Flow
 
 ```mermaid
 flowchart TD
     A[Operation] --> B{Error Occurs?}
     B -->|No| C[Continue]
-    B -->|Yes| D[Log Error]
+    B -->|Yes| D{Error Type}
 
-    D --> E{Critical Error?}
-    E -->|Yes| F[Stop Experiment]
-    E -->|No| G[Record Partial Results]
+    D -->|Configuration Error| E[Validate Config]
+    E --> F[Return Error Message]
+    F --> G[Complete Task with Error]
 
-    F --> H[Write Error to Transcript]
-    G --> H
+    D -->|Trial Execution Error| H[Catch Exception]
+    H --> I[Increment Failed Trials]
+    I --> J[Log Error]
+    J --> K[Write to Transcript]
+    K --> L[Continue with Other Trials]
 
-    H --> I[Update UI with Error]
-    I --> J[Generate Partial Report]
+    D -->|Fatal Error| M[Catch in Main Try-Catch]
+    M --> N[Write Error to Transcript]
+    N --> O[Update Overview Tab]
+    O --> P[Generate Partial Results]
+    P --> Q[Complete Task with Error]
 
-    J --> K{Results Available?}
-    K -->|Yes| L[Include Partial Analysis]
-    K -->|No| M[Error Report Only]
-
-    L --> N[Return Error Output]
-    M --> N
-
-    F --> O[Task Error State]
-    G --> P[Task Partial Complete]
-
-    style A fill:#e1f5ff
-    style F fill:#ffe1e1
-    style O fill:#ffe1e1
+    style B fill:#FFE4B5
+    style F fill:#FFB6C1
+    style G fill:#FFB6C1
+    style Q fill:#FFB6C1
 ```
 
 ## Data Structures
 
-### Core Data Models
+### 13. Key Data Structures
 
 ```mermaid
 erDiagram
-    EXPERIMENT ||--o{ CONDITION : contains
-    CONDITION ||--o{ RESULT : generates
-    RESULT ||--|| METRICS : has
+    LLMExperimentTaskExecutionConfigData ||--o{ ExperimentalCondition : generates
+    ExperimentalCondition ||--o{ ExperimentalResult : produces
+    ExperimentalResult ||--|| MetricRatings : contains
 
-    EXPERIMENT {
-        string experiment_type
-        string prompt_template
-        map prompt_variables
-        list temperature_values
-        int repetitions
-        boolean statistical_analysis
+    LLMExperimentTaskExecutionConfigData {
+        List_String prompt_templates
+        Map_String_List_String prompt_variables
+        List_String metrics
+        List_Double temperature_values
+        Int repetitions
+        Boolean statistical_analysis
+        Double significance_level
     }
 
-    CONDITION {
-        double temperature
-        map variables
-        string prompt
-        int index
+    ExperimentalCondition {
+        Double temperature
+        Map_String_String variables
+        String prompt
     }
 
-    RESULT {
-        int condition_index
-        int repetition
-        double temperature
-        map variables
-        string prompt
-        string response
-        long response_time
+    ExperimentalResult {
+        Int conditionIndex
+        Int repetition
+        Double temperature
+        Map_String_String variables
+        String prompt
+        String response
+        Long responseTime
+        Map_String_Double metrics
     }
 
-    METRICS {
-        double response_length
-        double word_count
-        double sentence_count
-        double avg_word_length
-        double uppercase_ratio
-        map custom_metrics
+    MetricRatings {
+        Map_String_MetricRating ratings
+    }
+
+    MetricRating {
+        Double score
+        String reasoning
     }
 ```
 
-### Result Aggregation
+## Performance Characteristics
+
+### 14. Performance Metrics
 
 ```mermaid
-flowchart LR
-    A[Individual Results] --> B[Group by Temperature]
-    A --> C[Group by Variables]
-    A --> D[Group by Condition]
+graph LR
+    A[Performance Factors] --> B[Number of Conditions]
+    A --> C[Repetitions per Condition]
+    A --> D[Thread Pool Size]
+    A --> E[LLM Response Time]
+    A --> F[Metric Calculation Time]
 
-    B --> E[Temperature Statistics]
-    C --> F[Variable Effects]
-    D --> G[Condition Summaries]
+    B --> G[Total Trials = Conditions × Repetitions]
+    C --> G
 
-    E --> H[Comparative Analysis]
-    F --> H
-    G --> H
+    D --> H[Parallelization Factor]
+    E --> H
 
-    H --> I[Final Report]
+    G --> I[Total Execution Time]
+    H --> I
+    F --> I
 
-    style A fill:#e1f5ff
-    style I fill:#e1ffe1
+    I --> J[Throughput = Trials / Time]
+
+    style A fill:#87CEEB
+    style I fill:#FFE4B5
+    style J fill:#90EE90
 ```
 
-## Integration Points
+**Time Complexity:**
+- Condition Generation: O(T × P × V) where T=templates, P=prompt variables (Cartesian product), V=variable values
+- Trial Execution: O(C × R × M) where C=conditions, R=repetitions, M=LLM response time
+- Statistical Analysis: O(C² × M) for pairwise comparisons
+- Overall: O(C × R × M) dominated by trial execution
 
-### External System Interactions
+**Space Complexity:**
+- Results Storage: O(C × R × (P + M)) where P=prompt size, M=metrics count
+- Transcript File: O(C × R × R_size) where R_size=average response size
 
-```mermaid
-graph TB
-    subgraph "LLMExperimentTask"
-        A[Task Core]
-    end
+## Usage Examples
 
-    subgraph "Orchestration System"
-        B[TaskOrchestrator]
-        C[SessionTask]
-    end
-
-    subgraph "AI Services"
-        D[ChatAgent]
-        E[API Client]
-    end
-
-    subgraph "UI System"
-        F[TabbedDisplay]
-        G[Task UI]
-    end
-
-    subgraph "File System"
-        H[Transcript Files]
-        I[Report Files]
-    end
-
-    B --> A
-    C --> A
-    A --> D
-    D --> E
-    A --> F
-    F --> G
-    A --> H
-    A --> I
-
-    style A fill:#e1f5ff
-    style D fill:#ffe1e1
-    style F fill:#e1ffe1
-```
-
-## Performance Considerations
-
-### Execution Time Estimation
+### 15. Example Configuration Flow
 
 ```mermaid
 flowchart TD
-    A[Calculate Total Trials] --> B[trials = conditions × repetitions]
-    B --> C[Estimate Per-Trial Time]
-    C --> D[avg_time = historical_avg or 5s]
-    D --> E[Calculate Total Time]
-    E --> F[total = trials × avg_time]
-    F --> G[Add Analysis Overhead]
-    G --> H[overhead = 10-30s]
-    H --> I[Final Estimate]
+    A[User Defines Experiment] --> B[Set Prompt Templates]
+    B --> C[Define Variables]
+    C --> D[Select Temperature Values]
+    D --> E[Choose Metrics]
+    E --> F[Set Repetitions]
+    F --> G[Configure Statistical Analysis]
 
-    style A fill:#e1f5ff
-    style I fill:#e1ffe1
+    G --> H[Create Config Object]
+    H --> I[Validate Configuration]
+    I --> J{Valid?}
+    J -->|No| K[Show Validation Errors]
+    J -->|Yes| L[Execute Experiment]
+
+    L --> M[Generate Conditions]
+    M --> N[Run Trials]
+    N --> O[Analyze Results]
+    O --> P[Generate Report]
+
+    style A fill:#87CEEB
+    style P fill:#90EE90
+    style K fill:#FFB6C1
 ```
 
-**Example Calculation:**
-```
-Conditions: 4 temperatures × 3 variable combinations = 12 conditions
-Repetitions: 5
-Total trials: 12 × 5 = 60 trials
-Avg trial time: 3 seconds
-Execution time: 60 × 3 = 180 seconds (3 minutes)
-Analysis overhead: 20 seconds
-Total time: ~3.5 minutes
+**Example Configuration:**
+
+```kotlin
+val config = LLMExperimentTaskExecutionConfigData(
+    prompt_templates = listOf(
+        "Explain {concept} in simple terms",
+        "What is {concept}? Provide a detailed explanation"
+    ),
+    prompt_variables = mapOf(
+        "concept" to listOf("quantum computing", "machine learning", "blockchain")
+    ),
+    temperature_values = listOf(0.1, 0.5, 0.9),
+    repetitions = 5,
+    metrics = listOf("clarity", "technical_accuracy", "completeness"),
+    statistical_analysis = true,
+    significance_level = 0.05
+)
 ```
 
-### Resource Management
+This generates:
+- 2 templates × 3 concepts × 3 temperatures = 18 conditions
+- 18 conditions × 5 repetitions = 90 total trials
+
+## Integration Points
+
+### 16. System Integration
 
 ```mermaid
-flowchart LR
-    A[Resource Pool] --> B[API Rate Limits]
-    A --> C[Memory Usage]
-    A --> D[File I/O]
+graph TD
+    A[LLMExperimentTask] --> B[TaskOrchestrator]
+    A --> C[ChatInterface API]
+    A --> D[SessionTask UI]
+    A --> E[File System]
 
-    B --> E[Throttling Strategy]
-    C --> F[Result Streaming]
-    D --> G[Buffered Writing]
+    B --> B1[Task Scheduling]
+    B --> B2[Dependency Management]
 
-    E --> H[Optimized Execution]
-    F --> H
-    G --> H
+    C --> C1[ChatAgent]
+    C --> C2[ParsedAgent]
+    C --> C3[Model API Calls]
 
-    style A fill:#e1f5ff
-    style H fill:#e1ffe1
+    D --> D1[TabbedDisplay]
+    D --> D2[Progress Updates]
+    D --> D3[Task Completion]
+
+    E --> E1[Transcript Files]
+    E --> E2[HTML/PDF Generation]
+
+    style A fill:#87CEEB
 ```
 
 ## Best Practices
 
-### Experiment Design Guidelines
-
-1. **Sample Size**: Use at least 5 repetitions for statistical validity
-2. **Temperature Range**: Test 0.0 (deterministic), 0.5 (balanced), 1.0 (creative)
-3. **Variable Control**: Change one variable at a time when possible
-4. **Randomization**: Always enable randomization to avoid order effects
-5. **Metrics Selection**: Choose metrics relevant to research question
-
-### Configuration Examples
-
-#### Bias Study
-```kotlin
-LLMExperimentTaskExecutionConfigData(
-    prompt_template = "What are your thoughts on {topic} for {demographic}?",
-    prompt_variables = mapOf(
-        "topic" to listOf("healthcare", "education", "employment"),
-        "demographic" to listOf("young adults", "seniors", "children")
-    ),
-    temperature_values = listOf(0.0, 0.5, 1.0),
-    repetitions = 10,
-    experiment_type = "bias_study",
-    metrics = listOf("response_length", "sentiment", "contains_keywords"),
-    search_patterns = listOf("should", "must", "always", "never"),
-    statistical_analysis = true
-)
-```
-
-#### Consistency Test
-```kotlin
-LLMExperimentTaskExecutionConfigData(
-    prompt_template = "Solve this problem: {problem}",
-    prompt_variables = mapOf(
-        "problem" to listOf("2+2", "What is the capital of France?")
-    ),
-    temperature_values = listOf(0.0, 0.5, 1.0, 1.5),
-    repetitions = 20,
-    experiment_type = "consistency_test",
-    metrics = listOf("response_length", "word_count"),
-    statistical_analysis = true,
-    randomize_order = true
-)
-```
-
-## Troubleshooting
-
-### Common Issues and Solutions
-
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| Configuration validation fails | Invalid parameter values | Check validation rules in documentation |
-| Trials timing out | max_tokens too high | Reduce max_tokens to 500 or less |
-| Inconsistent results | Temperature too high | Use lower temperature (0.0-0.5) |
-| Memory issues | Too many conditions | Reduce variables or repetitions |
-| API rate limits | Too many rapid requests | Add delays between trials |
-
-### Debug Flow
+### 17. Recommended Workflow
 
 ```mermaid
 flowchart TD
-    A[Issue Detected] --> B{Configuration Valid?}
-    B -->|No| C[Fix Configuration]
-    B -->|Yes| D{Trials Completing?}
+    A[Start] --> B[Define Research Question]
+    B --> C[Design Prompt Templates]
+    C --> D[Identify Variables]
+    D --> E[Select Temperature Range]
+    E --> F[Choose Appropriate Metrics]
+    F --> G[Determine Sample Size]
+    G --> H{Pilot Test}
+    H -->|Issues Found| I[Refine Design]
+    I --> C
+    H -->|Looks Good| J[Run Full Experiment]
+    J --> K[Review Statistical Tables]
+    K --> L[Analyze Insights]
+    L --> M[Draw Conclusions]
+    M --> N{Need Follow-up?}
+    N -->|Yes| O[Design Follow-up Experiment]
+    O --> C
+    N -->|No| P[Document Findings]
 
-    D -->|No| E[Check API Connection]
-    D -->|Yes| F{Results Accurate?}
+    style A fill:#90EE90
+    style P fill:#90EE90
+```
 
-    E --> G[Verify Credentials]
-    E --> H[Check Rate Limits]
+## Limitations and Considerations
 
-    F -->|No| I[Review Metrics Calculation]
-    F -->|Yes| J{Analysis Correct?}
+### 18. System Constraints
 
-    J -->|No| K[Check Statistical Functions]
-    J -->|Yes| L[Issue Resolved]
-
-    style A fill:#ffe1e1
-    style L fill:#e1ffe1
+```mermaid
+mindmap
+    root((Limitations))
+        Configuration
+            Max 100 repetitions
+            Temperature 0.0-2.0
+            Prompt template required
+        Performance
+            LLM API rate limits
+            Memory for large experiments
+            Disk space for transcripts
+        Statistical
+            Assumes normal distribution
+            Simplified p-value calculation
+            Limited to t-tests
+        Metrics
+            LLM-based evaluation bias
+            Subjective metric interpretation
+            Consistency across trials
 ```
 
 ## Future Enhancements
 
-Potential areas for expansion:
+Potential improvements to the system:
 
-1. **Advanced Statistical Tests**: ANOVA, chi-square, correlation analysis
-2. **Visualization**: Charts and graphs for result visualization
-3. **Parallel Execution**: Run multiple trials concurrently
-4. **Result Caching**: Store and reuse previous experimental results
-5. **Comparative Experiments**: Compare multiple models simultaneously
-6. **Real-time Monitoring**: Live dashboards during execution
-7. **Export Formats**: CSV, JSON, XML export options
-8. **Experiment Templates**: Pre-configured experiment types
-
+1. **Advanced Statistical Tests**: ANOVA, chi-square, non-parametric tests
+2. **Visualization**: Charts and graphs for results
+3. **Experiment Templates**: Pre-configured experiments for common use cases
+4. **Real-time Monitoring**: Live dashboards during execution
+5. **Result Caching**: Avoid re-running identical conditions
+6. **Distributed Execution**: Scale across multiple machines
+7. **A/B Testing Mode**: Simplified interface for binary comparisons
+8. **Bayesian Analysis**: Alternative to frequentist statistics

@@ -5,7 +5,9 @@ import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.google.common.cache.RemovalListener
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil.markdownToHtml
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
@@ -297,33 +299,28 @@ abstract class FileServlet : HttpServlet() {
     private fun renderMarkdown(mdFile: File, resp: HttpServletResponse, asPdf: Boolean) {
         try {
             val markdownContent = mdFile.readText()
-            val options = MutableDataSet()
-            val parser = Parser.builder(options).build()
-            val document = parser.parse(markdownContent)
-            val renderer = HtmlRenderer.builder(options).build()
-            val html = renderer.render(document)
+            val html = markdownContent.markdownToHtml()
+
+            val fullHtml = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 4px; }
+        code { background-color: #f4f4f4; padding: 2px 4px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+    $html
+</body>
+</html>
+"""
 
             if (asPdf) {
                 val outputStream = ByteArrayOutputStream()
                 val baseUri = mdFile.parentFile.toURI().toString()
-
-                // Wrap HTML with proper structure for PDF conversion
-                val fullHtml = """
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 40px; }
-                            pre { background-color: #f4f4f4; padding: 10px; border-radius: 4px; }
-                            code { background-color: #f4f4f4; padding: 2px 4px; border-radius: 2px; }
-                        </style>
-                    </head>
-                    <body>
-                        $html
-                    </body>
-                    </html>
-                """.trimIndent()
 
                 PdfRendererBuilder()
                     .withHtmlContent(fullHtml, baseUri)
@@ -338,7 +335,7 @@ abstract class FileServlet : HttpServlet() {
                 resp.contentType = "text/html"
                 resp.characterEncoding = "UTF-8"
                 resp.status = HttpServletResponse.SC_OK
-                resp.writer.write(html)
+                resp.writer.write(fullHtml)
             }
         } catch (e: Exception) {
             log.error("Error rendering markdown file: ${mdFile.absolutePath}", e)

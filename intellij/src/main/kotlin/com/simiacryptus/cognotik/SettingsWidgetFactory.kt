@@ -296,10 +296,11 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                                 value
                             )
 
-                        val activeThreads = ApplicationServices.threadPoolManager.getPool(value).threadFactory.threads.filter {
+                        val threadFactory = ApplicationServices.threadPoolManager.getPool(value).threadFactory
+                        val activeThreads = threadFactory.threads.filter {
                             when(it.state) {
                                 Thread.State.RUNNABLE -> true
-                                Thread.State.BLOCKED, Thread.State.WAITING, Thread.State.TIMED_WAITING -> false
+                                Thread.State.BLOCKED, Thread.State.WAITING, Thread.State.TIMED_WAITING -> true
                                 else -> false
                             }
                         }.size

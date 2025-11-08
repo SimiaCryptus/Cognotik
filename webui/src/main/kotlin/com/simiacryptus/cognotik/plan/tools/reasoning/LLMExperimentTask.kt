@@ -795,7 +795,7 @@ Be specific and reference the data provided.
             }.average()
         }.average()
         // 1 -> incompressible (high diversity)
-        // 2 -> highly compressible (low diversity)
+        // 2 -> duplicate (low diversity)
         return when {
             compressibility.isNaN() -> "N/A"
             compressibility < 1.1 -> "High Diversity"

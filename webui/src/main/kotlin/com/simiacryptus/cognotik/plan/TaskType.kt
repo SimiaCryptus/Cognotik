@@ -52,6 +52,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 register(taskType)
             }
 
+            registerConstructor(LLMPollSimulationTask.LLMPollSimulation) { settings, task ->
+                LLMPollSimulationTask(settings, task)
+            }
             registerConstructor(LLMExperimentTask.LLMExperiment) { settings, task ->
                 LLMExperimentTask(settings, task)
             }
