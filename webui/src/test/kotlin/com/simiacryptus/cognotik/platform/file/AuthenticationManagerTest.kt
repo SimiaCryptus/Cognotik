@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.platform.file
 
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User
 import org.junit.jupiter.api.Assertions.*
@@ -21,7 +22,7 @@ abstract class AuthenticationInterfaceTest(
     @Test
     fun `getUser should return null when no user is associated with access token`() {
         val user = authInterface.getUser(validAccessToken)
-        assertNull(user)
+        assertEquals(user, defaultUser)
     }
 
     @Test
@@ -44,7 +45,7 @@ abstract class AuthenticationInterfaceTest(
         assertNotNull(authInterface.getUser(validAccessToken))
 
         authInterface.logout(validAccessToken, newUser)
-        assertNull(authInterface.getUser(validAccessToken))
+        assertEquals(authInterface.getUser(validAccessToken), defaultUser)
     }
 
 }

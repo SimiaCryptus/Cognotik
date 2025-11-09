@@ -128,24 +128,31 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
 
     private fun getPackageGroup(taskType: TaskType<*, *>): String {
         return when {
-              taskType.name in listOf(
-            "MultiPerspectiveAnalysis", "SocraticDialogue", "AnalogicalReasoning",
-            "CounterfactualAnalysis", "AbstractionLadder", "ConstraintSatisfaction",
-            "CausalInference", "DecompositionSynthesis",
-            "AbductiveReasoning", "AdversarialReasoning", "ConstraintRelaxation",
-            "DialecticalReasoning", "LateralThinking",
-            "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
-            "GameTheory", "FiniteStateMachine", "Brainstorming",
-            "ChainOfThought", "MetaCognitiveReflection", "GeneticOptimization",
-            "EthicalReasoning", "LLMExperiment", "LLMPollSimulation", "GameEconomy"
-          ) -> "Reasoning"
+            taskType.name in listOf(
+                "SocraticDialogue", "AnalogicalReasoning",
+                "CounterfactualAnalysis", "AbstractionLadder", "ConstraintSatisfaction",
+                "CausalInference", "DecompositionSynthesis", "AbductiveReasoning",
+                "AdversarialReasoning", "ConstraintRelaxation", "LateralThinking",
+                "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
+                "FiniteStateMachine", "Brainstorming",
+                "ChainOfThought", "MetaCognitiveReflection", "GeneticOptimization",
+            ) -> "Reasoning"
 
-          taskType.name in listOf(
+            taskType.name in listOf(
+                "PoliticalOptimization", "MultiPerspectiveAnalysis", "DialecticalReasoning",
+                "GameTheory", "EthicalReasoning", "LLMExperiment",
+                "LLMPollSimulation", "PersuasiveEssay",
+            ) -> "Social"
+
+            taskType.name in listOf(
+                "GameLevelDesign", "GameNarrativeDesign", "GameMechanicsDesign", "GameEconomy",
+            ) -> "Gaming"
+
+            taskType.name in listOf(
             "NarrativeGeneration", "NarrativeReasoning", "ArticleGeneration",
-            "PersuasiveEssay", "TechnicalExplanation", "TutorialGeneration",
+            "TechnicalExplanation", "TutorialGeneration",
             "BusinessProposal", "EmailCampaign", "InteractiveStory",
             "ReportGeneration", "Scriptwriting", "JournalismReasoning",
-            "GameLevelDesign", "GameNarrativeDesign", "GameMechanicsDesign",
             "ResearchPaperGeneration",
           ) -> "Writing"
 

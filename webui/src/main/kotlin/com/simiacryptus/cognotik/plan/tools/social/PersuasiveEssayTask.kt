@@ -1,36 +1,47 @@
-package com.simiacryptus.cognotik.plan.tools.persuasion
+package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.ImageAndText
+import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
-import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
+import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.agents.ImageAndText
-import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import javax.imageio.ImageIO
 import org.slf4j.Logger
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.imageio.ImageIO
 
 class PersuasiveEssayTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: PersuasiveEssayTaskExecutionConfigData?
-) : AbstractTask<PersuasiveEssayTask.PersuasiveEssayTaskExecutionConfigData, TaskTypeConfig>(
+) : AbstractTask<PersuasiveEssayTask.PersuasiveEssayTaskExecutionConfigData, PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
-
+    class PersuasiveEssayTaskTypeConfig(
+        @Description("Whether to generate images for the essay")
+        val generate_images: Boolean = true,
+        @Description("Whether to generate a cover image for the essay")
+        val generate_cover_image: Boolean = true,
+    ) : TaskTypeConfig(
+        task_type = PersuasiveEssay.name,
+        name = "Persuasive Essay Task"
+    )
     class PersuasiveEssayTaskExecutionConfigData(
+        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+        val input_files: List<String>? = null,
+
         @Description("The thesis statement or position to argue for")
         val thesis: String? = null,
 
@@ -61,15 +72,8 @@ class PersuasiveEssayTask(
         @Description("Call to action type (MUST BE one of: 'strong', 'moderate', 'reflective', 'none')")
         val call_to_action: String = "strong",
 
-@Description("Number of revision passes for quality improvement")
+        @Description("Number of revision passes for quality improvement")
         val revision_passes: Int = 1,
-        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-        val input_files: List<String>? = null,
-       @Description("Whether to generate images for the essay")
-       val generate_images: Boolean = true,
-       @Description("Whether to generate a cover image for the essay")
-       val generate_cover_image: Boolean = true,
-
 
         @Description("Related files or research to incorporate")
         val related_files: List<String>? = null,
@@ -93,7 +97,7 @@ class PersuasiveEssayTask(
             if (num_arguments < 1 || num_arguments > 10) {
                 return "num_arguments must be between 1 and 10, got: $num_arguments"
             }
-if (revision_passes < 0 || revision_passes > 5) {
+            if (revision_passes < 0 || revision_passes > 5) {
                 return "revision_passes must be between 0 and 5, got: $revision_passes"
             }
             if (target_audience.isBlank()) {
@@ -230,21 +234,21 @@ if (revision_passes < 0 || revision_passes > 5) {
             return
         }
 
-val api = orchestrationConfig.defaultChatter ?: return
+        val api = orchestrationConfig.defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
-       // Generate cover image if enabled
-       if (executionConfig.generate_cover_image) {
-           generateCoverImage(
-               task = task,
-               tabs = tabs,
-               title = thesis,
-               audience = executionConfig.target_audience,
-               tone = executionConfig.tone,
-               transcriptWriter = transcript,
-               orchestrationConfig = orchestrationConfig
-           )
-       }
+        // Generate cover image if enabled
+        if (typeConfig!!.generate_cover_image) {
+            generateCoverImage(
+                task = task,
+                tabs = tabs,
+                title = thesis,
+                audience = executionConfig.target_audience,
+                tone = executionConfig.tone,
+                transcriptWriter = transcript,
+                orchestrationConfig = orchestrationConfig
+            )
+        }
 
         // Overview tab
         val overviewTask = task.ui.newTask(false)
@@ -457,20 +461,20 @@ Ensure the outline:
                 stream.flush()
             }
 
-overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
+            overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
             overviewTask.add("\n### Phase 2: Introduction\n*Writing compelling introduction...*\n".renderMarkdown)
             task.update()
-           // Generate outline visualization image if enabled
-           if (executionConfig.generate_images) {
-               generateOutlineImage(
-                   task = task,
-                   tabs = tabs,
-                   title = outline.title,
-                   outline = outline,
-                   transcriptWriter = transcript,
-                   orchestrationConfig = orchestrationConfig
-               )
-           }
+            // Generate outline visualization image if enabled
+            if (typeConfig!!.generate_images) {
+                generateOutlineImage(
+                    task = task,
+                    tabs = tabs,
+                    title = outline.title,
+                    outline = outline,
+                    transcriptWriter = transcript,
+                    orchestrationConfig = orchestrationConfig
+                )
+            }
 
             // Phase 2: Write Introduction
             log.info("Phase 2: Writing introduction")
@@ -659,20 +663,20 @@ Aim for approximately ${argOutline.estimated_word_count} words.
                 }
 
 
-resultBuilder.append(argumentSection.content)
+                resultBuilder.append(argumentSection.content)
                 resultBuilder.append("\n\n")
-               // Generate argument visualization image if enabled
-               if (executionConfig.generate_images) {
-                   generateArgumentImage(
-                       task = task,
-                       tabs = tabs,
-                       argumentNumber = index + 1,
-                       claim = argOutline.claim,
-                       content = argumentSection.content,
-                       transcriptWriter = transcript,
-                       orchestrationConfig = orchestrationConfig
-                   )
-               }
+                // Generate argument visualization image if enabled
+                if (typeConfig!!.generate_images) {
+                    generateArgumentImage(
+                        task = task,
+                        tabs = tabs,
+                        argumentNumber = index + 1,
+                        claim = argOutline.claim,
+                        content = argumentSection.content,
+                        transcriptWriter = transcript,
+                        orchestrationConfig = orchestrationConfig
+                    )
+                }
 
                 overviewTask.add("✅ (${argumentSection.word_count} words)\n".renderMarkdown)
                 task.update()
@@ -751,11 +755,10 @@ Aim for approximately $counterargumentWords words.
                     stream.flush()
                 }
 
-
-resultBuilder.append(counterSection.content)
+                resultBuilder.append(counterSection.content)
                 resultBuilder.append("\n\n")
                 // Generate counterargument visualization image if enabled
-                if (executionConfig.generate_images) {
+                if (typeConfig!!.generate_images) {
                     generateCounterargumentImage(
                         task = task,
                         tabs = tabs,
@@ -1099,7 +1102,8 @@ Provide the complete revised essay.
                 }
             }
             resultFn(errorOutput)
-        }}
+        }
+    }
 
 
     private fun generateCoverImage(
@@ -1393,7 +1397,6 @@ Provide the complete revised essay.
     }
 
 
-
     private fun getContextFiles(): String {
         val relatedFiles = executionConfig?.related_files ?: return ""
         if (relatedFiles.isEmpty()) return ""
@@ -1428,7 +1431,7 @@ Provide the complete revised essay.
         val PersuasiveEssay = TaskType(
             "PersuasiveEssay",
             PersuasiveEssayTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
+            PersuasiveEssayTaskTypeConfig::class.java,
             "Generate compelling persuasive essays with structured arguments",
             """
               Generates complete, well-structured persuasive essays using rhetorical techniques.

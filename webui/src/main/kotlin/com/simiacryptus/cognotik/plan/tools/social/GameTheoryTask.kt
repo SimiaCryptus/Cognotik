@@ -1,14 +1,20 @@
-package com.simiacryptus.cognotik.plan.tools.reasoning
+package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -51,14 +57,14 @@ class GameTheoryTask(
             "yml", "properties", "gradle", "maven"
         )
 
-        fun isTextFile(file: java.io.File): Boolean {
+        fun isTextFile(file: File): Boolean {
             return textExtensions.contains(file.extension.lowercase())
         }
 
-        fun extractDocumentContent(file: java.io.File) = try {
+        fun extractDocumentContent(file: File) = try {
             file.getDocumentReader().use { reader ->
                 when (reader) {
-                    is com.simiacryptus.cognotik.input.PaginatedDocumentReader ->
+                    is PaginatedDocumentReader ->
                         reader.getText(0, reader.getPageCount())
 
                     else -> reader.getText()
@@ -87,7 +93,7 @@ class GameTheoryTask(
         val recommendations: Map<String, String>? = null
     )
 
-    protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
+    protected val codeFiles = mutableMapOf<Path, String>()
 
     class GameTheoryTaskExecutionConfigData(
         @Description("The strategic situation or game to analyze")
@@ -876,7 +882,7 @@ Provide this in a clear, structured format.
 
     private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
         .flatMap { pattern: String ->
-            val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
             (FileSelectionUtils.filteredWalk(root.toFile()) {
                 when {
                     FileSelectionUtils.isLLMIgnored(it.toPath()) -> false

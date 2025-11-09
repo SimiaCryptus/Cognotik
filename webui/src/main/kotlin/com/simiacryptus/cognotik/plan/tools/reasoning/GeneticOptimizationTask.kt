@@ -1,11 +1,16 @@
-package com.simiacryptus.cognotik.plan.tools.persuasion
+package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -16,7 +21,7 @@ import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Date
 import kotlin.math.max
 import kotlin.math.min
 
@@ -97,7 +102,7 @@ class GeneticOptimizationTask(
             if (selection_size < 1 || selection_size >= population_size) {
                 return "selection_size must be between 1 and population_size-1"
             }
-            return ValidatedObject.validateFields(this)
+            return ValidatedObject.Companion.validateFields(this)
         }
     }
 
@@ -131,7 +136,7 @@ class GeneticOptimizationTask(
                     return "criteria_scores[$criterion] must be between 0 and 100"
                 }
             }
-            return ValidatedObject.validateFields(this)
+            return ValidatedObject.Companion.validateFields(this)
         }
     }
 

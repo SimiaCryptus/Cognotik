@@ -1,7 +1,5 @@
-package com.simiacryptus.cognotik.plan.tools.reasoning
+package com.simiacryptus.cognotik.plan.tools
 
-import com.simiacryptus.cognotik.chat.model.ChatInterface
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
