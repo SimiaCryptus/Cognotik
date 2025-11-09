@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.writing
+package com.simiacryptus.cognotik.plan.tools.games
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
+import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -20,6 +21,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.BufferedWriter
 import java.io.File
+import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -1254,7 +1256,7 @@ Provide specific examples and recommendations for improvement.
                 )
             }.pdf' target='_blank'>pdf</a>"
         )
-        return file?.outputStream()?.let { BufferedWriter(java.io.OutputStreamWriter(it)) }
+        return file?.outputStream()?.let { BufferedWriter(OutputStreamWriter(it)) }
     }
 
     private fun saveAnalysisToFile(outputDir: File, filename: String, content: String) {

@@ -811,16 +811,3 @@ mindmap
             Subjective metric interpretation
             Consistency across trials
 ```
-
-## Future Enhancements
-
-Potential improvements to the system:
-
-1. **Advanced Statistical Tests**: ANOVA, chi-square, non-parametric tests
-2. **Visualization**: Charts and graphs for results
-3. **Experiment Templates**: Pre-configured experiments for common use cases
-4. **Real-time Monitoring**: Live dashboards during execution
-5. **Result Caching**: Avoid re-running identical conditions
-6. **Distributed Execution**: Scale across multiple machines
-7. **A/B Testing Mode**: Simplified interface for binary comparisons
-8. **Bayesian Analysis**: Alternative to frequentist statistics

@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.reasoning
+package com.simiacryptus.cognotik.plan.tools.persuasion
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -22,6 +23,8 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.GZIPOutputStream
+import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.sqrt
 
 class LLMExperimentTask(
@@ -1164,7 +1167,7 @@ Be specific and reference the data provided.
     }
 
     private fun interpretEffectSize(d: Double): String {
-        val absD = kotlin.math.abs(d)
+        val absD = abs(d)
         return when {
             absD < 0.2 -> "Negligible"
             absD < 0.5 -> "Small"
@@ -1176,7 +1179,7 @@ Be specific and reference the data provided.
     private fun calculatePValue(tStat: Double, df: Int): Double {
         // Simplified p-value approximation using normal distribution for large df
         // For small df, this is less accurate but provides a reasonable estimate
-        val absTStat = kotlin.math.abs(tStat)
+        val absTStat = abs(tStat)
         // For df > 30, t-distribution approximates normal distribution
         if (df > 30) {
             // Using complementary error function approximation
@@ -1195,7 +1198,7 @@ Be specific and reference the data provided.
     private fun erf(x: Double): Double {
         // Approximation of error function using Abramowitz and Stegun formula
         val sign = if (x >= 0) 1.0 else -1.0
-        val absX = kotlin.math.abs(x)
+        val absX = abs(x)
         val a1 = 0.254829592
         val a2 = -0.284496736
         val a3 = 1.421413741
@@ -1203,7 +1206,7 @@ Be specific and reference the data provided.
         val a5 = 1.061405429
         val p = 0.3275911
         val t = 1.0 / (1.0 + p * absX)
-        val y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * kotlin.math.exp(-absX * absX)
+        val y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * exp(-absX * absX)
         return sign * y
     }
 

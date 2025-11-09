@@ -1,13 +1,16 @@
-package com.simiacryptus.cognotik.plan.tools.reasoning
+package com.simiacryptus.cognotik.plan.tools.games
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
+import com.simiacryptus.cognotik.plan.tools.reasoning.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.nio.file.FileSystems
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -1040,7 +1043,7 @@ Provide this in a clear, structured format suitable for game designers and stake
 
     private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
         .flatMap { pattern: String ->
-            val matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:$pattern")
+            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
             (FileSelectionUtils.filteredWalk(root.toFile()) {
                 when {
                     FileSelectionUtils.isLLMIgnored(it.toPath()) -> false

@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.writing
+package com.simiacryptus.cognotik.plan.tools.persuasion
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
@@ -11,7 +11,13 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.agents.ImageAndText
+import com.simiacryptus.cognotik.agents.ImageProcessingAgent
+import com.simiacryptus.cognotik.webui.chat.transcriptFilter
+import com.simiacryptus.cognotik.webui.session.getChildClient
+import javax.imageio.ImageIO
 import org.slf4j.Logger
+import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -55,10 +61,14 @@ class PersuasiveEssayTask(
         @Description("Call to action type (MUST BE one of: 'strong', 'moderate', 'reflective', 'none')")
         val call_to_action: String = "strong",
 
-        @Description("Number of revision passes for quality improvement")
+@Description("Number of revision passes for quality improvement")
         val revision_passes: Int = 1,
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
         val input_files: List<String>? = null,
+       @Description("Whether to generate images for the essay")
+       val generate_images: Boolean = true,
+       @Description("Whether to generate a cover image for the essay")
+       val generate_cover_image: Boolean = true,
 
 
         @Description("Related files or research to incorporate")
@@ -83,7 +93,7 @@ class PersuasiveEssayTask(
             if (num_arguments < 1 || num_arguments > 10) {
                 return "num_arguments must be between 1 and 10, got: $num_arguments"
             }
-            if (revision_passes < 0 || revision_passes > 5) {
+if (revision_passes < 0 || revision_passes > 5) {
                 return "revision_passes must be between 0 and 5, got: $revision_passes"
             }
             if (target_audience.isBlank()) {
@@ -189,16 +199,16 @@ class PersuasiveEssayTask(
         val startTime = System.currentTimeMillis()
         log.info("Starting PersuasiveEssayTask for thesis: '${executionConfig?.thesis}', input_files: ${executionConfig?.input_files?.size ?: 0}")
         // Create transcript file
-        val transcript = task.transcript()
+        val transcript = task.transcript()?.let { OutputStreamWriter(it) }
         transcript?.let { stream ->
-            stream.write("# Persuasive Essay Generation Transcript\n\n".toByteArray())
-            stream.write(
+            stream.appendLine("# Persuasive Essay Generation Transcript\n\n")
+            stream.appendLine(
                 "**Started:** ${
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                }\n\n".toByteArray()
+                }\n\n"
             )
-            stream.write("**Thesis:** ${executionConfig?.thesis}\n\n".toByteArray())
-            stream.write("---\n\n".toByteArray())
+            stream.appendLine("**Thesis:** ${executionConfig?.thesis}\n\n")
+            stream.appendLine("---\n\n")
             stream.flush()
         }
 
@@ -220,9 +230,21 @@ class PersuasiveEssayTask(
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+val api = orchestrationConfig.defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
+       // Generate cover image if enabled
+       if (executionConfig.generate_cover_image) {
+           generateCoverImage(
+               task = task,
+               tabs = tabs,
+               title = thesis,
+               audience = executionConfig.target_audience,
+               tone = executionConfig.tone,
+               transcriptWriter = transcript,
+               orchestrationConfig = orchestrationConfig
+           )
+       }
 
         // Overview tab
         val overviewTask = task.ui.newTask(false)
@@ -256,9 +278,9 @@ class PersuasiveEssayTask(
         overviewTask.add(overviewContent.renderMarkdown)
         task.update()
         transcript?.let { stream ->
-            stream.write("## Configuration\n\n".toByteArray())
-            stream.write(overviewContent.toByteArray())
-            stream.write("\n\n".toByteArray())
+            stream.write("## Configuration\n\n")
+            stream.write(overviewContent)
+            stream.write("\n\n")
             stream.flush()
         }
 
@@ -429,15 +451,26 @@ Ensure the outline:
             outlineTask.add(outlineContent.renderMarkdown)
             task.update()
             transcript?.let { stream ->
-                stream.write("## Essay Outline\n\n".toByteArray())
-                stream.write(outlineContent.toByteArray())
-                stream.write("\n\n".toByteArray())
+                stream.write("## Essay Outline\n\n")
+                stream.write(outlineContent)
+                stream.write("\n\n")
                 stream.flush()
             }
 
-            overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
+overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
             overviewTask.add("\n### Phase 2: Introduction\n*Writing compelling introduction...*\n".renderMarkdown)
             task.update()
+           // Generate outline visualization image if enabled
+           if (executionConfig.generate_images) {
+               generateOutlineImage(
+                   task = task,
+                   tabs = tabs,
+                   title = outline.title,
+                   outline = outline,
+                   transcriptWriter = transcript,
+                   orchestrationConfig = orchestrationConfig
+               )
+           }
 
             // Phase 2: Write Introduction
             log.info("Phase 2: Writing introduction")
@@ -505,9 +538,9 @@ Speak directly to the ${executionConfig.target_audience}.
             )
             task.update()
             transcript?.let { stream ->
-                stream.write("## Introduction\n\n".toByteArray())
-                stream.write(introduction.content.toByteArray())
-                stream.write("\n\n**Word Count:** ${introduction.word_count}\n\n".toByteArray())
+                stream.write("## Introduction\n\n")
+                stream.write(introduction.content)
+                stream.write("\n\n**Word Count:** ${introduction.word_count}\n\n")
                 stream.flush()
             }
 
@@ -619,15 +652,27 @@ Aim for approximately ${argOutline.estimated_word_count} words.
                 )
                 task.update()
                 transcript?.let { stream ->
-                    stream.write("## Argument ${index + 1}: ${argOutline.claim}\n\n".toByteArray())
-                    stream.write(argumentSection.content.toByteArray())
-                    stream.write("\n\n**Word Count:** ${argumentSection.word_count}\n\n".toByteArray())
+                    stream.write("## Argument ${index + 1}: ${argOutline.claim}\n\n")
+                    stream.write(argumentSection.content)
+                    stream.write("\n\n**Word Count:** ${argumentSection.word_count}\n\n")
                     stream.flush()
                 }
 
 
-                resultBuilder.append(argumentSection.content)
+resultBuilder.append(argumentSection.content)
                 resultBuilder.append("\n\n")
+               // Generate argument visualization image if enabled
+               if (executionConfig.generate_images) {
+                   generateArgumentImage(
+                       task = task,
+                       tabs = tabs,
+                       argumentNumber = index + 1,
+                       claim = argOutline.claim,
+                       content = argumentSection.content,
+                       transcriptWriter = transcript,
+                       orchestrationConfig = orchestrationConfig
+                   )
+               }
 
                 overviewTask.add("✅ (${argumentSection.word_count} words)\n".renderMarkdown)
                 task.update()
@@ -700,15 +745,25 @@ Aim for approximately $counterargumentWords words.
                 )
                 task.update()
                 transcript?.let { stream ->
-                    stream.write("## Counterarguments & Rebuttals\n\n".toByteArray())
-                    stream.write(counterSection.content.toByteArray())
-                    stream.write("\n\n**Word Count:** ${counterSection.word_count}\n\n".toByteArray())
+                    stream.write("## Counterarguments & Rebuttals\n\n")
+                    stream.write(counterSection.content)
+                    stream.write("\n\n**Word Count:** ${counterSection.word_count}\n\n")
                     stream.flush()
                 }
 
 
-                resultBuilder.append(counterSection.content)
+resultBuilder.append(counterSection.content)
                 resultBuilder.append("\n\n")
+                // Generate counterargument visualization image if enabled
+                if (executionConfig.generate_images) {
+                    generateCounterargumentImage(
+                        task = task,
+                        tabs = tabs,
+                        content = counterSection.content,
+                        transcriptWriter = transcript,
+                        orchestrationConfig = orchestrationConfig
+                    )
+                }
 
                 overviewTask.add("✅ Phase 4 Complete: Counterarguments addressed (${counterSection.word_count} words)\n".renderMarkdown)
             }
@@ -799,9 +854,9 @@ End on a strong note that reinforces your position.
             )
             task.update()
             transcript?.let { stream ->
-                stream.write("## Conclusion\n\n".toByteArray())
-                stream.write(conclusion.content.toByteArray())
-                stream.write("\n\n**Word Count:** ${conclusion.word_count}\n\n".toByteArray())
+                stream.write("## Conclusion\n\n")
+                stream.write(conclusion.content)
+                stream.write("\n\n**Word Count:** ${conclusion.word_count}\n\n")
                 stream.flush()
             }
 
@@ -877,8 +932,8 @@ Provide the complete revised essay.
                     )
                     task.update()
                     transcript?.let { stream ->
-                        stream.write("### Revision Pass ${passNum + 1}\n\n".toByteArray())
-                        stream.write("Completed revision pass ${passNum + 1} of ${executionConfig.revision_passes}\n\n".toByteArray())
+                        stream.write("### Revision Pass ${passNum + 1}\n\n")
+                        stream.write("Completed revision pass ${passNum + 1} of ${executionConfig.revision_passes}\n\n")
                         stream.flush()
                     }
                 }
@@ -917,9 +972,9 @@ Provide the complete revised essay.
             task.update()
             // Update transcript with final essay
             transcript?.let { stream ->
-                stream.write("## Complete Essay\n\n".toByteArray())
-                stream.write(finalEssay.toByteArray())
-                stream.write("\n\n".toByteArray())
+                stream.write("## Complete Essay\n\n")
+                stream.write(finalEssay)
+                stream.write("\n\n")
                 stream.flush()
             }
 
@@ -952,14 +1007,14 @@ Provide the complete revised essay.
             )
             task.update()
             transcript?.let { stream ->
-                stream.write("---\n\n".toByteArray())
-                stream.write("## Generation Complete\n\n".toByteArray())
-                stream.write("**Total Word Count:** $cumulativeWordCount\n\n".toByteArray())
-                stream.write("**Total Time:** ${totalTime / 1000.0}s\n\n".toByteArray())
+                stream.write("---\n\n")
+                stream.write("## Generation Complete\n\n")
+                stream.write("**Total Word Count:** $cumulativeWordCount\n\n")
+                stream.write("**Total Time:** ${totalTime / 1000.0}s\n\n")
                 stream.write(
                     "**Completed:** ${
                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                    }\n\n".toByteArray()
+                    }\n\n"
                 )
                 stream.flush()
             }
@@ -1022,9 +1077,9 @@ Provide the complete revised essay.
             )
             task.update()
             transcript?.let { stream ->
-                stream.write("---\n\n".toByteArray())
-                stream.write("## Error Occurred\n\n".toByteArray())
-                stream.write("**Error:** ${e.message}\n\n".toByteArray())
+                stream.write("---\n\n")
+                stream.write("## Error Occurred\n\n")
+                stream.write("**Error:** ${e.message}\n\n")
                 stream.flush()
             }
             transcript?.close()
@@ -1044,8 +1099,299 @@ Provide the complete revised essay.
                 }
             }
             resultFn(errorOutput)
+        }}
+
+
+    private fun generateCoverImage(
+        task: SessionTask,
+        tabs: TabbedDisplay,
+        title: String,
+        audience: String,
+        tone: String,
+        transcriptWriter: java.io.Writer?,
+        orchestrationConfig: OrchestrationConfig
+    ) {
+        try {
+            log.info("Generating cover image for: $title")
+            val imageTask = task.ui.newTask(false)
+            tabs["Cover Image"] = imageTask.placeholder
+            imageTask.add(
+                buildString {
+                    appendLine("# Cover Image")
+                    appendLine()
+                    appendLine("**Status:** Generating cover image...")
+                    appendLine()
+                }.renderMarkdown
+            )
+            task.update()
+
+            val imageAgent = ImageProcessingAgent(
+                prompt = "Create a professional, compelling cover image for a persuasive essay",
+                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                temperature = 0.8,
+            )
+
+            val coverPrompt = "Persuasive Essay: $title\nTarget Audience: $audience\nTone: $tone"
+            val result = imageAgent.answer(listOf(ImageAndText(coverPrompt)))
+            val image = result.image
+
+            // Save image
+            val imageFile = task.resolveUserFile("00_cover_image.png")!!
+            ImageIO.write(image, "png", imageFile)
+            log.debug("Saved cover image to: ${imageFile.absolutePath}")
+
+            // Create display link
+            val link = task.linkTo("00_cover_image.png")
+            val imageHtml = """
+        <div class='cover-image'>
+          <h3>$title</h3>
+          <p><em>For $audience</em></p>
+          <p><strong>Image Prompt:</strong> ${result.text}</p>
+          <a href='$link' target='_blank'>
+            <img src='$link' alt='Cover' style='max-width: 600px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);' />
+          </a>
+        </div>
+      """.trimIndent()
+            imageTask.add(imageHtml.renderMarkdown)
+            task.update()
+
+            transcriptWriter?.appendLine("## Cover Image")
+            transcriptWriter?.appendLine()
+            transcriptWriter?.appendLine("**Prompt:** ${result.text}")
+            transcriptWriter?.appendLine()
+            transcriptWriter?.appendLine("![Cover Image]($link)".transcriptFilter())
+            transcriptWriter?.appendLine()
+            transcriptWriter?.flush()
+
+            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+            task.update()
+        } catch (e: Exception) {
+            log.error("Failed to generate cover image", e)
+            transcriptWriter?.appendLine("**Cover Image Generation Failed:** ${e.message}")
+            transcriptWriter?.appendLine()
         }
     }
+
+    private fun generateOutlineImage(
+        task: SessionTask,
+        tabs: TabbedDisplay,
+        title: String,
+        outline: EssayOutline,
+        transcriptWriter: java.io.Writer?,
+        orchestrationConfig: OrchestrationConfig
+    ) {
+        try {
+            log.info("Generating outline visualization image")
+            val imageTask = task.ui.newTask(false)
+            tabs["Outline Visualization"] = imageTask.placeholder
+            imageTask.add(
+                buildString {
+                    appendLine("# Outline Visualization")
+                    appendLine()
+                    appendLine("**Status:** Generating outline visualization...")
+                    appendLine()
+                }.renderMarkdown
+            )
+            task.update()
+
+            val imageAgent = ImageProcessingAgent(
+                prompt = "Create an infographic-style visualization of the essay outline and argument structure",
+                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                temperature = 0.7,
+            )
+
+            val outlinePrompt = buildString {
+                append("Essay Title: $title\n")
+                append("Thesis: ${outline.thesis_statement}\n")
+                append("Arguments:\n")
+                outline.arguments.forEach { arg ->
+                    append("${arg.number}. ${arg.claim}\n")
+                }
+            }
+
+            val result = imageAgent.answer(listOf(ImageAndText(outlinePrompt)))
+            val image = result.image
+
+            // Save image
+            val imageFile = task.resolveUserFile("01_outline_visualization.png")!!
+            ImageIO.write(image, "png", imageFile)
+            log.debug("Saved outline visualization to: ${imageFile.absolutePath}")
+
+            // Create display link
+            val link = task.linkTo("01_outline_visualization.png")
+            val imageHtml = """
+        <div class='outline-image'>
+          <h4>Argument Structure</h4>
+          <p><strong>Image Prompt:</strong> ${result.text}</p>
+          <a href='$link' target='_blank'>
+            <img src='$link' alt='Outline' style='max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />
+          </a>
+        </div>
+      """.trimIndent()
+            imageTask.add(imageHtml.renderMarkdown)
+            task.update()
+
+            transcriptWriter?.appendLine("## Outline Visualization")
+            transcriptWriter?.appendLine()
+            transcriptWriter?.appendLine("**Prompt:** ${result.text}")
+            transcriptWriter?.appendLine()
+            transcriptWriter?.appendLine("![Outline]($link)".transcriptFilter())
+            transcriptWriter?.appendLine()
+            transcriptWriter?.flush()
+
+            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+            task.update()
+        } catch (e: Exception) {
+            log.error("Failed to generate outline visualization", e)
+            transcriptWriter?.appendLine("**Outline Image Generation Failed:** ${e.message}")
+            transcriptWriter?.appendLine()
+        }
+    }
+
+    private fun generateArgumentImage(
+        task: SessionTask,
+        tabs: TabbedDisplay,
+        argumentNumber: Int,
+        claim: String,
+        content: String,
+        transcriptWriter: java.io.Writer?,
+        orchestrationConfig: OrchestrationConfig
+    ) {
+        try {
+            log.info("Generating image for argument $argumentNumber")
+            val imageTask = task.ui.newTask(false)
+            tabs["Argument $argumentNumber Image"] = imageTask.placeholder
+            imageTask.add(
+                buildString {
+                    appendLine("# Argument $argumentNumber Visualization")
+                    appendLine()
+                    appendLine("**Status:** Generating argument visualization...")
+                    appendLine()
+                }.renderMarkdown
+            )
+            task.update()
+
+            val imageAgent = ImageProcessingAgent(
+                prompt = "Create a visual representation that illustrates this persuasive argument",
+                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                temperature = 0.7,
+            )
+
+            val argumentPrompt = buildString {
+                append("Argument $argumentNumber: $claim\n")
+                append("Summary: ${content.take(300)}")
+            }
+
+            val result = imageAgent.answer(listOf(ImageAndText(argumentPrompt)))
+            val image = result.image
+
+            // Save image
+            val imageFile = task.resolveUserFile("argument_${argumentNumber}_image.png")!!
+            ImageIO.write(image, "png", imageFile)
+            log.debug("Saved argument $argumentNumber image to: ${imageFile.absolutePath}")
+
+            // Create display link
+            val link = task.linkTo("argument_${argumentNumber}_image.png")
+            val imageHtml = """
+        <div class='argument-image'>
+          <h4>Argument $argumentNumber: ${claim.take(60)}</h4>
+          <p><strong>Image Prompt:</strong> ${result.text}</p>
+          <a href='$link' target='_blank'>
+            <img src='$link' alt='Argument $argumentNumber' style='max-width: 500px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />
+          </a>
+        </div>
+      """.trimIndent()
+            imageTask.add(imageHtml.renderMarkdown)
+            task.update()
+
+            transcriptWriter?.appendLine("#### Argument $argumentNumber Image")
+            transcriptWriter?.appendLine()
+            transcriptWriter?.appendLine("**Prompt:** ${result.text}")
+            transcriptWriter?.appendLine()
+            transcriptWriter?.appendLine("![Argument $argumentNumber]($link)".transcriptFilter())
+            transcriptWriter?.appendLine()
+            transcriptWriter?.flush()
+
+            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+            task.update()
+        } catch (e: Exception) {
+            log.error("Failed to generate argument $argumentNumber image", e)
+            transcriptWriter?.appendLine("**Argument $argumentNumber Image Generation Failed:** ${e.message}")
+            transcriptWriter?.appendLine()
+        }
+    }
+
+    private fun generateCounterargumentImage(
+        task: SessionTask,
+        tabs: TabbedDisplay,
+        content: String,
+        transcriptWriter: java.io.Writer?,
+        orchestrationConfig: OrchestrationConfig
+    ) {
+        try {
+            log.info("Generating counterargument visualization image")
+            val imageTask = task.ui.newTask(false)
+            tabs["Counterargument Image"] = imageTask.placeholder
+            imageTask.add(
+                buildString {
+                    appendLine("# Counterargument Visualization")
+                    appendLine()
+                    appendLine("**Status:** Generating counterargument visualization...")
+                    appendLine()
+                }.renderMarkdown
+            )
+            task.update()
+
+            val imageAgent = ImageProcessingAgent(
+                prompt = "Create a balanced visual representation showing counterarguments and rebuttals",
+                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                temperature = 0.7,
+            )
+
+            val counterPrompt = buildString {
+                append("Counterarguments and Rebuttals\n")
+                append("Summary: ${content.take(300)}")
+            }
+
+            val result = imageAgent.answer(listOf(ImageAndText(counterPrompt)))
+            val image = result.image
+
+            // Save image
+            val imageFile = task.resolveUserFile("counterargument_image.png")!!
+            ImageIO.write(image, "png", imageFile)
+            log.debug("Saved counterargument image to: ${imageFile.absolutePath}")
+
+            // Create display link
+            val link = task.linkTo("counterargument_image.png")
+            val imageHtml = """
+        <div class='counterargument-image'>
+          <h4>Counterarguments & Rebuttals</h4>
+          <p><strong>Image Prompt:</strong> ${result.text}</p>
+          <a href='$link' target='_blank'>
+            <img src='$link' alt='Counterarguments' style='max-width: 500px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />
+          </a>
+        </div>
+      """.trimIndent()
+            imageTask.add(imageHtml.renderMarkdown)
+            task.update()
+
+            transcriptWriter?.appendLine("## Counterargument Visualization")
+            transcriptWriter?.appendLine()
+            transcriptWriter?.appendLine("**Prompt:** ${result.text}")
+            transcriptWriter?.appendLine()
+            transcriptWriter?.appendLine("![Counterarguments]($link)".transcriptFilter())
+            transcriptWriter?.appendLine()
+            transcriptWriter?.flush()
+
+            imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
+            task.update()
+        } catch (e: Exception) {
+            log.error("Failed to generate counterargument image", e)
+            transcriptWriter?.appendLine("**Counterargument Image Generation Failed:** ${e.message}")
+            transcriptWriter?.appendLine()
+        }
+    }
+
 
 
     private fun getContextFiles(): String {

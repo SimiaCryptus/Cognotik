@@ -10,6 +10,10 @@ import com.simiacryptus.cognotik.plan.tools.file.*
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.Analysis
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
+import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
+import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
+import com.simiacryptus.cognotik.plan.tools.games.GameNarrativeDesignTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.Companion.KnowledgeIndexing
 import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
@@ -17,6 +21,10 @@ import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask.Companion
 import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
+import com.simiacryptus.cognotik.plan.tools.persuasion.GeneticOptimizationTask
+import com.simiacryptus.cognotik.plan.tools.persuasion.LLMExperimentTask
+import com.simiacryptus.cognotik.plan.tools.persuasion.LLMPollSimulationTask
+import com.simiacryptus.cognotik.plan.tools.persuasion.PersuasiveEssayTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask

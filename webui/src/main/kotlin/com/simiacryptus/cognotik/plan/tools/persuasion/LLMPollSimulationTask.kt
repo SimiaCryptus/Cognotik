@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.reasoning
+package com.simiacryptus.cognotik.plan.tools.persuasion
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.reasoning.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -19,6 +20,7 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.abs
 import kotlin.math.sqrt
 
 class LLMPollSimulationTask(
@@ -1131,7 +1133,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                         val max = question.max as? Int ?: 5
                         val midpoint = (min + max) / 2.0
 
-                        if (kotlin.math.abs(mean - midpoint) < 0.5) {
+                        if (abs(mean - midpoint) < 0.5) {
                             biases.appendLine("⚠️ **${question.id}**: Possible central tendency bias (mean=${String.format("%.2f", mean)}, midpoint=$midpoint)")
                         }
 
