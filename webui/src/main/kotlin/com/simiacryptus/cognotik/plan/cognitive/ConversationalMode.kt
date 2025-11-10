@@ -222,13 +222,21 @@ open class ConversationalMode(
         }".trim()
       })
     )
-    // Use the expanded userMessage for task selection
+    // Use the expanded userMessage with full conversation context for task selection
+    val conversationContext = getConversationContext()
     val answer = parsedActor.answer(
-      getConversationContext() + listOf(
-        "USER: $userMessage", "Please choose a single task to execute based on the current conversation."
+      conversationContext + listOf(
+        "USER: $userMessage",
+        "Please choose a single task to execute based on the current conversation context above."
       )
     )
     val chosenTasks = answer.obj.tasks?.firstOrNull() ?: throw IllegalStateException("No task was selected")
+    // Add task configuration to conversation history
+    val taskConfigJson = JsonUtil.toJson(chosenTasks)
+    synchronized(messagesLock) {
+      messages.add(ModelSchema.ChatMessage(ModelSchema.Role.assistant, "Executing task:\n```json\n$taskConfigJson\n```".toContentList()))
+    }
+   
     val resultSemaphore = Semaphore(0)
     val resultRef = AtomicReference<String>()
     val tabs = TabbedDisplay(task)
@@ -246,7 +254,7 @@ open class ConversationalMode(
           dataStorage = ui.dataStorage!!,
           root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.dataStorage.getSessionDir(user, session).toPath()
           ?: File(".").toPath()),
-        messages = listOf(userMessage),
+        messages = getConversationContext().takeLast(10) + listOf("USER: $userMessage"),
         task = this,
         resultFn = { result ->
           ui.newTask(false).apply {
