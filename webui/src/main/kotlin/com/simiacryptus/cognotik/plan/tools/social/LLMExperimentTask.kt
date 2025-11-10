@@ -793,8 +793,7 @@ Be specific and reference the data provided.
     fun diversity(results: List<ExperimentalResult>): String {
         val compressibility = results.map { a ->
             results.filter { it != a }.map { b ->
-                (compressedStringBits(a.response) + compressedStringBits(a.response)).toDouble() /
-                   compressedStringBits(a.response + b.response).toDouble()
+                compressibility(a.response, b.response)
             }.average()
         }.average()
         // 1 -> incompressible (high diversity)
@@ -807,7 +806,9 @@ Be specific and reference the data provided.
         } + " (Compressibility: ${String.format("%.2f", compressibility)})"
     }
 
-    private fun generateStatisticalTables(
+
+
+  private fun generateStatisticalTables(
         results: List<ExperimentalResult>,
         conditions: List<ExperimentalCondition>,
         significanceLevel: Double
@@ -1361,6 +1362,7 @@ Be specific and reference the data provided.
               <p><strong>Use cases:</strong> Bias studies, cognitive studies, logical performance analysis, consistency testing</p>
             """
         )
+
         fun compressedStringBits(str: String): Int {
             val byteStream = ByteArrayOutputStream()
             val gzipStream = GZIPOutputStream(byteStream)
@@ -1368,5 +1370,12 @@ Be specific and reference the data provided.
             gzipStream.close()
             return byteStream.size() * 8 // bits
         }
+
+      /**
+       * Calculates the compressibility between two strings based on their compressed sizes.
+       * 1 -> incompressible (high diversity)
+       * 2 -> duplicate (low diversity)
+       */
+        fun compressibility(strA: String, strB: String): Double = (compressedStringBits(strA) + compressedStringBits(strA)).toDouble() / compressedStringBits(strA + strB).toDouble()
     }
 }

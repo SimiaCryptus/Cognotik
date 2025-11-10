@@ -5,41 +5,38 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.AbstractTask
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskExecutionConfig
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Date
+import java.util.*
+import java.util.zip.GZIPOutputStream
 import kotlin.math.max
 import kotlin.math.min
 
 class GeneticOptimizationTask(
-    orchestrationConfig: OrchestrationConfig,
-    planTask: GeneticOptimizationTaskExecutionConfigData?
+  orchestrationConfig: OrchestrationConfig,
+  planTask: GeneticOptimizationTaskExecutionConfigData?
 ) : AbstractTask<GeneticOptimizationTask.GeneticOptimizationTaskExecutionConfigData, TaskTypeConfig>(
-    orchestrationConfig,
-    planTask
+  orchestrationConfig,
+  planTask
 ) {
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(GeneticOptimizationTask::class.java)
-        val GeneticOptimization = TaskType(
-            "GeneticOptimization",
-            GeneticOptimizationTaskExecutionConfigData::class.java,
-            TaskTypeConfig::class.java,
-            "Iteratively evolve and perfect text through genetic algorithms",
-            """
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(GeneticOptimizationTask::class.java)
+    val GeneticOptimization = TaskType(
+      "GeneticOptimization",
+      GeneticOptimizationTaskExecutionConfigData::class.java,
+      TaskTypeConfig::class.java,
+      "Iteratively evolve and perfect text through genetic algorithms",
+      """
               Uses genetic algorithms to optimize text through iterative evolution.
               <ul>
                 <li>Generates variations using configurable mutation strategies</li>
@@ -52,106 +49,125 @@ class GeneticOptimizationTask(
                 <li>Useful for perfecting prompts, copy, documentation, and messaging</li>
               </ul>
             """
-        )
-        private const val TT = """```"""
-    }
-
-    class GeneticOptimizationTaskExecutionConfigData(
-        @Description("The initial text to optimize (seed for genetic algorithm)")
-        val initial_text: String? = null,
-        @Description("The optimization goal or criteria (e.g., 'clarity and conciseness', 'persuasiveness', 'technical accuracy')")
-        val optimization_goal: String? = null,
-        @Description("Evaluation criteria weights (e.g., {'clarity': 0.4, 'conciseness': 0.3, 'impact': 0.3})")
-        val evaluation_weights: Map<String, Double>? = null,
-        @Description("Additional context or constraints for optimization")
-        val constraints: List<String>? = null,
-
-        @Description("Number of generations to evolve (default: 5)")
-        val num_generations: Int = 5,
-        @Description("Population size per generation (default: 6)")
-        val population_size: Int = 6,
-        @Description("Number of top candidates to keep each generation (default: 2)")
-        val selection_size: Int = 2,
-        @Description("Mutation strategies to use (e.g., 'rephrase', 'simplify', 'elaborate', 'restructure')")
-        val mutation_strategies: List<String>? = listOf("rephrase", "simplify", "elaborate"),
-        @Description("Whether to enable crossover (combining traits from multiple candidates)")
-        val enable_crossover: Boolean = true,
-
-        task_description: String? = null,
-        task_dependencies: List<String>? = null,
-        state: TaskState? = TaskState.Pending,
-    ) : TaskExecutionConfig(
-        task_type = GeneticOptimization.name,
-        task_description = task_description,
-        task_dependencies = task_dependencies?.toMutableList(),
-        state = state
-    ), ValidatedObject {
-        override fun validate(): String? {
-            if (initial_text.isNullOrBlank()) {
-                return "initial_text must not be blank"
-            }
-            if (optimization_goal.isNullOrBlank()) {
-                return "optimization_goal must not be blank"
-            }
-            if (num_generations < 1) {
-                return "num_generations must be at least 1"
-            }
-            if (population_size < 2) {
-                return "population_size must be at least 2"
-            }
-            if (selection_size < 1 || selection_size >= population_size) {
-                return "selection_size must be between 1 and population_size-1"
-            }
-            return ValidatedObject.Companion.validateFields(this)
-        }
-    }
-
-    data class TextVariant(
-        @Description("The text variant")
-        val text: String = "",
-        @Description("Brief explanation of what changed from parent")
-        val mutation_description: String = "",
-        @Description("The mutation strategy used")
-        val strategy: String = ""
     )
-
-    data class EvaluationScore(
-        @Description("Overall fitness score (0-100)")
-        val overall_score: Double = 0.0,
-        @Description("Breakdown of scores by criteria")
-        val criteria_scores: Map<String, Double> = emptyMap(),
-        @Description("Strengths of this variant")
-        val strengths: List<String> = emptyList(),
-        @Description("Weaknesses or areas for improvement")
-        val weaknesses: List<String> = emptyList(),
-        @Description("Brief justification for the score")
-        val justification: String = ""
-    ) : ValidatedObject {
-        override fun validate(): String? {
-            if (overall_score < 0.0 || overall_score > 100.0) {
-                return "overall_score must be between 0 and 100"
-            }
-            criteria_scores.forEach { (criterion, score) ->
-                if (score < 0.0 || score > 100.0) {
-                    return "criteria_scores[$criterion] must be between 0 and 100"
-                }
-            }
-            return ValidatedObject.Companion.validateFields(this)
-        }
+    private const val TT = """```"""
+    fun compressedStringBits(str: String): Int {
+      val byteStream = ByteArrayOutputStream()
+      val gzipStream = GZIPOutputStream(byteStream)
+      gzipStream.write(str.toByteArray(Charsets.UTF_8))
+      gzipStream.close()
+      return byteStream.size() * 8 // bits
     }
 
-    data class EvaluatedVariant(
-        val text: String = "",
-        val score: EvaluationScore = EvaluationScore(),
-        val generation: Int = 0,
-        val parentIndex: Int? = null,
-        val strategy: String = ""
-    )
+    /**
+     * Calculates the compressibility between two strings based on their compressed sizes.
+     * 1 -> incompressible (high diversity)
+     * 2 -> duplicate (low diversity)
+     */
+    fun compressibility(strA: String, strB: String): Double =
+      (compressedStringBits(strA) + compressedStringBits(strA)).toDouble() / compressedStringBits(strA + strB).toDouble()
+  }
 
-    override fun promptSegment(): String {
-        return """
+  class GeneticOptimizationTaskExecutionConfigData(
+    @Description("The initial text(s) to optimize (seeds for genetic algorithm) - Include the ENTIRE text(s) to be optimized. Multiple texts will be used as separate seeds in the initial population.")
+    val initial_text: List<String>? = null,
+    @Description("The optimization goal or criteria (e.g., 'clarity and conciseness', 'persuasiveness', 'technical accuracy')")
+    val optimization_goal: String? = null,
+    @Description("Evaluation criteria weights (e.g., {'clarity': 0.4, 'conciseness': 0.3, 'impact': 0.3})")
+    val evaluation_weights: Map<String, Double>? = null,
+    @Description("Additional context or constraints for optimization")
+    val constraints: List<String>? = null,
+
+    @Description("Number of generations to evolve (default: 5)")
+    val num_generations: Int = 5,
+    @Description("Population size per generation (default: 6)")
+    val population_size: Int = 6,
+    @Description("Number of top candidates to keep each generation (default: 2)")
+    val selection_size: Int = 2,
+    @Description("Mutation strategies to use (e.g., 'rephrase', 'simplify', 'elaborate', 'restructure')")
+    val mutation_strategies: List<String>? = listOf("rephrase", "simplify", "elaborate"),
+    @Description("Whether to enable crossover (combining traits from multiple candidates)")
+    val enable_crossover: Boolean = true,
+
+    task_description: String? = null,
+    task_dependencies: List<String>? = null,
+    state: TaskState? = TaskState.Pending,
+  ) : TaskExecutionConfig(
+    task_type = GeneticOptimization.name,
+    task_description = task_description,
+    task_dependencies = task_dependencies?.toMutableList(),
+    state = state
+  ), ValidatedObject {
+    override fun validate(): String? {
+      if (initial_text.isNullOrEmpty()) {
+        return "initial_text must not be empty"
+      }
+      if (initial_text.any { it.isBlank() }) {
+        return "initial_text entries must not be blank"
+      }
+      if (optimization_goal.isNullOrBlank()) {
+        return "optimization_goal must not be blank"
+      }
+      if (num_generations < 1) {
+        return "num_generations must be at least 1"
+      }
+      if (population_size < 2) {
+        return "population_size must be at least 2"
+      }
+      if (selection_size < 1 || selection_size >= population_size) {
+        return "selection_size must be between 1 and population_size-1"
+      }
+      return ValidatedObject.Companion.validateFields(this)
+    }
+  }
+
+  data class TextVariant(
+    @Description("The text variant")
+    val text: String = "",
+    @Description("Brief explanation of what changed from parent")
+    val mutation_description: String = "",
+    @Description("The mutation strategy used")
+    val strategy: String = ""
+  )
+
+  data class EvaluationScore(
+    @Description("Overall fitness score (0-100)")
+    val overall_score: Double = 0.0,
+    @Description("Breakdown of scores by criteria")
+    val criteria_scores: Map<String, Double> = emptyMap(),
+    @Description("Strengths of this variant")
+    val strengths: List<String> = emptyList(),
+    @Description("Weaknesses or areas for improvement")
+    val weaknesses: List<String> = emptyList(),
+    @Description("Brief justification for the score")
+    val justification: String = ""
+  ) : ValidatedObject {
+    override fun validate(): String? {
+      if (overall_score < 0.0 || overall_score > 100.0) {
+        return "overall_score must be between 0 and 100"
+      }
+      criteria_scores.forEach { (criterion, score) ->
+        if (score < 0.0 || score > 100.0) {
+          return "criteria_scores[$criterion] must be between 0 and 100"
+        }
+      }
+      return ValidatedObject.Companion.validateFields(this)
+    }
+  }
+
+  data class EvaluatedVariant(
+    val text: String = "",
+    val score: EvaluationScore = EvaluationScore(),
+    val generation: Int = 0,
+    val parentIndex: Int? = null,
+    val strategy: String = "",
+    val diversityScore: Double = 0.0
+  )
+
+  override fun promptSegment(): String {
+    return """
 GeneticOptimization - Iteratively evolve and perfect text through genetic algorithms
-  ** Specify the initial text to optimize
+  ** Specify the FULL text(s) items to optimize
   ** Define the optimization goal (e.g., clarity, persuasiveness, technical accuracy)
   ** Configure number of generations (default: 5)
   ** Set population size and selection size
@@ -171,608 +187,716 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
      - Optimizing technical documentation
      - Improving clarity and impact of messaging
         """.trimIndent()
-    }
+  }
 
-    override fun run(
-        agent: TaskOrchestrator,
-        messages: List<String>,
-        task: SessionTask,
-        resultFn: (String) -> Unit,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val transcript = transcript(task)
-        try {
-            val startTime = System.currentTimeMillis()
-            messages.joinToString("\n\n")
-            log.info("Starting GeneticOptimizationTask with initial_text length=${executionConfig?.initial_text?.length}, goal='${executionConfig?.optimization_goal}'")
-            // Validate configuration
-            executionConfig?.validate()?.let { errorMessage ->
-                log.error("Configuration validation failed: $errorMessage")
-                task.complete("VALIDATION ERROR: $errorMessage")
-                task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
-                transcript?.close()
-                resultFn("VALIDATION ERROR: $errorMessage")
-                return
-            }
-
-
-            val initialText = executionConfig?.initial_text
-            val optimizationGoal = executionConfig?.optimization_goal
-            val numGenerations = executionConfig?.num_generations ?: 5
-            val populationSize = executionConfig?.population_size ?: 6
-            val selectionSize = min(executionConfig?.selection_size ?: 2, populationSize / 2)
-            val mutationStrategies = executionConfig?.mutation_strategies ?: listOf("rephrase", "simplify", "elaborate")
-            val enableCrossover = executionConfig?.enable_crossover ?: true
-            val evaluationWeights = executionConfig?.evaluation_weights ?: mapOf(
-                "clarity" to 0.35,
-                "conciseness" to 0.25,
-                "impact" to 0.25,
-                "goal_alignment" to 0.15
-            )
-            val constraints = executionConfig?.constraints ?: emptyList()
-
-            if (initialText.isNullOrBlank() || optimizationGoal.isNullOrBlank()) {
-                log.error("Configuration error: initial_text or optimization_goal is blank")
-                task.complete("CONFIGURATION ERROR: Both initial_text and optimization_goal must be specified")
-                transcript?.close()
-                task.error(RuntimeException("Configuration error: initial_text or optimization_goal is blank"))
-                resultFn("CONFIGURATION ERROR: Both initial_text and optimization_goal must be specified")
-                return
-            }
-
-            log.info("Configuration validated: generations=$numGenerations, population=$populationSize, selection=$selectionSize, crossover=$enableCrossover")
-
-            val tabs = TabbedDisplay(task)
-            val api = orchestrationConfig.defaultChatter
-            transcript?.write("# Genetic Optimization Task Transcript\n\n".toByteArray())
-
-            // Create overview tab
-            val overviewTask = task.ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
-            val overviewContent = buildString {
-                appendLine("# Genetic Optimization Task")
-                appendLine()
-                appendLine(
-                    "**Started:** ${
-                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                    }"
-                )
-                appendLine()
-                appendLine("## Configuration")
-                appendLine()
-                appendLine("| Parameter | Value |")
-                appendLine("|-----------|-------|")
-                appendLine("| Optimization Goal | $optimizationGoal |")
-                appendLine("| Generations | $numGenerations |")
-                appendLine("| Population Size | $populationSize |")
-                appendLine("| Selection Size | $selectionSize |")
-                appendLine("| Mutation Strategies | ${mutationStrategies.joinToString(", ")} |")
-                appendLine("| Crossover | ${if (enableCrossover) "✓ Enabled" else "✗ Disabled"} |")
-                appendLine()
-                appendLine("## Evaluation Criteria")
-                appendLine()
-                evaluationWeights.forEach { (criterion, weight) ->
-                    appendLine("- **$criterion**: ${String.format("%.0f%%", weight * 100)}")
-                }
-                if (constraints.isNotEmpty()) {
-                    appendLine()
-                    appendLine("## Constraints")
-                    appendLine()
-                    constraints.forEach { appendLine("- $it") }
-                }
-                appendLine()
-                appendLine("## Initial Text")
-                appendLine()
-                appendLine("$TT")
-                appendLine(initialText)
-                appendLine("$TT")
-                appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine("## Progress")
-                appendLine()
-                appendLine("- ⏳ Initializing population...")
-            }
-            overviewTask.add(overviewContent.renderMarkdown)
-            task.update()
-            transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
-
-            // Gather context
-            log.debug("Gathering prior context")
-            val priorContext = getPriorCode(agent.executionState)
-            log.debug("Context gathered: length=${priorContext.length}")
-
-// Initialize population with the seed text
-            var currentPopulation = listOf(
-                EvaluatedVariant(
-                    text = initialText,
-                    score = EvaluationScore(overall_score = 0.0),
-                    generation = 0,
-                    strategy = "seed"
-                )
-            )
-
-            // Evaluate initial text
-            log.info("Evaluating initial text")
-            val initialEvaluation = evaluateVariant(initialText, optimizationGoal, evaluationWeights, constraints, api)
-            currentPopulation = listOf(currentPopulation[0].copy(score = initialEvaluation))
-
-            log.info("Initial evaluation: score=${initialEvaluation.overall_score}")
-            transcript?.write("\n\n## Initial Evaluation\n\n".toByteArray(StandardCharsets.UTF_8))
-            transcript?.write(
-                "**Score:** ${
-                    String.format(
-                        "%.1f",
-                        initialEvaluation.overall_score
-                    )
-                }/100\n\n".toByteArray(StandardCharsets.UTF_8)
-            )
-            transcript?.write("**Strengths:**\n".toByteArray(StandardCharsets.UTF_8))
-            initialEvaluation.strengths.forEach { transcript?.write("- $it\n".toByteArray(StandardCharsets.UTF_8)) }
-            transcript?.write("\n**Weaknesses:**\n".toByteArray(StandardCharsets.UTF_8))
-            initialEvaluation.weaknesses.forEach { transcript?.write("- $it\n".toByteArray(StandardCharsets.UTF_8)) }
-            transcript?.write("\n".toByteArray(StandardCharsets.UTF_8))
+  override fun run(
+    agent: TaskOrchestrator,
+    messages: List<String>,
+    task: SessionTask,
+    resultFn: (String) -> Unit,
+    orchestrationConfig: OrchestrationConfig
+  ) {
+    val transcript = transcript(task)
+    try {
+      val startTime = System.currentTimeMillis()
+      messages.joinToString("\n\n")
+      log.info("Starting GeneticOptimizationTask with ${executionConfig?.initial_text?.size} initial texts, goal='${executionConfig?.optimization_goal}'")
+      // Validate configuration
+      executionConfig?.validate()?.let { errorMessage ->
+        log.error("Configuration validation failed: $errorMessage")
+        task.complete("VALIDATION ERROR: $errorMessage")
+        task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
+        transcript?.close()
+        resultFn("VALIDATION ERROR: $errorMessage")
+        return
+      }
 
 
-            // Update overview with initial score
-            overviewTask.add(buildString {
-                appendLine()
-                appendLine("- ✓ Initial evaluation: **${String.format("%.1f", initialEvaluation.overall_score)}/100**")
-                appendLine("- ⏳ Starting evolution...")
-            }.renderMarkdown)
-            task.update()
+      val initialText = executionConfig?.initial_text
+      val optimizationGoal = executionConfig?.optimization_goal
+      val numGenerations = executionConfig?.num_generations ?: 5
+      val populationSize = executionConfig?.population_size ?: 6
+      val selectionSize = min(executionConfig?.selection_size ?: 2, populationSize / 2)
+      val mutationStrategies = executionConfig?.mutation_strategies ?: listOf("rephrase", "simplify", "elaborate")
+      val enableCrossover = executionConfig?.enable_crossover ?: true
+      val evaluationWeights = executionConfig?.evaluation_weights ?: mapOf(
+        "clarity" to 0.35,
+        "conciseness" to 0.25,
+        "impact" to 0.25,
+        "goal_alignment" to 0.15
+      )
+      val constraints = executionConfig?.constraints ?: emptyList()
 
-            // Track best variant across all generations
-            var bestVariant = currentPopulation[0]
-            val evolutionHistory = mutableListOf<List<EvaluatedVariant>>()
-            evolutionHistory.add(currentPopulation)
+      if (initialText.isNullOrEmpty() || optimizationGoal.isNullOrBlank()) {
+        log.error("Configuration error: initial_text is empty or optimization_goal is blank")
+        task.complete("CONFIGURATION ERROR: Both initial_text (at least one) and optimization_goal must be specified")
+        transcript?.close()
+        task.error(RuntimeException("Configuration error: initial_text is empty or optimization_goal is blank"))
+        resultFn("CONFIGURATION ERROR: Both initial_text (at least one) and optimization_goal must be specified")
+        return
+      }
 
-            // Evolution loop
-            for (generation in 1..numGenerations) {
-                log.info("Starting generation $generation/$numGenerations")
+      log.info("Configuration validated: generations=$numGenerations, population=$populationSize, selection=$selectionSize, crossover=$enableCrossover")
 
-                val generationTask = task.ui.newTask(false)
-                tabs["Generation $generation"] = generationTask.placeholder
-                transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
-                transcript?.write("# Generation $generation\n\n".toByteArray(StandardCharsets.UTF_8))
-                generationTask.add(buildString {
-                    appendLine("# Generation $generation")
-                    appendLine()
-                    appendLine("**Status:** In Progress")
-                    appendLine()
-                    appendLine("Generating $populationSize variants...")
-                }.renderMarkdown)
-                task.update()
+      val tabs = TabbedDisplay(task)
+      val api = orchestrationConfig.defaultChatter
+      transcript?.write("# Genetic Optimization Task Transcript\n\n".toByteArray())
 
-                // Step 1: Generate new variants
-                val newVariants = mutableListOf<EvaluatedVariant>()
-
-                // Keep top performers from previous generation
-                val survivors = currentPopulation.sortedByDescending { it.score.overall_score }.take(selectionSize)
-                log.debug("Selected $selectionSize survivors for generation $generation")
-
-                // Generate mutations from survivors
-                val mutationsNeeded = populationSize - survivors.size
-                val mutationsPerSurvivor = max(1, mutationsNeeded / survivors.size)
-
-                survivors.forEachIndexed { survivorIndex, survivor ->
-                    val mutationsToGenerate = if (survivorIndex == survivors.size - 1) {
-                        // Last survivor gets any remaining slots
-                        mutationsNeeded - (mutationsPerSurvivor * (survivors.size - 1))
-                    } else {
-                        mutationsPerSurvivor
-                    }
-
-                    repeat(mutationsToGenerate) {
-                        val strategy = mutationStrategies.random()
-                        log.debug("Generating mutation using strategy: $strategy")
-                        val mutated =
-                            generateMutation(
-                                survivor.text,
-                                survivor.score,
-                                strategy,
-                                optimizationGoal,
-                                constraints,
-                                priorContext,
-                                api
-                            )
-                        if (mutated != null) {
-                            newVariants.add(
-                                EvaluatedVariant(
-                                    text = mutated.text,
-                                    score = EvaluationScore(overall_score = 0.0),
-                                    generation = generation,
-                                    parentIndex = survivorIndex,
-                                    strategy = strategy
-                                )
-                            )
-                        }
-                    }
-                }
-
-                if (enableCrossover && survivors.size >= 2 && newVariants.size < populationSize) {
-                    log.debug("Applying crossover")
-                    val crossoverVariant = applyCrossover(
-                            survivors[0].text,
-                            survivors[0].score,
-                            survivors[1].text,
-                            survivors[1].score,
-                            optimizationGoal,
-                            constraints,
-                            api
-                        )
-                    if (crossoverVariant != null) {
-                        newVariants.add(
-                            EvaluatedVariant(
-                                text = crossoverVariant,
-                                score = EvaluationScore(overall_score = 0.0),
-                                generation = generation,
-                                strategy = "crossover"
-                            )
-                        )
-                    }
-                }
-
-                // Combine survivors and new variants
-                currentPopulation = survivors + newVariants
-
-                // Step 2: Evaluate all variants
-                log.info("Evaluating ${currentPopulation.size} variants in generation $generation")
-                currentPopulation = currentPopulation.map { variant ->
-                    if (variant.score.overall_score == 0.0) {
-                        val evaluation = evaluateVariant(
-                            variant.text,
-                            optimizationGoal,
-                            evaluationWeights,
-                            constraints,
-                            api
-                        )
-                        variant.copy(score = evaluation)
-                    } else {
-                        variant
-                    }
-                }
-
-                evolutionHistory.add(currentPopulation)
-
-                // Update best variant
-                val generationBest = currentPopulation.maxByOrNull { it.score.overall_score }!!
-                if (generationBest.score.overall_score > bestVariant.score.overall_score) {
-                    log.info("New best variant found in generation $generation: score=${generationBest.score.overall_score}")
-                    bestVariant = generationBest
-                }
-
-                // Display generation results
-                val generationResults = buildString {
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## Generation $generation Results")
-                    appendLine()
-                    appendLine("**Status:** ✓ Complete")
-                    appendLine()
-                    appendLine("### Population Statistics")
-                    appendLine()
-                    val scores = currentPopulation.map { it.score.overall_score }
-                    appendLine("- **Best Score:** ${String.format("%.1f", scores.maxOrNull() ?: 0.0)}/100")
-                    appendLine("- **Average Score:** ${String.format("%.1f", scores.average())}/100")
-                    appendLine("- **Worst Score:** ${String.format("%.1f", scores.minOrNull() ?: 0.0)}/100")
-                    appendLine(
-                        "- **Improvement:** ${
-                            String.format(
-                                "%.1f",
-                                (generationBest.score.overall_score - survivors[0].score.overall_score)
-                            )
-                        }"
-                    )
-                    appendLine()
-                    appendLine("### Top Variants")
-                    appendLine()
-                    currentPopulation.sortedByDescending { it.score.overall_score }.take(3)
-                        .forEachIndexed { index, variant ->
-                            appendLine(
-                                "#### ${index + 1}. Score: ${
-                                    String.format(
-                                        "%.1f",
-                                        variant.score.overall_score
-                                    )
-                                }/100 (${variant.strategy})"
-                            )
-                            appendLine()
-                            appendLine("$TT")
-                            appendLine(variant.text)
-                            appendLine("$TT")
-                            appendLine()
-                            appendLine("**Strengths:**")
-                            variant.score.strengths.forEach { appendLine("- $it") }
-                            appendLine()
-                            if (variant.score.weaknesses.isNotEmpty()) {
-                                appendLine("**Weaknesses:**")
-                                variant.score.weaknesses.forEach { appendLine("- $it") }
-                                appendLine()
-                            }
-                            appendLine("**Criteria Breakdown:**")
-                            variant.score.criteria_scores.forEach { (criterion, score) ->
-                                appendLine("- $criterion: ${String.format("%.1f", score)}/100")
-                            }
-                            appendLine()
-                            appendLine("---")
-                            appendLine()
-                        }
-                }
-                generationTask.add(generationResults.renderMarkdown)
-                task.update()
-                transcript?.write(generationResults.toByteArray(StandardCharsets.UTF_8))
-
-                // Update overview
-                overviewTask.add(buildString {
-                    appendLine()
-                    appendLine(
-                        "- ✓ Generation $generation: Best=${
-                            String.format(
-                                "%.1f",
-                                generationBest.score.overall_score
-                            )
-                        }, Avg=${String.format("%.1f", currentPopulation.map { it.score.overall_score }.average())}"
-                    )
-                }.renderMarkdown)
-                task.update()
-            }
-
-            // Create evolution visualization tab
-            log.info("Creating evolution visualization")
-            val evolutionTask = task.ui.newTask(false)
-            tabs["Evolution Analysis"] = evolutionTask.placeholder
-            val evolutionAnalysis = buildString {
-                appendLine("# Evolution Analysis")
-                appendLine()
-                appendLine("## Fitness Progression")
-                appendLine()
-                appendLine("| Generation | Best Score | Average Score | Improvement |")
-                appendLine("|------------|------------|---------------|-------------|")
-                evolutionHistory.forEachIndexed { index, population ->
-                    val scores = population.map { it.score.overall_score }
-                    val improvement = if (index > 0) {
-                        scores.maxOrNull()!! - evolutionHistory[index - 1].maxOf { it.score.overall_score }
-                    } else {
-                        0.0
-                    }
-                    appendLine(
-                        "| $index | ${String.format("%.1f", scores.maxOrNull() ?: 0.0)} | ${
-                            String.format(
-                                "%.1f",
-                                scores.average()
-                            )
-                        } | ${String.format("%+.1f", improvement)} |"
-                    )
-                }
-                appendLine()
-                appendLine("## Strategy Effectiveness")
-                appendLine()
-                val strategyStats = mutableMapOf<String, MutableList<Double>>()
-                evolutionHistory.flatten().forEach { variant ->
-                    if (variant.strategy.isNotEmpty()) {
-                        strategyStats.getOrPut(variant.strategy) { mutableListOf() }.add(variant.score.overall_score)
-                    }
-                }
-                appendLine("| Strategy | Avg Score | Count | Success Rate |")
-                appendLine("|----------|-----------|-------|--------------|")
-                strategyStats.forEach { (strategy, scores) ->
-                    val avgScore = scores.average()
-                    val successRate =
-                        scores.count { it > initialEvaluation.overall_score }.toDouble() / scores.size * 100
-                    appendLine(
-                        "| $strategy | ${
-                            String.format(
-                                "%.1f",
-                                avgScore
-                            )
-                        } | ${scores.size} | ${String.format("%.0f%%", successRate)} |"
-                    )
-                }
-                appendLine()
-                appendLine("## Best Variant Evolution")
-                appendLine()
-                appendLine("### Initial Text (Score: ${String.format("%.1f", initialEvaluation.overall_score)})")
-                appendLine("$TT")
-                appendLine(initialText)
-                appendLine("$TT")
-                appendLine()
-                appendLine(
-                    "### Final Optimized Text (Score: ${
-                        String.format(
-                            "%.1f",
-                            bestVariant.score.overall_score
-                        )
-                    })"
-                )
-                appendLine("$TT")
-                appendLine(bestVariant.text)
-                appendLine("$TT")
-                appendLine()
-                appendLine("### Improvement Summary")
-                appendLine()
-                appendLine(
-                    "- **Score Improvement:** ${
-                        String.format(
-                            "%+.1f",
-                            bestVariant.score.overall_score - initialEvaluation.overall_score
-                        )
-                    } points"
-                )
-                appendLine("- **Generation Found:** ${bestVariant.generation}")
-                appendLine("- **Strategy Used:** ${bestVariant.strategy}")
-                appendLine()
-                appendLine("### Detailed Analysis")
-                appendLine()
-                appendLine("**Strengths:**")
-                bestVariant.score.strengths.forEach { appendLine("- $it") }
-                appendLine()
-                if (bestVariant.score.weaknesses.isNotEmpty()) {
-                    appendLine("**Remaining Areas for Improvement:**")
-                    bestVariant.score.weaknesses.forEach { appendLine("- $it") }
-                    appendLine()
-                }
-                appendLine("**Criteria Scores:**")
-                bestVariant.score.criteria_scores.forEach { (criterion, score) ->
-                    val initialScore = initialEvaluation.criteria_scores[criterion] ?: 0.0
-                    val improvement = score - initialScore
-                    appendLine(
-                        "- $criterion: ${String.format("%.1f", score)}/100 (${
-                            String.format(
-                                "%+.1f",
-                                improvement
-                            )
-                        })"
-                    )
-                }
-                appendLine()
-                appendLine("**Justification:**")
-                appendLine(bestVariant.score.justification)
-            }
-            evolutionTask.add(evolutionAnalysis.renderMarkdown)
-            task.update()
-            transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
-            transcript?.write(evolutionAnalysis.toByteArray(StandardCharsets.UTF_8))
-
-            // Build final result
-            val totalTime = System.currentTimeMillis() - startTime
-            buildString {
-                appendLine("# Genetic Optimization Results")
-                appendLine()
-                appendLine("**Optimization Goal:** $optimizationGoal")
-                appendLine()
-                appendLine("## Final Optimized Text")
-                appendLine()
-                appendLine("$TT")
-                appendLine(bestVariant.text)
-                appendLine("$TT")
-                appendLine()
-                appendLine("## Performance Metrics")
-                appendLine()
-                appendLine("- **Initial Score:** ${String.format("%.1f", initialEvaluation.overall_score)}/100")
-                appendLine("- **Final Score:** ${String.format("%.1f", bestVariant.score.overall_score)}/100")
-                appendLine(
-                    "- **Improvement:** ${
-                        String.format(
-                            "%+.1f",
-                            bestVariant.score.overall_score - initialEvaluation.overall_score
-                        )
-                    } points"
-                )
-                appendLine("- **Generations:** $numGenerations")
-                appendLine("- **Total Variants Evaluated:** ${evolutionHistory.flatten().size}")
-                appendLine("- **Best Found in Generation:** ${bestVariant.generation}")
-                appendLine()
-                appendLine("## Key Improvements")
-                appendLine()
-                bestVariant.score.strengths.forEach { appendLine("- $it") }
-                appendLine()
-                appendLine("*See the Evolution Analysis tab for detailed progression and strategy effectiveness*")
-            }
-
-            // Final overview update
-            val finalOverview = buildString {
-                appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine("## ✅ Optimization Complete")
-                appendLine()
-                appendLine("| Metric | Value |")
-                appendLine("|--------|-------|")
-                appendLine("| Initial Score | ${String.format("%.1f", initialEvaluation.overall_score)}/100 |")
-                appendLine("| Final Score | ${String.format("%.1f", bestVariant.score.overall_score)}/100 |")
-                appendLine(
-                    "| Improvement | ${
-                        String.format(
-                            "%+.1f",
-                            bestVariant.score.overall_score - initialEvaluation.overall_score
-                        )
-                    } |"
-                )
-                appendLine("| Generations | $numGenerations |")
-                appendLine("| Total Variants | ${evolutionHistory.flatten().size} |")
-                appendLine("| Total Time | ${totalTime / 1000}s |")
-                appendLine()
-                appendLine("**Status:** ✓ Complete")
-            }
-            overviewTask.add(finalOverview.renderMarkdown)
-            task.update()
-            transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
-            transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
-            transcript?.close()
-
-            log.info("GeneticOptimizationTask completed successfully: total_time=${totalTime}ms, improvement=${bestVariant.score.overall_score - initialEvaluation.overall_score}, generations=$numGenerations")
-            task.complete(
-                "Optimization complete: improved by ${
-                    String.format(
-                        "%.1f",
-                        bestVariant.score.overall_score - initialEvaluation.overall_score
-                    )
-                } points in ${totalTime / 1000}s"
-            )
-            val transcriptFile = "optimization_results_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-            val (link, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-            val summaryMessage = buildString {
-                appendLine("Final Optimized Text")
-                appendLine()
-                appendLine("$TT")
-                appendLine(bestVariant.text)
-                appendLine("$TT")
-                appendLine()
-                appendLine("**Strengths:**")
-                bestVariant.score.strengths.forEach { appendLine("- $it") }
-                appendLine()
-                if (bestVariant.score.weaknesses.isNotEmpty()) {
-                    appendLine("**Remaining Areas for Improvement:**")
-                    bestVariant.score.weaknesses.forEach { appendLine("- $it") }
-                    appendLine()
-                }
-                appendLine()
-                appendLine(
-                    "Detailed results: <a href='$link' target='_blank'>$link</a> " +
-                            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-                )
-            }
-            resultFn(summaryMessage)
-
-        } catch (e: Exception) {
-            log.error("Error during GeneticOptimizationTask execution", e)
-            transcript?.close()
-            task.error(e)
-            task.complete("Failed with error: ${e.message}")
-            resultFn("ERROR: ${e.message}")
-        }
-    }
-
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
+      // Create overview tab
+      val overviewTask = task.ui.newTask(false)
+      tabs["Overview"] = overviewTask.placeholder
+      val overviewContent = buildString {
+        appendLine("# Genetic Optimization Task")
+        appendLine()
+        appendLine(
+          "**Started:** ${
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+          }"
         )
-        return markdownTranscript
+        appendLine()
+        appendLine("## Configuration")
+        appendLine()
+        appendLine("| Parameter | Value |")
+        appendLine("|-----------|-------|")
+        appendLine("| Optimization Goal | $optimizationGoal |")
+        appendLine("| Generations | $numGenerations |")
+        appendLine("| Population Size | $populationSize |")
+        appendLine("| Selection Size | $selectionSize |")
+        appendLine("| Mutation Strategies | ${mutationStrategies.joinToString(", ")} |")
+        appendLine("| Crossover | ${if (enableCrossover) "✓ Enabled" else "✗ Disabled"} |")
+        appendLine()
+        appendLine("## Evaluation Criteria")
+        appendLine()
+        evaluationWeights.forEach { (criterion, weight) ->
+          appendLine("- **$criterion**: ${String.format("%.0f%%", weight * 100)}")
+        }
+        if (constraints.isNotEmpty()) {
+          appendLine()
+          appendLine("## Constraints")
+          appendLine()
+          constraints.forEach { appendLine("- $it") }
+        }
+        appendLine()
+        appendLine("## Initial Text")
+        appendLine()
+        appendLine(initialText)
+        appendLine("$TT")
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine("## Progress")
+        appendLine()
+        appendLine("- ⏳ Initializing population...")
+      }
+      overviewTask.add(overviewContent.renderMarkdown)
+      task.update()
+      transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
+
+      // Gather context
+      log.debug("Gathering prior context")
+      val priorContext = getPriorCode(agent.executionState)
+      log.debug("Context gathered: length=${priorContext.length}")
+
+      overviewTask.add(buildString {
+        appendLine()
+      }.renderMarkdown)
+      // Initialize population with the seed texts
+      log.info("Evaluating ${initialText.size} initial texts")
+      var currentPopulation = initialText.mapIndexed { index, text ->
+        EvaluatedVariant(
+          text = text,
+          score = EvaluationScore(overall_score = 0.0),
+          generation = 0,
+          strategy = "seed",
+          diversityScore = 1.0
+        )
+      }
+
+      // Evaluate all initial texts
+      currentPopulation = currentPopulation.map { variant ->
+        val evaluation = evaluateVariant(variant.text, optimizationGoal, evaluationWeights, constraints, api)
+        variant.copy(score = evaluation, diversityScore = 1.0)
+      }
+
+      // Log and display initial evaluations
+      transcript?.write("\n\n## Initial Evaluations\n\n".toByteArray(StandardCharsets.UTF_8))
+      currentPopulation.forEachIndexed { index, variant ->
+        log.info("Initial text ${index + 1} evaluation: score=${variant.score.overall_score}")
+
+        val evalText = buildString {
+          if (currentPopulation.size > 1) {
+            appendLine("### Seed ${index + 1}")
+            appendLine()
+          }
+          appendLine("**Score:** ${String.format("%.1f", variant.score.overall_score)}/100")
+          appendLine()
+          appendLine("**Strengths:**")
+          variant.score.strengths.forEach { appendLine("- $it") }
+          appendLine()
+          appendLine("**Weaknesses:**")
+          variant.score.weaknesses.forEach { appendLine("- $it") }
+          appendLine()
+        }
+        transcript?.write(evalText.toByteArray(StandardCharsets.UTF_8))
+      }
+
+      // Update overview with initial scores
+      val initialScores = currentPopulation.map { it.score.overall_score }
+      overviewTask.add(buildString {
+        appendLine()
+        if (currentPopulation.size == 1) {
+          appendLine("- ✓ Initial evaluation: **${String.format("%.1f", initialScores[0])}/100**")
+        } else {
+          appendLine("- ✓ Initial evaluations:")
+          appendLine("  - Best: **${String.format("%.1f", initialScores.maxOrNull() ?: 0.0)}/100**")
+          appendLine("  - Average: **${String.format("%.1f", initialScores.average())}/100**")
+          appendLine("  - Worst: **${String.format("%.1f", initialScores.minOrNull() ?: 0.0)}/100**")
+        }
+        appendLine("- ⏳ Starting evolution...")
+      }.renderMarkdown)
+      task.update()
+
+      // Track best variant across all generations
+      var bestVariant = currentPopulation[0]
+      val evolutionHistory = mutableListOf<List<EvaluatedVariant>>()
+      evolutionHistory.add(currentPopulation)
+
+      // Evolution loop
+      for (generation in 1..numGenerations) {
+        log.info("Starting generation $generation/$numGenerations")
+
+        val generationTask = task.ui.newTask(false)
+        tabs["Generation $generation"] = generationTask.placeholder
+        transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
+        transcript?.write("# Generation $generation\n\n".toByteArray(StandardCharsets.UTF_8))
+        generationTask.add(buildString {
+          appendLine("# Generation $generation")
+          appendLine()
+          appendLine("**Status:** In Progress")
+          appendLine()
+          appendLine("Generating $populationSize variants...")
+        }.renderMarkdown)
+        task.update()
+
+// Step 1: Generate new variants
+        val newVariants = mutableListOf<EvaluatedVariant>()
+
+        // Keep top performers from previous generation
+        val survivors = currentPopulation.sortedByDescending { it.score.overall_score }.take(selectionSize)
+        log.debug("Selected $selectionSize survivors for generation $generation")
+        // Track all texts in current generation to prevent duplicates
+        val existingTexts = survivors.map { it.text }.toMutableSet()
+
+
+        // Generate mutations from survivors
+        val mutationsNeeded = populationSize - survivors.size
+        val mutationsPerSurvivor = max(1, mutationsNeeded / survivors.size)
+
+        survivors.forEachIndexed { survivorIndex, survivor ->
+          val mutationsToGenerate = if (survivorIndex == survivors.size - 1) {
+            // Last survivor gets any remaining slots
+            mutationsNeeded - (mutationsPerSurvivor * (survivors.size - 1))
+          } else {
+            mutationsPerSurvivor
+          }
+
+          repeat(mutationsToGenerate) {
+            val strategy = mutationStrategies.random()
+            log.debug("Generating mutation using strategy: $strategy")
+            newVariants.add(
+              EvaluatedVariant(
+                score = EvaluationScore(overall_score = 0.0),
+                generation = generation,
+              )
+            )
+            // Try up to 3 times to generate a unique variant
+            var attempts = 0
+            var mutated: TextVariant? = null
+            while (attempts < 3 && mutated == null) {
+              val candidate = generateMutation(
+                survivor.text,
+                survivor.score,
+                strategy,
+                optimizationGoal,
+                constraints,
+                priorContext,
+                api
+              )
+              if (candidate != null && !existingTexts.contains(candidate.text)) {
+                mutated = candidate
+                existingTexts.add(candidate.text)
+              }
+              attempts++
+            }
+
+            if (mutated != null) {
+              // Calculate diversity score based on compressibility with existing population
+              val diversityScore = calculateDiversityScore(mutated.text, existingTexts.toList())
+
+              newVariants.add(
+                EvaluatedVariant(
+                  text = mutated.text,
+                  score = EvaluationScore(overall_score = 0.0),
+                  generation = generation,
+                  parentIndex = survivorIndex,
+                  strategy = strategy,
+                  diversityScore = diversityScore
+                )
+              )
+            }
+          }
+        }
+
+        if (enableCrossover && survivors.size >= 2 && newVariants.size < populationSize) {
+          log.debug("Applying crossover")
+
+          // Try up to 3 times to generate a unique crossover
+          var attempts = 0
+          var crossoverVariant: String? = null
+          while (attempts < 3 && crossoverVariant == null) {
+            val candidate = applyCrossover(
+              survivors[0].text,
+              survivors[0].score,
+              survivors[1].text,
+              survivors[1].score,
+              optimizationGoal,
+              constraints,
+              api
+            )
+            if (candidate != null && !existingTexts.contains(candidate)) {
+              crossoverVariant = candidate
+              existingTexts.add(candidate)
+            }
+            attempts++
+          }
+
+          if (crossoverVariant != null) {
+            val diversityScore = calculateDiversityScore(crossoverVariant, existingTexts.toList())
+
+            newVariants.add(
+              EvaluatedVariant(
+                text = crossoverVariant,
+                score = EvaluationScore(overall_score = 0.0),
+                generation = generation,
+                strategy = "crossover",
+                diversityScore = diversityScore
+              )
+            )
+          }
+        }
+
+        // Combine survivors and new variants
+        currentPopulation = survivors + newVariants
+
+// Step 2: Evaluate all variants
+        log.info("Evaluating ${currentPopulation.size} variants in generation $generation")
+        currentPopulation = currentPopulation.map { variant ->
+          if (variant.score.overall_score == 0.0) {
+            val evaluation = evaluateVariant(
+              variant.text,
+              optimizationGoal,
+              evaluationWeights,
+              constraints,
+              api
+            )
+            // Combine fitness score with diversity bonus (10% weight on diversity)
+            val adjustedScore = evaluation.copy(
+              overall_score = evaluation.overall_score * 0.9 + variant.diversityScore * 10.0
+            )
+            variant.copy(score = adjustedScore)
+          } else {
+            variant
+          }
+        }
+        // Log diversity statistics
+        val avgDiversity = currentPopulation.map { it.diversityScore }.average()
+        log.debug("Generation $generation diversity: avg=${String.format("%.3f", avgDiversity)}")
+
+        evolutionHistory.add(currentPopulation)
+
+        // Update best variant
+        val generationBest = currentPopulation.maxByOrNull { it.score.overall_score }!!
+        if (generationBest.score.overall_score > bestVariant.score.overall_score) {
+          log.info("New best variant found in generation $generation: score=${generationBest.score.overall_score}")
+          bestVariant = generationBest
+        }
+
+        // Display generation results
+        val generationResults = buildString {
+          appendLine()
+          appendLine("---")
+          appendLine()
+          appendLine("## Generation $generation Results")
+          appendLine()
+          appendLine("**Status:** ✓ Complete")
+          appendLine()
+          appendLine("### Population Statistics")
+          appendLine()
+          val scores = currentPopulation.map { it.score.overall_score }
+          appendLine("- **Best Score:** ${String.format("%.1f", scores.maxOrNull() ?: 0.0)}/100")
+          appendLine("- **Average Score:** ${String.format("%.1f", scores.average())}/100")
+          appendLine("- **Worst Score:** ${String.format("%.1f", scores.minOrNull() ?: 0.0)}/100")
+          val diversityScores = currentPopulation.map { it.diversityScore }
+          appendLine("- **Average Diversity:** ${String.format("%.3f", diversityScores.average())}")
+          appendLine(
+            "- **Improvement:** ${
+              String.format(
+                "%.1f",
+                (generationBest.score.overall_score - survivors[0].score.overall_score)
+              )
+            }"
+          )
+          appendLine()
+          appendLine("### Top Variants")
+          appendLine()
+          currentPopulation.sortedByDescending { it.score.overall_score }.take(3)
+            .forEachIndexed { index, variant ->
+              appendLine(
+                "#### ${index + 1}. Score: ${
+                  String.format(
+                    "%.1f",
+                    variant.score.overall_score
+                  )
+                }/100 (${variant.strategy})"
+              )
+              appendLine()
+              appendLine("$TT")
+              appendLine(variant.text)
+              appendLine("$TT")
+              appendLine()
+              appendLine("**Strengths:**")
+              variant.score.strengths.forEach { appendLine("- $it") }
+              appendLine()
+              if (variant.score.weaknesses.isNotEmpty()) {
+                appendLine("**Weaknesses:**")
+                variant.score.weaknesses.forEach { appendLine("- $it") }
+                appendLine()
+              }
+              appendLine("**Criteria Breakdown:**")
+              variant.score.criteria_scores.forEach { (criterion, score) ->
+                appendLine("- $criterion: ${String.format("%.1f", score)}/100")
+              }
+              appendLine()
+              appendLine("---")
+              appendLine()
+            }
+        }
+        generationTask.add(generationResults.renderMarkdown)
+        task.update()
+        transcript?.write(generationResults.toByteArray(StandardCharsets.UTF_8))
+
+        // Update overview
+        overviewTask.add(buildString {
+          appendLine()
+          appendLine(
+            "- ✓ Generation $generation: Best=${
+              String.format(
+                "%.1f",
+                generationBest.score.overall_score
+              )
+            }, Avg=${String.format("%.1f", currentPopulation.map { it.score.overall_score }.average())}"
+          )
+        }.renderMarkdown)
+        task.update()
+      }
+
+      // Create evolution visualization tab
+      log.info("Creating evolution visualization")
+      val evolutionTask = task.ui.newTask(false)
+      tabs["Evolution Analysis"] = evolutionTask.placeholder
+      val evolutionAnalysis = buildString {
+        appendLine("# Evolution Analysis")
+        appendLine()
+        appendLine("## Fitness Progression")
+        appendLine()
+        appendLine("| Generation | Best Score | Average Score | Improvement |")
+        appendLine("|------------|------------|---------------|-------------|")
+        evolutionHistory.forEachIndexed { index, population ->
+          val scores = population.map { it.score.overall_score }
+          val improvement = if (index > 0) {
+            scores.maxOrNull()!! - evolutionHistory[index - 1].maxOf { it.score.overall_score }
+          } else {
+            0.0
+          }
+          appendLine(
+            "| $index | ${String.format("%.1f", scores.maxOrNull() ?: 0.0)} | ${
+              String.format(
+                "%.1f",
+                scores.average()
+              )
+            } | ${String.format("%+.1f", improvement)} |"
+          )
+        }
+        appendLine()
+        appendLine("## Strategy Effectiveness")
+        appendLine()
+        val strategyStats = mutableMapOf<String, MutableList<Double>>()
+        evolutionHistory.flatten().forEach { variant ->
+          if (variant.strategy.isNotEmpty()) {
+            strategyStats.getOrPut(variant.strategy) { mutableListOf() }.add(variant.score.overall_score)
+          }
+        }
+        appendLine("| Strategy | Avg Score | Count | Success Rate |")
+        appendLine("|----------|-----------|-------|--------------|")
+        strategyStats.forEach { (strategy, scores) ->
+          val avgScore = scores.average()
+          val initialBestScore = evolutionHistory[0].maxOf { it.score.overall_score }
+          val successRate =
+            scores.count { it > initialBestScore }.toDouble() / scores.size * 100
+          appendLine(
+            "| $strategy | ${
+              String.format(
+                "%.1f",
+                avgScore
+              )
+            } | ${scores.size} | ${String.format("%.0f%%", successRate)} |"
+          )
+        }
+        appendLine()
+        appendLine("## Best Variant Evolution")
+        appendLine()
+        appendLine("$TT")
+        appendLine(initialText)
+        if (initialText.size == 1) {
+          appendLine("### Initial Text (Score: ${String.format("%.1f", evolutionHistory[0][0].score.overall_score)})")
+          appendLine("$TT")
+          appendLine(initialText[0])
+          appendLine("$TT")
+        } else {
+          appendLine("### Initial Texts")
+          evolutionHistory[0].forEachIndexed { index, variant ->
+            appendLine()
+            appendLine("#### Seed ${index + 1} (Score: ${String.format("%.1f", variant.score.overall_score)})")
+            appendLine("$TT")
+            appendLine(variant.text)
+            appendLine("$TT")
+          }
+        }
+        appendLine()
+        appendLine(
+          "### Final Optimized Text (Score: ${
+            String.format(
+              "%.1f",
+              bestVariant.score.overall_score
+            )
+          })"
+        )
+        appendLine("$TT")
+        appendLine(bestVariant.text)
+        appendLine("$TT")
+        appendLine()
+        appendLine("### Improvement Summary")
+        appendLine()
+        val initialBestScore = evolutionHistory[0].maxOf { it.score.overall_score }
+        appendLine(
+          "- **Score Improvement:** ${
+            String.format(
+              "%+.1f",
+              bestVariant.score.overall_score - initialBestScore
+            )
+          } points"
+        )
+        appendLine("- **Generation Found:** ${bestVariant.generation}")
+        appendLine("- **Strategy Used:** ${bestVariant.strategy}")
+        appendLine()
+        appendLine("### Detailed Analysis")
+        appendLine()
+        appendLine("**Strengths:**")
+        bestVariant.score.strengths.forEach { appendLine("- $it") }
+        appendLine()
+        if (bestVariant.score.weaknesses.isNotEmpty()) {
+          appendLine("**Remaining Areas for Improvement:**")
+          bestVariant.score.weaknesses.forEach { appendLine("- $it") }
+          appendLine()
+        }
+        appendLine("**Criteria Scores:**")
+        bestVariant.score.criteria_scores.forEach { (criterion, score) ->
+          val initialScore = evolutionHistory[0].map { it.score.criteria_scores[criterion] ?: 0.0 }.maxOrNull() ?: 0.0
+          val improvement = score - initialScore
+          appendLine(
+            "- $criterion: ${String.format("%.1f", score)}/100 (${
+              String.format(
+                "%+.1f",
+                improvement
+              )
+            })"
+          )
+        }
+        appendLine()
+        appendLine("**Justification:**")
+        appendLine(bestVariant.score.justification)
+      }
+      evolutionTask.add(evolutionAnalysis.renderMarkdown)
+      task.update()
+      transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
+      transcript?.write(evolutionAnalysis.toByteArray(StandardCharsets.UTF_8))
+
+      // Build final result
+      val totalTime = System.currentTimeMillis() - startTime
+      buildString {
+        appendLine("# Genetic Optimization Results")
+        appendLine()
+        appendLine("**Optimization Goal:** $optimizationGoal")
+        appendLine()
+        appendLine("## Final Optimized Text")
+        appendLine()
+        appendLine("$TT")
+        appendLine(bestVariant.text)
+        appendLine("$TT")
+        appendLine()
+        appendLine("## Performance Metrics")
+        appendLine()
+        val initialBestScore = evolutionHistory[0].maxOf { it.score.overall_score }
+        appendLine("- **Initial Best Score:** ${String.format("%.1f", initialBestScore)}/100")
+        appendLine("- **Final Score:** ${String.format("%.1f", bestVariant.score.overall_score)}/100")
+        appendLine(
+          "- **Improvement:** ${
+            String.format(
+              "%+.1f",
+              bestVariant.score.overall_score - initialBestScore
+            )
+          } points"
+        )
+        appendLine("- **Generations:** $numGenerations")
+        appendLine("- **Total Variants Evaluated:** ${evolutionHistory.flatten().size}")
+        appendLine("- **Best Found in Generation:** ${bestVariant.generation}")
+        appendLine()
+        appendLine("## Key Improvements")
+        appendLine()
+        bestVariant.score.strengths.forEach { appendLine("- $it") }
+        appendLine()
+        appendLine("*See the Evolution Analysis tab for detailed progression and strategy effectiveness*")
+      }
+
+      // Final overview update
+      val finalOverview = buildString {
+        appendLine()
+        appendLine("---")
+        appendLine()
+        appendLine("## ✅ Optimization Complete")
+        appendLine()
+        appendLine("| Metric | Value |")
+        appendLine("|--------|-------|")
+        val initialBestScore = evolutionHistory[0].maxOf { it.score.overall_score }
+        appendLine("| Initial Best Score | ${String.format("%.1f", initialBestScore)}/100 |")
+        appendLine("| Final Score | ${String.format("%.1f", bestVariant.score.overall_score)}/100 |")
+        appendLine(
+          "| Improvement | ${
+            String.format(
+              "%+.1f",
+              bestVariant.score.overall_score - initialBestScore
+            )
+          } |"
+        )
+        appendLine("| Generations | $numGenerations |")
+        appendLine("| Total Variants | ${evolutionHistory.flatten().size} |")
+        appendLine("| Total Time | ${totalTime / 1000}s |")
+        appendLine()
+        appendLine("**Status:** ✓ Complete")
+      }
+      overviewTask.add(finalOverview.renderMarkdown)
+      task.update()
+      transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
+      transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
+      transcript?.close()
+
+      log.info("GeneticOptimizationTask completed successfully: total_time=${totalTime}ms, improvement=${bestVariant.score.overall_score - evolutionHistory[0].maxOf<EvaluatedVariant> { it.score.overall_score }}, generations=$numGenerations")
+      val initialBestScore = evolutionHistory[0].maxOf { it.score.overall_score }
+      log.info("GeneticOptimizationTask completed successfully: total_time=${totalTime}ms, improvement=${bestVariant.score.overall_score - initialBestScore}, generations=$numGenerations")
+      task.complete(
+        "Optimization complete: improved by ${
+          String.format(
+            "%.1f",
+            bestVariant.score.overall_score - initialBestScore
+          )
+        } points in ${totalTime / 1000}s"
+      )
+      val transcriptFile = "optimization_results_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+      val (link, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
+      val summaryMessage = buildString {
+        appendLine("Final Optimized Text")
+        appendLine()
+        appendLine("$TT")
+        appendLine(bestVariant.text)
+        appendLine("$TT")
+        appendLine()
+        appendLine("**Strengths:**")
+        bestVariant.score.strengths.forEach { appendLine("- $it") }
+        appendLine()
+        if (bestVariant.score.weaknesses.isNotEmpty()) {
+          appendLine("**Remaining Areas for Improvement:**")
+          bestVariant.score.weaknesses.forEach { appendLine("- $it") }
+          appendLine()
+        }
+        appendLine()
+        appendLine(
+          "Detailed results: <a href='$link' target='_blank'>$link</a> " +
+              "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+              "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+        )
+      }
+      resultFn(summaryMessage)
+
+    } catch (e: Exception) {
+      log.error("Error during GeneticOptimizationTask execution", e)
+      transcript?.close()
+      task.error(e)
+      task.complete("Failed with error: ${e.message}")
+      resultFn("ERROR: ${e.message}")
     }
+  }
+
+  /**
+   * Calculate diversity score for a text variant based on its compressibility
+   * with existing population members. Higher scores indicate more diversity.
+   *
+   * Returns a score between 0 and 1, where:
+   * - 1.0 = highly diverse (incompressible with existing texts)
+   * - 0.0 = duplicate or very similar (highly compressible)
+   */
+  private fun calculateDiversityScore(text: String, existingTexts: List<String>): Double {
+    if (existingTexts.isEmpty()) return 1.0
+    // Calculate average compressibility with all existing texts
+    val compressibilities = existingTexts.map { existing ->
+      compressibility(text, existing)
+    }
+    val avgCompressibility = compressibilities.average()
+    // Convert compressibility to diversity score
+    // compressibility of 1.0 (incompressible) -> diversity 1.0 (very diverse)
+    // compressibility of 2.0 (duplicate) -> diversity 0.0 (not diverse)
+    val diversityScore = max(0.0, min(1.0, 2.0 - avgCompressibility))
+    log.debug("Diversity score: ${String.format("%.3f", diversityScore)} (avg compressibility: ${String.format("%.3f", avgCompressibility)})")
+    return diversityScore
+  }
 
 
-    private fun generateMutation(
-        text: String,
-        parentScore: EvaluationScore,
-        strategy: String,
-        goal: String,
-        constraints: List<String>,
-        context: String,
-        api: ChatInterface
-    ) = try {
-        ParsedAgent(
-            resultClass = TextVariant::class.java,
-            prompt = """
+  private fun transcript(task: SessionTask): FileOutputStream? {
+    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
+    val markdownTranscript = file?.outputStream()
+    task.complete(
+      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        link.removeSuffix(
+          ".md"
+        )
+      }.pdf' target='_blank'>pdf</a>"
+    )
+    return markdownTranscript
+  }
+
+
+  private fun generateMutation(
+    text: String,
+    parentScore: EvaluationScore,
+    strategy: String,
+    goal: String,
+    constraints: List<String>,
+    context: String,
+    api: ChatInterface
+  ) = try {
+    ParsedAgent(
+      resultClass = TextVariant::class.java,
+      prompt = """
  You are a text optimization expert applying genetic algorithm mutations.
 
  ## Optimization Goal
@@ -781,15 +905,15 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
  ## Mutation Strategy
  $strategy
 ${
-                if (constraints.isNotEmpty()) {
-                    "\n\nConstraints to maintain:\n${constraints.joinToString("\n") { "- $it" }}"
-                } else ""
-            }
+        if (constraints.isNotEmpty()) {
+          "\n\nConstraints to maintain:\n${constraints.joinToString("\n") { "- $it" }}"
+        } else ""
+      }
 ${
-                if (context.isNotBlank()) {
-                    "\n\nAdditional context:\n${context.take(5000)}"
-                } else ""
-            }
+        if (context.isNotBlank()) {
+          "\n\nAdditional context:\n${context.take(5000)}"
+        } else ""
+      }
 
  ## Instructions
  Apply the "$strategy" mutation strategy to create a variant of the text that better achieves the optimization goal.
@@ -812,10 +936,10 @@ ${parentScore.strengths.joinToString("\n") { "- $it" }}
 ${parentScore.weaknesses.joinToString("\n") { "- $it" }}
 **Criteria Scores:**
 ${
-                parentScore.criteria_scores.entries.joinToString("\n") { (criterion, score) ->
-                    "- $criterion: ${String.format("%.1f", score)}/100"
-                }
-            }
+        parentScore.criteria_scores.entries.joinToString("\n") { (criterion, score) ->
+          "- $criterion: ${String.format("%.1f", score)}/100"
+        }
+      }
 **Justification:** ${parentScore.justification}
 
 Use this feedback to guide your mutation:
@@ -823,13 +947,13 @@ Use this feedback to guide your mutation:
 - Address the weaknesses while applying the mutation strategy
 - Focus on improving the lowest-scoring criteria
       """.trimIndent(),
-            model = api,
-            temperature = 0.8,
-            name = "MutationGenerator",
-            parsingChatter = orchestrationConfig.parsingChatter,
-        ).answer(
-            listOf(
-                """
+      model = api,
+      temperature = 0.8,
+      name = "MutationGenerator",
+      parsingChatter = orchestrationConfig.parsingChatter,
+    ).answer(
+      listOf(
+        """
 
  ## Current Text
 $TT
@@ -837,29 +961,29 @@ $text
 ```
 
         """
-            )
-        ).obj
-    } catch (e: Exception) {
-        log.warn("Failed to generate mutation with strategy $strategy", e)
-        null
-    }
+      )
+    ).obj
+  } catch (e: Exception) {
+    log.warn("Failed to generate mutation with strategy $strategy", e)
+    null
+  }
 
-    private fun applyCrossover(
-        text1: String,
-        score1: EvaluationScore,
-        text2: String,
-        score2: EvaluationScore,
-        goal: String,
-        constraints: List<String>,
-        api: ChatInterface
-    ) = try {
-        ChatAgent(
-            prompt = "You are a text optimization expert.",
-            model = api,
-            temperature = 0.7
-        ).answer(
-            listOf(
-                """
+  private fun applyCrossover(
+    text1: String,
+    score1: EvaluationScore,
+    text2: String,
+    score2: EvaluationScore,
+    goal: String,
+    constraints: List<String>,
+    api: ChatInterface
+  ) = try {
+    ChatAgent(
+      prompt = "You are a text optimization expert.",
+      model = api,
+      temperature = 0.7
+    ).answer(
+      listOf(
+        """
  You are a text optimization expert applying genetic algorithm crossover.
 
                 
@@ -881,10 +1005,10 @@ ${score1.strengths.joinToString("\n") { "- $it" }}
 ${score1.weaknesses.joinToString("\n") { "- $it" }}
 **Criteria Scores:**
 ${
-                    score1.criteria_scores.entries.joinToString("\n") { (criterion, score) ->
-                        "- $criterion: ${String.format("%.1f", score)}/100"
-                    }
-                }
+          score1.criteria_scores.entries.joinToString("\n") { (criterion, score) ->
+            "- $criterion: ${String.format("%.1f", score)}/100"
+          }
+        }
                 
 ## Parent Text 2
 ```
@@ -902,18 +1026,18 @@ ${score2.weaknesses.joinToString("\n") { "- $it" }}
 
 **Criteria Scores:**
 ${
-                    score2.criteria_scores.entries.joinToString("\n") { (criterion, score) ->
-                        "- $criterion: ${String.format("%.1f", score)}/100"
-                    }
-                }
+          score2.criteria_scores.entries.joinToString("\n") { (criterion, score) ->
+            "- $criterion: ${String.format("%.1f", score)}/100"
+          }
+        }
 
 ## Optimization Goal
 $goal
 ${
-                    if (constraints.isNotEmpty()) {
-                        "\n\nConstraints to maintain:\n${constraints.joinToString("\n") { "- $it" }}"
-                    } else ""
-                }
+          if (constraints.isNotEmpty()) {
+            "\n\nConstraints to maintain:\n${constraints.joinToString("\n") { "- $it" }}"
+          } else ""
+        }
 
 ## Instructions
 Create a new variant by combining the best elements from both parent texts.
@@ -924,23 +1048,23 @@ Create a new variant by combining the best elements from both parent texts.
 
  Generate the crossover variant now.
       """.trimIndent()
-            )
-        )
-    } catch (e: Exception) {
-        log.warn("Failed to apply crossover", e)
-        null
-    }
+      )
+    )
+  } catch (e: Exception) {
+    log.warn("Failed to apply crossover", e)
+    null
+  }
 
-    private fun evaluateVariant(
-        text: String,
-        goal: String,
-        weights: Map<String, Double>,
-        constraints: List<String>,
-        api: ChatInterface
-    ) = try {
-        ParsedAgent(
-            resultClass = EvaluationScore::class.java,
-            prompt = """
+  private fun evaluateVariant(
+    text: String,
+    goal: String,
+    weights: Map<String, Double>,
+    constraints: List<String>,
+    api: ChatInterface
+  ) = try {
+    ParsedAgent(
+      resultClass = EvaluationScore::class.java,
+      prompt = """
  You are an expert evaluator for text optimization using genetic algorithms.
 
 
@@ -949,20 +1073,20 @@ $goal
 
 ## Evaluation Criteria
 ${
-                weights.entries.joinToString("\n") { (criterion, weight) ->
-                    "- $criterion (${
-                        String.format(
-                            "%.0f%%",
-                            weight * 100
-                        )
-                    } weight)"
-                }
-            }
+        weights.entries.joinToString("\n") { (criterion, weight) ->
+          "- $criterion (${
+            String.format(
+              "%.0f%%",
+              weight * 100
+            )
+          } weight)"
+        }
+      }
 ${
-                if (constraints.isNotEmpty()) {
-                    "\n\nConstraints:\n${constraints.joinToString("\n") { "- $it" }}"
-                } else ""
-            }
+        if (constraints.isNotEmpty()) {
+          "\n\nConstraints:\n${constraints.joinToString("\n") { "- $it" }}"
+        } else ""
+      }
 
 ## Instructions
 Evaluate this text variant against the optimization goal and criteria.
@@ -981,29 +1105,29 @@ Also provide:
 
 Be objective and consistent in your evaluation.
       """.trimIndent(),
-            model = api,
-            temperature = 0.3,
-            name = "VariantEvaluator",
-            parsingChatter = orchestrationConfig.parsingChatter,
-        ).answer(
-            listOf(
-                """
+      model = api,
+      temperature = 0.3,
+      name = "VariantEvaluator",
+      parsingChatter = orchestrationConfig.parsingChatter,
+    ).answer(
+      listOf(
+        """
 
 ## Text to Evaluate
 $TT
 $text
 ```
         """.trimIndent()
-            )
-        ).obj
-    } catch (e: Exception) {
-        log.warn("Failed to evaluate variant", e)
-        EvaluationScore(
-            overall_score = 0.0,
-            criteria_scores = weights.keys.associateWith { 0.0 },
-            strengths = emptyList(),
-            weaknesses = listOf("Evaluation failed: ${e.message}"),
-            justification = "Error during evaluation"
-        )
-    }
+      )
+    ).obj
+  } catch (e: Exception) {
+    log.warn("Failed to evaluate variant", e)
+    EvaluationScore(
+      overall_score = 0.0,
+      criteria_scores = weights.keys.associateWith { 0.0 },
+      strengths = emptyList(),
+      weaknesses = listOf("Evaluation failed: ${e.message}"),
+      justification = "Error during evaluation"
+    )
+  }
 }

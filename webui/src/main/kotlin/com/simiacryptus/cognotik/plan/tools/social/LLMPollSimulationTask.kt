@@ -153,10 +153,17 @@ class LLMPollSimulationTask(
         val reasoning: Map<String, String>? = null
     )
 
-    data class ParsedResponse(
+data class ParsedResponse(
         val answer: Any? = null,
         val reasoning: String? = null
     )
+    data class QuestionResponse(
+        @Description("The answer to the question")
+        val answer: Any? = null,
+        @Description("Brief explanation of the reasoning behind the answer")
+        val reasoning: String? = null
+    )
+
 
     override fun promptSegment(): String {
         return """
@@ -729,7 +736,7 @@ Instructions:
         """.trimIndent()
     }
 
-    private fun conductSurvey(
+private fun conductSurvey(
         respondent: SimulatedRespondent,
         questions: List<SurveyQuestion>,
         api: ChatInterface,
@@ -744,6 +751,23 @@ Instructions:
             model = api,
             temperature = temperature
         )
+        val responseParser = ParsedAgent(
+            resultClass = QuestionResponse::class.java,
+            prompt = """
+Parse the survey response and extract the answer and reasoning.
+For the answer field, return the appropriate type based on the question:
+- For multiple choice: return a list of selected options
+- For single choice: return the selected option as a string
+- For numeric ratings/scales: return the number
+- For yes/no: return "Yes" or "No"
+- For rankings: return a list of options in ranked order
+- For open-ended: return the full text response
+            """.trimIndent(),
+            model = api,
+            temperature = 0.1,
+            parsingChatter = api
+        )
+
 
         questions.forEach { question ->
             // Check conditional logic
@@ -761,7 +785,20 @@ Instructions:
             val response = surveyAgent.answer(listOf(questionPrompt))
 
             // Parse response based on question type
-            val parsedResponse = parseResponse(response, question)
+            val parsedResponse = try {
+                val parsed = responseParser.answer(
+                    listOf(
+                        "Question Type: ${question.type}",
+                        "Question: ${question.text}",
+                        if (!question.options.isNullOrEmpty()) "Options: ${question.options.joinToString(", ")}" else "",
+                        "Response: $response"
+                    )
+                ).obj
+                ParsedResponse(parsed.answer, parsed.reasoning)
+            } catch (e: Exception) {
+                log.warn("Error parsing response for question ${question.id}", e)
+                ParsedResponse(response, null)
+            }
 
             answers[question.id] = parsedResponse.answer ?: ""
             if (parsedResponse.reasoning != null) {
@@ -846,67 +883,13 @@ Instructions:
         }
     }
 
-    private fun parseResponse(response: String, question: SurveyQuestion): ParsedResponse {
-        val lines = response.trim().lines()
-        val answerLine = lines.firstOrNull { it.isNotBlank() } ?: ""
 
-        return when (question.type) {
-            QuestionType.MULTIPLE_CHOICE -> {
-                val selections = answerLine.split(",")
-                    .mapNotNull { it.trim().toIntOrNull() }
-                    .filter { it > 0 && it <= (question.options?.size ?: 0) }
-                    .map { question.options!![it - 1] }
-                ParsedResponse(selections, extractReasoning(lines))
-            }
-            QuestionType.SINGLE_CHOICE -> {
-                val selection = answerLine.trim().toIntOrNull()
-                val answer = if (selection != null && selection > 0 && selection <= (question.options?.size ?: 0)) {
-                    question.options!![selection - 1]
-                } else {
-                    answerLine
-                }
-                ParsedResponse(answer, extractReasoning(lines))
-            }
-            QuestionType.LIKERT_SCALE, QuestionType.RATING -> {
-                val rating = answerLine.trim().toIntOrNull() ?: 0
-                ParsedResponse(rating, extractReasoning(lines))
-            }
-            QuestionType.YES_NO -> {
-                val answer = when {
-                    answerLine.contains("yes", ignoreCase = true) -> "Yes"
-                    answerLine.contains("no", ignoreCase = true) -> "No"
-                    else -> answerLine
-                }
-                ParsedResponse(answer, extractReasoning(lines))
-            }
-            QuestionType.RANKING -> {
-                val rankings = answerLine.split(",")
-                    .mapNotNull { it.trim().toIntOrNull() }
-                    .filter { it > 0 && it <= (question.options?.size ?: 0) }
-                    .map { question.options!![it - 1] }
-                ParsedResponse(rankings, extractReasoning(lines))
-            }
-            QuestionType.OPEN_ENDED -> {
-                ParsedResponse(response.trim(), null)
-            }
-            else -> ParsedResponse(response.trim(), null)
-        }
-    }
-
-    private fun extractReasoning(lines: List<String>): String? {
-        // Look for reasoning in subsequent lines
-        val reasoningLines = lines.drop(1).filter { it.isNotBlank() }
-        return if (reasoningLines.isNotEmpty()) {
-            reasoningLines.joinToString(" ")
-        } else null
-    }
 
     private fun generateDescriptiveStatistics(
         responses: List<SurveyResponse>,
         questions: List<SurveyQuestion>
     ): String {
         val stats = StringBuilder()
-
         stats.appendLine("### Response Summary\n")
         stats.appendLine("- **Total Responses:** ${responses.size}")
         stats.appendLine("- **Avg Response Time:** ${responses.map { it.response_time }.average().toInt()}ms")
@@ -914,9 +897,7 @@ Instructions:
 
         questions.forEach { question ->
             stats.appendLine("### ${question.id}: ${question.text}\n")
-
             val answers = responses.mapNotNull { it.answers[question.id] }
-
             when (question.type) {
                 QuestionType.MULTIPLE_CHOICE, QuestionType.SINGLE_CHOICE -> {
                     val frequency = mutableMapOf<String, Int>()
