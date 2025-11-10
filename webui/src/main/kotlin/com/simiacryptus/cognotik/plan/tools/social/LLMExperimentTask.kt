@@ -557,7 +557,7 @@ Be specific and reference the data provided.
                         transcriptLink.removeSuffix(
                             ".md"
                         )
-                    }.html' target='_blank'>html</a> <a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+                    }.html' target='_blank'>html</a>"
                 )
             }
             resultFn(finalMessage)

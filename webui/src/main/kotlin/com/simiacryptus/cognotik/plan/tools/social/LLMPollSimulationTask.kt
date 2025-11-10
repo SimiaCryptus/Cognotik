@@ -627,7 +627,7 @@ Be specific and reference the data provided.
                 appendLine()
                 appendLine("---")
                 appendLine()
-                appendLine("Full poll report: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>")
+                appendLine("Full poll report: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a>")
             }
             resultFn(finalMessage)
 
