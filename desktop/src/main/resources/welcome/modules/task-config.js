@@ -639,6 +639,13 @@ class TaskConfigManager {
                 configFields: []
             },
             {
+                id: 'PoliticalOptimization',
+                name: 'Political Optimization',
+                description: 'Analyze and optimize political strategies and policies',
+                category: 'Social',
+                configFields: []
+            },
+            {
                 id: 'ArticleGeneration',
                 name: 'Article Generation',
                 description: 'Generate well-structured articles and blog posts',
