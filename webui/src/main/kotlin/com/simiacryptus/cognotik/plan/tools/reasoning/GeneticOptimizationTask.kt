@@ -871,7 +871,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
 
   private fun transcript(task: SessionTask): FileOutputStream? {
-    val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    val transcriptFile = "full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
     val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
     task.complete(

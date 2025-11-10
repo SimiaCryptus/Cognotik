@@ -260,7 +260,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
                 concept,
                 levels,
                 direction,
-                "abstraction_ladder_analysis_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+                "abstraction_ladder_analysis_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             )
             resultFn(summaryMessage)
 
@@ -507,20 +507,6 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
     **Duration:** ${duration / 1000}s
     Detailed analysis: <a href='${task.linkTo(transcriptName)}' target='_blank'>View Full Report</a>
   """.trimIndent()
-
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
-    }
 
 
     companion object {

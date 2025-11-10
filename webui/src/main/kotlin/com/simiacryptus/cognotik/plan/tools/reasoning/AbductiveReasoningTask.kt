@@ -517,7 +517,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             // Final summary
             val totalTime = System.currentTimeMillis() - startTime
 
-            val transcriptFile = "analysis_summary_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+            val transcriptFile = "abductive_reasoning_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
 
             val (summaryLink, summaryFile) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
             val finalSummary = buildString {
@@ -920,7 +920,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
     }
 
     private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile = "abductive_reasoning_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         task.complete(

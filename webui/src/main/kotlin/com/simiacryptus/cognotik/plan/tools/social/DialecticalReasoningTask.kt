@@ -804,7 +804,7 @@ Be comprehensive yet concise in your final integration.
 
     private fun initializeTranscript(task: SessionTask): FileOutputStream? {
         return try {
-            val transcriptFile = "dialectical_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+            val transcriptFile = "dialectical_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
             val transcriptStream = file?.outputStream()
             task.complete(

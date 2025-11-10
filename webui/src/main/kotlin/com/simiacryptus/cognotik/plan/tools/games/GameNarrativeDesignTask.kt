@@ -1246,7 +1246,7 @@ Provide specific examples and recommendations for improvement.
     }
 
     private fun createTranscript(task: SessionTask, gameTitle: String): BufferedWriter? {
-        val transcriptFile = "game_narrative_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile = "game_narrative_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val file = task.resolveUserFile(transcriptFile)
         val link = task.linkTo(transcriptFile)
         task.complete(

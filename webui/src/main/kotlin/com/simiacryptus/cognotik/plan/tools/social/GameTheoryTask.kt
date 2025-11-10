@@ -975,7 +975,7 @@ Generate the game structure analysis now:
     }
 
     private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         task.complete(

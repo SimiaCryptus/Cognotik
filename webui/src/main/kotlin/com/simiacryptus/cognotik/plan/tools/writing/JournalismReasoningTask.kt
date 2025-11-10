@@ -241,7 +241,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
     }
 
     private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "journalism_transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile = "journalism_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         task.complete(

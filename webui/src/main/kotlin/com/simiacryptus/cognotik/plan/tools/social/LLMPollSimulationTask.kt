@@ -589,9 +589,6 @@ Be specific and reference the data provided.
                 appendLine()
                 appendLine(insights.take(2000))
                 appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine("Full report: [View Transcript]($transcriptLink)")
             }
 
             transcriptWriter?.apply {
@@ -1213,7 +1210,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
     }
 
     private fun createTranscriptFile(task: SessionTask): Pair<String, FileOutputStream?> {
-        val transcriptFile = "poll_simulation_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile = "poll_simulation_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         task.complete(

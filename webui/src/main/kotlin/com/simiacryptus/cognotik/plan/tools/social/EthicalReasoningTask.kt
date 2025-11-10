@@ -405,7 +405,7 @@ Provide a detailed synthesis and a clear final recommendation.
             val duration = System.currentTimeMillis() - startTime
             val summary = "Ethical reasoning analysis completed for dilemma: ${dilemma.truncateForDisplay(200)}"
             log.info("$summary (duration: ${duration}ms)")
-            val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+            val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (transcriptLink, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
 
             task.safeComplete(summary, log)
@@ -478,7 +478,7 @@ Provide a detailed synthesis and a clear final recommendation.
     }
 
     private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         task.complete(

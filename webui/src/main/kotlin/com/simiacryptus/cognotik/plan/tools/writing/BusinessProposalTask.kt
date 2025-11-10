@@ -1547,9 +1547,9 @@ Provide the complete revised proposal.
                 appendLine()
                 appendLine("## Output Files")
                 appendLine()
-                val proposalFile = "proposal_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+                val proposalFile = "proposal_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
                 val (proposalLink, _) = Pair(task.linkTo(proposalFile), task.resolveUserFile(proposalFile))
-                val transcriptFile = "transcript_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+                val transcriptFile = "proposal_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
                 val (transcriptLink, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
                 appendLine(
                     "- **Complete Proposal:** [View](${proposalLink}) | [HTML](${proposalLink.removeSuffix(".md")}.html) | [PDF](${

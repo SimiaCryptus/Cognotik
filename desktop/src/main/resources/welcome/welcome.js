@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Validate form data
         const model = document.getElementById('basic-chat-model').value;
         const parsingModel = document.getElementById('basic-chat-parsing-model').value;
-        const imageModel = document.getElementById('imageModel').value;
+        const imageChatModel = document.getElementById('imageChatModel').value;
         const temperatureInput = document.getElementById('basic-chat-temperature').value;
         const budgetInput = document.getElementById('basic-chat-budget').value;
         if (!model || !parsingModel || !temperatureInput || !budgetInput) {
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
         httpService.saveChatSettings(chatSessionId, {
             model: model,
             parsingModel: parsingModel,
-            imageModel: imageModel,
+            imageChatModel: imageChatModel,
             temperature: temperature,
             budget: budget
         })
@@ -447,7 +447,7 @@ function setupWizardNavigation() {
         // Save task settings
         appState.updateTaskSetting('defaultModel', document.getElementById('model-selection')?.value);
         appState.updateTaskSetting('parsingModel', document.getElementById('parsing-model')?.value);
-        appState.updateTaskSetting('imageModel', document.getElementById('image-model')?.value);
+        appState.updateTaskSetting('imageChatModel', document.getElementById('image-model')?.value);
         appState.updateTaskSetting('workingDir', document.getElementById('working-dir')?.value);
         appState.updateTaskSetting('temperature', parseFloat(document.getElementById('temperature')?.value));
         appState.updateTaskSetting('autoFix', document.getElementById('auto-fix')?.checked);

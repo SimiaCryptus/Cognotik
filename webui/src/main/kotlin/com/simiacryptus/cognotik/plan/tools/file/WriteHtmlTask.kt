@@ -71,10 +71,9 @@ class WriteHtmlTask(
         }
     }
 
-
     override fun promptSegment(): String {
         return """
- WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
+WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
   ** Specify the HTML file path in the files array (must end with .html)
   ** Provide a detailed description of the page requirements including:
      - Layout and structure
@@ -90,8 +89,14 @@ class WriteHtmlTask(
      - Modern best practices
      - Generated images (if enabled) embedded as base64 or saved as separate files
   ** Related files can include existing HTML templates or reference files
+    Available files:
+  ${
+          AnalysisTask.getAvailableFiles(
+            root
+          ).joinToString("\n") { "      - $it" }
+        }
   ** Output will be presented for review before being written to disk
-        """.trimIndent()
+        """
     }
 
 

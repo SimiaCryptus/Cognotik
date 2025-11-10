@@ -495,9 +495,6 @@ Be specific and reference the data provided.
                 appendLine()
                 appendLine(insights.take(10000))
                 appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine("Full report: [View Transcript]($transcriptLink)")
             }
 
             transcriptWriter?.apply {
@@ -553,11 +550,9 @@ Be specific and reference the data provided.
                 appendLine("---")
                 appendLine()
                 appendLine(
-                    "Full experiment report: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${
-                        transcriptLink.removeSuffix(
-                            ".md"
-                        )
-                    }.html' target='_blank'>html</a>"
+                    "Full experiment report: <a href='$transcriptLink' target='_blank'>${transcriptLink.split('/','\\').last()}</a> <a href='${
+                        transcriptLink.removeSuffix(".md") + ".html"
+                    }' target='_blank'>html</a>"
                 )
             }
             resultFn(finalMessage)
@@ -1308,7 +1303,7 @@ Be specific and reference the data provided.
 
 
     private fun createTranscriptFile(task: SessionTask): Pair<String, FileOutputStream?> {
-        val transcriptFile = "experiment_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile = "llm_experiment_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
         task.complete(

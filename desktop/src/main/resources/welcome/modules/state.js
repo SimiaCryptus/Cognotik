@@ -12,7 +12,7 @@ class AppState {
         return {
             defaultModel: this.localStorage.getItem('defaultModel') || 'GPT4o',
             parsingModel: this.localStorage.getItem('parsingModel') || 'GPT4oMini',
-            imageModel: this.localStorage.getItem('imageModel') || '',
+            imageChatModel: this.localStorage.getItem('imageChatModel') || '',
             workingDir: this.localStorage.getItem('workingDir') || '.',
             autoFix: this.localStorage.getItem('autoFix') === 'true',
             temperature: parseFloat(this.localStorage.getItem('temperature')) || 0.2,

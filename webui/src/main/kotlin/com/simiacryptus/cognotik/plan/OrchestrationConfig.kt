@@ -63,7 +63,7 @@ class OrchestrationConfig(
 
     @get:JsonIgnore
     val imageChatChatter
-        get() = instance(imageChatModel ?: defaultModel ?: throw IllegalStateException("Image chat model not set"))
+        get() = instance(imageChatModel ?: throw IllegalStateException("Image chat model not set"))
 
 
     @JsonIgnore
