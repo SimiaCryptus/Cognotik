@@ -7,6 +7,8 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -22,21 +24,21 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class LateralThinkingTask(
-  orchestrationConfig: OrchestrationConfig,
-  planTask: LateralThinkingTaskExecutionConfigData?
+    orchestrationConfig: OrchestrationConfig,
+    planTask: LateralThinkingTaskExecutionConfigData?
 ) : AbstractTask<LateralThinkingTask.LateralThinkingTaskExecutionConfigData, LateralThinkingTask.LateralThinkingTaskTypeConfig>(
-  orchestrationConfig,
-  planTask
+    orchestrationConfig,
+    planTask
 ) {
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(LateralThinkingTask::class.java)
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(LateralThinkingTask::class.java)
 
-    val LateralThinking = TaskType(
-      "LateralThinking",
-      LateralThinkingTaskExecutionConfigData::class.java,
-      LateralThinkingTaskTypeConfig::class.java,
-      "Break conventional thinking patterns to find innovative solutions",
-      """
+        val LateralThinking = TaskType(
+            "LateralThinking",
+            LateralThinkingTaskExecutionConfigData::class.java,
+            LateralThinkingTaskTypeConfig::class.java,
+            "Break conventional thinking patterns to find innovative solutions",
+            """
               Applies lateral thinking techniques to generate unconventional solutions.
               <ul>
                 <li>Supports multiple techniques: reversal, random stimulus, challenge assumptions, exaggeration, escape, metaphor, provocation</li>
@@ -49,181 +51,181 @@ class LateralThinkingTask(
                 <li>Ideal for innovation, breaking design impasses, and creative problem-solving</li>
               </ul>
             """
-    )
-  }
-
-  val maxDescriptionLength = 1500
-
-  class LateralThinkingTaskExecutionConfigData(
-    @Description("The problem or challenge to approach with lateral thinking")
-    val problem: String? = null,
-    @Description("Lateral thinking techniques to apply: reversal, random_stimulus, challenge_assumptions, exaggeration, escape, metaphor, provocation")
-    val techniques: List<String>? = listOf(
-      "reversal",
-      "random_stimulus",
-      "challenge_assumptions",
-      "exaggeration",
-      "escape"
-    ),
-    @Description("Number of alternative solutions to generate per technique")
-    val num_alternatives: Int = 5,
-    @Description("Whether to evaluate the feasibility of generated ideas")
-    val evaluate_feasibility: Boolean = true,
-    @Description("Domain or context to constrain the thinking (optional)")
-    val domain_context: String? = null,
-    @Description("Additional constraints or requirements to consider")
-    val constraints: List<String>? = null,
-    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the task")
-    val input_files: List<String>? = null,
-    task_description: String? = null,
-    task_dependencies: List<String>? = null,
-    state: TaskState? = TaskState.Pending,
-  ) : TaskExecutionConfig(
-    task_type = LateralThinking.name,
-    task_description = task_description
-      ?: "Apply lateral thinking to: ${problem?.take(100)}${if (problem?.length ?: 0 > 100) "..." else ""}",
-    task_dependencies = task_dependencies?.toMutableList(),
-    state = state
-  ), ValidatedObject {
-
-    override fun validate(): String? {
-      if (problem.isNullOrBlank()) {
-        return "Problem must be specified and cannot be blank"
-      }
-      if (num_alternatives < 1 || num_alternatives > 10) {
-        return "Number of alternatives must be between 1 and 10, got: $num_alternatives"
-      }
-      techniques?.forEach { technique ->
-        val validTechniques = listOf(
-          "reversal", "random_stimulus", "challenge_assumptions",
-          "exaggeration", "escape", "metaphor", "provocation"
         )
-        if (technique !in validTechniques) {
-          return "Invalid technique '$technique'. Valid techniques are: ${validTechniques.joinToString(", ")}"
+    }
+
+    val maxDescriptionLength = 1500
+
+    class LateralThinkingTaskExecutionConfigData(
+        @Description("The problem or challenge to approach with lateral thinking")
+        val problem: String? = null,
+        @Description("Lateral thinking techniques to apply: reversal, random_stimulus, challenge_assumptions, exaggeration, escape, metaphor, provocation")
+        val techniques: List<String>? = listOf(
+            "reversal",
+            "random_stimulus",
+            "challenge_assumptions",
+            "exaggeration",
+            "escape"
+        ),
+        @Description("Number of alternative solutions to generate per technique")
+        val num_alternatives: Int = 5,
+        @Description("Whether to evaluate the feasibility of generated ideas")
+        val evaluate_feasibility: Boolean = true,
+        @Description("Domain or context to constrain the thinking (optional)")
+        val domain_context: String? = null,
+        @Description("Additional constraints or requirements to consider")
+        val constraints: List<String>? = null,
+        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input context for the task")
+        val input_files: List<String>? = null,
+        task_description: String? = null,
+        task_dependencies: List<String>? = null,
+        state: TaskState? = TaskState.Pending,
+    ) : TaskExecutionConfig(
+        task_type = LateralThinking.name,
+        task_description = task_description
+            ?: "Apply lateral thinking to: ${problem?.take(100)}${if (problem?.length ?: 0 > 100) "..." else ""}",
+        task_dependencies = task_dependencies?.toMutableList(),
+        state = state
+    ), ValidatedObject {
+
+        override fun validate(): String? {
+            if (problem.isNullOrBlank()) {
+                return "Problem must be specified and cannot be blank"
+            }
+            if (num_alternatives < 1 || num_alternatives > 10) {
+                return "Number of alternatives must be between 1 and 10, got: $num_alternatives"
+            }
+            techniques?.forEach { technique ->
+                val validTechniques = listOf(
+                    "reversal", "random_stimulus", "challenge_assumptions",
+                    "exaggeration", "escape", "metaphor", "provocation"
+                )
+                if (technique !in validTechniques) {
+                    return "Invalid technique '$technique'. Valid techniques are: ${validTechniques.joinToString(", ")}"
+                }
+            }
+            return ValidatedObject.validateFields(this)
         }
-      }
-      return ValidatedObject.validateFields(this)
     }
-  }
 
-  class LateralThinkingTaskTypeConfig(
-    task_type: String? = LateralThinking.name,
-    name: String? = null,
-    model: ApiChatModel? = null
-  ) : TaskTypeConfig(
-    task_type = task_type,
-    name = name,
-    model = model
-  ), ValidatedObject
+    class LateralThinkingTaskTypeConfig(
+        task_type: String? = LateralThinking.name,
+        name: String? = null,
+        model: ApiChatModel? = null
+    ) : TaskTypeConfig(
+        task_type = task_type,
+        name = name,
+        model = model
+    ), ValidatedObject
 
-  data class LateralIdea(
-    @Description("Title of the idea")
-    val title: String = "",
-    @Description("The lateral thinking technique used")
-    val technique: String = "",
-    @Description("Detailed description of the idea")
-    val description: String = "",
-    @Description("The provocation or stimulus that led to this idea")
-    val provocation: String = "",
-    @Description("How this breaks conventional thinking")
-    val breakthrough_aspect: String = "",
-    @Description("Potential benefits of this approach")
-    val benefits: List<String> = emptyList(),
-    @Description("Potential challenges or risks")
-    val challenges: List<String> = emptyList(),
-    @Description("Concrete steps to implement this idea")
-    val implementation_steps: List<String> = emptyList(),
-    @Description("Novelty score (0-1)")
-    val novelty_score: Double = 0.0,
-    @Description("Feasibility score (0-1)")
-    val feasibility_score: Double = 0.0
-  ) : ValidatedObject {
-    override fun validate(): String? {
-      if (title.isBlank()) {
-        return "LateralIdea title cannot be blank"
-      }
-      if (technique.isBlank()) {
-        return "LateralIdea technique cannot be blank"
-      }
-      if (description.isBlank()) {
-        return "LateralIdea description cannot be blank"
-      }
-      if (novelty_score < 0.0 || novelty_score > 1.0) {
-        return "LateralIdea novelty_score must be between 0.0 and 1.0, got: $novelty_score"
-      }
-      if (feasibility_score < 0.0 || feasibility_score > 1.0) {
-        return "LateralIdea feasibility_score must be between 0.0 and 1.0, got: $feasibility_score"
-      }
-      return ValidatedObject.validateFields(this)
+    data class LateralIdea(
+        @Description("Title of the idea")
+        val title: String = "",
+        @Description("The lateral thinking technique used")
+        val technique: String = "",
+        @Description("Detailed description of the idea")
+        val description: String = "",
+        @Description("The provocation or stimulus that led to this idea")
+        val provocation: String = "",
+        @Description("How this breaks conventional thinking")
+        val breakthrough_aspect: String = "",
+        @Description("Potential benefits of this approach")
+        val benefits: List<String> = emptyList(),
+        @Description("Potential challenges or risks")
+        val challenges: List<String> = emptyList(),
+        @Description("Concrete steps to implement this idea")
+        val implementation_steps: List<String> = emptyList(),
+        @Description("Novelty score (0-1)")
+        val novelty_score: Double = 0.0,
+        @Description("Feasibility score (0-1)")
+        val feasibility_score: Double = 0.0
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (title.isBlank()) {
+                return "LateralIdea title cannot be blank"
+            }
+            if (technique.isBlank()) {
+                return "LateralIdea technique cannot be blank"
+            }
+            if (description.isBlank()) {
+                return "LateralIdea description cannot be blank"
+            }
+            if (novelty_score < 0.0 || novelty_score > 1.0) {
+                return "LateralIdea novelty_score must be between 0.0 and 1.0, got: $novelty_score"
+            }
+            if (feasibility_score < 0.0 || feasibility_score > 1.0) {
+                return "LateralIdea feasibility_score must be between 0.0 and 1.0, got: $feasibility_score"
+            }
+            return ValidatedObject.validateFields(this)
+        }
     }
-  }
 
-  data class TechniqueApplication(
-    @Description("The technique name")
-    val technique: String = "",
-    @Description("Description of how the technique was applied")
-    val application_description: String = "",
-    @Description("The provocation or reframing used")
-    val provocation: String = "",
-    @Description("Ideas generated from this technique")
-    val ideas: List<LateralIdea> = emptyList(),
-    @Description("Key insights from applying this technique")
-    val insights: List<String> = emptyList()
-  ) : ValidatedObject {
-    override fun validate(): String? {
-      if (technique.isBlank()) {
-        return "TechniqueApplication technique cannot be blank"
-      }
-      if (application_description.isBlank()) {
-        return "TechniqueApplication application_description cannot be blank"
-      }
-      return ValidatedObject.validateFields(this)
+    data class TechniqueApplication(
+        @Description("The technique name")
+        val technique: String = "",
+        @Description("Description of how the technique was applied")
+        val application_description: String = "",
+        @Description("The provocation or reframing used")
+        val provocation: String = "",
+        @Description("Ideas generated from this technique")
+        val ideas: List<LateralIdea> = emptyList(),
+        @Description("Key insights from applying this technique")
+        val insights: List<String> = emptyList()
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (technique.isBlank()) {
+                return "TechniqueApplication technique cannot be blank"
+            }
+            if (application_description.isBlank()) {
+                return "TechniqueApplication application_description cannot be blank"
+            }
+            return ValidatedObject.validateFields(this)
+        }
     }
-  }
 
-  data class FeasibilityEvaluation(
-    @Description("Overall feasibility assessment")
-    val overall_assessment: String = "",
-    @Description("Most promising ideas ranked by feasibility")
-    val top_ideas: List<String> = emptyList(),
-    @Description("Ideas requiring further exploration")
-    val ideas_for_exploration: List<String> = emptyList(),
-    @Description("Hybrid approaches combining multiple ideas")
-    val hybrid_approaches: List<String> = emptyList()
-  ) : ValidatedObject {
-    override fun validate(): String? {
-      if (overall_assessment.isBlank()) {
-        return "FeasibilityEvaluation overall_assessment cannot be blank"
-      }
-      return ValidatedObject.validateFields(this)
+    data class FeasibilityEvaluation(
+        @Description("Overall feasibility assessment")
+        val overall_assessment: String = "",
+        @Description("Most promising ideas ranked by feasibility")
+        val top_ideas: List<String> = emptyList(),
+        @Description("Ideas requiring further exploration")
+        val ideas_for_exploration: List<String> = emptyList(),
+        @Description("Hybrid approaches combining multiple ideas")
+        val hybrid_approaches: List<String> = emptyList()
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (overall_assessment.isBlank()) {
+                return "FeasibilityEvaluation overall_assessment cannot be blank"
+            }
+            return ValidatedObject.validateFields(this)
+        }
     }
-  }
 
-  data class LateralThinkingResult(
-    @Description("Applications of each technique")
-    val technique_applications: List<TechniqueApplication> = emptyList(),
-    @Description("All generated ideas across techniques")
-    val all_ideas: List<LateralIdea> = emptyList(),
-    @Description("Synthesized insights across all techniques")
-    val synthesized_insights: List<String> = emptyList(),
-    @Description("Recommended unconventional approaches")
-    val recommended_approaches: List<String> = emptyList(),
-    @Description("Feasibility evaluation if requested")
-    val feasibility_evaluation: FeasibilityEvaluation? = null
-  ) : ValidatedObject {
-    override fun validate(): String? {
-      if (technique_applications.isEmpty()) {
-        return "LateralThinkingResult must have at least one technique application"
-      }
-      if (all_ideas.isEmpty()) {
-        return "LateralThinkingResult must have at least one idea"
-      }
-      return ValidatedObject.validateFields(this)
+    data class LateralThinkingResult(
+        @Description("Applications of each technique")
+        val technique_applications: List<TechniqueApplication> = emptyList(),
+        @Description("All generated ideas across techniques")
+        val all_ideas: List<LateralIdea> = emptyList(),
+        @Description("Synthesized insights across all techniques")
+        val synthesized_insights: List<String> = emptyList(),
+        @Description("Recommended unconventional approaches")
+        val recommended_approaches: List<String> = emptyList(),
+        @Description("Feasibility evaluation if requested")
+        val feasibility_evaluation: FeasibilityEvaluation? = null
+    ) : ValidatedObject {
+        override fun validate(): String? {
+            if (technique_applications.isEmpty()) {
+                return "LateralThinkingResult must have at least one technique application"
+            }
+            if (all_ideas.isEmpty()) {
+                return "LateralThinkingResult must have at least one idea"
+            }
+            return ValidatedObject.validateFields(this)
+        }
     }
-  }
 
-  override fun promptSegment(): String {
-    return """
+    override fun promptSegment(): String {
+        return """
 LateralThinking - Break conventional thinking patterns to find innovative solutions
   ** Specify the problem or challenge to approach creatively
   ** Select lateral thinking techniques to apply:
@@ -244,245 +246,249 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
      - Evaluate feasibility if requested
   ** Useful for innovation, breaking design impasses, and creative problem-solving
         """.trimIndent()
-  }
+    }
 
-  override fun run(
-    agent: TaskOrchestrator,
-    messages: List<String>,
-    task: SessionTask,
-    resultFn: (String) -> Unit,
-    orchestrationConfig: OrchestrationConfig
-  ) {
-    try {
-      val startTime = System.currentTimeMillis()
-      val transcript = task.transcript()
-      log.info("Starting LateralThinkingTask for problem='${executionConfig?.problem?.take(50)}...', techniques=${executionConfig?.techniques}")
+    override fun run(
+        agent: TaskOrchestrator,
+        messages: List<String>,
+        task: SessionTask,
+        resultFn: (String) -> Unit,
+        orchestrationConfig: OrchestrationConfig
+    ) {
+        try {
+            val startTime = System.currentTimeMillis()
+            val transcript = task.transcript()
+            log.info("Starting LateralThinkingTask for problem='${executionConfig?.problem?.take(50)}...', techniques=${executionConfig?.techniques}")
 
-      val problem = executionConfig?.problem
-      if (problem.isNullOrBlank()) {
-        log.error("Configuration error: problem is blank")
-        task.safeComplete("CONFIGURATION ERROR: Problem must be specified", log)
-        task.error(RuntimeException("Configuration error: problem is blank"))
-        resultFn("CONFIGURATION ERROR: Problem must be specified")
-        return
-      }
-
-      val techniques = executionConfig.techniques ?: listOf(
-        "reversal",
-        "random_stimulus",
-        "challenge_assumptions",
-        "exaggeration",
-        "escape"
-      )
-      val numAlternatives = (executionConfig.num_alternatives ?: 5).coerceIn(1, 10)
-      val evaluateFeasibility = executionConfig.evaluate_feasibility ?: true
-      val domainContext = executionConfig.domain_context
-      val constraints = executionConfig.constraints
-
-      log.info("Configuration: techniques=${techniques.size}, numAlternatives=$numAlternatives, evaluateFeasibility=$evaluateFeasibility")
-
-      val api = validateAndGetApi(orchestrationConfig, task, log, resultFn) ?: return
-
-      val tabs = TabbedDisplay(task)
-
-      // Create overview tab
-      val overviewTask = task.ui.newTask(false)
-      tabs["Overview"] = overviewTask.placeholder
-      val overviewContent = buildString {
-        appendLine("# Lateral Thinking Task")
-        appendLine()
-        appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
-        appendLine()
-        appendLine("## Problem Statement")
-        appendLine()
-        appendLine("> $problem")
-        appendLine()
-        if (domainContext != null) {
-          appendLine("**Domain Context:** $domainContext")
-          appendLine()
-        }
-        if (!constraints.isNullOrEmpty()) {
-          appendLine("**Constraints:**")
-          constraints.forEach { appendLine("- $it") }
-          appendLine()
-        }
-        appendLine("## Configuration")
-        appendLine()
-        appendLine("| Parameter | Value |")
-        appendLine("|-----------|-------|")
-        appendLine("| Techniques | ${techniques.joinToString(", ")} |")
-        appendLine("| Alternatives per Technique | $numAlternatives |")
-        appendLine("| Feasibility Evaluation | ${if (evaluateFeasibility) "✓ Enabled" else "✗ Disabled"} |")
-        appendLine()
-        transcript?.write(this.toString().toByteArray())
-        appendLine("## Progress")
-        appendLine()
-        appendLine("- ⏳ Gathering context...")
-      }
-      overviewTask.add(overviewContent.renderMarkdown)
-      task.update()
-
-      log.debug("Gathering prior context")
-      val priorContext = getPriorCode(agent.executionState)
-      val fileContext = getInputFileCode(agent.root)
-      val combinedContext = priorContext + "\n\n" + fileContext
-      log.debug("Context gathered: priorContext length=${priorContext.length}, fileContext length=${fileContext.length}")
-
-      overviewTask.add(buildString {
-        appendLine()
-        transcript?.write("\n- ✓ Context gathered\n- ⏳ Applying lateral thinking techniques...\n".toByteArray())
-        appendLine("- ✓ Context gathered")
-        appendLine("- ⏳ Applying lateral thinking techniques...")
-      }.renderMarkdown)
-      task.update()
-
-      // Step 1: Apply each technique
-      log.info("Starting technique application phase")
-      val techniqueApplications = mutableListOf<TechniqueApplication>()
-      val allIdeas = mutableListOf<LateralIdea>()
-
-      techniques.forEachIndexed { index, technique ->
-        log.info("Applying technique ${index + 1}/${techniques.size}: $technique")
-
-        val techniqueTask = task.ui.newTask(false)
-        tabs["${index + 1}. ${technique.capitalize()}"] = techniqueTask.placeholder
-
-        techniqueTask.add(buildString {
-          appendLine("# ${technique.capitalize()} Technique")
-          appendLine()
-          transcript?.write("# ${technique.capitalize()} Technique\n\n**Status:** ⏳ Generating ideas...\n\n".toByteArray())
-          appendLine("**Status:** ⏳ Generating ideas...")
-          appendLine()
-          appendLine(getTechniqueDescription(technique))
-        }.renderMarkdown)
-        task.update()
-
-        val techniquePrompt = buildTechniquePrompt(
-          technique,
-          problem,
-          numAlternatives,
-          domainContext,
-          constraints,
-          combinedContext
-        )
-
-        val techniqueParser = ParsedAgent(
-          resultClass = TechniqueApplication::class.java,
-          prompt = techniquePrompt,
-          model = api.getChildClient(task),
-          temperature = 0.8,
-          name = "LateralThinking_${technique}",
-          parsingChatter = orchestrationConfig.parsingChatter,
-        )
-
-        val application = techniqueParser.answer(listOf(techniquePrompt)).obj
-
-        if (application != null) {
-          techniqueApplications.add(application)
-          allIdeas.addAll(application.ideas)
-          log.info("Technique $technique generated ${application.ideas.size} ideas")
-
-          // Display technique results
-          techniqueTask.add(buildString {
-            transcript?.write("\n---\n\n## Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
-            appendLine()
-            appendLine("---")
-            appendLine()
-            appendLine("## Results")
-            appendLine()
-            appendLine("**Status:** ✓ Complete")
-            appendLine()
-            appendLine("### Provocation")
-            appendLine()
-            appendLine("> ${application.provocation}")
-            appendLine()
-            appendLine("### Application")
-            appendLine()
-            appendLine(application.application_description)
-            appendLine()
-            appendLine("### Generated Ideas (${application.ideas.size})")
-            appendLine()
-            application.ideas.forEachIndexed { ideaIndex, idea ->
-              appendLine("#### ${ideaIndex + 1}. ${idea.title}")
-              appendLine()
-              appendLine(
-                "**Novelty:** ${String.format("%.1f%%", idea.novelty_score * 100)} | **Feasibility:** ${
-                  String.format(
-                    "%.1f%%",
-                    idea.feasibility_score * 100
-                  )
-                }"
-              )
-              appendLine()
-              appendLine(idea.description)
-              appendLine()
-              appendLine("**Breakthrough Aspect:** ${idea.breakthrough_aspect}")
-              appendLine()
-              if (idea.benefits.isNotEmpty()) {
-                appendLine("**Benefits:**")
-                idea.benefits.take(3).forEach { appendLine("- $it") }
-                if (idea.benefits.size > 3) appendLine("- *...and ${idea.benefits.size - 3} more*")
-                appendLine()
-              }
-              if (idea.challenges.isNotEmpty()) {
-                appendLine("**Challenges:**")
-                idea.challenges.take(3).forEach { appendLine("- $it") }
-                if (idea.challenges.size > 3) appendLine("- *...and ${idea.challenges.size - 3} more*")
-                appendLine()
-              }
-              appendLine("---")
-              appendLine()
+            val problem = executionConfig?.problem
+            if (problem.isNullOrBlank()) {
+                log.error("Configuration error: problem is blank")
+                task.safeComplete("CONFIGURATION ERROR: Problem must be specified", log)
+                task.error(RuntimeException("Configuration error: problem is blank"))
+                resultFn("CONFIGURATION ERROR: Problem must be specified")
+                return
             }
-            transcript?.write(this.toString().toByteArray())
-            if (application.insights.isNotEmpty()) {
-              appendLine("### Key Insights")
-              appendLine()
-              application.insights.forEach { appendLine("- $it") }
+
+            val techniques = executionConfig.techniques ?: listOf(
+                "reversal",
+                "random_stimulus",
+                "challenge_assumptions",
+                "exaggeration",
+                "escape"
+            )
+            val numAlternatives = (executionConfig.num_alternatives ?: 5).coerceIn(1, 10)
+            val evaluateFeasibility = executionConfig.evaluate_feasibility ?: true
+            val domainContext = executionConfig.domain_context
+            val constraints = executionConfig.constraints
+
+            log.info("Configuration: techniques=${techniques.size}, numAlternatives=$numAlternatives, evaluateFeasibility=$evaluateFeasibility")
+
+            val api = orchestrationConfig.defaultChatter ?: return
+
+            val tabs = TabbedDisplay(task)
+
+            // Create overview tab
+            val overviewTask = task.ui.newTask(false)
+            tabs["Overview"] = overviewTask.placeholder
+            val overviewContent = buildString {
+                appendLine("# Lateral Thinking Task")
+                appendLine()
+                appendLine(
+                    "**Started:** ${
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    }"
+                )
+                appendLine()
+                appendLine("## Problem Statement")
+                appendLine()
+                appendLine("> $problem")
+                appendLine()
+                if (domainContext != null) {
+                    appendLine("**Domain Context:** $domainContext")
+                    appendLine()
+                }
+                if (!constraints.isNullOrEmpty()) {
+                    appendLine("**Constraints:**")
+                    constraints.forEach { appendLine("- $it") }
+                    appendLine()
+                }
+                appendLine("## Configuration")
+                appendLine()
+                appendLine("| Parameter | Value |")
+                appendLine("|-----------|-------|")
+                appendLine("| Techniques | ${techniques.joinToString(", ")} |")
+                appendLine("| Alternatives per Technique | $numAlternatives |")
+                appendLine("| Feasibility Evaluation | ${if (evaluateFeasibility) "✓ Enabled" else "✗ Disabled"} |")
+                appendLine()
+                transcript?.write(this.toString().toByteArray())
+                appendLine("## Progress")
+                appendLine()
+                appendLine("- ⏳ Gathering context...")
             }
-          }.renderMarkdown)
-          task.update()
-        } else {
-          log.warn("Failed to generate ideas for technique: $technique")
-          transcript?.write("\n**Status:** ⚠️ Failed to generate ideas\n".toByteArray())
-          techniqueTask.add(buildString {
-            appendLine()
-            appendLine("**Status:** ⚠️ Failed to generate ideas")
-          }.renderMarkdown)
-          task.update()
-        }
+            overviewTask.add(overviewContent.renderMarkdown)
+            task.update()
 
-        overviewTask.add(buildString {
-          appendLine()
-          transcript?.write("\n- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)\n".toByteArray())
-          appendLine("- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)")
-        }.renderMarkdown)
-        task.update()
-      }
+            log.debug("Gathering prior context")
+            val priorContext = getPriorCode(agent.executionState)
+            val fileContext = getInputFileCode(agent.root)
+            val combinedContext = priorContext + "\n\n" + fileContext
+            log.debug("Context gathered: priorContext length=${priorContext.length}, fileContext length=${fileContext.length}")
 
-      log.info("All techniques applied. Total ideas generated: ${allIdeas.size}")
+            overviewTask.add(buildString {
+                appendLine()
+                transcript?.write("\n- ✓ Context gathered\n- ⏳ Applying lateral thinking techniques...\n".toByteArray())
+                appendLine("- ✓ Context gathered")
+                appendLine("- ⏳ Applying lateral thinking techniques...")
+            }.renderMarkdown)
+            task.update()
 
-      overviewTask.add(buildString {
-        appendLine()
-        transcript?.write("\n- ✓ All techniques applied (${allIdeas.size} total ideas)\n- ⏳ Synthesizing insights...\n".toByteArray())
-        appendLine("- ✓ All techniques applied (${allIdeas.size} total ideas)")
-        appendLine("- ⏳ Synthesizing insights...")
-      }.renderMarkdown)
-      task.update()
+            // Step 1: Apply each technique
+            log.info("Starting technique application phase")
+            val techniqueApplications = mutableListOf<TechniqueApplication>()
+            val allIdeas = mutableListOf<LateralIdea>()
 
-      // Step 2: Synthesize insights
-      log.info("Starting synthesis phase")
-      val synthesisTask = task.ui.newTask(false)
-      tabs["Synthesis"] = synthesisTask.placeholder
+            techniques.forEachIndexed { index, technique ->
+                log.info("Applying technique ${index + 1}/${techniques.size}: $technique")
 
-      synthesisTask.add(buildString {
-        appendLine("# Cross-Technique Synthesis")
-        transcript?.write("\n# Cross-Technique Synthesis\n\n**Status:** ⏳ Analyzing patterns and insights...\n".toByteArray())
-        appendLine()
-        appendLine("**Status:** ⏳ Analyzing patterns and insights...")
-      }.renderMarkdown)
-      task.update()
+                val techniqueTask = task.ui.newTask(false)
+                tabs["${index + 1}. ${technique.capitalize()}"] = techniqueTask.placeholder
 
-      val synthesisPrompt = """
+                techniqueTask.add(buildString {
+                    appendLine("# ${technique.capitalize()} Technique")
+                    appendLine()
+                    transcript?.write("# ${technique.capitalize()} Technique\n\n**Status:** ⏳ Generating ideas...\n\n".toByteArray())
+                    appendLine("**Status:** ⏳ Generating ideas...")
+                    appendLine()
+                    appendLine(getTechniqueDescription(technique))
+                }.renderMarkdown)
+                task.update()
+
+                val techniquePrompt = buildTechniquePrompt(
+                    technique,
+                    problem,
+                    numAlternatives,
+                    domainContext,
+                    constraints,
+                    combinedContext
+                )
+
+                val techniqueParser = ParsedAgent(
+                    resultClass = TechniqueApplication::class.java,
+                    prompt = techniquePrompt,
+                    model = api.getChildClient(task),
+                    temperature = 0.8,
+                    name = "LateralThinking_${technique}",
+                    parsingChatter = orchestrationConfig.parsingChatter,
+                )
+
+                val application = techniqueParser.answer(listOf(techniquePrompt)).obj
+
+                if (application != null) {
+                    techniqueApplications.add(application)
+                    allIdeas.addAll(application.ideas)
+                    log.info("Technique $technique generated ${application.ideas.size} ideas")
+
+                    // Display technique results
+                    techniqueTask.add(buildString {
+                        transcript?.write("\n---\n\n## Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
+                        appendLine()
+                        appendLine("---")
+                        appendLine()
+                        appendLine("## Results")
+                        appendLine()
+                        appendLine("**Status:** ✓ Complete")
+                        appendLine()
+                        appendLine("### Provocation")
+                        appendLine()
+                        appendLine("> ${application.provocation}")
+                        appendLine()
+                        appendLine("### Application")
+                        appendLine()
+                        appendLine(application.application_description)
+                        appendLine()
+                        appendLine("### Generated Ideas (${application.ideas.size})")
+                        appendLine()
+                        application.ideas.forEachIndexed { ideaIndex, idea ->
+                            appendLine("#### ${ideaIndex + 1}. ${idea.title}")
+                            appendLine()
+                            appendLine(
+                                "**Novelty:** ${String.format("%.1f%%", idea.novelty_score * 100)} | **Feasibility:** ${
+                                    String.format(
+                                        "%.1f%%",
+                                        idea.feasibility_score * 100
+                                    )
+                                }"
+                            )
+                            appendLine()
+                            appendLine(idea.description)
+                            appendLine()
+                            appendLine("**Breakthrough Aspect:** ${idea.breakthrough_aspect}")
+                            appendLine()
+                            if (idea.benefits.isNotEmpty()) {
+                                appendLine("**Benefits:**")
+                                idea.benefits.take(3).forEach { appendLine("- $it") }
+                                if (idea.benefits.size > 3) appendLine("- *...and ${idea.benefits.size - 3} more*")
+                                appendLine()
+                            }
+                            if (idea.challenges.isNotEmpty()) {
+                                appendLine("**Challenges:**")
+                                idea.challenges.take(3).forEach { appendLine("- $it") }
+                                if (idea.challenges.size > 3) appendLine("- *...and ${idea.challenges.size - 3} more*")
+                                appendLine()
+                            }
+                            appendLine("---")
+                            appendLine()
+                        }
+                        transcript?.write(this.toString().toByteArray())
+                        if (application.insights.isNotEmpty()) {
+                            appendLine("### Key Insights")
+                            appendLine()
+                            application.insights.forEach { appendLine("- $it") }
+                        }
+                    }.renderMarkdown)
+                    task.update()
+                } else {
+                    log.warn("Failed to generate ideas for technique: $technique")
+                    transcript?.write("\n**Status:** ⚠️ Failed to generate ideas\n".toByteArray())
+                    techniqueTask.add(buildString {
+                        appendLine()
+                        appendLine("**Status:** ⚠️ Failed to generate ideas")
+                    }.renderMarkdown)
+                    task.update()
+                }
+
+                overviewTask.add(buildString {
+                    appendLine()
+                    transcript?.write("\n- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)\n".toByteArray())
+                    appendLine("- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)")
+                }.renderMarkdown)
+                task.update()
+            }
+
+            log.info("All techniques applied. Total ideas generated: ${allIdeas.size}")
+
+            overviewTask.add(buildString {
+                appendLine()
+                transcript?.write("\n- ✓ All techniques applied (${allIdeas.size} total ideas)\n- ⏳ Synthesizing insights...\n".toByteArray())
+                appendLine("- ✓ All techniques applied (${allIdeas.size} total ideas)")
+                appendLine("- ⏳ Synthesizing insights...")
+            }.renderMarkdown)
+            task.update()
+
+            // Step 2: Synthesize insights
+            log.info("Starting synthesis phase")
+            val synthesisTask = task.ui.newTask(false)
+            tabs["Synthesis"] = synthesisTask.placeholder
+
+            synthesisTask.add(buildString {
+                appendLine("# Cross-Technique Synthesis")
+                transcript?.write("\n# Cross-Technique Synthesis\n\n**Status:** ⏳ Analyzing patterns and insights...\n".toByteArray())
+                appendLine()
+                appendLine("**Status:** ⏳ Analyzing patterns and insights...")
+            }.renderMarkdown)
+            task.update()
+
+            val synthesisPrompt = """
 You are an expert in creative problem-solving and innovation.
 
 ## Task
@@ -493,8 +499,8 @@ $problem
 
 ## Techniques Applied and Their Results
 ${
-        techniqueApplications.joinToString("\n\n") { app ->
-          """
+                techniqueApplications.joinToString("\n\n") { app ->
+                    """
 ### ${app.technique.capitalize()}
 **Provocation:** ${app.provocation}
 **Ideas Generated:** ${app.ideas.size}
@@ -502,10 +508,13 @@ ${
 ${app.insights.joinToString("\n") { "- $it" }}
 
 **Top Ideas:**
-${app.ideas.sortedByDescending { it.novelty_score * it.feasibility_score }.take(2).joinToString("\n") { "- ${it.title}: ${it.description.take(100)}..." }}
+${
+                        app.ideas.sortedByDescending { it.novelty_score * it.feasibility_score }.take(2)
+                            .joinToString("\n") { "- ${it.title}: ${it.description.take(100)}..." }
+                    }
 """.trim()
-        }
-      }
+                }
+            }
 
 ## Instructions
 1. Identify common themes and patterns across techniques
@@ -517,56 +526,56 @@ ${app.ideas.sortedByDescending { it.novelty_score * it.feasibility_score }.take(
 Provide a comprehensive synthesis.
             """.trimIndent()
 
-      val synthesisAgent = ChatAgent(
-        prompt = "You are an expert in creative synthesis and innovation strategy.",
-        model = api.getChildClient(task),
-        temperature = 0.6
-      )
+            val synthesisAgent = ChatAgent(
+                prompt = "You are an expert in creative synthesis and innovation strategy.",
+                model = api.getChildClient(task),
+                temperature = 0.6
+            )
 
-      val synthesisText = synthesisAgent.answer(listOf(synthesisPrompt))
+            val synthesisText = synthesisAgent.answer(listOf(synthesisPrompt))
 
-      synthesisTask.add(buildString {
-        appendLine()
-        transcript?.write("\n---\n\n## Synthesis Results\n\n**Status:** ✓ Complete\n\n${synthesisText}\n".toByteArray())
-        appendLine("---")
-        appendLine()
-        appendLine("## Synthesis Results")
-        appendLine()
-        appendLine("**Status:** ✓ Complete")
-        appendLine()
-        appendLine(synthesisText)
-      }.renderMarkdown)
-      task.update()
+            synthesisTask.add(buildString {
+                appendLine()
+                transcript?.write("\n---\n\n## Synthesis Results\n\n**Status:** ✓ Complete\n\n${synthesisText}\n".toByteArray())
+                appendLine("---")
+                appendLine()
+                appendLine("## Synthesis Results")
+                appendLine()
+                appendLine("**Status:** ✓ Complete")
+                appendLine()
+                appendLine(synthesisText)
+            }.renderMarkdown)
+            task.update()
 
-      // Extract recommended approaches from synthesis
-      val recommendedApproaches = extractRecommendedApproaches(synthesisText)
+            // Extract recommended approaches from synthesis
+            val recommendedApproaches = extractRecommendedApproaches(synthesisText)
 
-      overviewTask.add(buildString {
-        appendLine()
-        transcript?.write("\n- ✓ Synthesis complete\n".toByteArray())
-        appendLine("- ✓ Synthesis complete")
-        if (evaluateFeasibility) {
-          appendLine("- ⏳ Evaluating feasibility...")
-        }
-      }.renderMarkdown)
-      task.update()
+            overviewTask.add(buildString {
+                appendLine()
+                transcript?.write("\n- ✓ Synthesis complete\n".toByteArray())
+                appendLine("- ✓ Synthesis complete")
+                if (evaluateFeasibility) {
+                    appendLine("- ⏳ Evaluating feasibility...")
+                }
+            }.renderMarkdown)
+            task.update()
 
-      // Step 3: Feasibility evaluation (if requested)
-      var feasibilityEvaluation: FeasibilityEvaluation? = null
-      if (evaluateFeasibility) {
-        log.info("Starting feasibility evaluation phase")
-        val feasibilityTask = task.ui.newTask(false)
-        tabs["Feasibility"] = feasibilityTask.placeholder
+            // Step 3: Feasibility evaluation (if requested)
+            var feasibilityEvaluation: FeasibilityEvaluation? = null
+            if (evaluateFeasibility) {
+                log.info("Starting feasibility evaluation phase")
+                val feasibilityTask = task.ui.newTask(false)
+                tabs["Feasibility"] = feasibilityTask.placeholder
 
-        feasibilityTask.add(buildString {
-          appendLine("# Feasibility Evaluation")
-          transcript?.write("\n# Feasibility Evaluation\n\n**Status:** ⏳ Evaluating ${allIdeas.size} ideas...\n".toByteArray())
-          appendLine()
-          appendLine("**Status:** ⏳ Evaluating ${allIdeas.size} ideas...")
-        }.renderMarkdown)
-        task.update()
+                feasibilityTask.add(buildString {
+                    appendLine("# Feasibility Evaluation")
+                    transcript?.write("\n# Feasibility Evaluation\n\n**Status:** ⏳ Evaluating ${allIdeas.size} ideas...\n".toByteArray())
+                    appendLine()
+                    appendLine("**Status:** ⏳ Evaluating ${allIdeas.size} ideas...")
+                }.renderMarkdown)
+                task.update()
 
-        val feasibilityPrompt = """
+                val feasibilityPrompt = """
 You are an expert in evaluating the practical feasibility of innovative ideas.
 
 ## Original Problem
@@ -577,8 +586,8 @@ ${if (!constraints.isNullOrEmpty()) "## Constraints\n${constraints.joinToString(
 
 ## Ideas to Evaluate
 ${
-          allIdeas.sortedByDescending { it.novelty_score }.take(15).joinToString("\n\n") { idea ->
-            """
+                    allIdeas.sortedByDescending { it.novelty_score }.take(15).joinToString("\n\n") { idea ->
+                        """
 ### ${idea.title}
 **Technique:** ${idea.technique}
 **Description:** ${idea.description}
@@ -587,8 +596,8 @@ ${
 **Benefits:** ${idea.benefits.joinToString(", ")}
 **Challenges:** ${idea.challenges.joinToString(", ")}
 """.trim()
-          }
-        }
+                    }
+                }
 
 ## Instructions
 1. Provide an overall feasibility assessment
@@ -600,284 +609,284 @@ ${
 Provide a structured evaluation.
             """.trimIndent()
 
-        val feasibilityParser = ParsedAgent(
-          resultClass = FeasibilityEvaluation::class.java,
-          prompt = feasibilityPrompt,
-          model = api.getChildClient(task),
-          temperature = 0.4,
-          name = "FeasibilityEvaluation",
-          parsingChatter = orchestrationConfig.parsingChatter,
-        )
+                val feasibilityParser = ParsedAgent(
+                    resultClass = FeasibilityEvaluation::class.java,
+                    prompt = feasibilityPrompt,
+                    model = api.getChildClient(task),
+                    temperature = 0.4,
+                    name = "FeasibilityEvaluation",
+                    parsingChatter = orchestrationConfig.parsingChatter,
+                )
 
-        feasibilityEvaluation = feasibilityParser.answer(listOf(feasibilityPrompt)).obj
+                feasibilityEvaluation = feasibilityParser.answer(listOf(feasibilityPrompt)).obj
 
-        if (feasibilityEvaluation != null) {
-          feasibilityTask.add(buildString {
-            transcript?.write("\n---\n\n## Evaluation Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
-            appendLine()
-            appendLine("---")
-            appendLine()
-            appendLine("## Evaluation Results")
-            appendLine()
-            appendLine("**Status:** ✓ Complete")
-            appendLine()
-            appendLine("### Overall Assessment")
-            appendLine()
-            appendLine(feasibilityEvaluation.overall_assessment)
-            appendLine()
-            appendLine("### Top Ideas by Feasibility")
-            appendLine()
-            feasibilityEvaluation.top_ideas.forEachIndexed { idx, idea ->
-              appendLine("${idx + 1}. $idea")
+                if (feasibilityEvaluation != null) {
+                    feasibilityTask.add(buildString {
+                        transcript?.write("\n---\n\n## Evaluation Results\n\n**Status:** ✓ Complete\n\n".toByteArray())
+                        appendLine()
+                        appendLine("---")
+                        appendLine()
+                        appendLine("## Evaluation Results")
+                        appendLine()
+                        appendLine("**Status:** ✓ Complete")
+                        appendLine()
+                        appendLine("### Overall Assessment")
+                        appendLine()
+                        appendLine(feasibilityEvaluation.overall_assessment)
+                        appendLine()
+                        appendLine("### Top Ideas by Feasibility")
+                        appendLine()
+                        feasibilityEvaluation.top_ideas.forEachIndexed { idx, idea ->
+                            appendLine("${idx + 1}. $idea")
+                        }
+                        appendLine()
+                        appendLine("### Ideas for Further Exploration")
+                        appendLine()
+                        feasibilityEvaluation.ideas_for_exploration.forEach { appendLine("- $it") }
+                        appendLine()
+                        if (feasibilityEvaluation.hybrid_approaches.isNotEmpty()) {
+                            appendLine("### Hybrid Approaches")
+                            appendLine()
+                            feasibilityEvaluation.hybrid_approaches.forEach { appendLine("- $it") }
+                        }
+                    }.renderMarkdown)
+                    transcript?.write(this.toString().toByteArray())
+                    task.update()
+                }
+
+                overviewTask.add(buildString {
+                    transcript?.write("\n- ✓ Feasibility evaluation complete\n".toByteArray())
+                    appendLine()
+                    appendLine("- ✓ Feasibility evaluation complete")
+                }.renderMarkdown)
+                task.update()
             }
-            appendLine()
-            appendLine("### Ideas for Further Exploration")
-            appendLine()
-            feasibilityEvaluation.ideas_for_exploration.forEach { appendLine("- $it") }
-            appendLine()
-            if (feasibilityEvaluation.hybrid_approaches.isNotEmpty()) {
-              appendLine("### Hybrid Approaches")
-              appendLine()
-              feasibilityEvaluation.hybrid_approaches.forEach { appendLine("- $it") }
+
+            // Step 4: Create final result
+            val result = LateralThinkingResult(
+                technique_applications = techniqueApplications,
+                all_ideas = allIdeas,
+                synthesized_insights = extractInsights(synthesisText),
+                recommended_approaches = recommendedApproaches,
+                feasibility_evaluation = feasibilityEvaluation
+            )
+
+            // Step 5: Format final output
+            log.info("Formatting final results")
+            val summaryTask = task.ui.newTask(false)
+            tabs["Summary"] = summaryTask.placeholder
+
+            val summaryContent = formatSummary(result, problem, techniques)
+            summaryTask.add(summaryContent.renderMarkdown)
+            transcript?.write("\n${summaryContent}\n".toByteArray())
+            task.update()
+
+            // Create concise result text
+            val resultText = buildString {
+                appendLine("# Lateral Thinking Results")
+                appendLine()
+                appendLine("**Problem:** $problem")
+                appendLine()
+                appendLine("## Techniques Applied")
+                techniques.forEach { appendLine("- ${it.capitalize()}") }
+                appendLine()
+                appendLine("## Key Statistics")
+                appendLine("- **Total Ideas Generated:** ${allIdeas.size}")
+                appendLine(
+                    "- **Average Novelty:** ${
+                        String.format(
+                            "%.1f%%",
+                            allIdeas.map { it.novelty_score }.average() * 100
+                        )
+                    }"
+                )
+                appendLine(
+                    "- **Average Feasibility:** ${
+                        String.format(
+                            "%.1f%%",
+                            allIdeas.map { it.feasibility_score }.average() * 100
+                        )
+                    }"
+                )
+                appendLine()
+                appendLine("## Top Breakthrough Ideas")
+                allIdeas.sortedByDescending { it.novelty_score * it.feasibility_score }
+                    .take(5)
+                    .forEachIndexed { idx, idea ->
+                        appendLine("${idx + 1}. **${idea.title}** (${idea.technique})")
+                        appendLine("   ${idea.description.truncateForDisplay(maxDescriptionLength)}")
+                        appendLine()
+                    }
+                appendLine("## Recommended Approaches")
+                recommendedApproaches.forEach { appendLine("- $it") }
+                appendLine()
+                if (feasibilityEvaluation != null) {
+                    appendLine("## Feasibility Assessment")
+                    appendLine(feasibilityEvaluation.overall_assessment.truncateForDisplay(maxDescriptionLength))
+                    appendLine()
+                }
+                appendLine("*See the Summary tab for complete analysis and all generated ideas*")
             }
-          }.renderMarkdown)
-          transcript?.write(this.toString().toByteArray())
-          task.update()
+
+            // Final overview update
+            val totalTime = System.currentTimeMillis() - startTime
+            overviewTask.add(buildString {
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## ✓ Task Complete")
+                appendLine()
+                appendLine("| Metric | Value |")
+                appendLine("|--------|-------|")
+                appendLine("| Techniques Applied | ${techniques.size} |")
+                appendLine("| Total Ideas | ${allIdeas.size} |")
+                appendLine(
+                    "| Avg Novelty | ${
+                        String.format(
+                            "%.1f%%",
+                            allIdeas.map { it.novelty_score }.average() * 100
+                        )
+                    } |"
+                )
+                appendLine(
+                    "| Avg Feasibility | ${
+                        String.format(
+                            "%.1f%%",
+                            allIdeas.map { it.feasibility_score }.average() * 100
+                        )
+                    } |"
+                )
+                appendLine("| Total Time | ${totalTime / 1000}s |")
+                appendLine()
+                appendLine("**Status:** ✓ Complete")
+                transcript?.write(this.toString().toByteArray())
+            }.renderMarkdown)
+            task.update()
+
+            log.info(
+                "LateralThinkingTask completed: total_time=${totalTime}ms, techniques=${techniques.size}, ideas=${allIdeas.size}, avg_novelty=${
+                    allIdeas.map { it.novelty_score }.average()
+                }"
+            )
+            task.safeComplete(
+                "Completed in ${totalTime / 1000}s with ${allIdeas.size} ideas across ${techniques.size} techniques.",
+                log
+            )
+            resultFn(resultText)
+            transcript?.close()
+            // Create summary message with transcript link
+            val (transcriptLink, _) = task.createFile("lateral_thinking_summary.md")
+            val summaryMessage = buildString {
+                appendLine(resultText)
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine(
+                    "📄 **Full Analysis:** [View Transcript]($transcriptLink) | [HTML](${transcriptLink.removeSuffix(".md")}.html) | [PDF](${
+                        transcriptLink.removeSuffix(
+                            ".md"
+                        )
+                    }.pdf)"
+                )
+            }
+            resultFn(summaryMessage)
+
+        } catch (e: Exception) {
+            log.error("Error during LateralThinkingTask execution", e)
+            task.error(e)
+            val errorTask = task.ui.newTask(false)
+            errorTask.add(buildString {
+                appendLine("# ❌ Error")
+                appendLine()
+                appendLine("An error occurred during lateral thinking:")
+                appendLine("```")
+                appendLine(e.message ?: "Unknown error")
+                appendLine("```")
+            }.renderMarkdown)
+            task.safeComplete("Failed with error: ${e.message}", log)
+            resultFn("ERROR: ${e.message}")
         }
-
-        overviewTask.add(buildString {
-          transcript?.write("\n- ✓ Feasibility evaluation complete\n".toByteArray())
-          appendLine()
-          appendLine("- ✓ Feasibility evaluation complete")
-        }.renderMarkdown)
-        task.update()
-      }
-
-      // Step 4: Create final result
-      val result = LateralThinkingResult(
-        technique_applications = techniqueApplications,
-        all_ideas = allIdeas,
-        synthesized_insights = extractInsights(synthesisText),
-        recommended_approaches = recommendedApproaches,
-        feasibility_evaluation = feasibilityEvaluation
-      )
-
-      // Step 5: Format final output
-      log.info("Formatting final results")
-      val summaryTask = task.ui.newTask(false)
-      tabs["Summary"] = summaryTask.placeholder
-
-      val summaryContent = formatSummary(result, problem, techniques)
-      summaryTask.add(summaryContent.renderMarkdown)
-      transcript?.write("\n${summaryContent}\n".toByteArray())
-      task.update()
-
-      // Create concise result text
-      val resultText = buildString {
-        appendLine("# Lateral Thinking Results")
-        appendLine()
-        appendLine("**Problem:** $problem")
-        appendLine()
-        appendLine("## Techniques Applied")
-        techniques.forEach { appendLine("- ${it.capitalize()}") }
-        appendLine()
-        appendLine("## Key Statistics")
-        appendLine("- **Total Ideas Generated:** ${allIdeas.size}")
-        appendLine(
-          "- **Average Novelty:** ${
-            String.format(
-              "%.1f%%",
-              allIdeas.map { it.novelty_score }.average() * 100
-            )
-          }"
-        )
-        appendLine(
-          "- **Average Feasibility:** ${
-            String.format(
-              "%.1f%%",
-              allIdeas.map { it.feasibility_score }.average() * 100
-            )
-          }"
-        )
-        appendLine()
-        appendLine("## Top Breakthrough Ideas")
-        allIdeas.sortedByDescending { it.novelty_score * it.feasibility_score }
-          .take(5)
-          .forEachIndexed { idx, idea ->
-            appendLine("${idx + 1}. **${idea.title}** (${idea.technique})")
-            appendLine("   ${idea.description.truncateForDisplay(maxDescriptionLength)}")
-            appendLine()
-          }
-        appendLine("## Recommended Approaches")
-        recommendedApproaches.forEach { appendLine("- $it") }
-        appendLine()
-        if (feasibilityEvaluation != null) {
-          appendLine("## Feasibility Assessment")
-          appendLine(feasibilityEvaluation.overall_assessment.truncateForDisplay(maxDescriptionLength))
-          appendLine()
-        }
-        appendLine("*See the Summary tab for complete analysis and all generated ideas*")
-      }
-
-      // Final overview update
-      val totalTime = System.currentTimeMillis() - startTime
-      overviewTask.add(buildString {
-        appendLine()
-        appendLine("---")
-        appendLine()
-        appendLine("## ✓ Task Complete")
-        appendLine()
-        appendLine("| Metric | Value |")
-        appendLine("|--------|-------|")
-        appendLine("| Techniques Applied | ${techniques.size} |")
-        appendLine("| Total Ideas | ${allIdeas.size} |")
-        appendLine(
-          "| Avg Novelty | ${
-            String.format(
-              "%.1f%%",
-              allIdeas.map { it.novelty_score }.average() * 100
-            )
-          } |"
-        )
-        appendLine(
-          "| Avg Feasibility | ${
-            String.format(
-              "%.1f%%",
-              allIdeas.map { it.feasibility_score }.average() * 100
-            )
-          } |"
-        )
-        appendLine("| Total Time | ${totalTime / 1000}s |")
-        appendLine()
-        appendLine("**Status:** ✓ Complete")
-        transcript?.write(this.toString().toByteArray())
-      }.renderMarkdown)
-      task.update()
-
-      log.info(
-        "LateralThinkingTask completed: total_time=${totalTime}ms, techniques=${techniques.size}, ideas=${allIdeas.size}, avg_novelty=${
-          allIdeas.map { it.novelty_score }.average()
-        }"
-      )
-      task.safeComplete(
-        "Completed in ${totalTime / 1000}s with ${allIdeas.size} ideas across ${techniques.size} techniques.",
-        log
-      )
-      resultFn(resultText)
-      transcript?.close()
-      // Create summary message with transcript link
-      val (transcriptLink, _) = task.createFile("lateral_thinking_summary.md")
-      val summaryMessage = buildString {
-        appendLine(resultText)
-        appendLine()
-        appendLine("---")
-        appendLine()
-        appendLine(
-          "📄 **Full Analysis:** [View Transcript]($transcriptLink) | [HTML](${transcriptLink.removeSuffix(".md")}.html) | [PDF](${
-            transcriptLink.removeSuffix(
-              ".md"
-            )
-          }.pdf)"
-        )
-      }
-      resultFn(summaryMessage)
-
-    } catch (e: Exception) {
-      log.error("Error during LateralThinkingTask execution", e)
-      task.error(e)
-      val errorTask = task.ui.newTask(false)
-      errorTask.add(buildString {
-        appendLine("# ❌ Error")
-        appendLine()
-        appendLine("An error occurred during lateral thinking:")
-        appendLine("```")
-        appendLine(e.message ?: "Unknown error")
-        appendLine("```")
-      }.renderMarkdown)
-      task.safeComplete("Failed with error: ${e.message}", log)
-      resultFn("ERROR: ${e.message}")
     }
-  }
 
-  private fun getTechniqueDescription(technique: String): String {
-    return when (technique.lowercase()) {
-      "reversal" -> """
+    private fun getTechniqueDescription(technique: String): String {
+        return when (technique.lowercase()) {
+            "reversal" -> """
 ## Reversal Technique
 Instead of solving the problem, reverse it. Ask "How could we make this worse?" or "What if we did the opposite?"
 This helps identify hidden assumptions and can lead to breakthrough insights.
             """.trimIndent()
 
-      "random_stimulus" -> """
+            "random_stimulus" -> """
 ## Random Stimulus Technique
 Introduce a completely unrelated concept, object, or idea and force connections to the problem.
 This breaks mental patterns and can spark unexpected creative solutions.
             """.trimIndent()
 
-      "challenge_assumptions" -> """
+            "challenge_assumptions" -> """
 ## Challenge Assumptions Technique
 Identify and question the fundamental assumptions underlying the problem.
 Ask "What if this assumption wasn't true?" to open new solution spaces.
             """.trimIndent()
 
-      "exaggeration" -> """
+            "exaggeration" -> """
 ## Exaggeration Technique
 Amplify aspects of the problem to extremes. Make it 10x, 100x, or 1000x bigger or smaller.
 Extreme scenarios often reveal insights applicable to the original problem.
             """.trimIndent()
 
-      "escape" -> """
+            "escape" -> """
 ## Escape Technique
 Temporarily ignore a key constraint or requirement that seems immovable.
 This mental freedom can reveal solutions that work around the constraint in unexpected ways.
             """.trimIndent()
 
-      "metaphor" -> """
+            "metaphor" -> """
 ## Metaphor Technique
 Describe the problem using metaphors from completely different domains.
 Metaphorical thinking can reveal structural similarities and novel approaches.
             """.trimIndent()
 
-      "provocation" -> """
+            "provocation" -> """
 ## Provocation Technique
 Make deliberately absurd or provocative statements about the problem.
 Use "Po" (provocative operation) statements to jar thinking out of established patterns.
             """.trimIndent()
 
-      else -> "## $technique Technique\nApplying lateral thinking technique: $technique"
-    }
-  }
-
-  private fun buildTechniquePrompt(
-    technique: String,
-    problem: String,
-    numAlternatives: Int,
-    domainContext: String?,
-    constraints: List<String>?,
-    priorContext: String
-  ): String {
-    val baseContext = buildString {
-      appendLine("## Problem")
-      appendLine(problem)
-      appendLine()
-      if (domainContext != null) {
-        appendLine("## Domain Context")
-        appendLine(domainContext)
-        appendLine()
-      }
-      if (!constraints.isNullOrEmpty()) {
-        appendLine("## Constraints")
-        constraints.forEach { appendLine("- $it") }
-        appendLine()
-      }
-      if (priorContext.isNotBlank()) {
-        appendLine("## Additional Context")
-        appendLine(priorContext.take(2000))
-        appendLine()
-      }
+            else -> "## $technique Technique\nApplying lateral thinking technique: $technique"
+        }
     }
 
-    return when (technique.lowercase()) {
-      "reversal" -> """
+    private fun buildTechniquePrompt(
+        technique: String,
+        problem: String,
+        numAlternatives: Int,
+        domainContext: String?,
+        constraints: List<String>?,
+        priorContext: String
+    ): String {
+        val baseContext = buildString {
+            appendLine("## Problem")
+            appendLine(problem)
+            appendLine()
+            if (domainContext != null) {
+                appendLine("## Domain Context")
+                appendLine(domainContext)
+                appendLine()
+            }
+            if (!constraints.isNullOrEmpty()) {
+                appendLine("## Constraints")
+                constraints.forEach { appendLine("- $it") }
+                appendLine()
+            }
+            if (priorContext.isNotBlank()) {
+                appendLine("## Additional Context")
+                appendLine(priorContext.take(2000))
+                appendLine()
+            }
+        }
+
+        return when (technique.lowercase()) {
+            "reversal" -> """
 You are an expert in lateral thinking and creative problem-solving.
 
 $baseContext
@@ -895,7 +904,7 @@ Apply the reversal technique to generate $numAlternatives unconventional ideas.
 Generate $numAlternatives ideas using reversal thinking.
             """.trimIndent()
 
-      "random_stimulus" -> """
+            "random_stimulus" -> """
 You are an expert in lateral thinking and creative problem-solving.
 
 $baseContext
@@ -913,7 +922,7 @@ Apply the random stimulus technique to generate $numAlternatives unconventional 
 Generate $numAlternatives ideas using random stimuli.
             """.trimIndent()
 
-      "challenge_assumptions" -> """
+            "challenge_assumptions" -> """
 You are an expert in lateral thinking and creative problem-solving.
 
 $baseContext
@@ -931,7 +940,7 @@ Apply assumption-challenging to generate $numAlternatives unconventional ideas.
 Generate $numAlternatives ideas by challenging assumptions.
             """.trimIndent()
 
-      "exaggeration" -> """
+            "exaggeration" -> """
 You are an expert in lateral thinking and creative problem-solving.
 
 $baseContext
@@ -949,7 +958,7 @@ Apply exaggeration to generate $numAlternatives unconventional ideas.
 Generate $numAlternatives ideas using exaggeration.
             """.trimIndent()
 
-      "escape" -> """
+            "escape" -> """
 You are an expert in lateral thinking and creative problem-solving.
 
 $baseContext
@@ -967,7 +976,7 @@ Apply the escape technique to generate $numAlternatives unconventional ideas.
 Generate $numAlternatives ideas by escaping constraints.
             """.trimIndent()
 
-      "metaphor" -> """
+            "metaphor" -> """
 You are an expert in lateral thinking and creative problem-solving.
 
 $baseContext
@@ -985,7 +994,7 @@ Apply metaphorical thinking to generate $numAlternatives unconventional ideas.
 Generate $numAlternatives ideas using metaphorical thinking.
             """.trimIndent()
 
-      "provocation" -> """
+            "provocation" -> """
 You are an expert in lateral thinking and creative problem-solving.
 
 $baseContext
@@ -1003,7 +1012,7 @@ Apply provocative statements to generate $numAlternatives unconventional ideas.
 Generate $numAlternatives ideas using provocations.
             """.trimIndent()
 
-      else -> """
+            else -> """
 You are an expert in lateral thinking and creative problem-solving.
 
 $baseContext
@@ -1020,278 +1029,278 @@ Apply the $technique technique to generate $numAlternatives unconventional ideas
 
 Generate $numAlternatives ideas using $technique.
             """.trimIndent()
-    }
-  }
-
-  private fun extractRecommendedApproaches(synthesisText: String): List<String> {
-    // Simple extraction - look for numbered or bulleted lists in sections about recommendations
-    val lines = synthesisText.lines()
-    val recommendations = mutableListOf<String>()
-
-    var inRecommendationSection = false
-    for (line in lines) {
-      val trimmed = line.trim()
-      if (trimmed.contains("recommend", ignoreCase = true) ||
-        trimmed.contains("approach", ignoreCase = true) ||
-        trimmed.contains("suggestion", ignoreCase = true)
-      ) {
-        inRecommendationSection = true
-        continue
-      }
-      if (inRecommendationSection) {
-        if (trimmed.startsWith("-") || trimmed.matches(Regex("^\\d+\\..*"))) {
-          val cleaned = trimmed.removePrefix("-").removePrefix(Regex("^\\d+\\.")).trim()
-          if (cleaned.isNotEmpty() && cleaned.length > 10) {
-            recommendations.add(cleaned)
-          }
-        } else if (trimmed.isEmpty() && recommendations.isNotEmpty()) {
-          break
         }
-      }
     }
 
-    return recommendations.take(5)
-  }
+    private fun extractRecommendedApproaches(synthesisText: String): List<String> {
+        // Simple extraction - look for numbered or bulleted lists in sections about recommendations
+        val lines = synthesisText.lines()
+        val recommendations = mutableListOf<String>()
 
-  private fun extractInsights(synthesisText: String): List<String> {
-    // Simple extraction - look for bulleted or numbered insights
-    val lines = synthesisText.lines()
-    val insights = mutableListOf<String>()
-
-    var inInsightSection = false
-    for (line in lines) {
-      val trimmed = line.trim()
-      if (trimmed.contains("insight", ignoreCase = true) ||
-        trimmed.contains("theme", ignoreCase = true) ||
-        trimmed.contains("pattern", ignoreCase = true)
-      ) {
-        inInsightSection = true
-        continue
-      }
-      if (inInsightSection) {
-        if (trimmed.startsWith("-") || trimmed.matches(Regex("^\\d+\\..*"))) {
-          //val cleaned = trimmed.removePrefix("-").removePrefix(Regex("^\\d+\\.")).trim()
-          val cleaned = trimmed.removePrefix("-").removePrefix(Regex("^\\d+\\.")).trim()
-          if (cleaned.isNotEmpty() && cleaned.length > 10) {
-            insights.add(cleaned)
-          }
-        } else if (trimmed.isEmpty() && insights.isNotEmpty()) {
-          break
+        var inRecommendationSection = false
+        for (line in lines) {
+            val trimmed = line.trim()
+            if (trimmed.contains("recommend", ignoreCase = true) ||
+                trimmed.contains("approach", ignoreCase = true) ||
+                trimmed.contains("suggestion", ignoreCase = true)
+            ) {
+                inRecommendationSection = true
+                continue
+            }
+            if (inRecommendationSection) {
+                if (trimmed.startsWith("-") || trimmed.matches(Regex("^\\d+\\..*"))) {
+                    val cleaned = trimmed.removePrefix("-").removePrefix(Regex("^\\d+\\.")).trim()
+                    if (cleaned.isNotEmpty() && cleaned.length > 10) {
+                        recommendations.add(cleaned)
+                    }
+                } else if (trimmed.isEmpty() && recommendations.isNotEmpty()) {
+                    break
+                }
+            }
         }
-      }
+
+        return recommendations.take(5)
     }
 
-    return insights.take(10)
-  }
+    private fun extractInsights(synthesisText: String): List<String> {
+        // Simple extraction - look for bulleted or numbered insights
+        val lines = synthesisText.lines()
+        val insights = mutableListOf<String>()
 
-  private fun formatSummary(
-    result: LateralThinkingResult,
-    problem: String,
-    techniques: List<String>
-  ): String {
-    return buildString {
-      appendLine("# Lateral Thinking Summary")
-      appendLine()
-      appendLine("## Problem Statement")
-      appendLine()
-      appendLine("> $problem")
-      appendLine()
-      appendLine("---")
-      appendLine()
-      appendLine("## Executive Summary")
-      appendLine()
-      appendLine("Applied ${techniques.size} lateral thinking techniques to generate ${result.all_ideas.size} unconventional ideas.")
-      appendLine()
-      val avgNovelty = result.all_ideas.map { it.novelty_score }.average()
-      val avgFeasibility = result.all_ideas.map { it.feasibility_score }.average()
-      appendLine("**Average Novelty:** ${String.format("%.1f%%", avgNovelty * 100)}")
-      appendLine()
-      appendLine("**Average Feasibility:** ${String.format("%.1f%%", avgFeasibility * 100)}")
-      appendLine()
-      appendLine("---")
-      appendLine()
-      appendLine("## Top Breakthrough Ideas")
-      appendLine()
-      result.all_ideas
-        .sortedByDescending { it.novelty_score * it.feasibility_score }
-        .take(10)
-        .forEachIndexed { idx, idea ->
-          appendLine("### ${idx + 1}. ${idea.title}")
-          appendLine()
-          appendLine(
-            "**Technique:** ${idea.technique.capitalize()} | **Novelty:** ${
-              String.format(
-                "%.1f%%",
-                idea.novelty_score * 100
-              )
-            } | **Feasibility:** ${String.format("%.1f%%", idea.feasibility_score * 100)}"
-          )
-          appendLine()
-          appendLine("#### Description")
-          appendLine(idea.description)
-          appendLine()
-          appendLine("#### Breakthrough Aspect")
-          appendLine(idea.breakthrough_aspect)
-          appendLine()
-          if (idea.benefits.isNotEmpty()) {
-            appendLine("#### Benefits")
-            idea.benefits.forEach { appendLine("- $it") }
+        var inInsightSection = false
+        for (line in lines) {
+            val trimmed = line.trim()
+            if (trimmed.contains("insight", ignoreCase = true) ||
+                trimmed.contains("theme", ignoreCase = true) ||
+                trimmed.contains("pattern", ignoreCase = true)
+            ) {
+                inInsightSection = true
+                continue
+            }
+            if (inInsightSection) {
+                if (trimmed.startsWith("-") || trimmed.matches(Regex("^\\d+\\..*"))) {
+                    //val cleaned = trimmed.removePrefix("-").removePrefix(Regex("^\\d+\\.")).trim()
+                    val cleaned = trimmed.removePrefix("-").removePrefix(Regex("^\\d+\\.")).trim()
+                    if (cleaned.isNotEmpty() && cleaned.length > 10) {
+                        insights.add(cleaned)
+                    }
+                } else if (trimmed.isEmpty() && insights.isNotEmpty()) {
+                    break
+                }
+            }
+        }
+
+        return insights.take(10)
+    }
+
+    private fun formatSummary(
+        result: LateralThinkingResult,
+        problem: String,
+        techniques: List<String>
+    ): String {
+        return buildString {
+            appendLine("# Lateral Thinking Summary")
             appendLine()
-          }
-          if (idea.challenges.isNotEmpty()) {
-            appendLine("#### Challenges")
-            idea.challenges.forEach { appendLine("- $it") }
+            appendLine("## Problem Statement")
             appendLine()
-          }
-          if (idea.implementation_steps.isNotEmpty()) {
-            appendLine("#### Implementation Steps")
-            idea.implementation_steps.forEach { appendLine("${it.split(".").firstOrNull() ?: ""}. ${it}") }
+            appendLine("> $problem")
             appendLine()
-          }
-          appendLine("---")
-          appendLine()
-        }
+            appendLine("---")
+            appendLine()
+            appendLine("## Executive Summary")
+            appendLine()
+            appendLine("Applied ${techniques.size} lateral thinking techniques to generate ${result.all_ideas.size} unconventional ideas.")
+            appendLine()
+            val avgNovelty = result.all_ideas.map { it.novelty_score }.average()
+            val avgFeasibility = result.all_ideas.map { it.feasibility_score }.average()
+            appendLine("**Average Novelty:** ${String.format("%.1f%%", avgNovelty * 100)}")
+            appendLine()
+            appendLine("**Average Feasibility:** ${String.format("%.1f%%", avgFeasibility * 100)}")
+            appendLine()
+            appendLine("---")
+            appendLine()
+            appendLine("## Top Breakthrough Ideas")
+            appendLine()
+            result.all_ideas
+                .sortedByDescending { it.novelty_score * it.feasibility_score }
+                .take(10)
+                .forEachIndexed { idx, idea ->
+                    appendLine("### ${idx + 1}. ${idea.title}")
+                    appendLine()
+                    appendLine(
+                        "**Technique:** ${idea.technique.capitalize()} | **Novelty:** ${
+                            String.format(
+                                "%.1f%%",
+                                idea.novelty_score * 100
+                            )
+                        } | **Feasibility:** ${String.format("%.1f%%", idea.feasibility_score * 100)}"
+                    )
+                    appendLine()
+                    appendLine("#### Description")
+                    appendLine(idea.description)
+                    appendLine()
+                    appendLine("#### Breakthrough Aspect")
+                    appendLine(idea.breakthrough_aspect)
+                    appendLine()
+                    if (idea.benefits.isNotEmpty()) {
+                        appendLine("#### Benefits")
+                        idea.benefits.forEach { appendLine("- $it") }
+                        appendLine()
+                    }
+                    if (idea.challenges.isNotEmpty()) {
+                        appendLine("#### Challenges")
+                        idea.challenges.forEach { appendLine("- $it") }
+                        appendLine()
+                    }
+                    if (idea.implementation_steps.isNotEmpty()) {
+                        appendLine("#### Implementation Steps")
+                        idea.implementation_steps.forEach { appendLine("${it.split(".").firstOrNull() ?: ""}. ${it}") }
+                        appendLine()
+                    }
+                    appendLine("---")
+                    appendLine()
+                }
 
-      appendLine("## Synthesized Insights")
-      appendLine()
-      result.synthesized_insights.forEach { appendLine("- $it") }
-      appendLine()
+            appendLine("## Synthesized Insights")
+            appendLine()
+            result.synthesized_insights.forEach { appendLine("- $it") }
+            appendLine()
 
-      appendLine("## Recommended Unconventional Approaches")
-      appendLine()
-      result.recommended_approaches.forEachIndexed { idx, approach ->
-        appendLine("${idx + 1}. $approach")
-      }
-      appendLine()
+            appendLine("## Recommended Unconventional Approaches")
+            appendLine()
+            result.recommended_approaches.forEachIndexed { idx, approach ->
+                appendLine("${idx + 1}. $approach")
+            }
+            appendLine()
 
-      if (result.feasibility_evaluation != null) {
-        appendLine("---")
-        appendLine()
-        appendLine("## Feasibility Evaluation")
-        appendLine()
-        appendLine("### Overall Assessment")
-        appendLine()
-        appendLine(result.feasibility_evaluation.overall_assessment)
-        appendLine()
-        appendLine("### Most Promising Ideas")
-        appendLine()
-        result.feasibility_evaluation.top_ideas.forEachIndexed { idx, idea ->
-          appendLine("${idx + 1}. $idea")
-        }
-        appendLine()
-        if (result.feasibility_evaluation.ideas_for_exploration.isNotEmpty()) {
-          appendLine("### Ideas Requiring Further Exploration")
-          appendLine()
-          result.feasibility_evaluation.ideas_for_exploration.forEach { appendLine("- $it") }
-          appendLine()
-        }
-        if (result.feasibility_evaluation.hybrid_approaches.isNotEmpty()) {
-          appendLine("### Hybrid Approaches")
-          appendLine()
-          result.feasibility_evaluation.hybrid_approaches.forEach { appendLine("- $it") }
-          appendLine()
-        }
-      }
+            if (result.feasibility_evaluation != null) {
+                appendLine("---")
+                appendLine()
+                appendLine("## Feasibility Evaluation")
+                appendLine()
+                appendLine("### Overall Assessment")
+                appendLine()
+                appendLine(result.feasibility_evaluation.overall_assessment)
+                appendLine()
+                appendLine("### Most Promising Ideas")
+                appendLine()
+                result.feasibility_evaluation.top_ideas.forEachIndexed { idx, idea ->
+                    appendLine("${idx + 1}. $idea")
+                }
+                appendLine()
+                if (result.feasibility_evaluation.ideas_for_exploration.isNotEmpty()) {
+                    appendLine("### Ideas Requiring Further Exploration")
+                    appendLine()
+                    result.feasibility_evaluation.ideas_for_exploration.forEach { appendLine("- $it") }
+                    appendLine()
+                }
+                if (result.feasibility_evaluation.hybrid_approaches.isNotEmpty()) {
+                    appendLine("### Hybrid Approaches")
+                    appendLine()
+                    result.feasibility_evaluation.hybrid_approaches.forEach { appendLine("- $it") }
+                    appendLine()
+                }
+            }
 
-      appendLine("---")
-      appendLine()
-      appendLine("## Ideas by Technique")
-      appendLine()
-      result.technique_applications.forEach { app ->
-        appendLine("### ${app.technique.capitalize()} (${app.ideas.size} ideas)")
-        appendLine()
-        appendLine("**Provocation:** ${app.provocation}")
-        appendLine()
-        app.ideas.sortedByDescending { it.novelty_score }.take(3).forEach { idea ->
-          appendLine("- **${idea.title}** (Novelty: ${String.format("%.0f%%", idea.novelty_score * 100)})")
-          appendLine("  ${idea.description.truncateForDisplay(maxDescriptionLength)}")
+            appendLine("---")
+            appendLine()
+            appendLine("## Ideas by Technique")
+            appendLine()
+            result.technique_applications.forEach { app ->
+                appendLine("### ${app.technique.capitalize()} (${app.ideas.size} ideas)")
+                appendLine()
+                appendLine("**Provocation:** ${app.provocation}")
+                appendLine()
+                app.ideas.sortedByDescending { it.novelty_score }.take(3).forEach { idea ->
+                    appendLine("- **${idea.title}** (Novelty: ${String.format("%.0f%%", idea.novelty_score * 100)})")
+                    appendLine("  ${idea.description.truncateForDisplay(maxDescriptionLength)}")
+                }
+                if (app.ideas.size > 3) {
+                    appendLine("  *...and ${app.ideas.size - 3} more ideas*")
+                }
+                appendLine()
+            }
         }
-        if (app.ideas.size > 3) {
-          appendLine("  *...and ${app.ideas.size - 3} more ideas*")
-        }
-        appendLine()
-      }
     }
-  }
 
-  private fun String.capitalize(): String {
-    return this.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-  }
+    private fun String.capitalize(): String {
+        return this.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+    }
 
-  private fun getInputFileCode(root: Path): String = (executionConfig?.input_files ?: listOf())
-    .flatMap { pattern: String ->
-      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-      (FileSelectionUtils.filteredWalk(root.toFile()) {
-        when {
-          FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-          matcher.matches(root.relativize(it.toPath())) -> true
-          it.isDirectory -> true
-          else -> false
+    private fun getInputFileCode(root: Path): String = (executionConfig?.input_files ?: listOf())
+        .flatMap { pattern: String ->
+            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+            (FileSelectionUtils.filteredWalk(root.toFile()) {
+                when {
+                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+                    matcher.matches(root.relativize(it.toPath())) -> true
+                    it.isDirectory -> true
+                    else -> false
+                }
+            })
+        }.filter { file ->
+            file.isFile && file.exists()
         }
-      })
-    }.filter { file ->
-      file.isFile && file.exists()
-    }
-    .distinct()
-    .sortedBy { it }
-    .joinToString("\n\n") { relativePath ->
-      val file = root.toFile().resolve(relativePath)
-      try {
-        val content = if (!isTextFile(file)) {
-          extractDocumentContent(file)
-        } else {
-          file.readText()
+        .distinct()
+        .sortedBy { it }
+        .joinToString("\n\n") { relativePath ->
+            val file = root.toFile().resolve(relativePath)
+            try {
+                val content = if (!isTextFile(file)) {
+                    extractDocumentContent(file)
+                } else {
+                    file.readText()
+                }
+                "# $relativePath\n\n```\n$content\n```"
+            } catch (e: Throwable) {
+                log.warn("Error reading file: $relativePath", e)
+                ""
+            }
         }
-        "# $relativePath\n\n```\n$content\n```"
-      } catch (e: Throwable) {
-        log.warn("Error reading file: $relativePath", e)
-        ""
-      }
+
+    private fun isTextFile(file: File): Boolean {
+        val textExtensions = setOf(
+            "txt",
+            "md",
+            "kt",
+            "java",
+            "js",
+            "ts",
+            "py",
+            "rb",
+            "go",
+            "rs",
+            "c",
+            "cpp",
+            "h",
+            "hpp",
+            "css",
+            "html",
+            "xml",
+            "json",
+            "yaml",
+            "yml",
+            "properties",
+            "gradle",
+            "maven"
+        )
+        return textExtensions.contains(file.extension.lowercase())
     }
 
-  private fun isTextFile(file: File): Boolean {
-    val textExtensions = setOf(
-      "txt",
-      "md",
-      "kt",
-      "java",
-      "js",
-      "ts",
-      "py",
-      "rb",
-      "go",
-      "rs",
-      "c",
-      "cpp",
-      "h",
-      "hpp",
-      "css",
-      "html",
-      "xml",
-      "json",
-      "yaml",
-      "yml",
-      "properties",
-      "gradle",
-      "maven"
-    )
-    return textExtensions.contains(file.extension.lowercase())
-  }
-
-  private fun extractDocumentContent(file: File) = try {
-    file.getDocumentReader().use { reader ->
-      when (reader) {
-        is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
-        else -> reader.getText()
-      }
+    private fun extractDocumentContent(file: File) = try {
+        file.getDocumentReader().use { reader ->
+            when (reader) {
+                is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+                else -> reader.getText()
+            }
+        }
+    } catch (e: Exception) {
+        log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+        file.readText()
     }
-  } catch (e: Exception) {
-    log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
-    file.readText()
-  }
 
 }
 
 private fun String.removePrefix(prefix: Regex): String {
-  return this.replace(prefix, "")
+    return this.replace(prefix, "")
 }

@@ -639,6 +639,13 @@ class TaskConfigManager {
                 configFields: []
             },
             {
+                id: 'PoliticalOptimization',
+                name: 'Political Optimization',
+                description: 'Analyze and optimize political strategies and policies',
+                category: 'Social',
+                configFields: []
+            },
+            {
                 id: 'ArticleGeneration',
                 name: 'Article Generation',
                 description: 'Generate well-structured articles and blog posts',
@@ -751,6 +758,62 @@ class TaskConfigManager {
                         tooltip: 'Configure which task types are available within sub-plans'
                     }
                 ]
+            },
+            {
+                id: 'LLMExperiment',
+                name: 'LLM Experiment',
+                description: 'Run experiments with language models',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'LLMPollSimulation',
+                name: 'LLM Poll Simulation',
+                description: 'Simulate polling scenarios with language models',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'GameEconomy',
+                name: 'Game Economy',
+                description: 'Design and simulate game economy systems',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'GameLevelDesign',
+                name: 'Game Level Design',
+                description: 'Design game levels and environments',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'GameNarrativeDesign',
+                name: 'Game Narrative Design',
+                description: 'Create narratives and storylines for games',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'GameMechanicsDesign',
+                name: 'Game Mechanics Design',
+                description: 'Design game mechanics and systems',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'ResearchPaperGenerationTask',
+                name: 'Research Paper Generation',
+                description: 'Generate comprehensive research papers',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'IllustrateDocument',
+                name: 'Illustrate Document',
+                description: 'Add illustrations and visual elements to documents',
+                category: 'File Operations',
+                configFields: []
             }
         ];
     }

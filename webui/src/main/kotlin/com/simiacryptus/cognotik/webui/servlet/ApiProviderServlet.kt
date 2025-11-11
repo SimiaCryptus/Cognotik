@@ -10,17 +10,18 @@ import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 
 class ApiProviderServlet : HttpServlet() {
-   data class ApiProvidersResponse(
-       val configuredProviders: List<ProviderInfo>,
-       val availableProviders: List<AvailableProviderInfo>
-   )
-   data class AvailableProviderInfo(
-       val id: String,
-       val name: String,
-       val baseUrl: String,
-       val isConfigured: Boolean
-   )
-   
+    data class ApiProvidersResponse(
+        val configuredProviders: List<ProviderInfo>,
+        val availableProviders: List<AvailableProviderInfo>
+    )
+
+    data class AvailableProviderInfo(
+        val id: String,
+        val name: String,
+        val baseUrl: String,
+        val isConfigured: Boolean
+    )
+
     data class ProviderInfo(
         val name: String,
         val baseUrl: String,
@@ -28,12 +29,12 @@ class ApiProviderServlet : HttpServlet() {
         val supportsChat: Boolean,
         val supportsEmbedding: Boolean
     )
-    
+
     data class ModelInfo(
         val name: String,
         val maxTokens: Int? = null
     )
-    
+
     public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         try {
             val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
@@ -42,33 +43,33 @@ class ApiProviderServlet : HttpServlet() {
                 resp.writer.write(JsonUtil.toJson(mapOf("error" to "Unauthorized")))
                 return
             }
-            
+
             val userSettings = ApplicationServices.fileApplicationServices()
                 .userSettingsManager.getUserSettings(userinfo)
-           // Get all available providers (including unconfigured)
-           val availableProviders = APIProvider.values().map { provider ->
-               val isConfigured = userSettings.apis.any { 
-                   it.provider?.name == provider.name && !it.key.isNullOrEmpty()
-               }
-               AvailableProviderInfo(
-                   id = provider.name,
-                   name = provider.name,
-                   baseUrl = provider.base,
-                   isConfigured = isConfigured
-               )
-           }
-            
-           
+            // Get all available providers (including unconfigured)
+            val availableProviders = APIProvider.values().map { provider ->
+                val isConfigured = userSettings.apis.any {
+                    it.provider?.name == provider.name && !it.key.isNullOrEmpty()
+                }
+                AvailableProviderInfo(
+                    id = provider.name,
+                    name = provider.name,
+                    baseUrl = provider.base,
+                    isConfigured = isConfigured
+                )
+            }
+
+
             val providers = mutableListOf<ProviderInfo>()
-            
+
             // Get all registered API providers
             APIProvider.values().forEach { provider ->
                 try {
                     // Find matching API configuration for this provider
-                    val apiConfig = userSettings.apis.find { 
-                        it.provider?.name == provider.name 
+                    val apiConfig = userSettings.apis.find {
+                        it.provider?.name == provider.name
                     }
-                    
+
                     if (apiConfig != null && !apiConfig.key.isNullOrEmpty()) {
                         val models = try {
                             provider.getChatModels(
@@ -84,7 +85,7 @@ class ApiProviderServlet : HttpServlet() {
                             log.warn("Failed to fetch models for provider ${provider.name}", e)
                             emptyList()
                         }
-                        
+
                         val supportsEmbedding = try {
                             provider.getEmbeddingClient(
                                 key = apiConfig.key ?: "",
@@ -101,7 +102,7 @@ class ApiProviderServlet : HttpServlet() {
                             log.warn("Error checking embedding support for ${provider.name}", e)
                             false
                         }
-                        
+
                         providers.add(
                             ProviderInfo(
                                 name = provider.name,
@@ -116,23 +117,23 @@ class ApiProviderServlet : HttpServlet() {
                     log.error("Error processing provider ${provider.name}", e)
                 }
             }
-           val response = ApiProvidersResponse(
-               configuredProviders = providers,
-               availableProviders = availableProviders
-           )
-            
-           
+            val response = ApiProvidersResponse(
+                configuredProviders = providers,
+                availableProviders = availableProviders
+            )
+
+
             resp.status = HttpServletResponse.SC_OK
             val acceptHeader = req.getHeader("Accept") ?: ""
-            
+
             if (acceptHeader.contains("application/json")) {
                 resp.contentType = "application/json"
-               resp.writer.write(JsonUtil.toJson(response))
+                resp.writer.write(JsonUtil.toJson(response))
             } else {
                 resp.contentType = "text/html"
-               resp.writer.write(generateHtmlResponse(response))
+                resp.writer.write(generateHtmlResponse(response))
             }
-            
+
         } catch (e: Exception) {
             log.error("Error in ApiProviderServlet", e)
             resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
@@ -140,19 +141,19 @@ class ApiProviderServlet : HttpServlet() {
             resp.writer.write(JsonUtil.toJson(mapOf("error" to e.message)))
         }
     }
-    
-   private fun generateHtmlResponse(response: ApiProvidersResponse): String {
-       val availableProvidersHtml = response.availableProviders.joinToString("\n") { provider ->
-           """
+
+    private fun generateHtmlResponse(response: ApiProvidersResponse): String {
+        val availableProvidersHtml = response.availableProviders.joinToString("\n") { provider ->
+            """
            <tr>
                <td>${provider.name}</td>
                <td>${provider.baseUrl}</td>
                <td>${if (provider.isConfigured) "✓ Yes" else "✗ No"}</td>
            </tr>
            """.trimIndent()
-       }
-       
-       val providersHtml = response.configuredProviders.joinToString("\n") { provider ->
+        }
+
+        val providersHtml = response.configuredProviders.joinToString("\n") { provider ->
             val modelsHtml = provider.models.joinToString("\n") { model ->
                 """
                 <li>
@@ -161,7 +162,7 @@ class ApiProviderServlet : HttpServlet() {
                 </li>
                 """.trimIndent()
             }
-            
+
             """
             <div class="provider">
                 <h2>${provider.name}</h2>
@@ -175,7 +176,7 @@ class ApiProviderServlet : HttpServlet() {
             </div>
             """.trimIndent()
         }
-        
+
         return """
         <html>
         <head>
@@ -296,7 +297,7 @@ class ApiProviderServlet : HttpServlet() {
         </html>
         """.trimIndent()
     }
-    
+
     companion object {
         private val log = LoggerFactory.getLogger(ApiProviderServlet::class.java)
     }

@@ -1,10 +1,13 @@
 # Online Fetch Package
 
-This package provides flexible strategies for fetching web content, supporting both HTTP-based and browser-based approaches to web scraping and content retrieval.
+This package provides flexible strategies for fetching web content, supporting both HTTP-based and browser-based
+approaches to web scraping and content retrieval.
 
 ## Overview
 
-The fetch package implements a strategy pattern for web content retrieval, allowing seamless switching between different fetching methods based on requirements and availability. It handles various content types including HTML, documents (PDF, DOCX, etc.), and plain text.
+The fetch package implements a strategy pattern for web content retrieval, allowing seamless switching between different
+fetching methods based on requirements and availability. It handles various content types including HTML, documents (
+PDF, DOCX, etc.), and plain text.
 
 ## Components
 
@@ -31,19 +34,21 @@ interface FetchStrategy : EnabledStrategy {
 A lightweight, efficient HTTP-based fetching strategy using Java's built-in HttpClient.
 
 **Features:**
+
 - Fast and resource-efficient
 - Handles multiple content types:
-  - HTML pages (with simplification)
-  - PDF documents
-  - Microsoft Office documents (DOC, DOCX, XLS, XLSX, PPT, PPTX)
-  - OpenDocument formats (ODT)
-  - Plain text files
+    - HTML pages (with simplification)
+    - PDF documents
+    - Microsoft Office documents (DOC, DOCX, XLS, XLSX, PPT, PPTX)
+    - OpenDocument formats (ODT)
+    - Plain text files
 - SSL/TLS support with flexible certificate validation
 - Automatic text extraction from documents
 - Content size limits (5MB for HTML, 10MB for documents)
 - Proper error handling and fallbacks
 
 **Usage:**
+
 ```kotlin
 val strategy = HttpClientFetch().createStrategy(task)
 val content = strategy.fetch(url, webSearchDir, index, pool, config)
@@ -54,12 +59,14 @@ val content = strategy.fetch(url, webSearchDir, index, pool, config)
 A browser-based fetching strategy using Selenium WebDriver for JavaScript-heavy sites.
 
 **Features:**
+
 - Full browser rendering
 - JavaScript execution support
 - Automatic fallback to HttpClient on failure
 - Can be enabled/disabled via `FetchConfig.isSeleniumEnabled`
 
 **Usage:**
+
 ```kotlin
 FetchConfig.isSeleniumEnabled = true
 val strategy = Selenium().createStrategy(task)
@@ -83,9 +90,11 @@ enum class FetchMethod : FetchMethodFactory {
 
 1. **Raw Content Storage**: Original HTML is saved to `raw_pages/`
 2. **Simplification**: HTML is cleaned and simplified using `HtmlSimplifier`:
-  - Removes CSS, scripts, and interactive elements
-  - Preserves semantic structure
-  - Removes event handlers and media elements
+
+- Removes CSS, scripts, and interactive elements
+- Preserves semantic structure
+- Removes event handlers and media elements
+
 3. **Reduced Content Storage**: Simplified HTML is saved to `reduced_pages/`
 
 ### Document Processing
@@ -96,6 +105,7 @@ enum class FetchMethod : FetchMethodFactory {
 4. **Extracted Text Storage**: Plain text saved to `extracted_text/`
 
 Supported formats:
+
 - PDF (`.pdf`)
 - Microsoft Word (`.doc`, `.docx`)
 - Microsoft Excel (`.xls`, `.xlsx`)
@@ -146,6 +156,7 @@ webSearchDir/
 ## Logging
 
 Comprehensive logging at multiple levels:
+
 - **INFO**: Major operations (fetching, processing)
 - **DEBUG**: Detailed operation steps
 - **WARN**: Fallbacks and skipped content

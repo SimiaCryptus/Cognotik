@@ -13,12 +13,12 @@ public class OutputInterceptorThreadedTest {
 
     @Test
     public void testThreadedInterceptor() throws InterruptedException {
-        OutputInterceptor.INSTANCE.setupInterceptor();
+        OutputInterceptor.setupInterceptor();
         AtomicInteger successCounter = new AtomicInteger(0);
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         Object lock = new Object();
         Runnable task = () -> {
-            OutputInterceptor.INSTANCE.clearThreadOutput();
+            OutputInterceptor.clearThreadOutput();
             String threadName = Thread.currentThread().getName();
             System.out.println("Thread: " + threadName + " output");
             System.err.println("Thread: " + threadName + " error");
@@ -28,7 +28,7 @@ public class OutputInterceptorThreadedTest {
                 Thread.currentThread().interrupt();
             }
             String expectedOutput = ("Thread: " + threadName + " output\nThread: " + threadName + " error\n").trim();
-            String threadOutput = OutputInterceptor.INSTANCE.getThreadOutput().replace("\r", "").trim();
+            String threadOutput = OutputInterceptor.getThreadOutput().replace("\r", "").trim();
             if (threadOutput.trim().equals(expectedOutput.trim())) {
                 successCounter.incrementAndGet();
             } else {

@@ -16,26 +16,26 @@ class SessionProxyServer : ApplicationServer(
     override val inputCnt = 0
     override val stickyInput = false
     override fun appInfo(session: Session): Map<String, Any> {
-      val chat = chats[session]
-      val appInfoData = appInfoMap[session]
-      return (appInfoData ?: chat?.let { chatServer ->
-        AppInfoData(
-          applicationName = chatServer.applicationName,
-          inputCnt = chatServer.inputCnt,
-          stickyInput = chatServer.stickyInput,
-          loadImages = false,
-          showMenubar = showMenubar,
-        )
-      } ?: AppInfoData(
-        applicationName = "AI Coding Assistant",
-        inputCnt = 0,
-        stickyInput = false,
-        loadImages = false,
-        showMenubar = showMenubar,
-      )).toMap()
+        val chat = chats[session]
+        val appInfoData = appInfoMap[session]
+        return (appInfoData ?: chat?.let { chatServer ->
+            AppInfoData(
+                applicationName = chatServer.applicationName,
+                inputCnt = chatServer.inputCnt,
+                stickyInput = chatServer.stickyInput,
+                loadImages = false,
+                showMenubar = showMenubar,
+            )
+        } ?: AppInfoData(
+            applicationName = "AI Coding Assistant",
+            inputCnt = 0,
+            stickyInput = false,
+            loadImages = false,
+            showMenubar = showMenubar,
+        )).toMap()
     }
 
-    override fun newSession(user: User?, session: Session) =
+    override fun newSession(user: User, session: Session) =
         chats[session]?.newSession(user, session) ?: agents[session]
         ?: throw IllegalStateException("No agent found for session $session")
 

@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Interactive visualization of LLM generative use case patterns and workflows">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Interactive visualization of LLM generative use case patterns and workflows" name="description">
     <title>LLM Use Case Patterns - Interactive Guide</title>
     <!-- CSS will be added here -->
 
@@ -11,13 +11,13 @@
         /* ============================================
            CSS Reset & Base Styles
            ============================================ */
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         :root {
             /* Color Palette */
             --primary-color: #2563eb;
@@ -26,7 +26,7 @@
             --secondary-color: #8b5cf6;
             --accent-color: #10b981;
             --accent-orange: #f59e0b;
-        
+
             /* Neutral Colors */
             --bg-primary: #ffffff;
             --bg-secondary: #f8fafc;
@@ -39,11 +39,11 @@
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        
+
             /* Typography */
             --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             --font-mono: 'Courier New', Courier, monospace;
-        
+
             /* Spacing */
             --spacing-xs: 0.5rem;
             --spacing-sm: 0.75rem;
@@ -52,23 +52,23 @@
             --spacing-xl: 2rem;
             --spacing-2xl: 3rem;
             --spacing-3xl: 4rem;
-        
+
             /* Border Radius */
             --radius-sm: 0.375rem;
             --radius-md: 0.5rem;
             --radius-lg: 0.75rem;
             --radius-xl: 1rem;
-        
+
             /* Transitions */
             --transition-fast: 150ms ease-in-out;
             --transition-base: 250ms ease-in-out;
             --transition-slow: 350ms ease-in-out;
         }
-        
+
         html {
             scroll-behavior: smooth;
         }
-        
+
         body {
             font-family: var(--font-primary);
             font-size: 16px;
@@ -79,11 +79,11 @@
             display: flex;
             flex-direction: column;
         }
-        
+
         /* ============================================
            Header Styles
            ============================================ */
-        
+
         .site-header {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
@@ -92,7 +92,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .site-header::before {
             content: '';
             position: absolute;
@@ -103,7 +103,7 @@
             background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
             opacity: 0.3;
         }
-        
+
         .header-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -111,25 +111,25 @@
             position: relative;
             z-index: 1;
         }
-        
+
         .site-title {
             font-size: clamp(1.75rem, 4vw, 2.5rem);
             font-weight: 700;
             margin-bottom: var(--spacing-sm);
             letter-spacing: -0.02em;
         }
-        
+
         .site-subtitle {
             font-size: clamp(1rem, 2vw, 1.25rem);
             font-weight: 400;
             opacity: 0.95;
             letter-spacing: 0.01em;
         }
-        
+
         /* ============================================
            Navigation Tabs
            ============================================ */
-        
+
         .category-nav {
             background-color: var(--bg-primary);
             border-bottom: 2px solid var(--border-color);
@@ -138,7 +138,7 @@
             z-index: 100;
             box-shadow: var(--shadow-sm);
         }
-        
+
         .nav-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -148,20 +148,20 @@
             overflow-x: auto;
             scrollbar-width: thin;
         }
-        
+
         .nav-container::-webkit-scrollbar {
             height: 4px;
         }
-        
+
         .nav-container::-webkit-scrollbar-track {
             background: var(--bg-tertiary);
         }
-        
+
         .nav-container::-webkit-scrollbar-thumb {
             background: var(--primary-color);
             border-radius: 2px;
         }
-        
+
         .nav-tab {
             background: none;
             border: none;
@@ -175,17 +175,17 @@
             white-space: nowrap;
             border-bottom: 3px solid transparent;
         }
-        
+
         .nav-tab:hover {
             color: var(--primary-color);
             background-color: var(--bg-tertiary);
         }
-        
+
         .nav-tab.active {
             color: var(--primary-color);
             border-bottom-color: var(--primary-color);
         }
-        
+
         .nav-tab::after {
             content: '';
             position: absolute;
@@ -197,15 +197,15 @@
             transform: scaleX(0);
             transition: transform var(--transition-base);
         }
-        
+
         .nav-tab.active::after {
             transform: scaleX(1);
         }
-        
+
         /* ============================================
            Main Content Area
            ============================================ */
-        
+
         .main-content {
             flex: 1;
             max-width: 1200px;
@@ -213,16 +213,16 @@
             margin: 0 auto;
             padding: var(--spacing-2xl) var(--spacing-lg);
         }
-        
+
         .category-section {
             display: none;
             animation: fadeIn var(--transition-base);
         }
-        
+
         .category-section.active {
             display: block;
         }
-        
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -233,17 +233,17 @@
                 transform: translateY(0);
             }
         }
-        
+
         .section-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: var(--spacing-xl);
         }
-        
+
         /* ============================================
            Use Case Cards
            ============================================ */
-        
+
         .use-case-card {
             background-color: var(--bg-primary);
             border-radius: var(--radius-lg);
@@ -254,12 +254,12 @@
             display: flex;
             flex-direction: column;
         }
-        
+
         .use-case-card:hover {
             transform: translateY(-4px);
             box-shadow: var(--shadow-xl);
         }
-        
+
         .card-header {
             padding: var(--spacing-lg);
             background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
@@ -269,7 +269,7 @@
             align-items: flex-start;
             gap: var(--spacing-md);
         }
-        
+
         .card-title {
             font-size: 1.25rem;
             font-weight: 700;
@@ -278,7 +278,7 @@
             flex: 1;
             font-family: var(--font-mono);
         }
-        
+
         .pattern-badge {
             display: inline-block;
             padding: var(--spacing-xs) var(--spacing-md);
@@ -291,15 +291,15 @@
             border-radius: var(--radius-md);
             white-space: nowrap;
         }
-        
+
         .pattern-badge.advanced {
             background-color: var(--secondary-color);
         }
-        
+
         .pattern-badge.combined {
             background-color: var(--accent-color);
         }
-        
+
         .card-body {
             padding: var(--spacing-lg);
             display: flex;
@@ -307,20 +307,20 @@
             gap: var(--spacing-lg);
             flex: 1;
         }
-        
+
         .card-description {
             color: var(--text-secondary);
             font-size: 0.95rem;
             line-height: 1.6;
         }
-        
+
         .example-list {
             list-style: none;
             display: flex;
             flex-direction: column;
             gap: var(--spacing-md);
         }
-        
+
         .example-item {
             display: flex;
             align-items: flex-start;
@@ -330,23 +330,23 @@
             border-radius: var(--radius-sm);
             transition: background-color var(--transition-fast);
         }
-        
+
         .example-item:hover {
             background-color: var(--bg-tertiary);
         }
-        
+
         .example-icon {
             font-size: 1.25rem;
             flex-shrink: 0;
             line-height: 1;
         }
-        
+
         .example-text {
             color: var(--text-primary);
             font-size: 0.9rem;
             line-height: 1.5;
         }
-        
+
         .visualize-btn {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
             color: white;
@@ -360,38 +360,38 @@
             box-shadow: var(--shadow-sm);
             margin-top: auto;
         }
-        
+
         .visualize-btn:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
-        
+
         .visualize-btn:active {
             transform: translateY(0);
         }
-        
+
         /* ============================================
            Workflow Cards (Combined Section)
            ============================================ */
-        
+
         .workflow-intro {
             grid-column: 1 / -1;
             text-align: center;
             margin-bottom: var(--spacing-lg);
         }
-        
+
         .workflow-title {
             font-size: 2rem;
             font-weight: 700;
             color: var(--text-primary);
             margin-bottom: var(--spacing-sm);
         }
-        
+
         .workflow-description {
             font-size: 1.1rem;
             color: var(--text-secondary);
         }
-        
+
         .workflow-card {
             grid-column: 1 / -1;
             background-color: var(--bg-primary);
@@ -400,7 +400,7 @@
             overflow: hidden;
             border: 2px solid var(--accent-color);
         }
-        
+
         .workflow-header {
             padding: var(--spacing-xl);
             background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 100%);
@@ -410,23 +410,23 @@
             align-items: center;
             gap: var(--spacing-md);
         }
-        
+
         .workflow-name {
             font-size: 1.75rem;
             font-weight: 700;
         }
-        
+
         .workflow-body {
             padding: var(--spacing-xl);
         }
-        
+
         .workflow-steps {
             display: flex;
             flex-direction: column;
             gap: var(--spacing-lg);
             margin-bottom: var(--spacing-xl);
         }
-        
+
         .workflow-step {
             display: flex;
             gap: var(--spacing-lg);
@@ -437,12 +437,12 @@
             border-left: 4px solid var(--primary-color);
             transition: transform var(--transition-base), box-shadow var(--transition-base);
         }
-        
+
         .workflow-step:hover {
             transform: translateX(8px);
             box-shadow: var(--shadow-md);
         }
-        
+
         .step-number {
             width: 40px;
             height: 40px;
@@ -457,11 +457,11 @@
             flex-shrink: 0;
             box-shadow: var(--shadow-sm);
         }
-        
+
         .step-content {
             flex: 1;
         }
-        
+
         .step-title {
             font-size: 1.1rem;
             font-weight: 700;
@@ -469,13 +469,13 @@
             margin-bottom: var(--spacing-xs);
             font-family: var(--font-mono);
         }
-        
+
         .step-description {
             color: var(--text-secondary);
             font-size: 0.95rem;
             margin-bottom: var(--spacing-sm);
         }
-        
+
         .step-pattern {
             display: inline-block;
             padding: 0.25rem 0.75rem;
@@ -485,7 +485,7 @@
             font-weight: 600;
             border-radius: var(--radius-sm);
         }
-        
+
         .workflow-arrow {
             text-align: center;
             font-size: 2rem;
@@ -493,11 +493,11 @@
             font-weight: 700;
             padding: var(--spacing-sm) 0;
         }
-        
+
         /* ============================================
            Modal Styles
            ============================================ */
-        
+
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -513,11 +513,11 @@
             backdrop-filter: blur(4px);
             animation: fadeIn var(--transition-base);
         }
-        
+
         .modal-overlay.active {
             display: flex;
         }
-        
+
         .modal-container {
             background-color: var(--bg-primary);
             border-radius: var(--radius-xl);
@@ -530,7 +530,7 @@
             flex-direction: column;
             animation: slideUp var(--transition-base);
         }
-        
+
         @keyframes slideUp {
             from {
                 opacity: 0;
@@ -541,7 +541,7 @@
                 transform: translateY(0) scale(1);
             }
         }
-        
+
         .modal-header {
             padding: var(--spacing-xl);
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
@@ -551,12 +551,12 @@
             align-items: center;
             border-bottom: 2px solid var(--border-color);
         }
-        
+
         .modal-title {
             font-size: 1.5rem;
             font-weight: 700;
         }
-        
+
         .modal-close {
             background: rgba(255, 255, 255, 0.2);
             border: none;
@@ -572,18 +572,18 @@
             transition: background-color var(--transition-fast), transform var(--transition-fast);
             line-height: 1;
         }
-        
+
         .modal-close:hover {
             background: rgba(255, 255, 255, 0.3);
             transform: rotate(90deg);
         }
-        
+
         .modal-body {
             padding: var(--spacing-xl);
             overflow-y: auto;
             flex: 1;
         }
-        
+
         .visualization-canvas {
             width: 100%;
             height: 400px;
@@ -592,7 +592,7 @@
             margin-bottom: var(--spacing-lg);
             border: 2px solid var(--border-color);
         }
-        
+
         .visualization-description {
             color: var(--text-secondary);
             font-size: 1rem;
@@ -602,11 +602,11 @@
             border-radius: var(--radius-md);
             border-left: 4px solid var(--primary-color);
         }
-        
+
         /* ============================================
            Footer Styles
            ============================================ */
-        
+
         .site-footer {
             background-color: var(--text-primary);
             color: white;
@@ -614,114 +614,114 @@
             margin-top: var(--spacing-3xl);
             text-align: center;
         }
-        
+
         .footer-container {
             max-width: 1200px;
             margin: 0 auto;
         }
-        
+
         .footer-text {
             font-size: 1rem;
             margin-bottom: var(--spacing-sm);
             opacity: 0.9;
         }
-        
+
         .footer-credit {
             font-size: 0.875rem;
             opacity: 0.7;
         }
-        
+
         /* ============================================
            Responsive Design
            ============================================ */
-        
+
         @media (max-width: 768px) {
             :root {
                 --spacing-2xl: 2rem;
                 --spacing-3xl: 2.5rem;
             }
-        
+
             .site-header {
                 padding: var(--spacing-xl) var(--spacing-md);
             }
-        
+
             .main-content {
                 padding: var(--spacing-xl) var(--spacing-md);
             }
-        
+
             .section-container {
                 grid-template-columns: 1fr;
                 gap: var(--spacing-lg);
             }
-        
+
             .card-header {
                 flex-direction: column;
                 align-items: flex-start;
             }
-        
+
             .workflow-step {
                 flex-direction: column;
                 gap: var(--spacing-md);
             }
-        
+
             .step-number {
                 width: 36px;
                 height: 36px;
                 font-size: 1rem;
             }
-        
+
             .modal-container {
                 max-height: 95vh;
             }
-        
+
             .modal-header {
                 padding: var(--spacing-lg);
             }
-        
+
             .modal-body {
                 padding: var(--spacing-lg);
             }
-        
+
             .visualization-canvas {
                 height: 300px;
             }
         }
-        
+
         @media (max-width: 480px) {
             .site-title {
                 font-size: 1.5rem;
             }
-        
+
             .site-subtitle {
                 font-size: 0.95rem;
             }
-        
+
             .nav-tab {
                 padding: var(--spacing-sm) var(--spacing-md);
                 font-size: 0.9rem;
             }
-        
+
             .card-title {
                 font-size: 1.1rem;
             }
-        
+
             .workflow-name {
                 font-size: 1.4rem;
             }
-        
+
             .modal-overlay {
                 padding: var(--spacing-sm);
             }
         }
-        
+
         /* ============================================
            Utility Classes
            ============================================ */
-        
+
         .hidden {
             display: none !important;
         }
-        
+
         .sr-only {
             position: absolute;
             width: 1px;
@@ -733,11 +733,11 @@
             white-space: nowrap;
             border-width: 0;
         }
-        
+
         /* ============================================
            Print Styles
            ============================================ */
-        
+
         @media print {
             .category-nav,
             .visualize-btn,
@@ -745,11 +745,11 @@
             .site-footer {
                 display: none !important;
             }
-        
+
             .category-section {
                 display: block !important;
             }
-        
+
             .use-case-card,
             .workflow-card {
                 break-inside: avoid;
@@ -760,916 +760,921 @@
     </style>
 </head>
 <body>
-    <!-- Header Section -->
-    <header class="site-header">
-        <div class="header-container">
-            <h1 class="site-title">LLM Generative Use Case Patterns</h1>
-            <p class="site-subtitle">An Interactive Guide to Content Generation Workflows</p>
-        </div>
-    </header>
+<!-- Header Section -->
+<header class="site-header">
+    <div class="header-container">
+        <h1 class="site-title">LLM Generative Use Case Patterns</h1>
+        <p class="site-subtitle">An Interactive Guide to Content Generation Workflows</p>
+    </div>
+</header>
 
-    <!-- Navigation Tabs -->
-    <nav class="category-nav">
-        <div class="nav-container">
-            <button class="nav-tab active" data-category="basic">Basic Patterns</button>
-            <button class="nav-tab" data-category="advanced">Advanced Patterns</button>
-            <button class="nav-tab" data-category="combined">Combined Workflows</button>
-        </div>
-    </nav>
+<!-- Navigation Tabs -->
+<nav class="category-nav">
+    <div class="nav-container">
+        <button class="nav-tab active" data-category="basic">Basic Patterns</button>
+        <button class="nav-tab" data-category="advanced">Advanced Patterns</button>
+        <button class="nav-tab" data-category="combined">Combined Workflows</button>
+    </div>
+</nav>
 
-    <!-- Main Content Area -->
-    <main class="main-content">
-        
-        <!-- Basic Generative Use Cases Section -->
-        <section class="category-section active" id="basic-section">
-            <div class="section-container">
-                
-                <!-- 0 -> 1: Content Creation -->
-                <article class="use-case-card" data-pattern="0-to-1">
-                    <div class="card-header">
-                        <h2 class="card-title">0 → 1: Content Creation</h2>
-                        <span class="pattern-badge">Basic</span>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-description">Generate new content from scratch based on descriptions or prompts.</p>
-                        <ul class="example-list">
-                            <li class="example-item">
-                                <span class="example-icon">📄</span>
-                                <span class="example-text">Generate file from description</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">🎨</span>
-                                <span class="example-text">Generate images from text prompts</span>
-                            </li>
-                        </ul>
-                        <button class="visualize-btn" data-pattern="0-to-1">Visualize Pattern</button>
-                    </div>
-                </article>
+<!-- Main Content Area -->
+<main class="main-content">
 
-                <!-- 1 -> 1: Content Transformation -->
-                <article class="use-case-card" data-pattern="1-to-1">
-                    <div class="card-header">
-                        <h2 class="card-title">1 → 1: Content Transformation</h2>
-                        <span class="pattern-badge">Basic</span>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-description">Transform existing content into a different form or format.</p>
-                        <ul class="example-list">
-                            <li class="example-item">
-                                <span class="example-icon">📝</span>
-                                <span class="example-text">Summarization of articles</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">🌐</span>
-                                <span class="example-text">Translation between languages</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">💻</span>
-                                <span class="example-text">Edit/feature addition to code files</span>
-                            </li>
-                        </ul>
-                        <button class="visualize-btn" data-pattern="1-to-1">Visualize Pattern</button>
-                    </div>
-                </article>
+    <!-- Basic Generative Use Cases Section -->
+    <section class="category-section active" id="basic-section">
+        <div class="section-container">
 
-                <!-- (A + B + ...) -> C: Synthesis -->
-                <article class="use-case-card" data-pattern="many-to-1">
-                    <div class="card-header">
-                        <h2 class="card-title">(A + B + ...) → C: Synthesis</h2>
-                        <span class="pattern-badge">Basic</span>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-description">Combine multiple inputs to create unified, synthesized content.</p>
-                        <ul class="example-list">
-                            <li class="example-item">
-                                <span class="example-icon">🔄</span>
-                                <span class="example-text">Synthesis by Example: Generate from multiple inputs</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">🔍</span>
-                                <span class="example-text">Pattern Extraction: Identify common patterns</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">📚</span>
-                                <span class="example-text">Mass summarization: Multi-document summary</span>
-                            </li>
-                        </ul>
-                        <button class="visualize-btn" data-pattern="many-to-1">Visualize Pattern</button>
-                    </div>
-                </article>
-
-                <!-- (A-B+C) -> D: Analogical Generation -->
-                <article class="use-case-card" data-pattern="analogical">
-                    <div class="card-header">
-                        <h2 class="card-title">(A - B + C) → D: Analogical Generation</h2>
-                        <span class="pattern-badge">Basic</span>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-description">Create new content by combining and modifying existing pieces through analogy.</p>
-                        <ul class="example-list">
-                            <li class="example-item">
-                                <span class="example-icon">🧬</span>
-                                <span class="example-text">Transfer features between classes/files</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">🔀</span>
-                                <span class="example-text">Transgenic content generation</span>
-                            </li>
-                        </ul>
-                        <button class="visualize-btn" data-pattern="analogical">Visualize Pattern</button>
-                    </div>
-                </article>
-
-            </div>
-        </section>
-
-        <!-- Advanced Generative Use Cases Section -->
-        <section class="category-section" id="advanced-section">
-            <div class="section-container">
-                
-                <!-- A → A+δ: Incremental Generation -->
-                <article class="use-case-card" data-pattern="incremental">
-                    <div class="card-header">
-                        <h2 class="card-title">A → A+δ: Incremental Generation</h2>
-                        <span class="pattern-badge advanced">Advanced</span>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-description">Generate additions to existing content, continuing from where it left off.</p>
-                        <ul class="example-list">
-                            <li class="example-item">
-                                <span class="example-icon">➕</span>
-                                <span class="example-text">Generate additions to existing content</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">⏭️</span>
-                                <span class="example-text">Continue from previous output</span>
-                            </li>
-                        </ul>
-                        <button class="visualize-btn" data-pattern="incremental">Visualize Pattern</button>
-                    </div>
-                </article>
-
-                <!-- A -> (B,C); B -> (D,E): Hierarchical Generation -->
-                <article class="use-case-card" data-pattern="hierarchical">
-                    <div class="card-header">
-                        <h2 class="card-title">A → (B,C); B → (D,E); ...: Hierarchical Generation</h2>
-                        <span class="pattern-badge advanced">Advanced</span>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-description">Generate complex content through multiple stages of refinement and transformation.</p>
-                        <ul class="example-list">
-                            <li class="example-item">
-                                <span class="example-icon">🌳</span>
-                                <span class="example-text">Multi-stage refinement process</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">📈</span>
-                                <span class="example-text">Exponential content growth</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">📋</span>
-                                <span class="example-text">Spec-driven development</span>
-                            </li>
-                        </ul>
-                        <button class="visualize-btn" data-pattern="hierarchical">Visualize Pattern</button>
-                    </div>
-                </article>
-
-                <!-- for(1..5) A -> A: Iterative Editing -->
-                <article class="use-case-card" data-pattern="iterative">
-                    <div class="card-header">
-                        <h2 class="card-title">for(1..5) A → A: Iterative Editing</h2>
-                        <span class="pattern-badge advanced">Advanced</span>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-description">Repeatedly refine content through multiple editing passes.</p>
-                        <ul class="example-list">
-                            <li class="example-item">
-                                <span class="example-icon">🔁</span>
-                                <span class="example-text">Full replacement or modification strategy</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">📊</span>
-                                <span class="example-text">Monitor convergence and stability</span>
-                            </li>
-                        </ul>
-                        <button class="visualize-btn" data-pattern="iterative">Visualize Pattern</button>
-                    </div>
-                </article>
-
-                <!-- while(failure) A -> A: Error Correction -->
-                <article class="use-case-card" data-pattern="error-correction">
-                    <div class="card-header">
-                        <h2 class="card-title">while(failure) A → A: Error Correction</h2>
-                        <span class="pattern-badge advanced">Advanced</span>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-description">Identify and correct errors using feedback loops and external validators.</p>
-                        <ul class="example-list">
-                            <li class="example-item">
-                                <span class="example-icon">🔧</span>
-                                <span class="example-text">Feedback loop with validator</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">♾️</span>
-                                <span class="example-text">Multiple iterations until success</span>
-                            </li>
-                            <li class="example-item">
-                                <span class="example-icon">👤</span>
-                                <span class="example-text">Periodic human intervention</span>
-                            </li>
-                        </ul>
-                        <button class="visualize-btn" data-pattern="error-correction">Visualize Pattern</button>
-                    </div>
-                </article>
-
-            </div>
-        </section>
-
-        <!-- Combined Workflows Section -->
-        <section class="category-section" id="combined-section">
-            <div class="section-container">
-                
-                <div class="workflow-intro">
-                    <h2 class="workflow-title">Combined Use Case Workflows</h2>
-                    <p class="workflow-description">Real-world workflows that combine multiple patterns for complex tasks.</p>
+            <!-- 0 -> 1: Content Creation -->
+            <article class="use-case-card" data-pattern="0-to-1">
+                <div class="card-header">
+                    <h2 class="card-title">0 → 1: Content Creation</h2>
+                    <span class="pattern-badge">Basic</span>
                 </div>
+                <div class="card-body">
+                    <p class="card-description">Generate new content from scratch based on descriptions or prompts.</p>
+                    <ul class="example-list">
+                        <li class="example-item">
+                            <span class="example-icon">📄</span>
+                            <span class="example-text">Generate file from description</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">🎨</span>
+                            <span class="example-text">Generate images from text prompts</span>
+                        </li>
+                    </ul>
+                    <button class="visualize-btn" data-pattern="0-to-1">Visualize Pattern</button>
+                </div>
+            </article>
 
-                <!-- Spec-Driven Development Workflow -->
-                <article class="workflow-card">
-                    <div class="workflow-header">
-                        <h3 class="workflow-name">Spec-Driven Development</h3>
-                        <span class="pattern-badge combined">Combined</span>
-                    </div>
-                    <div class="workflow-body">
-                        <div class="workflow-steps">
-                            <div class="workflow-step">
-                                <div class="step-number">1</div>
-                                <div class="step-content">
-                                    <h4 class="step-title">Spec → (Modules)</h4>
-                                    <p class="step-description">Hierarchical generation of module specifications</p>
-                                    <span class="step-pattern">[Hierarchical]</span>
-                                </div>
-                            </div>
-                            <div class="workflow-arrow">↓</div>
-                            <div class="workflow-step">
-                                <div class="step-number">2</div>
-                                <div class="step-content">
-                                    <h4 class="step-title">Each Module → Code</h4>
-                                    <p class="step-description">Generate code from module specifications</p>
-                                    <span class="step-pattern">[0→1 Creation]</span>
-                                </div>
-                            </div>
-                            <div class="workflow-arrow">↓</div>
-                            <div class="workflow-step">
-                                <div class="step-number">3</div>
-                                <div class="step-content">
-                                    <h4 class="step-title">Code → Tests</h4>
-                                    <p class="step-description">Transform code into test suites</p>
-                                    <span class="step-pattern">[1→1 Transformation]</span>
-                                </div>
-                            </div>
-                            <div class="workflow-arrow">↓</div>
-                            <div class="workflow-step">
-                                <div class="step-number">4</div>
-                                <div class="step-content">
-                                    <h4 class="step-title">while(tests fail) → Fix</h4>
-                                    <p class="step-description">Iteratively fix code until tests pass</p>
-                                    <span class="step-pattern">[Error Correction]</span>
-                                </div>
+            <!-- 1 -> 1: Content Transformation -->
+            <article class="use-case-card" data-pattern="1-to-1">
+                <div class="card-header">
+                    <h2 class="card-title">1 → 1: Content Transformation</h2>
+                    <span class="pattern-badge">Basic</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-description">Transform existing content into a different form or format.</p>
+                    <ul class="example-list">
+                        <li class="example-item">
+                            <span class="example-icon">📝</span>
+                            <span class="example-text">Summarization of articles</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">🌐</span>
+                            <span class="example-text">Translation between languages</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">💻</span>
+                            <span class="example-text">Edit/feature addition to code files</span>
+                        </li>
+                    </ul>
+                    <button class="visualize-btn" data-pattern="1-to-1">Visualize Pattern</button>
+                </div>
+            </article>
+
+            <!-- (A + B + ...) -> C: Synthesis -->
+            <article class="use-case-card" data-pattern="many-to-1">
+                <div class="card-header">
+                    <h2 class="card-title">(A + B + ...) → C: Synthesis</h2>
+                    <span class="pattern-badge">Basic</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-description">Combine multiple inputs to create unified, synthesized content.</p>
+                    <ul class="example-list">
+                        <li class="example-item">
+                            <span class="example-icon">🔄</span>
+                            <span class="example-text">Synthesis by Example: Generate from multiple inputs</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">🔍</span>
+                            <span class="example-text">Pattern Extraction: Identify common patterns</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">📚</span>
+                            <span class="example-text">Mass summarization: Multi-document summary</span>
+                        </li>
+                    </ul>
+                    <button class="visualize-btn" data-pattern="many-to-1">Visualize Pattern</button>
+                </div>
+            </article>
+
+            <!-- (A-B+C) -> D: Analogical Generation -->
+            <article class="use-case-card" data-pattern="analogical">
+                <div class="card-header">
+                    <h2 class="card-title">(A - B + C) → D: Analogical Generation</h2>
+                    <span class="pattern-badge">Basic</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-description">Create new content by combining and modifying existing pieces through
+                        analogy.</p>
+                    <ul class="example-list">
+                        <li class="example-item">
+                            <span class="example-icon">🧬</span>
+                            <span class="example-text">Transfer features between classes/files</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">🔀</span>
+                            <span class="example-text">Transgenic content generation</span>
+                        </li>
+                    </ul>
+                    <button class="visualize-btn" data-pattern="analogical">Visualize Pattern</button>
+                </div>
+            </article>
+
+        </div>
+    </section>
+
+    <!-- Advanced Generative Use Cases Section -->
+    <section class="category-section" id="advanced-section">
+        <div class="section-container">
+
+            <!-- A → A+δ: Incremental Generation -->
+            <article class="use-case-card" data-pattern="incremental">
+                <div class="card-header">
+                    <h2 class="card-title">A → A+δ: Incremental Generation</h2>
+                    <span class="pattern-badge advanced">Advanced</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-description">Generate additions to existing content, continuing from where it left
+                        off.</p>
+                    <ul class="example-list">
+                        <li class="example-item">
+                            <span class="example-icon">➕</span>
+                            <span class="example-text">Generate additions to existing content</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">⏭️</span>
+                            <span class="example-text">Continue from previous output</span>
+                        </li>
+                    </ul>
+                    <button class="visualize-btn" data-pattern="incremental">Visualize Pattern</button>
+                </div>
+            </article>
+
+            <!-- A -> (B,C); B -> (D,E): Hierarchical Generation -->
+            <article class="use-case-card" data-pattern="hierarchical">
+                <div class="card-header">
+                    <h2 class="card-title">A → (B,C); B → (D,E); ...: Hierarchical Generation</h2>
+                    <span class="pattern-badge advanced">Advanced</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-description">Generate complex content through multiple stages of refinement and
+                        transformation.</p>
+                    <ul class="example-list">
+                        <li class="example-item">
+                            <span class="example-icon">🌳</span>
+                            <span class="example-text">Multi-stage refinement process</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">📈</span>
+                            <span class="example-text">Exponential content growth</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">📋</span>
+                            <span class="example-text">Spec-driven development</span>
+                        </li>
+                    </ul>
+                    <button class="visualize-btn" data-pattern="hierarchical">Visualize Pattern</button>
+                </div>
+            </article>
+
+            <!-- for(1..5) A -> A: Iterative Editing -->
+            <article class="use-case-card" data-pattern="iterative">
+                <div class="card-header">
+                    <h2 class="card-title">for(1..5) A → A: Iterative Editing</h2>
+                    <span class="pattern-badge advanced">Advanced</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-description">Repeatedly refine content through multiple editing passes.</p>
+                    <ul class="example-list">
+                        <li class="example-item">
+                            <span class="example-icon">🔁</span>
+                            <span class="example-text">Full replacement or modification strategy</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">📊</span>
+                            <span class="example-text">Monitor convergence and stability</span>
+                        </li>
+                    </ul>
+                    <button class="visualize-btn" data-pattern="iterative">Visualize Pattern</button>
+                </div>
+            </article>
+
+            <!-- while(failure) A -> A: Error Correction -->
+            <article class="use-case-card" data-pattern="error-correction">
+                <div class="card-header">
+                    <h2 class="card-title">while(failure) A → A: Error Correction</h2>
+                    <span class="pattern-badge advanced">Advanced</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-description">Identify and correct errors using feedback loops and external
+                        validators.</p>
+                    <ul class="example-list">
+                        <li class="example-item">
+                            <span class="example-icon">🔧</span>
+                            <span class="example-text">Feedback loop with validator</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">♾️</span>
+                            <span class="example-text">Multiple iterations until success</span>
+                        </li>
+                        <li class="example-item">
+                            <span class="example-icon">👤</span>
+                            <span class="example-text">Periodic human intervention</span>
+                        </li>
+                    </ul>
+                    <button class="visualize-btn" data-pattern="error-correction">Visualize Pattern</button>
+                </div>
+            </article>
+
+        </div>
+    </section>
+
+    <!-- Combined Workflows Section -->
+    <section class="category-section" id="combined-section">
+        <div class="section-container">
+
+            <div class="workflow-intro">
+                <h2 class="workflow-title">Combined Use Case Workflows</h2>
+                <p class="workflow-description">Real-world workflows that combine multiple patterns for complex
+                    tasks.</p>
+            </div>
+
+            <!-- Spec-Driven Development Workflow -->
+            <article class="workflow-card">
+                <div class="workflow-header">
+                    <h3 class="workflow-name">Spec-Driven Development</h3>
+                    <span class="pattern-badge combined">Combined</span>
+                </div>
+                <div class="workflow-body">
+                    <div class="workflow-steps">
+                        <div class="workflow-step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4 class="step-title">Spec → (Modules)</h4>
+                                <p class="step-description">Hierarchical generation of module specifications</p>
+                                <span class="step-pattern">[Hierarchical]</span>
                             </div>
                         </div>
-                        <button class="visualize-btn" data-pattern="spec-driven">Visualize Workflow</button>
+                        <div class="workflow-arrow">↓</div>
+                        <div class="workflow-step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4 class="step-title">Each Module → Code</h4>
+                                <p class="step-description">Generate code from module specifications</p>
+                                <span class="step-pattern">[0→1 Creation]</span>
+                            </div>
+                        </div>
+                        <div class="workflow-arrow">↓</div>
+                        <div class="workflow-step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4 class="step-title">Code → Tests</h4>
+                                <p class="step-description">Transform code into test suites</p>
+                                <span class="step-pattern">[1→1 Transformation]</span>
+                            </div>
+                        </div>
+                        <div class="workflow-arrow">↓</div>
+                        <div class="workflow-step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4 class="step-title">while(tests fail) → Fix</h4>
+                                <p class="step-description">Iteratively fix code until tests pass</p>
+                                <span class="step-pattern">[Error Correction]</span>
+                            </div>
+                        </div>
                     </div>
-                </article>
+                    <button class="visualize-btn" data-pattern="spec-driven">Visualize Workflow</button>
+                </div>
+            </article>
 
-            </div>
-        </section>
+        </div>
+    </section>
 
-    </main>
+</main>
 
-    <!-- Visualization Modal -->
-    <div class="modal-overlay" id="visualization-modal">
-        <div class="modal-container">
-            <div class="modal-header">
-                <h3 class="modal-title" id="modal-title">Pattern Visualization</h3>
-                <button class="modal-close" id="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <!-- Canvas for pattern visualization -->
-                <canvas class="visualization-canvas" id="pattern-canvas"></canvas>
-                <div class="visualization-description" id="visualization-description"></div>
-            </div>
+<!-- Visualization Modal -->
+<div class="modal-overlay" id="visualization-modal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modal-title">Pattern Visualization</h3>
+            <button class="modal-close" id="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Canvas for pattern visualization -->
+            <canvas class="visualization-canvas" id="pattern-canvas"></canvas>
+            <div class="visualization-description" id="visualization-description"></div>
         </div>
     </div>
+</div>
 
-    <!-- Footer -->
-    <footer class="site-footer">
-        <div class="footer-container">
-            <p class="footer-text">Interactive guide to LLM generative use case patterns</p>
-            <p class="footer-credit">Based on use case taxonomy documentation</p>
-        </div>
-    </footer>
+<!-- Footer -->
+<footer class="site-footer">
+    <div class="footer-container">
+        <p class="footer-text">Interactive guide to LLM generative use case patterns</p>
+        <p class="footer-credit">Based on use case taxonomy documentation</p>
+    </div>
+</footer>
 
-    <!-- JavaScript will be added here -->
+<!-- JavaScript will be added here -->
 
-    <script>
-        // ============================================================================
-        // LLM Use Case Patterns - Interactive Visualization
-        // ============================================================================
-        
-        // Pattern visualization data and configurations
-        const patternVisualizations = {
-            '0-to-1': {
-                title: '0 → 1: Content Creation',
-                description: 'Generate new content from scratch based on descriptions or prompts.',
-                nodes: [
-                    { id: 'prompt', label: 'Prompt/\nDescription', x: 100, y: 200, type: 'input' },
-                    { id: 'llm', label: 'LLM', x: 300, y: 200, type: 'process' },
-                    { id: 'output', label: 'Generated\nContent', x: 500, y: 200, type: 'output' }
-                ],
-                edges: [
-                    { from: 'prompt', to: 'llm', label: 'Input' },
-                    { from: 'llm', to: 'output', label: 'Generate' }
-                ]
-            },
-            '1-to-1': {
-                title: '1 → 1: Content Transformation',
-                description: 'Transform existing content into a different form or format.',
-                nodes: [
-                    { id: 'input', label: 'Original\nContent', x: 100, y: 200, type: 'input' },
-                    { id: 'llm', label: 'LLM', x: 300, y: 200, type: 'process' },
-                    { id: 'output', label: 'Transformed\nContent', x: 500, y: 200, type: 'output' }
-                ],
-                edges: [
-                    { from: 'input', to: 'llm', label: 'Transform' },
-                    { from: 'llm', to: 'output', label: 'Result' }
-                ]
-            },
-            'many-to-1': {
-                title: '(A + B + ...) → C: Synthesis',
-                description: 'Combine multiple inputs to create unified, synthesized content.',
-                nodes: [
-                    { id: 'inputA', label: 'Input A', x: 80, y: 100, type: 'input' },
-                    { id: 'inputB', label: 'Input B', x: 80, y: 200, type: 'input' },
-                    { id: 'inputC', label: 'Input C', x: 80, y: 300, type: 'input' },
-                    { id: 'llm', label: 'LLM\nSynthesis', x: 300, y: 200, type: 'process' },
-                    { id: 'output', label: 'Synthesized\nContent', x: 520, y: 200, type: 'output' }
-                ],
-                edges: [
-                    { from: 'inputA', to: 'llm', label: '' },
-                    { from: 'inputB', to: 'llm', label: '' },
-                    { from: 'inputC', to: 'llm', label: '' },
-                    { from: 'llm', to: 'output', label: 'Combine' }
-                ]
-            },
-            'analogical': {
-                title: '(A - B + C) → D: Analogical Generation',
-                description: 'Create new content by combining and modifying existing pieces through analogy.',
-                nodes: [
-                    { id: 'inputA', label: 'Base A', x: 80, y: 120, type: 'input' },
-                    { id: 'inputB', label: 'Remove B', x: 80, y: 200, type: 'input' },
-                    { id: 'inputC', label: 'Add C', x: 80, y: 280, type: 'input' },
-                    { id: 'llm', label: 'LLM\nAnalogy', x: 300, y: 200, type: 'process' },
-                    { id: 'output', label: 'New\nContent D', x: 520, y: 200, type: 'output' }
-                ],
-                edges: [
-                    { from: 'inputA', to: 'llm', label: '+' },
-                    { from: 'inputB', to: 'llm', label: '−' },
-                    { from: 'inputC', to: 'llm', label: '+' },
-                    { from: 'llm', to: 'output', label: 'Generate' }
-                ]
-            },
-            'incremental': {
-                title: 'A → A+δ: Incremental Generation',
-                description: 'Generate additions to existing content, continuing from where it left off.',
-                nodes: [
-                    { id: 'input', label: 'Content A', x: 100, y: 200, type: 'input' },
-                    { id: 'llm', label: 'LLM', x: 300, y: 200, type: 'process' },
-                    { id: 'output', label: 'A + δ\n(Extended)', x: 500, y: 200, type: 'output' }
-                ],
-                edges: [
-                    { from: 'input', to: 'llm', label: 'Continue' },
-                    { from: 'llm', to: 'output', label: 'Add δ' }
-                ]
-            },
-            'hierarchical': {
-                title: 'A → (B,C); B → (D,E): Hierarchical Generation',
-                description: 'Generate complex content through multiple stages of refinement.',
-                nodes: [
-                    { id: 'root', label: 'Root A', x: 300, y: 50, type: 'input' },
-                    { id: 'llm1', label: 'LLM', x: 300, y: 130, type: 'process' },
-                    { id: 'b', label: 'B', x: 200, y: 210, type: 'output' },
-                    { id: 'c', label: 'C', x: 400, y: 210, type: 'output' },
-                    { id: 'llm2', label: 'LLM', x: 200, y: 290, type: 'process' },
-                    { id: 'd', label: 'D', x: 150, y: 370, type: 'output' },
-                    { id: 'e', label: 'E', x: 250, y: 370, type: 'output' }
-                ],
-                edges: [
-                    { from: 'root', to: 'llm1', label: '' },
-                    { from: 'llm1', to: 'b', label: 'Generate' },
-                    { from: 'llm1', to: 'c', label: 'Generate' },
-                    { from: 'b', to: 'llm2', label: '' },
-                    { from: 'llm2', to: 'd', label: 'Expand' },
-                    { from: 'llm2', to: 'e', label: 'Expand' }
-                ]
-            },
-            'iterative': {
-                title: 'for(1..5) A → A: Iterative Editing',
-                description: 'Repeatedly refine content through multiple editing passes.',
-                nodes: [
-                    { id: 'input', label: 'Content A', x: 100, y: 200, type: 'input' },
-                    { id: 'llm', label: 'LLM\nEdit', x: 300, y: 200, type: 'process' },
-                    { id: 'output', label: 'Refined A', x: 500, y: 200, type: 'output' },
-                    { id: 'loop', label: 'Iterate\n(1..n)', x: 300, y: 320, type: 'control' }
-                ],
-                edges: [
-                    { from: 'input', to: 'llm', label: 'Initial' },
-                    { from: 'llm', to: 'output', label: 'Refine' },
-                    { from: 'output', to: 'loop', label: '' },
-                    { from: 'loop', to: 'llm', label: 'Repeat', curved: true }
-                ]
-            },
-            'error-correction': {
-                title: 'while(failure) A → A: Error Correction',
-                description: 'Identify and correct errors using feedback loops and validators.',
-                nodes: [
-                    { id: 'input', label: 'Content A', x: 100, y: 200, type: 'input' },
-                    { id: 'llm', label: 'LLM\nFix', x: 280, y: 200, type: 'process' },
-                    { id: 'validator', label: 'Validator', x: 460, y: 200, type: 'process' },
-                    { id: 'output', label: 'Valid A', x: 560, y: 80, type: 'output' },
-                    { id: 'feedback', label: 'Error\nFeedback', x: 460, y: 320, type: 'control' }
-                ],
-                edges: [
-                    { from: 'input', to: 'llm', label: 'Initial' },
-                    { from: 'llm', to: 'validator', label: 'Check' },
-                    { from: 'validator', to: 'output', label: 'Pass' },
-                    { from: 'validator', to: 'feedback', label: 'Fail' },
-                    { from: 'feedback', to: 'llm', label: 'Retry', curved: true }
-                ]
-            },
-            'spec-driven': {
-                title: 'Spec-Driven Development Workflow',
-                description: 'Complete workflow combining multiple patterns for software development.',
-                nodes: [
-                    { id: 'spec', label: 'Specification', x: 300, y: 50, type: 'input' },
-                    { id: 'llm1', label: 'LLM\nHierarchical', x: 300, y: 130, type: 'process' },
-                    { id: 'modules', label: 'Module\nSpecs', x: 300, y: 210, type: 'output' },
-                    { id: 'llm2', label: 'LLM\nGenerate', x: 300, y: 290, type: 'process' },
-                    { id: 'code', label: 'Code', x: 300, y: 370, type: 'output' },
-                    { id: 'llm3', label: 'LLM\nTransform', x: 300, y: 450, type: 'process' },
-                    { id: 'tests', label: 'Tests', x: 300, y: 530, type: 'output' },
-                    { id: 'validator', label: 'Run Tests', x: 500, y: 530, type: 'process' },
-                    { id: 'final', label: 'Working\nCode', x: 500, y: 370, type: 'output' }
-                ],
-                edges: [
-                    { from: 'spec', to: 'llm1', label: '' },
-                    { from: 'llm1', to: 'modules', label: 'Break down' },
-                    { from: 'modules', to: 'llm2', label: '' },
-                    { from: 'llm2', to: 'code', label: 'Generate' },
-                    { from: 'code', to: 'llm3', label: '' },
-                    { from: 'llm3', to: 'tests', label: 'Create tests' },
-                    { from: 'tests', to: 'validator', label: '' },
-                    { from: 'validator', to: 'final', label: 'Pass' },
-                    { from: 'validator', to: 'llm2', label: 'Fail - Fix', curved: true }
-                ]
-            }
-        };
-        
-        // ============================================================================
-        // DOM Elements
-        // ============================================================================
-        
-        const navTabs = document.querySelectorAll('.nav-tab');
-        const categorySections = document.querySelectorAll('.category-section');
-        const visualizeButtons = document.querySelectorAll('.visualize-btn');
-        const modal = document.getElementById('visualization-modal');
-        const modalTitle = document.getElementById('modal-title');
-        const modalClose = document.getElementById('close-modal');
-        const canvas = document.getElementById('pattern-canvas');
-        const visualizationDescription = document.getElementById('visualization-description');
-        const ctx = canvas.getContext('2d');
-        
-        // ============================================================================
-        // Navigation Tab Switching
-        // ============================================================================
-        
-        /**
-         * Handle category navigation tab clicks
-         * Switches between Basic, Advanced, and Combined workflow sections
-         */
-        navTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Get the target category from data attribute
-                const targetCategory = tab.dataset.category;
-        
-                // Remove active class from all tabs and sections
-                navTabs.forEach(t => t.classList.remove('active'));
-                categorySections.forEach(section => section.classList.remove('active'));
-        
-                // Add active class to clicked tab
-                tab.classList.add('active');
-        
-                // Show corresponding section
-                const targetSection = document.getElementById(`${targetCategory}-section`);
-                if (targetSection) {
-                    targetSection.classList.add('active');
-            
-                    // Smooth scroll to section
-                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
-        
-        // ============================================================================
-        // Modal Management
-        // ============================================================================
-        
-        /**
-         * Open the visualization modal
-         */
-        function openModal() {
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+<script>
+    // ============================================================================
+    // LLM Use Case Patterns - Interactive Visualization
+    // ============================================================================
+
+    // Pattern visualization data and configurations
+    const patternVisualizations = {
+        '0-to-1': {
+            title: '0 → 1: Content Creation',
+            description: 'Generate new content from scratch based on descriptions or prompts.',
+            nodes: [
+                {id: 'prompt', label: 'Prompt/\nDescription', x: 100, y: 200, type: 'input'},
+                {id: 'llm', label: 'LLM', x: 300, y: 200, type: 'process'},
+                {id: 'output', label: 'Generated\nContent', x: 500, y: 200, type: 'output'}
+            ],
+            edges: [
+                {from: 'prompt', to: 'llm', label: 'Input'},
+                {from: 'llm', to: 'output', label: 'Generate'}
+            ]
+        },
+        '1-to-1': {
+            title: '1 → 1: Content Transformation',
+            description: 'Transform existing content into a different form or format.',
+            nodes: [
+                {id: 'input', label: 'Original\nContent', x: 100, y: 200, type: 'input'},
+                {id: 'llm', label: 'LLM', x: 300, y: 200, type: 'process'},
+                {id: 'output', label: 'Transformed\nContent', x: 500, y: 200, type: 'output'}
+            ],
+            edges: [
+                {from: 'input', to: 'llm', label: 'Transform'},
+                {from: 'llm', to: 'output', label: 'Result'}
+            ]
+        },
+        'many-to-1': {
+            title: '(A + B + ...) → C: Synthesis',
+            description: 'Combine multiple inputs to create unified, synthesized content.',
+            nodes: [
+                {id: 'inputA', label: 'Input A', x: 80, y: 100, type: 'input'},
+                {id: 'inputB', label: 'Input B', x: 80, y: 200, type: 'input'},
+                {id: 'inputC', label: 'Input C', x: 80, y: 300, type: 'input'},
+                {id: 'llm', label: 'LLM\nSynthesis', x: 300, y: 200, type: 'process'},
+                {id: 'output', label: 'Synthesized\nContent', x: 520, y: 200, type: 'output'}
+            ],
+            edges: [
+                {from: 'inputA', to: 'llm', label: ''},
+                {from: 'inputB', to: 'llm', label: ''},
+                {from: 'inputC', to: 'llm', label: ''},
+                {from: 'llm', to: 'output', label: 'Combine'}
+            ]
+        },
+        'analogical': {
+            title: '(A - B + C) → D: Analogical Generation',
+            description: 'Create new content by combining and modifying existing pieces through analogy.',
+            nodes: [
+                {id: 'inputA', label: 'Base A', x: 80, y: 120, type: 'input'},
+                {id: 'inputB', label: 'Remove B', x: 80, y: 200, type: 'input'},
+                {id: 'inputC', label: 'Add C', x: 80, y: 280, type: 'input'},
+                {id: 'llm', label: 'LLM\nAnalogy', x: 300, y: 200, type: 'process'},
+                {id: 'output', label: 'New\nContent D', x: 520, y: 200, type: 'output'}
+            ],
+            edges: [
+                {from: 'inputA', to: 'llm', label: '+'},
+                {from: 'inputB', to: 'llm', label: '−'},
+                {from: 'inputC', to: 'llm', label: '+'},
+                {from: 'llm', to: 'output', label: 'Generate'}
+            ]
+        },
+        'incremental': {
+            title: 'A → A+δ: Incremental Generation',
+            description: 'Generate additions to existing content, continuing from where it left off.',
+            nodes: [
+                {id: 'input', label: 'Content A', x: 100, y: 200, type: 'input'},
+                {id: 'llm', label: 'LLM', x: 300, y: 200, type: 'process'},
+                {id: 'output', label: 'A + δ\n(Extended)', x: 500, y: 200, type: 'output'}
+            ],
+            edges: [
+                {from: 'input', to: 'llm', label: 'Continue'},
+                {from: 'llm', to: 'output', label: 'Add δ'}
+            ]
+        },
+        'hierarchical': {
+            title: 'A → (B,C); B → (D,E): Hierarchical Generation',
+            description: 'Generate complex content through multiple stages of refinement.',
+            nodes: [
+                {id: 'root', label: 'Root A', x: 300, y: 50, type: 'input'},
+                {id: 'llm1', label: 'LLM', x: 300, y: 130, type: 'process'},
+                {id: 'b', label: 'B', x: 200, y: 210, type: 'output'},
+                {id: 'c', label: 'C', x: 400, y: 210, type: 'output'},
+                {id: 'llm2', label: 'LLM', x: 200, y: 290, type: 'process'},
+                {id: 'd', label: 'D', x: 150, y: 370, type: 'output'},
+                {id: 'e', label: 'E', x: 250, y: 370, type: 'output'}
+            ],
+            edges: [
+                {from: 'root', to: 'llm1', label: ''},
+                {from: 'llm1', to: 'b', label: 'Generate'},
+                {from: 'llm1', to: 'c', label: 'Generate'},
+                {from: 'b', to: 'llm2', label: ''},
+                {from: 'llm2', to: 'd', label: 'Expand'},
+                {from: 'llm2', to: 'e', label: 'Expand'}
+            ]
+        },
+        'iterative': {
+            title: 'for(1..5) A → A: Iterative Editing',
+            description: 'Repeatedly refine content through multiple editing passes.',
+            nodes: [
+                {id: 'input', label: 'Content A', x: 100, y: 200, type: 'input'},
+                {id: 'llm', label: 'LLM\nEdit', x: 300, y: 200, type: 'process'},
+                {id: 'output', label: 'Refined A', x: 500, y: 200, type: 'output'},
+                {id: 'loop', label: 'Iterate\n(1..n)', x: 300, y: 320, type: 'control'}
+            ],
+            edges: [
+                {from: 'input', to: 'llm', label: 'Initial'},
+                {from: 'llm', to: 'output', label: 'Refine'},
+                {from: 'output', to: 'loop', label: ''},
+                {from: 'loop', to: 'llm', label: 'Repeat', curved: true}
+            ]
+        },
+        'error-correction': {
+            title: 'while(failure) A → A: Error Correction',
+            description: 'Identify and correct errors using feedback loops and validators.',
+            nodes: [
+                {id: 'input', label: 'Content A', x: 100, y: 200, type: 'input'},
+                {id: 'llm', label: 'LLM\nFix', x: 280, y: 200, type: 'process'},
+                {id: 'validator', label: 'Validator', x: 460, y: 200, type: 'process'},
+                {id: 'output', label: 'Valid A', x: 560, y: 80, type: 'output'},
+                {id: 'feedback', label: 'Error\nFeedback', x: 460, y: 320, type: 'control'}
+            ],
+            edges: [
+                {from: 'input', to: 'llm', label: 'Initial'},
+                {from: 'llm', to: 'validator', label: 'Check'},
+                {from: 'validator', to: 'output', label: 'Pass'},
+                {from: 'validator', to: 'feedback', label: 'Fail'},
+                {from: 'feedback', to: 'llm', label: 'Retry', curved: true}
+            ]
+        },
+        'spec-driven': {
+            title: 'Spec-Driven Development Workflow',
+            description: 'Complete workflow combining multiple patterns for software development.',
+            nodes: [
+                {id: 'spec', label: 'Specification', x: 300, y: 50, type: 'input'},
+                {id: 'llm1', label: 'LLM\nHierarchical', x: 300, y: 130, type: 'process'},
+                {id: 'modules', label: 'Module\nSpecs', x: 300, y: 210, type: 'output'},
+                {id: 'llm2', label: 'LLM\nGenerate', x: 300, y: 290, type: 'process'},
+                {id: 'code', label: 'Code', x: 300, y: 370, type: 'output'},
+                {id: 'llm3', label: 'LLM\nTransform', x: 300, y: 450, type: 'process'},
+                {id: 'tests', label: 'Tests', x: 300, y: 530, type: 'output'},
+                {id: 'validator', label: 'Run Tests', x: 500, y: 530, type: 'process'},
+                {id: 'final', label: 'Working\nCode', x: 500, y: 370, type: 'output'}
+            ],
+            edges: [
+                {from: 'spec', to: 'llm1', label: ''},
+                {from: 'llm1', to: 'modules', label: 'Break down'},
+                {from: 'modules', to: 'llm2', label: ''},
+                {from: 'llm2', to: 'code', label: 'Generate'},
+                {from: 'code', to: 'llm3', label: ''},
+                {from: 'llm3', to: 'tests', label: 'Create tests'},
+                {from: 'tests', to: 'validator', label: ''},
+                {from: 'validator', to: 'final', label: 'Pass'},
+                {from: 'validator', to: 'llm2', label: 'Fail - Fix', curved: true}
+            ]
         }
-        
-        /**
-         * Close the visualization modal
-         */
-        function closeModal() {
-            modal.classList.remove('active');
-            document.body.style.overflow = ''; // Restore scrolling
-        }
-        
-        // Close modal when clicking the close button
-        modalClose.addEventListener('click', closeModal);
-        
-        // Close modal when clicking outside the modal container
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeModal();
+    };
+
+    // ============================================================================
+    // DOM Elements
+    // ============================================================================
+
+    const navTabs = document.querySelectorAll('.nav-tab');
+    const categorySections = document.querySelectorAll('.category-section');
+    const visualizeButtons = document.querySelectorAll('.visualize-btn');
+    const modal = document.getElementById('visualization-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalClose = document.getElementById('close-modal');
+    const canvas = document.getElementById('pattern-canvas');
+    const visualizationDescription = document.getElementById('visualization-description');
+    const ctx = canvas.getContext('2d');
+
+    // ============================================================================
+    // Navigation Tab Switching
+    // ============================================================================
+
+    /**
+     * Handle category navigation tab clicks
+     * Switches between Basic, Advanced, and Combined workflow sections
+     */
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Get the target category from data attribute
+            const targetCategory = tab.dataset.category;
+
+            // Remove active class from all tabs and sections
+            navTabs.forEach(t => t.classList.remove('active'));
+            categorySections.forEach(section => section.classList.remove('active'));
+
+            // Add active class to clicked tab
+            tab.classList.add('active');
+
+            // Show corresponding section
+            const targetSection = document.getElementById(`${targetCategory}-section`);
+            if (targetSection) {
+                targetSection.classList.add('active');
+
+                // Smooth scroll to section
+                targetSection.scrollIntoView({behavior: 'smooth', block: 'start'});
             }
         });
-        
-        // Close modal with Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal.classList.contains('active')) {
-                closeModal();
-            }
-        });
-        
-        // ============================================================================
-        // Canvas Visualization
-        // ============================================================================
-        
-        /**
-         * Set canvas size based on container and device pixel ratio
-         */
-        function setupCanvas() {
-            const container = canvas.parentElement;
-            const rect = container.getBoundingClientRect();
-        
-            // Set display size
-            canvas.style.width = '100%';
-            canvas.style.height = '600px';
-        
-            // Set actual size in memory (scaled for retina displays)
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = rect.width * dpr;
-            canvas.height = 600 * dpr;
-        
-            // Scale context to match device pixel ratio
-            ctx.scale(dpr, dpr);
+    });
+
+    // ============================================================================
+    // Modal Management
+    // ============================================================================
+
+    /**
+     * Open the visualization modal
+     */
+    function openModal() {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    /**
+     * Close the visualization modal
+     */
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = ''; // Restore scrolling
+    }
+
+    // Close modal when clicking the close button
+    modalClose.addEventListener('click', closeModal);
+
+    // Close modal when clicking outside the modal container
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
         }
-        
-        /**
-         * Draw a node on the canvas
-         * @param {Object} node - Node object with id, label, x, y, and type
-         */
-        function drawNode(node) {
-            const { x, y, label, type } = node;
-        
-            // Set colors based on node type
-            let fillColor, strokeColor, textColor;
-            switch (type) {
-                case 'input':
-                    fillColor = '#e3f2fd';
-                    strokeColor = '#2196f3';
-                    textColor = '#1565c0';
-                    break;
-                case 'output':
-                    fillColor = '#e8f5e9';
-                    strokeColor = '#4caf50';
-                    textColor = '#2e7d32';
-                    break;
-                case 'process':
-                    fillColor = '#fff3e0';
-                    strokeColor = '#ff9800';
-                    textColor = '#e65100';
-                    break;
-                case 'control':
-                    fillColor = '#f3e5f5';
-                    strokeColor = '#9c27b0';
-                    textColor = '#6a1b9a';
-                    break;
-                default:
-                    fillColor = '#f5f5f5';
-                    strokeColor = '#9e9e9e';
-                    textColor = '#424242';
-            }
-        
-            // Draw node shape (rounded rectangle)
-            const width = 100;
-            const height = 60;
-            const radius = 8;
-        
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    // ============================================================================
+    // Canvas Visualization
+    // ============================================================================
+
+    /**
+     * Set canvas size based on container and device pixel ratio
+     */
+    function setupCanvas() {
+        const container = canvas.parentElement;
+        const rect = container.getBoundingClientRect();
+
+        // Set display size
+        canvas.style.width = '100%';
+        canvas.style.height = '600px';
+
+        // Set actual size in memory (scaled for retina displays)
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = 600 * dpr;
+
+        // Scale context to match device pixel ratio
+        ctx.scale(dpr, dpr);
+    }
+
+    /**
+     * Draw a node on the canvas
+     * @param {Object} node - Node object with id, label, x, y, and type
+     */
+    function drawNode(node) {
+        const {x, y, label, type} = node;
+
+        // Set colors based on node type
+        let fillColor, strokeColor, textColor;
+        switch (type) {
+            case 'input':
+                fillColor = '#e3f2fd';
+                strokeColor = '#2196f3';
+                textColor = '#1565c0';
+                break;
+            case 'output':
+                fillColor = '#e8f5e9';
+                strokeColor = '#4caf50';
+                textColor = '#2e7d32';
+                break;
+            case 'process':
+                fillColor = '#fff3e0';
+                strokeColor = '#ff9800';
+                textColor = '#e65100';
+                break;
+            case 'control':
+                fillColor = '#f3e5f5';
+                strokeColor = '#9c27b0';
+                textColor = '#6a1b9a';
+                break;
+            default:
+                fillColor = '#f5f5f5';
+                strokeColor = '#9e9e9e';
+                textColor = '#424242';
+        }
+
+        // Draw node shape (rounded rectangle)
+        const width = 100;
+        const height = 60;
+        const radius = 8;
+
+        ctx.beginPath();
+        ctx.moveTo(x - width / 2 + radius, y - height / 2);
+        ctx.lineTo(x + width / 2 - radius, y - height / 2);
+        ctx.quadraticCurveTo(x + width / 2, y - height / 2, x + width / 2, y - height / 2 + radius);
+        ctx.lineTo(x + width / 2, y + height / 2 - radius);
+        ctx.quadraticCurveTo(x + width / 2, y + height / 2, x + width / 2 - radius, y + height / 2);
+        ctx.lineTo(x - width / 2 + radius, y + height / 2);
+        ctx.quadraticCurveTo(x - width / 2, y + height / 2, x - width / 2, y + height / 2 - radius);
+        ctx.lineTo(x - width / 2, y - height / 2 + radius);
+        ctx.quadraticCurveTo(x - width / 2, y - height / 2, x - width / 2 + radius, y - height / 2);
+        ctx.closePath();
+
+        // Fill and stroke
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw label text
+        ctx.fillStyle = textColor;
+        ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Handle multi-line labels
+        const lines = label.split('\n');
+        const lineHeight = 16;
+        const startY = y - ((lines.length - 1) * lineHeight) / 2;
+
+        lines.forEach((line, index) => {
+            ctx.fillText(line, x, startY + index * lineHeight);
+        });
+    }
+
+    /**
+     * Draw an edge (arrow) between two nodes
+     * @param {Object} edge - Edge object with from, to, label, and optional curved flag
+     * @param {Object} nodes - Map of node IDs to node objects
+     */
+    function drawEdge(edge, nodes) {
+        const fromNode = nodes.find(n => n.id === edge.from);
+        const toNode = nodes.find(n => n.id === edge.to);
+
+        if (!fromNode || !toNode) return;
+
+        const {x: x1, y: y1} = fromNode;
+        const {x: x2, y: y2} = toNode;
+
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 2;
+        ctx.fillStyle = '#666';
+
+        if (edge.curved) {
+            // Draw curved arrow (for feedback loops)
+            const controlX = x1 + (x2 - x1) / 2 - 80;
+            const controlY = y1 + (y2 - y1) / 2 + 60;
+
             ctx.beginPath();
-            ctx.moveTo(x - width/2 + radius, y - height/2);
-            ctx.lineTo(x + width/2 - radius, y - height/2);
-            ctx.quadraticCurveTo(x + width/2, y - height/2, x + width/2, y - height/2 + radius);
-            ctx.lineTo(x + width/2, y + height/2 - radius);
-            ctx.quadraticCurveTo(x + width/2, y + height/2, x + width/2 - radius, y + height/2);
-            ctx.lineTo(x - width/2 + radius, y + height/2);
-            ctx.quadraticCurveTo(x - width/2, y + height/2, x - width/2, y + height/2 - radius);
-            ctx.lineTo(x - width/2, y - height/2 + radius);
-            ctx.quadraticCurveTo(x - width/2, y - height/2, x - width/2 + radius, y - height/2);
-            ctx.closePath();
-        
-            // Fill and stroke
-            ctx.fillStyle = fillColor;
-            ctx.fill();
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 2;
+            ctx.moveTo(x1, y1 + 30);
+            ctx.quadraticCurveTo(controlX, controlY, x2 - 50, y2);
             ctx.stroke();
-        
-            // Draw label text
-            ctx.fillStyle = textColor;
-            ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+            // Draw arrowhead
+            drawArrowhead(x2 - 50, y2, Math.atan2(y2 - controlY, x2 - 50 - controlX));
+        } else {
+            // Draw straight arrow
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const startX = x1 + Math.cos(angle) * 50;
+            const startY = y1 + Math.sin(angle) * 30;
+            const endX = x2 - Math.cos(angle) * 50;
+            const endY = y2 - Math.sin(angle) * 30;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            // Draw arrowhead
+            drawArrowhead(endX, endY, angle);
+        }
+
+        // Draw edge label
+        if (edge.label) {
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(midX - 25, midY - 10, 50, 20);
+
+            ctx.fillStyle = '#666';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-        
-            // Handle multi-line labels
-            const lines = label.split('\n');
-            const lineHeight = 16;
-            const startY = y - ((lines.length - 1) * lineHeight) / 2;
-        
-            lines.forEach((line, index) => {
-                ctx.fillText(line, x, startY + index * lineHeight);
-            });
+            ctx.fillText(edge.label, midX, midY);
         }
-        
-        /**
-         * Draw an edge (arrow) between two nodes
-         * @param {Object} edge - Edge object with from, to, label, and optional curved flag
-         * @param {Object} nodes - Map of node IDs to node objects
-         */
-        function drawEdge(edge, nodes) {
-            const fromNode = nodes.find(n => n.id === edge.from);
-            const toNode = nodes.find(n => n.id === edge.to);
-        
-            if (!fromNode || !toNode) return;
-        
-            const { x: x1, y: y1 } = fromNode;
-            const { x: x2, y: y2 } = toNode;
-        
-            ctx.strokeStyle = '#666';
-            ctx.lineWidth = 2;
-            ctx.fillStyle = '#666';
-        
-            if (edge.curved) {
-                // Draw curved arrow (for feedback loops)
-                const controlX = x1 + (x2 - x1) / 2 - 80;
-                const controlY = y1 + (y2 - y1) / 2 + 60;
-        
-                ctx.beginPath();
-                ctx.moveTo(x1, y1 + 30);
-                ctx.quadraticCurveTo(controlX, controlY, x2 - 50, y2);
-                ctx.stroke();
-        
-                // Draw arrowhead
-                drawArrowhead(x2 - 50, y2, Math.atan2(y2 - controlY, x2 - 50 - controlX));
-            } else {
-                // Draw straight arrow
-                const angle = Math.atan2(y2 - y1, x2 - x1);
-                const startX = x1 + Math.cos(angle) * 50;
-                const startY = y1 + Math.sin(angle) * 30;
-                const endX = x2 - Math.cos(angle) * 50;
-                const endY = y2 - Math.sin(angle) * 30;
-        
-                ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                ctx.lineTo(endX, endY);
-                ctx.stroke();
-        
-                // Draw arrowhead
-                drawArrowhead(endX, endY, angle);
-            }
-        
-            // Draw edge label
-            if (edge.label) {
-                const midX = (x1 + x2) / 2;
-                const midY = (y1 + y2) / 2;
-        
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(midX - 25, midY - 10, 50, 20);
-        
-                ctx.fillStyle = '#666';
-                ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(edge.label, midX, midY);
-            }
+    }
+
+    /**
+     * Draw an arrowhead at the specified position and angle
+     * @param {number} x - X coordinate
+     * @param {number} y - Y coordinate
+     * @param {number} angle - Angle in radians
+     */
+    function drawArrowhead(x, y, angle) {
+        const headLength = 12;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(
+            x - headLength * Math.cos(angle - Math.PI / 6),
+            y - headLength * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.moveTo(x, y);
+        ctx.lineTo(
+            x - headLength * Math.cos(angle + Math.PI / 6),
+            y - headLength * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.stroke();
+    }
+
+    /**
+     * Render a complete pattern visualization
+     * @param {string} patternKey - Key identifying the pattern to visualize
+     */
+    function renderVisualization(patternKey) {
+        const pattern = patternVisualizations[patternKey];
+
+        if (!pattern) {
+            console.error(`Pattern ${patternKey} not found`);
+            return;
         }
-        
-        /**
-         * Draw an arrowhead at the specified position and angle
-         * @param {number} x - X coordinate
-         * @param {number} y - Y coordinate
-         * @param {number} angle - Angle in radians
-         */
-        function drawArrowhead(x, y, angle) {
-            const headLength = 12;
-        
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(
-                x - headLength * Math.cos(angle - Math.PI / 6),
-                y - headLength * Math.sin(angle - Math.PI / 6)
+
+        // Update modal content
+        modalTitle.textContent = pattern.title;
+        visualizationDescription.textContent = pattern.description;
+
+        // Setup and clear canvas
+        setupCanvas();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw edges first (so they appear behind nodes)
+        pattern.edges.forEach(edge => drawEdge(edge, pattern.nodes));
+
+        // Draw nodes on top
+        pattern.nodes.forEach(node => drawNode(node));
+    }
+
+    // ============================================================================
+    // Visualize Button Event Listeners
+    // ============================================================================
+
+    /**
+     * Attach click handlers to all visualize buttons
+     */
+    visualizeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const patternKey = button.dataset.pattern;
+            renderVisualization(patternKey);
+            openModal();
+        });
+    });
+
+    // ============================================================================
+    // Responsive Canvas Handling
+    // ============================================================================
+
+    /**
+     * Redraw current visualization on window resize
+     */
+    let currentPattern = null;
+
+    visualizeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            currentPattern = button.dataset.pattern;
+        });
+    });
+
+    window.addEventListener('resize', () => {
+        if (modal.classList.contains('active') && currentPattern) {
+            renderVisualization(currentPattern);
+        }
+    });
+
+    // ============================================================================
+    // Card Hover Effects
+    // ============================================================================
+
+    /**
+     * Add subtle animation effects to use case cards on hover
+     */
+    const useCaseCards = document.querySelectorAll('.use-case-card, .workflow-card');
+
+    useCaseCards.forEach(card => {
+        card.addEventListener('mouseenter', function () {
+            this.style.transform = 'translateY(-4px)';
+        });
+
+        card.addEventListener('mouseleave', function () {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+
+    // ============================================================================
+    // Smooth Scroll for Navigation
+    // ============================================================================
+
+    /**
+     * Enhance smooth scrolling behavior for better UX
+     */
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // ============================================================================
+    // Initialization
+    // ============================================================================
+
+    /**
+     * Initialize the application on page load
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('LLM Use Case Patterns - Interactive Guide Loaded');
+
+        // Setup initial canvas size
+        setupCanvas();
+
+        // Add transition effects to cards
+        useCaseCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 50);
+        });
+    });
+
+    // ============================================================================
+    // Accessibility Enhancements
+    // ============================================================================
+
+    /**
+     * Add keyboard navigation support for modal
+     */
+    document.addEventListener('keydown', (e) => {
+        // Tab trap within modal when open
+        if (modal.classList.contains('active') && e.key === 'Tab') {
+            const focusableElements = modal.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
             );
-            ctx.moveTo(x, y);
-            ctx.lineTo(
-                x - headLength * Math.cos(angle + Math.PI / 6),
-                y - headLength * Math.sin(angle + Math.PI / 6)
-            );
-            ctx.stroke();
-        }
-        
-        /**
-         * Render a complete pattern visualization
-         * @param {string} patternKey - Key identifying the pattern to visualize
-         */
-        function renderVisualization(patternKey) {
-            const pattern = patternVisualizations[patternKey];
-        
-            if (!pattern) {
-                console.error(`Pattern ${patternKey} not found`);
-                return;
-            }
-        
-            // Update modal content
-            modalTitle.textContent = pattern.title;
-            visualizationDescription.textContent = pattern.description;
-        
-            // Setup and clear canvas
-            setupCanvas();
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-            // Draw edges first (so they appear behind nodes)
-            pattern.edges.forEach(edge => drawEdge(edge, pattern.nodes));
-        
-            // Draw nodes on top
-            pattern.nodes.forEach(node => drawNode(node));
-        }
-        
-        // ============================================================================
-        // Visualize Button Event Listeners
-        // ============================================================================
-        
-        /**
-         * Attach click handlers to all visualize buttons
-         */
-        visualizeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const patternKey = button.dataset.pattern;
-                renderVisualization(patternKey);
-                openModal();
-            });
-        });
-        
-        // ============================================================================
-        // Responsive Canvas Handling
-        // ============================================================================
-        
-        /**
-         * Redraw current visualization on window resize
-         */
-        let currentPattern = null;
-        
-        visualizeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                currentPattern = button.dataset.pattern;
-            });
-        });
-        
-        window.addEventListener('resize', () => {
-            if (modal.classList.contains('active') && currentPattern) {
-                renderVisualization(currentPattern);
-            }
-        });
-        
-        // ============================================================================
-        // Card Hover Effects
-        // ============================================================================
-        
-        /**
-         * Add subtle animation effects to use case cards on hover
-         */
-        const useCaseCards = document.querySelectorAll('.use-case-card, .workflow-card');
-        
-        useCaseCards.forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-4px)';
-            });
-        
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
-        });
-        
-        // ============================================================================
-        // Smooth Scroll for Navigation
-        // ============================================================================
-        
-        /**
-         * Enhance smooth scrolling behavior for better UX
-         */
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            if (e.shiftKey && document.activeElement === firstElement) {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-        
-        // ============================================================================
-        // Initialization
-        // ============================================================================
-        
-        /**
-         * Initialize the application on page load
-         */
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('LLM Use Case Patterns - Interactive Guide Loaded');
-        
-            // Setup initial canvas size
-            setupCanvas();
-        
-            // Add transition effects to cards
-            useCaseCards.forEach((card, index) => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-        
-                setTimeout(() => {
-                    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, index * 50);
-            });
-        });
-        
-        // ============================================================================
-        // Accessibility Enhancements
-        // ============================================================================
-        
-        /**
-         * Add keyboard navigation support for modal
-         */
-        document.addEventListener('keydown', (e) => {
-            // Tab trap within modal when open
-            if (modal.classList.contains('active') && e.key === 'Tab') {
-                const focusableElements = modal.querySelectorAll(
-                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                );
-                const firstElement = focusableElements[0];
-                const lastElement = focusableElements[focusableElements.length - 1];
-        
-                if (e.shiftKey && document.activeElement === firstElement) {
-                    e.preventDefault();
-                    lastElement.focus();
-                } else if (!e.shiftKey && document.activeElement === lastElement) {
-                    e.preventDefault();
-                    firstElement.focus();
-                }
+                lastElement.focus();
+            } else if (!e.shiftKey && document.activeElement === lastElement) {
+                e.preventDefault();
+                firstElement.focus();
             }
-        });
-        
-        /**
-         * Add ARIA labels for better screen reader support
-         */
-        navTabs.forEach(tab => {
-            tab.setAttribute('role', 'tab');
-            tab.setAttribute('aria-selected', tab.classList.contains('active'));
-        });
-        
-        visualizeButtons.forEach(button => {
-            const patternName = button.dataset.pattern;
-            button.setAttribute('aria-label', `Visualize ${patternName} pattern`);
-        });
-    </script>
+        }
+    });
+
+    /**
+     * Add ARIA labels for better screen reader support
+     */
+    navTabs.forEach(tab => {
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', tab.classList.contains('active'));
+    });
+
+    visualizeButtons.forEach(button => {
+        const patternName = button.dataset.pattern;
+        button.setAttribute('aria-label', `Visualize ${patternName} pattern`);
+    });
+</script>
 </body>
 </html>

@@ -90,14 +90,6 @@ class MultiCodeChatAction : BaseAction() {
         }
     }
 
-    override fun isEnabled(event: AnActionEvent): Boolean {
-        val root = getRoot(event) ?: return false
-        val files = getFiles(PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext) ?: arrayOf(), root)
-        if (files.isEmpty()) return false
-        return super.isEnabled(event)
-    }
-
-    /** Chat manager that handles the chat interface and code modifications */
     inner class CodeChatManager(
         session: Session,
         model: ChatInterface,

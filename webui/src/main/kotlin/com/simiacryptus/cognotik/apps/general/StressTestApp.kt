@@ -19,7 +19,7 @@ class StressTestApp(
     var wasRun = false
     override fun userMessage(
         session: Session,
-        user: User?,
+        user: User,
         userMessage: String,
         ui: SocketManager
     ) {

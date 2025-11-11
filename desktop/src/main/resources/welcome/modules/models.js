@@ -58,7 +58,7 @@ class ModelManager {
 
         const savedDefaultModel = this.appState.taskSettings.defaultModel;
         const savedParsingModel = this.appState.taskSettings.parsingModel;
-        const savedImageModel = this.appState.taskSettings.imageModel;
+        const savedImageModel = this.appState.taskSettings.imageChatModel;
 
         this.clearModelSelections(modelSelect, parsingModelSelect, imageModelSelect);
         this.addAvailableModels(modelSelect, parsingModelSelect, imageModelSelect);

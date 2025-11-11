@@ -16,45 +16,45 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class FiniteStateMachineTask(
-  orchestrationConfig: OrchestrationConfig,
-  planTask: FiniteStateMachineTaskExecutionConfigData?
+    orchestrationConfig: OrchestrationConfig,
+    planTask: FiniteStateMachineTaskExecutionConfigData?
 ) : AbstractTask<FiniteStateMachineTask.FiniteStateMachineTaskExecutionConfigData, TaskTypeConfig>(
-  orchestrationConfig,
-  planTask
+    orchestrationConfig,
+    planTask
 ) {
-  protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
-  val maxDescriptionLength = 500
-  private var transcriptStream: java.io.FileOutputStream? = null
+    protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
+    val maxDescriptionLength = 500
+    private var transcriptStream: java.io.FileOutputStream? = null
 
-  class FiniteStateMachineTaskExecutionConfigData(
-    @Description("The concept, system, or process to model as a finite state machine")
-    val concept_to_model: String? = null,
-    @Description("Initial state(s) to consider")
-    val initial_states: List<String>? = null,
-    @Description("Known events or triggers that cause state transitions")
-    val known_events: List<String>? = null,
-    @Description("Whether to identify edge cases and error states")
-    val identify_edge_cases: Boolean = true,
-    @Description("Whether to validate state machine properties (determinism, completeness, reachability)")
-    val validate_properties: Boolean = true,
-    @Description("Whether to generate test scenarios for state transitions")
-    val generate_test_scenarios: Boolean = true,
-    @Description("Domain or context for the FSM (e.g., 'authentication system', 'order processing')")
-    val domain_context: String? = null,
-    @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
-    val input_files: List<String>? = null,
-    task_description: String? = null,
-    task_dependencies: List<String>? = null,
-    state: TaskState? = TaskState.Pending,
-  ) : TaskExecutionConfig(
-    task_type = FiniteStateMachine.name,
-    task_description = task_description,
-    task_dependencies = task_dependencies?.toMutableList(),
-    state = state
-  )
+    class FiniteStateMachineTaskExecutionConfigData(
+        @Description("The concept, system, or process to model as a finite state machine")
+        val concept_to_model: String? = null,
+        @Description("Initial state(s) to consider")
+        val initial_states: List<String>? = null,
+        @Description("Known events or triggers that cause state transitions")
+        val known_events: List<String>? = null,
+        @Description("Whether to identify edge cases and error states")
+        val identify_edge_cases: Boolean = true,
+        @Description("Whether to validate state machine properties (determinism, completeness, reachability)")
+        val validate_properties: Boolean = true,
+        @Description("Whether to generate test scenarios for state transitions")
+        val generate_test_scenarios: Boolean = true,
+        @Description("Domain or context for the FSM (e.g., 'authentication system', 'order processing')")
+        val domain_context: String? = null,
+        @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
+        val input_files: List<String>? = null,
+        task_description: String? = null,
+        task_dependencies: List<String>? = null,
+        state: TaskState? = TaskState.Pending,
+    ) : TaskExecutionConfig(
+        task_type = FiniteStateMachine.name,
+        task_description = task_description,
+        task_dependencies = task_dependencies?.toMutableList(),
+        state = state
+    )
 
-  override fun promptSegment(): String {
-    return """
+    override fun promptSegment(): String {
+        return """
 FiniteStateMachine - Model concepts using finite state machine analysis
   ** Specify the concept, system, or process to model
   ** Optionally provide initial states and known events
@@ -70,69 +70,79 @@ FiniteStateMachine - Model concepts using finite state machine analysis
      - Test case generation
      - Protocol analysis
         """.trimIndent()
-  }
-
-  override fun run(
-    agent: TaskOrchestrator,
-    messages: List<String>,
-    task: SessionTask,
-    resultFn: (String) -> Unit,
-    orchestrationConfig: OrchestrationConfig
-  ) {
-    log.info("FiniteStateMachineTask.run() called with messages count: ${messages.size}")
-    val startTime = System.currentTimeMillis()
-    log.info("Starting FiniteStateMachineTask for concept: '${executionConfig?.concept_to_model}'")
-    // Initialize transcript
-    transcriptStream = task.transcript()
-    if (transcriptStream == null) {
-      log.error("Failed to initialize transcript stream")
-    }
-    writeToTranscript("# Finite State Machine Analysis\n\n${messages.joinToString("\n\n")}\n\n")
-    writeToTranscript("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n")
-
-    val conceptToModel = executionConfig?.concept_to_model
-    if (conceptToModel.isNullOrBlank()) {
-      val errorMsg = "CONFIGURATION ERROR: No concept to model specified"
-      log.error(errorMsg)
-      writeToTranscript("## Error\n\n$errorMsg\n\n")
-      closeTranscript()
-      task.complete(errorMsg)
-      resultFn(errorMsg)
-      return
     }
 
-    val ui = task.ui
-    val api = orchestrationConfig.defaultChatter ?: run {
-      log.error("No default chatter available")
-      writeToTranscript("## Error\n\nNo API available\n\n")
-      closeTranscript()
-      task.complete("ERROR: No API available")
-      resultFn("ERROR: No API available")
-      return
-    }
+    override fun run(
+        agent: TaskOrchestrator,
+        messages: List<String>,
+        task: SessionTask,
+        resultFn: (String) -> Unit,
+        orchestrationConfig: OrchestrationConfig
+    ) {
+        log.info("FiniteStateMachineTask.run() called with messages count: ${messages.size}")
+        val startTime = System.currentTimeMillis()
+        log.info("Starting FiniteStateMachineTask for concept: '${executionConfig?.concept_to_model}'")
+        // Initialize transcript
+        transcriptStream = task.transcript()
+        if (transcriptStream == null) {
+            log.error("Failed to initialize transcript stream")
+        }
+        writeToTranscript("# Finite State Machine Analysis\n\n${messages.joinToString("\n\n")}\n\n")
+        writeToTranscript(
+            "**Started:** ${
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            }\n\n"
+        )
 
-    try {
-      // Create tabbed display for organized output
-      val tabs = TabbedDisplay(task)
+        val conceptToModel = executionConfig?.concept_to_model
+        if (conceptToModel.isNullOrBlank()) {
+            val errorMsg = "CONFIGURATION ERROR: No concept to model specified"
+            log.error(errorMsg)
+            writeToTranscript("## Error\n\n$errorMsg\n\n")
+            closeTranscript()
+            task.complete(errorMsg)
+            resultFn(errorMsg)
+            return
+        }
 
-      // Overview tab
-      val overviewTask = task.ui.newTask(false)
-      tabs["Overview"] = overviewTask.placeholder
+        val ui = task.ui
+        val api = orchestrationConfig.defaultChatter ?: run {
+            log.error("No default chatter available")
+            writeToTranscript("## Error\n\nNo API available\n\n")
+            closeTranscript()
+            task.complete("ERROR: No API available")
+            resultFn("ERROR: No API available")
+            return
+        }
 
-      val domainContext = executionConfig.domain_context ?: "general domain"
-      val initialStates = executionConfig.initial_states ?: emptyList()
-      val knownEvents = executionConfig.known_events ?: emptyList()
-      writeToTranscript("## Configuration\n\n")
-      writeToTranscript("**Concept:** $conceptToModel\n\n")
-      writeToTranscript("**Input Files:** ${if (executionConfig.input_files?.isNotEmpty() == true) executionConfig.input_files.joinToString(", ") else "None"}\n\n")
-      writeToTranscript("**Domain:** $domainContext\n\n")
-      writeToTranscript("**Initial States:** ${if (initialStates.isNotEmpty()) initialStates.joinToString(", ") else "To be identified"}\n\n")
-      writeToTranscript("**Known Events:** ${if (knownEvents.isNotEmpty()) knownEvents.joinToString(", ") else "To be identified"}\n\n")
-      writeToTranscript("---\n\n")
+        try {
+            // Create tabbed display for organized output
+            val tabs = TabbedDisplay(task)
 
-      var overviewContent = overviewTask.add(
-        MarkdownUtil.renderMarkdown(
-          """
+            // Overview tab
+            val overviewTask = task.ui.newTask(false)
+            tabs["Overview"] = overviewTask.placeholder
+
+            val domainContext = executionConfig.domain_context ?: "general domain"
+            val initialStates = executionConfig.initial_states ?: emptyList()
+            val knownEvents = executionConfig.known_events ?: emptyList()
+            writeToTranscript("## Configuration\n\n")
+            writeToTranscript("**Concept:** $conceptToModel\n\n")
+            writeToTranscript(
+                "**Input Files:** ${
+                    if (executionConfig.input_files?.isNotEmpty() == true) executionConfig.input_files.joinToString(
+                        ", "
+                    ) else "None"
+                }\n\n"
+            )
+            writeToTranscript("**Domain:** $domainContext\n\n")
+            writeToTranscript("**Initial States:** ${if (initialStates.isNotEmpty()) initialStates.joinToString(", ") else "To be identified"}\n\n")
+            writeToTranscript("**Known Events:** ${if (knownEvents.isNotEmpty()) knownEvents.joinToString(", ") else "To be identified"}\n\n")
+            writeToTranscript("---\n\n")
+
+            var overviewContent = overviewTask.add(
+                MarkdownUtil.renderMarkdown(
+                    """
             |## Finite State Machine Analysis
             |
             |**Concept:** $conceptToModel
@@ -149,66 +159,69 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             |
             |**Status:** 🔄 Analyzing concept and identifying states...
           """.trimMargin(), ui = ui
-        )
-      )
-      task.update()
+                )
+            )
+            task.update()
 
-      log.debug("Gathering prior context from execution state")
-      val priorContext = getPriorCode(agent.executionState)
-      val inputFileContent = getInputFileCode()
+            log.debug("Gathering prior context from execution state")
+            val priorContext = getPriorCode(agent.executionState)
+            val inputFileContent = getInputFileCode()
 
-      // Step 1: Identify States
-      log.info("Step 1: Identifying all possible states")
-      val statesTask = task.ui.newTask(false)
-      tabs["States"] = statesTask.placeholder
+            // Step 1: Identify States
+            log.info("Step 1: Identifying all possible states")
+            val statesTask = task.ui.newTask(false)
+            tabs["States"] = statesTask.placeholder
 
-      val statesLoading = statesTask.add(
-        MarkdownUtil.renderMarkdown("## State Identification\n\n🔄 Analyzing concept to identify all possible states...", ui = ui)
-      )
-      task.update()
+            val statesLoading = statesTask.add(
+                MarkdownUtil.renderMarkdown(
+                    "## State Identification\n\n🔄 Analyzing concept to identify all possible states...",
+                    ui = ui
+                )
+            )
+            task.update()
 
-      val stateIdentificationPrompt = buildStateIdentificationPrompt(
-        conceptToModel,
-        domainContext,
-        initialStates,
-        priorContext,
-        inputFileContent
-      )
+            val stateIdentificationPrompt = buildStateIdentificationPrompt(
+                conceptToModel,
+                domainContext,
+                initialStates,
+                priorContext,
+                inputFileContent
+            )
 
-      val stateAgent = ChatAgent(
-        prompt = stateIdentificationPrompt,
-        model = api,
-        temperature = 0.3
-      )
+            val stateAgent = ChatAgent(
+                prompt = stateIdentificationPrompt,
+                model = api,
+                temperature = 0.3
+            )
 
-      log.debug("Requesting state identification from LLM")
-      val statesAnalysis = stateAgent.answer(listOf("Identify all possible states for this concept."))
-      writeToTranscript("## Step 1: State Identification\n\n")
-      writeToTranscript("### Prompt\n\n")
-      writeToTranscript("```\n$stateIdentificationPrompt\n```\n\n")
-      writeToTranscript("### Response\n\n")
-      writeToTranscript("$statesAnalysis\n\n")
-      writeToTranscript("---\n\n")
+            log.debug("Requesting state identification from LLM")
+            val statesAnalysis = stateAgent.answer(listOf("Identify all possible states for this concept."))
+            writeToTranscript("## Step 1: State Identification\n\n")
+            writeToTranscript("### Prompt\n\n")
+            writeToTranscript("```\n$stateIdentificationPrompt\n```\n\n")
+            writeToTranscript("### Response\n\n")
+            writeToTranscript("$statesAnalysis\n\n")
+            writeToTranscript("---\n\n")
 
-      statesLoading?.clear()
-      statesTask.add(
-        MarkdownUtil.renderMarkdown(
-          """
+            statesLoading?.clear()
+            statesTask.add(
+                MarkdownUtil.renderMarkdown(
+                    """
             |## Identified States
             |
             |✅ State analysis complete
             |
             |$statesAnalysis
           """.trimMargin(), ui = ui
-        )
-      )
-      task.update()
+                )
+            )
+            task.update()
 
-      // Update overview
-      overviewContent?.clear()
-      overviewContent = overviewTask.add(
-        MarkdownUtil.renderMarkdown(
-          """
+            // Update overview
+            overviewContent?.clear()
+            overviewContent = overviewTask.add(
+                MarkdownUtil.renderMarkdown(
+                    """
             |## Finite State Machine Analysis
             |
             |**Concept:** $conceptToModel
@@ -217,59 +230,62 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             |
             |**Status:** 🔄 Identifying transitions and events...
           """.trimMargin(), ui = ui
-        )
-      )
-      task.update()
+                )
+            )
+            task.update()
 
-      // Step 2: Identify Transitions
-      log.info("Step 2: Identifying state transitions and events")
-      val transitionsTask = task.ui.newTask(false)
-      tabs["Transitions"] = transitionsTask.placeholder
+            // Step 2: Identify Transitions
+            log.info("Step 2: Identifying state transitions and events")
+            val transitionsTask = task.ui.newTask(false)
+            tabs["Transitions"] = transitionsTask.placeholder
 
-      val transitionsLoading = transitionsTask.add(
-        MarkdownUtil.renderMarkdown("## Transition Analysis\n\n🔄 Identifying events and state transitions...", ui = ui)
-      )
-      task.update()
+            val transitionsLoading = transitionsTask.add(
+                MarkdownUtil.renderMarkdown(
+                    "## Transition Analysis\n\n🔄 Identifying events and state transitions...",
+                    ui = ui
+                )
+            )
+            task.update()
 
-      val transitionPrompt = buildTransitionPrompt(
-        statesAnalysis,
-        knownEvents
-      )
+            val transitionPrompt = buildTransitionPrompt(
+                statesAnalysis,
+                knownEvents
+            )
 
-      log.debug("Requesting transition analysis from LLM")
-      val transitionsAnalysis = stateAgent.answer(listOf(transitionPrompt))
-      writeToTranscript("## Step 2: Transition Analysis\n\n")
-      writeToTranscript("### Prompt\n\n")
-      writeToTranscript("```\n$transitionPrompt\n```\n\n")
-      writeToTranscript("### Response\n\n")
-      writeToTranscript("$transitionsAnalysis\n\n")
-      writeToTranscript("---\n\n")
+            log.debug("Requesting transition analysis from LLM")
+            val transitionsAnalysis = stateAgent.answer(listOf(transitionPrompt))
+            writeToTranscript("## Step 2: Transition Analysis\n\n")
+            writeToTranscript("### Prompt\n\n")
+            writeToTranscript("```\n$transitionPrompt\n```\n\n")
+            writeToTranscript("### Response\n\n")
+            writeToTranscript("$transitionsAnalysis\n\n")
+            writeToTranscript("---\n\n")
 
-      transitionsLoading?.clear()
-      transitionsTask.add(
-        MarkdownUtil.renderMarkdown(
-          """
+            transitionsLoading?.clear()
+            transitionsTask.add(
+                MarkdownUtil.renderMarkdown(
+                    """
             |## State Transitions
             |
             |✅ Transition analysis complete
             |
             |$transitionsAnalysis
           """.trimMargin(), ui = ui
-        )
-      )
-      task.update()
+                )
+            )
+            task.update()
 
-      // Step 3: Generate State Diagram
-      log.info("Step 3: Generating state diagram")
-      val diagramTask = task.ui.newTask(false)
-      tabs["State Diagram"] = diagramTask.placeholder
+            // Step 3: Generate State Diagram
+            log.info("Step 3: Generating state diagram")
+            val diagramTask = task.ui.newTask(false)
+            tabs["State Diagram"] = diagramTask.placeholder
 
-      val diagramLoading = diagramTask.add(
-        MarkdownUtil.renderMarkdown("## State Diagram\n\n🔄 Generating visual representation...", ui = ui)
-      )
-      task.update()
+            val diagramLoading = diagramTask.add(
+                MarkdownUtil.renderMarkdown("## State Diagram\n\n🔄 Generating visual representation...", ui = ui)
+            )
+            task.update()
 
-      val diagramPrompt = """
+            val diagramPrompt = """
 Based on the states and transitions identified above, create a Mermaid state diagram.
 
 Use the following format:
@@ -284,25 +300,25 @@ Use the following format:
 Generate the Mermaid diagram now:
       """.trimIndent()
 
-      log.debug("Requesting state diagram from LLM")
-      val diagramResult = stateAgent.answer(listOf(diagramPrompt))
-      val mermaidCode = extractMermaidCode(diagramResult)
-      writeToTranscript("## Step 3: State Diagram Generation\n\n")
-      writeToTranscript("### Prompt\n\n")
-      writeToTranscript("```\n$diagramPrompt\n```\n\n")
-      writeToTranscript("### Response\n\n")
-      if (mermaidCode.isNotEmpty()) {
-        writeToTranscript("```mermaid\n$mermaidCode\n```\n\n")
-      } else {
-        writeToTranscript("⚠️ Failed to generate diagram\n\n```\n$diagramResult\n```\n\n")
-      }
-      writeToTranscript("---\n\n")
+            log.debug("Requesting state diagram from LLM")
+            val diagramResult = stateAgent.answer(listOf(diagramPrompt))
+            val mermaidCode = extractMermaidCode(diagramResult)
+            writeToTranscript("## Step 3: State Diagram Generation\n\n")
+            writeToTranscript("### Prompt\n\n")
+            writeToTranscript("```\n$diagramPrompt\n```\n\n")
+            writeToTranscript("### Response\n\n")
+            if (mermaidCode.isNotEmpty()) {
+                writeToTranscript("```mermaid\n$mermaidCode\n```\n\n")
+            } else {
+                writeToTranscript("⚠️ Failed to generate diagram\n\n```\n$diagramResult\n```\n\n")
+            }
+            writeToTranscript("---\n\n")
 
-      diagramLoading?.clear()
-      if (mermaidCode.isNotEmpty()) {
-        diagramTask.add(
-          MarkdownUtil.renderMarkdown(
-            """
+            diagramLoading?.clear()
+            if (mermaidCode.isNotEmpty()) {
+                diagramTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        """
               |## State Diagram
               |
               |✅ Diagram generated successfully
@@ -311,12 +327,12 @@ Generate the Mermaid diagram now:
               |$mermaidCode
               |```
             """.trimMargin(), ui = ui
-          )
-        )
-      } else {
-        diagramTask.add(
-          MarkdownUtil.renderMarkdown(
-            """
+                    )
+                )
+            } else {
+                diagramTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        """
               |## State Diagram
               |
               |⚠️ Failed to generate diagram
@@ -326,24 +342,27 @@ Generate the Mermaid diagram now:
               |$diagramResult
               |```
             """.trimMargin(), ui = ui
-          )
-        )
-      }
-      task.update()
+                    )
+                )
+            }
+            task.update()
 
-      // Step 4: Edge Cases (if enabled)
-      var edgeCasesAnalysis: String
-      if (executionConfig.identify_edge_cases) {
-        log.info("Step 4: Identifying edge cases and error states")
-        val edgeCasesTask = task.ui.newTask(false)
-        tabs["Edge Cases"] = edgeCasesTask.placeholder
+            // Step 4: Edge Cases (if enabled)
+            var edgeCasesAnalysis: String
+            if (executionConfig.identify_edge_cases) {
+                log.info("Step 4: Identifying edge cases and error states")
+                val edgeCasesTask = task.ui.newTask(false)
+                tabs["Edge Cases"] = edgeCasesTask.placeholder
 
-        val edgeCasesLoading = edgeCasesTask.add(
-          MarkdownUtil.renderMarkdown("## Edge Cases Analysis\n\n🔄 Identifying edge cases and error states...", ui = ui)
-        )
-        task.update()
+                val edgeCasesLoading = edgeCasesTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        "## Edge Cases Analysis\n\n🔄 Identifying edge cases and error states...",
+                        ui = ui
+                    )
+                )
+                task.update()
 
-        val edgeCasesPrompt = """
+                val edgeCasesPrompt = """
 Analyze the finite state machine for edge cases and error conditions:
 
 1. **Invalid Transitions:** Identify events that could occur in states where they're not valid
@@ -356,43 +375,46 @@ Analyze the finite state machine for edge cases and error conditions:
 Provide a structured analysis of edge cases and recommendations.
         """.trimIndent()
 
-        log.debug("Requesting edge case analysis from LLM")
-        edgeCasesAnalysis = stateAgent.answer(listOf(edgeCasesPrompt))
-        writeToTranscript("## Step 4: Edge Cases Analysis\n\n")
-        writeToTranscript("### Prompt\n\n")
-        writeToTranscript("```\n$edgeCasesPrompt\n```\n\n")
-        writeToTranscript("### Response\n\n")
-        writeToTranscript("$edgeCasesAnalysis\n\n")
-        writeToTranscript("---\n\n")
+                log.debug("Requesting edge case analysis from LLM")
+                edgeCasesAnalysis = stateAgent.answer(listOf(edgeCasesPrompt))
+                writeToTranscript("## Step 4: Edge Cases Analysis\n\n")
+                writeToTranscript("### Prompt\n\n")
+                writeToTranscript("```\n$edgeCasesPrompt\n```\n\n")
+                writeToTranscript("### Response\n\n")
+                writeToTranscript("$edgeCasesAnalysis\n\n")
+                writeToTranscript("---\n\n")
 
-        edgeCasesLoading?.clear()
-        edgeCasesTask.add(
-          MarkdownUtil.renderMarkdown(
-            """
+                edgeCasesLoading?.clear()
+                edgeCasesTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        """
               |## Edge Cases and Error States
               |
               |✅ Edge case analysis complete
               |
               |$edgeCasesAnalysis
             """.trimMargin(), ui = ui
-          )
-        )
-        task.update()
-      }
+                    )
+                )
+                task.update()
+            }
 
-      // Step 5: Validation (if enabled)
-      var validationAnalysis = ""
-      if (executionConfig.validate_properties) {
-        log.info("Step 5: Validating FSM properties")
-        val validationTask = task.ui.newTask(false)
-        tabs["Validation"] = validationTask.placeholder
+            // Step 5: Validation (if enabled)
+            var validationAnalysis = ""
+            if (executionConfig.validate_properties) {
+                log.info("Step 5: Validating FSM properties")
+                val validationTask = task.ui.newTask(false)
+                tabs["Validation"] = validationTask.placeholder
 
-        val validationLoading = validationTask.add(
-          MarkdownUtil.renderMarkdown("## FSM Validation\n\n🔄 Validating state machine properties...", ui = ui)
-        )
-        task.update()
+                val validationLoading = validationTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        "## FSM Validation\n\n🔄 Validating state machine properties...",
+                        ui = ui
+                    )
+                )
+                task.update()
 
-        val validationPrompt = """
+                val validationPrompt = """
 Validate the following properties of this finite state machine:
 
 1. **Determinism:** Is the FSM deterministic? (Each state + event combination leads to exactly one next state)
@@ -411,43 +433,43 @@ For each property, provide:
 Provide a structured validation report.
         """.trimIndent()
 
-        log.debug("Requesting FSM validation from LLM")
-        validationAnalysis = stateAgent.answer(listOf(validationPrompt))
-        writeToTranscript("## Step 5: FSM Property Validation\n\n")
-        writeToTranscript("### Prompt\n\n")
-        writeToTranscript("```\n$validationPrompt\n```\n\n")
-        writeToTranscript("### Response\n\n")
-        writeToTranscript("$validationAnalysis\n\n")
-        writeToTranscript("---\n\n")
+                log.debug("Requesting FSM validation from LLM")
+                validationAnalysis = stateAgent.answer(listOf(validationPrompt))
+                writeToTranscript("## Step 5: FSM Property Validation\n\n")
+                writeToTranscript("### Prompt\n\n")
+                writeToTranscript("```\n$validationPrompt\n```\n\n")
+                writeToTranscript("### Response\n\n")
+                writeToTranscript("$validationAnalysis\n\n")
+                writeToTranscript("---\n\n")
 
-        validationLoading?.clear()
-        validationTask.add(
-          MarkdownUtil.renderMarkdown(
-            """
+                validationLoading?.clear()
+                validationTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        """
               |## FSM Property Validation
               |
               |✅ Validation complete
               |
               |$validationAnalysis
             """.trimMargin(), ui = ui
-          )
-        )
-        task.update()
-      }
+                    )
+                )
+                task.update()
+            }
 
-      // Step 6: Test Scenarios (if enabled)
-      var testScenariosAnalysis: String
-      if (executionConfig.generate_test_scenarios) {
-        log.info("Step 6: Generating test scenarios")
-        val testScenariosTask = task.ui.newTask(false)
-        tabs["Test Scenarios"] = testScenariosTask.placeholder
+            // Step 6: Test Scenarios (if enabled)
+            var testScenariosAnalysis: String
+            if (executionConfig.generate_test_scenarios) {
+                log.info("Step 6: Generating test scenarios")
+                val testScenariosTask = task.ui.newTask(false)
+                tabs["Test Scenarios"] = testScenariosTask.placeholder
 
-        val testScenariosLoading = testScenariosTask.add(
-          MarkdownUtil.renderMarkdown("## Test Scenario Generation\n\n🔄 Creating test scenarios...", ui = ui)
-        )
-        task.update()
+                val testScenariosLoading = testScenariosTask.add(
+                    MarkdownUtil.renderMarkdown("## Test Scenario Generation\n\n🔄 Creating test scenarios...", ui = ui)
+                )
+                task.update()
 
-        val testScenariosPrompt = """
+                val testScenariosPrompt = """
 Generate comprehensive test scenarios for this finite state machine:
 
 1. **Happy Path Tests:** Normal sequences of events leading to successful outcomes
@@ -467,41 +489,41 @@ For each test scenario, provide:
 Generate at least 5-10 diverse test scenarios.
         """.trimIndent()
 
-        log.debug("Requesting test scenario generation from LLM")
-        testScenariosAnalysis = stateAgent.answer(listOf(testScenariosPrompt))
-        writeToTranscript("## Step 6: Test Scenario Generation\n\n")
-        writeToTranscript("### Prompt\n\n")
-        writeToTranscript("```\n$testScenariosPrompt\n```\n\n")
-        writeToTranscript("### Response\n\n")
-        writeToTranscript("$testScenariosAnalysis\n\n")
-        writeToTranscript("---\n\n")
+                log.debug("Requesting test scenario generation from LLM")
+                testScenariosAnalysis = stateAgent.answer(listOf(testScenariosPrompt))
+                writeToTranscript("## Step 6: Test Scenario Generation\n\n")
+                writeToTranscript("### Prompt\n\n")
+                writeToTranscript("```\n$testScenariosPrompt\n```\n\n")
+                writeToTranscript("### Response\n\n")
+                writeToTranscript("$testScenariosAnalysis\n\n")
+                writeToTranscript("---\n\n")
 
-        testScenariosLoading?.clear()
-        testScenariosTask.add(
-          MarkdownUtil.renderMarkdown(
-            """
+                testScenariosLoading?.clear()
+                testScenariosTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        """
               |## Test Scenarios
               |
               |✅ Test scenarios generated
               |
               |$testScenariosAnalysis
             """.trimMargin(), ui = ui
-          )
-        )
-        task.update()
-      }
+                    )
+                )
+                task.update()
+            }
 
-      // Step 7: Generate Summary
-      log.info("Step 7: Generating comprehensive summary")
-      val summaryTask = task.ui.newTask(false)
-      tabs["Summary"] = summaryTask.placeholder
+            // Step 7: Generate Summary
+            log.info("Step 7: Generating comprehensive summary")
+            val summaryTask = task.ui.newTask(false)
+            tabs["Summary"] = summaryTask.placeholder
 
-      val summaryLoading = summaryTask.add(
-        MarkdownUtil.renderMarkdown("## Summary\n\n🔄 Generating comprehensive summary...", ui = ui)
-      )
-      task.update()
+            val summaryLoading = summaryTask.add(
+                MarkdownUtil.renderMarkdown("## Summary\n\n🔄 Generating comprehensive summary...", ui = ui)
+            )
+            task.update()
 
-      val summaryPrompt = """
+            val summaryPrompt = """
 Provide a comprehensive summary of the finite state machine analysis:
 
 1. **Overview:** Brief description of the FSM and its purpose
@@ -514,35 +536,35 @@ Provide a comprehensive summary of the finite state machine analysis:
 Keep the summary concise but informative.
       """.trimIndent()
 
-      log.debug("Requesting summary from LLM")
-      val summaryAnalysis = stateAgent.answer(listOf(summaryPrompt))
-      writeToTranscript("## Step 7: Summary\n\n")
-      writeToTranscript("### Prompt\n\n")
-      writeToTranscript("```\n$summaryPrompt\n```\n\n")
-      writeToTranscript("### Response\n\n")
-      writeToTranscript("$summaryAnalysis\n\n")
-      writeToTranscript("---\n\n")
+            log.debug("Requesting summary from LLM")
+            val summaryAnalysis = stateAgent.answer(listOf(summaryPrompt))
+            writeToTranscript("## Step 7: Summary\n\n")
+            writeToTranscript("### Prompt\n\n")
+            writeToTranscript("```\n$summaryPrompt\n```\n\n")
+            writeToTranscript("### Response\n\n")
+            writeToTranscript("$summaryAnalysis\n\n")
+            writeToTranscript("---\n\n")
 
-      summaryLoading?.clear()
-      summaryTask.add(
-        MarkdownUtil.renderMarkdown(
-          """
+            summaryLoading?.clear()
+            summaryTask.add(
+                MarkdownUtil.renderMarkdown(
+                    """
             |## Analysis Summary
             |
             |✅ Summary complete
             |
             |$summaryAnalysis
           """.trimMargin(), ui = ui
-        )
-      )
-      task.update()
+                )
+            )
+            task.update()
 
-      // Final overview update
-      overviewContent?.clear()
-      val totalTime = System.currentTimeMillis() - startTime
-      overviewTask.add(
-        MarkdownUtil.renderMarkdown(
-          """
+            // Final overview update
+            overviewContent?.clear()
+            val totalTime = System.currentTimeMillis() - startTime
+            overviewTask.add(
+                MarkdownUtil.renderMarkdown(
+                    """
             |## Finite State Machine Analysis
             |
             |**Concept:** $conceptToModel
@@ -566,95 +588,99 @@ Keep the summary concise but informative.
             |${if (executionConfig.generate_test_scenarios) "- ✅ Test scenario generation" else ""}
             |- ✅ Summary and recommendations
           """.trimMargin(), ui = ui
-        )
-      )
-      task.update()
+                )
+            )
+            task.update()
 
-      // Build concise result for task dependencies
-      val conciseResult = buildString {
-        appendLine("# FSM Analysis: $conceptToModel")
-        appendLine()
-        appendLine("## Summary")
-        appendLine(summaryAnalysis.take(maxDescriptionLength))
-        if (summaryAnalysis.length > maxDescriptionLength) appendLine("...")
-        appendLine()
-        appendLine("## Key Components")
-        appendLine("- States identified and analyzed")
-        appendLine("- Transitions mapped")
-        appendLine("- State diagram generated")
-        if (executionConfig.identify_edge_cases) appendLine("- Edge cases identified")
-        if (executionConfig.validate_properties) appendLine("- Properties validated")
-        if (executionConfig.generate_test_scenarios) appendLine("- Test scenarios generated")
-      }
+            // Build concise result for task dependencies
+            val conciseResult = buildString {
+                appendLine("# FSM Analysis: $conceptToModel")
+                appendLine()
+                appendLine("## Summary")
+                appendLine(summaryAnalysis.take(maxDescriptionLength))
+                if (summaryAnalysis.length > maxDescriptionLength) appendLine("...")
+                appendLine()
+                appendLine("## Key Components")
+                appendLine("- States identified and analyzed")
+                appendLine("- Transitions mapped")
+                appendLine("- State diagram generated")
+                if (executionConfig.identify_edge_cases) appendLine("- Edge cases identified")
+                if (executionConfig.validate_properties) appendLine("- Properties validated")
+                if (executionConfig.generate_test_scenarios) appendLine("- Test scenarios generated")
+            }
 
-      log.info("FiniteStateMachineTask completed: concept='$conceptToModel', duration=${totalTime}ms, output_size=${conciseResult.length} chars")
-      writeToTranscript("## Completion\n\n")
-      writeToTranscript("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n")
-      writeToTranscript("**Duration:** ${totalTime / 1000.0}s\n\n")
-      writeToTranscript("**Status:** ✅ Analysis complete\n\n")
-      closeTranscript()
+            log.info("FiniteStateMachineTask completed: concept='$conceptToModel', duration=${totalTime}ms, output_size=${conciseResult.length} chars")
+            writeToTranscript("## Completion\n\n")
+            writeToTranscript(
+                "**Completed:** ${
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                }\n\n"
+            )
+            writeToTranscript("**Duration:** ${totalTime / 1000.0}s\n\n")
+            writeToTranscript("**Status:** ✅ Analysis complete\n\n")
+            closeTranscript()
 
-      val (link, _) = task.createFile("fsm_analysis.md")
-      task.complete(
-        "FSM analysis completed for: $conceptToModel. " +
-            "Full analysis written to <a href='$link' target='_blank'>$link</a> " +
-            "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-            "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-      )
-      resultFn(conciseResult)
+            val (link, _) = task.createFile("fsm_analysis.md")
+            task.complete(
+                "FSM analysis completed for: $conceptToModel. " +
+                        "Full analysis written to <a href='$link' target='_blank'>$link</a> " +
+                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
+                        "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+            )
+            resultFn(conciseResult)
 
-    } catch (e: Exception) {
-      val duration = System.currentTimeMillis() - startTime
-      log.error("FiniteStateMachineTask failed after ${duration}ms for concept: $conceptToModel", e)
-      writeToTranscript("## Error\n\n")
-      writeToTranscript("**Failed after:** ${duration}ms\n\n")
-      writeToTranscript("**Error:** ${e.message}\n\n")
-      writeToTranscript("```\n${e.stackTraceToString()}\n```\n\n")
-      closeTranscript()
-      task.error(e)
-      task.complete("Analysis failed: ${e.message}")
-      resultFn("ERROR: FSM analysis failed - ${e.message}")
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            log.error("FiniteStateMachineTask failed after ${duration}ms for concept: $conceptToModel", e)
+            writeToTranscript("## Error\n\n")
+            writeToTranscript("**Failed after:** ${duration}ms\n\n")
+            writeToTranscript("**Error:** ${e.message}\n\n")
+            writeToTranscript("```\n${e.stackTraceToString()}\n```\n\n")
+            closeTranscript()
+            task.error(e)
+            task.complete("Analysis failed: ${e.message}")
+            resultFn("ERROR: FSM analysis failed - ${e.message}")
+        }
     }
-  }
 
-  private fun buildStateIdentificationPrompt(
-    concept: String,
-    domain: String,
-    initialStates: List<String>,
-    priorContext: String,
-    inputFileContent: String
-  ): String {
-    val fileContentSection = if (inputFileContent.isNotBlank()) {
-      """
+    private fun buildStateIdentificationPrompt(
+        concept: String,
+        domain: String,
+        initialStates: List<String>,
+        priorContext: String,
+        inputFileContent: String
+    ): String {
+        val fileContentSection = if (inputFileContent.isNotBlank()) {
+            """
         |
         |## Reference Files:
         |$inputFileContent
       """.trimMargin()
-    } else {
-      ""
-    }
-    val initialStatesSection = if (initialStates.isNotEmpty()) {
-      """
+        } else {
+            ""
+        }
+        val initialStatesSection = if (initialStates.isNotEmpty()) {
+            """
 $fileContentSection
         |
         |## Known Initial States:
         |${initialStates.joinToString("\n") { "- $it" }}
       """.trimMargin()
-    } else {
-      ""
-    }
+        } else {
+            ""
+        }
 
-    val contextSection = if (priorContext.isNotBlank()) {
-      """
+        val contextSection = if (priorContext.isNotBlank()) {
+            """
         |
         |## Context from Previous Tasks:
         |$priorContext
       """.trimMargin()
-    } else {
-      ""
-    }
+        } else {
+            ""
+        }
 
-    return """
+        return """
 You are an expert in formal methods and finite state machine modeling. Your task is to analyze a concept and identify all possible states.
 
 ## Concept to Model:
@@ -683,23 +709,23 @@ Consider:
 
 Provide a comprehensive list of states with detailed descriptions.
     """.trimIndent()
-  }
+    }
 
-  private fun buildTransitionPrompt(
-    statesAnalysis: String,
-    knownEvents: List<String>
-  ): String {
-    val eventsSection = if (knownEvents.isNotEmpty()) {
-      """
+    private fun buildTransitionPrompt(
+        statesAnalysis: String,
+        knownEvents: List<String>
+    ): String {
+        val eventsSection = if (knownEvents.isNotEmpty()) {
+            """
         |
         |## Known Events:
         |${knownEvents.joinToString("\n") { "- $it" }}
       """.trimMargin()
-    } else {
-      ""
-    }
+        } else {
+            ""
+        }
 
-    return """
+        return """
 Based on the states identified above, now identify all possible state transitions.
 
 ## States Analysis:
@@ -724,109 +750,109 @@ Create a comprehensive transition table covering:
 
 Format as a clear table or structured list.
     """.trimIndent()
-  }
+    }
 
-  private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
-    .flatMap { pattern: String ->
-      val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-      (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
-        when {
-          com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-          matcher.matches(root.relativize(it.toPath())) -> true
-          it.isDirectory -> true
-          else -> false
+    private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
+        .flatMap { pattern: String ->
+            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+            (com.simiacryptus.cognotik.util.FileSelectionUtils.filteredWalk(root.toFile()) {
+                when {
+                    com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+                    matcher.matches(root.relativize(it.toPath())) -> true
+                    it.isDirectory -> true
+                    else -> false
+                }
+            })
+        }.filter { file ->
+            file.isFile && file.exists()
         }
-      })
-    }.filter { file ->
-      file.isFile && file.exists()
-    }
-    .distinct()
-    .sortedBy { it }
-    .joinToString("\n\n") { relativePath ->
-      val file = root.toFile().resolve(relativePath)
-      try {
-        val content = if (!isTextFile(file)) {
-          extractDocumentContent(file)
-        } else {
-          codeFiles[file.toPath()] ?: file.readText()
+        .distinct()
+        .sortedBy { it }
+        .joinToString("\n\n") { relativePath ->
+            val file = root.toFile().resolve(relativePath)
+            try {
+                val content = if (!isTextFile(file)) {
+                    extractDocumentContent(file)
+                } else {
+                    codeFiles[file.toPath()] ?: file.readText()
+                }
+                "# $relativePath\n\n```\n$content\n```"
+            } catch (e: Throwable) {
+                log.warn("Error reading file: $relativePath", e)
+                ""
+            }
         }
-        "# $relativePath\n\n```\n$content\n```"
-      } catch (e: Throwable) {
-        log.warn("Error reading file: $relativePath", e)
-        ""
-      }
+
+    private fun isTextFile(file: File): Boolean {
+        val textExtensions = setOf(
+            "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp",
+            "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
+        )
+        return textExtensions.contains(file.extension.lowercase())
     }
 
-  private fun isTextFile(file: File): Boolean {
-    val textExtensions = setOf(
-      "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp",
-      "h", "hpp", "css", "html", "xml", "json", "yaml", "yml", "properties", "gradle", "maven"
-    )
-    return textExtensions.contains(file.extension.lowercase())
-  }
-
-  private fun extractDocumentContent(file: File) = try {
-    file.getDocumentReader().use { reader ->
-      when (reader) {
-        is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
-        else -> reader.getText()
-      }
-    }
-  } catch (e: Exception) {
-    log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
-    try {
-      file.readText()
-    } catch (e2: Exception) {
-      "Error reading file: ${e2.message}"
-    }
-  }
-
-
-  private fun extractMermaidCode(response: String): String {
-    // Try to extract mermaid code block
-    val mermaidBlockRegex = "```mermaid\\s*([\\s\\S]*?)```".toRegex()
-    val match = mermaidBlockRegex.find(response)
-    if (match != null) {
-      return match.groupValues[1].trim()
-    }
-
-    // Try to extract stateDiagram-v2 directly
-    val stateDiagramRegex = "(stateDiagram-v2[\\s\\S]*?)(?=```|$)".toRegex()
-    val stateDiagramMatch = stateDiagramRegex.find(response)
-    if (stateDiagramMatch != null) {
-      return stateDiagramMatch.groupValues[1].trim()
-    }
-
-    return ""
-  }
-
-  private fun writeToTranscript(content: String) {
-    try {
-      transcriptStream?.write(content.toByteArray(Charsets.UTF_8))
-      transcriptStream?.flush()
+    private fun extractDocumentContent(file: File) = try {
+        file.getDocumentReader().use { reader ->
+            when (reader) {
+                is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
+                else -> reader.getText()
+            }
+        }
     } catch (e: Exception) {
-      log.warn("Failed to write to transcript", e)
+        log.warn("Failed to extract content from ${file.name}, falling back to raw text", e)
+        try {
+            file.readText()
+        } catch (e2: Exception) {
+            "Error reading file: ${e2.message}"
+        }
     }
-  }
 
-  private fun closeTranscript() {
-    try {
-      transcriptStream?.close()
-      transcriptStream = null
-    } catch (e: Exception) {
-      log.warn("Failed to close transcript", e)
+
+    private fun extractMermaidCode(response: String): String {
+        // Try to extract mermaid code block
+        val mermaidBlockRegex = "```mermaid\\s*([\\s\\S]*?)```".toRegex()
+        val match = mermaidBlockRegex.find(response)
+        if (match != null) {
+            return match.groupValues[1].trim()
+        }
+
+        // Try to extract stateDiagram-v2 directly
+        val stateDiagramRegex = "(stateDiagram-v2[\\s\\S]*?)(?=```|$)".toRegex()
+        val stateDiagramMatch = stateDiagramRegex.find(response)
+        if (stateDiagramMatch != null) {
+            return stateDiagramMatch.groupValues[1].trim()
+        }
+
+        return ""
     }
-  }
 
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(FiniteStateMachineTask::class.java)
+    private fun writeToTranscript(content: String) {
+        try {
+            transcriptStream?.write(content.toByteArray(Charsets.UTF_8))
+            transcriptStream?.flush()
+        } catch (e: Exception) {
+            log.warn("Failed to write to transcript", e)
+        }
+    }
 
-    val FiniteStateMachine = TaskType(
-      "FiniteStateMachine",
-      FiniteStateMachineTaskExecutionConfigData::class.java,
-      TaskTypeConfig::class.java,
-      "Model concepts using finite state machine analysis",
-      """
+    private fun closeTranscript() {
+        try {
+            transcriptStream?.close()
+            transcriptStream = null
+        } catch (e: Exception) {
+            log.warn("Failed to close transcript", e)
+        }
+    }
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(FiniteStateMachineTask::class.java)
+
+        val FiniteStateMachine = TaskType(
+            "FiniteStateMachine",
+            FiniteStateMachineTaskExecutionConfigData::class.java,
+            TaskTypeConfig::class.java,
+            "Model concepts using finite state machine analysis",
+            """
         Analyzes concepts, systems, or processes using finite state machine modeling.
         <ul>
           <li>Identifies all possible states and their properties</li>
@@ -838,7 +864,7 @@ Format as a clear table or structured list.
           <li>Useful for system design, protocol analysis, and workflow validation</li>
         </ul>
       """
-    )
-  }
+        )
+    }
 }
 

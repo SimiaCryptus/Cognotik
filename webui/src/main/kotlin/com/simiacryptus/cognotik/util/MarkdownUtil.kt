@@ -27,8 +27,7 @@ object MarkdownUtil {
     ): String {
         if (rawMarkdown.isBlank()) return ""
         val markdown = markdownEditor(rawMarkdown)
-        val asHtml = HtmlRenderer.builder(options).build().render(Parser.builder(options).build().parse(markdown))
-            .let { renderMermaid(it, ui, tabs) }
+        val asHtml = markdown.markdownToHtml(options).let { renderMermaid(it, ui, tabs) }
         return when {
             markdown.isBlank() -> ""
             asHtml == rawMarkdown -> asHtml
@@ -48,7 +47,10 @@ object MarkdownUtil {
         }
     }
 
-    private fun renderMermaid(html: String, ui: SocketManager?, tabs: Boolean): String {
+    fun String.markdownToHtml(options: MutableDataSet = defaultOptions()): String =
+        HtmlRenderer.builder(options).build().render(Parser.builder(options).build().parse(this))
+
+    fun renderMermaid(html: String, ui: SocketManager?, tabs: Boolean): String {
         val mermaidRegex =
             Regex("<pre[^>]*><code class=\"language-mermaid\">(.*?)</code></pre>", RegexOption.DOT_MATCHES_ALL)
         val matches = mermaidRegex.findAll(html)

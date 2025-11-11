@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
@@ -8,7 +9,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 
 abstract class ApplicationSocketManager(
     session: Session,
-    owner: User?,
+    owner: User = defaultUser,
     dataStorage: StorageInterface?,
     applicationClass: Class<*>,
 ) : SocketManager(
@@ -28,7 +29,7 @@ abstract class ApplicationSocketManager(
 
     abstract fun userMessage(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         userMessage: String,
         socketManager: ApplicationSocketManager
     )

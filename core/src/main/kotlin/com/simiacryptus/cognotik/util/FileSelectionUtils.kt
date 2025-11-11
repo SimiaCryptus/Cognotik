@@ -11,7 +11,7 @@ import kotlin.io.path.name
 object FileSelectionUtils {
     val log = LoggerFactory.getLogger(FileSelectionUtils::class.java)
 
-fun filteredWalkAsciiTree(
+    fun filteredWalkAsciiTree(
         rootFile: File,
         maxFilesPerDir: Int = 20,
         treatDocumentsAsText: Boolean = false,

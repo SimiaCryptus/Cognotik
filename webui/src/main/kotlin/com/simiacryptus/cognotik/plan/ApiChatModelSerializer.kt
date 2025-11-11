@@ -9,11 +9,11 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
  * Custom serializer for ApiChatModel that only serializes the model name
  */
 class ApiChatModelSerializer : JsonSerializer<ApiChatModel>() {
-  override fun serialize(value: ApiChatModel?, gen: JsonGenerator, serializers: SerializerProvider) {
-    if (value == null) {
-      gen.writeNull()
-    } else {
-      gen.writeString(value.model?.modelName ?: value.model?.name)
+    override fun serialize(value: ApiChatModel?, gen: JsonGenerator, serializers: SerializerProvider) {
+        if (value == null) {
+            gen.writeNull()
+        } else {
+            gen.writeString(value.model?.modelName ?: value.model?.name)
+        }
     }
-  }
 }

@@ -19,7 +19,7 @@ open class ParsedActorTestApp<T : Any>(
 ) {
     override fun userMessage(
         session: Session,
-        user: User?,
+        user: User,
         userMessage: String,
         ui: SocketManager
     ) {

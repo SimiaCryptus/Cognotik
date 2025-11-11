@@ -15,84 +15,84 @@ import java.lang.reflect.Type
 
 object JsonUtil {
 
-  val _initForReading: ThreadLocal<JavaType?> = ThreadLocal.withInitial { null }
-  fun objectMapper(): ObjectMapper {
-    return object : ObjectMapper() {
-      override fun _initForReading(p: JsonParser?, targetType: JavaType?): JsonToken {
+    val _initForReading: ThreadLocal<JavaType?> = ThreadLocal.withInitial { null }
+    fun objectMapper(): ObjectMapper {
+        return object : ObjectMapper() {
+            override fun _initForReading(p: JsonParser?, targetType: JavaType?): JsonToken {
 
-        _initForReading.set(targetType)
-        return super._initForReading(p, targetType)
-      }
-    }
-
-      .enable(JsonParser.Feature.ALLOW_COMMENTS)
-      .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
-      .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
-      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-      .disable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES)
-      .disable(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES)
-      .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
-
-
-      .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS.mappedFeature())
-      .enable(JsonReadFeature.ALLOW_YAML_COMMENTS.mappedFeature())
-      .enable(JsonReadFeature.ALLOW_TRAILING_COMMA.mappedFeature())
-      .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature())
-      .enable(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER.mappedFeature())
-      .enable(JsonReadFeature.ALLOW_MISSING_VALUES.mappedFeature())
-      .enable(JsonReadFeature.ALLOW_LEADING_DECIMAL_POINT_FOR_NUMBERS.mappedFeature())
-      .enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS.mappedFeature())
-
-
-      .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-      .registerModule(
-        KotlinModule.Builder()
-          .withReflectionCacheSize(512)
-          .configure(KotlinFeature.NullToEmptyCollection, false)
-          .configure(KotlinFeature.NullToEmptyMap, false)
-          .configure(KotlinFeature.NullIsSameAsDefault, false)
-          .configure(KotlinFeature.SingletonSupport, false)
-          .configure(KotlinFeature.StrictNullChecks, false)
-          .build()
-      ).registerModule(JavaTimeModule())
-  }
-
-  fun toJson(data: Any?): String = when (data) {
-    null -> "null"
-    is String -> data
-    else -> objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(data)
-  }
-
-  fun <T> fromJson(data: String, type: Type): T {
-    if (type is Class<*> && type.isAssignableFrom(String::class.java)) return data as T
-    val objectMapper = objectMapper()
-    try {
-      val value = objectMapper.readValue(data, objectMapper.typeFactory.constructType(type)) as T
-      if (value is ValidatedObject) {
-        val validate = value.validate()
-        if (null != validate) {
-          log.warn("Validation failed for object of type ${type.typeName} with message: $validate")
+                _initForReading.set(targetType)
+                return super._initForReading(p, targetType)
+            }
         }
-      }
-      return value
-    } catch (e: Exception) {
-      throw RuntimeException("Failed to parse JSON: $data", e)
-    } finally {
-      _initForReading.remove()
-    }
-  }
 
-  val log = LoggerFactory.getLogger(JsonUtil::class.java)
+            .enable(JsonParser.Feature.ALLOW_COMMENTS)
+            .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
+            .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .disable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES)
+            .disable(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES)
+            .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+
+
+            .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS.mappedFeature())
+            .enable(JsonReadFeature.ALLOW_YAML_COMMENTS.mappedFeature())
+            .enable(JsonReadFeature.ALLOW_TRAILING_COMMA.mappedFeature())
+            .enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature())
+            .enable(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER.mappedFeature())
+            .enable(JsonReadFeature.ALLOW_MISSING_VALUES.mappedFeature())
+            .enable(JsonReadFeature.ALLOW_LEADING_DECIMAL_POINT_FOR_NUMBERS.mappedFeature())
+            .enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS.mappedFeature())
+
+
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .registerModule(
+                KotlinModule.Builder()
+                    .withReflectionCacheSize(512)
+                    .configure(KotlinFeature.NullToEmptyCollection, false)
+                    .configure(KotlinFeature.NullToEmptyMap, false)
+                    .configure(KotlinFeature.NullIsSameAsDefault, false)
+                    .configure(KotlinFeature.SingletonSupport, false)
+                    .configure(KotlinFeature.StrictNullChecks, false)
+                    .build()
+            ).registerModule(JavaTimeModule())
+    }
+
+    fun toJson(data: Any?): String = when (data) {
+        null -> "null"
+        is String -> data
+        else -> objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(data)
+    }
+
+    fun <T> fromJson(data: String, type: Type): T {
+        if (type is Class<*> && type.isAssignableFrom(String::class.java)) return data as T
+        val objectMapper = objectMapper()
+        try {
+            val value = objectMapper.readValue(data, objectMapper.typeFactory.constructType(type)) as T
+            if (value is ValidatedObject) {
+                val validate = value.validate()
+                if (null != validate) {
+                    log.warn("Validation failed for object of type ${type.typeName} with message: $validate")
+                }
+            }
+            return value
+        } catch (e: Exception) {
+            throw RuntimeException("Failed to parse JSON: $data", e)
+        } finally {
+            _initForReading.remove()
+        }
+    }
+
+    val log = LoggerFactory.getLogger(JsonUtil::class.java)
 }
 
 fun <T : Any> T.copy(fn: T.() -> Unit): T {
-  return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, this.javaClass).apply { fn(this) } }
+    return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, this.javaClass).apply { fn(this) } }
 }
 
 fun Any.toJson(): String {
-  return JsonUtil.toJson(this)
+    return JsonUtil.toJson(this)
 }
 
 inline fun <reified T> Any.jsonCast(): T {
-  return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, T::class.java) }
+    return JsonUtil.toJson(this).let { JsonUtil.fromJson<T>(it, T::class.java) }
 }

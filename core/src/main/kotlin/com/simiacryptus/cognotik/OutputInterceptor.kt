@@ -12,6 +12,8 @@ object OutputInterceptor {
     private val isSetup = AtomicBoolean(false)
     private val globalStreamLock = Any()
 
+    @JvmStatic
+
     fun setupInterceptor() {
         if (isSetup.getAndSet(true)) return
         System.setOut(PrintStream(OutputStreamRouter(originalOut)))
@@ -29,6 +31,8 @@ object OutputInterceptor {
         }
     }
 
+    @JvmStatic
+
     fun getThreadOutput(): String {
         val outputStream = getThreadOutputStream()
         try {
@@ -39,9 +43,13 @@ object OutputInterceptor {
         return outputStream.toString()
     }
 
+    @JvmStatic
+
     fun clearThreadOutput() {
         getThreadOutputStream().reset()
     }
+
+    @JvmStatic
 
     fun clearGlobalOutput() {
         synchronized(globalStreamLock) {

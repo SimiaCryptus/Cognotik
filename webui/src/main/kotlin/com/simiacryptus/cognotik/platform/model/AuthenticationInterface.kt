@@ -18,7 +18,7 @@ interface AuthenticationInterface {
      * @return The [User] object associated with the token, or null if the token
      *         is invalid, expired, or not provided.
      */
-    fun getUser(accessToken: String?): User?
+    fun getUser(accessToken: String?): User
 
     /**
      * Stores or updates a user session with the given access token.

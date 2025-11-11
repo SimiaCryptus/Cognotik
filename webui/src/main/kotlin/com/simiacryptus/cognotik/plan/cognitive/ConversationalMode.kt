@@ -5,17 +5,11 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.transcript
+import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.toContentList
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -33,7 +27,7 @@ open class ConversationalMode(
   override val task: SessionTask,
   override val orchestrationConfig: OrchestrationConfig,
   override val session: Session,
-  override val user: User?,
+  override val user: User = defaultUser,
   var useExpansionSyntax: Boolean = true
 ) : CognitiveMode {
 
@@ -47,7 +41,7 @@ open class ConversationalMode(
   private val messageBuffer = ConcurrentLinkedQueue<String>()
   private var transcriptStream: FileOutputStream? = null
   private var isProcessing = false
-  private val systemPrompt = "Given the following input, choose ONE task to execute and describe it in detail."
+  private val systemPrompt = "Given the following input, choose ONE task to execute and describe it in detail. Be sure to include all necessary parameters for execution, and all data required to complete the task."
   private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
   private val idSubPattern = """[^|\n,/\\;}\]\[><()@]+""" // Matches any valid identifier character except for special characters used in the expansion syntax
   private val expansionExpressionPattern = Regex("""@\[($idSubPattern(?:[|,]$idSubPattern)+)]""") // Matches @[option1|option2|option3]
@@ -63,14 +57,16 @@ open class ConversationalMode(
     transcriptStream = task.transcript()
     log.debug(
       "Task configurations: ${
-        orchestrationConfig.taskSettings.values.joinToString(", ") {
-          "${it.task_type}${it.name?.let { name -> ":$name" } ?: ""}"
-        }
-      }")
+      orchestrationConfig.taskSettings.values.joinToString(", ") {
+        "${it.task_type}${it.name?.let { name -> ":$name" } ?: ""}"
+      }
+    }")
   }
 
   override fun handleUserMessage(userMessage: String, task: SessionTask) {
     log.debug("Handling user message: ${JsonUtil.toJson(userMessage)}")
+    val parserChatter = orchestrationConfig.parsingChatter.getChildClient(task)
+    val defaultChat = this@ConversationalMode.orchestrationConfig.defaultChatter.getChildClient(task)
 
     synchronized(messagesLock) {
       messageBuffer.add(userMessage)
@@ -89,7 +85,7 @@ open class ConversationalMode(
           sleep(100) // Brief pause to allow batching of messages
           val userMessage = messageBuffer.poll() ?: continue
           val task = this.task.ui.newTask()
-          execute(task, userMessage)
+          execute(task, userMessage, parserChatter, defaultChat)
         }
       } finally {
         synchronized(messagesLock) {
@@ -99,20 +95,26 @@ open class ConversationalMode(
     }
   }
 
-  private fun execute(task: SessionTask, userMessage: String) {
+  private fun execute(task: SessionTask, userMessage: String, parsingChatter: ChatInterface, defaultChat: ChatInterface) {
     try {
       val expandedUserMessage = expandTopics(userMessage)
       synchronized(messagesLock) {
         // Don't add the message yet - it will be added after expansion
       }
-      val expansionFunctions = processMsgRecursive(expandedUserMessage, task)
+      val expansionFunctions = processMsgRecursive(
+        expandedUserMessage, task, parsingChatter, defaultChat
+      )
       val aggregateResponse = StringBuilder()
       runAll(expansionFunctions, aggregateResponse)
       // Now add the original user message and aggregate response to history
       synchronized(messagesLock) {
         messages.add(ModelSchema.ChatMessage(ModelSchema.Role.user, expandedUserMessage.toContentList()))
         if (aggregateResponse.isNotEmpty()) {
-          messages.add(ModelSchema.ChatMessage(ModelSchema.Role.assistant, aggregateResponse.toString().toContentList()))
+          messages.add(
+            ModelSchema.ChatMessage(
+              ModelSchema.Role.assistant, aggregateResponse.toString().toContentList()
+            )
+          )
         }
       }
 
@@ -120,8 +122,8 @@ open class ConversationalMode(
       if (useExpansionSyntax && aggregateResponse.isNotEmpty()) {
         try {
           writeToTranscript("## Assistant\n\n${aggregateResponse}\n\n")
-          val model = orchestrationConfig.defaultChatter.getChildClient(task)
-          val topics = extractTopics(aggregateResponse.toString(), model)
+          val model = defaultChat
+          val topics = extractTopics(aggregateResponse.toString(), model, parsingChatter)
           topics.topics?.forEach { (topicType, entities) ->
             val topicList = aggregateTopics.computeIfAbsent(topicType) { mutableListOf() }
             synchronized(topicList) {
@@ -146,18 +148,20 @@ open class ConversationalMode(
   }
 
   private fun processMsgRecursive(
-    currentMessage: String, task: SessionTask
+    currentMessage: String, task: SessionTask, parsingChatter: ChatInterface, defaultChatter: ChatInterface
   ): List<(StringBuilder) -> Unit> {
     if (useExpansionSyntax) {
       val rangeMatch = rangeExpansionPattern.find(currentMessage)
       if (rangeMatch != null) {
-        return expandRange(currentMessage, task, rangeMatch)
+        return expandRange(
+          currentMessage, task, rangeMatch, parsingChatter, defaultChatter
+        )
       }
       val sequenceMatch = sequenceExpansionPattern.find(currentMessage)
       if (sequenceMatch != null) {
         return listOf { finalAggregate: StringBuilder ->
           expandSequence(
-            task, sequenceMatch.groupValues[1].split(Regex("""\s*->\s*""")), currentMessage, sequenceMatch.value
+            task, sequenceMatch.groupValues[1].split(Regex("""\s*->\s*""")), currentMessage, sequenceMatch.value, defaultChatter, parsingChatter
           )
         }
       }
@@ -166,16 +170,22 @@ open class ConversationalMode(
         return expandAlternatives(
           currentMessage, task, match
         ) { msg, tsk ->
-          processMsgRecursive(msg, tsk)
+          processMsgRecursive(
+            msg, tsk, parsingChatter, defaultChatter = defaultChatter
+          )
         }
       }
     }
     return listOf { aggregateResponse: StringBuilder ->
-      executeTask(currentMessage, task, aggregateResponse)
+      executeTask(
+        currentMessage, task, aggregateResponse, defaultChatter, parsingChatter
+      )
     }
   }
 
-  private fun executeTask(userMessage: String, task: SessionTask, aggregateResponse: StringBuilder) {
+  private fun executeTask(
+    userMessage: String, task: SessionTask, aggregateResponse: StringBuilder, defaultModel: ChatInterface, parserChatter: ChatInterface
+  ) {
     val describer = TaskContextYamlDescriber(orchestrationConfig)
     val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
     Tasks.initDescriber(orchestrationConfig, describer)
@@ -202,8 +212,8 @@ open class ConversationalMode(
           append("\nNote: Some task types have multiple configurations available. You can specify which configuration to use by setting the task_config_name field.")
         }
       },
-      model = orchestrationConfig.defaultChatter.getChildClient(task),
-      parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task),
+      model = defaultModel,
+      parsingChatter = parserChatter,
       temperature = orchestrationConfig.temperature,
       describer = describer,
       parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
@@ -212,12 +222,21 @@ open class ConversationalMode(
         }".trim()
       })
     )
-    // Use the expanded userMessage for task selection
-    val input = getConversationContext() + listOf(
-      "USER: $userMessage", "Please choose a single task to execute based on the current conversation."
+    // Use the expanded userMessage with full conversation context for task selection
+    val conversationContext = getConversationContext()
+    val answer = parsedActor.answer(
+      conversationContext + listOf(
+        "USER: $userMessage",
+        "Please choose a single task to execute based on the current conversation context above."
+      )
     )
-    val answer = parsedActor.answer(input)
     val chosenTasks = answer.obj.tasks?.firstOrNull() ?: throw IllegalStateException("No task was selected")
+    // Add task configuration to conversation history
+    val taskConfigJson = JsonUtil.toJson(chosenTasks)
+    synchronized(messagesLock) {
+      messages.add(ModelSchema.ChatMessage(ModelSchema.Role.assistant, "Executing task:\n```json\n$taskConfigJson\n```".toContentList()))
+    }
+   
     val resultSemaphore = Semaphore(0)
     val resultRef = AtomicReference<String>()
     val tabs = TabbedDisplay(task)
@@ -235,7 +254,7 @@ open class ConversationalMode(
           dataStorage = ui.dataStorage!!,
           root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() } ?: ui.dataStorage.getSessionDir(user, session).toPath()
           ?: File(".").toPath()),
-        messages = listOf(userMessage),
+        messages = getConversationContext().takeLast(10) + listOf("USER: $userMessage"),
         task = this,
         resultFn = { result ->
           ui.newTask(false).apply {
@@ -259,7 +278,7 @@ open class ConversationalMode(
    * Executes a list of functions, each appending to the target StringBuilder, potentially in parallel.
    */
   private fun runAll(function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
-    val fixedConcurrencyProcessor = com.simiacryptus.cognotik.util.FixedConcurrencyProcessor(task.ui.pool, 4)
+    val fixedConcurrencyProcessor = FixedConcurrencyProcessor(task.ui.pool, 4)
     function1s.map { function1 ->
       fixedConcurrencyProcessor.submit {
         function1(target)
@@ -272,7 +291,7 @@ open class ConversationalMode(
    * Creates a sequence of numbers from start to end with the given step (default 1)
    */
   private fun expandRange(
-    currentMessage: String, task: SessionTask, rangeMatch: MatchResult
+    currentMessage: String, task: SessionTask, rangeMatch: MatchResult, parsingChatter: ChatInterface, defaultChatter: ChatInterface
   ): List<(StringBuilder) -> Unit> = listOf { finalAggregate: StringBuilder ->
     val start = rangeMatch.groupValues[1].toInt()
     val end = rangeMatch.groupValues[2].toInt()
@@ -281,7 +300,9 @@ open class ConversationalMode(
       task,
       generateSequence(start) { it + step }.takeWhile { if (step > 0) it <= end else it >= end }.toList().map { it.toString() },
       currentMessage,
-      rangeMatch.value
+      rangeMatch.value,
+      defaultChatter,
+      parsingChatter
     )
   }
 
@@ -302,14 +323,18 @@ open class ConversationalMode(
   }
 
   private fun expandSequence(
-    task: SessionTask, items: List<String>, currentMessage: String, expression: String
+    task: SessionTask, items: List<String>, currentMessage: String, expression: String, defaultChatter: ChatInterface, parsingChatter: ChatInterface
   ) {
     val aggregatedResponse = StringBuilder()
     val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
     for (item in items) {
       val newMessage = currentMessage.replaceFirst(expression, item)
       val subTaskFunctions = processMsgRecursive(
-        currentMessage = newMessage, task = this.task.ui.newTask(false).apply { tabs[item] = placeholder })
+        currentMessage = newMessage,
+        task = this.task.ui.newTask(false).apply { tabs[item] = placeholder },
+        defaultChatter = defaultChatter,
+        parsingChatter = parsingChatter
+      )
       val subAggregate = StringBuilder()
       runAll(subTaskFunctions, subAggregate)
       aggregatedResponse.append("[").append(item).append("]\n").append(subAggregate.toString()).append("\n")
@@ -336,14 +361,14 @@ open class ConversationalMode(
     }
   }
 
-  private fun extractTopics(response: String, model: ChatInterface): Topics {
+  private fun extractTopics(response: String, model: ChatInterface, chatInterface: ChatInterface): Topics {
     val topicsParsedActor = ParsedAgent(
       resultClass = Topics::class.java,
       prompt = "Identify topics (i.e. all named entities grouped by type) in the following text:",
       model = model,
       temperature = orchestrationConfig.temperature,
       name = "Topics",
-      parsingChatter = orchestrationConfig.parsingChatter,
+      parsingChatter = chatInterface,
     )
     return topicsParsedActor.getParser().apply(response)
   }
@@ -385,7 +410,7 @@ open class ConversationalMode(
 
     override val inputCnt = 1
     override fun getCognitiveMode(
-      task: SessionTask, orchestrationConfig: OrchestrationConfig, session: Session, user: User?
+      task: SessionTask, orchestrationConfig: OrchestrationConfig, session: Session, user: User
     ) = ConversationalMode(task, orchestrationConfig, session, user, useExpansionSyntax = true)
 
     private val messageMaps = ConcurrentHashMap<Session, ConcurrentLinkedQueue<ModelSchema.ChatMessage>>()

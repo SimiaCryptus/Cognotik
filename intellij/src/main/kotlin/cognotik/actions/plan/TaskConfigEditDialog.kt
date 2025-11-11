@@ -20,9 +20,10 @@ import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.SubPlanningTask
 import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.plan.tools.online.fetch.FetchMethod
+import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.plan.tools.online.seed.SeedMethod
+import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
 import java.awt.Component
 import java.awt.Dimension
 import javax.swing.*
@@ -91,6 +92,7 @@ class TaskConfigEditDialog(
             is CrawlerAgentTask.CrawlerTaskTypeConfig -> createCrawlerFields(config)
             is MCPToolTask.MCPToolTaskTypeConfig -> createMCPToolFields(config)
             is SubPlanningTask.SubPlanningTaskTypeConfig -> createSubPlanningFields(config)
+            is PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig -> createPersuasiveEssayFields(config)
             // Add more task types as needed
         }
     }
@@ -165,7 +167,7 @@ class TaskConfigEditDialog(
         }
     }
 
-private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: SubPlanningTask.SubPlanningTaskTypeConfig) {
+    private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: SubPlanningTask.SubPlanningTaskTypeConfig) {
         group("Sub-Planning Settings") {
             row("Purpose:") {
                 val textArea = JBTextArea(3, 40)
@@ -329,8 +331,7 @@ private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: Su
     }
 
 
-
-private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: CrawlerAgentTask.CrawlerTaskTypeConfig) {
+    private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: CrawlerAgentTask.CrawlerTaskTypeConfig) {
         group("Web Crawler Settings") {
             row("Processing Strategy:") {
                 val strategies = ProcessingStrategyType.entries.map { it.name }.toTypedArray()
@@ -566,6 +567,55 @@ private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: Crawle
                 }
             }
         }
+        // Validate PersuasiveEssayTask numeric fields
+        if (config is PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig) {
+            val thesis = (configFields["thesis"] as? JBTextArea)?.text?.trim()
+            if (thesis.isNullOrEmpty()) {
+                Messages.showWarningDialog(
+                    "Thesis statement cannot be empty",
+                    "Invalid Value"
+                )
+                configFields["thesis"]?.requestFocusInWindow()
+                return false
+            }
+            val wordCount = (configFields["target_word_count"] as? JBTextField)?.text?.trim()
+            if (!wordCount.isNullOrEmpty()) {
+                val value = wordCount.toIntOrNull()
+                if (value == null || value <= 0) {
+                    Messages.showWarningDialog(
+                        "Target Word Count must be a positive number",
+                        "Invalid Value"
+                    )
+                    configFields["target_word_count"]?.requestFocusInWindow()
+                    return false
+                }
+            }
+            val numArgs = (configFields["num_arguments"] as? JBTextField)?.text?.trim()
+            if (!numArgs.isNullOrEmpty()) {
+                val value = numArgs.toIntOrNull()
+                if (value == null || value !in 1..10) {
+                    Messages.showWarningDialog(
+                        "Number of Arguments must be between 1 and 10",
+                        "Invalid Value"
+                    )
+                    configFields["num_arguments"]?.requestFocusInWindow()
+                    return false
+                }
+            }
+            val revisionPasses = (configFields["revision_passes"] as? JBTextField)?.text?.trim()
+            if (!revisionPasses.isNullOrEmpty()) {
+                val value = revisionPasses.toIntOrNull()
+                if (value == null || value !in 0..5) {
+                    Messages.showWarningDialog(
+                        "Revision Passes must be between 0 and 5",
+                        "Invalid Value"
+                    )
+                    configFields["revision_passes"]?.requestFocusInWindow()
+                    return false
+                }
+            }
+        }
+
 
         // Validate numeric fields
         configFields.forEach { (key, component) ->
@@ -655,7 +705,7 @@ private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: Crawle
             }
 
 
-is CrawlerAgentTask.CrawlerTaskTypeConfig -> {
+            is CrawlerAgentTask.CrawlerTaskTypeConfig -> {
                 CrawlerAgentTask.CrawlerTaskTypeConfig(
                     task_type = baseConfig.task_type!!,
                     name = baseConfig.name,
@@ -685,7 +735,7 @@ is CrawlerAgentTask.CrawlerTaskTypeConfig -> {
                 )
             }
 
-is SubPlanningTask.SubPlanningTaskTypeConfig -> {
+            is SubPlanningTask.SubPlanningTaskTypeConfig -> {
                 SubPlanningTask.SubPlanningTaskTypeConfig(
                     task_type = baseConfig.task_type!!,
                     name = baseConfig.name,
@@ -694,12 +744,37 @@ is SubPlanningTask.SubPlanningTaskTypeConfig -> {
                     cognitiveMode = CognitiveModeStrategies.valueOf(
                         (configFields["cognitiveMode"] as? ComboBox<*>)?.selectedItem as? String ?: "Waterfall"
                     ),
-                    taskSettings = (config as SubPlanningTask.SubPlanningTaskTypeConfig).taskSettings.toMutableMap()
+                    taskSettings = config.taskSettings.toMutableMap()
                 )
             }
 
+            is PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig -> {
+                PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig(
+                    generate_images = (configFields["generate_images"] as? JCheckBox)?.isSelected ?: true,
+                    generate_cover_image = (configFields["generate_cover_image"] as? JCheckBox)?.isSelected ?: true,
+                )
+            }
 
             else -> baseConfig
+        }
+    }
+
+    private fun com.intellij.ui.dsl.builder.Panel.createPersuasiveEssayFields(config: PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig) {
+        group("Image Generation") {
+            row {
+                val generateImagesCheckbox = JCheckBox("Generate Images", config.generate_images)
+                generateImagesCheckbox.toolTipText = "Generate visualization images for arguments"
+                cell(generateImagesCheckbox)
+                    .comment("Enable to generate images for essay visualization")
+                configFields["generate_images"] = generateImagesCheckbox
+            }
+            row {
+                val coverImageCheckbox = JCheckBox("Generate Cover Image", config.generate_cover_image)
+                coverImageCheckbox.toolTipText = "Generate a professional cover image"
+                cell(coverImageCheckbox)
+                    .comment("Enable to generate a cover image for the essay")
+                configFields["generate_cover_image"] = coverImageCheckbox
+            }
         }
     }
 

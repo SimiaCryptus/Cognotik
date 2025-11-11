@@ -28,10 +28,10 @@ import java.util.concurrent.Executors
  * This allows for switching between different planning and execution strategies.
  */
 abstract class UnifiedPlanApp(
-  path: String,
-  applicationName: String = "Unified Planning App",
-  showMenubar: Boolean = true,
-  var useExpansionSyntax: Boolean = true,
+    path: String,
+    applicationName: String = "Unified Planning App",
+    showMenubar: Boolean = true,
+    var useExpansionSyntax: Boolean = true,
 ) : ApplicationServer(
     applicationName = applicationName,
     path = path,
@@ -72,14 +72,14 @@ abstract class UnifiedPlanApp(
     abstract fun instance(model: ApiChatModel): ChatInterface
 
     override fun newSession(
-        user: User?,
+        user: User,
         session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
         val settings = getSettings(session, user, OrchestrationConfig::class.java)
         useExpansionSyntax = when (settings?.cognitiveMode) {
-          CognitiveModeStrategies.Chat -> true
-          else -> false
+            CognitiveModeStrategies.Chat -> true
+            else -> false
         }
         if (useExpansionSyntax) {
             socketManager.newTask(cancelable = false, root = true).expandable(
@@ -128,7 +128,7 @@ ${settings?.toJson()}
 
     override fun userMessage(
         session: Session,
-        user: User?,
+        user: User,
         userMessage: String,
         ui: SocketManager
     ) {
@@ -205,7 +205,7 @@ ${settings?.toJson()}
      */
     private fun processMessageWithExpansions(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         userMessage: String,
         ui: SocketManager,
         orchestrationConfig: OrchestrationConfig
@@ -229,7 +229,7 @@ ${settings?.toJson()}
      */
     private fun processMessageRecursive(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,
@@ -271,7 +271,7 @@ ${settings?.toJson()}
      */
     private fun expandRange(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,
@@ -305,7 +305,7 @@ ${settings?.toJson()}
      */
     private fun expandSequence(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,
@@ -331,7 +331,7 @@ ${settings?.toJson()}
      */
     private fun expandParallel(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,
@@ -367,7 +367,7 @@ ${settings?.toJson()}
      */
     private fun expandSequenceItems(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
         currentMessage: String,
         ui: SocketManager,
         task: SessionTask,

@@ -9,15 +9,15 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
 
 open class ImageActorTestApp(
-  private val actor: ImageGenerationAgent,
-  applicationName: String = "ImageActorTest_" + actor.javaClass.simpleName,
+    private val actor: ImageGenerationAgent,
+    applicationName: String = "ImageActorTest_" + actor.javaClass.simpleName,
 ) : ApplicationServer(
     applicationName = applicationName,
     path = "/imageActorTest",
 ) {
 
     data class Settings(
-      val actor: ImageGenerationAgent? = null,
+        val actor: ImageGenerationAgent? = null,
     )
 
     override val settingsClass: Class<*> get() = Settings::class.java
@@ -27,7 +27,7 @@ open class ImageActorTestApp(
 
     override fun userMessage(
         session: Session,
-        user: User?,
+        user: User,
         userMessage: String,
         ui: SocketManager
     ) {

@@ -128,28 +128,38 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
 
     private fun getPackageGroup(taskType: TaskType<*, *>): String {
         return when {
-              taskType.name in listOf(
-            "MultiPerspectiveAnalysis", "SocraticDialogue", "AnalogicalReasoning",
-            "CounterfactualAnalysis", "AbstractionLadder", "ConstraintSatisfaction",
-            "CausalInference", "DecompositionSynthesis",
-            "AbductiveReasoning", "AdversarialReasoning", "ConstraintRelaxation",
-            "DialecticalReasoning", "LateralThinking",
-            "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
-            "GameTheory", "FiniteStateMachine", "Brainstorming",
-            "ChainOfThought", "MetaCognitiveReflection", "GeneticOptimization",
-            "EthicalReasoning"
-          ) -> "Reasoning"
+            taskType.name in listOf(
+                "SocraticDialogue", "AnalogicalReasoning",
+                "CounterfactualAnalysis", "AbstractionLadder", "ConstraintSatisfaction",
+                "CausalInference", "DecompositionSynthesis", "AbductiveReasoning",
+                "AdversarialReasoning", "ConstraintRelaxation", "LateralThinking",
+                "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
+                "FiniteStateMachine", "Brainstorming",
+                "ChainOfThought", "MetaCognitiveReflection", "GeneticOptimization",
+            ) -> "Reasoning"
 
-          taskType.name in listOf(
+            taskType.name in listOf(
+                "PoliticalOptimization", "MultiPerspectiveAnalysis", "DialecticalReasoning",
+                "GameTheory", "EthicalReasoning", "LLMExperiment",
+                "LLMPollSimulation", "PersuasiveEssay",
+            ) -> "Social"
+
+            taskType.name in listOf(
+                "GameLevelDesign", "GameNarrativeDesign", "GameMechanicsDesign", "GameEconomy",
+            ) -> "Gaming"
+
+            taskType.name in listOf(
             "NarrativeGeneration", "NarrativeReasoning", "ArticleGeneration",
-            "PersuasiveEssay", "TechnicalExplanation", "TutorialGeneration",
+            "TechnicalExplanation", "TutorialGeneration",
             "BusinessProposal", "EmailCampaign", "InteractiveStory",
-            "ReportGeneration", "Scriptwriting", "JournalismReasoning"
+            "ReportGeneration", "Scriptwriting", "JournalismReasoning",
+            "ResearchPaperGeneration",
           ) -> "Writing"
 
           taskType.name in listOf(
                 "Analysis", "FileModification", "FileSearch",
-                "WriteHtml", "GeneratePresentation", "GenerateImage"
+                "WriteHtml", "GeneratePresentation", "GenerateImage",
+              "IllustrateDocument",
             ) -> "File Operations"
 
             taskType.name in listOf("VectorSearch", "KnowledgeIndexing") -> "Knowledge Management"
@@ -168,11 +178,10 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
     }
 
     private fun updateDescription(taskType: TaskType<*, *>) {
-
-        val htmlContent = buildString {
-            append("<html><body style='font-family: sans-serif; padding: 10px;'>")
-            append("<h3 style='margin-top: 0;'>${taskType.name}</h3>")
-            append("<p><b>Description:</b> ${taskType.description ?: "No description available"}</p>")
+        descriptionPane.text = buildString {
+            this.append("<html><body style='font-family: sans-serif; padding: 10px;'>")
+            this.append("<h3 style='margin-top: 0;'>${taskType.name}</h3>")
+            this.append("<p><b>Description:</b> ${taskType.description ?: "No description available"}</p>")
             taskType.tooltipHtml?.let { html ->
                 // Extract content between body tags or use as-is if no body tags
                 val content = if (html.contains("<body")) {
@@ -182,11 +191,10 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
                 } else {
                     html.replace("<html>", "").replace("</html>", "")
                 }
-                append(content)
+                this.append(content)
             }
-            append("</body></html>")
+            this.append("</body></html>")
         }
-        descriptionPane.text = htmlContent
         descriptionPane.caretPosition = 0
     }
 

@@ -174,7 +174,7 @@ class TestResultAutofixAction : BaseAction() {
     ) {
         override val inputCnt = 1
         override val stickyInput = false
-        override fun newSession(user: User?, session: Session): SocketManager {
+        override fun newSession(user: User, session: Session): SocketManager {
             val socketManager = super.newSession(user, session)
             val task = socketManager.newTask(cancelable = false)
             task.add("Analyzing test result and suggesting fixes...")

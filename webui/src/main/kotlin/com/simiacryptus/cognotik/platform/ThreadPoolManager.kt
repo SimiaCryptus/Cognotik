@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.platform
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -24,7 +25,7 @@ open class ThreadPoolManager {
 
     fun getPool(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
     ) = poolCache.getOrPut(SessionKey(session, user)) {
         log.debug("Creating thread pool for session: {}, user: {}", session, user)
         createPool(session, user)
@@ -32,7 +33,7 @@ open class ThreadPoolManager {
 
     fun getScheduledPool(
         session: Session,
-        user: User?,
+        user: User = defaultUser,
     ) = scheduledPoolCache.getOrPut(SessionKey(session, user)) {
         log.debug("Creating scheduled pool for session: {}", session)
         createScheduledPool(session, user)

@@ -21,7 +21,7 @@ open class CodingActorTestApp(
     path = "/codingActorTest",
 ) {
     override fun userMessage(
-        session: Session, user: User?, userMessage: String, ui: SocketManager
+        session: Session, user: User, userMessage: String, ui: SocketManager
     ) {
         val message = ui.newTask()
         try {

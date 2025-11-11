@@ -2,11 +2,13 @@
 
 ## Analysis
 
-Based on the comprehensive documentation of reasoning task types, I'll create a decision tree that helps select the most appropriate reasoning strategy based on the problem characteristics.
+Based on the comprehensive documentation of reasoning task types, I'll create a decision tree that helps select the most
+appropriate reasoning strategy based on the problem characteristics.
 
 ## Decision Tree Plan
 
 The decision tree will branch based on:
+
 1. **Problem Type** (What are you trying to do?)
 2. **Uncertainty Level** (How much is known?)
 3. **Complexity** (How complex is the problem?)
@@ -122,12 +124,14 @@ graph TD
 ### Quick Reference by Problem Type:
 
 **🔍 EXPLAIN/UNDERSTAND (Blue)**
+
 - Unknown causes → **Abductive Reasoning**
 - Prove causation → **Causal Inference**
 - Time-based evolution → **Temporal Reasoning**
 - Story-based understanding → **Narrative Reasoning**
 
 **🎯 SOLVE/DECIDE (Orange)**
+
 - High uncertainty → **Probabilistic Reasoning**
 - Many constraints → **Constraint Satisfaction** or **Constraint Relaxation**
 - Complex multi-step → **Chain of Thought** or **Decomposition Synthesis**
@@ -135,6 +139,7 @@ graph TD
 - Need options → **Brainstorming**
 
 **📊 ANALYZE (Purple)**
+
 - Complex systems → **Systems Thinking**
 - State machines → **Finite State Machine**
 - Concepts/abstractions → **Abstraction Ladder** or **Socratic Dialogue**
@@ -143,9 +148,11 @@ graph TD
 - What-if scenarios → **Counterfactual Analysis**
 
 **✨ GENERATE/CREATE (Green)**
+
 - Unconventional ideas → **Lateral Thinking**
 - Cross-domain analogies → **Analogical Reasoning**
 - Complete stories → **Narrative Generation**
 - Optimize text → **Genetic Optimization**
 
-This decision tree provides a systematic way to select the most appropriate reasoning strategy based on your specific problem characteristics and goals.
+This decision tree provides a systematic way to select the most appropriate reasoning strategy based on your specific
+problem characteristics and goals.

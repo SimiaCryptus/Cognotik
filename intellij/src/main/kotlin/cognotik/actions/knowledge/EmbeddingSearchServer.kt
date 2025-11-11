@@ -57,7 +57,7 @@ class EmbeddingSearchServer(
         }
     }
 
-    override fun newSession(user: User?, session: Session): SocketManager {
+    override fun newSession(user: User, session: Session): SocketManager {
         val socketManager = super.newSession(user, session)
         socketManager.pool.submit {
             val task = socketManager.newTask(cancelable = false, root = true)

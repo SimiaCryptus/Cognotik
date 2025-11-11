@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui
 
+import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.agents.ImageGenerationAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.StressTestApp
 import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
 import com.simiacryptus.cognotik.apps.parse.DocumentParsingModel
@@ -75,13 +75,16 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                 )
             ),
 
-            ChildWebApp("/images", ImageActorTestApp(ImageGenerationAgent(
-              textModel = model,
-              imageModel = TODO(),
-              imageClient = TODO()
-            ).apply {
-                this.imageModel = GeminiImageModels.Imagen4Fast
-            })),
+            ChildWebApp(
+                "/images", ImageActorTestApp(
+                    ImageGenerationAgent(
+                        textModel = model,
+                        imageModel = TODO(),
+                        imageClient = TODO()
+                    ).apply {
+                        this.imageModel = GeminiImageModels.Imagen4Fast
+                    })
+            ),
 
             ChildWebApp(
                 "/test_coding_kotlin",

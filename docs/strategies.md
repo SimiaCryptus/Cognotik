@@ -2,7 +2,8 @@
 
 ## Overview
 
-This application employs several sophisticated strategy patterns that allow for extensibility and customization. These strategies enable developers to add new
+This application employs several sophisticated strategy patterns that allow for extensibility and customization. These
+strategies enable developers to add new
 capabilities without modifying core code, following the Open/Closed Principle.
 
 ## Table of Contents
@@ -19,10 +20,13 @@ capabilities without modifying core code, following the Open/Closed Principle.
 
 ### The Scaling Paradox
 
-One of the most powerful but underappreciated aspects of well-designed strategy systems is their **multiplicative scaling characteristic**. Unlike linear
-systems where adding a new feature increases capability by a fixed amount, strategy systems exhibit **exponential capability expansion** where each new strategy
+One of the most powerful but underappreciated aspects of well-designed strategy systems is their **multiplicative
+scaling characteristic**. Unlike linear
+systems where adding a new feature increases capability by a fixed amount, strategy systems exhibit **exponential
+capability expansion** where each new strategy
 makes all existing strategies more powerful.
-This creates a paradox: a small increment in code (one new strategy) produces a significant expansion in overall application capability (that strategy works
+This creates a paradox: a small increment in code (one new strategy) produces a significant expansion in overall
+application capability (that strategy works
 with all existing strategies).
 
 ### Mathematical Model of Strategy Scaling
@@ -68,7 +72,8 @@ The application demonstrates this scaling principle in practice:
 | v1.5 | 5 | 9 | 12 | 3 | 1,620 | +462% |
 | v2.0 | 8 | 12 | 26 | 5 | 12,480 | +670% |
 | v2.5 | 8 | 15 | 26 | 5 | 15,600 | +25% |
-Notice: Adding 3 chat models (v2.0→v2.5) increased total capability by 25%, despite being only a 20% increase in one dimension.
+Notice: Adding 3 chat models (v2.0→v2.5) increased total capability by 25%, despite being only a 20% increase in one
+dimension.
 
 ### Why Strategies Scale Multiplicatively
 
@@ -225,7 +230,8 @@ This is the power of composition: the system does far more than the sum of its e
 
 #### 1. Accelerating Development Velocity
 
-As the system grows, each new strategy has **more existing strategies to combine with**, making each addition more valuable:
+As the system grows, each new strategy has **more existing strategies to combine with**, making each addition more
+valuable:
 
  ```
  Strategy #1: Creates 1 new capability
@@ -472,84 +478,107 @@ The strategy pattern provides a **multiplicative scaling advantage** that become
 | Development Cost | Increasing | Constant |
 | ROI per Feature | Decreasing | Increasing |
 | Time to Market | Slowing | Accelerating |
-This is why the application grew from a handful of implementations to 26+ task types not through months of manual coding, but through an iterative process of
-AI-assisted generation and refinement—each new strategy multiplied the value of all existing strategies, creating a virtuous cycle of capability expansion.
-The key insight: **In a well-designed strategy system, adding one new strategy doesn't just add one new capability—it multiplies capability across all existing
+This is why the application grew from a handful of implementations to 26+ task types not through months of manual
+coding, but through an iterative process of
+AI-assisted generation and refinement—each new strategy multiplied the value of all existing strategies, creating a
+virtuous cycle of capability expansion.
+The key insight: **In a well-designed strategy system, adding one new strategy doesn't just add one new capability—it
+multiplies capability across all existing
 strategies, creating exponential growth from linear code additions.**
 
 ## Historical Context: Interoperability and Analogies as Foundational Principles
 
 ### The Enduring Power of Interoperability
 
-Interoperability—the ability of different systems to work together seamlessly—is not a modern software concept. It represents one of humanity's most fundamental
+Interoperability—the ability of different systems to work together seamlessly—is not a modern software concept. It
+represents one of humanity's most fundamental
 and enduring challenges, solved repeatedly across millennia:
 
 #### Ancient and Classical Examples
 
-* **Trade Routes and Standards**: The Silk Road succeeded not just through geography but through standardized measurements, weights, and exchange protocols that
+* **Trade Routes and Standards**: The Silk Road succeeded not just through geography but through standardized
+  measurements, weights, and exchange protocols that
   allowed merchants from vastly different cultures to trade effectively
-* **Roman Engineering**: The Roman Empire's dominance partly stemmed from standardized construction methods, materials specifications, and measurement systems
+* **Roman Engineering**: The Roman Empire's dominance partly stemmed from standardized construction methods, materials
+  specifications, and measurement systems
   that allowed infrastructure to be built consistently across diverse territories
-* **Maritime Navigation**: The development of standardized nautical charts, compass conventions, and port protocols enabled ships from different nations to
+* **Maritime Navigation**: The development of standardized nautical charts, compass conventions, and port protocols
+  enabled ships from different nations to
   navigate and trade together
-* **Printing Press**: Gutenberg's innovation wasn't just the press itself, but the standardization of typefaces, paper sizes, and binding methods that made
+* **Printing Press**: Gutenberg's innovation wasn't just the press itself, but the standardization of typefaces, paper
+  sizes, and binding methods that made
   books interoperable across printers and regions
 
 #### Industrial Revolution Interoperability
 
 The Industrial Revolution was fundamentally an interoperability revolution:
 
-* **Standardized Parts**: Eli Whitney's interchangeable parts manufacturing (1798) transformed production by ensuring components from different makers could
+* **Standardized Parts**: Eli Whitney's interchangeable parts manufacturing (1798) transformed production by ensuring
+  components from different makers could
   work together
-* **Railway Standards**: The adoption of standard gauge tracks (4 ft 8.5 in) allowed trains and cargo to move seamlessly across different railway companies and
+* **Railway Standards**: The adoption of standard gauge tracks (4 ft 8.5 in) allowed trains and cargo to move seamlessly
+  across different railway companies and
   nations
-* **Electrical Standards**: The "War of Currents" (AC vs DC) was ultimately resolved through standardization, enabling electrical systems from different
+* **Electrical Standards**: The "War of Currents" (AC vs DC) was ultimately resolved through standardization, enabling
+  electrical systems from different
   manufacturers to interoperate
-* **Screw Threads**: The adoption of standardized screw threads (Whitworth, metric) allowed fasteners from different manufacturers to work together reliably
+* **Screw Threads**: The adoption of standardized screw threads (Whitworth, metric) allowed fasteners from different
+  manufacturers to work together reliably
 
 #### Modern Industrial Examples
 
-* **Container Shipping**: The ISO 20-foot and 40-foot container standards revolutionized global trade by making cargo interoperable across ships, trains, and
+* **Container Shipping**: The ISO 20-foot and 40-foot container standards revolutionized global trade by making cargo
+  interoperable across ships, trains, and
   trucks
 * **Telecommunications**: The OSI model and TCP/IP protocols enable networks from different vendors to communicate
-* **Manufacturing**: Industry 4.0 relies on standardized interfaces allowing robots, sensors, and systems from different manufacturers to work together
+* **Manufacturing**: Industry 4.0 relies on standardized interfaces allowing robots, sensors, and systems from different
+  manufacturers to work together
 
 ### The Philosophical Importance of Analogies
 
-Analogical reasoning is not merely a rhetorical device—it's a fundamental cognitive tool that has driven human understanding across all disciplines:
+Analogical reasoning is not merely a rhetorical device—it's a fundamental cognitive tool that has driven human
+understanding across all disciplines:
 
 #### Ancient Philosophy
 
 * **Plato's Allegory of the Cave**: Used analogy to explain the nature of reality and perception
-* **Aristotle's Analogical Reasoning**: Formalized analogy as a logical tool, recognizing it as essential to scientific reasoning
-* **Buddhist Philosophy**: Extensively used analogies (the raft, the finger pointing at the moon) to convey non-conceptual truths
+* **Aristotle's Analogical Reasoning**: Formalized analogy as a logical tool, recognizing it as essential to scientific
+  reasoning
+* **Buddhist Philosophy**: Extensively used analogies (the raft, the finger pointing at the moon) to convey
+  non-conceptual truths
 
 #### Scientific Discovery Through Analogy
 
-* **Maxwell's Electromagnetic Theory**: James Clerk Maxwell used mechanical analogies (rotating cells, idle wheels) to develop equations describing
+* **Maxwell's Electromagnetic Theory**: James Clerk Maxwell used mechanical analogies (rotating cells, idle wheels) to
+  develop equations describing
   electromagnetic phenomena
-* **Bohr's Atomic Model**: Niels Bohr used the solar system as an analogy to explain atomic structure, providing crucial intuition despite later refinement
+* **Bohr's Atomic Model**: Niels Bohr used the solar system as an analogy to explain atomic structure, providing crucial
+  intuition despite later refinement
 * **Darwin's Evolution**: Darwin used artificial selection (breeding) as an analogy to understand natural selection
 * **Rutherford's Nuclear Model**: Used the solar system analogy to propose the nuclear structure of atoms
 * **Schrödinger's Wave Equation**: Developed through analogies between particle motion and wave phenomena
 
 #### Engineering and Design
 
-* **Biomimicry**: The Velcro fastener was developed by analogy to burrs clinging to fur; modern aircraft designs use bird wing analogies
-* **Structural Engineering**: Suspension bridges use analogies to hanging chains; arch bridges use analogies to natural stone formations
+* **Biomimicry**: The Velcro fastener was developed by analogy to burrs clinging to fur; modern aircraft designs use
+  bird wing analogies
+* **Structural Engineering**: Suspension bridges use analogies to hanging chains; arch bridges use analogies to natural
+  stone formations
 * **Materials Science**: Understanding material properties often proceeds through analogies to familiar substances
 
 #### Business and Economics
 
 * **Supply Chain Management**: Modern supply chains use analogies to biological systems (metabolism, immune response)
-* **Organizational Structure**: Companies use analogies to organisms, ecosystems, and military hierarchies to understand organizational dynamics
+* **Organizational Structure**: Companies use analogies to organisms, ecosystems, and military hierarchies to understand
+  organizational dynamics
 * **Market Dynamics**: Economists use analogies to fluid dynamics, thermodynamics, and evolutionary biology
 
 #### Medicine and Biology
 
 * **Germ Theory**: Pasteur's understanding of disease used analogies to fermentation and decay
 * **Immune System**: Described through military analogies (defense, attack, memory) that shaped research directions
-* **Neuroscience**: Brain function understood through analogies to telephone networks, then computers, now distributed systems
+* **Neuroscience**: Brain function understood through analogies to telephone networks, then computers, now distributed
+  systems
 
 ### Why Analogies and Interoperability Matter
 
@@ -576,7 +605,8 @@ Interoperability and analogical thinking provide:
 
 * **Universality**: The same principles appear across vastly different domains
 * **Emergence**: Complex systems emerge from simple interoperable components
-* **Abstraction**: Both interoperability and analogies work through abstraction—identifying essential patterns beneath surface differences
+* **Abstraction**: Both interoperability and analogies work through abstraction—identifying essential patterns beneath
+  surface differences
 * **Understanding**: True understanding often comes through recognizing analogies between domains
 
 ### The Danger of Forgetting These Principles
@@ -595,27 +625,37 @@ History shows that when organizations or societies ignore interoperability and a
 
 ### Why Strategies Matter for Generative AI
 
-In any large software project, you'll frequently encounter what's known as the Strategy Pattern—essentially, an interface with multiple implementations that can
-be plugged in various ways. This architectural pattern becomes particularly crucial when working with generative AI for several key reasons:
-The strategy pattern is powerful precisely because it embodies the principles of interoperability and analogical thinking that have proven valuable across human
-endeavor. By creating standardized interfaces (interoperability) and recognizing that different implementations solve similar problems in different ways (
+In any large software project, you'll frequently encounter what's known as the Strategy Pattern—essentially, an
+interface with multiple implementations that can
+be plugged in various ways. This architectural pattern becomes particularly crucial when working with generative AI for
+several key reasons:
+The strategy pattern is powerful precisely because it embodies the principles of interoperability and analogical
+thinking that have proven valuable across human
+endeavor. By creating standardized interfaces (interoperability) and recognizing that different implementations solve
+similar problems in different ways (
 analogical thinking), we create systems that are both flexible and maintainable.
 
 #### 1. Managing Growing Libraries at Scale
 
-Managing a growing library of implementations—like the 26+ different reasoning patterns in this application—can become increasingly expensive and cause scaling
-problems in your project. Traditional manual approaches to maintaining consistency across dozens of similar implementations quickly become:
+Managing a growing library of implementations—like the 26+ different reasoning patterns in this application—can become
+increasingly expensive and cause scaling
+problems in your project. Traditional manual approaches to maintaining consistency across dozens of similar
+implementations quickly become:
 
 * **Time-consuming**: Manually updating each implementation with new patterns or utilities
 * **Error-prone**: Inconsistencies creep in across similar files
 * **Expensive**: Developer time spent on repetitive tasks rather than innovation
 * **Difficult to document**: Keeping documentation synchronized across many files
 
-This is where AI assistance becomes invaluable. The strategy pattern provides the perfect structure for AI-powered tools to:
+This is where AI assistance becomes invaluable. The strategy pattern provides the perfect structure for AI-powered tools
+to:
 
-* **Generate documentation at scale**: Establish standards from exemplar implementations, then apply them consistently across all strategy implementations
-* **Suggest new implementations**: Analyze existing patterns to propose complementary strategies that fill gaps in functionality
-* **Create implementations from specifications**: Use existing strategies as templates to generate new, fully-functional implementations
+* **Generate documentation at scale**: Establish standards from exemplar implementations, then apply them consistently
+  across all strategy implementations
+* **Suggest new implementations**: Analyze existing patterns to propose complementary strategies that fill gaps in
+  functionality
+* **Create implementations from specifications**: Use existing strategies as templates to generate new, fully-functional
+  implementations
 * **Refactor consistently**: Apply improvements across entire families of related implementations simultaneously
 
 #### 2. Enabling AI-Driven Evolution
@@ -641,7 +681,8 @@ With this structure, AI tools can:
 
 #### 3. Reducing Cognitive Load
 
-When you have 26+ different reasoning task implementations, keeping them all consistent and up-to-date manually is cognitively overwhelming. The strategy
+When you have 26+ different reasoning task implementations, keeping them all consistent and up-to-date manually is
+cognitively overwhelming. The strategy
 pattern combined with AI assistance allows developers to:
 
 * Focus on high-level design decisions rather than repetitive implementation details
@@ -659,7 +700,8 @@ The combination of strategy patterns and AI assistance creates a virtuous cycle:
 4. **Rapid implementation**: AI generates new implementations following established patterns
 5. **Iterate and improve**: Use AI to refactor and enhance all implementations simultaneously
 
-This is how the application grew from a handful of task types to 26+ implementations—not through months of manual coding, but through an iterative process of AI-assisted generation and refinement.
+This is how the application grew from a handful of task types to 26+ implementations—not through months of manual
+coding, but through an iterative process of AI-assisted generation and refinement.
 
 ### Practical Benefits in This Codebase
 
@@ -671,6 +713,7 @@ The strategy patterns in this application are specifically designed to work well
 * **Cognitive Modes**: Planning strategies that can be mixed and matched, with AI helping to create new combinations
 
 Each of these strategy families benefits from AI-powered:
+
 * Documentation generation
 * Implementation suggestion
 * Code generation from specifications
@@ -698,11 +741,11 @@ abstract class APIProvider(name: String, val base: String) : DynamicEnum<APIProv
 
 * **Dynamic Registration**: Providers can be registered at runtime
 * **Unified Interface**: All providers implement common methods:
-  - `getChatClient()` - Returns chat interface
-  - `getChatModels()` - Lists available models
-  - `getEmbeddingModels()` - Lists embedding models
-  - `getImageModels()` - Lists image generation models
-  - `authorize()` - Handles authentication
+    - `getChatClient()` - Returns chat interface
+    - `getChatModels()` - Lists available models
+    - `getEmbeddingModels()` - Lists embedding models
+    - `getImageModels()` - Lists image generation models
+    - `authorize()` - Handles authentication
 
 ### Built-in Providers
 
@@ -752,7 +795,8 @@ Different chat models are like different vehicles:
 * **Claude 4.1 Opus**: A luxury sedan—high capacity (200K tokens), high cost, excellent performance
 * **Claude 4.5 Sonnet**: A sports car—balanced performance and efficiency
 * **Claude 3.5 Haiku**: A motorcycle—lightweight, fast, economical
-  Just as you choose a vehicle based on your journey's requirements (distance, cargo, speed, cost), you choose a model based on your task's requirements (
+  Just as you choose a vehicle based on your journey's requirements (distance, cargo, speed, cost), you choose a model
+  based on your task's requirements (
   context size, output length, cost, latency).
 
 #### Analogy to Shipping Classes
@@ -770,7 +814,8 @@ Like restaurants offering different service levels:
 * **Fast Casual** (Haiku): Quick, affordable, good for simple needs
 * **Fine Dining** (Opus): Expensive, high quality, suitable for special occasions
 * **Mid-Range** (Sonnet): Good balance of quality and cost
-  These analogies aren't just rhetorical—they help developers make better decisions about model selection by mapping unfamiliar AI concepts to familiar
+  These analogies aren't just rhetorical—they help developers make better decisions about model selection by mapping
+  unfamiliar AI concepts to familiar
   real-world trade-offs.
 
 ### Implementation
@@ -1493,10 +1538,10 @@ interface FetchMethodFactory {
 * **Purpose**: Full browser automation with JavaScript execution
 * **Use Case**: Dynamic websites requiring JavaScript rendering
 * **Characteristics**:
-  - Handles SPAs (Single Page Applications)
-  - Executes JavaScript
-  - Supports complex interactions
-  - Higher resource usage
+    - Handles SPAs (Single Page Applications)
+    - Executes JavaScript
+    - Supports complex interactions
+    - Higher resource usage
 * **Configuration**: Requires `FetchConfig.isSeleniumEnabled = true`
 
 #### HttpClient
@@ -1504,10 +1549,10 @@ interface FetchMethodFactory {
 * **Purpose**: Lightweight HTTP requests
 * **Use Case**: Static content, APIs, simple web pages
 * **Characteristics**:
-  - Fast and efficient
-  - Low resource usage
-  - No JavaScript execution
-  - Direct HTTP/HTTPS support
+    - Fast and efficient
+    - Low resource usage
+    - No JavaScript execution
+    - Direct HTTP/HTTPS support
 
 ### Extension Example
 
@@ -1819,10 +1864,10 @@ data class ContinuationDecision(
 * **Purpose**: General-purpose page summarization
 * **Use Case**: Content aggregation, research
 * **Process**:
-  1. Extract main content from HTML
-  2. Generate AI-powered summary
-  3. Extract relevant links
-  4. Score relevance to query
+    1. Extract main content from HTML
+    2. Generate AI-powered summary
+    3. Extract relevant links
+    4. Score relevance to query
 * **Output**: Structured summaries with metadata
 
 #### FactChecking
@@ -1830,10 +1875,10 @@ data class ContinuationDecision(
 * **Purpose**: Verify claims and statements
 * **Use Case**: Fact verification, claim validation
 * **Process**:
-  1. Extract factual claims
-  2. Cross-reference with multiple sources
-  3. Assign confidence scores
-  4. Track source credibility
+    1. Extract factual claims
+    2. Cross-reference with multiple sources
+    3. Assign confidence scores
+    4. Track source credibility
 * **Output**: Fact-check report with evidence
 
 #### JobMatching
@@ -1841,10 +1886,10 @@ data class ContinuationDecision(
 * **Purpose**: Match job listings to criteria
 * **Use Case**: Job search, candidate matching
 * **Process**:
-  1. Extract job details (title, requirements, salary)
-  2. Score against candidate profile
-  3. Identify matching skills
-  4. Flag missing qualifications
+    1. Extract job details (title, requirements, salary)
+    2. Score against candidate profile
+    3. Identify matching skills
+    4. Flag missing qualifications
 * **Output**: Ranked job matches with fit analysis
 
 #### SchemaExtraction
@@ -1852,10 +1897,10 @@ data class ContinuationDecision(
 * **Purpose**: Extract structured data from pages
 * **Use Case**: Data mining, structured information extraction
 * **Process**:
-  1. Identify schema.org markup
-  2. Extract JSON-LD data
-  3. Parse microdata
-  4. Normalize to common schema
+    1. Identify schema.org markup
+    2. Extract JSON-LD data
+    3. Parse microdata
+    4. Normalize to common schema
 * **Output**: Structured data objects
 
 #### DataTableAccumulation
@@ -1863,10 +1908,10 @@ data class ContinuationDecision(
 * **Purpose**: Aggregate tabular data across pages
 * **Use Case**: Price comparison, data collection
 * **Process**:
-  1. Identify HTML tables
-  2. Extract and normalize data
-  3. Merge with existing dataset
-  4. Handle schema variations
+    1. Identify HTML tables
+    2. Extract and normalize data
+    3. Merge with existing dataset
+    4. Handle schema variations
 * **Output**: Consolidated data table
 
 ### Extension Example
@@ -2124,7 +2169,8 @@ class CrawlerTask : AbstractTask<...> {
 
 ### 1. Open/Closed Principle
 
-All strategies are open for extension but closed for modification. New implementations can be added without changing existing code.
+All strategies are open for extension but closed for modification. New implementations can be added without changing
+existing code.
 
 ### 2. Strategy Pattern
 
@@ -2145,6 +2191,7 @@ Each strategy focuses on a single responsibility, making the system modular and 
 ### 6. AI-First Design
 
 Strategies are designed to work seamlessly with AI-assisted development tools, enabling:
+
 * Automated documentation generation
 * Pattern-based code generation
 * Consistent mass refactoring
@@ -2156,7 +2203,8 @@ Strategies are designed to work seamlessly with AI-assisted development tools, e
 
 ### 1. Follow Existing Patterns
 
-Study existing implementations before creating new ones. Use AI tools to analyze patterns across multiple implementations.
+Study existing implementations before creating new ones. Use AI tools to analyze patterns across multiple
+implementations.
 
 ### 2. Register Properly
 
@@ -2168,7 +2216,8 @@ Implement proper error handling and validation.
 
 ### 4. Document Thoroughly
 
-Provide clear documentation for new strategies. Consider using AI to generate initial documentation based on exemplar implementations.
+Provide clear documentation for new strategies. Consider using AI to generate initial documentation based on exemplar
+implementations.
 
 ### 5. Test Comprehensively
 
@@ -2181,6 +2230,7 @@ Be mindful of performance implications, especially for frequently-used strategie
 ### 7. Leverage AI Assistance
 
 When extending strategies:
+
 * Use AI to analyze existing implementations and extract patterns
 * Generate documentation standards from exemplar code
 * Create new implementations from specifications using AI
@@ -2190,6 +2240,7 @@ When extending strategies:
 ### 8. Maintain Consistency
 
 When you have many implementations (like 26+ task types):
+
 * Use AI to ensure consistent naming conventions
 * Apply utility functions uniformly across all implementations
 * Keep documentation synchronized
@@ -2199,18 +2250,24 @@ When you have many implementations (like 26+ task types):
 
 # Conclusion
 
-The application's extensible strategy system provides a robust framework for adding new capabilities while maintaining code quality and consistency.
+The application's extensible strategy system provides a robust framework for adding new capabilities while maintaining
+code quality and consistency.
 
-The combination of well-designed strategy patterns and AI-assisted development tools creates a powerful environment where:
+The combination of well-designed strategy patterns and AI-assisted development tools creates a powerful environment
+where:
 
 * **Documentation scales**: Generate and maintain documentation for dozens of implementations automatically
 * **Innovation accelerates**: Quickly prototype and implement new strategies based on existing patterns
 * **Quality remains high**: AI ensures consistency and catches deviations from established patterns
 * **Maintenance simplifies**: Apply improvements across entire strategy families simultaneously
 
-By understanding and extending these strategies—and leveraging AI assistance throughout the process—developers can create powerful, customized web crawling and analysis workflows tailored to specific use cases, without the traditional overhead of managing large collections of similar implementations.
+By understanding and extending these strategies—and leveraging AI assistance throughout the process—developers can
+create powerful, customized web crawling and analysis workflows tailored to specific use cases, without the traditional
+overhead of managing large collections of similar implementations.
 
-The growth from a handful of implementations to 26+ task types demonstrates the practical power of this approach: what would traditionally take months of careful manual coding can be accomplished in weeks through intelligent use of AI-assisted development within a well-designed strategy framework.
+The growth from a handful of implementations to 26+ task types demonstrates the practical power of this approach: what
+would traditionally take months of careful manual coding can be accomplished in weeks through intelligent use of
+AI-assisted development within a well-designed strategy framework.
 
 Interoperability and analogical thinking provide:
 
@@ -2224,7 +2281,8 @@ Interoperability and analogical thinking provide:
 
 * **Universality**: The same principles appear across vastly different domains
 * **Emergence**: Complex systems emerge from simple interoperable components
-* **Abstraction**: Both interoperability and analogies work through abstraction—identifying essential patterns beneath surface differences
+* **Abstraction**: Both interoperability and analogies work through abstraction—identifying essential patterns beneath
+  surface differences
 * **Understanding**: True understanding often comes through recognizing analogies between domains
 
 ### The Danger of Forgetting These Principles

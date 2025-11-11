@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.webui.chat
 
 import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
@@ -73,7 +74,7 @@ abstract class ChatServer(
         }
     }
 
-    abstract fun newSession(user: User?, session: Session): SocketManager
+    abstract fun newSession(user: User = defaultUser, session: Session): SocketManager
 
     open val baseResource: Resource?
         get() = javaClass.classLoader.getResource(resourceBase)?.let {
