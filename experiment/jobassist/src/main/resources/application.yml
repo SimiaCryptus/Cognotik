@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: news-api-service
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+
+# Cache configuration
+cache:
+  # Time-to-live for cache entries
+  # Examples: PT1H (1 hour), PT30M (30 minutes), PT5M (5 minutes)
+  # Leave empty or set to PT0S for unbounded cache (no expiration)
+  ttl: # Default: unbounded (no expiration)
+
+  # Maximum number of entries per cache
+  maximum-size: 10000
+
+logging:
+  level:
+    root: INFO
+    com.example.news: DEBUG
+    org.springframework.web: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

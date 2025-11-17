@@ -77,7 +77,7 @@ class DocumentedMassPatchServer(
         val futures = config.settings?.codeFilePaths?.map { path: Path ->
             fixedConcurrencyProcessor.submit {
                 try {
-                    status.append("Processing ${path}...<br/>")
+                    synchronized(status) { status.append("Processing ${path}...<br/>") }
                     task.update()
                     val codeSummary = """
                              $docSummary
@@ -159,7 +159,7 @@ class DocumentedMassPatchServer(
                             semaphore = Semaphore(0),
                         ).call()
                     }
-                    status.append("Completed processing ${path}<br/>")
+                    synchronized(status) { status.append("Completed processing ${path}<br/>") }
                     task.update()
                 } catch (e: Exception) {
                     log.warn("Error processing $path", e)
@@ -171,7 +171,7 @@ class DocumentedMassPatchServer(
             futures?.forEach {
                 Futures.getUnchecked(it)
             }
-            status.append("All files processed successfully.<br/>")
+            synchronized(status) { status.append("All files processed successfully.<br/>") }
             task.update()
         }
         return socketManager

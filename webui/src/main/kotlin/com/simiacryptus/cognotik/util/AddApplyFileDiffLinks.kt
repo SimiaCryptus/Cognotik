@@ -144,6 +144,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         defaultFile: String? = null,
         resolver: ((Path, String) -> String?) = ::resolveToRelativePath,
     ): String {
+
         self.apply {
             val initiator = getInitiatorPattern()
             if (response.contains(initiator) && !response.split(initiator, 2)[1].contains("\n```(?![^\n])".toRegex())) {
@@ -159,7 +160,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
 
             val codeBlocks = processor.extractCodeBlocks(response)
             val codeBlocksWithHeaders = codeBlocks.mapIndexed { index, (lang, code) ->
-                val headerForBlock = findHeaderForBlock(response, lang, code, index)
+                val headerForBlock = findHeaderForBlock(response, code)
                 Triple(
                     if (headerForBlock != null) {
                         headerForBlock
@@ -169,29 +170,29 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                 )
             }
 
-            val newFileBlocks = codeBlocksWithHeaders.filter { (header, lang, code) ->
+            fun isFileResolvable(header: String?): Boolean {
                 try {
-                    val resolvedPath = resolver(root, header ?: return@filter false)
-                    resolvedPath == null || !root.resolve(resolvedPath).toFile().exists()
+                    val prefiltered = prefilterFilename(normalizeFilename(header ?: "")) ?: ""
+                    val resolvedPath = resolver(root, prefiltered) ?: return (null != defaultFile)
+                    if (root.resolve(resolvedPath).toFile().exists()) return true
+                    if(!resolvedPath.contains('.') && null != defaultFile) return true // Allow default file for extensionless paths (likely to be a mis-parse)
+                    return false
                 } catch (e: Throwable) {
                     log.info("Error processing code block", e)
-                    false
+                    return false
                 }
             }
 
-            val patchBlocks = codeBlocksWithHeaders.filter { (header, lang, code) ->
-                try {
-                    val resolvedPath = resolver(root, header ?: return@filter false)
-                    resolvedPath != null && root.resolve(resolvedPath).toFile().exists()
-                } catch (e: Throwable) {
-                    log.info("Error processing code block", e)
-                    false
-                }
-            }
+            val newFileBlocks = codeBlocksWithHeaders.filter { (header, lang, code) -> !isFileResolvable(header) }
+            val patchBlocks = codeBlocksWithHeaders.filter { (header, lang, code) -> isFileResolvable(header) }
 
             val withPatchLinks: String = patchBlocks.reversed().fold(response) { markdown, (header, lang, diffValue) ->
-                val filename = resolver(root, normalizeFilename(header ?: ""))
-                if (filename.isNullOrBlank()) return@fold markdown
+                var normalizeFilename = normalizeFilename(header ?: "")
+                if (normalizeFilename.isBlank() || !normalizeFilename.contains('.')) {
+                    if(defaultFile == null) { return@fold markdown }
+                    normalizeFilename = defaultFile
+                }
+                val filename = resolver(root, normalizeFilename) ?: return@fold markdown
                 val newValue = renderDiffBlock(root, filename, diffValue, handle, self, shouldAutoApply)
                 val startOfMatch = markdown.indexOf(diffValue)
                 if (startOfMatch < 0) {
@@ -235,11 +236,9 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         }
     }
 
-    private fun findHeaderForBlock(response: String, lang: String, code: String, blockIndex: Int): String? {
+    private fun findHeaderForBlock(response: String, code: String): String? {
         val blockPosition = Regex.escape(code).toRegex().find(response)?.range?.first
-        if (blockPosition == null) {
-            return null
-        }
+        if (blockPosition == null) return null
         val markdownHeaderPattern = """(?<![^\n])#+\s*([^\n]+)""".toRegex()
         val fileHeaderPattern = """(?m)^(?:─+|-+)\s*\nFile:\s*(.+?)\s*\n(?:─+|-+)\s*""".toRegex()
         val headers = mutableListOf<Pair<IntRange, String>>()

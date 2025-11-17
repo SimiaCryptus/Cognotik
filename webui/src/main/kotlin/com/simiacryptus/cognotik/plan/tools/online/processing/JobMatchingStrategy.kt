@@ -472,6 +472,7 @@ class JobMatchingStrategy : DefaultSummarizerStrategy() {
             jobAnalysis.travel_requirements?.let {
                 appendLine("- **Travel Details:** $it")
             }
+            appendLine("- **Job Description URL:** ${jobAnalysis.job_description_url}")
             appendLine("- **Application URL:** [Apply Here](${jobAnalysis.application_url})")
             appendLine()
             appendLine("## Compensation")
