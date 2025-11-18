@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.genai.Client
 import com.google.genai.types.*
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.models.APIProvider
@@ -102,23 +103,13 @@ class GeminiSdkChatClient(
     try {
       val config = buildGenerateContentConfig(chatRequest)
       val contents = convertToGeminiContents(chatRequest.messages)
-
-      log(Level.DEBUG, "Sending request to Gemini SDK for model: ${model.modelName}", logStreams)
-
-      val response = if (contents.size == 1) {
-        client.models.generateContent(model.modelName, contents[0], config)
-      } else {
-        // For multi-turn conversations, use the first content as prompt
-        // and pass config with system instruction if needed
-        client.models.generateContent(model.modelName, contents.last(), config)
-      }
-
+      val text = contents.joinToString("\n\n")
+      log(Level.DEBUG, "Sending request to Gemini SDK for model: ${model.modelName}\n  ${text.indent("  ")}", logStreams)
+      val response = client.models.generateContent(model.modelName, text, config)
       val chatResponse = convertFromGeminiResponse(response)
-
       if (chatResponse.usage != null && model is ChatModel) {
         onUsage(model, chatResponse.usage.copy(cost = model.pricing(chatResponse.usage)), logStreams = logStreams)
       }
-
       return chatResponse
     } catch (e: Exception) {
       log.error("Error during Gemini SDK chat request", e)
