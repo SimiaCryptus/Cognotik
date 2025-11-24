@@ -6,12 +6,15 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
+import com.jetbrains.rd.generator.nova.GenerationSpec.Companion.nullIfEmpty
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.models.ModelSchema.ContentPart
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
@@ -20,10 +23,13 @@ import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import java.awt.image.BufferedImage
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.Path
 import java.text.SimpleDateFormat
+import javax.imageio.ImageIO
+import kotlin.io.path.name
 
 /**
  * Action that enables multi-file code chat functionality.
@@ -33,7 +39,7 @@ import java.text.SimpleDateFormat
  * @see BaseAction
  */
 
-class MultiCodeChatAction : BaseAction() {
+class ImageChatAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun handle(event: AnActionEvent) {
@@ -53,13 +59,13 @@ class MultiCodeChatAction : BaseAction() {
                 )
                 SessionProxyServer.agents[session] = CodeChatManager(
                     session = session,
-                    model = AppSettingsState.instance.smartChatClient,
+                    model = AppSettingsState.instance.imageChatClient,
                     parsingModel = AppSettingsState.instance.fastChatClient,
                     root = root.toFile(),
                     codeFiles = codeFiles
                 )
                 ApplicationServer.appInfoMap[session] = AppInfoData(
-                    applicationName = "Code Chat",
+                    applicationName = "Image Chat",
                     inputCnt = 0,
                     stickyInput = true,
                     loadImages = false,
@@ -114,6 +120,23 @@ class MultiCodeChatAction : BaseAction() {
         ${codeSummary()}
       """.trimIndent()
 
+        override val sysMessage: ChatMessage
+            get() = ChatMessage(ModelSchema.Role.system, listOf(
+                ContentPart(text = super.systemPrompt)
+            ) + codeFiles.filter { isImg(it.name) }.map { path ->
+                val bufferedImage = root.resolve(path.toFile()).readBufferedImage()
+                ContentPart(text = "${path}").apply { image = bufferedImage }
+            } )
+
+        fun File.readBufferedImage(): BufferedImage? {
+            return try {
+                ImageIO.read(this)
+            } catch (e: Exception) {
+                log.debug("Failed to read image file: $this", e)
+                null
+            }
+        }
+
         private fun codeSummary(): String {
             return codeFiles.mapNotNull { path ->
                 val file = root.toPath().resolve(path).toFile()
@@ -122,14 +145,14 @@ class MultiCodeChatAction : BaseAction() {
                 if (!exists) return@mapNotNull null
 
                 val content = try {
-                    readFileContent(file)
+                    readFileContent(file).nullIfEmpty() ?: return@mapNotNull null
                 } catch (e: Exception) {
                     log.warn("Failed to read file: $file", e)
                     return@mapNotNull null
                 }
                 path to content
             }.joinToString("\n\n") { (path, content) ->
-                val extension = path.toString().split('.').lastOrNull()?.let { it }
+                val extension = path.toString().split('.').lastOrNull()
                 "# $path\n```$extension\n$content\n```"
             }
         }
@@ -157,28 +180,26 @@ class MultiCodeChatAction : BaseAction() {
             transcriptStream: OutputStream?
         ): String {
             val codex = GPT4Tokenizer()
-            task.verbose((codeFiles.mapNotNull { path ->
+            task.verbose(codeFiles.mapNotNull { path ->
                 val file = root.resolve(path.toFile())
                 if (!file.exists()) {
                     log.warn("File does not exist: $file")
                     return@mapNotNull null
                 }
-
-                val content = try {
-                    readFileContent(file)
+                val estimateTokenCount = try {
+                    codex.estimateTokenCount(readFileContent(file))
                 } catch (e: Exception) {
                     log.warn("Failed to read file: $file", e)
                     return@mapNotNull null
                 }
-
-                "* $path - ${codex.estimateTokenCount(content)} tokens"
-            }.joinToString("\n")).renderMarkdown())
+                "* $path - $estimateTokenCount tokens"
+            }.joinToString("\n").renderMarkdown())
             return super.respond(task, userMessage, currentChatMessages, transcriptStream)
         }
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(MultiCodeChatAction::class.java)
+        private val log = LoggerFactory.getLogger(ImageChatAction::class.java)
 
         fun getFiles(
             virtualFiles: Array<out VirtualFile>?,
@@ -197,21 +218,32 @@ class MultiCodeChatAction : BaseAction() {
         fun isSupportedFile(file: VirtualFile): Boolean {
             val name = file.name.lowercase()
             return when {
-                name.endsWith(".pdf") ||
-                        name.endsWith(".docx") || name.endsWith(".doc") ||
-                        name.endsWith(".xlsx") || name.endsWith(".xls") ||
-                        name.endsWith(".pptx") || name.endsWith(".ppt") ||
-                        name.endsWith(".odt") ||
-                        name.endsWith(".rtf") ||
-                        name.endsWith(".html") || name.endsWith(".htm") ||
-                        name.endsWith(".eml") -> true
+                isDoc(name) -> true
+                isImg(name) -> true
                 file.inputStream.use { it.isBinary } -> true
                 else -> false
             }
         }
 
+        private fun isImg(name: String): Boolean = name.endsWith(".png") ||
+                name.endsWith(".jpg") || name.endsWith(".jpeg") ||
+                name.endsWith(".gif") || name.endsWith(".bmp") ||
+                name.endsWith(".tiff") || name.endsWith(".webp")
+
+        private fun isDoc(name: String): Boolean = name.endsWith(".pdf") ||
+                name.endsWith(".docx") || name.endsWith(".doc") ||
+                name.endsWith(".xlsx") || name.endsWith(".xls") ||
+                name.endsWith(".pptx") || name.endsWith(".ppt") ||
+                name.endsWith(".odt") ||
+                name.endsWith(".rtf") ||
+                name.endsWith(".html") || name.endsWith(".htm") ||
+                name.endsWith(".eml")
+
         fun readFileContent(file: File): String {
             return try {
+                if(isImg(file.name.lowercase())) {
+                    return ""
+                }
                 file.getDocumentReader().use { reader ->
                     reader.getText()
                 }

@@ -1,16 +1,72 @@
 package com.simiacryptus.cognotik.diff
 
-import com.simiacryptus.cognotik.util.LoggerFactory
-import org.apache.commons.text.similarity.LevenshteinDistance
-import kotlin.math.floor
-import kotlin.math.max
+ import com.simiacryptus.cognotik.util.LoggerFactory
+ import org.apache.commons.text.similarity.LevenshteinDistance
+ import kotlin.math.floor
+ import kotlin.math.max
 
 /**
  * PythonPatchUtil is an alternate diffing utility optimized for Python and YAML.
  * In Python/YAML code the leading spaces (indentation) are significant, so our normalizer
  * only removes trailing whitespace. The bracket‐metrics from IterativePatchUtil are omitted.
  */
-object PythonPatchUtil {
+class PythonPatcher : PatchProcessor {
+    override val label: String = "Python/YAML Patch Processor"
+
+    override val patchFormatPrompt = """
+      Response should use one or more code patches in diff format within ```diff code blocks.
+      Each diff should be preceded by a header that identifies the file being modified.
+      The diff format should use + for line additions, - for line deletions.
+      The diff should include 2 lines of context before and after every change.
+      
+      IMPORTANT: For Python and YAML files, preserve leading whitespace (indentation) exactly.
+      Only trailing whitespace will be normalized during patch application.
+      
+      Example:
+      
+      Here are the patches:
+      
+      ### src/utils/example.py
+      ```diff
+      
+       def example_function():
+      -    return 1
+      +    return 2
+       
+      ```
+      
+      ### config/settings.yaml
+      ```diff
+      
+       database:
+      -  host: localhost
+      +  host: 127.0.0.1
+         port: 5432
+      ```
+      """.trimIndent()
+
+    override fun getInitiatorPattern(): Regex {
+        return "(?s)```\\w*\n".toRegex()
+    }
+
+    override fun extractCodeBlocks(response: String): List<Pair<String, String>> {
+        val codeblockPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*?)\n```""".toRegex()
+        val codeblockGreedyPattern = """(?s)(?<![^\n])```([^\n]*)\n(.*)\n```""".toRegex()
+        val findAll = codeblockPattern.findAll(response).toList()
+        val findAllGreedy = codeblockGreedyPattern.findAll(response).toList()
+        // Use greedy pattern if we find markdown blocks, otherwise use non-greedy
+        val matches = if (findAllGreedy.any { it.groupValues[1] == "markdown" }) {
+            findAllGreedy
+        } else {
+            findAll
+        }
+        return matches.map { match ->
+            val language = match.groupValues[1]
+            val code = match.groupValues[2].trim()
+            language to code
+        }
+    }
+
     private enum class LineType { CONTEXT, ADD, DELETE }
 
 
@@ -50,7 +106,7 @@ object PythonPatchUtil {
     /**
      * Generate a patch from oldCode to newCode.
      */
-    fun generatePatch(oldCode: String, newCode: String): String {
+    override fun generatePatch(oldCode: String, newCode: String): String {
         log.info("Starting python/yaml patch generation process")
         val sourceLines = parseLines(oldCode)
         val newLines = parseLines(newCode)
@@ -77,7 +133,7 @@ object PythonPatchUtil {
     /**
      * Applies a patch to the given source text.
      */
-    fun applyPatch(source: String, patch: String): String {
+    override fun applyPatch(source: String, patch: String): String {
         log.info("Starting python/yaml patch application process")
         val sourceLines = parseLines(source)
         var patchLines = parsePatchLines(patch, sourceLines)
@@ -560,5 +616,5 @@ object PythonPatchUtil {
         log.debug("Finished fixing patch line order for python/yaml")
     }
 
-    private val log = LoggerFactory.getLogger(PythonPatchUtil::class.java)
+    private val log = LoggerFactory.getLogger(PythonPatcher::class.java)
 }

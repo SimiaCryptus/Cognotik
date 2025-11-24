@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
+import java.nio.file.Path
 import java.util.*
 import javax.imageio.ImageIO
 
@@ -469,3 +470,4 @@ interface ModelSchema {
     )
 
 }
+

@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
@@ -12,6 +13,7 @@ import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -123,7 +125,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
     )
 
     data class SettingProfile(
-        val name: String = "",
+        val setting_id: String = "",
         val description: String = "",
         val atmosphere: String = "",
         val significance: String = ""
@@ -155,9 +157,10 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
     )
 
     data class SceneOutline(
+        val act_number: Int = 1,
         val scene_number: Int = 1,
         val title: String = "",
-        val setting: String = "",
+        val setting_id: String = "",
         val characters: List<String> = emptyList(),
         val purpose: String = "",
         val key_events: List<String> = emptyList(),
@@ -165,8 +168,9 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
         val estimated_word_count: Int = 0
     )
 
-    data class GeneratedScene(
+data class GeneratedScene(
         val scene_number: Int = 1,
+        val act_number: Int = 1,
         val title: String = "",
         val content: String = "",
         val word_count: Int = 0,
@@ -290,7 +294,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
             overviewTask.add("\n### Phase 2: Outline Generation\n*Creating detailed scene-by-scene outline...*\n".renderMarkdown)
             task.update()
 
-            // Phase 2: Generate detailed outline
+// Phase 2: Generate detailed outline
             log.info("Phase 2: Generating narrative outline")
             val outlineTask = task.ui.newTask(false)
             tabs["Outline"] = outlineTask.placeholder
@@ -309,6 +313,27 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
             val wordsPerScene = genConfig.target_word_count / totalScenes
 
             val parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task)
+            // Generate cover image first if enabled (to use as seed for other images)
+            var coverImagePath: String? = null
+            if (genConfig.generate_cover_image || genConfig.generate_scene_images) {
+                log.info("Phase 2.0: Generating cover image to use as visual seed")
+                overviewTask.add("\n### Phase 2.0: Generating Cover Image\n*Creating visual foundation for the narrative...*\n".renderMarkdown)
+                task.update()
+                coverImagePath = generateCoverImage(
+                    task = task,
+                    tabs = tabs,
+                    title = subject,
+                    premise = analysisResult.toString().take(500),
+                    transcriptWriter = transcript,
+                    orchestrationConfig = orchestrationConfig
+                )
+                if (coverImagePath != null) {
+                    overviewTask.add("✅ Phase 2.0 Complete: Cover image generated and will be used as visual seed\n".renderMarkdown)
+                } else {
+                    overviewTask.add("⚠️ Phase 2.0: Cover image generation failed, proceeding without visual seed\n".renderMarkdown)
+                }
+                task.update()
+            }
 
             // Pass 1: High-level outline with characters and settings
             log.info("Phase 2.1: Generating high-level outline")
@@ -414,7 +439,7 @@ Ensure the structure:
                 appendLine("### Settings")
                 appendLine()
                 highLevelOutline.settings.forEach { setting ->
-                    appendLine("#### ${setting.name}")
+                    appendLine("#### ${setting.setting_id}")
                     appendLine()
                     appendLine("**Description:** ${setting.description}")
                     appendLine()
@@ -461,36 +486,37 @@ Ensure the structure:
                     resultClass = ActOutline::class.java,
                     prompt = """
 You are a master story architect. Expand this act into detailed scenes.
-**Overall Story:** ${highLevelOutline.title}
-**Premise:** ${highLevelOutline.premise}
-**Available Characters:**
-${highLevelOutline.characters.joinToString("\n") { "- ${it.name}: ${it.description}" }}
-**Available Settings:**
-${highLevelOutline.settings.joinToString("\n") { "- ${it.name}: ${it.description}" }}
-**Act to Expand:**
-- Act ${actSummary.act_number}: ${actSummary.title}
-- Purpose: ${actSummary.purpose}
-- Key Developments: ${actSummary.key_developments.joinToString("; ")}
-- Target Scenes: ${actSummary.estimated_scenes}
+
+**High-Level Narrative Context:**
+  ${highLevelOutline.toJson().indent("  ")}
+
+**Act:**
+  ${actSummary.toJson().indent("  ")}
+
 **Previous Acts Context:**
-${
-                        detailedActs.joinToString("\n") { act ->
-                            "Act ${act.act_number}: ${act.title} - ${act.scenes?.size ?: 0} scenes"
-                        }
+  ${
+                        detailedActs.joinToString("\n") { act -> "Act ${act.act_number}: ${act.title} - ${act.scenes?.size ?: 0} scenes" }
+                            .indent("  ")
                     }
+
 Create approximately ${actSummary.estimated_scenes} scenes for this act. For each scene specify:
 - Fulfills the act's purpose and key developments
-- Uses the established characters and settings consistently
-- Builds tension within the act
-- Connects smoothly to previous acts (if any)
+- Appropriate setting_id from defined settings
+- Characters present from defined characters
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
                     parsingChatter = parsingChatter
                 )
-                try {
+try {
                     val expandedAct = sceneExpansionAgent.answer(listOf("Expand act into scenes")).obj
-                    detailedActs.add(expandedAct)
+                    // Add act number to each scene
+                    val actWithNumberedScenes = expandedAct.copy(
+                        scenes = expandedAct.scenes?.map { scene ->
+                            scene.copy(act_number = actSummary.act_number)
+                        }
+                    )
+                    detailedActs.add(actWithNumberedScenes)
                     log.debug("Expanded Act ${actSummary.act_number} into ${expandedAct.scenes?.size ?: 0} scenes")
                 } catch (e: Exception) {
                     log.error("Failed to expand Act ${actSummary.act_number}", e)
@@ -533,7 +559,7 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
                     act.scenes?.forEach { scene ->
                         appendLine("#### Scene ${scene.scene_number}: ${scene.title}")
                         appendLine()
-                        appendLine("- **Setting:** ${scene.setting}")
+                        appendLine("- **Setting:** ${scene.setting_id}")
                         appendLine("- **Characters:** ${scene.characters.joinToString(", ")}")
                         appendLine("- **Purpose:** ${scene.purpose}")
                         appendLine("- **Emotional Arc:** ${scene.emotional_arc}")
@@ -562,18 +588,8 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
             overviewTask.add("✅ Phase 2 Complete: Outline created (${outline.acts.sumOf { it.scenes?.size ?: 0 }} scenes)\n".renderMarkdown)
             overviewTask.add("\n### Phase 3: Scene Generation\n*Writing scenes iteratively with context...*\n".renderMarkdown)
             task.update()
-            // Generate cover image if enabled
-            if (genConfig.generate_cover_image) {
-                generateCoverImage(
-                    task = task,
-                    tabs = tabs,
-                    title = outline.title,
-                    premise = outline.premise,
-                    transcriptWriter = transcript,
-                    orchestrationConfig = orchestrationConfig
-                )
-            }
-// Phase 2.5: Generate setting and character images if enabled
+
+            // Phase 2.5: Generate setting and character images if enabled
             val allScenes = outline.acts.flatMap { it.scenes ?: emptyList() } ?: emptyList()
             val settingImages = mutableMapOf<String, String>()
             val characterImages = mutableMapOf<String, String>()
@@ -591,10 +607,11 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
                         tabs = tabs,
                         transcriptWriter = transcript,
                         orchestrationConfig = orchestrationConfig,
-                        settingProfile = setting
+                        settingProfile = setting,
+                        coverImagePath = coverImagePath
                     )
                     if (settingImagePath != null) {
-                        settingImages[setting.name] = settingImagePath
+                        settingImages[setting.setting_id] = settingImagePath
                     }
                 }
 
@@ -606,7 +623,8 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
                         tabs = tabs,
                         characterProfile = character,
                         transcriptWriter = transcript,
-                        orchestrationConfig = orchestrationConfig
+                        orchestrationConfig = orchestrationConfig,
+                        coverImagePath = coverImagePath
                     )
                     if (characterImagePath != null) {
                         characterImages[character.name] = characterImagePath
@@ -623,17 +641,17 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
             var cumulativeWordCount = 0
 
             allScenes.forEachIndexed { index, sceneOutline ->
-                log.info("Generating scene ${index + 1}/${allScenes.size}: ${sceneOutline?.title}")
+                log.info("Generating Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}/${allScenes.size}: ${sceneOutline?.title}")
 
-                overviewTask.add("- Scene ${sceneOutline?.scene_number}: ${sceneOutline?.title} ".renderMarkdown)
+                overviewTask.add("- Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}: ${sceneOutline?.title} ".renderMarkdown)
                 task.update()
 
                 val sceneTask = task.ui.newTask(false)
-                tabs["Scene ${sceneOutline.scene_number}"] = sceneTask.placeholder
+                tabs["Act ${sceneOutline.act_number} Scene ${sceneOutline.scene_number}"] = sceneTask.placeholder
 
                 sceneTask.add(
                     buildString {
-                        appendLine("# Scene ${sceneOutline.scene_number}: ${sceneOutline.title}")
+                        appendLine("# Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}: ${sceneOutline.title}")
                         appendLine()
                         appendLine("**Status:** Writing scene...")
                         appendLine()
@@ -669,24 +687,17 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
                     "This is the opening scene."
                 }
 
-                val sceneAgent = ParsedAgent(
+val sceneAgent = ParsedAgent(
                     resultClass = GeneratedScene::class.java,
                     prompt = """
-You are a skilled ${genConfig.writing_style} writer. Write Scene ${sceneOutline.scene_number} of the narrative.
+ You are a skilled ${genConfig.writing_style} writer. Write Scene ${sceneOutline.scene_number} of the narrative.
+This is Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}.
 
-Overall Story: ${outline.title}
+ Overall Story: ${outline.title}
 Premise: ${outline.premise}
 
 Scene Outline:
-- Title: ${sceneOutline.title}
-- Setting: ${sceneOutline.setting}
-- Characters: ${sceneOutline.characters.joinToString(", ")}
-- Purpose: ${sceneOutline.purpose}
-- Emotional Arc: ${sceneOutline.emotional_arc}
-- Target Word Count: ${sceneOutline.estimated_word_count}
-
-Key Events to Include:
-${sceneOutline.key_events.joinToString("\n") { "- $it" }}
+  ${sceneOutline.toJson().indent("  ")}
 
 $recentContext
 
@@ -719,18 +730,20 @@ Make the writing engaging, immersive, and true to the characters and story.
                     parsingChatter = parsingChatter
                 )
 
-                var generatedScene = sceneAgent.answer(listOf("Write the scene")).obj
+var generatedScene = sceneAgent.answer(listOf("Write the scene")).obj
+                // Ensure act number is preserved
+                generatedScene = generatedScene.copy(act_number = sceneOutline.act_number)
 
                 // Optional revision pass
-                if (genConfig.revision_passes > 0) {
+if (genConfig.revision_passes > 0) {
                     repeat(genConfig.revision_passes) { revisionNum ->
-                        log.debug("Revision pass ${revisionNum + 1} for scene ${sceneOutline.scene_number}")
+                        log.debug("Revision pass ${revisionNum + 1} for Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}")
 
                         val revisionAgent = ChatAgent(
                             prompt = """
-You are an expert editor. Review and improve this scene while maintaining its core events and purpose.
+ You are an expert editor. Review and improve this scene while maintaining its core events and purpose.
 
-Scene ${sceneOutline.scene_number}: ${sceneOutline.title}
+Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}: ${sceneOutline.title}
 
 Current Version:
 ${generatedScene.content}
@@ -766,10 +779,12 @@ Provide the revised scene content only.
                 generatedScenes.add(generatedScene)
                 cumulativeWordCount += generatedScene.word_count
 
-                val sceneContent = buildString {
+val sceneContent = buildString {
                     appendLine("## ${sceneOutline.title}")
                     appendLine()
-                    appendLine("**Setting:** ${sceneOutline.setting}")
+                    appendLine("**Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}**")
+                    appendLine()
+                    appendLine("**Setting:** ${sceneOutline.setting_id}")
                     appendLine()
                     appendLine("**Characters:** ${sceneOutline.characters.joinToString(", ")}")
                     appendLine()
@@ -799,22 +814,25 @@ Provide the revised scene content only.
                 task.update()
 
                 // Add to result
-                resultBuilder.append("## Scene ${sceneOutline.scene_number}: ${sceneOutline.title}\n\n")
+                resultBuilder.append("## Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}: ${sceneOutline.title}\n\n")
                 resultBuilder.append(generatedScene.content)
                 resultBuilder.append("\n\n---\n\n")
 
                 overviewTask.add("✅ (${generatedScene.word_count} words)\n".renderMarkdown)
                 task.update()
-                // Generate scene image if enabled
+// Generate scene image if enabled
                 if (genConfig.generate_scene_images) {
                     generateSceneImage(
                         task = task,
                         tabs = tabs,
+                        actNumber = sceneOutline.act_number,
                         sceneNumber = sceneOutline.scene_number,
                         sceneTitle = sceneOutline.title,
                         sceneContent = generatedScene.content,
-                        setting = sceneOutline.setting,
-                        settingImagePath = settingImages.entries.find { sceneOutline.setting.lowercase().contains(it.key.lowercase()) }?.value,
+                        setting = sceneOutline.setting_id,
+                        settingImagePath = settingImages.entries.find {
+                            sceneOutline.setting_id.lowercase().contains(it.key.lowercase())
+                        }?.value,
                         characterImagePaths = sceneOutline.characters.mapNotNull { char ->
                             char to (characterImages[char] ?: return@mapNotNull null)
                         }.toMap(),
@@ -957,7 +975,7 @@ Provide the revised scene content only.
         premise: String,
         transcriptWriter: Writer?,
         orchestrationConfig: OrchestrationConfig
-    ) {
+    ): String? {
         try {
             log.info("Generating cover image for: $title")
             val task = task.ui.newTask(false)
@@ -980,11 +998,12 @@ Provide the revised scene content only.
             val result = imageAgent.answer(listOf(ImageAndText(coverPrompt)))
             val image = result.image
             // Save image
-            val imageFile = task.resolveUserFile("00_cover_image.png")!!
+            val relativePath = "00_cover_image.png"
+            val imageFile = task.resolveUserFile(relativePath)!!
             ImageIO.write(image, "png", imageFile)
             log.debug("Saved cover image to: ${imageFile.absolutePath}")
             // Create display link
-            val link = task.linkTo("00_cover_image.png")
+            val link = task.linkTo(relativePath)
             val imageHtml = """
         <div class='cover-image'>
           <h3>$title</h3>
@@ -1007,10 +1026,12 @@ Provide the revised scene content only.
             transcriptWriter?.flush()
             task.add("\n**Status:** ✅ Complete\n".renderMarkdown)
             task.update()
+            return relativePath
         } catch (e: Exception) {
             log.error("Failed to generate cover image", e)
             transcriptWriter?.appendLine("**Cover Image Generation Failed:** ${e.message}")
             transcriptWriter?.appendLine()
+            return null
         }
     }
 
@@ -1019,15 +1040,16 @@ Provide the revised scene content only.
         tabs: TabbedDisplay,
         settingProfile: SettingProfile,
         transcriptWriter: Writer?,
-        orchestrationConfig: OrchestrationConfig
+        orchestrationConfig: OrchestrationConfig,
+        coverImagePath: String?
     ): String? {
         return try {
-            log.info("Generating reference image for setting: ${settingProfile.name}")
+            log.info("Generating reference image for setting: ${settingProfile.setting_id}")
             val task = task.ui.newTask(false)
-            tabs["Setting: ${settingProfile.name}"] = task.placeholder
+            tabs["Setting: ${settingProfile.setting_id}"] = task.placeholder
             task.add(
                 buildString {
-                    appendLine("# Setting Reference: ${settingProfile.name}")
+                    appendLine("# Setting Reference: ${settingProfile.setting_id}")
                     appendLine()
                     appendLine("**Status:** Generating setting visualization...")
                     appendLine()
@@ -1036,21 +1058,42 @@ Provide the revised scene content only.
             task.update()
 
             val imageAgent = ImageProcessingAgent(
-                prompt = "Create a detailed, atmospheric image of this setting that captures its essence and mood",
+                prompt = "Create a detailed, atmospheric image of this setting that captures its essence and mood. Use the cover image as visual inspiration for style and atmosphere.",
                 model = orchestrationConfig.imageChatChatter.getChildClient(task),
                 temperature = 0.7,
             )
 
             val settingPrompt = buildString {
-                appendLine("${settingProfile.name}")
+                appendLine("${settingProfile.setting_id}")
                 appendLine("Description: ${settingProfile.description}")
                 appendLine("Atmosphere: ${settingProfile.atmosphere}")
             }.toString()
 
-            val result = imageAgent.answer(listOf(ImageAndText(settingPrompt)))
+            // Build input with cover image as reference if available
+            val imageInputs = mutableListOf<ImageAndText>()
+
+            if (coverImagePath != null) {
+                try {
+                    val coverImage = ImageIO.read(task.resolveUserFile(coverImagePath))
+                    if (coverImage != null) {
+                        imageInputs.add(
+                            ImageAndText(
+                                text = "Cover image - use as visual style reference",
+                                image = coverImage
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    log.warn("Failed to load cover image for setting reference: $coverImagePath", e)
+                }
+            }
+
+            imageInputs.add(ImageAndText(settingPrompt))
+
+            val result = imageAgent.answer(imageInputs)
             val image = result.image
             // Save image with sanitized filename
-            val sanitizedName = settingProfile.name.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(50)
+            val sanitizedName = settingProfile.setting_id.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(50)
             val relativePath = "setting_${sanitizedName}_ref.png"
             val imageFile = task.resolveUserFile(relativePath)!!
             ImageIO.write(image, "png", imageFile)
@@ -1060,30 +1103,30 @@ Provide the revised scene content only.
             val link = task.linkTo(relativePath)
             val imageHtml = """
         <div class='setting-reference'>
-          <h4>${settingProfile.name}</h4>
+          <h4>${settingProfile.setting_id}</h4>
           <p><strong>Description:</strong> ${settingProfile.description}</p>
           <p><strong>Atmosphere:</strong> ${settingProfile.atmosphere}</p>
           <p><strong>Image Prompt:</strong> ${result.text}</p>
           <a href='$link' target='_blank'>
-            <img src='$link' alt='${settingProfile.name}' style='max-width: 400px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />
+            <img src='$link' alt='${settingProfile.setting_id}' style='max-width: 400px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />
           </a>
         </div>
       """.trimIndent()
             task.add(imageHtml.renderMarkdown)
             task.update()
             // Write to transcript
-            transcriptWriter?.appendLine("#### Setting: ${settingProfile.name}")
+            transcriptWriter?.appendLine("#### Setting: ${settingProfile.setting_id}")
             transcriptWriter?.appendLine()
             transcriptWriter?.appendLine("**Prompt:** ${result.text}")
             transcriptWriter?.appendLine()
-            transcriptWriter?.appendLine("![Setting: ${settingProfile.name}]($link)".transcriptFilter())
+            transcriptWriter?.appendLine("![Setting: ${settingProfile.setting_id}]($link)".transcriptFilter())
             transcriptWriter?.appendLine()
             transcriptWriter?.flush()
             task.add("\n**Status:** ✅ Complete\n".renderMarkdown)
             task.update()
             relativePath
         } catch (e: Exception) {
-            log.error("Failed to generate setting reference image for: ${settingProfile.name}", e)
+            log.error("Failed to generate setting reference image for: ${settingProfile.setting_id}", e)
             transcriptWriter?.appendLine("**Setting Image Generation Failed:** ${e.message}")
             transcriptWriter?.appendLine()
             null
@@ -1095,7 +1138,8 @@ Provide the revised scene content only.
         tabs: TabbedDisplay,
         characterProfile: CharacterProfile,
         transcriptWriter: Writer?,
-        orchestrationConfig: OrchestrationConfig
+        orchestrationConfig: OrchestrationConfig,
+        coverImagePath: String?
     ): String? {
         return try {
             log.info("Generating reference image for character: ${characterProfile.name}")
@@ -1112,7 +1156,7 @@ Provide the revised scene content only.
             task.update()
 
             val imageAgent = ImageProcessingAgent(
-                prompt = "Create a detailed character portrait that captures their appearance, personality, and essence",
+                prompt = "Create a detailed character portrait that captures their appearance, personality, and essence. Use the cover image as visual inspiration for style and atmosphere.",
                 model = orchestrationConfig.imageChatChatter.getChildClient(task),
                 temperature = 0.7,
             )
@@ -1124,7 +1168,28 @@ Provide the revised scene content only.
                 appendLine("Traits: ${characterProfile.traits.joinToString(", ")}")
             }.toString()
 
-            val result = imageAgent.answer(listOf(ImageAndText(characterPrompt)))
+            // Build input with cover image as reference if available
+            val imageInputs = mutableListOf<ImageAndText>()
+
+            if (coverImagePath != null) {
+                try {
+                    val coverImage = ImageIO.read(task.resolveUserFile(coverImagePath))
+                    if (coverImage != null) {
+                        imageInputs.add(
+                            ImageAndText(
+                                text = "Cover image - use as visual style reference",
+                                image = coverImage
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    log.warn("Failed to load cover image for character reference: $coverImagePath", e)
+                }
+            }
+
+            imageInputs.add(ImageAndText(characterPrompt))
+
+            val result = imageAgent.answer(imageInputs)
             val image = result.image
             // Save image with sanitized filename
             val sanitizedName = characterProfile.name.replace(Regex("[^a-zA-Z0-9_-]"), "_").take(50)
@@ -1168,9 +1233,10 @@ Provide the revised scene content only.
         }
     }
 
-    private fun generateSceneImage(
+private fun generateSceneImage(
         task: SessionTask,
         tabs: TabbedDisplay,
+        actNumber: Int,
         sceneNumber: Int,
         sceneTitle: String,
         sceneContent: String,
@@ -1181,12 +1247,12 @@ Provide the revised scene content only.
         orchestrationConfig: OrchestrationConfig
     ) {
         try {
-            log.info("Generating image for scene $sceneNumber: $sceneTitle")
+            log.info("Generating image for Act $actNumber, Scene $sceneNumber: $sceneTitle")
             val sceneImageTask = task.ui.newTask(false)
-            tabs["Scene $sceneNumber Image"] = sceneImageTask.placeholder
+            tabs["Act $actNumber Scene $sceneNumber Image"] = sceneImageTask.placeholder
             sceneImageTask.add(
                 buildString {
-                    appendLine("# Scene $sceneNumber Image")
+                    appendLine("# Act $actNumber, Scene $sceneNumber Image")
                     appendLine()
                     appendLine("**Status:** Generating scene visualization...")
                     appendLine()
@@ -1203,7 +1269,7 @@ Provide the revised scene content only.
                 append("Scene: $sceneTitle. ")
                 append("Setting: $setting. ")
                 // Take first 500 chars of scene content for context
-                append(sceneContent.take(500))
+                append(sceneContent)
             }
             // Build input with reference images
             val imageInputs = mutableListOf<ImageAndText>()
@@ -1252,36 +1318,36 @@ Provide the revised scene content only.
             val result = imageAgent.answer(imageInputs)
             val image = result.image
             // Save image
-            val relativePath = "scene_${sceneNumber}_image.png"
+            val relativePath = "act_${actNumber}_scene_${sceneNumber}_image.png"
             val imageFile = task.resolveUserFile(relativePath)!!
             ImageIO.write(image, "png", imageFile)
             log.debug("Saved scene image to: ${imageFile.absolutePath}")
             // Create display link
             val link = task.linkTo(relativePath)
-            val imageHtml = """
+val imageHtml = """
         <div class='scene-image'>
-          <h4>Scene $sceneNumber: $sceneTitle</h4>
+          <h4>Act $actNumber, Scene $sceneNumber: $sceneTitle</h4>
           <p><strong>Setting:</strong> $setting</p>
           <p><strong>Image Prompt:</strong> ${result.text}</p>
           <a href='$link' target='_blank'>
-            <img src='$link' alt='Scene $sceneNumber' style='max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />
+            <img src='$link' alt='Act $actNumber Scene $sceneNumber' style='max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' />
           </a>
         </div>
       """.trimIndent()
             sceneImageTask.add(imageHtml.renderMarkdown)
             task.update()
             // Write to transcript
-            transcriptWriter?.appendLine("#### Scene $sceneNumber Image")
+            transcriptWriter?.appendLine("#### Act $actNumber, Scene $sceneNumber Image")
             transcriptWriter?.appendLine()
             transcriptWriter?.appendLine("**Prompt:** ${result.text}")
             transcriptWriter?.appendLine()
-            transcriptWriter?.appendLine("![Scene $sceneNumber]($link)".transcriptFilter())
+            transcriptWriter?.appendLine("![Act $actNumber Scene $sceneNumber]($link)".transcriptFilter())
             transcriptWriter?.appendLine()
             transcriptWriter?.flush()
             sceneImageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
             task.update()
         } catch (e: Exception) {
-            log.error("Failed to generate scene image for scene $sceneNumber", e)
+            log.error("Failed to generate scene image for Act $actNumber, Scene $sceneNumber", e)
             transcriptWriter?.appendLine("**Scene Image Generation Failed:** ${e.message}")
             transcriptWriter?.appendLine()
         }

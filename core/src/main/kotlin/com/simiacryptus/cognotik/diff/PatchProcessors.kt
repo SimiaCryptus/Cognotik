@@ -58,6 +58,13 @@ enum class PatchProcessors : PatchProcessor {
         override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
         override fun getInitiatorPattern() = matcher.getInitiatorPattern()
         override val matcher = FuzzyPatchMatcher()
+    },
+
+    Python {;
+        override val label = "Python"
+        override fun extractCodeBlocks(response: String) = matcher.extractCodeBlocks(response)
+        override fun getInitiatorPattern() = matcher.getInitiatorPattern()
+        override val matcher = PythonPatcher()
     };
 
     override val label: String get() = matcher.label

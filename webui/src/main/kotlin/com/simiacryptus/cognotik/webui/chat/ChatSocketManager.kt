@@ -73,7 +73,7 @@ open class ChatSocketManager(
         }
     }
 
-    val sysMessage: ModelSchema.ChatMessage
+    open val sysMessage: ModelSchema.ChatMessage
         get() {
             return ModelSchema.ChatMessage(ModelSchema.Role.system, systemPrompt.toContentList())
         }
