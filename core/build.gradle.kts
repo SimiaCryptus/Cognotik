@@ -59,6 +59,7 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.jupiter.params)
     testImplementation(libs.kotlin.test.junit5)
 
     // Optional Android dependency

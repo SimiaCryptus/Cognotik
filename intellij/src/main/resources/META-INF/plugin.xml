@@ -86,6 +86,10 @@
                     text="💬 Code Chat"
                     description="Initiate an interactive dialogue session to discuss and analyze multiple code files simultaneously">
             </action>
+            <action class="cognotik.actions.chat.ImageChatAction"
+                    text="💬 Image Chat"
+                    description="Initiate an interactive dialogue session to discuss and analyze multiple image files simultaneously">
+            </action>
             <action class="cognotik.actions.chat.ModifyFilesAction"
                     text="📝 Modify Files"
                     description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">

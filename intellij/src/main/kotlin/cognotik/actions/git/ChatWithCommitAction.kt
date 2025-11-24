@@ -14,16 +14,11 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.SessionProxyServer
+import com.simiacryptus.cognotik.util.isBinary
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.io.File
 import java.text.SimpleDateFormat
-
-val String.isBinary: Boolean
-    get() {
-        val binary = this.toByteArray().filter { it < 0x20 || it > 0x7E }
-        return binary.size > this.length / 10
-    }
 
 class ChatWithCommitAction : AnAction() {
     private val log = Logger.getInstance(ChatWithCommitAction::class.java)
