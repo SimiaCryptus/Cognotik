@@ -187,6 +187,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
             val rowImages = mutableMapOf<String, String>()
 
             if (genConfig.generate_images) {
+                var lastImage: java.awt.image.BufferedImage? = null
                 val charRefTask = task.ui.newTask(false).apply { tabs["Characters"] = placeholder }
                 charRefTask.add("# Character References\n\n".renderMarkdown)
 
@@ -200,8 +201,14 @@ ComicBookGeneration - Generate comic book scripts and visuals
                     try {
                         val charPrompt =
                             "Character: ${char.name}\nDescription: ${char.description}\nVisual Traits: ${char.visual_traits}\nStyle: ${genConfig.art_style}"
-                        val result = charAgent.answer(listOf(ImageAndText(charPrompt)))
+                        val inputs = mutableListOf<ImageAndText>()
+                        if (lastImage != null) {
+                            inputs.add(ImageAndText(text = "Style Reference", image = lastImage))
+                        }
+                        inputs.add(ImageAndText(charPrompt))
+                        val result = charAgent.answer(inputs)
                         val image = result.image
+                        lastImage = image
                         val relativePath = "char_${char.name.replace(Regex("[^a-zA-Z0-9]"), "_")}.png"
                         val imageFile = task.resolveUserFile(relativePath)!!
                         ImageIO.write(image, "png", imageFile)
@@ -271,10 +278,19 @@ ComicBookGeneration - Generate comic book scripts and visuals
                                     }
                                 }
                             }
+                            if (lastImage != null) {
+                                imageInputs.add(
+                                    ImageAndText(
+                                        text = "Previous Scene / Style Reference",
+                                        image = lastImage
+                                    )
+                                )
+                            }
                             imageInputs.add(ImageAndText(rowPrompt))
 
                             val result = imageAgent.answer(imageInputs)
                             val image = result.image
+                            lastImage = image
                             val relativePath = "page_${page.page_number}_row_${row.row_number}.png"
                             val imageFile = task.resolveUserFile(relativePath)!!
                             ImageIO.write(image, "png", imageFile)
