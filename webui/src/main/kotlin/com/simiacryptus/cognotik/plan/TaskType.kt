@@ -239,8 +239,11 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(GenerateImageTask.GenerateImage) { settings, task ->
                 GenerateImageTask(settings, task)
             }
-            registerConstructor(IllustrateDocumentTask.IllustrateDocument) { settings, task ->
+registerConstructor(IllustrateDocumentTask.IllustrateDocument) { settings, task ->
                 IllustrateDocumentTask(settings, task)
+            }
+            registerConstructor(ComicBookGenerationTask.ComicBookGeneration) { settings, task ->
+                ComicBookGenerationTask(settings, task)
             }
             taskConstructors.toMap()
         }

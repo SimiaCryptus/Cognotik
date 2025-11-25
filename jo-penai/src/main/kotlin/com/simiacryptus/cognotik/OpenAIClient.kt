@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.allowedCharset
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.exceptions.ModerationException
@@ -73,57 +74,14 @@ open class OpenAIClient(
     ): CompletionResponse = withReliability {
         withPerformanceLogging {
             if (request.suffix == null) {
-                log(
-                    msg = String.format(
-                        "Text Completion Request\nPrefix:\n\t%s\n", request.prompt.lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
-
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n")
-                    )
-                )
+                log(String.format("Text Completion Request\nPrefix:\n\t%s\n", request.prompt.indent("  ")))
                 log.debug("Text Completion Request with Prefix: ${request.prompt}")
             } else {
                 log(
-                    msg = String.format(
+                    String.format(
                         "Text Completion Request\nPrefix:\n\t%s\nSuffix:\n\t%s\n",
-                        request.prompt.lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
-
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n"),
-                        request.suffix.lineSequence()
-                            .map {
-                                when {
-                                    it.isBlank() -> {
-                                        when {
-                                            it.length < "  ".length -> "  "
-                                            else -> it
-                                        }
-                                    }
-
-                                    else -> "  " + it
-                                }
-                            }
-                            .joinToString("\n")
+                        request.prompt.indent("  "),
+                        request.suffix.indent("  ")
                     )
                 )
                 log.debug("Text Completion Request with Prefix: ${request.prompt} and Suffix: ${request.suffix}")
@@ -149,20 +107,7 @@ open class OpenAIClient(
                     request.prompt.trim { it <= ' ' })
             log(
                 msg = String.format(
-                    "Text Completion:\n\t%s", completionResult.toString().lineSequence()
-                        .map {
-                            when {
-                                it.isBlank() -> {
-                                    when {
-                                        it.length < "  ".length -> "  "
-                                        else -> it
-                                    }
-                                }
-
-                                else -> "  " + it
-                            }
-                        }
-                        .joinToString("\n")
+                    "Text Completion:\n\t%s", completionResult.toString().indent("  ")
                 )
             )
             log.debug("Text Completion Result: $completionResult")

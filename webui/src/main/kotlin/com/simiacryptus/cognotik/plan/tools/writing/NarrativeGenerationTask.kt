@@ -168,7 +168,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
         val estimated_word_count: Int = 0
     )
 
-data class GeneratedScene(
+    data class GeneratedScene(
         val scene_number: Int = 1,
         val act_number: Int = 1,
         val title: String = "",
@@ -508,7 +508,7 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
                     temperature = 0.7,
                     parsingChatter = parsingChatter
                 )
-try {
+                try {
                     val expandedAct = sceneExpansionAgent.answer(listOf("Expand act into scenes")).obj
                     // Add act number to each scene
                     val actWithNumberedScenes = expandedAct.copy(
@@ -687,7 +687,7 @@ try {
                     "This is the opening scene."
                 }
 
-val sceneAgent = ParsedAgent(
+                val sceneAgent = ParsedAgent(
                     resultClass = GeneratedScene::class.java,
                     prompt = """
  You are a skilled ${genConfig.writing_style} writer. Write Scene ${sceneOutline.scene_number} of the narrative.
@@ -730,12 +730,12 @@ Make the writing engaging, immersive, and true to the characters and story.
                     parsingChatter = parsingChatter
                 )
 
-var generatedScene = sceneAgent.answer(listOf("Write the scene")).obj
+                var generatedScene = sceneAgent.answer(listOf("Write the scene")).obj
                 // Ensure act number is preserved
                 generatedScene = generatedScene.copy(act_number = sceneOutline.act_number)
 
                 // Optional revision pass
-if (genConfig.revision_passes > 0) {
+                if (genConfig.revision_passes > 0) {
                     repeat(genConfig.revision_passes) { revisionNum ->
                         log.debug("Revision pass ${revisionNum + 1} for Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}")
 
@@ -779,7 +779,7 @@ Provide the revised scene content only.
                 generatedScenes.add(generatedScene)
                 cumulativeWordCount += generatedScene.word_count
 
-val sceneContent = buildString {
+                val sceneContent = buildString {
                     appendLine("## ${sceneOutline.title}")
                     appendLine()
                     appendLine("**Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}**")
@@ -927,6 +927,29 @@ val sceneContent = buildString {
                 appendLine(outlineContent.substringBeforeLast("\n**Status:**").trim())
             }
             log.info("NarrativeGenerationTask completed: scenes=${generatedScenes.size}, words=$cumulativeWordCount, time=${totalTime}ms")
+            val narrativeData = mapOf(
+                "config" to genConfig,
+                "highLevelOutline" to highLevelOutline,
+                "outline" to outline,
+                "scenes" to generatedScenes,
+                "assets" to mapOf(
+                    "coverImage" to coverImagePath,
+                    "settingImages" to settingImages,
+                    "characterImages" to characterImages
+                ),
+                "statistics" to mapOf(
+                    "wordCount" to cumulativeWordCount,
+                    "sceneCount" to generatedScenes.size,
+                    "durationMs" to totalTime
+                )
+            )
+            task.resolveUserFile("narrative_data.json")?.let { jsonFile ->
+                jsonFile.writeText(narrativeData.toJson())
+                log.info("Saved narrative data to ${jsonFile.absolutePath}")
+                overviewTask.add("\n**Data:** Saved full narrative data to `narrative_data.json`\n".renderMarkdown)
+                task.update()
+            }
+
             task.safeComplete(
                 "Narrative generation complete: ${generatedScenes.size} scenes, $cumulativeWordCount words in ${totalTime / 1000}s",
                 log
@@ -1233,7 +1256,7 @@ val sceneContent = buildString {
         }
     }
 
-private fun generateSceneImage(
+    private fun generateSceneImage(
         task: SessionTask,
         tabs: TabbedDisplay,
         actNumber: Int,
@@ -1324,7 +1347,7 @@ private fun generateSceneImage(
             log.debug("Saved scene image to: ${imageFile.absolutePath}")
             // Create display link
             val link = task.linkTo(relativePath)
-val imageHtml = """
+            val imageHtml = """
         <div class='scene-image'>
           <h4>Act $actNumber, Scene $sceneNumber: $sceneTitle</h4>
           <p><strong>Setting:</strong> $setting</p>

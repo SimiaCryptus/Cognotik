@@ -17,6 +17,7 @@ import okio.ByteString.Companion.decodeBase64
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import kotlin.jvm.optionals.getOrNull
@@ -104,17 +105,28 @@ class GeminiSdkChatClient(
         model: ChatModel,
         logStreams: MutableList<BufferedOutputStream>
     ): ModelSchema.ChatResponse {
+        val requestID = UUID.randomUUID().toString()
         try {
             val config = buildGenerateContentConfig(chatRequest)
             val contents: List<Content> = convertToGeminiContents(chatRequest.messages)
             log(
-                Level.DEBUG,
-                "Sending request to Gemini SDK for model: ${model.modelName}\n  ${
-                    contents.joinToString("\n\n").indent("  ")
-                }",
+                "<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelName} (${requestID})</summary>\n${
+                    contents.joinToString("\n\n") {
+                        it.toMarkdown()
+                    }.indent("  ")
+                }\n</details>",
                 logStreams
             )
             val response = client.models.generateContent(model.modelName, contents, config)
+            // Log response
+            log(
+                "<details>\n<summary>Gemini SDK Response (${requestID})</summary>\n${
+                    response.candidates().orElse(emptyList()).joinToString("\n\n") { candidate ->
+                        candidate.content().orElse(null)?.toMarkdown() ?: "\n\n**No content**\n\n"
+                    }.indent("  ")
+                }\n</details>",
+                logStreams
+            )
             val chatResponse = convertFromGeminiResponse(response)
             if (chatResponse.usage != null) {
                 onUsage(
@@ -128,6 +140,45 @@ class GeminiSdkChatClient(
             log.error("Error during Gemini SDK chat request", e)
             throw e
         }
+    }
+
+    private fun Content.toMarkdown(): CharSequence {
+        val sb = StringBuilder()
+        this.parts().orElse(emptyList()).forEach { part ->
+            part.text().getOrNull()?.let { text ->
+                sb.append(text).append("\n")
+            }
+            part.inlineData().getOrNull()?.let { inlineData ->
+                when (inlineData.mimeType().getOrNull()) {
+                    "image/png", "image/jpeg", "image/jpg", "image/gif" -> {
+                        val imageBytes = inlineData.data().getOrNull()
+                        if (imageBytes != null) {
+                            /*Resize to no more than 256 px wide*/
+                            val maxWidth = 256
+                            var sourceImage = javax.imageio.ImageIO.read(imageBytes.inputStream())
+                            if (sourceImage.width > maxWidth) {
+                                val aspectRatio = sourceImage.height.toDouble() / sourceImage.width.toDouble()
+                                val newHeight = (maxWidth * aspectRatio).toInt()
+                                val resizedImage = java.awt.image.BufferedImage(maxWidth, newHeight, sourceImage.type)
+                                val g2d = resizedImage.createGraphics()
+                                g2d.drawImage(sourceImage, 0, 0, maxWidth, newHeight, null)
+                                g2d.dispose()
+                                sourceImage = resizedImage
+                            }
+                            val logBytes = java.io.ByteArrayOutputStream()
+                            javax.imageio.ImageIO.write(sourceImage, inlineData.mimeType().getOrNull()!!.substringAfter("image/"), logBytes)
+                            val imageBytes = logBytes.toByteArray()
+                            sb.append("<img src=\"data:${inlineData.mimeType().getOrNull()};base64,${imageBytes.base64()}\" alt=\"image\" width=\"${sourceImage.width}\" height=\"${sourceImage.height}\" />\n")
+                        }
+                    }
+
+                    else -> {
+                        sb.append("`[Unsupported inline data of type ${inlineData.mimeType().getOrNull()}]`\n")
+                    }
+                }
+            }
+        }
+        return sb.toString()
     }
 
     private fun buildGenerateContentConfig(chatRequest: ModelSchema.ChatRequest): GenerateContentConfig? {
@@ -254,3 +305,7 @@ class GeminiSdkChatClient(
         private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
     }
 }
+
+
+private fun ByteArray.base64() = java.util.Base64.getEncoder().encodeToString(this)
+private fun String.base64() = java.util.Base64.getDecoder().decode(this)

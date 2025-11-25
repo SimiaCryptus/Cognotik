@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.exceptions.*
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
@@ -125,7 +126,6 @@ abstract class HttpClientManager(
     }
 
     protected fun captureCallerStack(): String {
-
         var stack = Throwable().stackTrace
             .dropWhile { it.methodName == "withPool" || it.className.contains("HttpClientManager") }
             .joinToString("\n") { "\tat $it" }
@@ -278,35 +278,28 @@ abstract class HttpClientManager(
 
     fun <T> withClient(fn: Function<CloseableHttpClient, T>): T = fn.apply(client)
 
-    protected open fun log(level: Level = logLevel, msg: String, logStreams: MutableList<BufferedOutputStream> = this.logStreams) {
-        val message = msg.trim().takeIf { it.isNotEmpty() }?.lineSequence()
-           ?.map {
-                when {
-                    it.isBlank() -> {
-                        when {
-                            it.length < "\t".length -> "\t"
-                            else -> it
-                        }
-                    }
+    protected open fun log(
+        level: Level,
+        msg: String,
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams,
+        format: Boolean = true
+    ) {
+        val message = if(format) formatMessage(msg, level) else msg
+        logFmt(message, logStreams)
+        logSys(level, msg)
+    }
 
-                    else -> "\t" + it
-                }
-            }
-            ?.joinToString("\n") ?: ""
-        
-        val timestamp = "%.3f".format((System.currentTimeMillis() - startTime) / 1000.0)
-        val logEntry = "[$level] [$timestamp] ${message.replace("\n", "\n\t")}\n"
-        
-        logStreams.forEach { stream ->
-            try {
-                stream.write(logEntry.toByteArray())
-                stream.flush()
-            } catch (e: Exception) {
-                // Avoid logging errors in the logging mechanism itself
-                System.err.println("Failed to write to log stream: ${e.message}")
-            }
-        }
-        
+    protected open fun log(
+        msg: String,
+        logStreams: MutableList<BufferedOutputStream> = this.logStreams,
+        format: Boolean = true
+    ) = log(logLevel, msg, logStreams, format)
+
+    protected open fun formatMessage(msg: String, level: Level) =
+        "\n* [$level] [${"%.3f".format((System.currentTimeMillis() - startTime) / 1000.0)}] ${
+        (msg.trim().takeIf { it.isNotEmpty() } ?: "").indent("  ")}\n"
+
+    protected open fun logSys(level: Level, message: String) {
         when (level) {
             Level.ERROR -> log.error(message)
             Level.WARN -> log.warn(message)
@@ -314,6 +307,22 @@ abstract class HttpClientManager(
             Level.DEBUG -> log.debug(message)
             Level.TRACE -> log.trace(message)
         }
+    }
+
+    protected open fun logFmt(
+        message: String,
+        logStreams: MutableList<BufferedOutputStream>
+    ) {
+        logStreams.forEach { stream ->
+            try {
+                stream.write(message.toByteArray())
+                stream.flush()
+            } catch (e: Exception) {
+                // Avoid logging errors in the logging mechanism itself
+                System.err.println("Failed to write to log stream: ${e.message}")
+            }
+        }
+
     }
 
 }
