@@ -18,8 +18,8 @@ open class CodeChatSocketManager(
     storage: StorageInterface?,
 ) : ChatSocketManager(
     session = session,
-    model = model,
-    parsingModel = parsingModel,
+    smartModel = model,
+    fastModel = parsingModel,
     userInterfacePrompt = "# `$filename`\n\n```$language\n$codeSelection\n```".renderMarkdown(),
     systemPrompt = "\nYou are a helpful AI that helps people with coding.\n\nYou will be answering questions about the following code located in `$filename`:\n\n```$language\n$codeSelection\n```\n\nResponses may use markdown formatting, including code blocks.",
     applicationClass = ApplicationServer::class.java,

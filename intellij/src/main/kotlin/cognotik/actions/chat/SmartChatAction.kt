@@ -14,39 +14,51 @@ import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
+import com.simiacryptus.cognotik.webui.chat.SmartChatSocketManager
 import java.text.SimpleDateFormat
 
-class GenericChatAction : BaseAction() {
+/**
+ * Smart Chat Action that provides enhanced chat functionality with:
+ * - Automatic history summarization when conversation gets too long
+ * - Query elevation from fast model to smart model for complex queries
+ */
+class SmartChatAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
-    private val systemPrompt = ""
+    private val systemPrompt = """
+        You are a helpful AI assistant with expertise in software development, coding, and technical problem-solving.
+        You provide clear, accurate, and well-structured responses.
+        When discussing code, you explain your reasoning and suggest best practices.
+    """.trimIndent()
 
     override fun handle(e: AnActionEvent) {
         val project = e.project ?: return
 
         try {
-            UITools.runAsync(project, "Initializing Chat", true) { progress ->
+            UITools.runAsync(project, "Initializing Smart Chat", true) { progress ->
                 progress.isIndeterminate = true
-                progress.text = "Setting up chat session..."
+                progress.text = "Setting up smart chat session..."
 
                 val session = Session.newGlobalID()
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
                     session,
-                    "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+                    "Smart Chat @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                SessionProxyServer.agents[session] = ChatSocketManager(
+                SessionProxyServer.agents[session] = SmartChatSocketManager(
                     session = session,
                     smartModel = AppSettingsState.instance.smartChatClient,
                     fastModel = AppSettingsState.instance.fastChatClient,
                     systemPrompt = systemPrompt,
                     applicationClass = ApplicationServer::class.java,
                     storage = ApplicationServices.fileApplicationServices().dataStorageFactory,
-                    budget = 2.0
+                    budget = 2.0,
+                    maxHistoryTokens = 4000,
+                    targetSummaryTokens = 1000,
+                    preserveRecentMessages = 4
                 )
                 ApplicationServer.appInfoMap[session] = AppInfoData(
-                    applicationName = "Code Chat",
+                    applicationName = "Smart Chat",
                     inputCnt = 0,
                     stickyInput = true,
                     loadImages = false,
@@ -69,6 +81,6 @@ class GenericChatAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(GenericChatAction::class.java)
+        private val log = LoggerFactory.getLogger(SmartChatAction::class.java)
     }
 }

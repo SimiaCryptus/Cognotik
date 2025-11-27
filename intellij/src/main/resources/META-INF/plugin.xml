@@ -37,10 +37,15 @@
                text="_Cognotik"
                description="Cognotik coding assistant tools">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
-            <action class="cognotik.actions.chat.GenericChatAction"
+<action class="cognotik.actions.chat.GenericChatAction"
                     id="GenericChat"
                     text="💬 Cognotik Chat"
                     description="Initiate a general-purpose chat session to discuss coding concepts, get assistance with programming tasks, or explore software development ideas">
+            </action>
+            <action class="cognotik.actions.chat.SmartChatAction"
+                    id="SmartChat"
+                    text="🧠 Smart Chat"
+                    description="Enhanced chat with automatic history summarization and intelligent query elevation for complex questions">
             </action>
             <action class="cognotik.actions.plan.UnifiedPlanFromMenuAction"
                     id="UnifiedPlan"
@@ -80,11 +85,15 @@
                icon="MyIcons.icon"
                text="_Cognotik"
                description="Cognotik coding assistant tools">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="WeighingNewGroup"/>
+<add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="WeighingNewGroup"/>
 
             <action class="cognotik.actions.chat.MultiCodeChatAction"
                     text="💬 Code Chat"
                     description="Initiate an interactive dialogue session to discuss and analyze multiple code files simultaneously">
+            </action>
+            <action class="cognotik.actions.chat.SmartCodeChatAction"
+                    text="🧠 Smart Code Chat"
+                    description="Enhanced code chat with automatic history summarization and intelligent query elevation for complex code analysis">
             </action>
             <action class="cognotik.actions.chat.ImageChatAction"
                     text="💬 Image Chat"

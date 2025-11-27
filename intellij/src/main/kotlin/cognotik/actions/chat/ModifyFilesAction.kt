@@ -119,8 +119,8 @@ open class ModifyFilesAction(
         private val showLineNumbers: Boolean = false
     ) : ChatSocketManager(
         session = session,
-        model = model,
-        parsingModel = parsingModel,
+        smartModel = model,
+        fastModel = parsingModel,
         systemPrompt = "",
         applicationClass = ApplicationServer::class.java,
         storage = ApplicationServices.fileApplicationServices().dataStorageFactory,

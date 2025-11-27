@@ -18,7 +18,7 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.chat.ChatSocketManager
+import com.simiacryptus.cognotik.webui.chat.SmartChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.io.OutputStream
@@ -26,32 +26,30 @@ import java.nio.file.Path
 import java.text.SimpleDateFormat
 
 /**
- * Action that enables multi-file code chat functionality.
- * Allows users to select multiple files and discuss them with an AI assistant.
- * Supports code modifications through patch application.
- *
- * @see BaseAction
+ * Smart Code Chat Action that provides enhanced multi-file code chat with:
+ * - Automatic history summarization when conversation gets too long
+ * - Query elevation from fast model to smart model for complex queries
+ * - Support for code modifications through patch application
  */
-
-class MultiCodeChatAction : BaseAction() {
+class SmartCodeChatAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun handle(event: AnActionEvent) {
         val root = getRoot(event) ?: return
         val codeFiles =
-            getFiles(PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext) ?: arrayOf(), root).toMutableSet()
+            MultiCodeChatAction.getFiles(PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext) ?: arrayOf(), root).toMutableSet()
 
         try {
-            UITools.runAsync(event.project, "Initializing Chat", true) { progress ->
+            UITools.runAsync(event.project, "Initializing Smart Code Chat", true) { progress ->
                 progress.isIndeterminate = true
-                progress.text = "Setting up chat session..."
+                progress.text = "Setting up smart code chat session..."
                 val session = Session.newGlobalID()
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
                     session,
-                    "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+                    "Smart Code Chat @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                SessionProxyServer.agents[session] = CodeChatManager(
+                SessionProxyServer.agents[session] = SmartCodeChatManager(
                     session = session,
                     model = AppSettingsState.instance.smartChatClient,
                     parsingModel = AppSettingsState.instance.fastChatClient,
@@ -59,7 +57,7 @@ class MultiCodeChatAction : BaseAction() {
                     codeFiles = codeFiles
                 )
                 ApplicationServer.appInfoMap[session] = AppInfoData(
-                    applicationName = "Code Chat",
+                    applicationName = "Smart Code Chat",
                     inputCnt = 0,
                     stickyInput = true,
                     loadImages = false,
@@ -77,7 +75,7 @@ class MultiCodeChatAction : BaseAction() {
                 }.start()
             }
         } catch (e: Throwable) {
-            UITools.error(log, "Failed to initialize chat session", e)
+            UITools.error(log, "Failed to initialize smart code chat session", e)
         }
     }
 
@@ -90,13 +88,13 @@ class MultiCodeChatAction : BaseAction() {
         }
     }
 
-    inner class CodeChatManager(
+    inner class SmartCodeChatManager(
         session: Session,
         model: ChatInterface,
         parsingModel: ChatInterface,
         val root: File,
         private val codeFiles: Set<Path>
-    ) : ChatSocketManager(
+    ) : SmartChatSocketManager(
         session = session,
         smartModel = model,
         fastModel = parsingModel,
@@ -104,12 +102,14 @@ class MultiCodeChatAction : BaseAction() {
         applicationClass = ApplicationServer::class.java,
         storage = ApplicationServices.fileApplicationServices().dataStorageFactory,
         budget = 2.0,
+        maxHistoryTokens = 6000,
+        targetSummaryTokens = 1500,
+        preserveRecentMessages = 4
     ) {
 
         override val systemPrompt: String
             get() = """
         You are a helpful AI that helps people with coding.
-
         You will be answering questions about the following code:
         ${codeSummary()}
       """.trimIndent()
@@ -122,7 +122,7 @@ class MultiCodeChatAction : BaseAction() {
                 if (!exists) return@mapNotNull null
 
                 val content = try {
-                    readFileContent(file)
+                    MultiCodeChatAction.readFileContent(file)
                 } catch (e: Exception) {
                     log.warn("Failed to read file: $file", e)
                     return@mapNotNull null
@@ -165,7 +165,7 @@ class MultiCodeChatAction : BaseAction() {
                 }
 
                 val content = try {
-                    readFileContent(file)
+                    MultiCodeChatAction.readFileContent(file)
                 } catch (e: Exception) {
                     log.warn("Failed to read file: $file", e)
                     return@mapNotNull null
@@ -178,48 +178,6 @@ class MultiCodeChatAction : BaseAction() {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(MultiCodeChatAction::class.java)
-
-        fun getFiles(
-            virtualFiles: Array<out VirtualFile>?,
-            root: Path
-        ): Set<Path> = virtualFiles?.filter { file ->
-            // Include all files that can be read by DocumentReader or are code files
-            !file.name.startsWith(".") && (file.isDirectory || isSupportedFile(file))
-        }?.flatMap { file ->
-            if (file.isDirectory && !file.name.startsWith(".")) {
-                getFiles(file.children, root)
-            } else {
-                setOf(root.relativize(file.toNioPath()))
-            }
-        }?.toSet() ?: emptySet()
-
-        fun isSupportedFile(file: VirtualFile): Boolean {
-            val name = file.name.lowercase()
-            return when {
-                name.endsWith(".pdf") ||
-                        name.endsWith(".docx") || name.endsWith(".doc") ||
-                        name.endsWith(".xlsx") || name.endsWith(".xls") ||
-                        name.endsWith(".pptx") || name.endsWith(".ppt") ||
-                        name.endsWith(".odt") ||
-                        name.endsWith(".rtf") ||
-                        name.endsWith(".html") || name.endsWith(".htm") ||
-                        name.endsWith(".eml") -> true
-                file.inputStream.use { it.isBinary } -> true
-                else -> false
-            }
-        }
-
-        fun readFileContent(file: File): String {
-            return try {
-                file.getDocumentReader().use { reader ->
-                    reader.getText()
-                }
-            } catch (e: Exception) {
-                log.debug("Failed to read as document, falling back to text: ${file.name}", e)
-                // Fallback to reading as plain text
-                file.readText(Charsets.UTF_8)
-            }
-        }
+        private val log = LoggerFactory.getLogger(SmartCodeChatAction::class.java)
     }
 }
