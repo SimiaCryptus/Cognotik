@@ -22,8 +22,9 @@ import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.GeneticOptimizationTask
-import com.simiacryptus.cognotik.plan.tools.social.LLMExperimentTask
-import com.simiacryptus.cognotik.plan.tools.social.LLMPollSimulationTask
+import com.simiacryptus.cognotik.plan.tools.reasoning.MathematicalReasoningTask
+ import com.simiacryptus.cognotik.plan.tools.social.LLMExperimentTask
+ import com.simiacryptus.cognotik.plan.tools.social.LLMPollSimulationTask
 import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
 import com.simiacryptus.cognotik.plan.tools.social.PoliticalOptimizationTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.*
@@ -64,7 +65,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 }
                 register(taskType)
             }
-
+            registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument) { settings, task ->
+                SoftwareDesignDocumentTask(settings, task)
+            }
             registerConstructor(PoliticalOptimizationTask.PoliticalOptimization) { settings, task ->
                 PoliticalOptimizationTask(settings, task)
             }
@@ -197,8 +200,11 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(NarrativeGenerationTask.NarrativeGeneration) { settings, task ->
                 NarrativeGenerationTask(settings, task)
             }
-            registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
+registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
                 GeneticOptimizationTask(settings, task)
+            }
+            registerConstructor(MathematicalReasoningTask.MathematicalReasoning) { settings, task ->
+                MathematicalReasoningTask(settings, task)
             }
             registerConstructor(SubPlanning) { settings, task ->
                 SubPlanningTask(settings, task)
