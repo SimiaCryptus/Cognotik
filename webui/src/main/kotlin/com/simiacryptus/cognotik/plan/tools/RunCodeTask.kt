@@ -189,6 +189,7 @@ class RunCodeTask(
         private val log = LoggerFactory.getLogger(RunCodeTask::class.java)
         val RunCode = TaskType(
             "RunCode",
+            "Execution & Automation",
             RunCodeTaskExecutionConfigData::class.java,
             RunCodeTaskTypeConfig::class.java,
             "Execute code snippets safely",

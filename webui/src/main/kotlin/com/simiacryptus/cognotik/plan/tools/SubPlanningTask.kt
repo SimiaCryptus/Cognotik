@@ -314,6 +314,7 @@ class SubPlanningTask(
 
         val SubPlanning = TaskType(
             "SubPlanning",
+            "Planning & Orchestration",
             SubPlanningTaskExecutionConfigData::class.java,
             SubPlanningTaskTypeConfig::class.java,
             "Create and execute sub-plans using recursive planning",

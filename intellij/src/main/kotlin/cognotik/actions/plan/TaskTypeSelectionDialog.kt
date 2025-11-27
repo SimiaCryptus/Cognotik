@@ -14,13 +14,20 @@ import javax.swing.event.TreeSelectionEvent
 import javax.swing.event.TreeSelectionListener
 import javax.swing.tree.*
 
-class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
+class TaskTypeSelectionDialog(
+    project: Project?,
+    private val allowMultipleSelection: Boolean = false
+) : DialogWrapper(project) {
 
-    private var selectedTaskType: TaskType<*, *>? = null
+    private val selectedTaskTypes = mutableSetOf<TaskType<*, *>>()
     private val descriptionPane = JEditorPane().apply {
         contentType = "text/html"
         isEditable = false
-        text = "<html><body><p>Select a task type to see its description</p></body></html>"
+        text = if (allowMultipleSelection) {
+            "<html><body><p>Select one or more task types to see their descriptions</p></body></html>"
+        } else {
+            "<html><body><p>Select a task type to see its description</p></body></html>"
+        }
     }
 
     private val taskTree: JTree
@@ -45,7 +52,11 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
         }
 
         taskTree = JTree(treeModel).apply {
-            selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
+            selectionModel.selectionMode = if (allowMultipleSelection) {
+                TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION
+            } else {
+                TreeSelectionModel.SINGLE_TREE_SELECTION
+            }
             isRootVisible = false
             showsRootHandles = true
 
@@ -83,32 +94,46 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
                 }
             }
 
-            // Add selection listener to update description
+// Add selection listener to update description
             addTreeSelectionListener(object : TreeSelectionListener {
                 override fun valueChanged(e: TreeSelectionEvent?) {
-                    val node = lastSelectedPathComponent as? DefaultMutableTreeNode
-                    val userObject = node?.userObject
 
-                    if (userObject is TaskTypeNode) {
-                        selectedTaskType = userObject.taskType
-                        updateDescription(userObject.taskType)
+                    selectedTaskTypes.clear()
+                    
+                    val paths = selectionPaths
+                    if (paths != null) {
+                        paths.forEach { path ->
+                            val node = path.lastPathComponent as? DefaultMutableTreeNode
+                            val userObject = node?.userObject
+                            if (userObject is TaskTypeNode) {
+                                selectedTaskTypes.add(userObject.taskType)
+                            }
+                        }
+                    }
+                    
+                    if (selectedTaskTypes.isNotEmpty()) {
+                        updateDescription(selectedTaskTypes.toList())
                     } else {
-                        selectedTaskType = null
-                        descriptionPane.text =
+                        descriptionPane.text = if (allowMultipleSelection) {
+                            "<html><body><p>Select one or more task types to see their descriptions</p></body></html>"
+                        } else {
                             "<html><body><p>Select a task type to see its description</p></body></html>"
+                        }
                     }
                 }
             })
+            
             // Add double-click listener to select and OK
             addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
-                    if (e.clickCount == 2) {
+                    if (e.clickCount == 2 && !allowMultipleSelection) {
                         val path = getPathForLocation(e.x, e.y)
                         if (path != null) {
                             val node = path.lastPathComponent as? DefaultMutableTreeNode
                             val userObject = node?.userObject
                             if (userObject is TaskTypeNode) {
-                                selectedTaskType = userObject.taskType
+                                selectedTaskTypes.clear()
+                                selectedTaskTypes.add(userObject.taskType)
                                 doOKAction()
                             }
                         }
@@ -123,7 +148,7 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
         }
 
         init()
-        title = "Select Task Type"
+        title = if (allowMultipleSelection) "Select Task Types" else "Select Task Type"
     }
 
     private fun getPackageGroup(taskType: TaskType<*, *>): String {
@@ -164,36 +189,68 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
 
             taskType.name in listOf("VectorSearch", "KnowledgeIndexing") -> "Knowledge Management"
 
-            taskType.name in listOf(
-                "RunShellCommand", "RunCode", "CommandSession",
-                "SeleniumSession", "SelfHealing"
-            ) -> "Execution & Automation"
 
-            taskType.name in listOf("GitHubSearch", "CrawlerAgent", "MCPTool") -> "Online & Search"
-            taskType.name in listOf("SubPlanning") -> "Planning & Orchestration"
-
-
-            else -> "Other"
+            else -> taskType.category
         }
     }
 
-    private fun updateDescription(taskType: TaskType<*, *>) {
-        descriptionPane.text = buildString {
-            this.append("<html><body style='font-family: sans-serif; padding: 10px;'>")
-            this.append("<h3 style='margin-top: 0;'>${taskType.name}</h3>")
-            this.append("<p><b>Description:</b> ${taskType.description ?: "No description available"}</p>")
-            taskType.tooltipHtml?.let { html ->
-                // Extract content between body tags or use as-is if no body tags
-                val content = if (html.contains("<body")) {
-                    html.substringAfter("<body", "")
-                        .substringAfter(">", "")
-                        .substringBeforeLast("</body>", html)
-                } else {
-                    html.replace("<html>", "").replace("</html>", "")
-                }
-                this.append(content)
+    private fun updateDescription(taskTypes: List<TaskType<*, *>>) {
+        if (taskTypes.isEmpty()) {
+            descriptionPane.text = if (allowMultipleSelection) {
+                "<html><body><p>Select one or more task types to see their descriptions</p></body></html>"
+            } else {
+                "<html><body><p>Select a task type to see its description</p></body></html>"
             }
-            this.append("</body></html>")
+            return
+        }
+        
+        if (taskTypes.size == 1) {
+            val taskType = taskTypes[0]
+            descriptionPane.text = buildString {
+                this.append("<html><body style='font-family: sans-serif; padding: 10px;'>")
+                this.append("<h3 style='margin-top: 0;'>${taskType.name}</h3>")
+                this.append("<p><b>Description:</b> ${taskType.description ?: "No description available"}</p>")
+                taskType.tooltipHtml?.let { html ->
+                    val content = if (html.contains("<body")) {
+                        html.substringAfter("<body", "")
+                            .substringAfter(">", "")
+                            .substringBeforeLast("</body>", html)
+                    } else {
+                        html.replace("<html>", "").replace("</html>", "")
+                    }
+                    this.append(content)
+                }
+                this.append("</body></html>")
+            }
+            descriptionPane.text = buildString {
+                this.append("<html><body style='font-family: sans-serif; padding: 10px;'>")
+                this.append("<h3 style='margin-top: 0;'>${taskType.name}</h3>")
+                this.append("<p><b>Description:</b> ${taskType.description ?: "No description available"}</p>")
+                taskType.tooltipHtml?.let { html ->
+                    // Extract content between body tags or use as-is if no body tags
+                    val content = if (html.contains("<body")) {
+                        html.substringAfter("<body", "")
+                            .substringAfter(">", "")
+                            .substringBeforeLast("</body>", html)
+                    } else {
+                        html.replace("<html>", "").replace("</html>", "")
+                    }
+                    this.append(content)
+                }
+                this.append("</body></html>")
+            }
+        } else {
+            // Multiple tasks selected - show summary
+            descriptionPane.text = buildString {
+                this.append("<html><body style='font-family: sans-serif; padding: 10px;'>")
+                this.append("<h3 style='margin-top: 0;'>${taskTypes.size} Tasks Selected</h3>")
+                this.append("<ul>")
+                taskTypes.sortedBy { it.name }.forEach { taskType ->
+                    this.append("<li><b>${taskType.name}</b>: ${taskType.description ?: "No description"}</li>")
+                }
+                this.append("</ul>")
+                this.append("</body></html>")
+            }
         }
         descriptionPane.caretPosition = 0
     }
@@ -220,10 +277,10 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
     }
 
     override fun doOKAction() {
-        if (selectedTaskType == null) {
+        if (selectedTaskTypes.isEmpty()) {
             JOptionPane.showMessageDialog(
                 contentPane,
-                "Please select a task type",
+                if (allowMultipleSelection) "Please select one or more task types" else "Please select a task type",
                 "No Selection",
                 JOptionPane.WARNING_MESSAGE
             )
@@ -232,7 +289,10 @@ class TaskTypeSelectionDialog(project: Project?) : DialogWrapper(project) {
         super.doOKAction()
     }
 
-    fun getSelectedTaskType(): TaskType<*, *>? = selectedTaskType
+    fun getSelectedTaskTypes(): List<TaskType<*, *>> = selectedTaskTypes.toList()
+    
+    @Deprecated("Use getSelectedTaskTypes() instead", ReplaceWith("getSelectedTaskTypes().firstOrNull()"))
+    fun getSelectedTaskType(): TaskType<*, *>? = selectedTaskTypes.firstOrNull()
 
     private data class TaskTypeNode(val taskType: TaskType<*, *>) {
         override fun toString(): String = taskType.name

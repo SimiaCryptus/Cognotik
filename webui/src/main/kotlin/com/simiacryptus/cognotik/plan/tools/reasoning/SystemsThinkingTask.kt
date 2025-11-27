@@ -17,10 +17,10 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class SystemsThinkingTask(
+ class SystemsThinkingTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: SystemsThinkingTaskExecutionConfigData?
-) : AbstractTask<SystemsThinkingTask.SystemsThinkingTaskExecutionConfigData, TaskTypeConfig>(
+ ) : AbstractTask<SystemsThinkingTask.SystemsThinkingTaskExecutionConfigData, TaskTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
@@ -38,7 +38,7 @@ class SystemsThinkingTask(
         val map_delays: Boolean = true,
         @Description("Whether to find leverage points for intervention")
         val find_leverage_points: Boolean = true,
-        @Description("List of potential interventions to simulate")
+        @Description("List of potential interventions to simulate (e.g., 'Implement caching layer', 'Add rate limiting'). Leave empty or null to skip intervention simulation.")
         val simulate_interventions: List<String>? = null,
         @Description("Time horizon for analysis (e.g., '6 months', '1 year')")
         val time_horizon: String? = "6 months",
@@ -48,6 +48,10 @@ class SystemsThinkingTask(
         val analyze_emergent_behavior: Boolean = true,
         @Description("Additional files for context")
         val related_files: List<String>? = null,
+        @Description("Focus areas or subsystems to prioritize in the analysis")
+        val focus_areas: List<String>? = null,
+        @Description("Specific questions to answer about the system")
+        val analysis_questions: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -61,20 +65,23 @@ class SystemsThinkingTask(
 
     override fun promptSegment(): String {
         return """
-SystemsThinking - Analyze complex systems through feedback loops and dynamics
-  ** Specify the system to analyze (e.g., "CI/CD pipeline", "team workflow")
+ SystemsThinking - Analyze complex systems through feedback loops and dynamics
+ ** Specify the system to analyze (e.g., "CI/CD pipeline", "team workflow", "market dynamics")
   ** Identify feedback loops (reinforcing and balancing)
   ** Map delays and accumulations
   ** Find leverage points for intervention
-  ** Simulate potential interventions
+  ** Simulate potential interventions (provide a list of specific interventions to simulate)
   ** Identify system archetypes (e.g., "Limits to Growth", "Shifting the Burden")
   ** Analyze emergent behavior and unintended consequences
+  ** Optionally specify focus_areas to prioritize certain subsystems
+  ** Optionally provide analysis_questions for specific insights
   ** Useful for:
      - Understanding system behavior
      - Performance optimization
      - Identifying unintended consequences
      - Organizational dynamics
      - Technical debt dynamics
+     - Strategic planning and scenario analysis
         """.trimIndent()
     }
 
@@ -109,8 +116,10 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
             // Overview tab
             tabs["Overview"] = overviewTask.placeholder
 
-            val timeHorizon = executionConfig.time_horizon ?: "6 months"
+val timeHorizon = executionConfig.time_horizon ?: "6 months"
             val interventions = executionConfig.simulate_interventions ?: emptyList()
+            val focusAreas = executionConfig.focus_areas ?: emptyList()
+            val analysisQuestions = executionConfig.analysis_questions ?: emptyList()
 
             overviewTask.add(
                 buildString {
@@ -120,6 +129,16 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
                     appendLine()
                     appendLine("**Time Horizon:** $timeHorizon")
                     appendLine()
+                    if (focusAreas.isNotEmpty()) {
+                        appendLine("**Focus Areas:**")
+                        focusAreas.forEach { appendLine("- $it") }
+                        appendLine()
+                    }
+                    if (analysisQuestions.isNotEmpty()) {
+                        appendLine("**Analysis Questions:**")
+                        analysisQuestions.forEach { appendLine("- $it") }
+                        appendLine()
+                    }
                     appendLine("**Analysis Components:**")
                     if (executionConfig.identify_feedback_loops) appendLine("- ✅ Feedback Loops")
                     if (executionConfig.map_delays) appendLine("- ✅ Delays & Accumulations")
@@ -182,10 +201,10 @@ SystemsThinking - Analyze complex systems through feedback loops and dynamics
                 task.update()
             }
 
-            // Initialize analysis agent
+// Initialize analysis agent
             log.info("Initializing systems thinking analysis agent")
             val analysisAgent = ChatAgent(
-                prompt = buildSystemsThinkingPrompt(systemDescription, timeHorizon, priorContext, relatedContext),
+                prompt = buildSystemsThinkingPrompt(systemDescription, timeHorizon, priorContext, relatedContext, focusAreas, analysisQuestions),
                 model = api,
                 temperature = 0.6
             )
@@ -684,35 +703,39 @@ $simulationAnalysis
         }
     }
 
-    private fun buildSystemsThinkingPrompt(
+private fun buildSystemsThinkingPrompt(
         systemDescription: String,
         timeHorizon: String,
         priorContext: String,
-        relatedContext: String
+        relatedContext: String,
+        focusAreas: List<String>,
+        analysisQuestions: List<String>
     ): String {
         return """
-You are an expert in systems thinking, system dynamics, and complex adaptive systems. Your role is to analyze systems through the lens of feedback loops, delays, accumulations, and emergent behavior.
+ You are an expert in systems thinking, system dynamics, and complex adaptive systems. Your role is to analyze systems through the lens of feedback loops, delays, accumulations, and emergent behavior.
 
-## System to Analyze:
-$systemDescription
+ ## System to Analyze:
+ $systemDescription
 
-## Time Horizon:
-$timeHorizon
+ ## Time Horizon:
+ $timeHorizon
 
-## Context:
-${if (priorContext.isNotBlank()) "### Prior Task Results:\n$priorContext\n\n" else ""}
-${if (relatedContext.isNotBlank()) "### Related Files:\n$relatedContext\n\n" else ""}
+${if (focusAreas.isNotEmpty()) "## Focus Areas:\n${focusAreas.joinToString("\n") { "- $it" }}\n\n" else ""}
+${if (analysisQuestions.isNotEmpty()) "## Specific Questions to Address:\n${analysisQuestions.joinToString("\n") { "- $it" }}\n\n" else ""}
+ ## Context:
+ ${if (priorContext.isNotBlank()) "### Prior Task Results:\n$priorContext\n\n" else ""}
+ ${if (relatedContext.isNotBlank()) "### Related Files:\n$relatedContext\n\n" else ""}
 
-## Systems Thinking Principles:
-1. **Feedback Loops**: Systems are governed by reinforcing and balancing feedback loops
-2. **Delays**: Time lags between cause and effect create oscillations and instability
-3. **Stocks and Flows**: Accumulations (stocks) change through inflows and outflows
-4. **Non-linearity**: Small changes can have large effects; large changes can have small effects
-5. **Emergence**: System behavior arises from interactions, not individual components
-6. **Boundaries**: System definition affects what we see and can influence
-7. **Leverage Points**: Some interventions are far more effective than others
+ ## Systems Thinking Principles:
+ 1. **Feedback Loops**: Systems are governed by reinforcing and balancing feedback loops
+ 2. **Delays**: Time lags between cause and effect create oscillations and instability
+ 3. **Stocks and Flows**: Accumulations (stocks) change through inflows and outflows
+ 4. **Non-linearity**: Small changes can have large effects; large changes can have small effects
+ 5. **Emergence**: System behavior arises from interactions, not individual components
+ 6. **Boundaries**: System definition affects what we see and can influence
+ 7. **Leverage Points**: Some interventions are far more effective than others
 
-## Analysis Approach:
+ ## Analysis Approach:
 - Think in terms of circular causality, not linear cause-and-effect
 - Look for feedback loops that drive system behavior
 - Identify delays that create problems
@@ -720,6 +743,8 @@ ${if (relatedContext.isNotBlank()) "### Related Files:\n$relatedContext\n\n" els
 - Consider unintended consequences and side effects
 - Use system archetypes to recognize common patterns
 - Think long-term about how interventions play out over time
+${if (focusAreas.isNotEmpty()) "- Prioritize analysis of the specified focus areas" else ""}
+${if (analysisQuestions.isNotEmpty()) "- Ensure the specific analysis questions are addressed" else ""}
 
 Provide clear, actionable insights grounded in systems thinking principles.
     """.trimIndent()

@@ -1410,6 +1410,7 @@ Provide comprehensive, production-ready documentation.
         private val log: Logger = LoggerFactory.getLogger(SoftwareDesignDocumentTask::class.java)
         val SoftwareDesignDocument = TaskType(
             "SoftwareDesignDocument",
+            "Writing",
             SoftwareDesignDocumentTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comprehensive software design documentation",

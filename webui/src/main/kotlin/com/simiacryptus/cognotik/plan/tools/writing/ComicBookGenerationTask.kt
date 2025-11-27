@@ -357,6 +357,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
         private val log: Logger = LoggerFactory.getLogger(ComicBookGenerationTask::class.java)
         val ComicBookGeneration = TaskType(
             "ComicBookGeneration",
+            "Writing",
             ComicBookGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comic book scripts and visuals",
