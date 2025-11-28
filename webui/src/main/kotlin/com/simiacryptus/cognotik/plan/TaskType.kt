@@ -21,21 +21,11 @@ import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask.Companion
 import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
-import com.simiacryptus.cognotik.plan.tools.reasoning.GeneticOptimizationTask
- import com.simiacryptus.cognotik.plan.tools.reasoning.MathematicalReasoningTask
-import com.simiacryptus.cognotik.plan.tools.reasoning.NeuralNetworkLayerTask
-import com.simiacryptus.cognotik.plan.tools.social.LLMExperimentTask
-import com.simiacryptus.cognotik.plan.tools.social.LLMPollSimulationTask
-import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
-import com.simiacryptus.cognotik.plan.tools.social.PoliticalOptimizationTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
-import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask
-import com.simiacryptus.cognotik.plan.tools.social.EthicalReasoningTask
-import com.simiacryptus.cognotik.plan.tools.social.GameTheoryTask
-import com.simiacryptus.cognotik.plan.tools.social.MultiPerspectiveAnalysisTask
+import com.simiacryptus.cognotik.plan.tools.social.*
 import com.simiacryptus.cognotik.plan.tools.writing.*
 import com.simiacryptus.cognotik.plan.tools.writing.ResearchPaperGenerationTask.Companion.ResearchPaperGeneration
 import com.simiacryptus.cognotik.util.DynamicEnum
@@ -80,6 +70,12 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                     constructor(settings, task as T?) as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
                 }
                 register(taskType)
+            }
+            registerConstructor(TableCompilationTask.TableCompilation) { settings, task ->
+              TableCompilationTask(settings, task)
+            }
+            registerConstructor(ImageTableTask.ImageTable) { settings, task ->
+              ImageTableTask(settings, task)
             }
             registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument) { settings, task ->
                 SoftwareDesignDocumentTask(settings, task)

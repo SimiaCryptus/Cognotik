@@ -103,12 +103,11 @@ open class SessionTask(
         @Description("The html tag to wrap the message in (default: div)")
         tag: String = "div",
         @Description("Additional css class(es) to apply to the message")
-        additionalClasses: String = "",
-        socketManager: SocketManager
+        additionalClasses: String = ""
     ): StringBuilder? {
         var windowBuffer: StringBuilder? = null
         val closeButton = """<span class="close">${
-            socketManager.hrefLink(
+          ui.hrefLink(
                 "&times;",
                 "close-button href-link",
                 null,
@@ -255,7 +254,7 @@ Stack Trace:
 
             else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n"
 
-        }.renderMarkdown(), showSpinner, tag, "error", ui
+        }.renderMarkdown(), showSpinner, tag, "error"
     )
 
     @Description("Displays a final message in the task output. This will hide the spinner.")
