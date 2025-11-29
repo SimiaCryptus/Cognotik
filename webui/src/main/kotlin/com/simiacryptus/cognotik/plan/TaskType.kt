@@ -8,11 +8,12 @@ import com.simiacryptus.cognotik.plan.tools.SubPlanningTask
 import com.simiacryptus.cognotik.plan.tools.SubPlanningTask.Companion.SubPlanning
 import com.simiacryptus.cognotik.plan.tools.file.*
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.Analysis
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
-import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
-import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
-import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
-import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
+ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+ import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+import com.simiacryptus.cognotik.plan.tools.file.GenerateQRImageTask
+ import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
+ import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
+ import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameNarrativeDesignTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.Companion.KnowledgeIndexing
@@ -263,8 +264,11 @@ registerConstructor(MathematicalReasoningTask.MathematicalReasoning) { settings,
 registerConstructor(IllustrateDocumentTask.IllustrateDocument) { settings, task ->
                 IllustrateDocumentTask(settings, task)
             }
-            registerConstructor(ComicBookGenerationTask.ComicBookGeneration) { settings, task ->
+registerConstructor(ComicBookGenerationTask.ComicBookGeneration) { settings, task ->
                 ComicBookGenerationTask(settings, task)
+            }
+            registerConstructor(GenerateQRImageTask.GenerateQRImage) { settings, task ->
+                GenerateQRImageTask(settings, task)
             }
             taskConstructors.toMap()
         }
