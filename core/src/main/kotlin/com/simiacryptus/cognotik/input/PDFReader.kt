@@ -5,11 +5,29 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pdfbox.text.PDFTextStripper
 import java.awt.image.BufferedImage
-import java.io.File
+ import java.io.File
+ import javax.imageio.ImageIO
+import javax.imageio.spi.IIORegistry
+import javax.imageio.spi.ImageReaderSpi
+import javax.imageio.spi.ImageWriterSpi
+import java.util.ServiceLoader
 
-class PDFReader(pdfFile: File) : PaginatedDocumentReader, RenderableDocumentReader {
+ class PDFReader(pdfFile: File) : PaginatedDocumentReader, RenderableDocumentReader {
     private val document: PDDocument = Loader.loadPDF(pdfFile)
     private val renderer: PDFRenderer = PDFRenderer(document)
+    companion object {
+        init {
+            val registry = IIORegistry.getDefaultInstance()
+            val loader = PDFReader::class.java.classLoader
+            ServiceLoader.load(ImageReaderSpi::class.java, loader).forEach {
+                registry.registerServiceProvider(it)
+            }
+            ServiceLoader.load(ImageWriterSpi::class.java, loader).forEach {
+                registry.registerServiceProvider(it)
+            }
+        }
+    }
+
     override fun getText(): String {
         val stripper = PDFTextStripper().apply { sortByPosition = true }
         return stripper.getText(document)
@@ -27,7 +45,14 @@ class PDFReader(pdfFile: File) : PaginatedDocumentReader, RenderableDocumentRead
     }
 
     override fun renderImage(pageIndex: Int, dpi: Float): BufferedImage {
-        return renderer.renderImageWithDPI(pageIndex, dpi)
+        val currentThread = Thread.currentThread()
+        val originalClassLoader = currentThread.contextClassLoader
+        try {
+            currentThread.contextClassLoader = this::class.java.classLoader
+            return renderer.renderImageWithDPI(pageIndex, dpi)
+        } finally {
+            currentThread.contextClassLoader = originalClassLoader
+        }
     }
 
     override fun close() {

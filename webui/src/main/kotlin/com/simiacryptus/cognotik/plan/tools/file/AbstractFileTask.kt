@@ -60,7 +60,7 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
         .distinct()
         .filterNotNull()
         .sortedBy { it }
-        .mapNotNull { fn }
+        .mapNotNull { fn(it) }
         .joinToString("\n\n")
 
     protected open fun toString(relativePath: File): CharSequence? = try {

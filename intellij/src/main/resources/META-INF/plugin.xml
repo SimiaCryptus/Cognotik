@@ -37,14 +37,14 @@
                text="_Cognotik"
                description="Cognotik coding assistant tools">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
-<action class="cognotik.actions.chat.GenericChatAction"
+            <action class="cognotik.actions.chat.GenericChatAction"
                     id="GenericChat"
                     text="💬 Cognotik Chat"
                     description="Initiate a general-purpose chat session to discuss coding concepts, get assistance with programming tasks, or explore software development ideas">
             </action>
             <action class="cognotik.actions.chat.SmartChatAction"
                     id="SmartChat"
-                    text="🧠 Smart Chat"
+                    text="🧠 Adaptive Chat"
                     description="Enhanced chat with automatic history summarization and intelligent query elevation for complex questions">
             </action>
             <action class="cognotik.actions.plan.UnifiedPlanFromMenuAction"
@@ -85,25 +85,31 @@
                icon="MyIcons.icon"
                text="_Cognotik"
                description="Cognotik coding assistant tools">
-<add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="WeighingNewGroup"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="WeighingNewGroup"/>
 
-            <action class="cognotik.actions.chat.MultiCodeChatAction"
-                    text="💬 Code Chat"
-                    description="Initiate an interactive dialogue session to discuss and analyze multiple code files simultaneously">
-            </action>
-            <action class="cognotik.actions.chat.SmartCodeChatAction"
-                    text="🧠 Smart Code Chat"
-                    description="Enhanced code chat with automatic history summarization and intelligent query elevation for complex code analysis">
-            </action>
-            <action class="cognotik.actions.chat.ImageChatAction"
-                    text="💬 Image Chat"
-                    description="Initiate an interactive dialogue session to discuss and analyze multiple image files simultaneously">
-            </action>
-            <action class="cognotik.actions.chat.ModifyFilesAction"
-                    text="📝 Modify Files"
-                    description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
-            </action>
+            <group id="cognotik.ui.ProjectMenu.Chat"
+                   class="com.intellij.openapi.actionSystem.DefaultActionGroup"
+                   popup="true"
+                   text="💬 Chat"
+                   description="File modification tools">
+                <action class="cognotik.actions.chat.MultiCodeChatAction"
+                        text="💬 Simple"
+                        description="Initiate an interactive dialogue session to discuss and analyze multiple code files simultaneously">
+                </action>
 
+                <action class="cognotik.actions.chat.ModifyFilesAction"
+                        text="📝 Edit"
+                        description="Analyze and generate patches for multiple files simultaneously, considering the broader project context">
+                </action>
+                <action class="cognotik.actions.chat.SmartCodeChatAction"
+                        text="🧠 Adaptive"
+                        description="Enhanced code chat with automatic history summarization and intelligent query elevation for complex code analysis">
+                </action>
+                <action class="cognotik.actions.chat.ImageChatAction"
+                        text="💬 Image"
+                        description="Initiate an interactive dialogue session to discuss and analyze multiple image files simultaneously">
+                </action>
+            </group>
             <group id="cognotik.ui.ProjectMenu.Modify"
                    class="com.intellij.openapi.actionSystem.DefaultActionGroup"
                    popup="true"
@@ -200,6 +206,10 @@
                         description="Create a visual representation of the knowledge index for easier exploration and understanding">
                 </action>
             </group>
+            <action class="cognotik.actions.generate.OCRAction"
+                    text="📄 OCR"
+                    description="Extract text from image files using Optical Character Recognition (OCR) and save to a new markdown file">
+            </action>
 
             <action class="cognotik.actions.dev.ApplyPatchAction"
                     text="🔧 Apply Patch"
