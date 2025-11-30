@@ -48,6 +48,20 @@ class TaskConfigManager {
                 configFields: []
             },
             {
+                id: 'TableCompilation',
+                name: 'Table Compilation',
+                description: 'Compile data into tables',
+                category: 'File Operations',
+                configFields: []
+            },
+            {
+                id: 'ImageTable',
+                name: 'Image Table',
+                description: 'Generate tables containing images',
+                category: 'File Operations',
+                configFields: []
+            },
+            {
                 id: 'VectorSearch',
                 name: 'Vector Search Task',
                 description: 'Perform vector-based searches for similar items',
@@ -611,13 +625,6 @@ class TaskConfigManager {
                 ]
             },
             {
-                id: 'NarrativeReasoning',
-                name: 'Narrative Reasoning',
-                description: 'Understand and analyze narrative structures',
-                category: 'Writing',
-                configFields: []
-            },
-            {
                 id: 'NarrativeGeneration',
                 name: 'Narrative Generation',
                 description: 'Generate coherent narrative content',
@@ -628,6 +635,20 @@ class TaskConfigManager {
                 id: 'GeneticOptimization',
                 name: 'Genetic Optimization',
                 description: 'Optimize solutions using evolutionary algorithms',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'MathematicalReasoning',
+                name: 'Mathematical Reasoning',
+                description: 'Solve mathematical problems and proofs',
+                category: 'Reasoning',
+                configFields: []
+            },
+            {
+                id: 'NeuralNetworkLayer',
+                name: 'Neural Network Layer',
+                description: 'Simulate or design neural network layers',
                 category: 'Reasoning',
                 configFields: []
             },
@@ -716,17 +737,24 @@ class TaskConfigManager {
                 configFields: []
             },
             {
+                id: 'SoftwareDesignDocument',
+                name: 'Software Design Document',
+                description: 'Generate software design documentation',
+                category: 'Writing',
+                configFields: []
+            },
+            {
+                id: 'ComicBookGeneration',
+                name: 'Comic Book Generation',
+                description: 'Generate comic book pages and stories',
+                category: 'Writing',
+                configFields: []
+            },
+            {
                 id: 'GenerateImage',
                 name: 'Generate Image',
                 description: 'Generate images using AI image generation',
                 category: 'File Operations',
-                configFields: []
-            },
-            {
-                id: 'CommandSession',
-                name: 'Command Session Task',
-                description: 'Execute a series of commands in a session',
-                category: 'Execution & Automation',
                 configFields: []
             },
             {
@@ -812,6 +840,13 @@ class TaskConfigManager {
                 id: 'IllustrateDocument',
                 name: 'Illustrate Document',
                 description: 'Add illustrations and visual elements to documents',
+                category: 'File Operations',
+                configFields: []
+            },
+            {
+                id: 'GenerateQRImage',
+                name: 'Generate QR Image',
+                description: 'Generate QR codes',
                 category: 'File Operations',
                 configFields: []
             }
@@ -946,7 +981,7 @@ class TaskConfigManager {
 
         // Populate model dropdown
         this.populateTaskModelDropdown(modal, configModel);
-        
+
         // Set up sub-tasks event handlers if this is a SubPlanning task
         if (taskType.id === 'SubPlanning') {
             this.setupSubTasksHandlers(modal, existingConfig);
@@ -1053,6 +1088,7 @@ class TaskConfigManager {
             </div>
         `;
     }
+
     // Set up event handlers for sub-tasks management
     setupSubTasksHandlers(modal, existingConfig) {
         // Initialize sub-tasks data on modal
@@ -1085,6 +1121,7 @@ class TaskConfigManager {
             this.attachSubTaskItemHandlers(modal, item);
         });
     }
+
     // Attach event handlers to a sub-task item
     attachSubTaskItemHandlers(modal, item) {
         const key = item.dataset.key;
@@ -1128,6 +1165,7 @@ class TaskConfigManager {
             });
         }
     }
+
     // Show task type selection dialog
     showTaskTypeSelectionDialog() {
         return new Promise((resolve, reject) => {
@@ -1322,6 +1360,6 @@ class TaskConfigManager {
     }
 }
 
- if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== 'undefined' && module.exports) {
     module.exports = {TaskConfigManager};
 }
