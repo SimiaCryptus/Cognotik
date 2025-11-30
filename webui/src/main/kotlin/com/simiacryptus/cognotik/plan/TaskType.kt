@@ -8,11 +8,12 @@ import com.simiacryptus.cognotik.plan.tools.SubPlanningTask
 import com.simiacryptus.cognotik.plan.tools.SubPlanningTask.Companion.SubPlanning
 import com.simiacryptus.cognotik.plan.tools.file.*
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.Analysis
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
-import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
-import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
-import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
-import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
+ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+ import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+import com.simiacryptus.cognotik.plan.tools.file.GenerateQRImageTask
+ import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
+ import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
+ import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameNarrativeDesignTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.Companion.KnowledgeIndexing
@@ -21,19 +22,11 @@ import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask.Companion
 import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
-import com.simiacryptus.cognotik.plan.tools.reasoning.GeneticOptimizationTask
-import com.simiacryptus.cognotik.plan.tools.social.LLMExperimentTask
-import com.simiacryptus.cognotik.plan.tools.social.LLMPollSimulationTask
-import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
-import com.simiacryptus.cognotik.plan.tools.social.PoliticalOptimizationTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
 import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
-import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask
-import com.simiacryptus.cognotik.plan.tools.social.EthicalReasoningTask
-import com.simiacryptus.cognotik.plan.tools.social.GameTheoryTask
-import com.simiacryptus.cognotik.plan.tools.social.MultiPerspectiveAnalysisTask
+import com.simiacryptus.cognotik.plan.tools.social.*
 import com.simiacryptus.cognotik.plan.tools.writing.*
 import com.simiacryptus.cognotik.plan.tools.writing.ResearchPaperGenerationTask.Companion.ResearchPaperGeneration
 import com.simiacryptus.cognotik.util.DynamicEnum
@@ -44,11 +37,26 @@ import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 @JsonSerialize(using = TaskTypeSerializer::class)
 class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
     name: String,
+    val category: String = "",
     val executionConfigClass: Class<out T>,
     val taskSettingsClass: Class<out U>,
     val description: String? = null,
     val tooltipHtml: String? = null,
 ) : DynamicEnum<TaskType<*, *>>(name) {
+    constructor(
+        name: String,
+        executionConfigClass: Class<out T>,
+        taskSettingsClass: Class<out U>,
+        description: String? = null,
+        tooltipHtml: String? = null,
+    ) : this(
+        name,
+        "",
+        executionConfigClass,
+        taskSettingsClass,
+        description,
+        tooltipHtml,
+    )
 
     companion object {
 
@@ -64,7 +72,15 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 }
                 register(taskType)
             }
-
+            registerConstructor(TableCompilationTask.TableCompilation) { settings, task ->
+              TableCompilationTask(settings, task)
+            }
+            registerConstructor(ImageTableTask.ImageTable) { settings, task ->
+              ImageTableTask(settings, task)
+            }
+            registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument) { settings, task ->
+                SoftwareDesignDocumentTask(settings, task)
+            }
             registerConstructor(PoliticalOptimizationTask.PoliticalOptimization) { settings, task ->
                 PoliticalOptimizationTask(settings, task)
             }
@@ -197,8 +213,14 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(NarrativeGenerationTask.NarrativeGeneration) { settings, task ->
                 NarrativeGenerationTask(settings, task)
             }
-            registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
+registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
                 GeneticOptimizationTask(settings, task)
+            }
+registerConstructor(MathematicalReasoningTask.MathematicalReasoning) { settings, task ->
+                MathematicalReasoningTask(settings, task)
+            }
+            registerConstructor(NeuralNetworkLayerTask.NeuralNetworkLayer) { settings, task ->
+                NeuralNetworkLayerTask(settings, task)
             }
             registerConstructor(SubPlanning) { settings, task ->
                 SubPlanningTask(settings, task)
@@ -239,8 +261,14 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(GenerateImageTask.GenerateImage) { settings, task ->
                 GenerateImageTask(settings, task)
             }
-            registerConstructor(IllustrateDocumentTask.IllustrateDocument) { settings, task ->
+registerConstructor(IllustrateDocumentTask.IllustrateDocument) { settings, task ->
                 IllustrateDocumentTask(settings, task)
+            }
+registerConstructor(ComicBookGenerationTask.ComicBookGeneration) { settings, task ->
+                ComicBookGenerationTask(settings, task)
+            }
+            registerConstructor(GenerateQRImageTask.GenerateQRImage) { settings, task ->
+                GenerateQRImageTask(settings, task)
             }
             taskConstructors.toMap()
         }

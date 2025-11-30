@@ -104,8 +104,8 @@ class ImageChatAction : BaseAction() {
         private val codeFiles: Set<Path>
     ) : ChatSocketManager(
         session = session,
-        model = model,
-        parsingModel = parsingModel,
+        smartModel = model,
+        fastModel = parsingModel,
         systemPrompt = "",
         applicationClass = ApplicationServer::class.java,
         storage = ApplicationServices.fileApplicationServices().dataStorageFactory,

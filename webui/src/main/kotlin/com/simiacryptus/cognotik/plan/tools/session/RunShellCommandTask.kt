@@ -220,6 +220,7 @@ class RunShellCommandTask(
         private val log = LoggerFactory.getLogger(RunShellCommandTask::class.java)
         val RunShellCommand = TaskType(
             "RunShellCommand",
+            "Execution & Automation",
             RunShellCommandTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Execute shell commands safely",

@@ -225,6 +225,7 @@ class GitHubSearchTask(
     companion object {
         val GitHubSearch = TaskType(
             "GitHubSearch",
+            "Online & Search",
             GitHubSearchTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Search GitHub repositories, code, issues and users",

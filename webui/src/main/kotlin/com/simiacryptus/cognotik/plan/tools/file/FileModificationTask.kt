@@ -49,44 +49,11 @@ class FileModificationTask(
         }
     }
 
-    private fun getGitDiff(filePath: String): String? {
-        return try {
-            val process = ProcessBuilder("git", "diff", "HEAD", "--", File(filePath).name)
-                .directory(File(filePath).parentFile)
-                .start()
-            if (process.waitFor(10, TimeUnit.SECONDS)) {
-                process.inputStream.bufferedReader().readText()
-            } else {
-                process.destroy()
-                log.warn("Git diff command timed out for file: $filePath")
-                null
-            }
-        } catch (e: Exception) {
-            log.warn("Failed to get git diff for file: $filePath", e)
-            null
-        }
-    }
-
-    private fun getInputFileWithDiff(): String {
-        if (!executionConfig?.includeGitDiff!!) return getInputFileCode()
-        val fileContent = getInputFileCode()
-        val gitDiffs = (executionConfig?.related_files ?: listOf())
-            .mapNotNull { file ->
-                getGitDiff(file)?.let { diff ->
-                    "Git diff for $file:\n$diff"
-                }
-            }
-            .joinToString("\n\n")
-        return if (gitDiffs.isNotBlank()) {
-            """
-      Current file content:
-      $fileContent
-      Git changes:
-      $gitDiffs
-      """.trimIndent()
-        } else {
-            fileContent
-        }
+    private fun getInputFileWithDiff() = if (!executionConfig?.includeGitDiff!!) getInputFileCode()
+    else getInputFileCode { file ->
+        toString(file).toString() + (file.toString().getGitDiff()?.let { diff ->
+            "\n\nGit diff for $file:\n$diff"
+        } ?: "")
     }
 
     override fun promptSegment() = """
@@ -109,21 +76,7 @@ ${
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val defaultFile =
-            if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).isEmpty()) {
-                task.complete("CONFIGURATION ERROR: No input files specified")
-                resultFn("CONFIGURATION ERROR: No input files specified")
-                return
-            } else if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files
-                    ?: listOf())).distinct().size == 1
-            ) {
-                ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).first()
-            } else if ((executionConfig?.files ?: listOf()).distinct().size == 1) {
-                (executionConfig?.files ?: listOf()).first()
-            } else {
-                null
-            }
-
+        val defaultFile = getDefaultFile()
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
         // Initialize transcript for this task
@@ -277,6 +230,19 @@ ${
         }
     }
 
+    fun getDefaultFile() =
+        if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).isEmpty()) {
+            null
+        } else if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files
+                ?: listOf())).distinct().size == 1
+        ) {
+            ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).first()
+        } else if ((executionConfig?.files ?: listOf()).distinct().size == 1) {
+            (executionConfig?.files ?: listOf()).first()
+        } else {
+            null
+        }
+
     companion object {
         private val log = LoggerFactory.getLogger(FileModificationTask::class.java)
 
@@ -299,5 +265,22 @@ ${
                       </ul>
                     """
         )
+        fun String.getGitDiff(): String? {
+            return try {
+                val process = ProcessBuilder("git", "diff", "HEAD", "--", File(this).name)
+                    .directory(File(this).parentFile)
+                    .start()
+                if (process.waitFor(10, TimeUnit.SECONDS)) {
+                    process.inputStream.bufferedReader().readText()
+                } else {
+                    process.destroy()
+                    log.warn("Git diff command timed out for file: ${this}")
+                    null
+                }
+            } catch (e: Exception) {
+                log.warn("Failed to get git diff for file: ${this}", e)
+                null
+            }
+        }
     }
 }

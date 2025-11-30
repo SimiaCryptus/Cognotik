@@ -48,11 +48,22 @@ abstract class FileServlet : HttpServlet() {
             false == file?.exists() -> {
                 // Check if this is a request for HTML or PDF with an equivalent .md file
                 val fileName = file.name
+                val extension = fileName.split(".").lastOrNull()
+                extension?.let { extension ->
+                    log.info("File does not exist: ${file.absolutePath}, checking for markdown alternative for extension: $extension")
+                }
                 when {
-                    (fileName.endsWith(".html") || fileName.endsWith(".pdf")) -> {
+                    setOf("html", "pdf", "txt").contains(extension) -> {
                         val mdFile = File(file.parentFile, fileName.substringBeforeLast(".") + ".md")
                         if (mdFile.exists() && mdFile.isFile) {
                             log.info("Found markdown file, rendering: ${mdFile.absolutePath}")
+                            if(extension == "txt") {
+                                resp.contentType = "text/plain"
+                                resp.characterEncoding = "UTF-8"
+                                resp.status = HttpServletResponse.SC_OK
+                                resp.writer.write(mdFile.readText())
+                                return
+                            }
                             renderMarkdown(mdFile, resp, fileName.endsWith(".pdf"))
                         } else {
                             log.warn("File not found: ${file.absolutePath}")

@@ -277,6 +277,7 @@ class MCPToolTask(
         private val log: Logger = LoggerFactory.getLogger(MCPToolTask::class.java)
         val MCPTool = TaskType(
             "MCPTool",
+            "Online & Search",
             MCPToolTaskExecutionConfigData::class.java,
             MCPToolTaskTypeConfig::class.java,
             "Execute tools from Model Context Protocol servers",

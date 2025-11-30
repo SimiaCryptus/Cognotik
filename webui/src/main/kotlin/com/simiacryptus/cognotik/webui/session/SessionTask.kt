@@ -103,12 +103,11 @@ open class SessionTask(
         @Description("The html tag to wrap the message in (default: div)")
         tag: String = "div",
         @Description("Additional css class(es) to apply to the message")
-        additionalClasses: String = "",
-        socketManager: SocketManager
+        additionalClasses: String = ""
     ): StringBuilder? {
         var windowBuffer: StringBuilder? = null
         val closeButton = """<span class="close">${
-            socketManager.hrefLink(
+          ui.hrefLink(
                 "&times;",
                 "close-button href-link",
                 null,
@@ -238,21 +237,24 @@ open class SessionTask(
     ) = hideable(
         when {
             e is ValidatedObject.ValidationError -> """
-        **Data Validation Error**
 
-        """.trimIndent() + e.message + """
+**Data Validation Error**
 
-        Stack Trace:
-        ```text
-        """.trimIndent() + e.stackTraceTxt + """
-        ```
-      """
+""" + e.message + """
+
+Stack Trace:
+
+```text
+""" + e.stackTraceTxt + """
+```
+
+"""
 
             e is FailedToImplementException -> "**Failed to Implement** \n\n${e.message}\n\nPrefix:\n```${e.language?.lowercase() ?: ""}\n${e.prefix}\n```\n\nImplementation Attempt:\n```${e.language?.lowercase() ?: ""}\n${e.code}\n```\n\n"
 
             else -> "**Error `${e.javaClass.name}`**\n\n```text\n${e.stackTraceToString()}\n```\n"
 
-        }.renderMarkdown(), showSpinner, tag, "error", ui
+        }.renderMarkdown(), showSpinner, tag, "error"
     )
 
     @Description("Displays a final message in the task output. This will hide the spinner.")
@@ -357,7 +359,7 @@ fun ChatInterface.getChildClient(task: SessionTask): ChatInterface {
 }
 
 fun SessionTask.newLogStream(name: String = """API log"""): BufferedOutputStream {
-    val relativePath = ".logs/api-${UUID.randomUUID()}.log"
+    val relativePath = ".logs/api-${UUID.randomUUID()}.md"
     val (file, createFile) = Pair(
         this@newLogStream.linkTo(relativePath),
         this@newLogStream.resolveSystemFile(relativePath)
@@ -365,12 +367,12 @@ fun SessionTask.newLogStream(name: String = """API log"""): BufferedOutputStream
     val buffered = createFile?.outputStream()?.buffered()
         ?: throw RuntimeException("Failed to create log file at path: $relativePath")
     buffered.write("API Logging Started\n".toByteArray())
-    buffered.write("Stack Trace:\n".toByteArray())
+    buffered.write("<details><summary>Stack Trace</summary>\n".toByteArray())
     Thread.currentThread().stackTrace.forEach { element ->
         buffered.write("${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
     }
-    verbose("""<a href='${file}' target='_blank'>$name</a>: <input type="text" value="${createFile.absolutePath}" id="file-path-${messageID}"/>
-    """.trimMargin())
+    buffered.write("</details>\n".toByteArray())
+    verbose("""<a href='${file.removeSuffix(".md")}.html' target='_blank'>$name</a>: <input type="text" value="${createFile.absolutePath}" id="file-path-${messageID}"/>""".trimMargin())
     return buffered
 }
 

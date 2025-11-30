@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicReference
 open class ChatSocketManager(
     session: Session,
     var useExpansionSyntax: Boolean = true,
-    var model: ChatInterface,
-    var parsingModel: ChatInterface,
+    var smartModel: ChatInterface,
+    var fastModel: ChatInterface,
     val userInterfacePrompt: String = (if (!useExpansionSyntax) "" else """
     <div class="expandable-guide">
       <div class="expandable-header">
@@ -158,7 +158,7 @@ open class ChatSocketManager(
         currentChatMessages: List<ModelSchema.ChatMessage>,
         transcriptStream: OutputStream? = null
     ): String {
-        val model = model.getChildClient(task)
+        val model = smartModel.getChildClient(task)
         return buildString {
             runAll(
                 processMsgRecursive(
@@ -225,7 +225,7 @@ open class ChatSocketManager(
             model = model,
             temperature = temperature,
             name = "Topics",
-            parsingChatter = parsingModel,
+            parsingChatter = fastModel,
         )
         return if (fastTopicParsing) {
             topicsParsedActor.getParser().apply(response)
@@ -302,7 +302,7 @@ open class ChatSocketManager(
                     match,
                     transcriptStream
                 ) { msg, tsk, msgs ->
-                    processMsgRecursive(msg, tsk, msgs, transcriptStream, this@ChatSocketManager.model)
+                    processMsgRecursive(msg, tsk, msgs, transcriptStream, this@ChatSocketManager.smartModel)
                 }
             }
         }
@@ -421,7 +421,7 @@ open class ChatSocketManager(
                 task = this.newTask(cancelable = false, root = false).apply { tabs[item] = placeholder },
                 baseMessages = messages.filter { it.content?.any { it.text?.contains(expression) == true } != true },
                 transcriptStream = transcriptStream,
-                model = this@ChatSocketManager.model
+                model = this@ChatSocketManager.smartModel
             )
             val subAggregate = StringBuilder()
             runAll(subTaskFunctions, subAggregate)

@@ -72,9 +72,9 @@ class BasicChatApp(
         }
         return ChatSocketManager(
             session = session,
-            model = instance(settings.model)
+            smartModel = instance(settings.model)
                 ?: throw RuntimeException("No API key for model ${settings.model.name}"),
-            parsingModel = instance(settings.parsingModel)
+            fastModel = instance(settings.parsingModel)
                 ?: throw RuntimeException("No API key for model ${settings.parsingModel.name}"),
             systemPrompt = "",
             temperature = settings.temperature,

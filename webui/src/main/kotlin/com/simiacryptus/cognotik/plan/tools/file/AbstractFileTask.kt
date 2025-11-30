@@ -37,45 +37,43 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
         state = state
     )
 
-    protected fun getInputFileCode(): String {
-        val strings = (executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())
-        val flatMap = strings
-            .flatMap { pattern: String ->
-                if (root.resolve(pattern).exists()) {
-                    return@flatMap listOf(root.resolve(pattern).toFile())
-                }
-                val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-                (FileSelectionUtils.filteredWalk(root.toFile()) {
-                    //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
-                    when {
-                        FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                        it.isDirectory -> true
-                        !matcher.matches(root.relativize(it.toPath())) -> false
-                        else -> true
-                    }
-                })
+    protected fun getInputFileCode(
+        fn: (File) -> (CharSequence?) = ::toString
+    ) = ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf()))
+        .flatMap { pattern: String ->
+            if (root.resolve(pattern).exists()) {
+                return@flatMap listOf(root.resolve(pattern).toFile())
             }
-        val filter = flatMap.filter { file ->
+            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+            (FileSelectionUtils.filteredWalk(root.toFile()) {
+                //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                when {
+                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+                    it.isDirectory -> true
+                    !matcher.matches(root.relativize(it.toPath())) -> false
+                    else -> true
+                }
+            })
+        }.filter { file ->
             file.isFile && file.exists()
         }
-        return filter
-            .distinct()
-            .filterNotNull()
-            .sortedBy { it }
-            .joinToString("\n\n") { relativePath ->
-                val file = root.toFile().resolve(relativePath)
-                try {
-                    val content = if (executionConfig?.extractContent == true && !isTextFile(file)) {
-                        extractDocumentContent(file)
-                    } else {
-                        codeFiles[file.toPath()] ?: file.readText()
-                    }
-                    "# $relativePath\n\n$TRIPLE_TILDE\n$content\n$TRIPLE_TILDE"
-                } catch (e: Throwable) {
-                    log.warn("Error reading file: $relativePath", e)
-                    ""
-                }
-            }
+        .distinct()
+        .filterNotNull()
+        .sortedBy { it }
+        .mapNotNull { fn(it) }
+        .joinToString("\n\n")
+
+    protected open fun toString(relativePath: File): CharSequence? = try {
+        val file = root.toFile().resolve(relativePath)
+        val content = if (executionConfig?.extractContent == true && !isTextFile(file)) {
+            extractDocumentContent(file)
+        } else {
+            codeFiles[file.toPath()] ?: file.readText()
+        }
+        "# $relativePath\n\n$TRIPLE_TILDE\n$content\n$TRIPLE_TILDE"
+    } catch (e: Throwable) {
+        log.warn("Error reading file: $relativePath", e)
+        ""
     }
 
     private fun isTextFile(file: File): Boolean {

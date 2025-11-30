@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.embedding
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
@@ -82,22 +83,11 @@ abstract class EmbeddingClientBase(
             log(
                 level = Level.DEBUG,
                 msg = String.format(
-                    "POST %s\nID:%s\nPrefix:\n\t%s\n%s\n",
+                    "POST %s\nID:%s\nPrefix:\n\t%s\n```\n%s\n```\n",
                     request.uri,
                     requestID,
                     formatEntityForLogging(request.entity),
-                    captureCallerStack().lineSequence().map { str ->
-                        when {
-                            str.isBlank() -> {
-                                when {
-                                    str.length < "\t".length -> "\t"
-                                    else -> str
-                                }
-                            }
-
-                            else -> "\t" + str
-                        }
-                    }.joinToString("\n")
+                    captureCallerStack().indent("  ")
                 )
             )
             val response = it.execute(request)
@@ -146,8 +136,13 @@ abstract class EmbeddingClientBase(
             user = this@EmbeddingClientBase.user
         }
 
-        override fun log(level: Level, msg: String, logStreams: MutableList<BufferedOutputStream>) {
-            super.log(level, msg, logStreams)
+        override fun log(
+            level: Level,
+            msg: String,
+            logStreams: MutableList<BufferedOutputStream>,
+            format: Boolean
+        ) {
+            super.log(level, msg, logStreams, format)
             this@EmbeddingClientBase.log(level, msg)
         }
 

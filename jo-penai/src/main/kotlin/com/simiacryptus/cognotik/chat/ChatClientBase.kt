@@ -2,9 +2,11 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
+import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.core5.http.HttpEntity
@@ -12,7 +14,9 @@ import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.toJson
 import org.apache.hc.client5.http.classic.methods.HttpGet
+import org.json.JSONObject
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
@@ -96,22 +100,11 @@ abstract class ChatClientBase(
             log(
                 level = Level.DEBUG,
                 msg = String.format(
-                    "POST %s\nID:%s\nPrefix:\n\t%s\n%s\n",
+                    "<details><summary>POST %s\nID:%s</summary>\nPrefix:\n\n```json\n%s\n```\n\n```\n%s\n```\n</details>",
                     request.uri,
                     requestID,
                     request.entity.formatEntityForLogging(),
-                    captureCallerStack().lineSequence().map {
-                        when {
-                            it.isBlank() -> {
-                                when {
-                                    it.length < "\t".length -> "\t"
-                                    else -> it
-                                }
-                            }
-
-                            else -> "\t" + it
-                        }
-                    }.joinToString("\n")
+                    captureCallerStack().indent("  ")
                 ),
                 logStreams
             )
@@ -119,15 +112,16 @@ abstract class ChatClientBase(
             log(
                 level = Level.DEBUG,
                 msg = String.format(
-                    "POST %s\nID:%s\nResponse:\n\t%s",
+                    "<details><summary>POST %s\nID:%s</summary>\nResponse:\n\n```\n%s\n```\n</details>",
                     request.uri,
                     requestID,
-                    response.lineSequence().map {
-                        when {
-                            it.isBlank() -> if (it.length < "\t".length) "\t" else it
-                            else -> "\t$it"
+                    response.let {
+                        try {
+                            fromJson<Map<String,Any>>(it, Map::class.java).toJson()
+                        } catch (e: Exception) {
+                            it
                         }
-                    }.joinToString("\n")
+                    }.indent("  ")
                 ),
                 logStreams
             )
@@ -188,12 +182,7 @@ abstract class ChatClientBase(
 }
 
 fun HttpEntity?.formatEntityForLogging() = try {
-    EntityUtils.toString(this)?.lineSequence()?.map {
-        when {
-            it.isBlank() -> if (it.length < "\t".length) "\t" else it
-            else -> "\t$it"
-        }
-    }?.joinToString("\n").orEmpty()
+    EntityUtils.toString(this)?.indent("  ").orEmpty()
 } catch (e: Exception) {
     "[Unable to format entity for logging]: $e"
 }

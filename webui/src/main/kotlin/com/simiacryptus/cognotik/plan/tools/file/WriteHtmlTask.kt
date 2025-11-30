@@ -233,14 +233,15 @@ DESCRIPTION: another detailed description
             transcriptWriter?.write("**Response:**\n$imageSpecResponse\n\n")
             // Parse image specifications
             val imageSpecs = parseImageSpecs(imageSpecResponse)
+          val imageChat = orchestrationConfig.imageChatChatter.getChildClient(task)
             // Generate each image
             imageSpecs.take(executionConfig.image_count).forEach { (filename, description) ->
                 val filename = filename
                 try {
                     newTask.add(MarkdownUtil.renderMarkdown("Generating image: `$filename`...", ui = ui))
-                    val imageAgent = ImageProcessingAgent(
+                  val imageAgent = ImageProcessingAgent(
                         prompt = "Create a high-quality image for a web page based on the description",
-                        model = orchestrationConfig.imageChatChatter,
+                    model = imageChat,
                         temperature = 0.7,
                     )
                     val result = imageAgent.answer(

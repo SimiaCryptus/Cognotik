@@ -66,6 +66,10 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.logback.classic)
 
+    implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
+    implementation("com.github.jai-imageio:jai-imageio-jpeg2000:1.4.0")
+    implementation("org.apache.pdfbox:jbig2-imageio:3.0.4")
+
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)

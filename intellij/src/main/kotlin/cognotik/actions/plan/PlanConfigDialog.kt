@@ -130,9 +130,9 @@ private val parsingModelCombo =
 
     // Task configuration list
     private val taskConfigListModel = DefaultListModel<TaskConfigEntry>()
-    private val taskConfigList = JBList(taskConfigListModel).apply {
+private val taskConfigList = JBList(taskConfigListModel).apply {
         cellRenderer = TaskConfigListCellRenderer()
-        selectionMode = ListSelectionModel.SINGLE_SELECTION
+        selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
         toolTipText = "Configured tasks - double-click to edit"
     }
 
@@ -146,7 +146,7 @@ private val parsingModelCombo =
             }
         }
 
-        // Double-click to edit task configuration
+// Double-click to edit task configuration
         taskConfigList.addMouseListener(object : java.awt.event.MouseAdapter() {
             override fun mouseClicked(e: java.awt.event.MouseEvent) {
                 if (e.clickCount == 2) {
@@ -218,22 +218,43 @@ private val parsingModelCombo =
     }
 
     private fun addTaskConfig() {
-        val dialog = TaskTypeSelectionDialog(null)
+        val dialog = TaskTypeSelectionDialog(null, allowMultipleSelection = true)
         if (dialog.showAndGet()) {
-            val taskType = dialog.getSelectedTaskType() ?: return
-            val newConfig = taskType.newSettings() ?: run {
-                Messages.showErrorDialog(
-                    "Failed to create default configuration for ${taskType.name}",
-                    "Error"
+            val selectedTaskTypes = dialog.getSelectedTaskTypes()
+            if (selectedTaskTypes.isEmpty()) return
+            
+            // If multiple tasks selected, use default configuration without opening edit dialog
+            if (selectedTaskTypes.size > 1) {
+                selectedTaskTypes.forEach { taskType ->
+                    val newConfig = taskType.newSettings() ?: run {
+                        log.warn("Failed to create default configuration for ${taskType.name}")
+                        return@forEach
+                    }
+                    val key = taskType.name
+                    settings.taskSettings[key] = newConfig
+                    taskConfigListModel.addElement(TaskConfigEntry(taskType, newConfig))
+                }
+                Messages.showInfoMessage(
+                    "Added ${selectedTaskTypes.size} task configurations with default settings",
+                    "Tasks Added"
                 )
-                return
-            }
-            val dialog = TaskConfigEditDialog(null, taskType, newConfig, visibleModelsCache)
-            if (dialog.showAndGet()) {
-                val config = dialog.getConfig()
-                val key = if (config.name != null) "${taskType.name}_${config.name}" else taskType.name
-                settings.taskSettings[key] = config
-                taskConfigListModel.addElement(TaskConfigEntry(taskType, config))
+            } else {
+                // Single task selected - open edit dialog
+                val taskType = selectedTaskTypes[0]
+                val newConfig = taskType.newSettings() ?: run {
+                    Messages.showErrorDialog(
+                        "Failed to create default configuration for ${taskType.name}",
+                        "Error"
+                    )
+                    return
+                }
+                val editDialog = TaskConfigEditDialog(null, taskType, newConfig, visibleModelsCache)
+                if (editDialog.showAndGet()) {
+                    val config = editDialog.getConfig()
+                    val key = if (config.name != null) "${taskType.name}_${config.name}" else taskType.name
+                    settings.taskSettings[key] = config
+                    taskConfigListModel.addElement(TaskConfigEntry(taskType, config))
+                }
             }
         }
     }
@@ -581,7 +602,7 @@ row("Parsing Model:") {
                         .comment("Double-click to edit a task configuration")
                         .resizableColumn()
                 }.resizableRow()
-                row {
+row {
                     button("Add Task Config") {
                         addTaskConfig()
                     }

@@ -25,6 +25,7 @@ class SelfHealingTask(
         private val log = LoggerFactory.getLogger(SelfHealingTask::class.java)
         val SelfHealing = TaskType(
             "SelfHealing",
+            "Execution & Automation",
             SelfHealingTaskExecutionConfigData::class.java,
             SelfHealingTaskTypeConfig::class.java,
             "Run a command and automatically fix any issues that arise",

@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
+import java.io.File
 import java.util.*
 import javax.imageio.ImageIO
 
@@ -59,6 +60,13 @@ GenerateImage - Create images using AI image generation models
         """.trimIndent()
     }
 
+    override fun toString(relativePath: File): CharSequence? {
+        return when(relativePath.name.split('.').last()) {
+            "png", "jpg", "jpeg" -> null
+            else -> super.toString(relativePath)
+        }
+    }
+
     override fun run(
         agent: TaskOrchestrator,
         messages: List<String>,
@@ -71,14 +79,26 @@ GenerateImage - Create images using AI image generation models
             resultFn("CONFIGURATION ERROR: No image file specified")
             return
         }
+        val inputImageFiles = executionConfig?.related_files?.filter {
+            it.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))
+        } ?: emptyList()
+        val inputImages = inputImageFiles.mapNotNull { filePath ->
+            val file = root.resolve(filePath)
+            if (file.toFile().exists()) {
+                val image = ImageIO.read(file.toFile())
+                ImageAndText(image = image, text = "Reference image: $filePath")
+            } else {
+                null
+            }
+        }
 
-        val imageFile = imageFiles.first()
-        if (!imageFile.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))) {
-            resultFn("CONFIGURATION ERROR: File must have .png, .jpg, or .jpeg extension: $imageFile")
+        val imageOutputFile = imageFiles.first()
+        if (!imageOutputFile.matches(Regex(".*\\.(png|jpg|jpeg)$", RegexOption.IGNORE_CASE))) {
+            resultFn("CONFIGURATION ERROR: File must have .png, .jpg, or .jpeg extension: $imageOutputFile")
             return
         }
 
-        task.add(MarkdownUtil.renderMarkdown("## Generating Image: `$imageFile`", ui = task.ui))
+        task.add(MarkdownUtil.renderMarkdown("## Generating Image: `$imageOutputFile`", ui = task.ui))
 
         val contextFiles = getInputFileCode()
         val priorCode = getPriorCode(agent.executionState)
@@ -112,7 +132,7 @@ GenerateImage - Create images using AI image generation models
                 model = orchestrationConfig.imageChatChatter,
             )
 
-            val result = imageAgent.answer(listOf(ImageAndText(imagePrompt)))
+            val result = imageAgent.answer(listOf(ImageAndText(imagePrompt)) + inputImages)
             val generatedImage = result.image
             val optimizedPrompt = result.text
 
@@ -127,22 +147,22 @@ GenerateImage - Create images using AI image generation models
             task.add("""<a href="$previewLink" target="_blank"><img src="$previewLink" style="max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" /></a>""")
 
             // Save the image
-            val outputPath = root.resolve(imageFile)
+            val outputPath = root.resolve(imageOutputFile)
             outputPath.toFile().parentFile?.mkdirs()
 
             val format = when {
-                imageFile.endsWith(".png", ignoreCase = true) -> "png"
-                imageFile.endsWith(".jpg", ignoreCase = true) -> "jpg"
-                imageFile.endsWith(".jpeg", ignoreCase = true) -> "jpeg"
+                imageOutputFile.endsWith(".png", ignoreCase = true) -> "png"
+                imageOutputFile.endsWith(".jpg", ignoreCase = true) -> "jpg"
+                imageOutputFile.endsWith(".jpeg", ignoreCase = true) -> "jpeg"
                 else -> "png"
             }
 
             ImageIO.write(generatedImage, format, outputPath.toFile())
 
             val summary =
-                "Successfully generated and saved image to <a href=\"${task.linkTo(imageFile)}\">$imageFile</a>."
+                "Successfully generated and saved image to <a href=\"${task.linkTo(imageOutputFile)}\">$imageOutputFile</a>."
             task.complete(summary)
-            task.add("""<a href="${task.linkTo(imageFile)}"><img src="${task.linkTo(imageFile)}" /></a> created""")
+            task.add("""<a href="${task.linkTo(imageOutputFile)}"><img src="${task.linkTo(imageOutputFile)}" /></a> created""")
             resultFn(summary)
 
         } catch (e: Exception) {

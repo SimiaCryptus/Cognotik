@@ -1416,6 +1416,7 @@ class CrawlerAgentTask(
         private val VALID_URL_PATTERN = Pattern.compile("^(http|https)://.*")
         val CrawlerAgent = TaskType(
             "CrawlerAgent",
+            "Online & Search",
             CrawlerTaskExecutionConfigData::class.java,
             CrawlerTaskTypeConfig::class.java,
             "Search Google, fetch top results, and analyze content",
