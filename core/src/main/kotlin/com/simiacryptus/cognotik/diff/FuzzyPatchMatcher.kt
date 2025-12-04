@@ -376,7 +376,7 @@ open class FuzzyPatchMatcher(
      * @return The normalized string.
      */
     open fun normalizeLine(line: String): String {
-        return line.trimEnd().replace("\\s{2,}".toRegex(), " ")
+        return line.trim().replace("\\s{2,}".toRegex(), " ")
     }
 
     /**
@@ -785,14 +785,17 @@ open class FuzzyPatchMatcher(
             val trimmedLine = line.trimStart()
             val content = when {
                 line.startsWith("  ") -> line.substring(2)
+                line.startsWith(" ") -> line.substring(1)
                 trimmedLine.startsWith("+") || trimmedLine.startsWith("-") -> trimmedLine
                 else -> line
             }
 
-            LineRecord(
+LineRecord(
                 index = index, line = run {
                     when {
                         content.startsWith("+++") || content.startsWith("---") || content.startsWith("@@") -> null
+                        content.startsWith("+ ") && !content.startsWith("+  ") -> content.substring(2)
+                        content.startsWith("- ") && !content.startsWith("-  ") -> content.substring(2)
                         content.startsWith("+") -> content.substring(1)
                         content.startsWith("-") -> content.substring(1)
                         else -> content
