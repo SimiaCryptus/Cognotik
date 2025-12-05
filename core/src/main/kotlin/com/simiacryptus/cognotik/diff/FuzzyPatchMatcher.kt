@@ -487,7 +487,8 @@ open class FuzzyPatchMatcher(
         }
         // Only add unmatched ADD lines if we had at least some context match
         // Otherwise, the patch likely doesn't apply to this file
-        if (lastMatchedPatchIndex >= 0) {
+        val isSourceEmpty = sourceLines.isEmpty() || (sourceLines.size == 1 && sourceLines[0].line.isNullOrEmpty())
+        if (lastMatchedPatchIndex >= 0 || isSourceEmpty) {
             patchLines.filter { it.type == ADD && !usedPatchLines.contains(it) }.forEach { line ->
                 log.debug("Added patch line: {}", line)
                 patchedText.add(line.line ?: "")
