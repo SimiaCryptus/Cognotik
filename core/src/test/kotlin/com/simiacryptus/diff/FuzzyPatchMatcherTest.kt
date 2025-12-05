@@ -12,13 +12,15 @@ class FuzzyPatchMatcherTest {
         fun testCases() = listOf(
             "/patch_exact_match.json",
             "/patch_add_line.json",
+            "/patch_append_line.json",
+            "/patch_prepend_line.json",
             "/patch_modify_line.json",
+            "/yaml_min_repro.json",
             "/patch_remove_line.json",
-//            "/patch_add_2_lines_variant_2.json",
-//            "/patch_add_2_lines_variant_3.json",
-            "/patch_from_data_1.json",
-            "/patch_from_data_2.json",
-            "/yaml_1.json"
+            "/patch_add_2_lines_variant_2.json",
+            "/patch_add_2_lines_variant_3.json",
+            "/patch_inner_block.json",
+            "/patch_append_to_empty_file.json",
         )
     }
 

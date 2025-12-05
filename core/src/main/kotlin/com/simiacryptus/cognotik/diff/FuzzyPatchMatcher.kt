@@ -376,7 +376,7 @@ open class FuzzyPatchMatcher(
      * @return The normalized string.
      */
     open fun normalizeLine(line: String): String {
-        return line.trimEnd().replace("\\s{2,}".toRegex(), " ")
+        return line.trim().replace("\\s{2,}".toRegex(), " ")
     }
 
     /**
@@ -487,7 +487,8 @@ open class FuzzyPatchMatcher(
         }
         // Only add unmatched ADD lines if we had at least some context match
         // Otherwise, the patch likely doesn't apply to this file
-        if (lastMatchedPatchIndex >= 0) {
+        val isSourceEmpty = sourceLines.isEmpty() || (sourceLines.size == 1 && sourceLines[0].line.isNullOrEmpty())
+        if (lastMatchedPatchIndex >= 0 || isSourceEmpty) {
             patchLines.filter { it.type == ADD && !usedPatchLines.contains(it) }.forEach { line ->
                 log.debug("Added patch line: {}", line)
                 patchedText.add(line.line ?: "")
@@ -785,14 +786,17 @@ open class FuzzyPatchMatcher(
             val trimmedLine = line.trimStart()
             val content = when {
                 line.startsWith("  ") -> line.substring(2)
+                line.startsWith(" ") -> line.substring(1)
                 trimmedLine.startsWith("+") || trimmedLine.startsWith("-") -> trimmedLine
                 else -> line
             }
 
-            LineRecord(
+LineRecord(
                 index = index, line = run {
                     when {
                         content.startsWith("+++") || content.startsWith("---") || content.startsWith("@@") -> null
+                        content.startsWith("+ ") && !content.startsWith("+  ") -> content.substring(2)
+                        content.startsWith("- ") && !content.startsWith("-  ") -> content.substring(2)
                         content.startsWith("+") -> content.substring(1)
                         content.startsWith("-") -> content.substring(1)
                         else -> content

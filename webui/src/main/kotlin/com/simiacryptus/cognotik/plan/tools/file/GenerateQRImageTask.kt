@@ -284,18 +284,17 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
         }
     }
 
-    private fun generateQRCode(content: String, size: Int): BufferedImage {
-        val hints = mapOf(
-            EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.H, // Highest error correction (30%)
-            EncodeHintType.MARGIN to 50,
-            EncodeHintType.CHARACTER_SET to "UTF-8"
+    private fun generateQRCode(content: String, size: Int) = MatrixToImageWriter.toBufferedImage(
+        QRCodeWriter().encode(
+            content, BarcodeFormat.QR_CODE, size, size, mapOf(
+                EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.H, // Highest error correction (30%)
+                EncodeHintType.MARGIN to (size / 35).coerceAtLeast(5),
+                EncodeHintType.CHARACTER_SET to "UTF-8"
+            )
         )
-        val qrCodeWriter = QRCodeWriter()
-        val bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, size, size, hints)
-        return MatrixToImageWriter.toBufferedImage(bitMatrix)
-    }
+    )
 
-private fun verifyQRCode(image: BufferedImage): String? {
+    private fun verifyQRCode(image: BufferedImage): String? {
         // Try multiple verification strategies to better match real-world phone scanners
         val strategies = listOf(
             { img: BufferedImage -> verifyWithGlobalHistogramBinarizer(img) },
@@ -387,14 +386,15 @@ private fun verifyQRCode(image: BufferedImage): String? {
         return scaled
     }
 
-private fun convertToGrayscale(image: BufferedImage): BufferedImage {
+    private fun convertToGrayscale(image: BufferedImage): BufferedImage {
         val grayscale = BufferedImage(image.width, image.height, BufferedImage.TYPE_BYTE_GRAY)
         val g2d = grayscale.createGraphics()
         g2d.drawImage(image, 0, 0, null)
         g2d.dispose()
         return grayscale
     }
-private fun enhanceContrast(image: BufferedImage): BufferedImage {
+
+    private fun enhanceContrast(image: BufferedImage): BufferedImage {
         val enhanced = BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_RGB)
         // First pass: find min/max values for histogram stretching
         var minVal = 255
@@ -411,7 +411,7 @@ private fun enhanceContrast(image: BufferedImage): BufferedImage {
             }
         }
         val range = (maxVal - minVal).coerceAtLeast(1)
-        
+
         for (y in 0 until image.height) {
             for (x in 0 until image.width) {
                 val rgb = image.getRGB(x, y)
@@ -427,6 +427,7 @@ private fun enhanceContrast(image: BufferedImage): BufferedImage {
         }
         return enhanced
     }
+
     private fun sharpenImage(image: BufferedImage): BufferedImage {
         try {
             val kernel = java.awt.image.Kernel(
@@ -445,7 +446,8 @@ private fun enhanceContrast(image: BufferedImage): BufferedImage {
             return image
         }
     }
-private fun thresholdImage(image: BufferedImage): BufferedImage {
+
+    private fun thresholdImage(image: BufferedImage): BufferedImage {
         val grayscale = convertToGrayscale(image)
         val thresholded = BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_RGB)
         // Calculate average luminance for adaptive threshold
@@ -467,6 +469,7 @@ private fun thresholdImage(image: BufferedImage): BufferedImage {
         }
         return thresholded
     }
+
     private fun adaptiveThreshold(image: BufferedImage): BufferedImage {
         // Use local adaptive thresholding for better results with varying lighting/colors
         val grayscale = if (image.type == BufferedImage.TYPE_BYTE_GRAY) image else convertToGrayscale(image)
