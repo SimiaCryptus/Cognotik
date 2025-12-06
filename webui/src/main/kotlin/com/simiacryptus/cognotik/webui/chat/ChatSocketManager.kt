@@ -86,7 +86,7 @@ open class ChatSocketManager(
         val expandedUserMessage = expandTopics(userMessage)
         markdownTranscript?.write("## User\n$expandedUserMessage\n\n".toByteArray())
         val task = newTask()
-        task.echo(renderResponse(expandedUserMessage, task))
+        task.echo(expandedUserMessage.renderMarkdown)
 
         synchronized(messagesLock) {
             chatMessages += ModelSchema.ChatMessage(ModelSchema.Role.user, expandedUserMessage.toContentList())

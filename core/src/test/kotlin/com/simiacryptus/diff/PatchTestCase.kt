@@ -9,7 +9,7 @@ data class PatchTestCase(
     val originalCode: String,
     val diff: String,
     val newCode: String,
-    val isValid: Boolean,
+    val isValid: Boolean?,
     val errors: String?
 ) {
     companion object {
@@ -18,7 +18,7 @@ data class PatchTestCase(
             val stream = patcher.javaClass.getResourceAsStream(resourceName)
                 ?: throw IllegalArgumentException("Resource not found: $resourceName")
             val testCase: PatchTestCase = JsonUtil.fromJson(String(stream.readAllBytes()), PatchTestCase::class.java)
-            if (!testCase.isValid) return
+            if (false == testCase.isValid) return
             val result = patcher.applyPatch(testCase.originalCode, testCase.diff)
             Assertions.assertEquals(normalize(testCase.newCode), normalize(result))
         }
