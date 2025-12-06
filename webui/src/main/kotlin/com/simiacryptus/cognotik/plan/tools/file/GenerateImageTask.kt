@@ -172,6 +172,11 @@ GenerateImage - Create images using AI image generation models
         }
     }
 
+    override fun isIgnored(file: File) = when(file.extension) {
+        "png", "jpg", "jpeg" -> true
+        else -> super.isIgnored(file)
+    }
+
     override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
         val acceptLink = ui.hrefLink("Accept and Save Image") {
             fn()

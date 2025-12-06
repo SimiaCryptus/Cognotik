@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.input.DocumentReader
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.AbstractTask
@@ -55,13 +56,21 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
                 }
             })
         }.filter { file ->
-            file.isFile && file.exists()
+            file.isFile && file.exists() && !isIgnored(file)
         }
         .distinct()
         .filterNotNull()
         .sortedBy { it }
         .mapNotNull { fn(it) }
         .joinToString("\n\n")
+
+    protected open fun isIgnored(file: File): Boolean = when(file.extension) {
+        /* Common Binary Files */
+        "class", "jar", "exe", "dll", "bin", "img", "iso", "zip", "tar", "gz", "7z" -> true
+        /* Common Image and Media */
+        "png", "jpg", "jpeg", "gif", "bmp", "tiff", "mp4", "mp3", "avi", "mov", "wmv", "flv", "mkv" -> true
+        else -> false
+    }
 
     protected open fun toString(relativePath: File): CharSequence? = try {
         val file = root.toFile().resolve(relativePath)
@@ -115,7 +124,14 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
                 file.getDocumentReader().use { reader ->
                     when (reader) {
                         is PaginatedDocumentReader -> reader.getText(0, reader.getPageCount())
-                        else -> reader.getText()
+                        else -> {
+                            val text = reader.getText()
+                            when {
+                                text.isAsciiPrintable() -> text
+                                text.length > (1024 * 512) -> ""
+                                else -> text
+                            }
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -128,4 +144,8 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
             }
         }
     }
+}
+
+fun String.isAsciiPrintable(): Boolean {
+    return this.all { it.code in 32..126 || it == '\n' || it == '\r' || it == '\t' }
 }
