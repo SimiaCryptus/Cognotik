@@ -3,21 +3,21 @@ group = properties("libraryGroup")
 version = properties("libraryVersion")
 
 plugins {
-  kotlin("jvm") // Version is applied globally via settings.gradle.kts
-  id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
-  jacoco
-  id("io.github.gradle-nexus.publish-plugin")
+    kotlin("jvm") // Version is applied globally via settings.gradle.kts
+    id("com.github.ben-manes.versions") // Version is applied globally via settings.gradle.kts
+    jacoco
+    id("io.github.gradle-nexus.publish-plugin")
 }
 
 nexusPublishing {
-  repositories {
-    sonatype {
-      nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-      snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-      username.set(findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME"))
-      password.set(findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD"))
+    repositories {
+        sonatype {
+            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots/"))
+            username.set(findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME"))
+            password.set(findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD"))
+        }
     }
-  }
 }
 
 
@@ -29,7 +29,9 @@ subprojects {
         gradlePluginPortal()
     }
     when (name) {
-        "android" -> { /* Skip Java plugin for Android project */ }
+        "android" -> { /* Skip Java plugin for Android project */
+        }
+
         else -> {
             apply(plugin = "java")
             apply(plugin = "kotlin")
@@ -41,7 +43,7 @@ subprojects {
             }
         }
     }
-tasks.withType<JavaCompile> {
+    tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.add("-parameters")
         options.release.set(21)
@@ -106,8 +108,10 @@ tasks.withType<JavaCompile> {
 
 allprojects {
     // Only apply Java plugin to non-Android projects
-when (name) {
-        "android" -> { /* Skip Java plugin for Android project */ }
+    when (name) {
+        "android" -> { /* Skip Java plugin for Android project */
+        }
+
         else -> {
             apply(plugin = "java")
             java {

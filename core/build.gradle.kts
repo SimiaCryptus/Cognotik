@@ -1,5 +1,5 @@
-group = providers.gradleProperty("cognotikGroup").get()
-version = providers.gradleProperty("cognotikVersion").get()
+group = providers.gradleProperty("libraryGroup").get()
+version = providers.gradleProperty("libraryVersion").get()
 
 plugins {
     `java-library`
@@ -123,8 +123,8 @@ publishing {
                 developers {
                     developer {
                         id.set("simiacryptus")
-                        name.set("SimiaCryptus")
-                        email.set("simiacryptus@gmail.com")
+                        name.set("Andrew Charneski")
+                        email.set("acharneski@gmail.com")
                     }
                 }
 
@@ -141,12 +141,10 @@ publishing {
 signing {
     val signingKey = findProperty("signingInMemoryKey")?.toString() ?: System.getenv("SIGNING_KEY")
     val signingPassword = findProperty("signingInMemoryKeyPassword")?.toString() ?: System.getenv("SIGNING_PASSWORD")
-
     if (signingKey != null && signingPassword != null) {
         useInMemoryPgpKeys(signingKey, signingPassword)
+        sign(publishing.publications["maven"])
     }
-
-    sign(publishing.publications["maven"])
 }
 
 tasks.javadoc {
