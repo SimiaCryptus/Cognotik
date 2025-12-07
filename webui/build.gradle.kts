@@ -173,7 +173,7 @@ publishing {
             from(components["java"])
 
             groupId = "com.cognotik"
-            artifactId = "webapp"
+            artifactId = "webui"
             version = project.version.toString()
 
             pom {
