@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
 import okio.ByteString.Companion.decodeBase64
 import org.apache.hc.core5.http.HttpRequest
@@ -110,7 +111,9 @@ class GeminiSdkChatClient(
             val config = buildGenerateContentConfig(chatRequest)
             val contents: List<Content> = convertToGeminiContents(chatRequest.messages)
             log(
-                "<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelName} (${requestID})</summary>\n${
+                "<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelName} (${requestID})</summary>\n\n```json\n${
+                    toJson(config)
+                }\n```\n\n${
                     contents.joinToString("\n\n") {
                         it.toMarkdown()
                     }.indent("  ")

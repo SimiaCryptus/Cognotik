@@ -1,0 +1,92 @@
+--- /home/andrew/code/FakeNewsSite/ui/src/pages/UserProfile.tsx
++++ /home/andrew/code/FakeNewsSite/ui/src/pages/UserProfile.tsx
+@@ -15,4 +15,5 @@
+ export const UserProfile: React.FC = () => {
+   const { username } = useParams<{ username: string }>();
++  console.log('UserProfile: init', { username });
+   const navigate = useNavigate();
+   const [activeTab, setActiveTab] = useState<ActivityTab>('stories');
+@@ -46,4 +47,13 @@
+     refetch: refetchComments,
+   } = useUserComments(username || null, commentsPage, commentsPageSize);
+ 
++  console.log('UserProfile: render state', {
++    user,
++    userLoading,
++    activeTab,
++    storiesData,
++    commentsData
++  });
++
+   if (userLoading) {
++    console.log('UserProfile: loading...');
+     return <Loading size="large" text="Loading user profile..." />;
+   }
+    console.log(`[CommentsService] buildCommentTree finished. Root comments: ${rootComments.length}`);
+ 
+   if (userError) {
++    console.error('UserProfile: error', userError);
+     return (
+       <div className="user-profile-error">
+@@ -61,4 +71,5 @@
+ 
+   if (!user) {
++    console.warn('UserProfile: user not found');
+     return (
+       <div className="user-profile-error">
+@@ -73,4 +84,5 @@
+ 
+   const handleTabChange = (tab: ActivityTab) => {
++    console.log('UserProfile: handleTabChange', tab);
+     setActiveTab(tab);
+     if (tab === 'stories') {
+    console.log(`[CommentsService] getCommentById called with id: ${id}`);
+    console.log(`[CommentsService] getComment called with id: ${id}`);
+    console.log(`[CommentsService] getCommentsByIds called with ids: ${ids.join(', ')}`);
+    console.log(`[CommentsService] getCommentThread called with id: ${id}`);
+      console.log(`[CommentsService] Fetching children for comment ${id}`);
+    console.log(`[CommentsService] getCommentsWithDetails called with ids: ${ids.join(', ')}`);
+    const fulfilledCount = results.filter(r => r.status === 'fulfilled').length;
+    console.log(`[CommentsService] getCommentsWithDetails finished. Success: ${fulfilledCount}/${ids.length}`);
+    console.log(`[CommentsService] buildCommentTree called with ${comments.length} comments`);
+    console.log(`[UsersService] Fetching user details: ${username}`);
+    try {
+      const user = await apiClient.get<User>(ENDPOINTS.USER_DETAIL(username));
+      console.log(`[UsersService] Successfully fetched user: ${username}`);
+      return user;
+    } catch (error) {
+      console.error(`[UsersService] Error fetching user: ${username}`, error);
+      throw error;
+    }
+    console.log(`[UsersService] getUser alias called for: ${username}`);
+    console.log(`[UsersService] Fetching stories for user: ${username}`, params);
+    try {
+      const stories = await apiClient.get<PaginatedStoryIds>(
+        ENDPOINTS.USER_STORIES(username),
+        params
+      );
+      console.log(`[UsersService] Successfully fetched stories for user: ${username}`);
+      return stories;
+    } catch (error) {
+      console.error(`[UsersService] Error fetching stories for user: ${username}`, error);
+      throw error;
+    }
+    console.log(`[UsersService] Fetching comments for user: ${username}`, params);
+    try {
+      const comments = await apiClient.get<PaginatedCommentIds>(
+        ENDPOINTS.USER_COMMENTS(username),
+        params
+      );
+      console.log(`[UsersService] Successfully fetched comments for user: ${username}`);
+      return comments;
+    } catch (error) {
+      console.error(`[UsersService] Error fetching comments for user: ${username}`, error);
+      throw error;
+    }
+    console.log(`[UsersService] Fetching multiple users: ${usernames.join(', ')}`);
+    const users = results
+    console.log(`[UsersService] Successfully fetched ${users.length}/${usernames.length} users`);
+    return users;
+    console.log(`[UsersService] Checking if user exists: ${username}`);
+      console.log(`[UsersService] User exists: ${username}`);
+      console.warn(`[UsersService] User check failed or not found: ${username}`);
