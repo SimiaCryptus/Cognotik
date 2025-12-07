@@ -650,7 +650,7 @@ open class FuzzyPatchMatcher(
             for (sourceLine in sourceLines) {
                 val patchLine = sourceLine.matchingLine ?: continue
                 // Skip if we've already processed this line
-                if (patchLine.type == DELETE || patchLine.type == ADD) continue
+                if (patchLine.type == ADD) continue
                 val pairKey = Pair(sourceLine.index, patchLine.index)
                 if (!processedPairs.add(pairKey)) continue
 

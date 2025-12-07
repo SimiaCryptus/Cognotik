@@ -173,7 +173,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             fun isFileResolvable(header: String?): Boolean {
                 try {
                     val prefiltered = prefilterFilename(normalizeFilename(header ?: "")) ?: ""
-                    val resolvedPath = resolver(root, prefiltered) ?: return (null != defaultFile)
+                    val resolvedPath = resolver(root, prefiltered) ?: return (true != header?.contains('.') && null != defaultFile)
                     if (root.resolve(resolvedPath).toFile().exists()) return true
                     if(!resolvedPath.contains('.') && null != defaultFile) return true // Allow default file for extensionless paths (likely to be a mis-parse)
                     return false

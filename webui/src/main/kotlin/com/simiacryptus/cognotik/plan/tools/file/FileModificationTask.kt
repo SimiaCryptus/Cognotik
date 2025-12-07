@@ -236,7 +236,7 @@ ${
         } else if (((executionConfig?.related_files ?: listOf()) + (executionConfig?.files
                 ?: listOf())).distinct().size == 1
         ) {
-            ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).first()
+            ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf())).last()
         } else if ((executionConfig?.files ?: listOf()).distinct().size == 1) {
             (executionConfig?.files ?: listOf()).first()
         } else {

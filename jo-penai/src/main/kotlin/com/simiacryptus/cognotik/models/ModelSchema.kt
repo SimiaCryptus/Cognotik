@@ -5,16 +5,23 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
-import java.nio.file.Path
 import java.util.*
 import javax.imageio.ImageIO
 
 @Suppress("PropertyName", "SpellCheckingInspection")
 interface ModelSchema {
     data class AudioInput(
-        val data: String,
-        val format: String
-    )
+        var data: String,
+        var format: String
+    ) {
+        var audioBytes: ByteArray
+            @JsonIgnore
+            get() = Base64.getDecoder().decode(data)
+            @JsonIgnore
+            set(value) {
+                data = Base64.getEncoder().encodeToString(value)
+            }
+    }
 
     data class ApiError(
         val message: String? = null,
@@ -226,7 +233,7 @@ interface ModelSchema {
     data class ContentPart(
         val text: String? = null,
         var image_url: String? = null,
-        val input_audio: AudioInput? = null
+        var input_audio: AudioInput? = null
     ) {
       var image_data: ByteArray?
         @JsonIgnore
@@ -268,7 +275,19 @@ interface ModelSchema {
               image_url = null
           }
         }
-
+      var audio_data: ByteArray?
+        @JsonIgnore
+        get() {
+          return input_audio?.audioBytes
+        }
+        @JsonIgnore
+        set(value) {
+            input_audio = if (value != null) {
+                AudioInput(Base64.getEncoder().encodeToString(value), input_audio?.format ?: "mp3")
+            } else {
+                null
+            }
+        }
 
         companion object {
             private val log = LoggerFactory.getLogger(ContentPart::class.java)
@@ -291,6 +310,11 @@ interface ModelSchema {
                 log.info("Creating audio ContentPart")
                 return ContentPart(input_audio = AudioInput(data, format))
             }
+            fun audio(data: ByteArray, format: String): ContentPart {
+                log.info("Creating audio ContentPart")
+                return ContentPart(input_audio = AudioInput(Base64.getEncoder().encodeToString(data), format))
+            }
+
 
             fun toBase64(image: BufferedImage, fmt: String): String {
                 log.info("Converting image to Base64")
@@ -470,4 +494,3 @@ interface ModelSchema {
     )
 
 }
-

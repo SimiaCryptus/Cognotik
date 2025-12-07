@@ -73,8 +73,8 @@ class NeuralNetworkLayerTask(
     val include_lyapunov: Boolean = true,
     @Description("Whether to include Lipschitz analysis")
     val include_lipschitz: Boolean = true,
-    @Description("Target implementation languages")
-    val implementation_languages: List<String>? = listOf("python", "pseudocode"),
+    @Description("Target implementation languages, e.g. 'tensorflow.js', 'pseudocode'")
+    val implementation_languages: List<String>? = listOf("tensorflow.js"),
     @Description("Whether to include numerical stability analysis")
     val include_numerical_stability: Boolean = true,
     @Description("Whether to generate test cases")
@@ -380,7 +380,7 @@ class NeuralNetworkLayerTask(
       val includeHigherOrder = executionConfig?.include_higher_order ?: true
       val includeLyapunov = executionConfig?.include_lyapunov ?: true
       val includeLipschitz = executionConfig?.include_lipschitz ?: true
-      val languages = executionConfig?.implementation_languages ?: listOf("python")
+      val languages = executionConfig?.implementation_languages ?: listOf("tensorflow.js")
       val includeNumerical = executionConfig?.include_numerical_stability ?: true
       val generateTests = executionConfig?.generate_tests ?: true
       val analysisDepth = executionConfig?.analysis_depth ?: "standard"
@@ -1697,7 +1697,7 @@ Provide a complete implementation:
 4. Required imports/dependencies
 
 Use idiomatic code for the target language. Include comments explaining the mathematics.
-For Python, use NumPy. For pseudocode, be clear and mathematical.
+For Python, use NumPy. For Tensorflow.js, use tfjs. For pseudocode, be clear and mathematical.
                 """.trimIndent(),
         model = api,
         temperature = 0.3,

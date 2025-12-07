@@ -31,6 +31,9 @@ class TaskTypeSelectionDialog(
     }
 
     private val taskTree: JTree
+    var isQuickSelect = false
+        private set
+
 
     init {
         val root = DefaultMutableTreeNode("Task Types")
@@ -99,7 +102,7 @@ class TaskTypeSelectionDialog(
                 override fun valueChanged(e: TreeSelectionEvent?) {
 
                     selectedTaskTypes.clear()
-                    
+
                     val paths = selectionPaths
                     if (paths != null) {
                         paths.forEach { path ->
@@ -110,7 +113,7 @@ class TaskTypeSelectionDialog(
                             }
                         }
                     }
-                    
+
                     if (selectedTaskTypes.isNotEmpty()) {
                         updateDescription(selectedTaskTypes.toList())
                     } else {
@@ -122,19 +125,21 @@ class TaskTypeSelectionDialog(
                     }
                 }
             })
-            
+
             // Add double-click listener to select and OK
             addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
-                    if (e.clickCount == 2 && !allowMultipleSelection) {
-                        val path = getPathForLocation(e.x, e.y)
+                    if (e.clickCount == 2) {
+                        val path = taskTree.getPathForLocation(e.x, e.y)
                         if (path != null) {
                             val node = path.lastPathComponent as? DefaultMutableTreeNode
                             val userObject = node?.userObject
                             if (userObject is TaskTypeNode) {
                                 selectedTaskTypes.clear()
                                 selectedTaskTypes.add(userObject.taskType)
+                                isQuickSelect = true
                                 doOKAction()
+                                e.consume()
                             }
                         }
                     }
@@ -150,6 +155,8 @@ class TaskTypeSelectionDialog(
         init()
         title = if (allowMultipleSelection) "Select Task Types" else "Select Task Type"
     }
+    override fun getDimensionServiceKey(): String = "TaskTypeSelectionDialog"
+
 
     private fun getPackageGroup(taskType: TaskType<*, *>): String {
         return when {
@@ -174,17 +181,17 @@ class TaskTypeSelectionDialog(
             ) -> "Gaming"
 
             taskType.name in listOf(
-            "NarrativeGeneration", "NarrativeReasoning", "ArticleGeneration",
-            "TechnicalExplanation", "TutorialGeneration",
-            "BusinessProposal", "EmailCampaign", "InteractiveStory",
-            "ReportGeneration", "Scriptwriting", "JournalismReasoning",
-            "ResearchPaperGeneration",
-          ) -> "Writing"
+                "NarrativeGeneration", "NarrativeReasoning", "ArticleGeneration",
+                "TechnicalExplanation", "TutorialGeneration",
+                "BusinessProposal", "EmailCampaign", "InteractiveStory",
+                "ReportGeneration", "Scriptwriting", "JournalismReasoning",
+                "ResearchPaperGeneration",
+            ) -> "Writing"
 
-          taskType.name in listOf(
+            taskType.name in listOf(
                 "Analysis", "FileModification", "FileSearch",
                 "WriteHtml", "GeneratePresentation", "GenerateImage",
-              "IllustrateDocument",
+                "IllustrateDocument",
             ) -> "File Operations"
 
             taskType.name in listOf("VectorSearch", "KnowledgeIndexing") -> "Knowledge Management"
@@ -203,7 +210,7 @@ class TaskTypeSelectionDialog(
             }
             return
         }
-        
+
         if (taskTypes.size == 1) {
             val taskType = taskTypes[0]
             descriptionPane.text = buildString {
@@ -290,7 +297,7 @@ class TaskTypeSelectionDialog(
     }
 
     fun getSelectedTaskTypes(): List<TaskType<*, *>> = selectedTaskTypes.toList()
-    
+
     @Deprecated("Use getSelectedTaskTypes() instead", ReplaceWith("getSelectedTaskTypes().firstOrNull()"))
     fun getSelectedTaskType(): TaskType<*, *>? = selectedTaskTypes.firstOrNull()
 

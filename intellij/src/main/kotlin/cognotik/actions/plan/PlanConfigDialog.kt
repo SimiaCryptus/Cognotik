@@ -5,9 +5,9 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBList
+import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
-import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.AIModel
@@ -97,7 +97,7 @@ class PlanConfigDialog(
                 settings.defaultModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
             toolTipText = "Default AI model for all tasks"
         }
-private val parsingModelCombo =
+    private val parsingModelCombo =
         ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
             maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
             selectedItem =
@@ -130,10 +130,11 @@ private val parsingModelCombo =
 
     // Task configuration list
     private val taskConfigListModel = DefaultListModel<TaskConfigEntry>()
-private val taskConfigList = JBList(taskConfigListModel).apply {
+    private val taskConfigList = JBList(taskConfigListModel).apply {
         cellRenderer = TaskConfigListCellRenderer()
         selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
         toolTipText = "Configured tasks - double-click to edit"
+        visibleRowCount = 2
     }
 
 
@@ -222,7 +223,7 @@ private val taskConfigList = JBList(taskConfigListModel).apply {
         if (dialog.showAndGet()) {
             val selectedTaskTypes = dialog.getSelectedTaskTypes()
             if (selectedTaskTypes.isEmpty()) return
-            
+
             // If multiple tasks selected, use default configuration without opening edit dialog
             if (selectedTaskTypes.size > 1) {
                 selectedTaskTypes.forEach { taskType ->
@@ -464,7 +465,7 @@ private val taskConfigList = JBList(taskConfigListModel).apply {
             settings.temperature = config.temperature.coerceIn(0.0, 1.0)
             settings.autoFix = config.autoFix
             settings.maxTaskHistoryChars = config.maxTaskHistoryChars
-settings.maxTasksPerIteration = config.maxTasksPerIteration
+            settings.maxTasksPerIteration = config.maxTasksPerIteration
             settings.maxIterations = config.maxIterations
             settings.defaultModel = config.defaultModel
             settings.parsingModel = config.parsingModel
@@ -502,7 +503,7 @@ settings.maxTasksPerIteration = config.maxTasksPerIteration
                 }
             }
 
-config.parsingModel?.model?.modelName?.let { modelName ->
+            config.parsingModel?.model?.modelName?.let { modelName ->
                 visibleModelsCache.find { it.modelName == modelName }?.let { model ->
                     settings.parsingModel = model.toApiChatModel()
                     parsingModelCombo.selectedItem = modelName
@@ -523,7 +524,8 @@ config.parsingModel?.model?.modelName?.let { modelName ->
         }
     }
 
-    override fun createCenterPanel(): JComponent = panel {
+
+    override fun createCenterPanel(): JComponent = JBScrollPane(com.intellij.ui.dsl.builder.panel {
         group {
             row("Saved Configs:") {
                 cell(savedConfigsCombo).align(Align.FILL)
@@ -562,7 +564,6 @@ config.parsingModel?.model?.modelName?.let { modelName ->
                 button("Copy") { exportTaskConfigs() }
                 button("Paste") { importTaskConfigs() }
             }
-
             group("Planning Settings") {
                 row("Cognitive Mode:") {
                     cell(cognitiveModeCombo).align(Align.FILL).comment("Select the cognitive strategy for planning")
@@ -571,12 +572,10 @@ config.parsingModel?.model?.modelName?.let { modelName ->
                     cell(autoPlanPanel).align(Align.FILL)
                 }
             }
-
             row {
                 cell(autoFixCheckbox).align(Align.FILL)
                     .comment("Automatically apply suggested fixes without confirmation")
             }
-
             row("Temperature:") {
                 cell(temperatureSlider).align(Align.FILL)
                     .comment("Adjust AI response creativity (higher = more creative)")
@@ -586,7 +585,7 @@ config.parsingModel?.model?.modelName?.let { modelName ->
                 cell(globalModelCombo).align(Align.FILL)
                     .comment("Default AI model for all tasks")
             }
-row("Parsing Model:") {
+            row("Parsing Model:") {
                 cell(parsingModelCombo).align(Align.FILL)
                     .comment("AI model for parsing and understanding tasks")
             }
@@ -594,7 +593,6 @@ row("Parsing Model:") {
                 cell(imageChatModelCombo).align(Align.FILL)
                     .comment("Multimodal AI model for image-related tasks")
             }
-
             group("Task Configurations") {
                 row {
                     scrollCell(taskConfigList)
@@ -602,7 +600,7 @@ row("Parsing Model:") {
                         .comment("Double-click to edit a task configuration")
                         .resizableColumn()
                 }.resizableRow()
-row {
+                row {
                     button("Add Task Config") {
                         addTaskConfig()
                     }
@@ -630,13 +628,23 @@ row {
                     }
                 }
             }
-
         }
+    }).apply {
+        border = null
+        viewport.border = null
+        horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
     }
 
 
     override fun doOKAction() {
         updateSettings() ?: return
+        try {
+            val configs = AppSettingsState.instance.savedPlanConfigs ?: mutableMapOf()
+            configs["Last"] = toJson(settings)
+            AppSettingsState.instance.savedPlanConfigs = configs
+        } catch (e: Exception) {
+            log.warn("Failed to save 'Last' configuration", e)
+        }
         super.doOKAction()
     }
 
@@ -665,7 +673,7 @@ row {
             val model = visibleModelsCache.find { it.modelName == selectedGlobalModel }
             settings.defaultModel = model?.toApiChatModel()
         }
-val selectedParsingModel = parsingModelCombo.selectedItem as? String
+        val selectedParsingModel = parsingModelCombo.selectedItem as? String
         if (selectedParsingModel != null) {
             val model = visibleModelsCache.find { it.modelName == selectedParsingModel }
             settings.parsingModel = model?.toApiChatModel()
@@ -707,7 +715,7 @@ val selectedParsingModel = parsingModelCombo.selectedItem as? String
         // Validation patterns
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")
 
-      fun isVisible(chatModel: AIModel) =
+        fun isVisible(chatModel: AIModel) =
             ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.filter { it.key != null }
                 .any { it.provider == chatModel.provider }
     }

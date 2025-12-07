@@ -10,7 +10,7 @@ import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
-val String.renderMarkdown: String get() = MarkdownUtil.renderMarkdown(this)
+val String.renderMarkdown: String get() = renderMarkdown(true)
 fun String.renderMarkdown(tabs: Boolean = false): String = MarkdownUtil.renderMarkdown(this, tabs = tabs)
 
 class CmdPatchApp(

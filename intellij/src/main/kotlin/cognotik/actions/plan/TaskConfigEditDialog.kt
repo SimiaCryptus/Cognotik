@@ -5,6 +5,7 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBList
+import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
@@ -52,37 +53,48 @@ class TaskConfigEditDialog(
 
     // For SubPlanning task settings
     private val subTaskConfigListModel = DefaultListModel<SubTaskConfigEntry>()
-    private val subTaskConfigList = JBList(subTaskConfigListModel)
+    private val subTaskConfigList = JBList(subTaskConfigListModel).apply {
+        this.visibleRowCount = 2
+    }
 
     init {
         init()
         title = "Edit ${taskType.name} Configuration"
+        isResizable = true
     }
+    override fun getDimensionServiceKey(): String = "TaskConfigEditDialog"
 
-    override fun createCenterPanel(): JComponent = panel {
-        group("Task Configuration") {
-            row("Configuration Name:") {
-                cell(configNameField)
-                    .align(Align.FILL)
-                    .comment("Enter a unique name for this configuration")
+
+    override fun createCenterPanel(): JComponent {
+        val dialogPanel = panel {
+            group("Task Configuration") {
+                row("Configuration Name:") {
+                    cell(configNameField)
+                        .align(Align.FILL)
+                        .comment("Enter a unique name for this configuration")
+                }
+
+                row("AI Model:") {
+                    cell(modelCombo)
+                        .align(Align.FILL)
+                        .comment("Select the AI model to use for this task type")
+                }
             }
+            // Add task-specific configuration fields
+            createTaskSpecificFields()
 
-            row("AI Model:") {
-                cell(modelCombo)
-                    .align(Align.FILL)
-                    .comment("Select the AI model to use for this task type")
+            group("Task Type Information") {
+                row {
+                    text(taskType.description ?: "No description available")
+                }
             }
         }
-        // Add task-specific configuration fields
-        createTaskSpecificFields()
 
-        group("Task Type Information") {
-            row {
-                text(taskType.description ?: "No description available")
-            }
+        return JBScrollPane(dialogPanel).apply {
+            preferredSize = Dimension(900, 700)
+            border = BorderFactory.createEmptyBorder()
+            horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED
         }
-    }.apply {
-        preferredSize = Dimension(600, 500)
     }
 
     private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
@@ -286,13 +298,17 @@ class TaskConfigEditDialog(
                 )
                 return
             }
-            val configDialog = TaskConfigEditDialog(null, taskType, newConfig, availableModels)
-            if (configDialog.showAndGet()) {
-                val config = configDialog.getConfig()
-                val key = if (config.name != null) "${taskType.name}_${config.name}" else taskType.name
-                parentConfig.taskSettings[key] = config
-                subTaskConfigListModel.addElement(SubTaskConfigEntry(taskType, config, key))
+
+            val config = if (dialog.isQuickSelect) {
+                newConfig
+            } else {
+                val configDialog = TaskConfigEditDialog(null, taskType, newConfig, availableModels)
+                if (configDialog.showAndGet()) configDialog.getConfig() else return
             }
+
+            val key = if (config.name != null) "${taskType.name}_${config.name}" else taskType.name
+            parentConfig.taskSettings[key] = config
+            subTaskConfigListModel.addElement(SubTaskConfigEntry(taskType, config, key))
         }
     }
 
