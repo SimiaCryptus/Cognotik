@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.core.json.JsonReadFeature
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JavaType
+import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
@@ -28,6 +29,7 @@ object JsonUtil {
             .enable(JsonParser.Feature.ALLOW_COMMENTS)
             .enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES)
             .enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
+            .disable(MapperFeature.REQUIRE_HANDLERS_FOR_JAVA8_OPTIONALS)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .disable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES)
             .disable(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES)

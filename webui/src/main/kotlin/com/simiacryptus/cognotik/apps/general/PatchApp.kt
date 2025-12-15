@@ -58,6 +58,8 @@ abstract class PatchApp(
     private var lastParsedErrors: ParsedErrors? = null
 
     private val previousParsedErrorsRecords = mutableListOf<ParsedErrorRecord>()
+    data class FixAttempt(val error: String, val patch: String, val timestamp: Long = System.currentTimeMillis())
+    private val fixHistory = mutableMapOf<String, MutableList<FixAttempt>>()
 
     abstract fun codeFiles(): Set<Path>
 
@@ -134,10 +136,9 @@ abstract class PatchApp(
     override val inputCnt = 1
     override val stickyInput = false
     override fun newSession(user: User, session: Session): SocketManager {
-        val socketManager = super.newSession(user, session)
+        val ui = super.newSession(user, session)
         log.info("Creating new session for user: ${user?.id ?: "anonymous"}")
         var retries: Int = -1
-        val ui = socketManager
         val task = ui.newTask()
         var retryOnOffButton: StringBuilder? = null
         val disableButton = task.hrefLink("Disable Auto-Retry") {
@@ -159,7 +160,7 @@ abstract class PatchApp(
                 }
                 log.debug("Initialized retries to $retries")
             }
-            val newTask = ui.newTask(false)
+            val newTask = task.linkedTask("Run Command${if (retries < settings.maxRetries) " (Retry ${settings.maxRetries - retries}/$settings.maxRetries)" else ""}")
             Thread {
                 log.info("Starting run thread")
                 val model = model.getChildClient(task)
@@ -174,7 +175,7 @@ abstract class PatchApp(
             newTask.placeholder
         }
         log.info("Session setup complete")
-        return socketManager
+        return ui
     }
 
     abstract fun projectSummary(): String
@@ -307,7 +308,6 @@ abstract class PatchApp(
                 task = fixTask,
                 plan = plan,
                 settings = settings,
-                changed = mutableSetOf(),
                 progressHeader = progressHeader,
                 model = model
             )
@@ -330,12 +330,10 @@ abstract class PatchApp(
         task: SessionTask,
         plan: ParsedResponse<ParsedErrors>,
         settings: Settings,
-        changed: MutableSet<Path>,
         progressHeader: StringBuilder?,
         model: ChatInterface
     ) {
         log.info("Starting fixAllErrors")
-        val tabs = TabbedDisplay(task)
         val errors = plan.obj.errors ?: emptyList()
         val hasErrors = errors.any { it.isWarning != true }
         log.info("Found ${errors.size} errors, hasErrors=$hasErrors")
@@ -351,24 +349,30 @@ abstract class PatchApp(
             .map { (msg, errors) ->
                 log.info("Processing error group: $msg with ${errors.size} instances")
                 task.ui.pool.submit {
-                    val task = task.ui.newTask(false).apply { tabs[msg ?: "Error"] = placeholder }
+                    val subSession = task.linkedTask("Fix: ${msg?.take(50) ?: "Error"}...")
+                    val statusBuffer = subSession.add("Status: Initializing...")!!
                     errors.forEach { error ->
                         log.info("Processing individual error: ${error.message}")
-                        task.header("Processing error: $msg", 3)
-                        task.add(
+                        statusBuffer.set("Status: Analyzing error details...")
+                        subSession.update()
+                        
+                        subSession.header("Processing error: $msg", 3)
+                        subSession.add(
                             renderMarkdown(
                                 "```json\n${JsonUtil.toJson(error)}\n```",
                                 tabs = false,
-                                ui = task.ui
+                                ui = subSession.ui
                             )
                         )
-                        task.verbose(
+                        subSession.verbose(
                             renderMarkdown(
                                 "[Extra Details] Error processed at: ${Instant.now()}",
                                 tabs = false,
-                                ui = task.ui
+                                ui = subSession.ui
                             )
                         )
+                        statusBuffer.set("Status: Searching for relevant files...")
+                        subSession.update()
 
                         val searchResults = error.research?.searchQueries?.flatMap { query ->
                             log.debug("Executing search query: pattern=${query.pattern}, glob=${query.fileGlob}")
@@ -383,22 +387,25 @@ abstract class PatchApp(
                         }?.toSet() ?: emptySet()
                         log.info("Search found ${searchResults.size} relevant files")
                         if (searchResults.isNotEmpty()) {
-                            task.verbose(
+                            subSession.verbose(
                                 renderMarkdown(
                                     "Search results:\n\n${searchResults.joinToString("\n") { "* `$it`" }}",
                                     tabs = false,
-                                    ui = task.ui
+                                    ui = subSession.ui
                                 )
                             )
                         }
+                        statusBuffer.set("Status: Generating fix...")
+                        subSession.update()
                         fix(
                             error,
                             searchResults.toList().map { it.toFile().absolutePath },
                             settings.autoFix,
-                            changed,
-                            task,
+                            subSession,
                             model
                         )
+                        statusBuffer.set("Status: Complete")
+                        subSession.update()
                     }
                 }
             }.toTypedArray().onEach { it.get() }
@@ -472,7 +479,6 @@ abstract class PatchApp(
         error: ParsedError,
         additionalFiles: List<String>? = null,
         autoFix: Boolean,
-        changed: MutableSet<Path>,
         task: SessionTask,
         model: ChatInterface,
     ) {
@@ -508,6 +514,15 @@ abstract class PatchApp(
 
         val summary = codeSummary(prunedPaths.distinct(), error)
         log.info("Generated code summary (${summary.length} chars)")
+        val historyContext = prunedPaths.mapNotNull { path ->
+            val history = fixHistory[path.toString()]
+            if (!history.isNullOrEmpty()) {
+                "### History for `$path`\n" + history.joinToString("\n") {
+                    "- [${SimpleDateFormat("HH:mm:ss").format(it.timestamp)}] Attempted fix for '${it.error}'"
+                } + "\n\nPrevious patches applied to this file:\n```diff\n" + history.joinToString("\n\n") { it.patch } + "\n```"
+            } else null
+        }.joinToString("\n\n")
+
         val fixResponse = ChatAgent(
             prompt = """
         You are a helpful AI that helps people with coding.
@@ -522,31 +537,31 @@ abstract class PatchApp(
             listOf(
                 "$promptPrefix\n\nFocus on and Fix the Error:\n  ${error.message ?: ""}\n" +
                         (if (error.details?.isNotBlank() == true) "Details:\n  ${error.details}\n" else "") +
-                        (if (settings.additionalInstructions.isNotBlank()) "Additional Instructions:\n  ${settings.additionalInstructions}\n" else "")
+                        (if (settings.additionalInstructions.isNotBlank()) "Additional Instructions:\n  ${settings.additionalInstructions}\n" else "") +
+                        (if (historyContext.isNotBlank()) "\n\nPrevious Debugging Attempts (Learn from these):\n$historyContext" else "")
             ),
 
             ).lines().joinToString("\n") {
             it.replace(Regex("""/\* Error.*?\*/"""), "")
         }
         log.info("Received fix response (${fixResponse.length} chars)")
+        // Record history
+        prunedPaths.forEach { path ->
+            fixHistory.getOrPut(path.toString()) { mutableListOf() }.add(
+                FixAttempt(error.message ?: "Unknown", fixResponse)
+            )
+        }
+
         val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(
             self = task.ui,
             root = root.toPath(),
             response = fixResponse,
             shouldAutoApply = { path ->
-                if (autoFix && !changed.contains(path)) {
+                if (autoFix) {
                     log.info("Auto-applying fix to: $path")
-                    changed.add(path)
                     true
                 } else {
-                    log.debug(
-                        "Not auto-applying fix to: {} (autoFix={}, already changed={})",
-                        path,
-                        autoFix,
-                        changed.contains(
-                            path
-                        )
-                    )
+                    log.debug("Not auto-applying fix to: {} (autoFix={})", path, autoFix)
                     false
                 }
             },

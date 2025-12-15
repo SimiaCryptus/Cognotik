@@ -44,7 +44,7 @@ open class WaterfallMode(
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         log.debug("Handling user message: $userMessage")
         transcriptStream?.let { stream ->
-            stream.write("## User Message\n\n$userMessage\n\n".toByteArray())
+            stream.write("\n## User Message\n\n$userMessage\n\n".toByteArray())
             stream.flush()
         }
         execute(userMessage, task)
@@ -77,7 +77,7 @@ open class WaterfallMode(
                 describer = describer
             )
             transcriptStream?.let { stream ->
-                stream.write("## Generated Plan\n\n${plan.planText}\n\n".toByteArray())
+                stream.write("\n## Generated Plan\n\n${plan.planText}\n\n".toByteArray())
                 stream.flush()
             }
 
@@ -92,7 +92,7 @@ open class WaterfallMode(
             task.error(e) // Report error on the current task
             log.error("Error in execute", e)
             transcriptStream?.let { stream ->
-                stream.write("## Error\n\n```\n${e.message}\n${e.stackTraceToString()}\n```\n\n".toByteArray())
+                stream.write("\n## Error\n\n```\n${e.message}\n${e.stackTraceToString()}\n```\n\n".toByteArray())
                 stream.flush()
             }
         } finally {
@@ -220,7 +220,7 @@ open class WaterfallMode(
             }  " else {
                 files.joinToString("\n\n") {
                     val path = root.relativize(it.toPath())
-                    "## $path\n\n${(codeFiles[path] ?: "").let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
+                    "\n## $path\n\n${(codeFiles[path] ?: "").let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
                 }
             },
             str

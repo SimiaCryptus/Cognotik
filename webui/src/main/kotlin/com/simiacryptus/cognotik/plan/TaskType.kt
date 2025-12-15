@@ -72,6 +72,15 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 }
                 register(taskType)
             }
+            registerConstructor(FunctorialMappingTask.FunctorialMapping) { settings, task ->
+                FunctorialMappingTask(settings, task)
+            }
+            registerConstructor(StructuralInvariantAnalysisTask.StructuralInvariantAnalysis) { settings, task ->
+                StructuralInvariantAnalysisTask(settings, task)
+            }
+            registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery) { settings, task ->
+                IsomorphismDiscoveryTask(settings, task)
+            }
             registerConstructor(TableCompilationTask.TableCompilation) { settings, task ->
               TableCompilationTask(settings, task)
             }

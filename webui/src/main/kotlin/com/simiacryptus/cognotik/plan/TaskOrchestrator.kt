@@ -97,11 +97,13 @@ class TaskOrchestrator(
         tabs: TabbedDisplay,
         orchestrationConfig: OrchestrationConfig,
     ) {
-        val sessionTask = task.ui.newTask(false).apply { tabs["Session"] = placeholder }
-        val taskTabs = object : TabbedDisplay(sessionTask, additionalClasses = "task-tabs") {
+        val taskTabs = object : TabbedDisplay(
+            task.ui.newTask(false).apply { tabs["Session"] = placeholder },
+            additionalClasses = "task-tabs"
+        ) {
             override fun renderTabButtons(): String {
                 diagramBuffer?.set(
-                    "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown
+                    "\n## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(subTasks)}\n$TRIPLE_TILDE".renderMarkdown
                 )
                 task.complete()
                 return buildString {
@@ -137,24 +139,28 @@ class TaskOrchestrator(
         while (taskIdProcessingQueue.isNotEmpty()) {
             val taskId = taskIdProcessingQueue.removeAt(0)
             val subTask = executionState.subTasks[taskId] ?: throw RuntimeException("Task not found: $taskId")
-            executionState.taskFutures[taskId] = pool.submit {
-                subTask.state = AbstractTask.TaskState.Pending
-                log.debug("Awaiting dependencies: ${subTask.task_dependencies?.joinToString(", ") ?: ""}")
-                subTask.task_dependencies
-                    ?.associate { it to executionState.taskFutures[it] }
-                    ?.forEach { (id, future) ->
-                        try {
-                            future?.get() ?: log.warn("Dependency not found: $id")
-                        } catch (e: Throwable) {
-                            log.warn("Error", e)
-                        }
+            subTask.state = AbstractTask.TaskState.Pending
+            log.debug("Awaiting dependencies: ${subTask.task_dependencies?.joinToString(", ") ?: ""}")
+            subTask.task_dependencies
+                ?.associate { it to executionState.taskFutures[it] }
+                ?.forEach { (id, future) ->
+                    try {
+                        future?.get() ?: log.warn("Dependency not found: $id")
+                    } catch (e: Throwable) {
+                        log.warn("Error", e)
                     }
+                }
+            executionState.taskFutures[taskId] = pool.submit {
                 subTask.state = AbstractTask.TaskState.InProgress
                 taskTabs.update()
                 log.debug("Running task: ${System.identityHashCode(subTask)} ${subTask.task_description}")
-                val task1 = executionState.uitaskMap.get(taskId) ?: task.ui.newTask(false).apply {
+                val task = executionState.uitaskMap[taskId] ?: task.ui.newTask(false).apply {
                     taskTabs[taskId] = placeholder
                 }
+                task.add(
+                    ("\n## Task `" + taskId + "`" + (subTask.task_description ?: "") + "\n" +
+                            TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE + "\n").renderMarkdown
+                )
                 try {
                     val dependencies = subTask.task_dependencies?.toMutableSet() ?: mutableSetOf()
                     dependencies += getAllDependencies(
@@ -162,13 +168,7 @@ class TaskOrchestrator(
                         subTasks = executionState.subTasks,
                         visited = mutableSetOf()
                     )
-
-                    task1.add(
-                        """
-              ## Task `""".trimIndent() + taskId + "`" + (subTask.task_description ?: "") + "\n" +
-                                TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE +
-                                "\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }.renderMarkdown
-                    )
+                    task.add(("\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }).renderMarkdown)
                     val impl = getImpl(orchestrationConfig, subTask)
                     val messages = listOf(
                         userMessage,
@@ -178,13 +178,13 @@ class TaskOrchestrator(
                     impl.run(
                         agent = this,
                         messages = messages,
-                        task = task1,
+                        task = task,
                         resultFn = { executionState.taskResult[taskId] = it },
                         orchestrationConfig = orchestrationConfig
                     )
                 } catch (e: Throwable) {
                     log.warn("Error during task execution", e)
-                    task1.error(e)
+                    task.error(e)
                 } finally {
                     executionState.completedTasks.add(element = taskId)
                     subTask.state = AbstractTask.TaskState.Completed
@@ -198,11 +198,12 @@ class TaskOrchestrator(
 
     fun await(futures: MutableMap<String, Future<*>>) {
         val start = System.currentTimeMillis()
-        while (futures.values.count { it.isDone } < futures.size && (System.currentTimeMillis() - start) < TimeUnit.MINUTES.toMillis(
-                2
-            )) {
-            Thread.sleep(1000)
+        fun cont(): Boolean {
+            val elapsed = System.currentTimeMillis() - start
+            val done = futures.values.count { it.isDone }
+            return done < futures.size && elapsed < TimeUnit.MINUTES.toMillis(20)
         }
+        while (cont()) Thread.sleep(1000)
     }
 
     fun copy(

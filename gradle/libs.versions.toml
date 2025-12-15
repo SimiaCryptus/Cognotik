@@ -88,6 +88,7 @@ jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-an
 jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
 jackson-jaxrs-json = { group = "com.fasterxml.jackson.jaxrs", name = "jackson-jaxrs-json-provider", version.ref = "jackson" }
 jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jackson" }
+jackson-datatype-jdk8 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jdk8", version.ref = "jackson" }
 aws-sdk = { group = "software.amazon.awssdk", name = "aws-sdk-java", version.ref = "aws" }
 aws-bedrock = { group = "software.amazon.awssdk", name = "bedrock", version.ref = "aws" }
 aws-bedrockruntime = { group = "software.amazon.awssdk", name = "bedrockruntime", version.ref = "aws" }
