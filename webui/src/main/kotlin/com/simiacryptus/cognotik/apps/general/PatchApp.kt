@@ -58,7 +58,7 @@ abstract class PatchApp(
     private var lastParsedErrors: ParsedErrors? = null
 
     private val previousParsedErrorsRecords = mutableListOf<ParsedErrorRecord>()
-    data class FixAttempt(val error: String, val patch: String, val timestamp: Long = System.currentTimeMillis())
+    data class FixAttempt(val error: String, val patch: String, val timestamp: Long = System.currentTimeMillis(), val iteration: Int = 0)
     private val fixHistory = mutableMapOf<String, MutableList<FixAttempt>>()
 
     abstract fun codeFiles(): Set<Path>
@@ -126,6 +126,8 @@ abstract class PatchApp(
         }
     }
 
+    lateinit var updateStatus: (String) -> Unit
+
     abstract fun output(
         task: SessionTask,
         settings: Settings,
@@ -151,8 +153,14 @@ abstract class PatchApp(
             log.info("Auto-fix enabled with max retries: ${settings.maxRetries}")
             retryOnOffButton = task.add(disableButton)
         }
-        lateinit var retry: Retryable
-        retry = Retryable(task = task) { content ->
+        val currentStatus = task.add("Status: Initializing...")!!
+        updateStatus = { message: String ->
+            log.info("Status update: $message")
+            currentStatus.set("Status: $message")
+            task.update()
+        }
+
+        fun runIteration() {
             if (retries < 0) {
                 retries = when {
                     settings.autoFix -> settings.maxRetries
@@ -160,20 +168,42 @@ abstract class PatchApp(
                 }
                 log.debug("Initialized retries to $retries")
             }
+            val currentIteration = settings.maxRetries - retries + 1
             val newTask = task.linkedTask("Run Command${if (retries < settings.maxRetries) " (Retry ${settings.maxRetries - retries}/$settings.maxRetries)" else ""}")
             Thread {
                 log.info("Starting run thread")
+                updateStatus("Running command (Iteration $currentIteration)...")
                 val model = model.getChildClient(task)
-                val result = run(newTask, model)
+                val result = run(newTask, model, currentIteration)
                 log.info("Run completed with exit code: ${result.exitCode}")
-                if (result.exitCode != 0 && retries > 0) {
-                    log.info("Triggering retry (${retries} remaining)")
-                    retry.retry()
+                if (result.exitCode != 0) {
+                    if (retries > 0) {
+                        val errorStats = previousParsedErrorsRecords
+                            .flatMap { record -> record.errors?.errors?.map { it.message to record.iteration } ?: emptyList() }
+                            .groupBy({ it.first }, { it.second })
+                            .map { (msg, iters) -> "'${msg?.take(20)}...' (${iters.distinct().size} iters)" }
+                            .joinToString(", ")
+                        log.info("Triggering retry (${retries} remaining). Active errors: $errorStats")
+                        updateStatus("Command failed. Retrying (${retries} remaining)... Active Errors: $errorStats")
+                        retries -= 1
+                        runIteration()
+                    } else {
+                        updateStatus("Command failed. No retries remaining.")
+                    }
+                } else {
+                    updateStatus("Command successful.")
                 }
-                retries -= 1
             }.start()
-            newTask.placeholder
         }
+
+        task.add(task.hrefLink("Run Again", classname = "href-link play-button") {
+            if (retries <= 0 && settings.autoFix) {
+                retries = settings.maxRetries
+            }
+            runIteration()
+        })
+
+        runIteration()
         log.info("Session setup complete")
         return ui
     }
@@ -200,7 +230,7 @@ abstract class PatchApp(
     )
 
     data class ParsedErrorRecord(
-        val errors: ParsedErrors? = null, val timestamp: Long = System.currentTimeMillis()
+        val errors: ParsedErrors? = null, val timestamp: Long = System.currentTimeMillis(), val iteration: Int = 0
     )
 
     data class SearchQuery(
@@ -260,6 +290,7 @@ abstract class PatchApp(
     fun run(
         task: SessionTask,
         model: ChatInterface,
+        iteration: Int = 0
     ): OutputResult {
         log.info("Starting run with settings: ${JsonUtil.toJson(settings)}")
 
@@ -302,14 +333,15 @@ abstract class PatchApp(
                     ).filter { it.value.isNotBlank() },
                 )
             )
-            previousParsedErrorsRecords.add(ParsedErrorRecord(parsedErrors))
+            previousParsedErrorsRecords.add(ParsedErrorRecord(parsedErrors, iteration = iteration))
             log.info("Starting to fix all errors")
             fixAllErrors(
                 task = fixTask,
                 plan = plan,
                 settings = settings,
                 progressHeader = progressHeader,
-                model = model
+                model = model,
+                iteration = iteration
             )
         } catch (e: Exception) {
             log.error("Error during fix process", e)
@@ -331,7 +363,8 @@ abstract class PatchApp(
         plan: ParsedResponse<ParsedErrors>,
         settings: Settings,
         progressHeader: StringBuilder?,
-        model: ChatInterface
+        model: ChatInterface,
+        iteration: Int
     ) {
         log.info("Starting fixAllErrors")
         val errors = plan.obj.errors ?: emptyList()
@@ -402,7 +435,8 @@ abstract class PatchApp(
                             searchResults.toList().map { it.toFile().absolutePath },
                             settings.autoFix,
                             subSession,
-                            model
+                            model,
+                            iteration
                         )
                         statusBuffer.set("Status: Complete")
                         subSession.update()
@@ -481,6 +515,7 @@ abstract class PatchApp(
         autoFix: Boolean,
         task: SessionTask,
         model: ChatInterface,
+        iteration: Int,
     ) {
         log.info("Starting fix for error: ${error.message}")
         val paths = ((error.research?.fixFiles ?: emptyList()) +
@@ -517,9 +552,24 @@ abstract class PatchApp(
         val historyContext = prunedPaths.mapNotNull { path ->
             val history = fixHistory[path.toString()]
             if (!history.isNullOrEmpty()) {
-                "### History for `$path`\n" + history.joinToString("\n") {
-                    "- [${SimpleDateFormat("HH:mm:ss").format(it.timestamp)}] Attempted fix for '${it.error}'"
-                } + "\n\nPrevious patches applied to this file:\n```diff\n" + history.joinToString("\n\n") { it.patch } + "\n```"
+                val (related, unrelated) = history.partition { it.error == error.message }
+                val sb = StringBuilder()
+                if (related.isNotEmpty()) {
+                    sb.append("### ⚠️ PRIOR FAILED FIXES for `$path` (Error: ${error.message})\n")
+                    sb.append("The following patches were attempted in previous iterations but the error persists. DO NOT generate the same code again.\n")
+                    sb.append(related.joinToString("\n") {
+                        "- [Iter ${it.iteration}] Patch:\n```diff\n${it.patch}\n```"
+                    })
+                    sb.append("\n\n")
+                }
+                if (unrelated.isNotEmpty()) {
+                    sb.append("### Other History for `$path`\n")
+                    sb.append(unrelated.joinToString("\n") {
+                        "- [Iter ${it.iteration}] ${it.error}"
+                    })
+                    sb.append("\n\nPrevious patches applied to this file:\n```diff\n" + unrelated.joinToString("\n\n") { it.patch } + "\n```")
+                }
+                sb.toString()
             } else null
         }.joinToString("\n\n")
 
@@ -548,7 +598,7 @@ abstract class PatchApp(
         // Record history
         prunedPaths.forEach { path ->
             fixHistory.getOrPut(path.toString()) { mutableListOf() }.add(
-                FixAttempt(error.message ?: "Unknown", fixResponse)
+                FixAttempt(error.message ?: "Unknown", fixResponse, iteration = iteration)
             )
         }
 
