@@ -6,14 +6,15 @@ import com.simiacryptus.cognotik.plan.tools.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.SubPlanningTask
 import com.simiacryptus.cognotik.plan.tools.SubPlanningTask.Companion.SubPlanning
+import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
+import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.Companion.DataIngest
 import com.simiacryptus.cognotik.plan.tools.file.*
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.Analysis
- import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
- import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
-import com.simiacryptus.cognotik.plan.tools.file.GenerateQRImageTask
- import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
- import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
- import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
+import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
+import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameNarrativeDesignTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.Companion.KnowledgeIndexing
@@ -82,10 +83,10 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 IsomorphismDiscoveryTask(settings, task)
             }
             registerConstructor(TableCompilationTask.TableCompilation) { settings, task ->
-              TableCompilationTask(settings, task)
+                TableCompilationTask(settings, task)
             }
             registerConstructor(ImageTableTask.ImageTable) { settings, task ->
-              ImageTableTask(settings, task)
+                ImageTableTask(settings, task)
             }
             registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument) { settings, task ->
                 SoftwareDesignDocumentTask(settings, task)
@@ -177,6 +178,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(SocraticDialogueTask.SocraticDialogue) { settings, task ->
                 SocraticDialogueTask(settings, task)
             }
+            registerConstructor(DecisionTreeTask.DecisionTree) { settings, task ->
+                DecisionTreeTask(settings, task)
+            }
             registerConstructor(MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysis) { settings, task ->
                 MultiPerspectiveAnalysisTask(settings, task)
             }
@@ -222,10 +226,10 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(NarrativeGenerationTask.NarrativeGeneration) { settings, task ->
                 NarrativeGenerationTask(settings, task)
             }
-registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
+            registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
                 GeneticOptimizationTask(settings, task)
             }
-registerConstructor(MathematicalReasoningTask.MathematicalReasoning) { settings, task ->
+            registerConstructor(MathematicalReasoningTask.MathematicalReasoning) { settings, task ->
                 MathematicalReasoningTask(settings, task)
             }
             registerConstructor(NeuralNetworkLayerTask.NeuralNetworkLayer) { settings, task ->
@@ -270,12 +274,16 @@ registerConstructor(MathematicalReasoningTask.MathematicalReasoning) { settings,
             registerConstructor(GenerateImageTask.GenerateImage) { settings, task ->
                 GenerateImageTask(settings, task)
             }
-registerConstructor(IllustrateDocumentTask.IllustrateDocument) { settings, task ->
+            registerConstructor(IllustrateDocumentTask.IllustrateDocument) { settings, task ->
                 IllustrateDocumentTask(settings, task)
             }
-registerConstructor(ComicBookGenerationTask.ComicBookGeneration) { settings, task ->
+            registerConstructor(ComicBookGenerationTask.ComicBookGeneration) { settings, task ->
                 ComicBookGenerationTask(settings, task)
             }
+            registerConstructor(DataIngest) { settings, task ->
+                DataIngestTask(settings, task)
+            }
+
             registerConstructor(GenerateQRImageTask.GenerateQRImage) { settings, task ->
                 GenerateQRImageTask(settings, task)
             }

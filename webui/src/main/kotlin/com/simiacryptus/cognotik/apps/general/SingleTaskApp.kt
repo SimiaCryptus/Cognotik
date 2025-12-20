@@ -98,7 +98,7 @@ Task Type: `${taskType.name}`
                 messages = listOf(taskConfig.task_description ?: "Execute task"),
                 task = task,
                 resultFn = { result ->
-                    task.complete(result)
+                    task.complete(result.renderMarkdown)
                 },
                 orchestrationConfig = orchestrationConfig
             )
