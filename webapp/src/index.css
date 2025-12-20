@@ -88,17 +88,6 @@ body {
 
 .cmd-button:active {
     background-color: #3e8e41;
-
-
-
-
-
-
-
-
-
-
-
     box-shadow: 0 0.3125rem #666;
     transform: translateY(0.25rem);
 }
