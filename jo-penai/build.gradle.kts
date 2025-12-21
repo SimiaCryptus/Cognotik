@@ -1,5 +1,5 @@
-group = providers.gradleProperty("cognotikGroup").get()
-version = providers.gradleProperty("cognotikVersion").get()
+group = providers.gradleProperty("libraryGroup").get()
+version = providers.gradleProperty("libraryVersion").get()
 
 plugins {
     `java-library`
@@ -57,6 +57,10 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.kotlin.test.junit5)
 }
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
 
 
 publishing {
@@ -103,10 +107,13 @@ signing {
     val signingPassword = findProperty("signingInMemoryKeyPassword")?.toString() ?: System.getenv("SIGNING_PASSWORD")
 
     if (signingKey != null && signingPassword != null) {
+        println("Signing with in-memory PGP keys")
+        println("Signing Key (first 300 chars): ${signingKey.take(300)}...")
+        println("Signing Password Length: ${signingPassword.length} characters")
         useInMemoryPgpKeys(signingKey, signingPassword)
+        sign(publishing.publications["maven"])
     }
 
-    sign(publishing.publications["maven"])
 }
 
 tasks.javadoc {

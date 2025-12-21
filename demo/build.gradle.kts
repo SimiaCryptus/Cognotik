@@ -6,7 +6,7 @@ plugins {
     kotlin("jvm")
 }
 
-group = "com.simiacryptus"
+group = "com.cognotik"
 version = providers.gradleProperty("libraryVersion").get()
 
 repositories {

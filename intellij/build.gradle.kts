@@ -10,7 +10,7 @@ import org.jetbrains.changelog.Changelog
     alias(libs.plugins.kover)
 }
 
-group = "com.simiacryptus"
+group = "com.cognotik"
 version = providers.gradleProperty("libraryVersion").get()
 
 repositories {

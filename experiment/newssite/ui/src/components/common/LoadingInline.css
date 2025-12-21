@@ -1,7 +1,0 @@
-.loading-inline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-xl) var(--spacing-md);
-  width: 100%;
-}

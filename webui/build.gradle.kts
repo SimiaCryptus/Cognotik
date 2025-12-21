@@ -157,6 +157,14 @@ tasks.register<com.github.gradle.node.npm.task.NpxTask>("compileSass") {
 tasks.named("processResources") {
     dependsOn("compileSass", "copyWebappBuild", "copyWebappStatic")
 }
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+tasks.named("sourcesJar") {
+    dependsOn("copyWebappBuild", "copyWebappStatic")
+}
+
 
 
 publishing {
@@ -165,11 +173,11 @@ publishing {
             from(components["java"])
 
             groupId = "com.cognotik"
-            artifactId = "jo-penai"
+            artifactId = "webui"
             version = project.version.toString()
 
             pom {
-                name.set("Cognotik Core")
+                name.set("Cognotik Webapp")
                 description.set("Core library for Cognotik AI framework")
                 url.set("https://github.com/SimiaCryptus/Cognotik")
 
@@ -204,9 +212,9 @@ signing {
 
     if (signingKey != null && signingPassword != null) {
         useInMemoryPgpKeys(signingKey, signingPassword)
+        sign(publishing.publications["maven"])
     }
 
-    sign(publishing.publications["maven"])
 }
 
 tasks.javadoc {

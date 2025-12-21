@@ -142,6 +142,10 @@
                         text="🌐 Generate HTML Page"
                         description="Create a complete HTML page with embedded CSS and JavaScript, optionally with AI-generated images">
                 </action>
+                <action class="cognotik.actions.task.DataIngestAction"
+                        text="📥 Data Ingestion"
+                        description="Parse unstructured logs or text files into structured data using AI-discovered regex patterns">
+                </action>
                 <action class="cognotik.actions.task.GeneratePresentationAction"
                         text="📊 Generate Presentation"
                         description="Create a complete Reveal.js presentation with speaker notes and optional AI-generated images">

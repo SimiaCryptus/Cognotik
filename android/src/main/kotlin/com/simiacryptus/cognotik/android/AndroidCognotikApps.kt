@@ -177,7 +177,7 @@ class AndroidCognotikApps private constructor(
     }
 
     private val describer = AbbrevWhitelistYamlDescriber(
-        "com.simiacryptus", "com.simiacryptus"
+        "com.cognotik", "com.simiacryptus"
     )
     private val model : ApiChatModel = AnthropicModels.Claude35Haiku.let {
         ApiChatModel(

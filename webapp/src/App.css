@@ -44,7 +44,7 @@
 /* Improve tab button accessibility */
 .tab-button {
     padding: 0.85rem 1.5rem;
-    min-width: 100px;
+    min-width: 6.25rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: var(--font-display);
     border: none;
@@ -56,25 +56,25 @@
     font-size: var(--font-size-md);
     letter-spacing: var(--letter-spacing-wide);
     text-transform: uppercase;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     margin: 0 0.25rem;
     white-space: nowrap;
     user-select: none;
-    backdrop-filter: blur(8px);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(0.5rem);
+    text-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.1);
 }
 
 /* Active tab state */
 .tab-button.active {
     background-color: var(--theme-primary); /* Or a semi-transparent primary */
     color: var(--theme-text-on-primary, #fff); /* Assuming text on primary is light */
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-0.125rem);
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.2);
     position: relative;
     z-index: 1;
     font-weight: var(--font-weight-bold); /* Uses global style var */
     letter-spacing: var(--letter-spacing-wider);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.2);
 }
 
 .tab-button:hover {
@@ -90,15 +90,15 @@
     box-shadow: var(--theme-shadow-small); /* Use theme shadow */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: inline-block;
-    padding: 8px 15px;
-    font-size: 14px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
     cursor: pointer;
     text-align: center;
     outline: none;
     color: #fff;
     background-color: var(--primary-color);
     border: none;
-    border-radius: 5px;
+    border-radius: 0.3125rem;
 }
 
 .cmd-button:before {
@@ -216,14 +216,14 @@
 /* Focus states */
 .tab-button:focus,
 .tab-button:focus-visible {
-    outline: 2px solid var(--theme-primary);
-    outline-offset: 2px;
-    box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.2);
+    outline: 0.125rem solid var(--theme-primary);
+    outline-offset: 0.125rem;
+    box-shadow: 0 0 0 0.25rem rgba(var(--color-primary-rgb), 0.2);
 }
 
 .cmd-button:active {
     transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.2);
 }
 
 /* CSS variables for consistent theming */
@@ -264,8 +264,8 @@
 /* Query Expansion Syntax Guide Styles */
 .expandable-guide {
     border: 1px solid var(--theme-border);
-    border-radius: 5px;
-    margin-bottom: 15px;
+    border-radius: 0.3125rem;
+    margin-bottom: 1rem;
     overflow: hidden;
     background-color: var(--theme-background); /* Use theme background */
     color: var(--theme-text); /* Use theme text */
@@ -274,7 +274,7 @@
 .expandable-header {
     background-color: var(--theme-surface); /* Use theme surface */
     color: var(--theme-text); /* Use theme text */
-    padding: 10px;
+    padding: 0.625rem;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -287,7 +287,7 @@
 }
 
 .expand-icon {
-    font-size: 12px;
+    font-size: 0.75rem;
     transition: transform 0.3s ease;
     color: var(--theme-text-secondary); /* Use secondary text color */
 }
@@ -297,7 +297,7 @@
 
 .expandable-content {
     max-height: 0;
-    padding: 0 15px;
+    padding: 0 1rem;
     overflow: hidden;
     transition: max-height 0.3s ease, padding 0.3s ease;
 }
@@ -305,7 +305,7 @@
 .expandable-content.expanded {
     max-height: 70vh;
     overflow: auto;
-    padding: 15px;
+    padding: 1rem;
 }
 
 .expand-icon.expanded {
@@ -313,12 +313,12 @@
 }
 
 .expandable-section-title {
-    margin-top: 15px;
-    margin-bottom: 5px;
+    margin-top: 1rem;
+    margin-bottom: 0.3125rem;
 }
 
 .expandable-section-title:first-of-type {
-    margin-top: 10px;
+    margin-top: 0.625rem;
 }
 
 .expandable-description {
@@ -326,19 +326,19 @@
 }
 
 .expandable-example {
-    margin-top: 5px;
+    margin-top: 0.3125rem;
     color: var(--theme-text-secondary); /* Use secondary text color */
 }
 
 .expandable-footer {
-    margin-top: 15px;
+    margin-top: 1rem;
     border-top: 1px solid var(--theme-border); /* Use theme border */
-    padding-top: 10px;
+    padding-top: 0.625rem;
 }
 /* Coding Agent Specific Styles */
 .code-display-container {
     background-color: var(--theme-surface, #f8f9fa); /* Slightly different background */
-    border-radius: 8px;
+    border-radius: 0.5rem;
     padding: 0.5rem 1rem; /* Padding around the code block */
     margin-bottom: 1rem;
     border: 1px solid var(--theme-border, #dee2e6);
@@ -356,7 +356,7 @@
     margin-top: 1rem;
     padding: 0.75rem;
     background-color: var(--theme-surface-alt, #f1f3f5); /* Slightly different background for controls */
-    border-radius: 8px;
+    border-radius: 0.5rem;
     border: 1px solid var(--theme-border, #dee2e6);
 }
 .revise-form {
@@ -370,7 +370,7 @@
 .action-button,
 .feedback-controls .button { /* Style generated buttons and specific action buttons */
     padding: 0.5rem 1rem;
-    border-radius: 5px;
+    border-radius: 0.3125rem;
     cursor: pointer;
     font-weight: var(--font-weight-semibold);
     transition: background-color 0.2s ease, transform 0.1s ease;
@@ -383,21 +383,21 @@
 .action-button:hover,
 .feedback-controls .button:hover {
     background-color: var(--theme-hover);
-    transform: translateY(-1px);
+    transform: translateY(-0.0625rem);
 }
 .action-status {
     padding: 0.5rem 1rem;
     margin-bottom: 0.5rem;
     background-color: var(--info-color-bg, #e0f7fa);
     color: var(--info-color, #007bff);
-    border-radius: 5px;
+    border-radius: 0.3125rem;
     font-style: italic;
 }
 .execution-result,
 .execution-error {
     margin-top: 1rem;
     padding: 1rem;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     border: 1px solid var(--theme-border, #dee2e6);
 }
 .execution-result {

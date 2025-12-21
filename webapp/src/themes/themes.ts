@@ -20,47 +20,6 @@ const themeLogger = {
     }
 };
 
-interface ThemeSizing {
-    spacing: {
-        xs: string;
-        sm: string;
-        md: string;
-        lg: string;
-        xl: string;
-    };
-    borderRadius: {
-        sm: string;
-        md: string;
-        lg: string;
-    };
-    console: {
-        minHeight: string;
-        maxHeight: string;
-        padding: string;
-    };
-}
-
-interface ThemeTypography {
-    fontFamily: string;
-    fontSize: {
-        xs: string;
-        sm: string;
-        md: string;
-        lg: string;
-        xl: string;
-    };
-    fontWeight: {
-        regular: number;
-        medium: number;
-        bold: number;
-    };
-    console: {
-        fontFamily: string;
-        fontSize: string;
-        lineHeight: string;
-    };
-}
-
 type ExtendedTheme = BaseTheme;
 
 const baseTheme: Omit<BaseTheme, 'name' | 'colors'> = {
@@ -260,27 +219,27 @@ export const nightTheme: ExtendedTheme = {
 export const forestTheme: ExtendedTheme = {
     name: 'forest' as ColorThemeName,
     colors: {
-        primary: '#2D6A4F',
-        secondary: '#40916C',
-        background: '#081C15',
-        surface: '#1B4332',
+        primary: '#52B788',
+        secondary: '#74C69D',
+        background: '#1B4332',
+        surface: '#2D6A4F',
         text: {
             primary: '#D8F3DC',
-            secondary: '#95D5B2',
+            secondary: '#B7E4C7',
         },
         border: '#2D6A4F',
         error: '#D62828',
         success: '#52B788',
         warning: '#F77F00',
         info: '#4895EF',
-        primaryDark: '#1E4D38', // Darker green
-        secondaryDark: '#2F6D50', // Darker secondary green
+        primaryDark: '#40916C', // Darker green
+        secondaryDark: '#52B788', // Darker secondary green
         errorDark: '#B82323', // Darker red
-        successDark: '#3E8E6A', // Darker success green
+        successDark: '#2D6A4F', // Darker success green
         critical: '#D62828',
 
         disabled: '#2D3B35',
-        hover: '#1E4D38',
+        hover: '#40916C',
 
     },
     ...baseTheme,
@@ -289,27 +248,27 @@ export const forestTheme: ExtendedTheme = {
 export const ponyTheme: ExtendedTheme = {
     name: 'pony' as ColorThemeName,
     colors: {
-        primary: '#FF69B4',
-        secondary: '#FFB6C1',
+        primary: '#D81B60',
+        secondary: '#EC407A',
         background: '#FFF0F5',
-        surface: '#FFE4E1',
+        surface: '#FFFFFF',
         text: {
-            primary: '#DB7093',
-            secondary: '#C71585',
+            primary: '#880E4F',
+            secondary: '#AD1457',
         },
-        border: '#FFB6C1',
-        error: '#FF1493',
-        success: '#FF69B4',
-        warning: '#FFB6C1',
-        info: '#DB7093',
-        primaryDark: '#E55EA4', // Darker pink
-        secondaryDark: '#E5A0AD', // Darker light pink
-        errorDark: '#D9127F', // Darker deep pink
-        successDark: '#E55EA4', // Darker pink (same as primaryDark for this theme)
-        critical: '#FF1493',
+        border: '#F48FB1',
+        error: '#D32F2F',
+        success: '#388E3C',
+        warning: '#FBC02D',
+        info: '#1976D2',
+        primaryDark: '#AD1457', // Darker pink
+        secondaryDark: '#C2185B', // Darker light pink
+        errorDark: '#B71C1C', // Darker deep pink
+        successDark: '#2E7D32', // Darker pink (same as primaryDark for this theme)
+        critical: '#D32F2F',
 
         disabled: '#F8E1E7',
-        hover: '#E55EA4',
+        hover: '#AD1457',
 
     },
     ...baseTheme,
@@ -363,26 +322,26 @@ export const themes = {
     sunset: {
         name: 'sunset' as ColorThemeName,
         colors: {
-            primary: '#FF6B6B',
-            secondary: '#FFA07A',
+            primary: '#E67E22',
+            secondary: '#D35400',
             background: '#2C3E50',
             surface: '#34495E',
             text: {
                 primary: '#ECF0F1',
                 secondary: '#BDC3C7',
             },
-            border: '#95A5A6',
-            error: '#E74C3C',
+            border: '#7F8C8D',
+            error: '#C0392B',
             success: '#2ECC71',
             warning: '#F1C40F',
-            info: '#3498DB',
-            primaryDark: '#D65B5B', // Darker red
-            secondaryDark: '#E08A6A', // Darker light red
-            errorDark: '#C0392B', // Darker error red
-            successDark: '#27AE60', // Darker green
-            disabled: '#7F8C8D',
-            critical: '#E74C3C',
-            hover: '#D65B5B',
+            info: '#2980B9',
+            primaryDark: '#D35400', // Darker red
+            secondaryDark: '#A04000', // Darker light red
+            errorDark: '#922B21', // Darker error red
+            successDark: '#1E8449', // Darker green
+            disabled: '#95A5A6',
+            critical: '#C0392B',
+            hover: '#D35400',
 
         },
         ...baseTheme,
@@ -391,25 +350,25 @@ export const themes = {
         name: 'ocean' as ColorThemeName,
         colors: {
             primary: '#00B4D8',
-            secondary: '#48CAE4',
-            background: '#03045E',
-            surface: '#023E8A',
+            secondary: '#90E0EF',
+            background: '#0F172A',
+            surface: '#1E293B',
             text: {
-                primary: '#CAF0F8',
-                secondary: '#90E0EF',
+                primary: '#F1F5F9',
+                secondary: '#94A3B8',
             },
-            border: '#0077B6',
-            error: '#FF6B6B',
-            success: '#2ECC71',
-            warning: '#FFB703',
-            info: '#48CAE4',
-            primaryDark: '#0093C0', // Darker blue
-            secondaryDark: '#3EAFC7', // Darker light blue
-            errorDark: '#D65B5B', // Darker red
-            successDark: '#27AE60', // Darker green
-            disabled: '#415A77',
-            hover: '#0077B6',
-            critical: '#FF6B6B',
+            border: '#334155',
+            error: '#EF4444',
+            success: '#10B981',
+            warning: '#F59E0B',
+            info: '#3B82F6',
+            primaryDark: '#0096C7', // Darker blue
+            secondaryDark: '#0077B6', // Darker light blue
+            errorDark: '#B91C1C', // Darker red
+            successDark: '#047857', // Darker green
+            disabled: '#475569',
+            hover: '#0096C7',
+            critical: '#EF4444',
 
         },
         ...baseTheme,
@@ -417,26 +376,26 @@ export const themes = {
     cyberpunk: {
         name: 'cyberpunk' as ColorThemeName,
         colors: {
-            primary: '#FF00FF',
-            secondary: '#00FFFF',
-            background: '#0D0221',
-            surface: '#1A1A2E',
+            primary: '#F72585',
+            secondary: '#4CC9F0',
+            background: '#10002B',
+            surface: '#240046',
             text: {
-                primary: '#FF00FF',
-                secondary: '#00FFFF',
+                primary: '#E0AAFF',
+                secondary: '#9D4EDD',
             },
-            border: '#FF00FF',
-            error: '#FF0000',
-            success: '#00FF00',
-            warning: '#FFD700',
-            info: '#00FFFF',
-            primaryDark: '#D100D1', // Darker magenta
-            secondaryDark: '#00D1D1', // Darker cyan
-            errorDark: '#D10000', // Darker red
-            successDark: '#00D100', // Darker green
-            disabled: '#4A4A4A',
-            hover: '#FF69B4',
-            critical: '#FF0000',
+            border: '#3C096C',
+            error: '#FF0054',
+            success: '#3A0CA3',
+            warning: '#FF9E00',
+            info: '#4361EE',
+            primaryDark: '#B5179E', // Darker magenta
+            secondaryDark: '#4895EF', // Darker cyan
+            errorDark: '#C9184A', // Darker red
+            successDark: '#480CA8', // Darker green
+            disabled: '#5A189A',
+            hover: '#B5179E',
+            critical: '#FF0054',
 
         },
         ...baseTheme,
@@ -446,26 +405,26 @@ export const themes = {
 themes.synthwave = {
     name: 'synthwave' as ColorThemeName,
     colors: {
-        primary: '#FF00FF', // Magenta
-        secondary: '#00FFFF', // Cyan
-        background: '#1A1A2E', // Dark Indigo
-        surface: '#2A2A3E', // Slightly Lighter Indigo
+        primary: '#FF2A6D', // Reddish Pink
+        secondary: '#05D9E8', // Cyan
+        background: '#01012B', // Dark Blue
+        surface: '#121245', // Lighter Blue
         text: {
-            primary: '#00FFFF', // Cyan
-            secondary: '#FF00FF', // Magenta
+            primary: '#E0E0E0', // Off-white
+            secondary: '#D1F7FF', // Pale Cyan
         },
-        border: '#FF00FF', // Magenta
-        error: '#FF3366', // Hot Pink
-        success: '#00FF7F', // Spring Green
-        warning: '#FFFF66', // Canary Yellow
-        info: '#3399FF', // Bright Blue
-        primaryDark: '#CC00CC',
-        secondaryDark: '#00CCCC',
-        errorDark: '#D92B58',
-        successDark: '#00CC66',
-        critical: '#FF3366',
-        disabled: '#4A4A5E',
-        hover: '#CC00CC',
+        border: '#2D2D63', // Magenta
+        error: '#FF5555', // Hot Pink
+        success: '#50FA7B', // Spring Green
+        warning: '#F1FA8C', // Canary Yellow
+        info: '#8BE9FD', // Bright Blue
+        primaryDark: '#D41C54',
+        secondaryDark: '#00B8C4',
+        errorDark: '#FF3333',
+        successDark: '#3DD665',
+        critical: '#FF5555',
+        disabled: '#44475A',
+        hover: '#D41C54',
     },
     ...baseTheme,
 };
