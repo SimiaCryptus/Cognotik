@@ -192,4 +192,3 @@ inline fun <reified T : Any> Any.parserCast(
   parsingChatter = model,
   describer = describer
 ).getParser().apply(this.toJson())
-

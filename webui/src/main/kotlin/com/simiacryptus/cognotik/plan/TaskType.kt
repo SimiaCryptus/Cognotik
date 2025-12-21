@@ -73,6 +73,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 }
                 register(taskType)
             }
+            registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet) { settings, task ->
+                GenerateSpriteSheetTask(settings, task)
+            }
             registerConstructor(FunctorialMappingTask.FunctorialMapping) { settings, task ->
                 FunctorialMappingTask(settings, task)
             }
