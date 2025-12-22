@@ -216,7 +216,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
             val detailLevel = executionConfig?.detail_level ?: "standard"
 
             val tabs = TabbedDisplay(task)
-            val api = orchestrationConfig.defaultChatter
+            val api = defaultChatter
 
             // Create overview tab
             val overviewTask = task.ui.newTask(false)

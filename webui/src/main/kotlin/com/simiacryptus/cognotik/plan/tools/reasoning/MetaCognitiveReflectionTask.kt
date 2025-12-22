@@ -131,7 +131,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
         // Create transcript file
         val (transcriptLink, transcript) = initializeTranscript(task)
         transcript?.let { stream ->

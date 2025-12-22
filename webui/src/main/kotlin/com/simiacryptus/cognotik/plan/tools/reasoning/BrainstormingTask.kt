@@ -263,8 +263,8 @@ Brainstorming - Generate and analyze multiple solution options
                 inputFileContent
             )
 
-            val api = orchestrationConfig.defaultChatter ?: return
-            val parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task)
+            val api = defaultChatter ?: return
+            val parsingChatter = parsingChatter.getChildClient(task)
             val defaultChatter = api.getChildClient(task)
             val brainstormAgent = ParsedAgent(
                 resultClass = BrainstormResult::class.java,

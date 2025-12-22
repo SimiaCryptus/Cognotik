@@ -114,7 +114,7 @@ CausalInference - Identify causal relationships and root causes
 
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
-        val api = orchestrationConfig.defaultChatter ?: run {
+        val api = defaultChatter ?: run {
             log.error("No default chatter available")
             markdownTranscript?.write("# Error\n\nNo API available\n".toByteArray())
             markdownTranscript?.close()

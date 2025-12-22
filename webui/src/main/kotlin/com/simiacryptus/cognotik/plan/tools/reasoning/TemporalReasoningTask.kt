@@ -144,7 +144,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
         val ui = task.ui
         val transcript = task.transcript()
 
@@ -280,7 +280,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
                 prompt = timelinePrompt,
                 model = api,
                 temperature = 0.3,
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = parsingChatter,
             )
 
             val timelineAnalysis = timelineAgent.answer(listOf(timelinePrompt)).obj

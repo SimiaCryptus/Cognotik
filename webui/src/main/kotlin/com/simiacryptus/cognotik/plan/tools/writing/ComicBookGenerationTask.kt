@@ -119,7 +119,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
             return
         }
 
-        val api = orchestrationConfig.defaultChatter.getChildClient(task)
+        val api = defaultChatter.getChildClient(task)
         val tabs = TabbedDisplay(task)
 
         val overviewTask = task.ui.newTask(false).apply { tabs["Overview"] = placeholder }

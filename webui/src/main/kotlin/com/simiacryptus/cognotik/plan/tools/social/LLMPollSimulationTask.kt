@@ -199,7 +199,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
         val profiles = executionConfig?.respondent_profiles ?: listOf()
         val respondentsPerProfile = executionConfig?.respondents_per_profile ?: 10
         val temperature = executionConfig?.temperature ?: 0.7
-        val api = orchestrationConfig.defaultChatter.getChildClient(task)
+        val api = defaultChatter.getChildClient(task)
 
         val (transcriptLink, transcriptStream) = createTranscriptFile(task)
         val transcriptWriter = transcriptStream?.bufferedWriter()

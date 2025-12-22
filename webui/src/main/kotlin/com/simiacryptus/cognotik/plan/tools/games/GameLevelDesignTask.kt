@@ -378,7 +378,7 @@ class GameLevelDesignTask(
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
 
@@ -522,7 +522,7 @@ Keep zone descriptions brief - detailed content will be added later.
           """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             var level = structureAgent.answer(listOf("Create level structure")).obj
@@ -648,7 +648,7 @@ Return the complete level with all encounters filled in.
           """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             level = encounterAgent.answer(listOf("Design encounters")).obj
@@ -759,7 +759,7 @@ Return the complete level with pacing_curve filled in.
           """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             level = pacingAgent.answer(listOf("Analyze pacing")).obj
@@ -865,7 +865,7 @@ Return the complete level with collectibles and secrets filled in.
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 level = collectiblesAgent.answer(listOf("Add collectibles and secrets")).obj
@@ -960,7 +960,7 @@ Create comprehensive guidance that helps without patronizing.
           """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             val guidance = guidanceAgent.answer(listOf("Design player guidance")).obj

@@ -106,7 +106,7 @@ FunctorialMapping - Translate problems from one category to another
         val targetDef = executionConfig?.target_category_definition!!
         val properties = executionConfig?.functor_properties ?: "covariant"
 
-        val api = orchestrationConfig.defaultChatter
+        val api = defaultChatter
         val tabs = TabbedDisplay(task)
         val transcript = transcript(task)
 

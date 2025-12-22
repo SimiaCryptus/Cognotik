@@ -231,7 +231,7 @@ class ScriptwritingTask(
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
 
@@ -374,7 +374,7 @@ Ensure the outline:
           """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             var outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -492,7 +492,7 @@ Ensure the dialogue sounds natural when spoken aloud.
           """.trimIndent(),
                     model = api,
                     temperature = 0.8,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 var hookSegment = hookAgent.answer(listOf("Write opening")).obj
@@ -628,7 +628,7 @@ Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of co
           """.trimIndent(),
                     model = api,
                     temperature = 0.8,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 var sectionSegment = sectionAgent.answer(listOf("Write section")).obj
@@ -739,7 +739,7 @@ Target duration: 15-20 seconds.
           """.trimIndent(),
                 model = api,
                 temperature = 0.8,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             var closingSegment = closingAgent.answer(listOf("Write closing")).obj

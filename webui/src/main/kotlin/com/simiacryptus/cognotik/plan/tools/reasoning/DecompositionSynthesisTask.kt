@@ -203,7 +203,7 @@ class DecompositionSynthesisTask(
             log.error("Failed to initialize transcript", e)
             null
         }
-        val api = orchestrationConfig.defaultChatter ?: run {
+        val api = defaultChatter ?: run {
             log.error("No default chatter available")
             task.complete("ERROR: No API available")
             resultFn("ERROR: No API available")
@@ -801,7 +801,7 @@ class DecompositionSynthesisTask(
             resultClass = ProblemDecomposition::class.java,
             prompt = prompt,
             model = api,
-            parsingChatter = orchestrationConfig.parsingChatter,
+            parsingChatter = parsingChatter,
         )
 
         val decomposition = decompositionAgent.answer(listOf(problem)).obj

@@ -134,7 +134,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val attackVectors = executionConfig.attack_vectors ?: listOf("security", "logic")
         val adversaryCapability = executionConfig.adversary_capability

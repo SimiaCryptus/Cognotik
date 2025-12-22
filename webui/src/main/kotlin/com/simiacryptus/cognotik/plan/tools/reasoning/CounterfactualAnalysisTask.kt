@@ -107,7 +107,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
         val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
         val transcript = task.transcript()
         transcript?.write("# Counterfactual Analysis Transcript\n\n".toByteArray())
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         try {
             val tabs = TabbedDisplay(task)

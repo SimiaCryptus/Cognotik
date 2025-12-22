@@ -252,7 +252,7 @@ class SubPlanningTask(
         // Use an agent to create a summary
         val typeConfig = typeConfig ?: throw RuntimeException()
         val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
-            ?: orchestrationConfig.defaultChatter).getChildClient(task)
+            ?: defaultChatter).getChildClient(task)
 
         val summaryAgent = ChatAgent(
             prompt = """

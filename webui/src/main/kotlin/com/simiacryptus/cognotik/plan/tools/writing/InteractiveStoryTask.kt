@@ -267,7 +267,7 @@ class InteractiveStoryTask(
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
 
@@ -468,7 +468,7 @@ Focus on structure and connections, not detailed prose.
           """.trimIndent(),
                 model = api,
                 temperature = 0.5,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             val structure = structureAgent.answer(listOf("Create detailed structure from outline")).obj
@@ -638,7 +638,7 @@ Make it immersive and compelling. The reader should feel invested immediately.
           """.trimIndent(),
                 model = api,
                 temperature = 0.8,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             var openingSegment = openingAgent.answer(listOf("Write opening")).obj

@@ -372,7 +372,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
 
@@ -519,7 +519,7 @@ Identify 3-5 key stakeholders who will influence the decision.
           """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             val stakeholderAnalysis = stakeholderAgent.answer(listOf("Analyze stakeholders")).obj
@@ -625,7 +625,7 @@ If specific numbers aren't provided, use reasonable estimates based on the propo
           """.trimIndent(),
                     model = api,
                     temperature = 0.5,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 roiAnalysis = roiAgent.answer(listOf("Perform ROI analysis")).obj
@@ -728,7 +728,7 @@ Be realistic but not alarmist. Focus on actionable mitigation strategies.
           """.trimIndent(),
                     model = api,
                     temperature = 0.6,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 riskAssessment = riskAgent.answer(listOf("Assess risks")).obj
@@ -819,7 +819,7 @@ Be fair to alternatives but make a compelling case for this proposal.
           """.trimIndent(),
                     model = api,
                     temperature = 0.6,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 competitiveAnalysis = competitiveAgent.answer(listOf("Analyze competition")).obj
@@ -917,7 +917,7 @@ Ensure phases flow logically and dependencies are clear.
           """.trimIndent(),
                     model = api,
                     temperature = 0.5,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 timelineMilestones = timelineAgent.answer(listOf("Create timeline")).obj
@@ -1027,7 +1027,7 @@ Tailor the outline to the ${executionConfig.proposal_type} proposal type and ${e
         """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             val outline = outlineAgent.answer(listOf("Create outline")).obj
@@ -1127,7 +1127,7 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
         """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             var execSummary = execSummaryAgent.answer(listOf("Write executive summary")).obj
@@ -1266,7 +1266,7 @@ Aim for approximately ${sectionOutline.estimated_word_count} words.
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 var sectionContent = sectionAgent.answer(listOf("Write section")).obj
@@ -1351,7 +1351,7 @@ Make it action-oriented and compelling. The reader should feel motivated to move
         """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             var conclusion = conclusionAgent.answer(listOf("Write conclusion")).obj

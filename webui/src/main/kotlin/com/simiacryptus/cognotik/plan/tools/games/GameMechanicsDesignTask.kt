@@ -363,7 +363,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)
@@ -502,7 +502,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 model = api,
                 temperature = 0.7,
                 name = "MechanicsGenerator",
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = parsingChatter,
             )
 
             val mechanics = mechanicsParser.answer(listOf(mechanicsPrompt.toString())).obj.mechanics
@@ -594,7 +594,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 model = api,
                 temperature = 0.6,
                 name = "InteractionAnalyzer",
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = parsingChatter,
             )
 
             val interactions = interactionsParser.answer(listOf(interactionsPrompt.toString())).obj.interactions
@@ -732,7 +732,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     model = api,
                     temperature = 0.6,
                     name = "ProgressionDesigner",
-                    parsingChatter = orchestrationConfig.parsingChatter,
+                    parsingChatter = parsingChatter,
                 )
 
                 val progression = progressionParser.answer(listOf(progressionPrompt.toString())).obj.levels
@@ -868,7 +868,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     model = api,
                     temperature = 0.6,
                     name = "EconomyDesigner",
-                    parsingChatter = orchestrationConfig.parsingChatter,
+                    parsingChatter = parsingChatter,
                 )
 
                 val economy = economyParser.answer(listOf(economyPrompt.toString())).obj

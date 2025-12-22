@@ -181,8 +181,8 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
                 documentContent, maxImages, isMarkdown, executionConfig.composerDirective
             )
 
-            val api = orchestrationConfig.defaultChatter ?: return
-            val parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task)
+            val api = defaultChatter ?: return
+            val parsingChatter = parsingChatter.getChildClient(task)
             val defaultChatter = api.getChildClient(task)
 
             val analysisAgent = ParsedAgent(

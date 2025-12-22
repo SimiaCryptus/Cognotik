@@ -226,7 +226,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
         }
         log.debug("Configuration validated - Acts: ${genConfig.number_of_acts}, Scenes/Act: ${genConfig.scenes_per_act}, Style: ${genConfig.writing_style}")
 
-        val api = orchestrationConfig.defaultChatter.getChildClient(task)
+        val api = defaultChatter.getChildClient(task)
 
         val tabs = TabbedDisplay(task)
         // Get input file context
@@ -312,7 +312,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
             val totalScenes = genConfig.number_of_acts * genConfig.scenes_per_act
             val wordsPerScene = genConfig.target_word_count / totalScenes
 
-            val parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task)
+            val parsingChatter = parsingChatter.getChildClient(task)
             // Generate cover image first if enabled (to use as seed for other images)
             var coverImagePath: String? = null
             if (genConfig.generate_cover_image || genConfig.generate_scene_images) {

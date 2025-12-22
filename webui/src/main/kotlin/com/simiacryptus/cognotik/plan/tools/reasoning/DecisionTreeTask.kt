@@ -98,7 +98,7 @@ class DecisionTreeTask(
         }
 
         val chatAgent = ChatAgent(
-            model = orchestrationConfig.defaultChatter.getChildClient(task),
+            model = defaultChatter.getChildClient(task),
             temperature = 0.2,
             prompt = """
                 You are a Decision Tree Rule Generator.

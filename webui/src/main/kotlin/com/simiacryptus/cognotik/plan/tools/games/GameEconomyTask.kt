@@ -262,7 +262,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
         }
 
         val ui = task.ui
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
         val transcript = transcript(task)
 
         // Create tabbed display for organized output
@@ -865,7 +865,7 @@ Provide this in a clear, structured format suitable for game designers and stake
                 prompt = summaryPrompt,
                 model = api,
                 temperature = 0.2,
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = parsingChatter,
             )
 
             val gameEconomy = parsedAgent.answer(toInput(summaryPrompt)).obj

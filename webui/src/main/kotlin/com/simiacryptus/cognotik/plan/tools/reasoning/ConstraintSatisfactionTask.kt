@@ -148,7 +148,7 @@ class ConstraintSatisfactionTask(
 
 
             val toInput = { it: String -> listOf(it) }
-            val api = orchestrationConfig.defaultChatter ?: return
+            val api = defaultChatter ?: return
             log.info(
                 """
         |Starting Constraint Satisfaction Task:

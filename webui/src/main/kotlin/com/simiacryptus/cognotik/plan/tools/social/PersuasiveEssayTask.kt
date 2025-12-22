@@ -234,7 +234,7 @@ class PersuasiveEssayTask(
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
         // Generate cover image if enabled
@@ -384,7 +384,7 @@ Ensure the outline:
           """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             var outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -518,7 +518,7 @@ Speak directly to the ${executionConfig.target_audience}.
           """.trimIndent(),
                 model = api,
                 temperature = 0.8,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             var introduction = introAgent.answer(listOf("Write introduction")).obj
@@ -626,7 +626,7 @@ Aim for approximately ${argOutline.estimated_word_count} words.
           """.trimIndent(),
                     model = api,
                     temperature = 0.8,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 var argumentSection = argumentAgent.answer(listOf("Write argument")).obj
@@ -728,7 +728,7 @@ Aim for approximately $counterargumentWords words.
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 var counterSection = counterAgent.answer(listOf("Write counterarguments")).obj
@@ -832,7 +832,7 @@ End on a strong note that reinforces your position.
           """.trimIndent(),
                 model = api,
                 temperature = 0.8,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             var conclusion = conclusionAgent.answer(listOf("Write conclusion")).obj

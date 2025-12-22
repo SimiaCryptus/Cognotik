@@ -105,7 +105,7 @@ import java.util.*
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)

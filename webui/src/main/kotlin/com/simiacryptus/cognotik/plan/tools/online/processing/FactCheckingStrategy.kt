@@ -63,7 +63,7 @@ class FactCheckingStrategy : PageProcessingStrategy {
         context: PageProcessingStrategy.ProcessingContext
     ): PageProcessingStrategy.PageProcessingResult {
         val config =
-            context.executionConfig.content_queries?.parserCast<FactCheckingConfig>(context.orchestrationConfig.parsingChatter)
+            context.executionConfig.content_queries?.parserCast<FactCheckingConfig>(context.parsingChatter)
                 ?: return PageProcessingStrategy.PageProcessingResult(
                     url = url,
                     pageType = CrawlerAgentTask.PageType.Error,
@@ -174,8 +174,8 @@ class FactCheckingStrategy : PageProcessingStrategy {
         val analysis = ParsedAgent(
             prompt = prompt,
             resultClass = FactCheckResult::class.java,
-            model = context.orchestrationConfig.parsingChatter.getChildClient(context.task),
-            parsingChatter = context.orchestrationConfig.parsingChatter.getChildClient(context.task)
+            model = context.parsingChatter.getChildClient(context.task),
+            parsingChatter = context.parsingChatter.getChildClient(context.task)
         ).answer(listOf(content))
 
         return analysis.obj.copy(

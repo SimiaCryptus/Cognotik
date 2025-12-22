@@ -111,7 +111,7 @@ class SelfHealingTask(
             val task = task.ui.newTask()
             task.ui.pool.submit {
                 val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
-                    ?: orchestrationConfig.defaultChatter).getChildClient(task)
+                    ?: defaultChatter).getChildClient(task)
                 CmdPatchApp(
                     root = agent.root,
                     settings = PatchApp.Settings(
@@ -140,7 +140,7 @@ class SelfHealingTask(
                     ),
                     files = agent.files,
                     model = model,
-                    parsingModel = orchestrationConfig.parsingChatter,
+                    parsingModel = parsingChatter,
                     processor = orchestrationConfig.processor,
                 ).also { app ->
                     markdownTranscript?.let { transcript ->

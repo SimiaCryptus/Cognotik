@@ -69,7 +69,7 @@ class RunCodeTask(
         val semaphore = Semaphore(0)
         val typeConfig = typeConfig ?: throw RuntimeException()
         val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
-            ?: orchestrationConfig.defaultChatter).getChildClient(task)
+            ?: defaultChatter).getChildClient(task)
 
 //        val taskSettings = this.orchestrationConfig.getTaskSettings(TaskType.RunCodeTask)
         val taskSettings = typeConfig as? RunCodeTaskTypeConfig

@@ -248,7 +248,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
 
@@ -434,7 +434,7 @@ Ensure academic rigor appropriate for ${executionConfig.academic_level} level.
         """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             val outline = outlineAgent.answer(listOf("Create outline")).obj
@@ -563,7 +563,7 @@ Write in a ${executionConfig.academic_level} level academic style.
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 var generatedSection = sectionAgent.answer(listOf("Write section")).obj
@@ -654,7 +654,7 @@ Ensure all citations are properly formatted and complete.
         """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             val bibliography = bibliographyAgent.answer(listOf("Generate bibliography")).obj.citations
@@ -748,7 +748,7 @@ Format as a professional peer review.
           """.trimIndent(),
                     model = api,
                     temperature = 0.6,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 val review = reviewAgent.answer(listOf("Review the paper")).obj

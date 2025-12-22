@@ -195,7 +195,7 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
             return
         }
 
-        val api = orchestrationConfig.defaultChatter.getChildClient(task)
+        val api = defaultChatter.getChildClient(task)
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)

@@ -236,7 +236,7 @@ class CrawlerAgentTask(
             } else null
             val chatInterface = (
                     typeConfig?.model?.let { this@CrawlerAgentTask.orchestrationConfig.instance(it) }
-                        ?: this@CrawlerAgentTask.orchestrationConfig.parsingChatter
+                        ?: this@CrawlerAgentTask.parsingChatter
                     ).getChildClient(task)
             resultFn(innerRun(agent, messages, task, orchestrationConfig, transcriptStream, chatInterface))
         } catch (e: Throwable) {

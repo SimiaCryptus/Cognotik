@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import java.io.File
 import javax.imageio.ImageIO
@@ -109,7 +110,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             val imageAgent = ImageProcessingAgent(
                 prompt = "You are a pixel artist and game asset designer.",
                 name = "SpriteGenerator",
-                model = orchestrationConfig.imageChatChatter,
+                model = orchestrationConfig.imageChatChatter.getChildClient(task),
             )
 
             val imageResult = imageAgent.answer(listOf(ImageAndText(imageGenPrompt)))
@@ -128,7 +129,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
 
             val parserAgent = ParsedImageAgent(
                 resultClass = SpriteSheetMetadata::class.java,
-                model = orchestrationConfig.defaultChatter, // Vision model to see the sprites
+                model = (typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: defaultChatter).getChildClient(task),
                 prompt = """
                     Identify all distinct sprites in this image.
                     For each sprite, provide:

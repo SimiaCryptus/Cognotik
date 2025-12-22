@@ -89,7 +89,7 @@ ${
                 task.ui.pool.submit {
                     val chatInterface =
                         (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
-                            ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
+                            ?: this.defaultChatter).getChildClient(task)
                     val chatAgent = ChatAgent(
                         name = "FileModification",
                         prompt = """

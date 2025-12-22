@@ -108,7 +108,7 @@ TableCompilation - Generate structured tables with AI-computed cell values
     val partitionSize = typeConfig?.partition_size ?: 2
 
     val ui = task.ui
-    val api = orchestrationConfig.defaultChatter.getChildClient(task)
+    val api = defaultChatter.getChildClient(task)
 
     task.add(MarkdownUtil.renderMarkdown("## Table Compilation", ui = ui))
     task.add(

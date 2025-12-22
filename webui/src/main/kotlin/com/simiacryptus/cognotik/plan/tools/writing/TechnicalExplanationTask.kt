@@ -249,7 +249,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
         // Load input files if specified
@@ -441,7 +441,7 @@ Ensure the outline:
           """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             var outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -639,7 +639,7 @@ ${
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 var section = sectionAgent.answer(listOf("Write section")).obj

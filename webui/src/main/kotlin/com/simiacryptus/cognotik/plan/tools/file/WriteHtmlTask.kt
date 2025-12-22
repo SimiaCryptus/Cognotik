@@ -131,7 +131,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
 
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
-        val api = orchestrationConfig.defaultChatter.getChildClient(task)
+        val api = defaultChatter.getChildClient(task)
 
         newTask.add(MarkdownUtil.renderMarkdown("## Creating HTML File: `$htmlFile`", ui = ui))
 

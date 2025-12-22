@@ -147,7 +147,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
 
         log.info("Configuration: hypotheses=${hypotheses.size}, evidence=${evidence.size}, context=$decisionContext")
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)

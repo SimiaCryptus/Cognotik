@@ -122,7 +122,7 @@ class DataTableCompilationTask(
         val typeConfig = typeConfig ?: throw RuntimeException()
         val chatter =
             (typeConfig.model?.let { orchestrationConfig.instance(it) }
-                ?: orchestrationConfig.defaultChatter).getChildClient(task)
+                ?: defaultChatter).getChildClient(task)
         val columnsResponse = ParsedAgent(
             name = "ColumnIdentifier",
             resultClass = Columns::class.java,
@@ -154,7 +154,7 @@ class DataTableCompilationTask(
                 2. Provide a detailed description of what the column represents
             """.trimIndent(),
             model = chatter,
-            parsingChatter = orchestrationConfig.parsingChatter,
+            parsingChatter = parsingChatter,
             temperature = orchestrationConfig.temperature,
             describer = TaskContextYamlDescriber(orchestrationConfig),
         ).answer(
@@ -206,7 +206,7 @@ class DataTableCompilationTask(
                 2. List the source files that contain data for this row
             """.trimIndent(),
             model = chatter,
-            parsingChatter = orchestrationConfig.parsingChatter,
+            parsingChatter = parsingChatter,
             temperature = orchestrationConfig.temperature,
             describer = TaskContextYamlDescriber(orchestrationConfig),
         ).answer(
@@ -256,7 +256,7 @@ class DataTableCompilationTask(
                         "Special Instructions:\n${executionConfig?.cell_extraction_instructions}\n\n" +
                         "IMPORTANT: Respond with ONLY the single JSON object for the row `${row.id}`. Do NOT return a JSON array.",
                 model = chatter,
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = parsingChatter,
                 temperature = orchestrationConfig.temperature,
                 describer = TaskContextYamlDescriber(orchestrationConfig),
             ).answer(

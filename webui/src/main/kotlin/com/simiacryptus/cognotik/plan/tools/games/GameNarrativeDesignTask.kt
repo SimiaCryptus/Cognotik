@@ -406,7 +406,7 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
         val transcript = createTranscript(task, gameTitle)
@@ -534,7 +534,7 @@ Ensure the structure supports ${gameConfig.player_agency_level} player agency wi
           """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = parsingChatter
             )
 
             val gameNarrative = gameStructureAgent.answer(listOf("Generate game structure")).obj
@@ -759,7 +759,7 @@ Ensure each character's dialogue matches their established style.
           """.trimIndent(),
                     model = api,
                     temperature = 0.8,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 val dialogueTrees = dialogueAgent.answer(listOf("Generate dialogue trees")).obj.trees
@@ -938,7 +938,7 @@ Make quests feel meaningful, not just filler content.
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = parsingChatter
                 )
 
                 val sideQuests = sideQuestAgent.answer(listOf("Generate side quests")).obj.quests

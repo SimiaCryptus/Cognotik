@@ -109,7 +109,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
 
         log.info("Configuration: thesis='$thesis', antithesis='$antithesis', context='$context', levels=$synthesisLevels, preserveStrengths=$preserveStrengths")
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
         val ui = task.ui
         val tabs = TabbedDisplay(task)
         transcriptStream = initializeTranscript(task)

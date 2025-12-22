@@ -386,7 +386,7 @@ class NeuralNetworkLayerTask(
       val analysisDepth = executionConfig?.analysis_depth ?: "standard"
 
       val tabs = TabbedDisplay(task)
-      val api = orchestrationConfig.defaultChatter
+      val api = defaultChatter
 
       // Overview tab
       val overviewTask = task.ui.newTask(false)

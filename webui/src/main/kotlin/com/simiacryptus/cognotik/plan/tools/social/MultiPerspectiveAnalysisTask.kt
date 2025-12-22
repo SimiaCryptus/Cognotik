@@ -113,7 +113,7 @@ class MultiPerspectiveAnalysisTask(
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: run {
+        val api = defaultChatter ?: run {
             log.error("No default chatter available")
             task.complete("ERROR: No API available")
             resultFn("ERROR: No API available")

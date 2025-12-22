@@ -113,7 +113,7 @@ class LLMExperimentTask(
         val repetitions = executionConfig?.repetitions ?: 5
         val metrics = executionConfig?.metrics ?: listOf("response_length", "response_time")
         val statisticalAnalysis = executionConfig?.statistical_analysis ?: true
-        val api = orchestrationConfig.defaultChatter.getChildClient(task)
+        val api = defaultChatter.getChildClient(task)
 
         val (transcriptLink, transcriptStream) = createTranscriptFile(task)
         val transcriptWriter = transcriptStream?.bufferedWriter()

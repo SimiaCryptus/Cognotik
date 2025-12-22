@@ -100,7 +100,7 @@ class AnalysisTask(
                 Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
                 """.trimIndent(),
             model = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
-                ?: this.orchestrationConfig.defaultChatter).getChildClient(task),
+                ?: defaultChatter).getChildClient(task),
             temperature = this.orchestrationConfig.temperature,
         )
         val inquiryResult = if (orchestrationConfig.autoFix || typeConfig.non_interactive) {

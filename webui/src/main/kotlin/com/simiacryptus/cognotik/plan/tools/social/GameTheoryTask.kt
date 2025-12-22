@@ -207,7 +207,7 @@ GameTheory - Analyze strategic interactions using game theory
         }
 
         val ui = task.ui
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
         val transcript = transcript(task)
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
@@ -722,7 +722,7 @@ Provide this in a clear, structured format.
                 prompt = summaryPrompt,
                 model = api,
                 temperature = 0.2,
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = parsingChatter,
             )
 
             val gameAnalysis = parsedAgent.answer(toInput(summaryPrompt)).obj

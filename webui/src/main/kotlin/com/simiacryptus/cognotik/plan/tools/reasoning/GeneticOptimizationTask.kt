@@ -239,7 +239,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
       log.info("Configuration validated: generations=$numGenerations, population=$populationSize, selection=$selectionSize, crossover=$enableCrossover")
 
       val tabs = TabbedDisplay(task)
-      val api = orchestrationConfig.defaultChatter
+      val api = defaultChatter
       transcript?.write("# Genetic Optimization Task Transcript\n\n".toByteArray())
 
       // Create overview tab
@@ -950,7 +950,7 @@ Use this feedback to guide your mutation:
       model = api,
       temperature = 0.8,
       name = "MutationGenerator",
-      parsingChatter = orchestrationConfig.parsingChatter,
+      parsingChatter = parsingChatter,
     ).answer(
       listOf(
         """

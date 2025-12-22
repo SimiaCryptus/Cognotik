@@ -91,7 +91,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
                 writeTranscriptHeader(stream, subject, transformations, format)
             }
 
-            val api = orchestrationConfig.defaultChatter ?: return
+            val api = defaultChatter ?: return
             log.info("Starting Structural Invariant Analysis: $subject")
 
             val tabbedDisplay = TabbedDisplay(task)

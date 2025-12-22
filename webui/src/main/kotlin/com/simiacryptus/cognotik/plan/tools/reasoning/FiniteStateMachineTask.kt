@@ -106,7 +106,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
         }
 
         val ui = task.ui
-        val api = orchestrationConfig.defaultChatter ?: run {
+        val api = defaultChatter ?: run {
             log.error("No default chatter available")
             writeToTranscript("## Error\n\nNo API available\n\n")
             closeTranscript()

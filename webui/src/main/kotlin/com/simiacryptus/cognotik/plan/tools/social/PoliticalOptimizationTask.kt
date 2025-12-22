@@ -248,7 +248,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             log.info("Configuration: perspectives=${perspectives.size}, criteria=${evaluationCriteria.size}, mode=$consensusMode, generations=$numGenerations")
 
             val tabs = TabbedDisplay(task)
-            val api = orchestrationConfig.defaultChatter
+            val api = defaultChatter
             transcript?.write("# Political Optimization Task Transcript\n\n".toByteArray())
 
             // Create overview tab
@@ -884,7 +884,7 @@ The perspective field in your response should be: "$perspective"
                 model = api,
                 temperature = 0.4,
                 name = "PerspectiveEvaluator_$perspective",
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = parsingChatter,
             ).answer(
                 listOf(
                     """

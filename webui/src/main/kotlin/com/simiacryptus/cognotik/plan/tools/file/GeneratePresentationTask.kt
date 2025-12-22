@@ -129,7 +129,7 @@ class GeneratePresentationTask(
         val newTask = task.ui.newTask(false)
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
-        val api = orchestrationConfig.defaultChatter
+        val api = defaultChatter
 
         newTask.add(MarkdownUtil.renderMarkdown("## Creating Presentation: `$htmlFile`", ui = ui))
 

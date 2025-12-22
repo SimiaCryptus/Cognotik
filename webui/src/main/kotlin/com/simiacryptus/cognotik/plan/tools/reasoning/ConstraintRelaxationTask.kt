@@ -135,7 +135,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
       """.trimMargin()
         )
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultChatter ?: return
 
         val tabs = TabbedDisplay(task)
         val transcript = task.transcript("constraint_relaxation")
