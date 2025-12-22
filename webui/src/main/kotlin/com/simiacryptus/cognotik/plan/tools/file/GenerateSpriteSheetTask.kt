@@ -16,6 +16,9 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import java.awt.BasicStroke
+import java.awt.Color
+import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 
@@ -154,6 +157,42 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             val jsonOutputPath = root.resolve(metadataFile)
             val mapper = jacksonObjectMapper().writerWithDefaultPrettyPrinter()
             jsonOutputPath.toFile().writeText(mapper.writeValueAsString(metadata))
+            // Save Individual Sprites
+            val baseName = File(imageFile).nameWithoutExtension
+            val parentDir = File(imageFile).parent ?: ""
+            val spriteDirRelative = if (parentDir.isEmpty()) baseName else "$parentDir/$baseName"
+            val spriteDir = root.resolve(spriteDirRelative)
+            spriteDir.toFile().mkdirs()
+            val debugImage = BufferedImage(generatedImage.width, generatedImage.height, BufferedImage.TYPE_INT_ARGB)
+            val g = debugImage.createGraphics()
+            g.drawImage(generatedImage, 0, 0, null)
+            g.color = Color.RED
+            g.stroke = BasicStroke(2f)
+            val spriteHtml = StringBuilder()
+            metadata.sprites.forEach { sprite ->
+                try {
+                    val x = sprite.x.coerceIn(0, generatedImage.width - 1)
+                    val y = sprite.y.coerceIn(0, generatedImage.height - 1)
+                    val w = sprite.width.coerceAtMost(generatedImage.width - x)
+                    val h = sprite.height.coerceAtMost(generatedImage.height - y)
+                    g.drawRect(x, y, w, h)
+                    if (w > 0 && h > 0) {
+                        val subImage = generatedImage.getSubimage(x, y, w, h)
+                        val safeName = sprite.name.replace(Regex("[^a-zA-Z0-9.-]"), "_")
+                        val spriteFileName = "$safeName.png"
+                        ImageIO.write(subImage, "png", spriteDir.resolve(spriteFileName).toFile())
+                        val spriteLink = task.linkTo("$spriteDirRelative/$spriteFileName")
+                        spriteHtml.append("""<div style="display:inline-block;margin:2px;border:1px solid #ccc;padding:2px"><img src="$spriteLink" title="${sprite.name}" style="max-height:50px"/></div>""")
+                    }
+                } catch (e: Exception) {
+                    log.warn("Failed to save sprite ${sprite.name}", e)
+                }
+            }
+            g.dispose()
+            val debugFile = if (parentDir.isEmpty()) "${baseName}_debug.png" else "$parentDir/${baseName}_debug.png"
+            ImageIO.write(debugImage, "png", root.resolve(debugFile).toFile())
+            val debugLink = task.linkTo(debugFile)
+
 
             // Display Results
             val metadataLink = task.linkTo(metadataFile)
@@ -162,6 +201,11 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
                 - Image saved to: <a href="$imageLink">$imageFile</a>
                 - Metadata saved to: <a href="$metadataLink">$metadataFile</a>
                 - Identified ${metadata.sprites.size} sprites.
+                - Individual sprites saved to: `$spriteDirRelative/`
+                ### Bounding Boxes
+                <a href="$debugLink" target="_blank"><img src="$debugLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
+                ### Sprites
+                $spriteHtml
             """.trimIndent()
 
             task.add(MarkdownUtil.renderMarkdown(summary, ui = task.ui))
@@ -171,9 +215,9 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
                 "| ${it.name} | ${it.x}, ${it.y} | ${it.width}x${it.height} |" 
             }
             task.add(MarkdownUtil.renderMarkdown("""
-                | Name | Position | Size |
-                |------|----------|------|
-                $tableRows
+| Name | Position | Size |
+|------|----------|------|
+$tableRows
             """.trimIndent(), ui = task.ui))
 
             task.complete("Generated sprite sheet with ${metadata.sprites.size} sprites")

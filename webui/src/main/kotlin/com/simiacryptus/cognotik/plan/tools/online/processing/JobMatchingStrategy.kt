@@ -144,7 +144,7 @@ class JobMatchingStrategy : DefaultSummarizerStrategy() {
         context: PageProcessingStrategy.ProcessingContext
     ) = try {
         log.debug("Processing page: $url")
-        val chatInterface = context.parsingChatter.getChildClient(context.task)
+        val chatInterface = context.orchestrationConfig.parsingChatter.getChildClient(context.task)
         val config = context.executionConfig.content_queries?.parserCast<JobMatchingConfig>(chatInterface)
             ?: run {
                 val errorMsg = "Missing JobMatchingConfig for job matching strategy"

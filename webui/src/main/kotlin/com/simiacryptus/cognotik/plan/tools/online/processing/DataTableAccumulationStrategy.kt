@@ -82,7 +82,7 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
         log.debug("Processing page for data table accumulation: $url")
 
         val config = try {
-            val chatInterface = context.parsingChatter.getChildClient(context.task)
+            val chatInterface = context.orchestrationConfig.parsingChatter.getChildClient(context.task)
             context.executionConfig.content_queries?.let { queries ->
                 queries.parserCast<DataTableConfig>(chatInterface)
             } ?: run {
@@ -217,7 +217,7 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
         }
 
         val model = (context.typeConfig.model?.let { context.orchestrationConfig.instance(it) }
-            ?: context.parsingChatter).getChildClient(context.task)
+            ?: context.orchestrationConfig.parsingChatter).getChildClient(context.task)
 
         val result = ParsedAgent(
             prompt = prompt,
@@ -408,7 +408,7 @@ class DataTableAccumulationStrategy : DefaultSummarizerStrategy() {
 
         val config = try {
             context.executionConfig.content_queries?.let { queries ->
-                queries.parserCast<DataTableConfig>(context.parsingChatter.getChildClient(context.task))
+                queries.parserCast<DataTableConfig>(context.orchestrationConfig.parsingChatter.getChildClient(context.task))
             } ?: DataTableConfig()
         } catch (e: Exception) {
             log.error("Failed to parse config for final output", e)

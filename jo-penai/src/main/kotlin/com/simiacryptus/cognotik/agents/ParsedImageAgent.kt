@@ -59,7 +59,19 @@ open class ParsedImageAgent<T : Any>(
         override val text =
             response(*messages).choices.firstOrNull()?.message?.content
                 ?: throw RuntimeException("No response")
-        private val _obj: T by lazy { JsonUtil.fromJson(text, resultClass!!) }
+        private val _obj: T by lazy { JsonUtil.fromJson(unwrap(text), resultClass!!) }
+
+        private fun unwrap(text: String): String {
+            val trimmed = text.trim()
+            return if (trimmed.startsWith("```json") && trimmed.endsWith("```")) {
+                trimmed.removePrefix("```json").removeSuffix("```").trim()
+            } else if (trimmed.startsWith("```") && trimmed.endsWith("```")) {
+                trimmed.removePrefix("```").removeSuffix("```").trim()
+            } else {
+                trimmed
+            }
+        }
+
         override val obj get() = _obj
     }
     override fun respond(input: List<ImageAndText>, vararg messages: ModelSchema.ChatMessage): ParsedResponse<T> =

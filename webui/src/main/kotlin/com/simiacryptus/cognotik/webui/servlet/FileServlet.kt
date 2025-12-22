@@ -43,7 +43,6 @@ abstract class FileServlet : HttpServlet() {
         val pathSegments = parsePath(req.pathInfo ?: req.servletPath ?: "/")
         val dir = getDir(req)
         val file = dir?.let { getFile(it, pathSegments, req) }
-
         when {
             false == file?.exists() -> {
                 // Check if this is a request for HTML or PDF with an equivalent .md file

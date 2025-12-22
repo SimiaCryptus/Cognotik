@@ -113,7 +113,7 @@ class GeminiSdkChatClient(
             log(
                 "<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelName} (${requestID})</summary>\n\n```json\n${
                     toJson(config)
-                }\n```\n\n${
+                }\n```\n\nSystem Prompt:\n```\n${config?.systemInstruction()?.getOrNull()?.toString()?.indent("  ")}\n```\n\n${
                     contents.joinToString("\n\n") {
                         it.toMarkdown()
                     }.indent("  ")
