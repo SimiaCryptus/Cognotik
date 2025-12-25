@@ -237,6 +237,18 @@
           "label": "Neural Network Layer Task",
           "url": "NeuralNetworkLayerTask.html",
           "description": "Design and analyze neural network layers."
+        },
+        {
+          "id": "comicbookgeneration",
+          "label": "Comic Book Generation",
+          "url": "ComicBookGenerationTask.html",
+          "description": "Create comic books from scripts and images."
+        },
+        {
+          "id": "softwaredesigndocument",
+          "label": "Software Design Document",
+          "url": "SoftwareDesignDocumentTask.html",
+          "description": "Generate detailed software design documents."
         }
       ]
     }

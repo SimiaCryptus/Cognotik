@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cognotik Comic Book Generation Task - Transform text concepts into structured comic scripts and visual narratives.">
+    <title>Comic Book Generator | Cognotik</title>
+
+    <!-- Fonts: Inter for UI, Cinzel for Narrative flair -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Shared Styles -->
+    <link rel="stylesheet" href="assets/styles/main.css">
+
+    <!-- Web Component Script -->
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            /* Theme Variables - Dark Mode Default */
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-panel: #020617;
+            
+            /* Task Specific Accents: Purple (Creative) & Gold (Narrative) */
+            --accent-primary: #a855f7; /* Purple */
+            --accent-secondary: #fbbf24; /* Gold */
+            --accent-glow: rgba(168, 85, 247, 0.3);
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --font-ui: 'Inter', system-ui, sans-serif;
+            --font-display: 'Cinzel', serif;
+            
+            --border-radius: 12px;
+            --transition-speed: 0.3s;
+        }
+
+        /* Base Reset & Layout */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Utility Classes */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        .hidden { display: none !important; }
+        .btn {
+            background: linear-gradient(135deg, var(--accent-primary), #7e22ce);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-speed);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 0 15px var(--accent-glow); }
+
+        /* Hero Section */
+        .hero-section {
+            padding: 8rem 0 4rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            min-height: 80vh;
+        }
+        
+        .hero-content h1 {
+            font-family: var(--font-display);
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero-content p {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 500px;
+        }
+
+        .hero-visual {
+            position: relative;
+            height: 500px;
+            background: radial-gradient(circle at center, var(--bg-card), var(--bg-dark));
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Features Grid */
+        .features-section { padding: 4rem 0; }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: var(--transition-speed);
+        }
+        .feature-card:hover { border-color: var(--accent-primary); transform: translateY(-5px); }
+        
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-secondary);
+        }
+
+        /* Simulator Section */
+        .simulator-section { padding: 4rem 0; }
+        .simulator-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            background: var(--bg-panel);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            height: 800px;
+        }
+
+        /* Sim: Left Column (Controls) */
+        .sim-controls {
+            padding: 2rem;
+            background: var(--bg-card);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-group label { font-size: 0.875rem; font-weight: 600; color: var(--text-muted); }
+        
+        .sim-input, .sim-select {
+            background: var(--bg-dark);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-family: var(--font-ui);
+        }
+        .sim-input:focus { outline: 2px solid var(--accent-primary); border-color: transparent; }
+
+        .range-wrapper { display: flex; align-items: center; gap: 1rem; }
+        
+        /* Sim: Right Column (Output) */
+        .sim-output { display: flex; flex-direction: column; height: 100%; }
+        
+        .output-tabs {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition-speed);
+        }
+        .tab-btn.active { color: var(--accent-secondary); border-bottom-color: var(--accent-secondary); }
+        
+        .output-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Output Specifics */
+        .log-terminal {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #10b981;
+        }
+        .script-view { white-space: pre-wrap; font-family: serif; line-height: 1.8; }
+        
+        .char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
+        .char-card { background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; text-align: center; }
+        .char-img-placeholder { width: 100%; height: 150px; background: #000; margin-bottom: 0.5rem; border-radius: 4px; }
+
+        /* Use Cases */
+        .use-cases-section { padding: 4rem 0; }
+        .use-case-list { display: flex; flex-direction: column; gap: 1rem; }
+        .use-case-item {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--accent-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-section { grid-template-columns: 1fr; padding-top: 6rem; text-align: center; }
+            .hero-content p { margin: 0 auto 2rem; }
+            .simulator-container { grid-template-columns: 1fr; height: auto; }
+            .sim-controls { max-height: 400px; }
+            .sim-output { height: 500px; }
+        }
+    </style>
+
+    <style>
+        /* =========================================
+           1. Variables & Theme Configuration
+           ========================================= */
+        :root {
+            /* Color Palette - Dark Mode Base */
+            --bg-dark: #0f172a;       /* Slate 900 - Main Background */
+            --bg-card: #1e293b;       /* Slate 800 - Cards/Sections */
+            --bg-panel: #020617;      /* Slate 950 - Deep Panels/Terminal */
+            --bg-input: #334155;      /* Slate 700 - Form Inputs */
+        
+            /* Task Specific Accents: Creative Writing Theme */
+            --accent-primary: #a855f7;    /* Purple - Creative/Magic */
+            --accent-secondary: #fbbf24;  /* Gold - Narrative/Prestige */
+            --accent-glow: rgba(168, 85, 247, 0.4);
+            --accent-glow-gold: rgba(251, 191, 36, 0.3);
+        
+            /* Typography Colors */
+            --text-main: #f8fafc;     /* Slate 50 */
+            --text-muted: #94a3b8;    /* Slate 400 */
+            --text-highlight: #e2e8f0; /* Slate 200 */
+        
+            /* Fonts */
+            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-display: 'Cinzel', serif; /* Narrative flair */
+            --font-mono: 'Fira Code', 'Courier New', monospace;
+        
+            /* UI Metrics */
+            --border-radius: 12px;
+            --border-radius-sm: 6px;
+            --transition-speed: 0.3s;
+            --container-width: 1200px;
+            --header-height: 70px;
+        }
+        
+        /* =========================================
+           2. Reset & Global Styles
+           ========================================= */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Custom Scrollbar for Webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-primary);
+        }
+        
+        /* =========================================
+           3. Utility Classes
+           ========================================= */
+        .container {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-primary), #7e22ce);
+            color: white;
+            border: none;
+            padding: 0.85rem 2rem;
+            border-radius: var(--border-radius);
+            font-family: var(--font-ui);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px var(--accent-glow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--accent-glow);
+            filter: brightness(1.1);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background: var(--bg-input);
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+        
+        /* =========================================
+           4. Hero Section
+           ========================================= */
+        .hero-section {
+            padding: calc(var(--header-height) + 4rem) 0 6rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            min-height: 85vh;
+            position: relative;
+        }
+        
+        /* Background decorative glow */
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            z-index: -1;
+            opacity: 0.5;
+            filter: blur(80px);
+        }
+        
+        .hero-content h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff 20%, var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(251, 191, 36, 0.2);
+        }
+        
+        .hero-content p {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 540px;
+        }
+        
+        .hero-visual {
+            position: relative;
+            height: 500px;
+            background: radial-gradient(circle at center, var(--bg-card), var(--bg-dark));
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        /* =========================================
+           5. Features Grid
+           ========================================= */
+        .features-section {
+            padding: 4rem 0;
+            position: relative;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: var(--bg-card);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: var(--transition-speed);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity var(--transition-speed);
+        }
+        
+        .feature-card:hover::after {
+            opacity: 1;
+        }
+        
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-secondary);
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 0 15px var(--accent-glow-gold);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+        
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        
+        /* =========================================
+           6. Interactive Simulator (The Core)
+           ========================================= */
+        .simulator-section {
+            padding: 4rem 0;
+        }
+        
+        .simulator-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 0; /* Gap handled by border */
+            background: var(--bg-panel);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            height: 800px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        
+        /* --- Left Column: Controls --- */
+        .sim-controls {
+            padding: 2rem;
+            background: var(--bg-card);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .sim-controls h2 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--accent-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .control-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+        
+        .sim-input, .sim-select {
+            background: var(--bg-dark);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-family: var(--font-ui);
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+        
+        .sim-input:focus, .sim-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+        
+        textarea.sim-input {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-secondary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px var(--accent-glow-gold);
+        }
+        
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--bg-input);
+            border-radius: 2px;
+        }
+        
+        /* Checkbox/Toggle Styling */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            appearance: none;
+            background-color: var(--bg-input);
+            margin: 0;
+            font: inherit;
+            color: currentColor;
+            width: 2.5em;
+            height: 1.25em;
+            border-radius: 1em;
+            display: grid;
+            place-content: center;
+            transition: 0.2s ease-in-out;
+            position: relative;
+        }
+        
+        .checkbox-container input[type="checkbox"]::before {
+            content: "";
+            width: 1em;
+            height: 1em;
+            border-radius: 50%;
+            background: white;
+            transform: translateX(-50%);
+            transition: 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .checkbox-container input[type="checkbox"]:checked {
+            background-color: var(--accent-primary);
+        }
+        
+        .checkbox-container input[type="checkbox"]:checked::before {
+            transform: translateX(50%);
+        }
+        
+        /* --- Right Column: Output --- */
+        .sim-output {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: var(--bg-panel);
+            position: relative;
+        }
+        
+        .output-tabs {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            overflow-x: auto;
+        }
+        
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition-speed);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(255,255,255,0.02);
+        }
+        
+        .tab-btn.active {
+            color: var(--accent-secondary);
+            border-bottom-color: var(--accent-secondary);
+            background: rgba(251, 191, 36, 0.05);
+        }
+        
+        .output-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        /* Output: Logs */
+        .log-terminal {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: #10b981; /* Terminal Green */
+            line-height: 1.5;
+        }
+        
+        /* Output: Script */
+        .script-view {
+            white-space: pre-wrap;
+            font-family: 'Merriweather', serif;
+            line-height: 1.8;
+            color: #e2e8f0;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        /* Output: Characters */
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .char-card {
+            background: rgba(255,255,255,0.03);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .char-img-placeholder {
+            width: 100%;
+            height: 180px;
+            background: #000;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+        
+        .char-card h4 {
+            color: var(--accent-secondary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .char-card small {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        
+        /* =========================================
+           7. Workflow Section
+           ========================================= */
+        .workflow-section {
+            padding: 4rem 0;
+        }
+        
+        .workflow-section h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+            font-size: 2rem;
+        }
+        
+        /* =========================================
+           8. Use Cases Section
+           ========================================= */
+        .use-cases-section {
+            padding: 4rem 0 8rem;
+        }
+        
+        .use-case-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .use-case-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5rem;
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--accent-primary);
+            transition: transform 0.2s;
+        }
+        
+        .use-case-item:hover {
+            transform: translateX(10px);
+            background: linear-gradient(90deg, var(--bg-card), rgba(168, 85, 247, 0.05));
+        }
+        
+        .use-case-item h3 {
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+            font-family: var(--font-display);
+        }
+        
+        .use-case-item p {
+            color: var(--text-muted);
+            margin: 0;
+        }
+        
+        /* =========================================
+           9. Responsive Design
+           ========================================= */
+        @media (max-width: 1024px) {
+            .hero-section {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding-top: 8rem;
+                gap: 3rem;
+            }
+        
+            .hero-content p {
+                margin: 0 auto 2.5rem;
+            }
+        
+            .hero-visual {
+                height: 400px;
+            }
+        
+            .simulator-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                max-height: none;
+            }
+        
+            .sim-controls {
+                border-right: none;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                max-height: none;
+            }
+        
+            .sim-output {
+                height: 600px; /* Fixed height for output on mobile to allow scrolling */
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+        
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        
+            /* Workflow arrows rotate on mobile */
+            .workflow-section > div {
+                flex-direction: column;
+                align-items: center;
+            }
+        
+            .workflow-section > div > div:nth-child(even) {
+                transform: rotate(90deg);
+                margin: 1rem 0;
+            }
+        
+            .output-tabs {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+<!-- Generated Images:
+     - comic-generator-hero.png: A high-quality, abstract 3D illustration set against a deep slate blue background (#0f172a). The image depicts a stream of glowing binary code and text floating upward and transforming into vibrant, floating comic book panels. The panels show abstract silhouettes of heroes in dynamic poses. The composition is lit with neon purple (#a855f7) and gold (#fbbf24) rim lighting. The style is "Future-Professional," combining clean geometric shapes with artistic fluidity to represent AI-generated storytelling.
+     - character-detective-kai.png: A stylized character reference sheet for a "Cyberpunk Noir" comic. The subject is "Detective Kai," a gritty man in a high-collared trench coat with a glowing cybernetic eye. The art style is high-contrast digital painting with heavy shadows and neon blue highlights. The background is a dark, technical grid pattern (slate grey) to imply a schematic or database view. The image should look like a generated asset for a character consistency profile.
+     - comic-strip-row-noir.png: A horizontal comic book strip consisting of two wide panels, rendered in a dark, atmospheric noir style. Panel 1 (Left): A wide shot of a futuristic Tokyo-style skyline under heavy rain, illuminated by neon signs in purple and cyan. Panel 2 (Right): A cinematic close-up of heavy combat boots stepping into a rain puddle, creating a splash. The images should have a "hand-drawn" ink aesthetic but with digital coloring, fitting the "Western Superhero" or "Noir" art style options.
+-->
+</head>
+<body>
+
+    <!-- Navigation Component -->
+    <cognotik-header current-page="comic-book"></cognotik-header>
+
+    <main>
+        <!-- 
+            IMAGE PROMPT: 
+            A high-quality, abstract 3D illustration representing comic book creation.
+            Visual: Floating, glowing comic book panels assembling themselves in mid-air from digital particles.
+            The panels show abstract silhouettes of heroes. The color palette is deep slate blue with 
+            neon purple and gold outlines, emphasizing the "Writing" and "Creative" nature of the task.
+        -->
+        <section class="hero-section container">
+            <div class="hero-content">
+                <h1>Comic Book Generator</h1>
+                <p>Transform raw ideas into fully realized graphic narratives. This agent orchestrates scriptwriting, character design, and panel layout visualization in a single workflow.</p>
+                <button class="btn" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
+                    Open Studio
+                </button>
+            </div>
+            <div class="hero-visual">
+                <!-- 3D Illustration -->
+                <img src="assets/images/comic-generator-hero.png" alt="Abstract 3D illustration of glowing comic book panels assembling from digital particles" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="features-section container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    </div>
+                    <h3>Structured Scripting</h3>
+                    <p>Automatically generates industry-standard scripts broken down by Page, Row, and Frame with dialogue and visual descriptions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </div>
+                    <h3>Character Consistency</h3>
+                    <p>Creates detailed character profiles and reference sheets to ensure visual consistency across the narrative.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    </div>
+                    <h3>Visual Rendering</h3>
+                    <p>Optional image generation pipeline that renders comic strips row-by-row based on the generated script and art style.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Simulator -->
+        <section id="simulator" class="simulator-section container">
+            <div class="simulator-container">
+                <!-- Left: Inputs -->
+                <div class="sim-controls">
+                    <h2>Configuration</h2>
+                    <form id="task-config-form" onsubmit="event.preventDefault(); runSimulation();">
+                        
+                        <div class="control-group">
+                            <label for="subject">Subject / Premise</label>
+                            <textarea id="subject" class="sim-input" rows="4" placeholder="e.g., A detective noir story set in a cyberpunk Tokyo where it never stops raining..."></textarea>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="art_style">Art Style</label>
+                            <select id="art_style" class="sim-select">
+                                <option value="western superhero">Western Superhero</option>
+                                <option value="manga">Manga</option>
+                                <option value="noir">Noir / High Contrast</option>
+                                <option value="cartoon">Cartoon</option>
+                                <option value="watercolor">Watercolor</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="target_pages">Target Pages: <span id="page-val">5</span></label>
+                            <div class="range-wrapper">
+                                <input type="range" id="target_pages" min="1" max="20" value="5" class="sim-input" oninput="document.getElementById('page-val').innerText = this.value">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="generate_images" checked>
+                                Generate Visuals (Slow)
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn" id="run-btn">Generate Comic</button>
+                    </form>
+                </div>
+
+                <!-- Right: Outputs -->
+                <div class="sim-output">
+                    <div class="output-tabs">
+                        <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+                        <button class="tab-btn" onclick="switchTab('script')">Script</button>
+                        <button class="tab-btn" onclick="switchTab('characters')">Characters</button>
+                        <button class="tab-btn" onclick="switchTab('visuals')">Visuals</button>
+                        <button class="tab-btn" onclick="switchTab('logs')">Logs</button>
+                    </div>
+
+                    <div id="tab-overview" class="output-content">
+                        <h3>Ready to Create</h3>
+                        <p class="text-muted">Configure the settings on the left and click "Generate Comic" to start the agent.</p>
+                        <div style="margin-top: 2rem; opacity: 0.5; text-align: center;">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+                        </div>
+                    </div>
+
+                    <div id="tab-script" class="output-content hidden">
+                        <div class="script-view" id="script-display">
+                            <!-- Script content will be injected here -->
+                        </div>
+                    </div>
+
+                    <div id="tab-characters" class="output-content hidden">
+                        <div class="char-grid" id="char-display">
+                            <!-- Character cards injected here -->
+                        </div>
+                    </div>
+
+                    <div id="tab-visuals" class="output-content hidden">
+                        <div id="visuals-display">
+                            <!-- Images injected here -->
+                        </div>
+                    </div>
+
+                    <div id="tab-logs" class="output-content hidden">
+                        <div class="log-terminal" id="log-display">
+                            <span style="color: #64748b;">// System Ready...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workflow Visualization -->
+        <section class="workflow-section container" style="padding-bottom: 4rem;">
+            <h2 style="margin-bottom: 2rem; font-family: var(--font-display);">Agent Workflow</h2>
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <div class="feature-card" style="flex: 1; min-width: 200px; text-align: center;">
+                    <strong style="color: var(--accent-secondary);">01. Concept</strong>
+                    <p>Analyzes subject & style</p>
+                </div>
+                <div style="display: flex; align-items: center; color: var(--text-muted);">→</div>
+                <div class="feature-card" style="flex: 1; min-width: 200px; text-align: center;">
+                    <strong style="color: var(--accent-secondary);">02. Scripting</strong>
+                    <p>Generates pages & dialogue</p>
+                </div>
+                <div style="display: flex; align-items: center; color: var(--text-muted);">→</div>
+                <div class="feature-card" style="flex: 1; min-width: 200px; text-align: center;">
+                    <strong style="color: var(--accent-secondary);">03. Character Design</strong>
+                    <p>Creates reference sheets</p>
+                </div>
+                <div style="display: flex; align-items: center; color: var(--text-muted);">→</div>
+                <div class="feature-card" style="flex: 1; min-width: 200px; text-align: center;">
+                    <strong style="color: var(--accent-secondary);">04. Rendering</strong>
+                    <p>Draws panels row-by-row</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="use-cases-section container">
+            <h2 style="margin-bottom: 2rem; font-family: var(--font-display);">Use Cases</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <div>
+                        <h3>Rapid Storyboarding</h3>
+                        <p>Filmmakers and animators can generate visual storyboards from rough script ideas in minutes rather than days.</p>
+                    </div>
+                </div>
+                <div class="use-case-item">
+                    <div>
+                        <h3>Indie Comic Publishing</h3>
+                        <p>Solo writers can visualize their narratives without needing advanced drawing skills, or use the output as a reference for human artists.</p>
+                    </div>
+                </div>
+                <div class="use-case-item">
+                    <div>
+                        <h3>Educational Material</h3>
+                        <p>Create engaging, visual explanations of complex historical events or scientific processes for students.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            // Hide all content
+            document.querySelectorAll('.output-content').forEach(content => content.classList.add('hidden'));
+            // Show target content
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+        }
+
+        // Simulation Logic
+        function runSimulation() {
+            const subject = document.getElementById('subject').value || "A generic hero story";
+            const style = document.getElementById('art_style').value;
+            const pages = document.getElementById('target_pages').value;
+            const genImages = document.getElementById('generate_images').checked;
+            
+            const logDisplay = document.getElementById('log-display');
+            const scriptDisplay = document.getElementById('script-display');
+            const charDisplay = document.getElementById('char-display');
+            const visualsDisplay = document.getElementById('visuals-display');
+            const runBtn = document.getElementById('run-btn');
+
+            // Reset UI
+            runBtn.disabled = true;
+            runBtn.innerText = "Processing...";
+            logDisplay.innerHTML = `<div style="margin-bottom: 5px;">> Initializing ComicBookGenerationTask...</div>`;
+            scriptDisplay.innerHTML = "";
+            charDisplay.innerHTML = "";
+            visualsDisplay.innerHTML = "";
+            switchTab('logs');
+
+            // Helper for logging
+            const log = (msg) => {
+                logDisplay.innerHTML += `<div style="margin-bottom: 5px;">> ${msg}</div>`;
+                logDisplay.scrollTop = logDisplay.scrollHeight;
+            };
+
+            // Mock Process
+            setTimeout(() => {
+                log(`Subject: "${subject}"`);
+                log(`Style: ${style}, Pages: ${pages}`);
+                
+                // Step 1: Script
+                setTimeout(() => {
+                    log("Generating Script Structure...");
+                    const mockScript = `
+# The Neon Shadow
+*Premise: ${subject}*
+
+## Page 1
+**Row 1**
+- Panel 1: Wide shot of the city skyline. Rain falls heavily.
+  - **Narrator**: "The city never sleeps. It just waits."
+- Panel 2: Close up on DETECTIVE KAI's boots stepping into a puddle.
+  - **Sound**: SPLASH
+
+**Row 2**
+- Panel 3: Kai lights a cigarette under a neon sign.
+  - **Kai**: "Another night, another missing android."
+                    `;
+                    scriptDisplay.innerText = mockScript;
+                    log("✅ Script Generated.");
+                    
+                    // Step 2: Characters
+                    setTimeout(() => {
+                        log("Designing Character Profiles...");
+                        const chars = [
+                            {name: "Detective Kai", desc: "Gritty, trenchcoat, cyber-eye"},
+                            {name: "Unit 734", desc: "Rogue android, glowing blue veins"}
+                        ];
+                        
+                        chars.forEach(c => {
+                            // Logic to insert specific character image for Detective Kai
+                            let imgHtml = `<div class="char-img-placeholder" style="background: linear-gradient(45deg, #333, #444);"></div>`;
+                            if(c.name === "Detective Kai") {
+                                imgHtml = `<img src="assets/images/character-detective-kai.png" alt="Detective Kai Character Sheet" style="width: 100%; height: auto; border-radius: 4px; margin-bottom: 0.5rem;">`;
+                            }
+
+                            charDisplay.innerHTML += `
+                                <div class="char-card">
+                                    ${imgHtml}
+                                    <h4>${c.name}</h4>
+                                    <small>${c.desc}</small>
+                                </div>
+                            `;
+                        });
+                        log(`✅ ${chars.length} Characters Defined.`);
+
+                        // Step 3: Visuals (if enabled)
+                        if(genImages) {
+                            setTimeout(() => {
+                                log("Rendering Page 1, Row 1...");
+                                // Insert generated comic strip image
+                                visualsDisplay.innerHTML += `
+                                    <div style="margin-bottom:1rem;">
+                                        <img src="assets/images/comic-strip-row-noir.png" alt="Noir Comic Strip Row" style="width: 100%; border: 1px solid #333; border-radius: 4px;">
+                                    </div>`;
+                                
+                                setTimeout(() => {
+                                    log("Rendering Page 1, Row 2...");
+                                    visualsDisplay.innerHTML += `<div style="background:#111; padding:1rem; margin-bottom:1rem; border:1px solid #333; text-align:center;">[Generated Image: Detective Kai / Neon Light]</div>`;
+                                    
+                                    finish();
+                                }, 1500);
+                            }, 1500);
+                        } else {
+                            finish();
+                        }
+
+                    }, 1500);
+                }, 1500);
+            }, 500);
+
+            function finish() {
+                log("Task Complete.");
+                runBtn.disabled = false;
+                runBtn.innerText = "Generate Comic";
+                if(genImages) switchTab('visuals');
+                else switchTab('script');
+            }
+        }
+    </script>
+
+    <script>
+        /**
+         * Cognotik Comic Book Generator - Interactive Logic
+         * Handles tab switching, range slider updates, and the mock simulation of the agent workflow.
+         */
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize UI elements
+            setupRangeSlider();
+            setupFormSubmission();
+        });
+        
+        /**
+         * Sets up the range slider to update the display value in real-time.
+         */
+        function setupRangeSlider() {
+            const rangeInput = document.getElementById('target_pages');
+            const rangeValueDisplay = document.getElementById('page-val');
+        
+            if (rangeInput && rangeValueDisplay) {
+                rangeInput.addEventListener('input', (e) => {
+                    rangeValueDisplay.textContent = e.target.value;
+                });
+            }
+        }
+        
+        /**
+         * Handles the form submission to prevent default reload and trigger the simulation.
+         */
+        function setupFormSubmission() {
+            const form = document.getElementById('task-config-form');
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    runSimulation();
+                });
+            }
+        }
+        
+        /**
+         * Switches the active tab in the output section.
+         * Exposed to window to support inline HTML onclick attributes.
+         * @param {string} tabId - The ID suffix of the tab to show (e.g., 'script', 'logs').
+         */
+        window.switchTab = function(tabId) {
+            // 1. Update Button States
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                // Check if this button's onclick matches the requested tabId
+                if (btn.getAttribute('onclick').includes(tabId)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        
+            // 2. Update Content Visibility
+            const contents = document.querySelectorAll('.output-content');
+            contents.forEach(content => {
+                content.classList.add('hidden');
+            });
+        
+            const targetContent = document.getElementById(`tab-${tabId}`);
+            if (targetContent) {
+                targetContent.classList.remove('hidden');
+            }
+        };
+        
+        /**
+         * Helper function to simulate network/processing delay.
+         * @param {number} ms - Milliseconds to wait.
+         */
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        /**
+         * Core Simulation Logic
+         * Mocks the backend agent process: Config -> Logs -> Script -> Characters -> Visuals.
+         */
+        async function runSimulation() {
+            // 1. Gather Inputs
+            const subjectInput = document.getElementById('subject');
+            const styleInput = document.getElementById('art_style');
+            const pagesInput = document.getElementById('target_pages');
+            const genImagesInput = document.getElementById('generate_images');
+            const runBtn = document.getElementById('run-btn');
+        
+            // Default values if empty
+            const subject = subjectInput.value.trim() || "A generic hero story in a futuristic city";
+            const style = styleInput.value;
+            const pages = pagesInput.value;
+            const shouldGenImages = genImagesInput.checked;
+        
+            // 2. Prepare UI for Processing
+            runBtn.disabled = true;
+            runBtn.innerHTML = `<span class="spinner"></span> Processing...`; // Assumes CSS spinner or just text
+        
+            // Clear previous outputs
+            document.getElementById('script-display').innerHTML = '';
+            document.getElementById('char-display').innerHTML = '';
+            document.getElementById('visuals-display').innerHTML = '';
+        
+            // Switch to Logs tab to show progress
+            window.switchTab('logs');
+            const logDisplay = document.getElementById('log-display');
+            logDisplay.innerHTML = '<div style="color: #64748b;">// Initializing ComicBookGenerationTask...</div>';
+        
+            // Helper to append logs
+            const log = (msg, type = 'info') => {
+                const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#f8fafc');
+                const timestamp = new Date().toLocaleTimeString([], { hour12: false });
+                logDisplay.innerHTML += `<div style="margin-top: 4px;"><span style="color:#555">[${timestamp}]</span> <span style="color:${color}">> ${msg}</span></div>`;
+                logDisplay.scrollTop = logDisplay.scrollHeight;
+            };
+        
+            try {
+                // --- STEP 1: Initialization ---
+                await delay(600);
+                log(`Configuration loaded: ${pages} pages, Style: "${style}"`);
+                log(`Analyzing subject: "${subject.substring(0, 30)}..."`);
+        
+                // --- STEP 2: Script Generation ---
+                await delay(1200);
+                log("Agent: Writing script structure (Page/Row/Panel)...");
+        
+                // Generate Mock Script based on style
+                const mockScript = generateMockScript(subject, style);
+                document.getElementById('script-display').innerHTML = mockScript; // Using innerHTML to render HTML tags in script
+        
+                await delay(800);
+                log("✅ Script generation complete.", "success");
+        
+                // --- STEP 3: Character Extraction ---
+                await delay(1000);
+                log("Agent: Extracting character profiles and visual traits...");
+        
+                const characters = generateMockCharacters(style);
+                const charContainer = document.getElementById('char-display');
+        
+                characters.forEach(char => {
+                    const charCard = `
+                        <div class="char-card">
+                            <div class="char-img-placeholder" style="background: linear-gradient(135deg, #334155, #1e293b); display:flex; align-items:center; justify-content:center; color:#64748b; font-size:0.8rem;">
+                                [Ref: ${char.name}]
+                            </div>
+                            <h4 style="margin-top:0.5rem; color:var(--accent-secondary)">${char.name}</h4>
+                            <small style="color:var(--text-muted)">${char.desc}</small>
+                        </div>
+                    `;
+                    charContainer.innerHTML += charCard;
+                });
+        
+                log(`✅ Identified ${characters.length} primary characters.`, "success");
+        
+                // --- STEP 4: Visual Generation (Optional) ---
+                if (shouldGenImages) {
+                    log("Agent: Initializing ImageProcessingAgent for panel rendering...");
+                    const visualsContainer = document.getElementById('visuals-display');
+            
+                    // Simulate rendering loop
+                    const totalPanels = 2; // Mocking just 2 panels for the demo
+                    for (let i = 1; i <= totalPanels; i++) {
+                        await delay(1500); // Simulate generation time
+                        log(`Rendering Page 1, Row ${i}...`);
+                
+                        const imgPlaceholder = `
+                            <div style="margin-bottom: 2rem;">
+                                <div style="background: #020617; border: 1px solid #334155; border-radius: 8px; padding: 1rem; text-align: center;">
+                                    <div style="height: 200px; background: radial-gradient(circle, #1e293b, #0f172a); display: flex; align-items: center; justify-content: center; border-radius: 4px; margin-bottom: 0.5rem;">
+                                        <span style="color: var(--accent-primary); font-family: var(--font-display);">
+                                            [Generated Image: Page 1 / Row ${i}]
+                                        </span>
+                                    </div>
+                                    <p style="font-size: 0.9rem; color: var(--text-muted);">
+                                        <em>Visual context: ${i === 1 ? 'Establishing shot, atmospheric lighting' : 'Character interaction, close-up'}</em>
+                                    </p>
+                                </div>
+                            </div>
+                        `;
+                        visualsContainer.innerHTML += imgPlaceholder;
+                    }
+                    log("✅ Visual rendering complete.", "success");
+                } else {
+                    log("Skipping visual generation (User preference).");
+                }
+        
+                // --- STEP 5: Finalization ---
+                await delay(500);
+                log("Task completed successfully.", "success");
+        
+                // Reset Button
+                runBtn.disabled = false;
+                runBtn.innerText = "Generate Comic";
+        
+                // Auto-switch to the most relevant tab
+                if (shouldGenImages) {
+                    window.switchTab('visuals');
+                } else {
+                    window.switchTab('script');
+                }
+        
+            } catch (error) {
+                console.error(error);
+                log("Error during execution.", "error");
+                runBtn.disabled = false;
+                runBtn.innerText = "Generate Comic";
+            }
+        }
+        
+        /**
+         * Generates a mock script string based on the selected style.
+         */
+        function generateMockScript(subject, style) {
+            const title = subject.split(' ').slice(0, 3).join(' ').toUpperCase() || "UNTITLED STORY";
+        
+            // Adjust tone based on style
+            let tone = "Standard";
+            if (style === 'noir') tone = "Dark, high contrast, rainy";
+            if (style === 'manga') tone = "Dynamic action lines, emotional close-ups";
+            if (style === 'western superhero') tone = "Bold colors, heroic angles";
+        
+            return `
+        <h2 style="font-family: var(--font-display); color: var(--accent-secondary);">${title}</h2>
+        <p><em><strong>Premise:</strong> ${subject}</em></p>
+        <p><em><strong>Visual Style:</strong> ${tone}</em></p>
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
+        
+        <h3>Page 1</h3>
+        
+        <div style="margin-left: 1rem; border-left: 2px solid var(--accent-primary); padding-left: 1rem;">
+            <strong>Row 1</strong>
+            <ul style="list-style: none; padding: 0; margin-top: 0.5rem;">
+                <li style="margin-bottom: 1rem;">
+                    <span style="color: var(--accent-primary);">Panel 1 (Wide):</span> Establishing shot. The environment reflects the mood of the subject.
+                    <br><span style="color: #94a3b8;">CAPTION: "It started like any other day..."</span>
+                </li>
+                <li style="margin-bottom: 1rem;">
+                    <span style="color: var(--accent-primary);">Panel 2 (Medium):</span> The protagonist enters the frame. Lighting highlights their silhouette.
+                    <br><span style="color: #94a3b8;">SFX: *CLICK*</span>
+                </li>
+            </ul>
+        </div>
+        
+        <div style="margin-left: 1rem; border-left: 2px solid var(--accent-primary); padding-left: 1rem; margin-top: 1.5rem;">
+            <strong>Row 2</strong>
+            <ul style="list-style: none; padding: 0; margin-top: 0.5rem;">
+                <li style="margin-bottom: 1rem;">
+                    <span style="color: var(--accent-primary);">Panel 3 (Close-up):</span> Focus on the eyes. A realization occurs.
+                    <br><span style="color: #94a3b8;">HERO: "I knew I shouldn't have come here."</span>
+                </li>
+            </ul>
+        </div>
+            `;
+        }
+        
+        /**
+         * Generates mock character data based on style.
+         */
+        function generateMockCharacters(style) {
+            if (style === 'manga') {
+                return [
+                    { name: "Protagonist (Hiro)", desc: "Spiky hair, determined expression, school uniform or armor." },
+                    { name: "Rival (Kenji)", desc: "Sharp eyes, cool demeanor, dark clothing." }
+                ];
+            } else if (style === 'noir') {
+                return [
+                    { name: "Detective Vance", desc: "Worn trenchcoat, fedora, smoking a cigarette." },
+                    { name: "The Femme Fatale", desc: "Elegant evening gown, mysterious shadow across face." }
+                ];
+            } else {
+                // Default / Superhero
+                return [
+                    { name: "Captain Solar", desc: "Muscular build, glowing emblem on chest, cape." },
+                    { name: "Dr. Void", desc: "Lab coat, cybernetic enhancements, green energy aura." }
+                ];
+            }
+        }
+    </script>
+</body>
+</html>
