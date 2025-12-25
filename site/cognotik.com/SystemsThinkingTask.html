@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Systems Thinking Task - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Component Script -->
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #06b6d4; /* Cyan */
+            --accent-secondary: #8b5cf6; /* Violet */
+            --accent-glow: rgba(6, 182, 212, 0.3);
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            background: radial-gradient(circle at 50% 20%, #1e293b 0%, #0f172a 70%);
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background:
+                linear-gradient(45deg, transparent 48%, var(--accent-glow) 50%, transparent 52%),
+                linear-gradient(-45deg, transparent 48%, var(--accent-glow) 50%, transparent 52%);
+            background-size: 60px 60px;
+            opacity: 0.1;
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-cta {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            font-weight: 600;
+            border-radius: 9999px;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        /* Features Grid */
+        .features {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-primary);
+        }
+
+        .feature-icon {
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            width: 32px;
+            height: 32px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Simulator */
+        .simulator {
+            padding: 4rem 2rem;
+            background: #0b1120;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sim-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
+            min-height: 800px;
+        }
+
+        @media (max-width: 1024px) {
+            .sim-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sim-panel {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sim-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .sim-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sim-content {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .toggle-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 0.5rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Output Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .output-view {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .output-view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .markdown-body h2 {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .markdown-body p {
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        .markdown-body ul, .markdown-body ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        .markdown-body li {
+            margin-bottom: 0.5rem;
+        }
+
+        .code-block {
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .mermaid-mock {
+            background: #0f172a;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .use-case-card {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border-left: 4px solid var(--accent-secondary);
+        }
+
+        .use-case-card h4 {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .use-case-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <cognotik-header current-page="systems-thinking"></cognotik-header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Systems Thinking Task</h1>
+                <p class="subtitle">
+                    Analyze complex systems through feedback loops, delays, and emergent behavior.
+                    Identify high-leverage intervention points to optimize performance and mitigate unintended consequences.
+                </p>
+                <a href="#simulator" class="btn-cta">Try the Simulator</a>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="features">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i data-lucide="refresh-cw" class="feature-icon"></i>
+                    <h3>Feedback Loops</h3>
+                    <p>Identify reinforcing and balancing loops that drive system behavior and stability.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="clock" class="feature-icon"></i>
+                    <h3>Delays & Accumulations</h3>
+                    <p>Map time lags and stocks to understand oscillations and system inertia.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="target" class="feature-icon"></i>
+                    <h3>Leverage Points</h3>
+                    <p>Find the most effective places to intervene based on Meadows' hierarchy.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="layers" class="feature-icon"></i>
+                    <h3>System Archetypes</h3>
+                    <p>Recognize common patterns like "Limits to Growth" or "Shifting the Burden".</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="activity" class="feature-icon"></i>
+                    <h3>Emergent Behavior</h3>
+                    <p>Predict unintended consequences and system-level patterns arising from component interactions.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="play-circle" class="feature-icon"></i>
+                    <h3>Intervention Simulation</h3>
+                    <p>Simulate specific changes over time to forecast immediate and long-term effects.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Simulator -->
+        <section id="simulator" class="simulator">
+            <div class="sim-container">
+                <!-- Left: Configuration -->
+                <div class="sim-panel">
+                    <div class="sim-header">
+                        <h2><i data-lucide="settings"></i> Configuration</h2>
+                    </div>
+                    <div class="sim-content">
+                        <form id="configForm">
+                            <div class="form-group">
+                                <label class="form-label">System Description</label>
+                                <textarea class="form-textarea" id="systemDesc">Software Engineering Team Burnout: High feature demand leads to overtime, which increases fatigue and error rates, leading to more rework and even less time for new features.</textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Time Horizon</label>
+                                <select class="form-select" id="timeHorizon">
+                                    <option value="3 months">3 Months</option>
+                                    <option value="6 months" selected>6 Months</option>
+                                    <option value="1 year">1 Year</option>
+                                    <option value="5 years">5 Years</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Analysis Components</label>
+
+                                <div class="toggle-group">
+                                    <span>Identify Feedback Loops</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="checkLoops" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="toggle-group">
+                                    <span>Map Delays</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="checkDelays" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="toggle-group">
+                                    <span>Find Leverage Points</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="checkLeverage" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="toggle-group">
+                                    <span>Identify Archetypes</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="checkArchetypes" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="toggle-group">
+                                    <span>Emergent Behavior</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="checkEmergent" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Simulate Interventions (One per line)</label>
+                                <textarea class="form-textarea" id="interventions" style="min-height: 80px;">Implement mandatory cooldown weeks
+Hire more QA engineers</textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right: Output -->
+                <div class="sim-panel">
+                    <div class="sim-header">
+                        <h2><i data-lucide="monitor"></i> Analysis Output</h2>
+                        <div class="tabs">
+                            <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+                            <button class="tab-btn" onclick="switchTab('diagram')">Diagram</button>
+                            <button class="tab-btn" onclick="switchTab('simulation')">Simulation</button>
+                        </div>
+                    </div>
+                    <div class="sim-content" id="outputContainer">
+                        <!-- Content injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="use-cases">
+            <h2 style="margin-bottom: 2rem; text-align: center;">When to Use</h2>
+            <div class="use-case-grid">
+                <div class="use-case-card">
+                    <h4>Organizational Dynamics</h4>
+                    <p>Understand why adding more people to a late project makes it later (Brooks' Law).</p>
+                </div>
+                <div class="use-case-card">
+                    <h4>Technical Debt</h4>
+                    <p>Analyze the vicious cycle of quick fixes leading to system instability and slower velocity.</p>
+                </div>
+                <div class="use-case-card">
+                    <h4>Strategic Planning</h4>
+                    <p>Forecast long-term market responses to pricing changes or new product launches.</p>
+                </div>
+                <div class="use-case-card">
+                    <h4>Performance Optimization</h4>
+                    <p>Identify bottlenecks in CI/CD pipelines or distributed system architectures.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Simulator Logic
+        const form = document.getElementById('configForm');
+        const outputContainer = document.getElementById('outputContainer');
+        let currentTab = 'overview';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('onclick').includes(tab));
+            });
+            renderOutput();
+        }
+
+        function renderOutput() {
+            const systemDesc = document.getElementById('systemDesc').value;
+            const timeHorizon = document.getElementById('timeHorizon').value;
+            const hasLoops = document.getElementById('checkLoops').checked;
+            const hasDelays = document.getElementById('checkDelays').checked;
+            const hasLeverage = document.getElementById('checkLeverage').checked;
+            const hasArchetypes = document.getElementById('checkArchetypes').checked;
+            const hasEmergent = document.getElementById('checkEmergent').checked;
+            const interventions = document.getElementById('interventions').value.split('\n').filter(i => i.trim());
+
+            let content = '';
+
+            if (currentTab === 'overview') {
+                content = `
+                    <div class="markdown-body output-view active">
+                        <h1>Systems Analysis Report</h1>
+                        <p><strong>System:</strong> ${systemDesc.substring(0, 60)}...</p>
+                        <p><strong>Time Horizon:</strong> ${timeHorizon}</p>
+
+                        ${hasArchetypes ? `
+                        <h2>Detected Archetype: "Fixes that Fail"</h2>
+                        <p>The system exhibits the "Fixes that Fail" archetype. Short-term solutions (Overtime) alleviate the symptom (Feature Backlog) but create unintended consequences (Fatigue, Errors) that eventually worsen the original problem.</p>
+                        ` : ''}
+
+                        ${hasLoops ? `
+                        <h2>Key Feedback Loops</h2>
+                        <ul>
+                            <li><strong>R1 (Vicious Cycle):</strong> Overtime &rarr; Fatigue &rarr; Error Rate &rarr; Rework &rarr; Backlog &rarr; Overtime.</li>
+                            <li><strong>B1 (Balancing):</strong> Feature Demand &rarr; Development &rarr; Features Released &rarr; Demand Satisfied.</li>
+                        </ul>
+                        ` : ''}
+
+                        ${hasDelays ? `
+                        <h2>Delays</h2>
+                        <p>There is a significant delay between <em>Increased Overtime</em> and the visible spike in <em>Error Rate</em> (approx. 2-3 weeks). This delay masks the negative impact of crunch time.</p>
+                        ` : ''}
+
+                        ${hasEmergent ? `
+                        <h2>Emergent Behavior</h2>
+                        <p>The system is likely to reach a tipping point where error correction consumes 100% of capacity, leading to zero feature velocity despite maximum effort.</p>
+                        ` : ''}
+
+                        ${hasLeverage ? `
+                        <h2>High-Leverage Points</h2>
+                        <ol>
+                            <li><strong>Rules (High):</strong> Change incentives to reward code quality over raw feature count.</li>
+                            <li><strong>Information Flows (Medium):</strong> Make "Rework Time" visible on sprint dashboards immediately.</li>
+                        </ol>
+                        ` : ''}
+                    </div>
+                `;
+            } else if (currentTab === 'diagram') {
+                content = `
+                    <div class="output-view active">
+                        <div class="mermaid-mock">
+                            <svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                                        <path d="M0,0 L0,6 L9,3 z" fill="#06b6d4" />
+                                    </marker>
+                                </defs>
+                                <!-- Nodes -->
+                                <circle cx="200" cy="50" r="30" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+                                <text x="200" y="55" text-anchor="middle" fill="white" font-size="10">Backlog</text>
+
+                                <circle cx="350" cy="150" r="30" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+                                <text x="350" y="155" text-anchor="middle" fill="white" font-size="10">Overtime</text>
+
+                                <circle cx="200" cy="250" r="30" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+                                <text x="200" y="255" text-anchor="middle" fill="white" font-size="10">Fatigue</text>
+
+                                <circle cx="50" cy="150" r="30" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+                                <text x="50" y="155" text-anchor="middle" fill="white" font-size="10">Errors</text>
+
+                                <!-- Edges -->
+                                <path d="M230,50 Q350,50 350,120" fill="none" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrow)"/>
+                                <path d="M350,180 Q350,250 230,250" fill="none" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrow)"/>
+                                <path d="M170,250 Q50,250 50,180" fill="none" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrow)"/>
+                                <path d="M50,120 Q50,50 170,50" fill="none" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrow)"/>
+
+                                <!-- Loop Label -->
+                                <text x="200" y="150" text-anchor="middle" fill="#8b5cf6" font-weight="bold" font-size="14">R1</text>
+                            </svg>
+                        </div>
+                        <p style="text-align: center; margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                            Visual representation of the reinforcing feedback loop (R1) driving burnout.
+                        </p>
+                    </div>
+                `;
+            } else if (currentTab === 'simulation') {
+                if (interventions.length === 0) {
+                    content = `<div class="output-view active"><p style="color: var(--text-secondary); padding: 2rem; text-align: center;">No interventions specified. Add interventions in the configuration panel to see simulation results.</p></div>`;
+                } else {
+                    content = `
+                        <div class="markdown-body output-view active">
+                            <h2>Intervention Simulation (${timeHorizon})</h2>
+                            ${interventions.map((inv, idx) => `
+                                <div style="background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                                    <h3 style="margin-top:0; color: var(--accent-primary);">Scenario ${idx + 1}: ${inv}</h3>
+                                    <ul>
+                                        <li><strong>Immediate Effect (1 mo):</strong> Velocity drops slightly as team adjusts to new process/hiring.</li>
+                                        <li><strong>Medium Term (3 mo):</strong> Error rates stabilize. Morale improves.</li>
+                                        <li><strong>Long Term (${timeHorizon}):</strong> Sustainable velocity achieved. Rework reduced by 40%.</li>
+                                        <li><strong>Risk:</strong> Management may perceive initial velocity drop as failure.</li>
+                                    </ul>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+            }
+
+            outputContainer.innerHTML = content;
+        }
+
+        // Event Listeners
+        form.addEventListener('input', renderOutput);
+
+        // Initial Render
+        renderOutput();
+    </script>
+</body>
+</html>

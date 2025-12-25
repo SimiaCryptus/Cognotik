@@ -97,14 +97,23 @@ class CognotikHeader extends HTMLElement {
                     right: 0;
                     background-color: #fff;
                     min-width: 240px;
+                    
+                    /* Updated for scrolling and columns */
+                    max-height: 70vh;
+                    overflow-y: auto;
+                    width: max-content;
+                    max-width: min(80vw, 800px);
+                    
                     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                     border: 1px solid var(--border-color, #e9ecef);
                     border-radius: 4px;
-                    padding: 0.5rem 0;
+                    padding: 0.5rem;
                     z-index: 1001;
                 }
                 .nav-item:hover .dropdown-menu {
-                    display: block;
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                    gap: 0.5rem;
                 }
                 .dropdown-item {
                     display: block;
@@ -113,6 +122,7 @@ class CognotikHeader extends HTMLElement {
                     text-decoration: none;
                     font-size: 0.9rem;
                     border-bottom: 1px solid #f1f1f1;
+                    border-radius: 4px;
                 }
                 .dropdown-item:last-child {
                     border-bottom: none;

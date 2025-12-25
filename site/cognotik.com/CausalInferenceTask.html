@@ -1,0 +1,378 @@
+<!-- Image Prompt: A futuristic, abstract 3D visualization of a causal network. Glowing nodes in deep blue and purple are connected by data streams. One specific path is highlighted in bright cyan, tracing from a root node to an effect node, symbolizing the discovery of a root cause amidst complexity. High contrast, cinematic lighting, dark background. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Causal Inference - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --accent-primary: #8b5cf6; /* Violet */
+            --accent-secondary: #06b6d4; /* Cyan */
+            --bg-dark: #0f172a;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, sans-serif;
+            margin: 0;
+        }
+
+        .hero {
+            padding: 6rem 2rem;
+            text-align: center;
+            background: radial-gradient(circle at top, #1e293b 0%, var(--bg-dark) 70%);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--accent-secondary), var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            line-height: 1.6;
+        }
+
+        .btn-cta {
+            background: var(--accent-primary);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            transition: border-color 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent-secondary);
+        }
+
+        .feature-icon {
+            color: var(--accent-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .simulator-section {
+            padding: 4rem 2rem;
+            background: #020617;
+        }
+
+        .simulator-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .sim-col {
+            padding: 2rem;
+        }
+
+        .sim-col.inputs {
+            border-right: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            color: var(--accent-secondary);
+            border-bottom-color: var(--accent-secondary);
+        }
+
+        .output-content {
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            min-height: 400px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+
+        .mermaid-container {
+            background: #1e293b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .simulator-container {
+                grid-template-columns: 1fr;
+            }
+            .sim-col.inputs {
+                border-right: none;
+                border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="causal-inference"></cognotik-header>
+
+<main>
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Causal Inference Engine</h1>
+        <p>
+            Move beyond correlation. Systematically identify root causes, map causal chains, and detect confounding factors in complex systems using advanced reasoning.
+        </p>
+        <a href="#simulator" class="btn-cta">Try the Simulator</a>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </div>
+            <h3>Root Cause Analysis</h3>
+            <p>Distinguish between proximate triggers and fundamental root causes using counterfactual reasoning.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            </div>
+            <h3>Causal Graphing</h3>
+            <p>Automatically generate Mermaid diagrams to visualize complex dependencies and causal flows.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            </div>
+            <h3>Evidence Integration</h3>
+            <p>Ingest logs, code files, and metrics to ground analysis in concrete evidence, not just speculation.</p>
+        </div>
+    </section>
+
+    <!-- Simulator -->
+    <section id="simulator" class="simulator-section">
+        <div class="simulator-container">
+            <!-- Inputs -->
+            <div class="sim-col inputs">
+                <h2>Configuration</h2>
+                <div class="form-group">
+                    <label>Observed Effect</label>
+                    <textarea id="input-effect" rows="2">High latency in payment processing API</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Potential Causes (Optional)</label>
+                    <textarea id="input-causes" rows="3" placeholder="One per line">Database lock contention
+Third-party fraud service timeout
+Memory leak in container</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Evidence Sources (Glob patterns)</label>
+                    <input type="text" id="input-evidence" value="logs/app.log, src/**/*.kt">
+                </div>
+                <div class="toggle-group">
+                    <label><input type="checkbox" id="check-graph" checked> Build Graph</label>
+                    <label><input type="checkbox" id="check-confounders" checked> Identify Confounders</label>
+                </div>
+                <button class="btn-cta" onclick="runSimulation()" style="width: 100%">Analyze Causality</button>
+            </div>
+
+            <!-- Outputs -->
+            <div class="sim-col outputs">
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('analysis')">Analysis</div>
+                    <div class="tab" onclick="switchTab('graph')">Causal Graph</div>
+                    <div class="tab" onclick="switchTab('evidence')">Evidence</div>
+                </div>
+
+                <div id="tab-analysis" class="output-content">
+                    <div style="color: #64748b; text-align: center; padding-top: 4rem;">
+                        Configure inputs and click "Analyze Causality" to start.
+                    </div>
+                </div>
+
+                <div id="tab-graph" class="output-content" style="display: none;">
+                    <div class="mermaid-container">
+                        <!-- Graph will render here -->
+                    </div>
+                </div>
+
+                <div id="tab-evidence" class="output-content" style="display: none;">
+                    <div style="color: #64748b;">No evidence loaded.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="features-grid">
+        <div class="feature-card">
+            <h3>Production Incidents</h3>
+            <p>Rapidly diagnose outages by correlating symptoms with recent changes and logs.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Performance Regressions</h3>
+            <p>Trace latency spikes to specific bottlenecks in code or infrastructure.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Legacy Code Analysis</h3>
+            <p>Understand side effects and hidden dependencies in undocumented systems.</p>
+        </div>
+    </section>
+</main>
+
+<script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.output-content').forEach(c => c.style.display = 'none');
+
+        event.target.classList.add('active');
+        document.getElementById('tab-' + tabName).style.display = 'block';
+    }
+
+    function runSimulation() {
+        const effect = document.getElementById('input-effect').value;
+        const analysisTab = document.getElementById('tab-analysis');
+        const graphTab = document.querySelector('.mermaid-container');
+
+        analysisTab.innerHTML = '<div style="text-align:center; padding-top:4rem;">🔄 Analyzing causal chains...</div>';
+
+        setTimeout(() => {
+            // Mock Analysis Output
+            analysisTab.innerHTML = `### Causal Analysis Results
+
+**Observed Effect:** ${effect}
+
+**Primary Root Cause:** Database Lock Contention
+
+**Mechanism:**
+The evidence indicates that the \`processPayment\` transaction in \`PaymentService.kt\` is holding a row lock on the \`accounts\` table while synchronously waiting for the external fraud check API. When the fraud service degrades, the lock duration increases, causing a pile-up of other transactions.
+
+**Evidence:**
+- \`logs/app.log\`: Repeated "Lock wait timeout exceeded" errors correlating with latency spikes.
+- \`src/PaymentService.kt\`: Code analysis confirms external call inside \`@Transactional\` block.
+
+**Confidence:** High
+
+**Recommendations:**
+1. Move the external fraud check call outside the database transaction.
+2. Implement circuit breaker for the fraud service.`;
+
+            // Mock Graph Output
+            const graphDefinition = `
+graph TD
+    A[Start Payment] --> B{Transaction Start}
+    B --> C[Lock Account Row]
+    C --> D[Call Fraud API]
+    D -.->|High Latency| C
+    C -->|Holds Lock| E[Database]
+    E -->|Blocks| F[Other Requests]
+    F -->|Result| G[System Latency]
+    style G fill:#ef4444,stroke:#991b1b
+    style D fill:#f59e0b,stroke:#b45309
+            `;
+
+            graphTab.innerHTML = `<div class="mermaid">${graphDefinition}</div>`;
+            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+
+            // Mock Evidence Output
+            document.getElementById('tab-evidence').innerHTML = `### logs/app.log
+\`\`\`
+2023-10-27 10:15:01 ERROR [PaymentService] Lock wait timeout exceeded; try restarting transaction
+2023-10-27 10:15:02 WARN  [FraudClient] API response time: 2500ms
+\`\`\`
+
+### src/PaymentService.kt
+\`\`\`kotlin
+@Transactional
+fun processPayment(req: PaymentRequest) {
+    val account = repo.findById(req.accountId) // Locks row
+    fraudClient.check(account) // External call while locked!
+    // ...
+}
+\`\`\``;
+
+        }, 1500);
+    }
+</script>
+</body>
+</html>

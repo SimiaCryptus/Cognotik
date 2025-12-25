@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abstraction Ladder Analysis | Cognotik</title>
+
+    <!-- Load Shared Styles -->
+    <link rel="stylesheet" href="assets/styles/main.css">
+
+    <!-- Load Component Script -->
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <!-- Hero Image Prompt:
+         A glowing, translucent ladder structure floating in a dark void.
+         The bottom rungs are made of concrete, metallic code blocks.
+         The top rungs dissolve into abstract, geometric light nodes.
+         Neon blue and purple lighting.
+    -->
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --accent-primary: #8b5cf6; /* Violet for Reasoning */
+            --accent-secondary: #06b6d4; /* Cyan */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 6rem 2rem;
+            text-align: center;
+            background: radial-gradient(circle at top center, #1e1b4b 0%, var(--bg-dark) 70%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--accent-secondary), var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+
+        .hero-visual {
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            margin: 2rem auto;
+            background: linear-gradient(45deg, rgba(139, 92, 246, 0.1), rgba(6, 182, 212, 0.1));
+            border-radius: 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .hero-visual::after {
+            content: "3D Abstract Ladder Visualization";
+            color: var(--accent-secondary);
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            font-weight: 600;
+            border-radius: 9999px;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+
+        /* Features Grid */
+        .features {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: border-color 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-primary);
+        }
+
+        .feature-card h3 {
+            margin: 0 0 1rem;
+            font-size: 1.25rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Simulator */
+        .simulator {
+            padding: 4rem 2rem;
+            background: #0b1120;
+        }
+
+        .sim-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            background: var(--bg-card);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .sim-controls {
+            padding: 2rem;
+            background: rgba(0,0,0,0.2);
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .sim-controls h2 {
+            margin-top: 0;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.5rem;
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            width: 48px;
+            height: 24px;
+            background: #334155;
+            border-radius: 9999px;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent-primary);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(24px);
+        }
+
+        .run-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background 0.2s;
+        }
+
+        .run-btn:hover {
+            background: #7c3aed;
+        }
+
+        .sim-output {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--text-main);
+        }
+
+        .tab.active {
+            color: var(--accent-secondary);
+            border-bottom-color: var(--accent-secondary);
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .output-content {
+            padding: 2rem;
+            overflow-y: auto;
+            flex: 1;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+
+        .output-pane {
+            display: none;
+        }
+
+        .output-pane.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .markdown-mock h3 { color: var(--accent-secondary); margin-top: 1.5rem; }
+        .markdown-mock ul { padding-left: 1.5rem; color: var(--text-muted); }
+        .markdown-mock li { margin-bottom: 0.5rem; }
+        .markdown-mock code { background: rgba(255,255,255,0.1); padding: 0.2rem 0.4rem; border-radius: 4px; color: #e2e8f0; }
+        .markdown-mock pre { background: #0f172a; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); }
+
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .use-cases h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .use-case-item {
+            background: rgba(255,255,255,0.03);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--accent-secondary);
+        }
+
+        .use-case-item h4 {
+            margin: 0 0 0.5rem;
+            color: var(--text-main);
+        }
+
+        .use-case-item p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .sim-container {
+                grid-template-columns: 1fr;
+            }
+            .sim-output {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Component -->
+    <cognotik-header current-page="abstraction-ladder"></cognotik-header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>Abstraction Ladder Analysis</h1>
+            <p>Traverse abstraction levels to uncover design patterns, architectural insights, and refactoring opportunities by generalizing up and concretizing down.</p>
+            <div class="hero-visual">
+                <!-- Placeholder for 3D Visual -->
+            </div>
+            <a href="#simulator" class="cta-button">Try the Simulator</a>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/><path d="m5 19 7 7 7-7"/></svg>
+                </div>
+                <h3>Bidirectional Analysis</h3>
+                <p>Move 'up' to find generalizations and 'down' to discover specific implementations or 'both' for a complete view.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                </div>
+                <h3>Pattern Recognition</h3>
+                <p>Automatically identifies design patterns, anti-patterns, and code smells at every level of abstraction.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                </div>
+                <h3>Context Aware</h3>
+                <p>Ingests specific input files and related context to provide relevant, codebase-specific insights.</p>
+            </div>
+        </section>
+
+        <!-- Interactive Simulator -->
+        <section id="simulator" class="simulator">
+            <div class="sim-container">
+                <!-- Left: Inputs -->
+                <div class="sim-controls">
+                    <h2>Configuration</h2>
+                    <form id="sim-form" onsubmit="return false;">
+                        <div class="form-group">
+                            <label for="concept">Concrete Concept</label>
+                            <input type="text" id="concept" class="form-control" value="Repository Pattern" placeholder="e.g. Singleton Pattern">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="direction">Direction</label>
+                            <select id="direction" class="form-control">
+                                <option value="both">Both (Up & Down)</option>
+                                <option value="up">Up (Generalize)</option>
+                                <option value="down">Down (Concretize)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="levels">Levels (1-5)</label>
+                            <input type="range" id="levels" min="1" max="5" value="3" class="form-control" oninput="document.getElementById('level-val').innerText = this.value">
+                            <div style="text-align: right; font-size: 0.8rem; color: var(--text-muted);">Value: <span id="level-val">3</span></div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="toggle-group" onclick="togglePatterns()">
+                                <label style="margin:0; cursor:pointer;">Identify Patterns</label>
+                                <div id="pattern-toggle" class="toggle-switch active"></div>
+                            </div>
+                            <input type="hidden" id="identify_patterns" value="true">
+                        </div>
+
+                        <button class="run-btn" onclick="runSimulation()">Run Analysis</button>
+                    </form>
+                </div>
+
+                <!-- Right: Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('overview')">Overview</div>
+                        <div class="tab" onclick="switchTab('upward')">Upward Analysis</div>
+                        <div class="tab" onclick="switchTab('downward')">Downward Analysis</div>
+                        <div class="tab" onclick="switchTab('patterns')">Patterns</div>
+                    </div>
+
+                    <div id="overview" class="output-pane active output-content markdown-mock">
+                        <!-- Content populated by JS -->
+                    </div>
+                    <div id="upward" class="output-pane output-content markdown-mock"></div>
+                    <div id="downward" class="output-pane output-content markdown-mock"></div>
+                    <div id="patterns" class="output-pane output-content markdown-mock"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="use-cases">
+            <h2>When to Use</h2>
+            <div class="use-case-grid">
+                <div class="use-case-item">
+                    <h4>Refactoring Legacy Code</h4>
+                    <p>Analyze existing implementations to find the underlying abstract pattern, then re-implement using modern practices.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Architectural Review</h4>
+                    <p>Ensure that concrete code aligns with high-level architectural principles by traversing up the ladder.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Code Generation</h4>
+                    <p>Start with an abstract requirement and generate specific, concrete implementation options (downward traversal).</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Educational Analysis</h4>
+                    <p>Understand complex codebases by breaking them down into layers of abstraction.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Simulator Logic
+        let isPatternEnabled = true;
+
+        function togglePatterns() {
+            isPatternEnabled = !isPatternEnabled;
+            const toggle = document.getElementById('pattern-toggle');
+            toggle.classList.toggle('active');
+            document.getElementById('identify_patterns').value = isPatternEnabled;
+        }
+
+        function switchTab(tabId) {
+            // Update Tab Headers
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update Panes
+            document.querySelectorAll('.output-pane').forEach(p => p.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function runSimulation() {
+            const concept = document.getElementById('concept').value || "Repository Pattern";
+            const direction = document.getElementById('direction').value;
+            const levels = document.getElementById('levels').value;
+            const patterns = isPatternEnabled;
+
+            // Show Loading State
+            const panes = document.querySelectorAll('.output-content');
+            panes.forEach(p => p.innerHTML = '<div style="color: var(--accent-secondary); text-align:center; margin-top: 2rem;">Analyzing... <span style="animation: blink 1s infinite">_</span></div>');
+
+            setTimeout(() => {
+                generateResults(concept, direction, levels, patterns);
+            }, 800);
+        }
+
+        function generateResults(concept, direction, levels, patterns) {
+            // Mock Data Generation
+
+            // Overview
+            const overviewHtml = `
+                <h2>Abstraction Ladder Analysis: <code>${concept}</code></h2>
+                <p><strong>Direction:</strong> ${direction} | <strong>Levels:</strong> ${levels} | <strong>Pattern Analysis:</strong> ${patterns ? "Enabled" : "Disabled"}</p>
+                <hr style="border-color: rgba(255,255,255,0.1)">
+                <p>Analysis complete. The system has traversed the abstraction hierarchy for <strong>${concept}</strong>.</p>
+                <ul>
+                    <li>Identified ${levels} levels of generalization.</li>
+                    <li>Identified ${levels} levels of concretization.</li>
+                    ${patterns ? "<li>Detected 3 related design patterns and 1 potential anti-pattern.</li>" : ""}
+                </ul>
+            `;
+            document.getElementById('overview').innerHTML = overviewHtml;
+
+            // Upward
+            let upwardHtml = `<h3>## Upward Abstraction (Generalizations)</h3>`;
+            if (direction === 'down') {
+                upwardHtml += `<p><em>Skipped based on direction configuration.</em></p>`;
+            } else {
+                upwardHtml += `
+                    <div style="margin-bottom: 2rem;">
+                        <h4>Level 0 (Concrete): ${concept}</h4>
+                        <ul>
+                            <li><strong>Description:</strong> Mechanism to encapsulate storage, retrieval, and search behavior which emulates a collection of objects.</li>
+                        </ul>
+                    </div>
+                    <div style="margin-bottom: 2rem;">
+                        <h4>Level 1: Data Access Abstraction</h4>
+                        <ul>
+                            <li><strong>Generalization:</strong> Decoupling domain logic from data mapping layers.</li>
+                            <li><strong>Examples:</strong> DAO (Data Access Object), Active Record (partial overlap).</li>
+                        </ul>
+                    </div>
+                    <div style="margin-bottom: 2rem;">
+                        <h4>Level 2: Architectural Boundary</h4>
+                        <ul>
+                            <li><strong>Generalization:</strong> Interface between inner circle (Entities) and outer circle (Gateways).</li>
+                            <li><strong>Patterns:</strong> Clean Architecture, Hexagonal Architecture (Ports & Adapters).</li>
+                        </ul>
+                    </div>
+                `;
+            }
+            document.getElementById('upward').innerHTML = upwardHtml;
+
+            // Downward
+            let downwardHtml = `<h3>## Downward Concretization (Specific Implementations)</h3>`;
+            if (direction === 'up') {
+                downwardHtml += `<p><em>Skipped based on direction configuration.</em></p>`;
+            } else {
+                downwardHtml += `
+                    <div style="margin-bottom: 2rem;">
+                        <h4>Level 0 (Starting): ${concept}</h4>
+                    </div>
+                    <div style="margin-bottom: 2rem;">
+                        <h4>Level -1: JPA Repository Interface</h4>
+                        <ul>
+                            <li><strong>Specialization:</strong> Java-specific ORM abstraction.</li>
+                            <li><strong>Code:</strong> <code>public interface UserRepository extends JpaRepository&lt;User, Long&gt; {}</code></li>
+                        </ul>
+                    </div>
+                    <div style="margin-bottom: 2rem;">
+                        <h4>Level -2: Hibernate Implementation</h4>
+                        <ul>
+                            <li><strong>Specialization:</strong> Specific library implementation handling session management and dirty checking.</li>
+                        </ul>
+                    </div>
+                    <div style="margin-bottom: 2rem;">
+                        <h4>Level -3: SQL Execution</h4>
+                        <ul>
+                            <li><strong>Specialization:</strong> Raw database interaction.</li>
+                            <li><strong>Code:</strong> <code>SELECT * FROM users WHERE id = ?</code></li>
+                        </ul>
+                    </div>
+                `;
+            }
+            document.getElementById('downward').innerHTML = downwardHtml;
+
+            // Patterns
+            let patternHtml = `<h3>## Pattern Analysis & Recommendations</h3>`;
+            if (!patterns) {
+                patternHtml += `<p><em>Pattern analysis disabled.</em></p>`;
+            } else {
+                patternHtml += `
+                    <h4>Design Patterns Identified</h4>
+                    <ul>
+                        <li><strong>Dependency Injection:</strong> Essential for swapping repository implementations.</li>
+                        <li><strong>Strategy Pattern:</strong> Can be used to switch storage strategies at runtime.</li>
+                    </ul>
+
+                    <h4>Refactoring Opportunities</h4>
+                    <ul>
+                        <li>Ensure the repository interface is defined in the Domain layer, not the Infrastructure layer (Dependency Inversion Principle).</li>
+                        <li>Avoid "Anemic Domain Model" by pushing logic into entities rather than keeping it all in repository services.</li>
+                    </ul>
+
+                    <h4>Anti-Patterns</h4>
+                    <ul>
+                        <li><strong>Leaky Abstractions:</strong> Exposing JPA-specific exceptions (e.g., <code>EntityNotFoundException</code>) to the upper layers. Wrap in domain exceptions.</li>
+                    </ul>
+                `;
+            }
+            document.getElementById('patterns').innerHTML = patternHtml;
+        }
+
+        // Initial Run
+        runSimulation();
+    </script>
+</body>
+</html>

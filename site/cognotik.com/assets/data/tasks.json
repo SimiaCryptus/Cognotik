@@ -57,6 +57,84 @@
           "label": "Game Theory Task",
           "url": "GameTheoryTask.html",
           "description": "Analyze strategic interactions using game theory."
+        },
+        {
+          "id": "abstractionladder",
+          "label": "Abstraction Ladder Task",
+          "url": "AbstractionLadderTask.html",
+          "description": "Navigate different levels of abstraction."
+        },
+        {
+          "id": "adversarialreasoning",
+          "label": "Adversarial Reasoning Task",
+          "url": "AdversarialReasoningTask.html",
+          "description": "Develop strategies in competitive scenarios."
+        },
+        {
+          "id": "causalinference",
+          "label": "Causal Inference Task",
+          "url": "CausalInferenceTask.html",
+          "description": "Determine cause-and-effect relationships."
+        },
+        {
+          "id": "chainofthought",
+          "label": "Chain of Thought Task",
+          "url": "ChainOfThoughtTask.html",
+          "description": "Enhance reasoning through step-by-step thinking."
+        },
+        {
+          "id": "constraintsatisfaction",
+          "label": "Constraint Satisfaction Task",
+          "url": "ConstraintSatisfactionTask.html",
+          "description": "Solve problems with multiple constraints."
+        },
+        {
+          "id": "decompositionsynthesis",
+          "label": "Decomposition Synthesis Task",
+          "url": "DecompositionSynthesisTask.html",
+          "description": "Synthesize solutions by decomposing problems."
+        },
+        {
+          "id": "isomorphismdiscovery",
+          "label": "Isomorphism Discovery Task",
+          "url": "IsomorphismDiscoveryTask.html",
+          "description": "Identify structural similarities between systems."
+        },
+        {
+          "id": "mathematicalreasoning",
+          "label": "Mathematical Reasoning Task",
+          "url": "MathematicalReasoningTask.html",
+          "description": "Solve complex mathematical problems."
+        },
+        {
+          "id": "probabilisticreasoning",
+          "label": "Probabilistic Reasoning Task",
+          "url": "ProbabilisticReasoningTask.html",
+          "description": "Make decisions under uncertainty."
+        },
+        {
+          "id": "socraticdialogue",
+          "label": "Socratic Dialogue Task",
+          "url": "SocraticDialogueTask.html",
+          "description": "Engage in guided questioning to explore ideas."
+        },
+        {
+          "id": "structuralinvariantanalysis",
+          "label": "Structural Invariant Analysis Task",
+          "url": "StructuralInvariantAnalysisTask.html",
+          "description": "Analyze properties that remain unchanged under transformations."
+        },
+        {
+          "id": "systemsthinking",
+          "label": "Systems Thinking Task",
+          "url": "SystemsThinkingTask.html",
+          "description": "Understand and analyze complex systems."
+        },
+        {
+          "id": "temporalreasoning",
+          "label": "Temporal Reasoning Task",
+          "url": "TemporalReasoningTask.html",
+          "description": "Reason about time-dependent information."
         }
       ]
     },
