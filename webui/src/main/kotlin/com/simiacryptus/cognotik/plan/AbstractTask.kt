@@ -27,11 +27,11 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         get() = executionConfig?.task_type
             ?.let { task_type -> orchestrationConfig.taskSettings.values.firstOrNull { it.task_type == task_type } as? U }
 
-    open val defaultChatter: ChatInterface
-        get() = typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultChatter
+    open val defaultSmart: ChatInterface
+        get() = typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultSmart
 
-    open val parsingChatter: ChatInterface
-        get() = orchestrationConfig.parsingChatter
+    open val defaultFast: ChatInterface
+        get() = orchestrationConfig.defaultFast
 
     enum class TaskState {
         Pending,

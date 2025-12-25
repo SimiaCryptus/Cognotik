@@ -105,7 +105,7 @@ import java.util.*
             return
         }
 
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)
@@ -838,6 +838,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
         private val log: Logger = LoggerFactory.getLogger(SystemsThinkingTask::class.java)
         val SystemsThinking = TaskType(
             "SystemsThinking",
+            "Reasoning",
             SystemsThinkingTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze complex systems through feedback loops and dynamics",

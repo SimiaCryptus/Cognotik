@@ -249,7 +249,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
             return
         }
 
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
         // Load input files if specified
@@ -441,7 +441,7 @@ Ensure the outline:
           """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = parsingChatter
+                parsingChatter = defaultFast
             )
 
             var outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -639,7 +639,7 @@ ${
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 var section = sectionAgent.answer(listOf("Write section")).obj
@@ -1064,6 +1064,7 @@ Provide the complete revised explanation.
         private val log: Logger = LoggerFactory.getLogger(TechnicalExplanationTask::class.java)
         val TechnicalExplanation = TaskType(
             "TechnicalExplanation",
+            "Writing",
             TechnicalExplanationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Break down complex technical subjects into clear, digestible explanations",

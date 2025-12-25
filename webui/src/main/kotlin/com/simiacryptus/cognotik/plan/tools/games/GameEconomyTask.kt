@@ -29,6 +29,7 @@ class GameEconomyTask(
         private val log: Logger = LoggerFactory.getLogger(GameEconomyTask::class.java)
         val GameEconomy = TaskType(
             "GameEconomy",
+            "Games",
             GameEconomyTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Design complete game economic systems with progression and monetization",
@@ -262,7 +263,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
         }
 
         val ui = task.ui
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
         val transcript = transcript(task)
 
         // Create tabbed display for organized output
@@ -865,7 +866,7 @@ Provide this in a clear, structured format suitable for game designers and stake
                 prompt = summaryPrompt,
                 model = api,
                 temperature = 0.2,
-                parsingChatter = parsingChatter,
+                parsingChatter = defaultFast,
             )
 
             val gameEconomy = parsedAgent.answer(toInput(summaryPrompt)).obj

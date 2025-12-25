@@ -181,8 +181,8 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
                 documentContent, maxImages, isMarkdown, executionConfig.composerDirective
             )
 
-            val api = defaultChatter ?: return
-            val parsingChatter = parsingChatter.getChildClient(task)
+            val api = defaultSmart ?: return
+            val parsingChatter = defaultFast.getChildClient(task)
             val defaultChatter = api.getChildClient(task)
 
             val analysisAgent = ParsedAgent(
@@ -220,7 +220,7 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
             val imageAgent = ImageProcessingAgent(
                 prompt = "Transform the user request into an image that enhances document content",
                 name = "DocumentIllustrator",
-                model = orchestrationConfig.imageChatChatter,
+                model = orchestrationConfig.defaultImage,
             )
 
             val generatedImages = mutableListOf<Triple<String, String, ImageSuggestion>>()
@@ -525,6 +525,7 @@ Generate the patches now.
 
         val IllustrateDocument = TaskType(
             "IllustrateDocument",
+            "Writing",
             IllustrateDocumentTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze a document and generate images to enhance its content",

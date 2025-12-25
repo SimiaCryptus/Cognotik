@@ -38,27 +38,12 @@ import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 @JsonSerialize(using = TaskTypeSerializer::class)
 class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
     name: String,
-    val category: String = "",
+    val category: String,
     val executionConfigClass: Class<out T>,
     val taskSettingsClass: Class<out U>,
     val description: String? = null,
     val tooltipHtml: String? = null,
 ) : DynamicEnum<TaskType<*, *>>(name) {
-    constructor(
-        name: String,
-        executionConfigClass: Class<out T>,
-        taskSettingsClass: Class<out U>,
-        description: String? = null,
-        tooltipHtml: String? = null,
-    ) : this(
-        name,
-        "",
-        executionConfigClass,
-        taskSettingsClass,
-        description,
-        tooltipHtml,
-    )
-
     companion object {
 
         private val taskConstructors by lazy {

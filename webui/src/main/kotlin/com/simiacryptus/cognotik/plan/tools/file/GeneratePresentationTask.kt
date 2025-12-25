@@ -129,17 +129,12 @@ class GeneratePresentationTask(
         val newTask = task.ui.newTask(false)
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
-        val api = defaultChatter
+        val api = defaultSmart
 
         newTask.add(MarkdownUtil.renderMarkdown("## Creating Presentation: `$htmlFile`", ui = ui))
 
         val contextFiles = getInputFileCode()
         val priorCode = getPriorCode(agent.executionState)
-
-        val chatAgent = ChatAgent(
-            prompt = promptSegment(),
-            model = api,
-        )
 
         // Step 1: Generate slide content only
         val outlinePrompt = """
@@ -198,9 +193,14 @@ ${TT}html
 $TT
         """.trimIndent()
 
+        val chatAgent = ChatAgent(
+            prompt = outlinePrompt,
+            model = api,
+        )
+
         newTask.add(MarkdownUtil.renderMarkdown("### Step 1: Generating Presentation Structure", ui = ui))
 
-        val response = chatAgent.answer(toInput(outlinePrompt))
+        val response = chatAgent.answer(listOf("Generate the presentation."))
         val slideContent = extractCodeFromResponse(response, "html")
 
         if (slideContent.isEmpty()) {
@@ -422,7 +422,7 @@ $TT
                     )
                     val imageAgent = ImageProcessingAgent(
                         prompt = "Create a professional, visually appealing image for a presentation slide",
-                        model = orchestrationConfig.imageChatChatter,
+                        model = orchestrationConfig.defaultImage,
                         temperature = 0.7,
                     )
                     val imagePrompt = """
@@ -544,6 +544,7 @@ Style: Clean, modern, professional presentation aesthetic
         private val log: Logger = LoggerFactory.getLogger(GeneratePresentationTask::class.java)
         val GeneratePresentation = TaskType(
             "GeneratePresentation",
+            "Writing",
             GeneratePresentationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create complete Reveal.js presentations with narration support",

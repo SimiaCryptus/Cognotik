@@ -33,6 +33,7 @@ class GameTheoryTask(
         private val log: Logger = LoggerFactory.getLogger(GameTheoryTask::class.java)
         val GameTheory = TaskType(
             "GameTheory",
+            "Reasoning",
             GameTheoryTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze strategic interactions using game theory",
@@ -207,7 +208,7 @@ GameTheory - Analyze strategic interactions using game theory
         }
 
         val ui = task.ui
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
         val transcript = transcript(task)
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
@@ -722,7 +723,7 @@ Provide this in a clear, structured format.
                 prompt = summaryPrompt,
                 model = api,
                 temperature = 0.2,
-                parsingChatter = parsingChatter,
+                parsingChatter = defaultFast,
             )
 
             val gameAnalysis = parsedAgent.answer(toInput(summaryPrompt)).obj

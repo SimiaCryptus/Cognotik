@@ -13,23 +13,25 @@ import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import kotlin.io.path.Path
 
 
 class OrchestrationConfig(
     @JsonSerialize(using = ApiChatModelSerializer::class)
     @JsonDeserialize(using = ApiChatModelDeserializer::class)
-    var defaultModel: ApiChatModel? = null,
+    var defaultSmartModel: ApiChatModel? = null,
     @JsonSerialize(using = ApiChatModelSerializer::class)
     @JsonDeserialize(using = ApiChatModelDeserializer::class)
-    var parsingModel: ApiChatModel? = null,
+    var defaultFastModel: ApiChatModel? = null,
     @JsonSerialize(using = ApiChatModelSerializer::class)
     @JsonDeserialize(using = ApiChatModelDeserializer::class)
-    var imageChatModel: ApiChatModel? = null,
+    var defaultImageModel: ApiChatModel? = null,
     var cognitiveMode: CognitiveModeStrategies? = null,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
     var temperature: Double = 0.2,
@@ -55,15 +57,15 @@ class OrchestrationConfig(
     var processor: PatchProcessor = PatchProcessors.Fuzzy
 
     @get:JsonIgnore
-    val defaultChatter get() = instance(defaultModel ?: throw IllegalStateException("Default model not set"))
+    val defaultSmart get() = instance(defaultSmartModel ?: throw IllegalStateException("Default model not set"))
 
     @get:JsonIgnore
-    val parsingChatter
-        get() = instance(parsingModel ?: defaultModel ?: throw IllegalStateException("Parsing model not set"))
+    val defaultFast
+        get() = instance(defaultFastModel ?: defaultSmartModel ?: throw IllegalStateException("Parsing model not set"))
 
     @get:JsonIgnore
-    val imageChatChatter
-        get() = instance(imageChatModel ?: throw IllegalStateException("Image chat model not set"))
+    val defaultImage
+        get() = instance(defaultImageModel ?: throw IllegalStateException("Image chat model not set"))
 
 
     @JsonIgnore
@@ -84,12 +86,6 @@ class OrchestrationConfig(
             else -> File(this.workingDir).absolutePath
         }
 
-    fun getTaskSettings(taskType: TaskType<*, *>): TaskTypeConfig =
-        taskSettings[taskType.name] ?: taskType.newSettings()?.also {
-            it.name = taskType.description
-            taskSettings[taskType.name] = it
-        } ?: throw IllegalStateException("No default config for task type ${taskType.name}")
-
     fun planningActor(
         describer: TypeDescriber,
         task: SessionTask
@@ -99,9 +95,11 @@ class OrchestrationConfig(
             taskDescriptions = availableTaskTypes.joinToString("\n") { taskType ->
                 val impl = TaskType.getImpl(this, taskType)
                 "* ${impl.promptSegment()}"
-            },
-            model = defaultChatter.getChildClient(task),
-            parsingModel = parsingChatter.getChildClient(task),
+            } + (this.workingDir?.let {root ->
+                "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
+            } ?: ""),
+            model = defaultSmart.getChildClient(task),
+            parsingModel = defaultFast.getChildClient(task),
             temperature = temperature,
             describer = describer,
             availableTaskTypes = availableTaskTypes
@@ -110,9 +108,9 @@ class OrchestrationConfig(
 
     @JsonIgnore
     fun copy(
-        model: ApiChatModel? = this.defaultModel,
-        parsingModel: ApiChatModel? = this.parsingModel,
-        imageChatModel: ApiChatModel? = this.imageChatModel,
+        model: ApiChatModel? = this.defaultSmartModel,
+        parsingModel: ApiChatModel? = this.defaultFastModel,
+        imageChatModel: ApiChatModel? = this.defaultImageModel,
         shellCmd: List<String> = this.shellCmd,
         temperature: Double = this.temperature,
         budget: Double = this.budget,
@@ -126,9 +124,9 @@ class OrchestrationConfig(
         maxTasksPerIteration: Int = this.maxTasksPerIteration,
         maxIterations: Int = this.maxIterations,
     ): OrchestrationConfig = OrchestrationConfig(
-        defaultModel = model,
-        parsingModel = parsingModel,
-        imageChatModel = imageChatModel,
+        defaultSmartModel = model,
+        defaultFastModel = parsingModel,
+        defaultImageModel = imageChatModel,
         shellCmd = shellCmd,
         temperature = temperature,
         budget = budget,

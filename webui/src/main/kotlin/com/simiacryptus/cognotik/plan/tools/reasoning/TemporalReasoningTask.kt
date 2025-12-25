@@ -144,7 +144,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             return
         }
 
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
         val ui = task.ui
         val transcript = task.transcript()
 
@@ -280,7 +280,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
                 prompt = timelinePrompt,
                 model = api,
                 temperature = 0.3,
-                parsingChatter = parsingChatter,
+                parsingChatter = defaultFast,
             )
 
             val timelineAnalysis = timelineAgent.answer(listOf(timelinePrompt)).obj
@@ -821,6 +821,7 @@ Generate the Mermaid timeline diagram now:
         private val log: Logger = LoggerFactory.getLogger(TemporalReasoningTask::class.java)
         val TemporalReasoning = TaskType(
             "TemporalReasoning",
+            "Reasoning",
             TemporalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze how systems evolve over time and predict future states",

@@ -89,12 +89,6 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
      - Modern best practices
      - Generated images (if enabled) embedded as base64 or saved as separate files
   ** Related files can include existing HTML templates or reference files
-    Available files:
-  ${
-          AnalysisTask.getAvailableFiles(
-            root
-          ).joinToString("\n") { "      - $it" }
-        }
   ** Output will be presented for review before being written to disk
         """
     }
@@ -131,7 +125,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
 
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
-        val api = defaultChatter.getChildClient(task)
+        val api = defaultSmart.getChildClient(task)
 
         newTask.add(MarkdownUtil.renderMarkdown("## Creating HTML File: `$htmlFile`", ui = ui))
 
@@ -185,7 +179,7 @@ Provide the HTML structure within a code block:
         """.trimIndent()
 
         val chatAgent = ChatAgent(
-            prompt = promptSegment(),
+            prompt = htmlPrompt,
             model = api,
         )
 
@@ -193,7 +187,7 @@ Provide the HTML structure within a code block:
         transcriptWriter?.write("### Step 1: Generating HTML Structure\n\n")
         transcriptWriter?.write("**Prompt:**\n```\n$htmlPrompt\n```\n\n")
 
-        val htmlResponse = chatAgent.answer(toInput(htmlPrompt))
+        val htmlResponse = chatAgent.answer(listOf("Generate the HTML structure as per the requirements."))
         transcriptWriter?.write("**Response:**\n$htmlResponse\n\n")
 
         val htmlStructure = extractCodeFromResponse(htmlResponse, "html")
@@ -233,7 +227,7 @@ DESCRIPTION: another detailed description
             transcriptWriter?.write("**Response:**\n$imageSpecResponse\n\n")
             // Parse image specifications
             val imageSpecs = parseImageSpecs(imageSpecResponse)
-          val imageChat = orchestrationConfig.imageChatChatter.getChildClient(task)
+          val imageChat = orchestrationConfig.defaultImage.getChildClient(task)
             // Generate each image
             imageSpecs.take(executionConfig.image_count).forEach { (filename, description) ->
                 val filename = filename
@@ -558,6 +552,7 @@ Provide the complete updated HTML structure within a code block:
         private val log: Logger = LoggerFactory.getLogger(WriteHtmlTask::class.java)
         val WriteHtml = TaskType(
             "WriteHtml",
+            "Writing",
             WriteHtmlTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create complete HTML files with embedded CSS and JavaScript",

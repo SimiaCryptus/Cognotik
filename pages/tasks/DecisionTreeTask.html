@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | Decision Tree Agent</title>
+    <meta name="description" content="Build interpretable, LLM-driven symbolic decision trees for complex data analysis.">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --accent: #0ea5e9;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --code-bg: #1e293b;
+            --success: #10b981;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; margin-bottom: 1.5rem; }
+        h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+        p { margin-bottom: 1rem; color: var(--text-light); }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 4rem 0;
+        }
+
+        /* Header */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links a {
+            margin-left: 2rem;
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--primary); }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 6rem 0;
+            background: linear-gradient(to bottom, #eff6ff, #f8fafc);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 700px;
+            margin: 1rem auto 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent);
+        }
+
+        .icon {
+            width: 48px;
+            height: 48px;
+            background: #eff6ff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        /* Interactive Demo Section */
+        .demo-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+            background: var(--surface);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            height: 600px;
+        }
+
+        .demo-sidebar {
+            background: #f1f5f9;
+            padding: 1.5rem;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+
+        .demo-main {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            color: var(--text-light);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .viz-area {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .terminal {
+            background: var(--code-bg);
+            color: #a5b4fc;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            height: 100%;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+
+        .log-entry { margin-bottom: 0.5rem; }
+        .log-success { color: var(--success); }
+        .log-info { color: #60a5fa; }
+
+        /* Tree Visualization Styles */
+        svg { width: 100%; height: 100%; }
+        .node circle { fill: var(--surface); stroke: var(--primary); stroke-width: 2px; }
+        .node text { font-size: 12px; text-anchor: middle; dominant-baseline: middle; fill: var(--text); }
+        .link { stroke: var(--border); stroke-width: 2px; }
+        .node-label { font-size: 10px; fill: var(--text-light); background: white; }
+
+        /* Code Block */
+        pre {
+            background: var(--code-bg);
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 3rem 0;
+            margin-top: 4rem;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .demo-container { grid-template-columns: 1fr; height: auto; }
+            .demo-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+            .viz-area { height: 300px; }
+        }
+    </style>
+
+    <style>
+        /* =========================================
+           1. Variables & Reset
+           ========================================= */
+        :root {
+            /* Color Palette */
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #eff6ff;
+            --secondary: #64748b;
+            --accent: #0ea5e9;
+        
+            /* Backgrounds & Surfaces */
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --surface-alt: #f1f5f9;
+        
+            /* Text Colors */
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-inverse: #ffffff;
+        
+            /* UI Elements */
+            --border: #e2e8f0;
+            --border-focus: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --code-bg: #1e293b;
+        
+            /* Effects */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 1rem;
+            --transition: all 0.2s ease-in-out;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* =========================================
+           2. Typography
+           ========================================= */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-main);
+            line-height: 1.2;
+            font-weight: 700;
+        }
+        
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; letter-spacing: -0.025em; }
+        h2 { font-size: 2rem; margin-bottom: 1.5rem; letter-spacing: -0.025em; }
+        h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
+        
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+        
+        a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        
+        a:hover {
+            color: var(--primary-dark);
+        }
+        
+        /* =========================================
+           3. Layout Utilities
+           ========================================= */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            width: 100%;
+        }
+        
+        section {
+            padding: 5rem 0;
+        }
+        
+        /* =========================================
+           4. Header & Navigation
+           ========================================= */
+        header {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logo svg {
+            color: var(--primary);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .nav-links a {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+        
+        /* =========================================
+           5. Hero Section
+           ========================================= */
+        .hero {
+            text-align: center;
+            padding: 8rem 0 6rem;
+            background: radial-gradient(circle at top center, var(--primary-light) 0%, var(--background) 70%);
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            max-width: 900px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--text-muted);
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: var(--text-inverse);
+            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.4);
+            color: var(--text-inverse);
+        }
+        
+        /* =========================================
+           6. Features Grid
+           ========================================= */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent);
+        }
+        
+        .feature-card .icon {
+            width: 56px;
+            height: 56px;
+            background: var(--primary-light);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+        
+        .feature-card code {
+            background: var(--surface-alt);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: var(--primary-dark);
+            font-family: 'Courier New', Courier, monospace;
+        }
+        
+        /* =========================================
+           7. Interactive Demo Section
+           ========================================= */
+        .demo-container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            height: 650px;
+            margin-top: 2rem;
+        }
+        
+        /* Sidebar */
+        .demo-sidebar {
+            background: var(--surface-alt);
+            padding: 2rem;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .control-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+        
+        .control-group input, 
+        .control-group select {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            background: var(--surface);
+            color: var(--text-main);
+            transition: var(--transition);
+        }
+        
+        .control-group input:focus, 
+        .control-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .control-group select:disabled {
+            background: #e2e8f0;
+            cursor: not-allowed;
+        }
+        
+        /* Main Demo Area */
+        .demo-main {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            position: relative;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+        
+        .tab:hover {
+            background: var(--surface-alt);
+            color: var(--text-main);
+        }
+        
+        .tab.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        /* Visualization Panels */
+        .viz-area {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+        }
+        
+        /* Terminal Style */
+        .terminal {
+            background: var(--code-bg);
+            color: #e2e8f0;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            padding: 1.5rem;
+            height: 100%;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        
+        .log-entry { margin-bottom: 0.5rem; word-break: break-word; }
+        .log-entry::before { content: "$ "; opacity: 0.5; margin-right: 0.5rem; }
+        .log-success { color: var(--success); }
+        .log-info { color: #60a5fa; }
+        .log-error { color: var(--danger); }
+        
+        /* Code Block */
+        pre {
+            background: var(--code-bg);
+            color: #e2e8f0;
+            padding: 1.5rem;
+            height: 100%;
+            overflow: auto;
+            font-size: 0.9rem;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+        }
+        
+        /* SVG Tree Visualization */
+        svg { width: 100%; height: 100%; }
+        
+        .node circle { 
+            fill: var(--surface); 
+            stroke: var(--primary); 
+            stroke-width: 2px; 
+            transition: all 0.5s ease;
+        }
+        
+        .node text { 
+            font-size: 12px; 
+            text-anchor: middle; 
+            dominant-baseline: middle; 
+            fill: var(--text-main);
+            font-weight: 600;
+            pointer-events: none;
+        }
+        
+        .link { 
+            stroke: var(--border); 
+            stroke-width: 2px; 
+            transition: all 0.5s ease;
+        }
+        
+        .node-label { 
+            font-size: 11px; 
+            fill: var(--text-muted); 
+            background: white; /* Note: SVG doesn't support bg on text directly, usually requires a rect behind it, but keeping simple per HTML */
+            font-weight: 500;
+        }
+        
+        /* =========================================
+           8. Documentation Section
+           ========================================= */
+        #docs ul {
+            list-style: none;
+        }
+        
+        #docs li {
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+        
+        #docs li:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        #docs code {
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            color: var(--primary-dark);
+        }
+        
+        /* =========================================
+           9. Footer
+           ========================================= */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 3rem 0;
+            margin-top: 4rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* =========================================
+           10. Responsive Design
+           ========================================= */
+        @media (max-width: 992px) {
+            .hero h1 { font-size: 3rem; }
+            .demo-container { grid-template-columns: 250px 1fr; }
+        }
+        
+        @media (max-width: 768px) {
+            /* Typography */
+            .hero h1 { font-size: 2.25rem; }
+            .hero p { font-size: 1.1rem; }
+        
+            /* Navigation */
+            .nav-links { display: none; } /* Simple hide for this demo */
+        
+            /* Layout */
+            .container { padding: 0 1rem; }
+        
+            /* Demo Section */
+            .demo-container { 
+                grid-template-columns: 1fr; 
+                height: auto; 
+                display: flex;
+                flex-direction: column;
+            }
+        
+            .demo-sidebar { 
+                border-right: none; 
+                border-bottom: 1px solid var(--border);
+                max-height: 300px; /* Allow scrolling if controls are long */
+            }
+        
+            .viz-area { 
+                height: 400px; 
+                min-height: 400px;
+            }
+        
+            .tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+    </style>
+<!-- Generated Images:
+     - decision-tree-hero.png: A high-tech, bright, and clean 3D illustration of a decision tree structure growing upwards. The nodes are polished glass spheres glowing with soft blue light (#2563eb), connected by sleek metallic branches. The base of the tree emerges from a digital grid representing unstructured data. The background is a very light, airy gradient of white and pale slate, suitable for a modern SaaS hero section. The style conveys precision, logic, and artificial intelligence.
+     - semantic-splitting-diagram.png: A modern, flat-style vector illustration depicting "Semantic Splitting". On the left, a document icon contains abstract text lines with specific keywords like "Error" and "Urgent" highlighted in bright cyan. These keywords flow into a central diamond-shaped decision node. Two arrows emerge from the node: one path leads to a checkmark icon (green), the other to a cross icon (red), visualizing how text meaning drives logic. The color palette uses the site's primary blue, slate grey, and white.
+     - tree-to-code-compiler.png: A split-screen conceptual illustration. The left half shows a simplified, colorful decision tree graph. The right half shows a code editor window with syntax-highlighted Kotlin code. A glowing, semi-transparent arrow flows from the tree structure into the code lines, symbolizing the automatic generation of code from logic. The aesthetic is clean, professional, and technical, utilizing a white background with deep blue and code-syntax colors.
+-->
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <nav>
+                <a href="#" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"></path><path d="M8.5 8.5a2.5 2.5 0 0 1 0 5"></path><path d="M15.5 15.5a2.5 2.5 0 0 1 0-5"></path></svg>
+                    Cognotik
+                </a>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#demo">Live Demo</a>
+                    <a href="#docs">Documentation</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Symbolic Logic meets LLM Intuition</h1>
+                <p>The <strong>DecisionTreeTask</strong> combines the semantic understanding of Large Language Models with the mathematical rigor of Information Gain algorithms to build interpretable, executable decision trees.</p>
+                <a href="#demo" class="btn btn-primary">Try the Simulation</a>
+                <div style="margin-top: 3rem;">
+                    <img src="decision-tree-hero.png" alt="High-tech 3D illustration of a decision tree structure growing upwards with glowing nodes" style="max-width: 100%; height: auto; border-radius: 1rem; box-shadow: var(--shadow);">
+                </div>
+            </div>
+        </section>
+
+        <section id="features">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <img src="semantic-splitting-diagram.png" alt="Vector illustration of semantic text splitting logic" style="width: 100%; height: auto; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <h3>Semantic Splitting</h3>
+                        <p>Unlike traditional trees that only handle numbers, our agent understands text. It generates rules like <code>description contains "error"</code> or <code>sku matches "^[A-Z]-123"</code>.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        </div>
+                        <h3>Math-Verified Accuracy</h3>
+                        <p>The LLM proposes the rules, but the data decides. We calculate Entropy and Information Gain for every proposal to ensure the tree is statistically sound.</p>
+                    </div>
+                    <div class="feature-card">
+                        <img src="tree-to-code-compiler.png" alt="Illustration of decision tree logic converting to Kotlin code" style="width: 100%; height: auto; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <h3>Code Generation</h3>
+                        <p>The final output isn't just a report—it's a compiled Kotlin function ready to be dropped into your production codebase.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="demo">
+            <div class="container">
+                <h2>Interactive Simulation</h2>
+                <p>See how the agent builds a tree to predict <strong>Customer Churn</strong> based on mixed data types.</p>
+                
+                <div class="demo-container">
+                    <div class="demo-sidebar">
+                        <div class="control-group">
+                            <label>Target Column</label>
+                            <select id="targetSelect" disabled>
+                                <option>Churn (Yes/No)</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label>Max Depth</label>
+                            <input type="number" id="maxDepth" value="3" min="1" max="5">
+                        </div>
+                        <div class="control-group">
+                            <label>Candidate Rules per Node</label>
+                            <input type="number" id="candidateRules" value="3" min="1" max="10">
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%" onclick="runSimulation()">Run Task</button>
+                        
+                        <div style="margin-top: 2rem; font-size: 0.8rem; color: var(--text-light);">
+                            <strong>Dataset Preview:</strong><br>
+                            - Age (Int)<br>
+                            - Contract (String)<br>
+                            - LastCall (Text)<br>
+                            - Usage (Float)
+                        </div>
+                    </div>
+                    
+                    <div class="demo-main">
+                        <div class="tabs">
+                            <div class="tab active" onclick="switchTab('viz')">Tree Visualization</div>
+                            <div class="tab" onclick="switchTab('log')">Agent Logs</div>
+                            <div class="tab" onclick="switchTab('code')">Generated Code</div>
+                        </div>
+                        
+                        <div id="viz-panel" class="viz-area">
+                            <svg id="treeSvg"></svg>
+                        </div>
+                        
+                        <div id="log-panel" class="viz-area" style="display: none;">
+                            <div class="terminal" id="terminalOutput">
+                                <div class="log-entry">Waiting to start...</div>
+                            </div>
+                        </div>
+
+                        <div id="code-panel" class="viz-area" style="display: none; background: var(--code-bg);">
+                            <pre id="codeOutput" style="margin: 0; height: 100%; border-radius: 0;"><code class="language-kotlin">// Code will appear here after simulation</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="docs">
+            <div class="container">
+                <h2>Configuration & Usage</h2>
+                <p>The <code>DecisionTreeTask</code> is configured via the <code>DecisionTreeTaskExecutionConfigData</code> class.</p>
+                
+                <div style="background: white; padding: 2rem; border-radius: 1rem; border: 1px solid var(--border); margin-top: 2rem;">
+                    <h3>Parameters</h3>
+                    <ul style="list-style: none; margin-top: 1rem;">
+                        <li style="margin-bottom: 1rem;">
+                            <code>data_file</code> <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">String</span><br>
+                            Path to the CSV or JSONL file containing the training data.
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <code>target_column</code> <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">String</span><br>
+                            The name of the column you want to predict.
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <code>max_depth</code> <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Int</span><br>
+                            Limits the height of the tree to prevent overfitting. Default: 3.
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <code>candidate_rules</code> <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Int</span><br>
+                            How many splitting rules the LLM should propose for each node. Higher numbers increase accuracy but cost more tokens.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Simiacryptus Cognotik. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Simulation Data and Logic
+        const mockData = {
+            root: {
+                name: "Root",
+                rule: "Start",
+                children: [
+                    {
+                        name: "Contract",
+                        rule: "Contract == 'Month-to-Month'",
+                        children: [
+                            {
+                                name: "Usage",
+                                rule: "Usage < 10.5",
+                                children: [
+                                    { name: "Churn", rule: "Yes", leaf: true },
+                                    { name: "No Churn", rule: "No", leaf: true }
+                                ]
+                            },
+                            {
+                                name: "Support",
+                                rule: "LastCall contains 'angry'",
+                                children: [
+                                    { name: "Churn", rule: "Yes", leaf: true },
+                                    { name: "No Churn", rule: "No", leaf: true }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        name: "Age",
+                        rule: "Contract != 'Month-to-Month'",
+                        children: [
+                            { name: "No Churn", rule: "No", leaf: true } // Simplified for demo
+                        ]
+                    }
+                ]
+            }
+        };
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.viz-area').forEach(p => p.style.display = 'none');
+            
+            // Find the clicked tab element based on text content or index is tricky, 
+            // so we rely on the onclick context or just index mapping.
+            // Simple mapping:
+            const tabs = document.querySelectorAll('.tab');
+            if(tabName === 'viz') { tabs[0].classList.add('active'); document.getElementById('viz-panel').style.display = 'block'; }
+            if(tabName === 'log') { tabs[1].classList.add('active'); document.getElementById('log-panel').style.display = 'block'; }
+            if(tabName === 'code') { tabs[2].classList.add('active'); document.getElementById('code-panel').style.display = 'block'; }
+        }
+
+        function log(msg, type = 'info') {
+            const term = document.getElementById('terminalOutput');
+            const div = document.createElement('div');
+            div.className = `log-entry log-${type}`;
+            div.textContent = `> ${msg}`;
+            term.appendChild(div);
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('terminalOutput').innerHTML = '';
+        }
+
+        async function runSimulation() {
+            const depth = document.getElementById('maxDepth').value;
+            const candidates = document.getElementById('candidateRules').value;
+            
+            clearLog();
+            switchTab('log');
+            
+            log(`Initializing DecisionTreeTask...`);
+            log(`Config: Target='Churn', Depth=${depth}, Candidates=${candidates}`);
+            await wait(800);
+            
+            log(`Loading data... 1000 records found.`);
+            await wait(800);
+            
+            log(`Calculating initial Entropy... 0.98`);
+            await wait(500);
+            
+            // Simulate Level 0
+            log(`Depth 0: Sampling data for LLM...`);
+            await wait(1000);
+            log(`LLM Proposed rules:`, 'info');
+            log(`  1. Contract == 'Month-to-Month'`);
+            log(`  2. Age > 60`);
+            log(`  3. Usage < 50.0`);
+            await wait(800);
+            log(`Validating rules via Information Gain...`);
+            log(`Best Split: Contract == 'Month-to-Month' (Gain: 0.45)`, 'success');
+            
+            // Draw Root Split
+            switchTab('viz');
+            drawTreeStep(1);
+            await wait(1500);
+            
+            switchTab('log');
+            // Simulate Level 1 Left
+            log(`Depth 1 (Left): Subset size 450. Entropy 0.85.`);
+            log(`LLM Proposed rules: 'LastCall contains "angry"', 'Usage < 10.5'`);
+            await wait(1000);
+            log(`Best Split: Usage < 10.5 (Gain: 0.22)`, 'success');
+            
+            switchTab('viz');
+            drawTreeStep(2);
+            await wait(1500);
+
+            switchTab('log');
+            log(`Depth 1 (Right): Subset size 550. Purity > 0.95.`);
+            log(`Leaf Node Created: Prediction 'No'`, 'success');
+            
+            switchTab('viz');
+            drawTreeStep(3);
+            await wait(1000);
+            
+            log(`Tree construction complete.`);
+            log(`Generating Kotlin code...`);
+            
+            const code = `fun predict(record: Map<String, String>): String {
+    if (record["Contract"] == "Month-to-Month") {
+        if ((record["Usage"]?.toDoubleOrNull() ?: 0.0) < 10.5) {
+            // Probability: 0.85 (n=120)
+            return "Yes"
+        } else {
+            // Probability: 0.60 (n=330)
+            return "No"
+        }
+    } else {
+        // Probability: 0.96 (n=550)
+        return "No"
+    }
+}`;
+            document.getElementById('codeOutput').querySelector('code').textContent = code;
+            switchTab('code');
+        }
+
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Simple SVG Tree Drawing Logic
+        function drawTreeStep(step) {
+            const svg = document.getElementById('treeSvg');
+            svg.innerHTML = ''; // Clear
+            
+            const width = svg.clientWidth;
+            const height = svg.clientHeight;
+            const startX = width / 2;
+            const startY = 40;
+            const levelH = 80;
+            
+            // Helper to draw node
+            const drawNode = (x, y, label, color = '#fff') => {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.setAttribute("class", "node");
+                
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", x);
+                circle.setAttribute("cy", y);
+                circle.setAttribute("r", 20);
+                circle.style.fill = color;
+                
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", x);
+                text.setAttribute("y", y);
+                text.textContent = label;
+                
+                g.appendChild(circle);
+                g.appendChild(text);
+                svg.appendChild(g);
+            };
+
+            // Helper to draw link
+            const drawLink = (x1, y1, x2, y2, label) => {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", x1);
+                line.setAttribute("y1", y1);
+                line.setAttribute("x2", x2);
+                line.setAttribute("y2", y2);
+                line.setAttribute("class", "link");
+                svg.appendChild(line);
+
+                if(label) {
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", (x1+x2)/2);
+                    text.setAttribute("y", (y1+y2)/2 - 5);
+                    text.setAttribute("class", "node-label");
+                    text.setAttribute("text-anchor", "middle");
+                    text.textContent = label;
+                    svg.appendChild(text);
+                }
+            };
+
+            // Step 1: Root Split
+            drawNode(startX, startY, "Root");
+            
+            if (step >= 1) {
+                // Left Child
+                drawLink(startX, startY, startX - 100, startY + levelH, "Contract=M2M");
+                drawNode(startX - 100, startY + levelH, "?");
+                
+                // Right Child
+                drawLink(startX, startY, startX + 100, startY + levelH, "Else");
+                drawNode(startX + 100, startY + levelH, "?");
+            }
+
+            if (step >= 2) {
+                // Expand Left
+                drawLink(startX - 100, startY + levelH, startX - 150, startY + levelH*2, "Usage<10");
+                drawNode(startX - 150, startY + levelH*2, "Yes", "#fee2e2"); // Churn
+
+                drawLink(startX - 100, startY + levelH, startX - 50, startY + levelH*2, "Else");
+                drawNode(startX - 50, startY + levelH*2, "No", "#dcfce7"); // No Churn
+                
+                // Update parent node text
+                // (In a real app we'd use data binding, here just redrawing/overwriting visually)
+            }
+
+            if (step >= 3) {
+                // Expand Right (Leaf)
+                // Just color the right node green
+                const nodes = svg.querySelectorAll('circle');
+                nodes[2].style.fill = "#dcfce7"; // The right child from step 1
+                const texts = svg.querySelectorAll('text');
+                // Update text content manually for demo simplicity
+                texts[texts.length-1].textContent = "No"; // Last text added was the node label? No, order varies.
+                // Re-drawing specifically for step 3 to ensure correctness
+                svg.innerHTML = '';
+                
+                // Re-draw full tree
+                drawNode(startX, startY, "Root");
+                
+                // Left Branch
+                drawLink(startX, startY, startX - 100, startY + levelH, "Contract=M2M");
+                drawNode(startX - 100, startY + levelH, "Split");
+                
+                drawLink(startX - 100, startY + levelH, startX - 160, startY + levelH*2, "Usage<10");
+                drawNode(startX - 160, startY + levelH*2, "Yes", "#fee2e2");
+
+                drawLink(startX - 100, startY + levelH, startX - 40, startY + levelH*2, "Else");
+                drawNode(startX - 40, startY + levelH*2, "No", "#dcfce7");
+
+                // Right Branch
+                drawLink(startX, startY, startX + 100, startY + levelH, "Else");
+                drawNode(startX + 100, startY + levelH, "No", "#dcfce7");
+            }
+        }
+        
+        // Initial Draw
+        drawTreeStep(0);
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Configuration and State
+            const state = {
+                isRunning: false,
+                currentStep: 0,
+                simulationSpeed: 1 // Multiplier for wait times
+            };
+        
+            const colors = {
+                primary: '#2563eb',
+                success: '#10b981',
+                danger: '#ef4444',
+                surface: '#ffffff',
+                text: '#0f172a',
+                churn: '#fee2e2',
+                noChurn: '#dcfce7'
+            };
+        
+            // DOM Elements
+            const ui = {
+                runBtn: document.querySelector('.btn-primary[onclick="runSimulation()"]'),
+                tabs: document.querySelectorAll('.tab'),
+                panels: {
+                    viz: document.getElementById('viz-panel'),
+                    log: document.getElementById('log-panel'),
+                    code: document.getElementById('code-panel')
+                },
+                inputs: {
+                    depth: document.getElementById('maxDepth'),
+                    candidates: document.getElementById('candidateRules')
+                },
+                terminal: document.getElementById('terminalOutput'),
+                svg: document.getElementById('treeSvg'),
+                codeBlock: document.querySelector('#codeOutput code')
+            };
+        
+            // --- Utility Functions ---
+        
+            /**
+             * Creates a promise that resolves after ms milliseconds
+             * @param {number} ms 
+             */
+            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms * state.simulationSpeed));
+        
+            /**
+             * Helper to create SVG elements with proper namespace
+             */
+            const createSvgElement = (type, attributes = {}) => {
+                const el = document.createElementNS("http://www.w3.org/2000/svg", type);
+                Object.entries(attributes).forEach(([key, value]) => el.setAttribute(key, value));
+                return el;
+            };
+        
+            // --- UI Logic ---
+        
+            /**
+             * Handles tab switching logic
+             * @param {string} tabName - 'viz', 'log', or 'code'
+             */
+            const switchTab = (tabName) => {
+                // Update Tab Styles
+                ui.tabs.forEach((tab, index) => {
+                    const target = ['viz', 'log', 'code'][index];
+                    if (target === tabName) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+        
+                // Update Panel Visibility
+                Object.entries(ui.panels).forEach(([key, panel]) => {
+                    panel.style.display = key === tabName ? 'block' : 'none';
+                });
+            };
+        
+            /**
+             * Terminal Logger
+             */
+            const logger = {
+                clear: () => {
+                    ui.terminal.innerHTML = '';
+                },
+                log: (msg, type = 'info') => {
+                    const div = document.createElement('div');
+                    div.className = `log-entry log-${type}`;
+            
+                    // Add timestamp
+                    const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+                    div.innerHTML = `<span style="opacity:0.5">[${time}]</span> > ${msg}`;
+            
+                    ui.terminal.appendChild(div);
+                    ui.terminal.scrollTop = ui.terminal.scrollHeight;
+                }
+            };
+        
+            /**
+             * Tree Visualization Logic
+             */
+            const visualizer = {
+                clear: () => {
+                    ui.svg.innerHTML = '';
+                },
+        
+                drawNode: (x, y, label, bgColor = colors.surface) => {
+                    const g = createSvgElement('g', { class: 'node' });
+            
+                    const circle = createSvgElement('circle', {
+                        cx: x, cy: y, r: 20,
+                        style: `fill: ${bgColor}; stroke: ${colors.primary}; stroke-width: 2px;`
+                    });
+            
+                    const text = createSvgElement('text', {
+                        x: x, y: y,
+                        'text-anchor': 'middle',
+                        'dominant-baseline': 'middle',
+                        style: `fill: ${colors.text}; font-size: 12px;`
+                    });
+                    text.textContent = label;
+        
+                    g.appendChild(circle);
+                    g.appendChild(text);
+                    ui.svg.appendChild(g);
+                },
+        
+                drawLink: (x1, y1, x2, y2, label) => {
+                    // Draw Line
+                    const line = createSvgElement('line', {
+                        x1, y1, x2, y2,
+                        class: 'link',
+                        style: 'stroke: #e2e8f0; stroke-width: 2px;'
+                    });
+                    ui.svg.prepend(line); // Prepend so lines are behind nodes
+        
+                    // Draw Label Background (for readability)
+                    if (label) {
+                        const midX = (x1 + x2) / 2;
+                        const midY = (y1 + y2) / 2;
+                
+                        const text = createSvgElement('text', {
+                            x: midX, y: midY - 5,
+                            class: 'node-label',
+                            'text-anchor': 'middle',
+                            style: 'font-size: 10px; fill: #64748b; background: white;'
+                        });
+                        text.textContent = label;
+                        ui.svg.appendChild(text);
+                    }
+                },
+        
+                renderStep: (step) => {
+                    visualizer.clear();
+                    const width = ui.svg.clientWidth || 600;
+                    const startX = width / 2;
+                    const startY = 40;
+                    const levelH = 80;
+                    const spread = 120;
+        
+                    // Always draw Root
+                    visualizer.drawNode(startX, startY, "Root");
+        
+                    if (step >= 1) {
+                        // Level 1 Split
+                        visualizer.drawLink(startX, startY, startX - spread, startY + levelH, "Contract=M2M");
+                        visualizer.drawLink(startX, startY, startX + spread, startY + levelH, "Else");
+                
+                        visualizer.drawNode(startX - spread, startY + levelH, step === 1 ? "?" : "Split");
+                        visualizer.drawNode(startX + spread, startY + levelH, step === 1 ? "?" : "No", step >= 3 ? colors.noChurn : colors.surface);
+                    }
+        
+                    if (step >= 2) {
+                        // Level 2 Split (Left Branch)
+                        const leftX = startX - spread;
+                        const leftY = startY + levelH;
+                
+                        visualizer.drawLink(leftX, leftY, leftX - 60, leftY + levelH, "Usage<10");
+                        visualizer.drawLink(leftX, leftY, leftX + 60, leftY + levelH, "Else");
+        
+                        visualizer.drawNode(leftX - 60, leftY + levelH, "Yes", colors.churn);
+                        visualizer.drawNode(leftX + 60, leftY + levelH, "No", colors.noChurn);
+                    }
+                }
+            };
+        
+            // --- Main Simulation Logic ---
+        
+            const runSimulation = async () => {
+                if (state.isRunning) return;
+                state.isRunning = true;
+        
+                // Disable button
+                ui.runBtn.textContent = "Running...";
+                ui.runBtn.style.opacity = "0.7";
+                ui.runBtn.style.cursor = "not-allowed";
+        
+                try {
+                    const depth = ui.inputs.depth.value;
+                    const candidates = ui.inputs.candidates.value;
+        
+                    // 1. Initialization
+                    switchTab('log');
+                    logger.clear();
+                    logger.log(`Initializing DecisionTreeTask...`);
+                    logger.log(`Configuration: Target='Churn', MaxDepth=${depth}, Candidates=${candidates}`);
+                    await wait(800);
+        
+                    logger.log(`Loading dataset... 1,000 records loaded.`);
+                    logger.log(`Calculating global entropy... 0.98`);
+                    await wait(800);
+        
+                    // 2. Root Node Analysis
+                    logger.log(`Depth 0: Analyzing root node...`);
+                    await wait(600);
+                    logger.log(`LLM generating candidate rules...`, 'info');
+                    await wait(800);
+                    logger.log(`  > Contract == 'Month-to-Month'`);
+                    logger.log(`  > Age > 60`);
+                    logger.log(`  > Usage < 50.0`);
+                    await wait(600);
+                    logger.log(`Calculating Information Gain for candidates...`);
+                    logger.log(`Best Split Selected: Contract == 'Month-to-Month' (Gain: 0.45)`, 'success');
+        
+                    // 3. Visualize Step 1
+                    switchTab('viz');
+                    visualizer.renderStep(1);
+                    await wait(1500);
+        
+                    // 4. Level 1 Analysis
+                    switchTab('log');
+                    logger.log(`Depth 1 (Left Branch): Subset size 450. Entropy 0.85.`);
+                    logger.log(`LLM generating candidate rules...`, 'info');
+                    await wait(1000);
+                    logger.log(`  > LastCall contains "angry"`);
+                    logger.log(`  > Usage < 10.5`);
+                    logger.log(`Best Split Selected: Usage < 10.5 (Gain: 0.22)`, 'success');
+        
+                    // 5. Visualize Step 2
+                    switchTab('viz');
+                    visualizer.renderStep(2);
+                    await wait(1500);
+        
+                    // 6. Finalize
+                    switchTab('log');
+                    logger.log(`Depth 1 (Right Branch): Subset size 550. Purity > 0.95.`);
+                    logger.log(`Leaf Node Created: Prediction 'No'`, 'success');
+                    await wait(800);
+            
+                    // 7. Visualize Final
+                    switchTab('viz');
+                    visualizer.renderStep(3); // Final state
+                    await wait(1000);
+        
+                    logger.log(`Tree construction complete.`);
+                    logger.log(`Compiling to Kotlin...`);
+                    await wait(800);
+        
+                    // 8. Show Code
+                    const finalCode = `/**
+         * Generated Decision Tree for Churn Prediction
+         * Accuracy on Train Set: 94.2%
+         */
+        fun predict(record: Map<String, String>): String {
+            // Root Split
+            if (record["Contract"] == "Month-to-Month") {
+        
+                // Depth 1: Usage Check
+                val usage = record["Usage"]?.toDoubleOrNull() ?: 0.0
+                if (usage < 10.5) {
+                    // High probability of churn for low usage M2M customers
+                    return "Yes" 
+                } else {
+                    return "No"
+                }
+        
+            } else {
+                // Long term contracts rarely churn
+                return "No"
+            }
+        }`;
+                    ui.codeBlock.textContent = finalCode;
+                    switchTab('code');
+        
+                } catch (error) {
+                    console.error(error);
+                    logger.log(`Error: ${error.message}`, 'danger');
+                } finally {
+                    state.isRunning = false;
+                    ui.runBtn.textContent = "Run Task";
+                    ui.runBtn.style.opacity = "1";
+                    ui.runBtn.style.cursor = "pointer";
+                }
+            };
+        
+            // --- Event Listeners ---
+        
+            // Replace inline onclick for Run button
+            if (ui.runBtn) {
+                ui.runBtn.removeAttribute('onclick'); // Clean up HTML attribute
+                ui.runBtn.addEventListener('click', runSimulation);
+            }
+        
+            // Replace inline onclick for Tabs
+            ui.tabs.forEach((tab, index) => {
+                tab.removeAttribute('onclick'); // Clean up HTML attribute
+                const tabNames = ['viz', 'log', 'code'];
+                tab.addEventListener('click', () => switchTab(tabNames[index]));
+            });
+        
+            // Initial Render
+            visualizer.renderStep(0);
+        });
+    </script>
+</body>
+</html>

@@ -195,7 +195,7 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
             return
         }
 
-        val api = defaultChatter.getChildClient(task)
+        val api = defaultSmart.getChildClient(task)
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)

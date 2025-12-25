@@ -331,6 +331,7 @@ VectorSearch - Search for similar embeddings in index files and provide top resu
 
         val VectorSearch = TaskType(
             "VectorSearch",
+            "Knowledge",
             VectorSearchTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Perform semantic search using AI embeddings",

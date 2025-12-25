@@ -119,7 +119,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
             return
         }
 
-        val api = defaultChatter.getChildClient(task)
+        val api = defaultSmart.getChildClient(task)
         val tabs = TabbedDisplay(task)
 
         val overviewTask = task.ui.newTask(false).apply { tabs["Overview"] = placeholder }
@@ -127,7 +127,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
         task.update()
 
         try {
-            val parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task)
+            val parsingChatter = defaultFast.getChildClient(task)
             val scriptAgent = ParsedAgent(
                 resultClass = ComicScript::class.java,
                 prompt = """
@@ -193,7 +193,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
                 val charAgent = ImageProcessingAgent(
                     prompt = "Create a character sheet for a comic book. Style: ${genConfig.art_style}",
-                    model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                    model = orchestrationConfig.defaultImage.getChildClient(task),
                     temperature = 0.7
                 )
 
@@ -229,7 +229,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
                 val imageAgent = ImageProcessingAgent(
                     prompt = "Create a comic book strip based on the description. Style: ${genConfig.art_style}",
-                    model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                    model = orchestrationConfig.defaultImage.getChildClient(task),
                     temperature = 0.7
                 )
 

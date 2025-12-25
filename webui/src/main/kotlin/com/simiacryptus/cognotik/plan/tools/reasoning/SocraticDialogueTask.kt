@@ -139,7 +139,7 @@ class SocraticDialogueTask(
         log.info("Configuration: maxDepth=$maxDepth, challengeAssumptions=$challengeAssumptions, domainConstraints=$domainConstraints")
 
         val ui = task.ui
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
         // Overview tab
@@ -652,6 +652,7 @@ Provide a structured synthesis.
         private val log: Logger = LoggerFactory.getLogger(SocraticDialogueTask::class.java)
         val SocraticDialogue = TaskType(
             "SocraticDialogue",
+            "Reasoning",
             SocraticDialogueTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Explore ideas through Socratic questioning",

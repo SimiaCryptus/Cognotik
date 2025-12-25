@@ -113,7 +113,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             val imageAgent = ImageProcessingAgent(
                 prompt = "You are a pixel artist and game asset designer.",
                 name = "SpriteGenerator",
-                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                model = orchestrationConfig.defaultImage.getChildClient(task),
             )
 
             val imageResult = imageAgent.answer(listOf(ImageAndText(imageGenPrompt)))
@@ -132,7 +132,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
 
             val parserAgent = ParsedImageAgent(
                 resultClass = SpriteSheetMetadata::class.java,
-                model = (typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: defaultChatter).getChildClient(task),
+                model = (typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: defaultSmart).getChildClient(task),
                 prompt = """
                     Identify all distinct sprites in this image.
                     For each sprite, provide:

@@ -65,7 +65,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
         val config = try {
             context.executionConfig.content_queries?.let { queries ->
                 queries.parserCast<SchemaExtractionConfig>(
-                    context.orchestrationConfig.parsingChatter.getChildClient(
+                    context.orchestrationConfig.defaultFast.getChildClient(
                         context.task
                     )
                 )
@@ -196,7 +196,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
         }
 
         val model = (context.typeConfig.model?.let { context.orchestrationConfig.instance(it) }
-            ?: context.orchestrationConfig.parsingChatter).getChildClient(context.task)
+            ?: context.orchestrationConfig.defaultFast).getChildClient(context.task)
 
         return ParsedAgent(
             prompt = prompt,
@@ -268,7 +268,7 @@ class SchemaExtractionStrategy : DefaultSummarizerStrategy() {
     ): String {
         log.info("Generating final aggregated output")
         val config = try {
-            val chatInterface = context.orchestrationConfig.parsingChatter.getChildClient(context.task)
+            val chatInterface = context.orchestrationConfig.defaultFast.getChildClient(context.task)
             context.executionConfig.content_queries?.parserCast<SchemaExtractionConfig>(chatInterface)
                 ?: SchemaExtractionConfig()
         } catch (e: Exception) {

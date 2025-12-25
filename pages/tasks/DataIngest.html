@@ -1,0 +1,373 @@
+<!-- Prompt: Abstract 3D visualization of a chaotic stream of binary code and log lines flowing into a funnel and emerging as organized, glowing geometric data blocks (cubes and spheres) in cyan and gold. Dark background, cinematic lighting, depth of field. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataIngest - Cognotik Task</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --accent-primary: #06b6d4; /* Cyan */
+            --accent-secondary: #fbbf24; /* Gold */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --glass: rgba(15, 23, 42, 0.8);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .logo { font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; }
+        .logo svg { stroke: var(--accent-primary); }
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        nav a:hover { color: var(--accent-primary); }
+        /* Hero */
+        .hero {
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+        .hero-visual {
+            width: 100%;
+            height: 400px;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 70%);
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-visual::after {
+            content: "3D Visual Placeholder: Abstract Data Stream";
+            color: rgba(255,255,255,0.2);
+            font-weight: 700;
+        }
+        .cta-btn {
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); }
+        /* Features */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: border-color 0.3s;
+        }
+        .feature-card:hover { border-color: var(--accent-primary); }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: var(--accent-primary);
+        }
+        /* Simulator */
+        .simulator {
+            padding: 4rem 2rem;
+            background: #0b1120;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .sim-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            height: 700px;
+        }
+        .sim-panel {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .sim-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--accent-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+        .form-control {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+        }
+        .form-control:focus { outline: none; border-color: var(--accent-primary); }
+        .sim-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sim-tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+        }
+        .sim-tab.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+        .sim-output {
+            flex: 1;
+            background: #0f172a;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            color: #a5b4fc;
+        }
+        .log-entry { margin-bottom: 0.5rem; }
+        .log-info { color: #94a3b8; }
+        .log-success { color: #4ade80; }
+        .log-warn { color: #fbbf24; }
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .use-case-item {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            align-items: flex-start;
+        }
+        .check-icon { color: var(--accent-primary); flex-shrink: 0; }
+        @media (max-width: 768px) {
+            .sim-container { grid-template-columns: 1fr; height: auto; }
+            .hero h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i data-lucide="cpu"></i> Cognotik
+        </div>
+        <nav>
+            <a href="#features">Features</a>
+            <a href="#simulator">Simulator</a>
+            <a href="#use-cases">Use Cases</a>
+        </nav>
+    </header>
+    <section class="hero">
+        <h1>Data Ingest</h1>
+        <p>Iteratively parse unstructured logs into structured data. Automates the creation of regex parsers for log files using LLM-driven pattern discovery.</p>
+        <div class="hero-visual">
+            <!-- Visual placeholder -->
+        </div>
+        <a href="#simulator" class="cta-btn">Try the Simulator</a>
+    </section>
+    <section id="features" class="features">
+        <div class="feature-card">
+            <div class="feature-icon"><i data-lucide="search"></i></div>
+            <h3>Pattern Discovery</h3>
+            <p>Automatically samples data and uses LLMs to discover regex patterns, handling complex log formats without manual rule writing.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i data-lucide="filter"></i></div>
+            <h3>Residual Targeting</h3>
+            <p>Iteratively targets unparsed lines to ensure high coverage, refining patterns until the threshold is met.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i data-lucide="database"></i></div>
+            <h3>Structured Output</h3>
+            <p>Generates JSONL data, a pattern registry, and a CSV index linking data back to source lines for full traceability.</p>
+        </div>
+    </section>
+    <section id="simulator" class="simulator">
+        <div class="sim-container">
+            <!-- Inputs -->
+            <div class="sim-panel">
+                <div class="sim-header"><i data-lucide="sliders"></i> Configuration</div>
+                <div class="form-group">
+                    <label>Input Files (Glob Pattern)</label>
+                    <input type="text" class="form-control" id="inputFiles" value="**/*.log">
+                </div>
+                <div class="form-group">
+                    <label>Sample Size (Lines)</label>
+                    <input type="number" class="form-control" id="sampleSize" value="1000">
+                </div>
+                <div class="form-group">
+                    <label>Max Iterations</label>
+                    <input type="range" min="1" max="20" value="10" class="form-control" id="maxIterations" oninput="this.nextElementSibling.value = this.value">
+                    <output>10</output>
+                </div>
+                <div class="form-group">
+                    <label>Coverage Threshold</label>
+                    <input type="range" min="0.1" max="1.0" step="0.05" value="0.95" class="form-control" id="coverageThreshold" oninput="this.nextElementSibling.value = (this.value * 100) + '%'">
+                    <output>95%</output>
+                </div>
+                <button class="cta-btn" onclick="runSimulation()" style="width:100%; text-align:center; margin-top:auto;">Run Ingestion</button>
+            </div>
+            <!-- Outputs -->
+            <div class="sim-panel">
+                <div class="sim-tabs">
+                    <div class="sim-tab active" onclick="switchTab('logs')">Execution Logs</div>
+                    <div class="sim-tab" onclick="switchTab('data')">Data Preview</div>
+                </div>
+                <div id="outputLogs" class="sim-output">
+                    <div class="log-info">Ready to start ingestion...</div>
+                </div>
+                <div id="outputData" class="sim-output" style="display:none;">
+                    <div class="log-info">No data generated yet.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section id="use-cases" class="use-cases">
+        <h2>When to Use</h2>
+        <div class="use-case-item">
+            <div class="check-icon"><i data-lucide="check-circle"></i></div>
+            <div>
+                <h3>Log Analysis</h3>
+                <p>Convert messy server logs into structured databases for SQL querying and analytics.</p>
+            </div>
+        </div>
+        <div class="use-case-item">
+            <div class="check-icon"><i data-lucide="check-circle"></i></div>
+            <div>
+                <h3>Legacy Data Migration</h3>
+                <p>Parse old, undocumented flat files into modern formats during system upgrades.</p>
+            </div>
+        </div>
+    </section>
+    <script>
+        lucide.createIcons();
+        function switchTab(tab) {
+            document.querySelectorAll('.sim-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('outputLogs').style.display = tab === 'logs' ? 'block' : 'none';
+            document.getElementById('outputData').style.display = tab === 'data' ? 'block' : 'none';
+        }
+        async function runSimulation() {
+            const logs = document.getElementById('outputLogs');
+            const data = document.getElementById('outputData');
+            logs.innerHTML = '';
+            switchTab('logs');
+            const addLog = (msg, type='info') => {
+                const div = document.createElement('div');
+                div.className = `log-entry log-${type}`;
+                div.innerText = `> ${msg}`;
+                logs.appendChild(div);
+                logs.scrollTop = logs.scrollHeight;
+            };
+            addLog("Initializing DataIngestTask...", "info");
+            await new Promise(r => setTimeout(r, 800));
+            addLog(`Resolving files for pattern: ${document.getElementById('inputFiles').value}`, "info");
+            await new Promise(r => setTimeout(r, 600));
+            addLog("Found 3 files (server.log, access.log, error.log)", "success");
+            addLog("## Phase 1: Sampling", "warn");
+            await new Promise(r => setTimeout(r, 500));
+            addLog(`Loaded ${document.getElementById('sampleSize').value} sample lines.`, "info");
+            addLog("## Phase 2: Pattern Discovery", "warn");
+            const iterations = 3;
+            for(let i=1; i<=iterations; i++) {
+                await new Promise(r => setTimeout(r, 1000));
+                const coverage = Math.min(98, i * 30 + 10);
+                addLog(`**Iteration ${i}** | Coverage: ${coverage}% | Residuals: ${100-coverage}`, "info");
+                if(i === 1) addLog("✅ Discovered Pattern: `^(?<timestamp>\\S+) (?<level>\\w+) (?<msg>.*)$`", "success");
+                if(i === 2) addLog("✅ Discovered Pattern: `^Exception in thread \"(?<thread>.*)\": (?<error>.*)$`", "success");
+            }
+            addLog("Coverage threshold reached.", "success");
+            addLog("## Phase 3: Bulk Extraction", "warn");
+            await new Promise(r => setTimeout(r, 800));
+            addLog("Writing data.jsonl...", "info");
+            addLog("Writing index.csv...", "info");
+            addLog("Ingestion Complete. Extracted 15,420 records.", "success");
+            // Mock Data Output
+            data.innerHTML = JSON.stringify({
+                timestamp: "2023-10-27T10:00:00",
+                level: "INFO",
+                msg: "User login successful",
+                source_file: "server.log"
+            }, null, 2) + "\n" + JSON.stringify({
+                timestamp: "2023-10-27T10:00:05",
+                level: "ERROR",
+                msg: "Connection timeout",
+                source_file: "error.log"
+            }, null, 2);
+        }
+    </script>
+</body>
+</html>

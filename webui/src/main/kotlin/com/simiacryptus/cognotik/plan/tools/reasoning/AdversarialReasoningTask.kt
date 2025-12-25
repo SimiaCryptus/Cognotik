@@ -134,7 +134,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             return
         }
 
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val attackVectors = executionConfig.attack_vectors ?: listOf("security", "logic")
         val adversaryCapability = executionConfig.adversary_capability
@@ -1179,6 +1179,7 @@ Consider both immediate fixes and long-term architectural improvements.
         private val log: Logger = LoggerFactory.getLogger(AdversarialReasoningTask::class.java)
         val AdversarialReasoning = TaskType(
             "AdversarialReasoning",
+            "Reasoning",
             AdversarialReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Red team analysis to identify vulnerabilities and weaknesses",

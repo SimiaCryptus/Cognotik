@@ -128,8 +128,8 @@ DataIngest - Parse unstructured logs/text into structured data
             log("## Phase 2: Pattern Discovery")
             val registry = mutableListOf<PatternRegistryItem>()
             val unparsedSample = sampleLines.toMutableList()
-            val parsingChatter = parsingChatter.getChildClient(task)
-            val defaultChatter = defaultChatter.getChildClient(task)
+            val parsingChatter = defaultFast.getChildClient(task)
+            val defaultChatter = defaultSmart.getChildClient(task)
 
             val discoveryTask = task.ui.newTask(false)
             tabs["Discovery"] = discoveryTask.placeholder

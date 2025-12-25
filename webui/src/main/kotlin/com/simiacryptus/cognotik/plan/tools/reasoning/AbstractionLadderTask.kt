@@ -117,7 +117,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         val levels = executionConfig.levels.coerceIn(1, 5)
         val identifyPatterns = executionConfig.identify_patterns
 
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         // Initialize detailed output file
         detailedOutputFile = initializeDetailedOutput(task)
@@ -513,6 +513,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         private val log: Logger = LoggerFactory.getLogger(AbstractionLadderTask::class.java)
         val AbstractionLadder = TaskType(
             "AbstractionLadder",
+            "Reasoning",
             AbstractionLadderTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Traverse abstraction levels to identify patterns and design insights",

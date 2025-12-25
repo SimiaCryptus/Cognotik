@@ -94,21 +94,21 @@ class PlanConfigDialog(
         ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
             maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
             selectedItem =
-                settings.defaultModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
+                settings.defaultSmartModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
             toolTipText = "Default AI model for all tasks"
         }
     private val parsingModelCombo =
         ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
             maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
             selectedItem =
-                settings.parsingModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
+                settings.defaultFastModel?.model?.modelName ?: AppSettingsState.instance.smartModel?.model?.modelName
             toolTipText = "AI model for parsing and understanding tasks"
         }
     private val imageChatModelCombo =
         ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
             maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
             selectedItem =
-                settings.imageChatModel?.model?.modelName ?: AppSettingsState.instance.imageChatModel?.model?.modelName
+                settings.defaultImageModel?.model?.modelName ?: AppSettingsState.instance.imageChatModel?.model?.modelName
             toolTipText = "Multimodal AI model for image-related tasks"
         }
 
@@ -467,9 +467,9 @@ class PlanConfigDialog(
             settings.maxTaskHistoryChars = config.maxTaskHistoryChars
             settings.maxTasksPerIteration = config.maxTasksPerIteration
             settings.maxIterations = config.maxIterations
-            settings.defaultModel = config.defaultModel
-            settings.parsingModel = config.parsingModel
-            settings.imageChatModel = config.imageChatModel
+            settings.defaultSmartModel = config.defaultSmartModel
+            settings.defaultFastModel = config.defaultFastModel
+            settings.defaultImageModel = config.defaultImageModel
             settings.cognitiveMode = config.cognitiveMode
 
             // Update UI components
@@ -496,22 +496,22 @@ class PlanConfigDialog(
             }
 
             // Update model combo boxes
-            config.defaultModel?.model?.modelName?.let { modelName ->
+            config.defaultSmartModel?.model?.modelName?.let { modelName ->
                 visibleModelsCache.find { it.modelName == modelName }?.let { model ->
-                    settings.defaultModel = model.toApiChatModel()
+                    settings.defaultSmartModel = model.toApiChatModel()
                     globalModelCombo.selectedItem = modelName
                 }
             }
 
-            config.parsingModel?.model?.modelName?.let { modelName ->
+            config.defaultFastModel?.model?.modelName?.let { modelName ->
                 visibleModelsCache.find { it.modelName == modelName }?.let { model ->
-                    settings.parsingModel = model.toApiChatModel()
+                    settings.defaultFastModel = model.toApiChatModel()
                     parsingModelCombo.selectedItem = modelName
                 }
             }
-            config.imageChatModel?.model?.modelName?.let { modelName ->
+            config.defaultImageModel?.model?.modelName?.let { modelName ->
                 visibleModelsCache.find { it.modelName == modelName }?.let { model ->
-                    settings.imageChatModel = model.toApiChatModel()
+                    settings.defaultImageModel = model.toApiChatModel()
                     imageChatModelCombo.selectedItem = modelName
                 }
             }
@@ -671,17 +671,17 @@ class PlanConfigDialog(
         val selectedGlobalModel = globalModelCombo.selectedItem as? String
         if (selectedGlobalModel != null) {
             val model = visibleModelsCache.find { it.modelName == selectedGlobalModel }
-            settings.defaultModel = model?.toApiChatModel()
+            settings.defaultSmartModel = model?.toApiChatModel()
         }
         val selectedParsingModel = parsingModelCombo.selectedItem as? String
         if (selectedParsingModel != null) {
             val model = visibleModelsCache.find { it.modelName == selectedParsingModel }
-            settings.parsingModel = model?.toApiChatModel()
+            settings.defaultFastModel = model?.toApiChatModel()
         }
         val selectedImageChatModel = imageChatModelCombo.selectedItem as? String
         if (selectedImageChatModel != null) {
             val model = visibleModelsCache.find { it.modelName == selectedImageChatModel }
-            settings.imageChatModel = model?.toApiChatModel()
+            settings.defaultImageModel = model?.toApiChatModel()
         }
         val selectedCognitiveMode = cognitiveModeCombo.selectedItem as String
         settings.cognitiveMode = CognitiveModeStrategies.valueOf(selectedCognitiveMode)

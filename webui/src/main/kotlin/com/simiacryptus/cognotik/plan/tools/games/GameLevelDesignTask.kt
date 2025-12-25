@@ -378,7 +378,7 @@ class GameLevelDesignTask(
             return
         }
 
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
 
@@ -522,7 +522,7 @@ Keep zone descriptions brief - detailed content will be added later.
           """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = parsingChatter
+                parsingChatter = defaultFast
             )
 
             var level = structureAgent.answer(listOf("Create level structure")).obj
@@ -648,7 +648,7 @@ Return the complete level with all encounters filled in.
           """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = parsingChatter
+                parsingChatter = defaultFast
             )
 
             level = encounterAgent.answer(listOf("Design encounters")).obj
@@ -759,7 +759,7 @@ Return the complete level with pacing_curve filled in.
           """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = parsingChatter
+                parsingChatter = defaultFast
             )
 
             level = pacingAgent.answer(listOf("Analyze pacing")).obj
@@ -865,7 +865,7 @@ Return the complete level with collectibles and secrets filled in.
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 level = collectiblesAgent.answer(listOf("Add collectibles and secrets")).obj
@@ -960,7 +960,7 @@ Create comprehensive guidance that helps without patronizing.
           """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = parsingChatter
+                parsingChatter = defaultFast
             )
 
             val guidance = guidanceAgent.answer(listOf("Design player guidance")).obj
@@ -1056,7 +1056,7 @@ Ensure variants maintain the core level design while adjusting challenge.
           """.trimIndent(),
                     model = api,
                     temperature = 0.6,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 val variants = variantsAgent.answer(listOf("Generate difficulty variants")).obj
@@ -1515,6 +1515,7 @@ Ensure variants maintain the core level design while adjusting challenge.
 
         val GameLevelDesign = TaskType(
             "GameLevelDesign",
+            "Games",
             GameLevelDesignTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete game level designs with layout, pacing, and encounters",

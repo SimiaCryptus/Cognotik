@@ -86,8 +86,8 @@ class SoftwareGraphModificationTask(
                     .joinToString("\n")
             },
             model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
-                ?: defaultChatter).getChildClient(task),
-            parsingChatter = parsingChatter,
+                ?: defaultSmart).getChildClient(task),
+            parsingChatter = defaultFast,
             temperature = orchestrationConfig.temperature,
             describer = TaskContextYamlDescriber(orchestrationConfig),
         )

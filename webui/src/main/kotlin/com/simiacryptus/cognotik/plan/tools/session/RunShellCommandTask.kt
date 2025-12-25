@@ -74,7 +74,7 @@ class RunShellCommandTask(
         val markdownTranscript = task.transcript()
         val typeConfig = typeConfig ?: throw RuntimeException()
         val chatter = (typeConfig.model?.let { this.orchestrationConfig.instance(it) }
-            ?: this.defaultChatter).getChildClient(task)
+            ?: this.defaultSmart).getChildClient(task)
         val planTask = this.executionConfig
         val shellCommandActor = CodeAgent(
             name = "RunShellCommand",

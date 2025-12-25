@@ -69,6 +69,8 @@ abstract class ApplicationDirectory(
         .also { log.debug("Initialized WelcomeServlet") }
     open val apiKeyServlet: HttpServlet = ApiKeyServlet()
         .also { log.debug("Initialized ApiKeyServlet") }
+    open val taskConfigServlet: HttpServlet = TaskConfigServlet()
+        .also { log.debug("Initialized TaskConfigServlet") }
 
     open fun authenticatedWebsite(): OAuthBase? = OAuthGoogle(
         redirectUri = "$domainName/oauth2callback",
@@ -145,6 +147,10 @@ abstract class ApplicationDirectory(
         },
         newWebAppContext("/apiKeys", apiKeyServlet).let {
             log.debug("Configuring apiKeys context with authentication")
+            authenticatedWebsite()?.configure(it, true) ?: it
+        },
+        newWebAppContext("/taskConfig", taskConfigServlet).let {
+            log.debug("Configuring taskConfig context with authentication")
             authenticatedWebsite()?.configure(it, true) ?: it
         },
         newWebAppContext("/", welcomeResources, "welcome", welcomeServlet).let {

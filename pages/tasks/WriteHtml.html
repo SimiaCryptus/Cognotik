@@ -1,0 +1,540 @@
+<!-- Image Prompt: Abstract 3D composition of floating web interface elements, glass panels displaying HTML code, and glowing neon nodes connecting them. Deep blue background with cyan and electric blue accents. Cinematic lighting, 8k resolution, unreal engine 5 render style. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WriteHtml - Cognotik Task</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #38bdf8;
+            --accent-secondary: #818cf8;
+            --accent-glow: rgba(56, 189, 248, 0.3);
+            --border-color: #334155;
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            overflow-x: hidden;
+        }
+        /* Typography */
+        h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
+        p { color: var(--text-secondary); }
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+        }
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--accent-primary); }
+        /* Hero */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 8rem 2rem 4rem;
+            background: radial-gradient(circle at 50% 30%, #1e293b 0%, #0f172a 70%);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoNTYsIDE4OSwgMjQ4LCAwLjEpIi8+PC9zdmc+');
+            mask-image: linear-gradient(to bottom, black, transparent);
+            pointer-events: none;
+        }
+        .hero-badge {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+        }
+        .btn-primary {
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        /* Features */
+        .features {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border-color);
+            transition: border-color 0.3s;
+        }
+        .feature-card:hover {
+            border-color: var(--accent-primary);
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-primary);
+            margin-bottom: 1.5rem;
+        }
+        .feature-card h3 { margin-bottom: 0.75rem; color: var(--text-primary); }
+        /* Simulator */
+        .simulator {
+            padding: 6rem 2rem;
+            background: #0b1120;
+        }
+        .sim-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            height: 800px;
+            background: var(--bg-card);
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .sim-sidebar {
+            padding: 2rem;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .form-group label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .form-control {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .sim-main {
+            display: flex;
+            flex-direction: column;
+            background: #0f172a;
+        }
+        .sim-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-card);
+        }
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-btn.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .sim-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .tab-pane {
+            display: none;
+            height: 100%;
+            width: 100%;
+        }
+        .tab-pane.active { display: block; }
+        #preview-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+        #code-editor {
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow: auto;
+            white-space: pre;
+        }
+        #logs-console {
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            color: #10b981;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            overflow: auto;
+        }
+        .log-entry { margin-bottom: 0.5rem; }
+        .log-error { color: #ef4444; }
+        .log-info { color: #3b82f6; }
+        /* Use Cases */
+        .use-cases {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .use-case-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .use-case-item {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        @media (max-width: 768px) {
+            .sim-container { grid-template-columns: 1fr; height: auto; }
+            .sim-sidebar { height: auto; max-height: 400px; }
+            .sim-main { height: 500px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i data-lucide="cpu"></i>
+            <span>Cognotik</span>
+        </div>
+        <nav class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#simulator">Simulator</a>
+            <a href="#use-cases">Use Cases</a>
+        </nav>
+    </header>
+    <section class="hero">
+        <div class="hero-badge">Task: WriteHtml</div>
+        <h1>Web Engineering,<br>Automated.</h1>
+        <p>Generate complete, self-contained HTML documents with embedded CSS, JavaScript, and AI-generated assets in seconds.</p>
+        <a href="#simulator" class="btn-primary">
+            Try the Simulator <i data-lucide="arrow-right"></i>
+        </a>
+    </section>
+    <section id="features" class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="layout"></i></div>
+                <h3>Full Stack Generation</h3>
+                <p>Creates HTML structure, CSS styling, and JavaScript interactivity in a single pass, ensuring cohesive design and functionality.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="package"></i></div>
+                <h3>Self-Contained Output</h3>
+                <p>Generates standalone files with embedded resources. No external dependencies or complex build steps required.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="image"></i></div>
+                <h3>AI Image Integration</h3>
+                <p>Automatically identifies image requirements, generates assets using AI, and embeds them directly into the page.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="code-2"></i></div>
+                <h3>Modern Standards</h3>
+                <p>Produces clean, semantic HTML5 code with responsive CSS Grid/Flexbox layouts and modern ES6+ JavaScript.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="file-json"></i></div>
+                <h3>Context Aware</h3>
+                <p>Can utilize existing templates and related files to maintain consistency with your project's design system.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="check-circle"></i></div>
+                <h3>Auto-Validation</h3>
+                <p>Validates file extensions and structure before writing, ensuring error-free output ready for deployment.</p>
+            </div>
+        </div>
+    </section>
+    <section id="simulator" class="simulator">
+        <div class="sim-container">
+            <div class="sim-sidebar">
+                <h3>Configuration</h3>
+                <div class="form-group">
+                    <label>Target File</label>
+                    <input type="text" class="form-control" id="sim-file" value="landing-page.html">
+                </div>
+                <div class="form-group">
+                    <label>Task Description</label>
+                    <textarea class="form-control" id="sim-desc">Create a modern landing page for a coffee shop called "Neon Brew". Include a hero section with a dark theme, a menu grid, and a contact form.</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Generate Images</label>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="sim-images" checked>
+                        <span style="font-size: 0.9rem; color: var(--text-secondary);">Enable AI Image Generation</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Image Count: <span id="img-count-val">3</span></label>
+                    <input type="range" class="form-control" id="sim-count" min="0" max="10" value="3">
+                </div>
+                <button class="btn-primary" onclick="runSimulation()" style="margin-top: auto; justify-content: center;">
+                    <i data-lucide="play"></i> Generate Page
+                </button>
+            </div>
+            <div class="sim-main">
+                <div class="sim-tabs">
+                    <button class="tab-btn active" onclick="switchTab('preview')">Preview</button>
+                    <button class="tab-btn" onclick="switchTab('code')">Code</button>
+                    <button class="tab-btn" onclick="switchTab('logs')">Logs</button>
+                </div>
+                <div class="sim-content">
+                    <div id="tab-preview" class="tab-pane active">
+                        <iframe id="preview-frame"></iframe>
+                    </div>
+                    <div id="tab-code" class="tab-pane">
+                        <div id="code-editor"></div>
+                    </div>
+                    <div id="tab-logs" class="tab-pane">
+                        <div id="logs-console">
+                            <div class="log-entry">> Ready to generate...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section id="use-cases" class="use-cases">
+        <h2 style="margin-bottom: 2rem;">When to Use</h2>
+        <div class="use-case-list">
+            <div class="use-case-item">
+                <i data-lucide="zap" style="color: var(--accent-primary);"></i>
+                <div>
+                    <h3>Rapid Prototyping</h3>
+                    <p>Quickly spin up landing pages, UI concepts, or mockups to visualize ideas without writing boilerplate code.</p>
+                </div>
+            </div>
+            <div class="use-case-item">
+                <i data-lucide="file-text" style="color: var(--accent-primary);"></i>
+                <div>
+                    <h3>Documentation & Reports</h3>
+                    <p>Generate standalone HTML reports, dashboards, or documentation pages from data summaries.</p>
+                </div>
+            </div>
+            <div class="use-case-item">
+                <i data-lucide="mail" style="color: var(--accent-primary);"></i>
+                <div>
+                    <h3>Marketing Assets</h3>
+                    <p>Create self-contained email templates or campaign landing pages that are easy to distribute and deploy.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        lucide.createIcons();
+        // Simulator Logic
+        const imgCountSlider = document.getElementById('sim-count');
+        const imgCountVal = document.getElementById('img-count-val');
+        imgCountSlider.addEventListener('input', (e) => {
+            imgCountVal.textContent = e.target.value;
+        });
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-` + tabName).classList.add('active');
+        }
+        function log(msg, type = '') {
+            const console = document.getElementById('logs-console');
+            const div = document.createElement('div');
+            div.className = `log-entry ${type === 'error' ? 'log-error' : type === 'info' ? 'log-info' : ''}`;
+            div.textContent = `> ${msg}`;
+            console.appendChild(div);
+            console.scrollTop = console.scrollHeight;
+        }
+        async function runSimulation() {
+            const file = document.getElementById('sim-file').value;
+            const desc = document.getElementById('sim-desc').value;
+            const useImages = document.getElementById('sim-images').checked;
+            const imgCount = document.getElementById('sim-count').value;
+            // Reset
+            document.getElementById('logs-console').innerHTML = '';
+            switchTab('logs');
+            log(`Initializing WriteHtml task for ${file}...`);
+            await new Promise(r => setTimeout(r, 800));
+            log(`Analyzing description: "${desc.substring(0, 30)}..."`);
+            await new Promise(r => setTimeout(r, 1000));
+            log(`Generating HTML structure...`, 'info');
+            await new Promise(r => setTimeout(r, 1200));
+            if (useImages) {
+                log(`Identified ${imgCount} image requirements...`, 'info');
+                for(let i=1; i<=imgCount; i++) {
+                    log(`Generating image ${i}/${imgCount}...`);
+                    await new Promise(r => setTimeout(r, 600));
+                }
+            }
+            log(`Generating CSS styles...`, 'info');
+            await new Promise(r => setTimeout(r, 800));
+            log(`Generating JavaScript interactivity...`, 'info');
+            await new Promise(r => setTimeout(r, 800));
+            log(`Assembling final document...`);
+            // Generate Mock HTML
+            const mockHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Brew</title>
+    <style>
+        body { margin: 0; font-family: sans-serif; background: #111; color: #fff; }
+        .hero {
+            height: 400px;
+            background: linear-gradient(45deg, #222, #000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        h1 { font-size: 3rem; color: #0ff; text-shadow: 0 0 10px #0ff; }
+        .btn {
+            padding: 10px 20px;
+            background: #f0f;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .content { padding: 2rem; text-align: center; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 800px; margin: 0 auto; }
+        .card { background: #222; padding: 1rem; border: 1px solid #333; }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>NEON BREW</h1>
+        <p>The future of coffee is here.</p>
+        <button class="btn" onclick="alert('Order placed!')">Order Now</button>
+    </div>
+    <div class="content">
+        <h2>Our Menu</h2>
+        <div class="grid">
+            <div class="card"><h3>Cyber Latte</h3><p>$5.00</p></div>
+            <div class="card"><h3>Glitch Espresso</h3><p>$3.50</p></div>
+        </div>
+    </div>
+    <script>
+        console.log('Neon Brew initialized');
+    <\/script>
+</body>
+</html>`;
+            document.getElementById('code-editor').textContent = mockHtml;
+            const frame = document.getElementById('preview-frame');
+            frame.contentWindow.document.open();
+            frame.contentWindow.document.write(mockHtml);
+            frame.contentWindow.document.close();
+            log(`Success! File written to ${file}`, 'info');
+            switchTab('preview');
+        }
+    </script>
+</body>
+</html>

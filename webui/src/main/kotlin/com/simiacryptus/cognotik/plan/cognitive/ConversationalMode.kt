@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
@@ -19,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.io.path.Path
 
 /**
  * A cognitive mode that executes tasks based on user input while maintaining conversation history.
@@ -32,8 +34,8 @@ open class ConversationalMode(
 ) : CognitiveMode {
 
   init {
-    require(orchestrationConfig.defaultModel != null) { "Default model must be specified in orchestration config" }
-    require(orchestrationConfig.parsingModel != null) { "Parsing model must be specified in orchestration config" }
+    require(orchestrationConfig.defaultSmartModel != null) { "Default model must be specified in orchestration config" }
+    require(orchestrationConfig.defaultFastModel != null) { "Parsing model must be specified in orchestration config" }
   }
 
   private val messagesLock = Any()
@@ -65,8 +67,8 @@ open class ConversationalMode(
 
   override fun handleUserMessage(userMessage: String, task: SessionTask) {
     log.debug("Handling user message: ${JsonUtil.toJson(userMessage)}")
-    val parserChatter = orchestrationConfig.parsingChatter.getChildClient(task)
-    val defaultChat = this@ConversationalMode.orchestrationConfig.defaultChatter.getChildClient(task)
+    val parserChatter = orchestrationConfig.defaultFast.getChildClient(task)
+    val defaultChat = this@ConversationalMode.orchestrationConfig.defaultSmart.getChildClient(task)
 
     synchronized(messagesLock) {
       messageBuffer.add(userMessage)
@@ -205,7 +207,9 @@ open class ConversationalMode(
           val configName = config.name?.let { " ($it)" } ?: ""
           "* ${taskType.name}$configName:\n  ${
             TaskType.getImpl(orchestrationConfig, taskType).promptSegment().trim().trimIndent().indent("  ")
-          }"
+          }" + (orchestrationConfig.workingDir?.let {root ->
+            "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
+          } ?: "")
         })
         append("\nChoose the most suitable task type and provide details of how it should be executed.")
         if (orchestrationConfig.taskSettings.values.any { it.name != null }) {

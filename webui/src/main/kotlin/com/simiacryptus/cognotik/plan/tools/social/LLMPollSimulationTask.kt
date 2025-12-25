@@ -199,7 +199,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
         val profiles = executionConfig?.respondent_profiles ?: listOf()
         val respondentsPerProfile = executionConfig?.respondents_per_profile ?: 10
         val temperature = executionConfig?.temperature ?: 0.7
-        val api = defaultChatter.getChildClient(task)
+        val api = defaultSmart.getChildClient(task)
 
         val (transcriptLink, transcriptStream) = createTranscriptFile(task)
         val transcriptWriter = transcriptStream?.bufferedWriter()
@@ -1223,6 +1223,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
         private val log: Logger = LoggerFactory.getLogger(LLMPollSimulationTask::class.java)
         val LLMPollSimulation = TaskType(
             "LLMPollSimulation",
+            "Social",
             LLMPollSimulationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Simulate polls and surveys with AI personas",

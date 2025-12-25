@@ -107,7 +107,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
         val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }
         val transcript = task.transcript()
         transcript?.write("# Counterfactual Analysis Transcript\n\n".toByteArray())
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         try {
             val tabs = TabbedDisplay(task)
@@ -269,19 +269,17 @@ ${executionConfig?.control_factors?.joinToString("\n") { "- $it" } ?: "None spec
 5. Consider both short-term and long-term implications
 6. Highlight any assumptions or uncertainties
 7. Provide insights on causal relationships
-
- Provide a comprehensive analysis:
         """.trimIndent()
         transcript?.write("\n### Prompt for $scenarioName\n\n".toByteArray())
         transcript?.write("```\n$prompt\n```\n\n".toByteArray())
 
 
         val chatAgent = ChatAgent(
-            prompt = promptSegment(),
+            prompt = prompt,
             model = api,
         )
 
-        var result: String? = chatAgent.answer(toInput(prompt))
+        var result: String? = chatAgent.answer(listOf("Provide a comprehensive analysis"))
         transcript?.write("### Response for $scenarioName\n\n".toByteArray())
         transcript?.write("${result ?: "(No response)"}\n\n".toByteArray())
         return result ?: ""
@@ -337,18 +335,17 @@ $priorCode
 7. Highlight any surprising or counterintuitive findings
 8. Provide recommendations based on the analysis
 
- Provide a comprehensive comparative analysis:
         """.trimIndent()
         transcript?.write("\n### Comparison Prompt\n\n".toByteArray())
         transcript?.write("```\n$prompt\n```\n\n".toByteArray())
 
 
         val chatAgent = ChatAgent(
-            prompt = promptSegment(),
+            prompt = prompt,
             model = api,
         )
 
-        var result: String? = chatAgent.answer(toInput(prompt))
+        var result: String? = chatAgent.answer(listOf("Provide a comprehensive comparative analysis"))
         transcript?.write("### Comparison Response\n\n".toByteArray())
         transcript?.write("${result ?: "(No response)"}\n\n".toByteArray())
         return result ?: ""
@@ -424,6 +421,7 @@ $priorCode
         private val log: Logger = LoggerFactory.getLogger(CounterfactualAnalysisTask::class.java)
         val CounterfactualAnalysis = TaskType(
             "CounterfactualAnalysis",
+            "Reasoning",
             CounterfactualAnalysisTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Explore what-if scenarios to understand causal relationships and decision impacts",

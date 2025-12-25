@@ -135,7 +135,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
       """.trimMargin()
         )
 
-        val api = defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
         val transcript = task.transcript("constraint_relaxation")
@@ -820,6 +820,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         private val log: Logger = LoggerFactory.getLogger(ConstraintRelaxationTask::class.java)
         val ConstraintRelaxation = TaskType(
             "ConstraintRelaxation",
+            "Reasoning",
             ConstraintRelaxationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Solve over-constrained problems through progressive constraint relaxation",

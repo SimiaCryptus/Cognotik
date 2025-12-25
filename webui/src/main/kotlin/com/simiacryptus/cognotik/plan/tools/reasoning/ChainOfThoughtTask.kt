@@ -121,7 +121,7 @@ class ChainOfThoughtTask(
         log.info("Configuration: maxSteps=$maxSteps, validateSteps=$validateSteps")
 
         val ui = task.ui
-        val api = defaultChatter
+        val api = defaultSmart
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
         // Overview tab
@@ -589,7 +589,7 @@ class ChainOfThoughtTask(
             model = api,
             temperature = 0.3,
             name = "ReasoningStep$stepNumber",
-            parsingChatter = parsingChatter,
+            parsingChatter = defaultFast,
         )
 
         var step: ReasoningStep? = reasoningAgent.answer(listOf(question)).obj.copy(step_number = stepNumber)
@@ -656,7 +656,7 @@ class ChainOfThoughtTask(
             model = api,
             temperature = 0.1,
             name = "StepValidation",
-            parsingChatter = parsingChatter,
+            parsingChatter = defaultFast,
         )
 
         var validation: StepValidation? = validationAgent.answer(listOf("Validate step ${step.step_number}")).obj
@@ -764,6 +764,7 @@ class ChainOfThoughtTask(
         private val log: Logger = LoggerFactory.getLogger(ChainOfThoughtTask::class.java)
         val ChainOfThought = TaskType(
             "ChainOfThought",
+            "Reasoning",
             ChainOfThoughtTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Break down complex problems into explicit reasoning steps",

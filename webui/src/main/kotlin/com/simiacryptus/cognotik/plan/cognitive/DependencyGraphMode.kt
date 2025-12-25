@@ -115,8 +115,8 @@ open class DependencyGraphMode(
                     Only suggest new dependencies that are not already present.
                     Ensure all suggested task IDs exist in the current plan.
                 """.trimIndent(),
-                model = orchestrationConfig.defaultChatter.getChildClient(task),
-                parsingChatter = orchestrationConfig.parsingChatter,
+                model = orchestrationConfig.defaultSmart.getChildClient(task),
+                parsingChatter = orchestrationConfig.defaultFast,
             ).answer(
                 contextData() +
                         listOf(

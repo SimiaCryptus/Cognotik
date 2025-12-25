@@ -148,7 +148,7 @@ class ConstraintSatisfactionTask(
 
 
             val toInput = { it: String -> listOf(it) }
-            val api = defaultChatter ?: return
+            val api = defaultSmart ?: return
             log.info(
                 """
         |Starting Constraint Satisfaction Task:
@@ -491,6 +491,7 @@ Generate the constraint satisfaction solution now:
         private val log: Logger = LoggerFactory.getLogger(ConstraintSatisfactionTask::class.java)
         val ConstraintSatisfaction = TaskType(
             "ConstraintSatisfaction",
+            "Reasoning",
             ConstraintSatisfactionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Solve problems with multiple competing constraints",

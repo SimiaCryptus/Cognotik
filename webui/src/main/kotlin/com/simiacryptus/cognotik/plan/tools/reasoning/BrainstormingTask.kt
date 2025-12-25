@@ -263,8 +263,8 @@ Brainstorming - Generate and analyze multiple solution options
                 inputFileContent
             )
 
-            val api = defaultChatter ?: return
-            val parsingChatter = parsingChatter.getChildClient(task)
+            val api = defaultSmart ?: return
+            val parsingChatter = defaultFast.getChildClient(task)
             val defaultChatter = api.getChildClient(task)
             val brainstormAgent = ParsedAgent(
                 resultClass = BrainstormResult::class.java,
@@ -892,6 +892,7 @@ Provide a well-structured, actionable summary now.
         private val log: Logger = LoggerFactory.getLogger(BrainstormingTask::class.java)
         val Brainstorming = TaskType(
             "Brainstorming",
+            "Reasoning",
             BrainstormingTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate and analyze multiple solution options",

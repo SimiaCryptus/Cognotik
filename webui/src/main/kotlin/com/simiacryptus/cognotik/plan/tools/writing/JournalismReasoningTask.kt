@@ -33,6 +33,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
         private val log: Logger = LoggerFactory.getLogger(JournalismReasoningTask::class.java)
         val JournalismReasoning = TaskType(
             "JournalismReasoning",
+            "Writing",
             JournalismReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Investigate stories through journalistic principles and methods",
@@ -292,7 +293,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
                         "alternativeAngles=$alternativeAngles, assessNewsworthiness=$assessNewsworthiness"
             )
 
-            val api = defaultChatter ?: return
+            val api = defaultSmart ?: return
 
             val tabs = TabbedDisplay(task)
 
@@ -428,7 +429,7 @@ Apply rigorous journalistic standards. Be skeptical but fair.
           """.trimIndent(),
                         model = api,
                         temperature = 0.3,
-                        parsingChatter = parsingChatter
+                        parsingChatter = defaultFast
                     )
 
                     val factChecks = factAgent.answer(listOf("Verify facts")).obj.facts
@@ -557,7 +558,7 @@ Ensure balanced representation of different viewpoints.
           """.trimIndent(),
                         model = api,
                         temperature = 0.5,
-                        parsingChatter = parsingChatter
+                        parsingChatter = defaultFast
                     )
 
                     val perspectives = perspectiveAgent.answer(listOf("Identify perspectives")).obj.sources
@@ -662,7 +663,7 @@ Help readers understand why this story matters and how it fits into the bigger p
           """.trimIndent(),
                         model = api,
                         temperature = 0.5,
-                        parsingChatter = parsingChatter
+                        parsingChatter = defaultFast
                     )
 
                     val context = contextAgent.answer(listOf("Analyze context")).obj
@@ -756,7 +757,7 @@ Be thorough but fair. Distinguish between legitimate perspective and problematic
           """.trimIndent(),
                         model = api,
                         temperature = 0.4,
-                        parsingChatter = parsingChatter
+                        parsingChatter = defaultFast
                     )
 
                     val biasAnalysis = biasAgent.answer(listOf("Analyze biases")).obj
@@ -863,7 +864,7 @@ Consider angles that:
           """.trimIndent(),
                         model = api,
                         temperature = 0.7,
-                        parsingChatter = parsingChatter
+                        parsingChatter = defaultFast
                     )
 
                     val angles = anglesAgent.answer(listOf("Explore angles")).obj.angles
@@ -989,7 +990,7 @@ Prioritize gaps that are most important for understanding the full story.
           """.trimIndent(),
                         model = api,
                         temperature = 0.5,
-                        parsingChatter = parsingChatter
+                        parsingChatter = defaultFast
                     )
 
                     val gaps = gapsAgent.answer(listOf("Find gaps")).obj.gaps

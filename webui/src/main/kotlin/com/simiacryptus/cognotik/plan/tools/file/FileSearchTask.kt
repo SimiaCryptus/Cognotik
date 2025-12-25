@@ -57,12 +57,6 @@ FileSearch - Search for patterns in files and provide results with context
 * Specify whether the pattern is a regex or a substring
 * Specify the number of context lines to include
 * List files (incl glob patterns) to be searched
-Available files:
-${
-        AnalysisTask.getAvailableFiles(
-            root
-        ).joinToString("\n") { "  - $it" }
-    }
 """.trimIndent()
     // run remains the same
 
@@ -335,6 +329,7 @@ ${
 
         val FileSearch = TaskType(
             "FileSearch",
+            "File",
             SearchTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Search project files using patterns with contextual results",

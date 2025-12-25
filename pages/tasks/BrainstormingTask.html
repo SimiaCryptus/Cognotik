@@ -1,0 +1,1853 @@
+<!-- 
+    File Path: webui/src/main/resources/products/brainstorming.html 
+    
+    Image Generation Prompt for Hero Section:
+    "Abstract 3D illustration of a glowing neural network converging into a radiant crystalline lightbulb structure. 
+    The scene is set against a deep void (#0f172a). The nodes are interconnected with electric cyan and neon purple 
+    synaptic lines. The style is hyper-realistic, glassmorphism texture, cinematic lighting, depth of field focusing 
+    on the center convergence point, representing the synthesis of ideas."
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | Brainstorming Task</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            /* Theme Colors */
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            
+            /* Accent Colors - Purple/Violet for Reasoning/Creativity */
+            --accent-primary: #8b5cf6; 
+            --accent-secondary: #06b6d4; /* Cyan */
+            --accent-glow: rgba(139, 92, 246, 0.5);
+            
+            /* Typography */
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-serif: 'Cinzel', serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            
+            /* Spacing */
+            --container-width: 1200px;
+            --header-height: 70px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Utilities */
+        .container {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: var(--header-height);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-secondary);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding-top: calc(var(--header-height) + 80px);
+            padding-bottom: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%);
+            opacity: 0.15;
+            filter: blur(80px);
+            z-index: -1;
+        }
+
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-family: var(--font-serif);
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-text p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            max-width: 500px;
+        }
+
+        .hero-visual {
+            position: relative;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        /* Placeholder for the 3D Image */
+        .hero-visual-placeholder {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1e1b4b, #0f172a);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-secondary);
+        }
+
+        .floating-node {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-secondary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-secondary);
+            animation: float 6s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -20px); }
+        }
+
+        /* Features Grid */
+        .features {
+            padding: 80px 0;
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-primary);
+        }
+
+        .icon-box {
+            width: 50px;
+            height: 50px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-primary);
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Simulator Section */
+        .simulator {
+            padding: 80px 0;
+            scroll-margin-top: 80px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-header h2 {
+            font-family: var(--font-serif);
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .sim-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            height: 700px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Sim Left: Inputs */
+        .sim-inputs {
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.2);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            overflow-y: auto;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-control {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+            font-family: var(--font-sans);
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .input-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        textarea.input-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .range-wrap {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent-primary);
+        }
+
+        .toggle-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: var(--bg-input);
+            border-radius: 20px;
+            transition: 0.3s;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        input[type="checkbox"]:checked + .toggle-switch {
+            background: var(--accent-primary);
+        }
+
+        input[type="checkbox"]:checked + .toggle-switch::after {
+            transform: translateX(24px);
+        }
+
+        /* Sim Right: Outputs */
+        .sim-outputs {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-btn {
+            padding: 15px 25px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: white;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-secondary);
+            border-bottom-color: var(--accent-secondary);
+        }
+
+        .tab-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Output Styling */
+        .log-terminal {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #a5b4fc;
+        }
+
+        .log-line {
+            margin-bottom: 5px;
+            border-left: 2px solid transparent;
+            padding-left: 10px;
+        }
+        
+        .log-line.info { border-color: var(--accent-secondary); }
+        .log-line.success { border-color: #4ade80; color: #86efac; }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .option-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .option-title {
+            font-weight: 700;
+            color: var(--accent-secondary);
+        }
+
+        .option-category {
+            font-size: 0.75rem;
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--accent-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .analysis-col h4 {
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .analysis-list {
+            list-style: none;
+        }
+
+        .analysis-list li {
+            position: relative;
+            padding-left: 15px;
+            margin-bottom: 4px;
+            color: #cbd5e1;
+        }
+
+        .analysis-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--accent-primary);
+        }
+
+        /* Use Cases */
+        .use-cases {
+            padding: 80px 0;
+        }
+
+        .use-case-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .use-case-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+        }
+
+        .check-icon {
+            color: #4ade80;
+            flex-shrink: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .hero-content { grid-template-columns: 1fr; text-align: center; }
+            .hero-text p { margin: 0 auto 30px; }
+            .sim-container { grid-template-columns: 1fr; height: auto; }
+            .sim-inputs { max-height: 400px; }
+            .sim-outputs { height: 600px; }
+        }
+    </style>
+
+    <style>
+        /* =========================================
+           1. Variables & Theme Configuration
+           ========================================= */
+        :root {
+            /* Core Palette - Future/Professional Dark Mode */
+            --bg-dark: #0f172a;       /* Deep Slate */
+            --bg-card: #1e293b;       /* Lighter Slate */
+            --bg-input: #334155;      /* Input Background */
+        
+            /* Typography Colors */
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        
+            /* Accent Colors - Brainstorming Theme (Purple/Cyan) */
+            --accent-primary: #8b5cf6; 
+            --accent-secondary: #06b6d4;
+            --accent-glow: rgba(139, 92, 246, 0.5);
+            --accent-success: #4ade80;
+        
+            /* Fonts */
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-serif: 'Cinzel', serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        
+            /* Layout Dimensions */
+            --container-width: 1200px;
+            --header-height: 70px;
+            --border-radius-lg: 16px;
+            --border-radius-md: 8px;
+        }
+        
+        /* =========================================
+           2. Reset & Base Styles
+           ========================================= */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* =========================================
+           3. Utility Classes
+           ========================================= */
+        .container {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: var(--border-radius-md);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 0 20px var(--accent-glow);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px var(--accent-glow);
+            filter: brightness(1.1);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        /* =========================================
+           4. Navigation
+           ========================================= */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: var(--header-height);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 100%;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        
+        .nav-links a:hover {
+            color: var(--accent-secondary);
+        }
+        
+        /* =========================================
+           5. Hero Section
+           ========================================= */
+        .hero {
+            padding-top: calc(var(--header-height) + 80px);
+            padding-bottom: 100px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Ambient Background Glow */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--accent-primary) 0%, transparent 60%);
+            opacity: 0.12;
+            filter: blur(100px);
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+        
+        .hero-text h1 {
+            font-family: var(--font-serif);
+            font-size: 3.75rem;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            background: linear-gradient(to right, #fff 20%, var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+        
+        .hero-text p {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            max-width: 540px;
+            line-height: 1.7;
+        }
+        
+        /* Hero Visual / 3D Placeholder */
+        .hero-visual {
+            position: relative;
+            height: 450px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .hero-visual-placeholder {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1e1b4b, #0f172a);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-secondary);
+        }
+        
+        /* Floating Animation Elements */
+        .floating-node {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-secondary);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--accent-secondary);
+            animation: float 6s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -20px); }
+        }
+        
+        /* =========================================
+           6. Features Grid
+           ========================================= */
+        .features {
+            padding: 100px 0;
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.8));
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .section-header h2 {
+            font-family: var(--font-serif);
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+        
+        .feature-card {
+            background: var(--bg-card);
+            padding: 32px;
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .icon-box {
+            width: 56px;
+            height: 56px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-primary);
+            margin-bottom: 24px;
+        }
+        
+        .feature-card h3 {
+            margin-bottom: 12px;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        /* =========================================
+           7. Simulator Section
+           ========================================= */
+        .simulator {
+            padding: 100px 0;
+            scroll-margin-top: 80px;
+        }
+        
+        .sim-container {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 0;
+            height: 750px;
+            background: var(--bg-card);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Left Column: Inputs */
+        .sim-inputs {
+            padding: 40px 30px;
+            background: rgba(0, 0, 0, 0.2);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-group {
+            margin-bottom: 28px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .input-control {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius-md);
+            padding: 14px;
+            color: white;
+            font-family: var(--font-sans);
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        
+        .input-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        }
+        
+        textarea.input-control {
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.5;
+        }
+        
+        /* Range Slider */
+        .range-wrap {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-input);
+            border-radius: 3px;
+            appearance: none;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Toggle Switch */
+        .toggle-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 5px 0;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: var(--bg-input);
+            border-radius: 20px;
+            transition: 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        input[type="checkbox"]:checked + .toggle-switch {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        
+        input[type="checkbox"]:checked + .toggle-switch::after {
+            transform: translateX(24px);
+        }
+        
+        /* Right Column: Outputs */
+        .sim-outputs {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: rgba(30, 41, 59, 0.5);
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.3);
+        }
+        
+        .tab-btn {
+            padding: 18px 30px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .tab-btn.active {
+            color: var(--accent-secondary);
+            border-bottom-color: var(--accent-secondary);
+            background: rgba(6, 182, 212, 0.05);
+        }
+        
+        /* Tab Content Areas */
+        .tab-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: none;
+            scrollbar-width: thin;
+            scrollbar-color: var(--bg-input) transparent;
+        }
+        
+        .tab-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .tab-content::-webkit-scrollbar-thumb {
+            background-color: var(--bg-input);
+            border-radius: 4px;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Log Terminal Style */
+        .log-terminal {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #a5b4fc;
+            background: #0f172a;
+            padding: 20px;
+        }
+        
+        .log-line {
+            margin-bottom: 8px;
+            border-left: 2px solid transparent;
+            padding-left: 12px;
+            word-break: break-word;
+        }
+        
+        .log-line.info { border-color: var(--accent-secondary); }
+        .log-line.success { border-color: var(--accent-success); color: #86efac; }
+        
+        /* Option Cards (Output) */
+        .option-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: border-color 0.2s;
+        }
+        
+        .option-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .option-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .option-title {
+            font-weight: 700;
+            color: var(--accent-secondary);
+            font-size: 1.05rem;
+        }
+        
+        .option-category {
+            font-size: 0.7rem;
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-secondary);
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Analysis Grid */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .analysis-col h4 {
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        
+        .analysis-list {
+            list-style: none;
+        }
+        
+        .analysis-list li {
+            position: relative;
+            padding-left: 18px;
+            margin-bottom: 6px;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+        
+        .analysis-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--accent-primary);
+            font-weight: bold;
+        }
+        
+        /* =========================================
+           8. Use Cases Section
+           ========================================= */
+        .use-cases {
+            padding: 80px 0 120px;
+            background: var(--bg-dark);
+        }
+        
+        .use-case-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        
+        .use-case-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+        
+        .use-case-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+        
+        .check-icon {
+            color: var(--accent-success);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .use-case-item h4 {
+            margin-bottom: 6px;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+        
+        /* =========================================
+           9. Responsive Design
+           ========================================= */
+        @media (max-width: 900px) {
+            /* Hero */
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 40px;
+            }
+        
+            .hero-text p {
+                margin: 0 auto 30px;
+            }
+        
+            .hero-visual {
+                height: 350px;
+            }
+        
+            /* Simulator */
+            .sim-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                max-height: none;
+            }
+        
+            .sim-inputs {
+                max-height: none;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        
+            .sim-outputs {
+                height: 600px;
+            }
+        
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .hero-text h1 {
+                font-size: 2.5rem;
+            }
+        
+            .nav-links {
+                display: none; /* In a real app, this would be a hamburger menu */
+            }
+        
+            .tabs {
+                overflow-x: auto;
+            }
+        
+            .tab-btn {
+                padding: 15px 20px;
+            }
+        }
+    </style>
+<!-- Generated Images:
+     - brainstorming-hero.png: Abstract 3D illustration of a glowing neural network converging into a radiant crystalline lightbulb structure. The scene is set against a deep void (#0f172a). The nodes are interconnected with electric cyan and neon purple synaptic lines. The style is hyper-realistic, glassmorphism texture, cinematic lighting, depth of field focusing on the center convergence point, representing the synthesis of ideas.
+     - brainstorming-process-flow.png: A futuristic 3D schematic visualization of a decision process. A single stream of white light enters from the left, splits into multiple distinct neon-colored pathways (purple, cyan, gold) that flow through transparent glass lenses, and then reconverge into a single, intense beam on the right. Set against a dark slate background with faint grid lines. High-tech, clean, isometric perspective.
+     - brainstorming-analysis-abstract.png: A macro 3D render of a "thought node" being analyzed. A complex, floating geometric crystal structure is surrounded by holographic data rings and scanning lasers in cyan and violet. The background is a deep, blurred bokeh of digital noise and dark blue gradients. Represents deep analysis and scrutiny of ideas. Future-professional aesthetic.
+-->
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="container nav-content">
+            <div class="logo">
+                <i data-lucide="brain-circuit" color="#8b5cf6"></i>
+                <span>COGNOTIK</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#simulator">Simulator</a>
+                <a href="#use-cases">Use Cases</a>
+            </div>
+            <a href="#simulator" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">Try Demo</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container hero-content">
+            <div class="hero-text">
+                <h1>Brainstorming Task</h1>
+                <p>Systematically generate diverse solution options and analyze them independently. From creative exploration to strategic decision-making, unlock the power of structured reasoning.</p>
+                <a href="#simulator" class="btn btn-primary">
+                    <span>Launch Simulator</span>
+                    <i data-lucide="arrow-right" size="18"></i>
+                </a>
+            </div>
+            <div class="hero-visual">
+                <img src="brainstorming-hero.png" alt="Abstract 3D illustration of a glowing neural network converging into a radiant crystalline lightbulb structure" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Key Capabilities</h2>
+            </div>
+            
+            <!-- Process Flow Visualization -->
+            <div style="margin-bottom: 40px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                <img src="brainstorming-process-flow.png" alt="Futuristic 3D schematic visualization of a decision process splitting and reconverging" style="width: 100%; display: block;">
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="icon-box">
+                        <i data-lucide="layers"></i>
+                    </div>
+                    <h3>Divergent Generation</h3>
+                    <p>Generates between 3 to 20 distinct options, ensuring a wide breadth of potential solutions from conventional to creative.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-box">
+                        <i data-lucide="microscope"></i>
+                    </div>
+                    <h3>Independent Analysis</h3>
+                    <p>Each option undergoes rigorous scrutiny, evaluating Pros, Cons, Feasibility, Impact, and Risks in isolation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-box">
+                        <i data-lucide="git-merge"></i>
+                    </div>
+                    <h3>Strategic Synthesis</h3>
+                    <p>Automatically compiles a comparative summary, identifying synergies and providing actionable recommendations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-box">
+                        <i data-lucide="sliders"></i>
+                    </div>
+                    <h3>Configurable Depth</h3>
+                    <p>Adjust analysis depth from "Brief" overviews to "Detailed" reports based on your time constraints and needs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Simulator Section -->
+    <section id="simulator" class="simulator">
+        <div class="container">
+            <div class="section-header">
+                <h2>Interactive Simulator</h2>
+                <p style="color: var(--text-secondary);">Configure the agent and watch it reason through your problem.</p>
+            </div>
+
+            <div class="sim-container">
+                <!-- Left: Inputs -->
+                <div class="sim-inputs">
+                    <form id="sim-form" onsubmit="return false;">
+                        <div class="input-group">
+                            <label for="problem">Problem Statement</label>
+                            <textarea id="problem" class="input-control" placeholder="E.g., How can we reduce server costs while maintaining performance?">How can we improve team communication in a remote-first environment?</textarea>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Target Options: <span id="count-val" style="color: var(--accent-secondary);">5</span></label>
+                            <div class="range-wrap">
+                                <input type="range" id="option-count" min="3" max="10" value="5" oninput="document.getElementById('count-val').innerText = this.value">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="categories">Categories (Optional)</label>
+                            <input type="text" id="categories" class="input-control" placeholder="E.g., Technical, Process, HR">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="depth">Analysis Depth</label>
+                            <select id="depth" class="input-control">
+                                <option value="brief">Brief</option>
+                                <option value="moderate" selected>Moderate</option>
+                                <option value="detailed">Detailed</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="toggle-wrap">
+                                <span>Include Creative Options</span>
+                                <input type="checkbox" id="creative" checked style="display:none;">
+                                <div class="toggle-switch"></div>
+                            </label>
+                        </div>
+
+                        <button type="button" class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="runSimulation()">
+                            <i data-lucide="play"></i> Start Brainstorming
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right: Outputs -->
+                <div class="sim-outputs">
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab('logs')">Logs</button>
+                        <button class="tab-btn" onclick="switchTab('options')">Options</button>
+                        <button class="tab-btn" onclick="switchTab('analysis')">Analysis</button>
+                        <button class="tab-btn" onclick="switchTab('summary')">Summary</button>
+                    </div>
+
+                    <div id="tab-logs" class="tab-content active log-terminal">
+                        <div class="log-line info">System ready. Waiting for input...</div>
+                    </div>
+
+                    <div id="tab-options" class="tab-content">
+                        <div style="text-align: center; color: var(--text-secondary); margin-top: 50px;">
+                            <i data-lucide="loader" style="margin-bottom: 10px;"></i>
+                            <p>Run the simulation to generate options.</p>
+                        </div>
+                    </div>
+
+                    <div id="tab-analysis" class="tab-content">
+                        <div style="text-align: center; color: var(--text-secondary); margin-top: 50px;">
+                            <p>Analysis will appear here after options are generated.</p>
+                        </div>
+                    </div>
+
+                    <div id="tab-summary" class="tab-content">
+                        <div style="text-align: center; color: var(--text-secondary); margin-top: 50px;">
+                            <p>Final recommendations will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <div class="section-header">
+                <h2>When to Use</h2>
+            </div>
+            
+            <!-- Analysis Visualization -->
+            <div style="margin-bottom: 40px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); max-height: 300px;">
+                <img src="brainstorming-analysis-abstract.png" alt="Macro 3D render of a thought node being analyzed with holographic data rings" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <i data-lucide="check-circle" class="check-icon"></i>
+                    <div>
+                        <h4>Strategic Planning</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">Exploring market entry strategies or product roadmap directions.</p>
+                    </div>
+                </div>
+                <div class="use-case-item">
+                    <i data-lucide="check-circle" class="check-icon"></i>
+                    <div>
+                        <h4>Technical Architecture</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">Comparing different tech stacks or system design patterns.</p>
+                    </div>
+                </div>
+                <div class="use-case-item">
+                    <i data-lucide="check-circle" class="check-icon"></i>
+                    <div>
+                        <h4>Crisis Management</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">Rapidly generating mitigation strategies for unexpected issues.</p>
+                    </div>
+                </div>
+                <div class="use-case-item">
+                    <i data-lucide="check-circle" class="check-icon"></i>
+                    <div>
+                        <h4>Creative Writing</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">Developing plot points, character arcs, or world-building elements.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Remove active class from all buttons and contents
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            // Add active class to selected
+            const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.innerText.toLowerCase() === tabId || (tabId === 'logs' && b.innerText === 'Logs'));
+            if(btn) btn.classList.add('active');
+            
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        // Logger Utility
+        function log(message, type = 'info') {
+            const terminal = document.getElementById('tab-logs');
+            const line = document.createElement('div');
+            line.className = `log-line ${type}`;
+            const time = new Date().toLocaleTimeString().split(' ')[0];
+            line.innerText = `[${time}] ${message}`;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Mock Data Generator
+        function generateMockData(problem, count, creative) {
+            const options = [];
+            const categories = ['Process', 'Technology', 'Culture', 'Wildcard'];
+            
+            for (let i = 1; i <= count; i++) {
+                const isCreative = creative && i === count; // Make last one creative
+                options.push({
+                    id: i,
+                    title: isCreative ? `Radical Shift: ${problem.split(' ').slice(0,2).join(' ')} Gamification` : `Strategic Initiative ${i}: Optimized Workflow`,
+                    category: categories[i % categories.length],
+                    description: isCreative 
+                        ? "Implement a completely decentralized, token-based reward system to incentivize desired behaviors." 
+                        : "Standardize communication protocols and implement asynchronous daily standups to reduce meeting fatigue.",
+                    pros: ["High potential engagement", "Scalable solution", "Modern approach"],
+                    cons: ["High implementation cost", "Learning curve", "Requires cultural shift"],
+                    feasibility: isCreative ? "Low - Requires significant R&D" : "High - Can start immediately",
+                    impact: "High - Transformative potential",
+                    risks: ["User resistance", "Technical debt"]
+                });
+            }
+            return options;
+        }
+
+        // Simulation Logic
+        async function runSimulation() {
+            const problem = document.getElementById('problem').value;
+            const count = parseInt(document.getElementById('option-count').value);
+            const creative = document.getElementById('creative').checked;
+
+            if (!problem) {
+                alert("Please enter a problem statement.");
+                return;
+            }
+
+            // Reset UI
+            document.getElementById('tab-logs').innerHTML = '';
+            document.getElementById('tab-options').innerHTML = '<div style="text-align:center; padding:20px;"><i data-lucide="loader" class="spin"></i> Generating...</div>';
+            document.getElementById('tab-analysis').innerHTML = '';
+            document.getElementById('tab-summary').innerHTML = '';
+            switchTab('logs');
+
+            // Step 1: Initialization
+            log(`Starting BrainstormingTask for: "${problem.substring(0, 30)}..."`);
+            log(`Configuration: Target=${count}, Creative=${creative}`);
+            await new Promise(r => setTimeout(r, 800));
+
+            // Step 2: Generation
+            log("Generating options via ParsedAgent...", "info");
+            await new Promise(r => setTimeout(r, 1500));
+            
+            const data = generateMockData(problem, count, creative);
+            log(`Generated ${data.length} options.`, "success");
+            
+            // Render Options Tab
+            let optionsHtml = '';
+            data.forEach(opt => {
+                optionsHtml += `
+                    <div class="option-card">
+                        <div class="option-header">
+                            <span class="option-title">#${opt.id} ${opt.title}</span>
+                            <span class="option-category">${opt.category}</span>
+                        </div>
+                        <p style="color: #cbd5e1; font-size: 0.9rem;">${opt.description}</p>
+                    </div>
+                `;
+            });
+            document.getElementById('tab-options').innerHTML = optionsHtml;
+
+            // Step 3: Analysis
+            log("Analyzing options independently...", "info");
+            
+            let analysisHtml = '';
+            for (let i = 0; i < data.length; i++) {
+                await new Promise(r => setTimeout(r, 600)); // Simulate thinking per option
+                log(`Analyzed Option ${i+1}: ${data[i].title}`);
+                
+                analysisHtml += `
+                    <div class="option-card">
+                        <div class="option-header">
+                            <span class="option-title">${data[i].title}</span>
+                        </div>
+                        <div class="analysis-grid">
+                            <div class="analysis-col">
+                                <h4>Pros</h4>
+                                <ul class="analysis-list">
+                                    ${data[i].pros.map(p => `<li>${p}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div class="analysis-col">
+                                <h4>Cons</h4>
+                                <ul class="analysis-list">
+                                    ${data[i].cons.map(c => `<li>${c}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem;">
+                            <span style="color: var(--text-secondary);">Feasibility:</span> <span style="color: #fff;">${data[i].feasibility}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('tab-analysis').innerHTML = analysisHtml;
+
+            // Step 4: Summary
+            log("Synthesizing findings and recommendations...", "info");
+            await new Promise(r => setTimeout(r, 1000));
+            
+            const summaryHtml = `
+                <div class="option-card" style="border-color: var(--accent-primary);">
+                    <h3 style="color: var(--accent-secondary); margin-bottom: 15px;">Executive Summary</h3>
+                    <p style="margin-bottom: 15px;">Based on the analysis of ${count} options, the recommended approach is a hybrid strategy.</p>
+                    
+                    <h4 style="color: white; margin-bottom: 10px;">Top Recommendation</h4>
+                    <p style="margin-bottom: 15px; color: #cbd5e1;"><strong>${data[1].title}</strong> offers the best balance of feasibility and impact. While it requires initial setup, the long-term benefits outweigh the risks.</p>
+                    
+                    <h4 style="color: white; margin-bottom: 10px;">Alternative (High Risk/Reward)</h4>
+                    <p style="color: #cbd5e1;"><strong>${data[data.length-1].title}</strong> presents a unique opportunity for innovation if resources allow for R&D.</p>
+                </div>
+            `;
+            document.getElementById('tab-summary').innerHTML = summaryHtml;
+            
+            log("Brainstorming Session Complete.", "success");
+            switchTab('summary'); // Auto switch to summary at end
+        }
+    </script>
+
+    <script>
+        // Initialize Lucide Icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+        
+        /**
+         * Handles tab switching in the Simulator Output section.
+         * @param {string} tabId - The identifier for the tab to switch to (e.g., 'logs', 'options').
+         */
+        function switchTab(tabId) {
+            // Remove active class from all buttons and contents
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+            // Add active class to selected button
+            // Matches based on the text content or specific ID mapping
+            const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => 
+                b.innerText.toLowerCase() === tabId || (tabId === 'logs' && b.innerText === 'Logs')
+            );
+            if(btn) btn.classList.add('active');
+        
+            // Show the specific tab content
+            const tabContent = document.getElementById(`tab-${tabId}`);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+        }
+        
+        /**
+         * Appends a message to the log terminal.
+         * @param {string} message - The text to display.
+         * @param {string} type - The style class ('info', 'success', 'error').
+         */
+        function log(message, type = 'info') {
+            const terminal = document.getElementById('tab-logs');
+            if (!terminal) return;
+        
+            const line = document.createElement('div');
+            line.className = `log-line ${type}`;
+            const time = new Date().toLocaleTimeString().split(' ')[0];
+            line.innerText = `[${time}] ${message}`;
+            terminal.appendChild(line);
+        
+            // Auto-scroll to bottom
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        
+        /**
+         * Generates mock data for the simulation based on user inputs.
+         * @param {string} problem - The problem statement.
+         * @param {number} count - Number of options to generate.
+         * @param {boolean} creative - Whether to include creative options.
+         * @returns {Array} Array of option objects.
+         */
+        function generateMockData(problem, count, creative) {
+            const options = [];
+            const categories = ['Process', 'Technology', 'Culture', 'Wildcard'];
+        
+            for (let i = 1; i <= count; i++) {
+                const isCreative = creative && i === count; // Make last one creative if enabled
+        
+                // Generate dynamic content based on the problem input
+                const problemKeywords = problem.split(' ').slice(0, 2).join(' ');
+        
+                options.push({
+                    id: i,
+                    title: isCreative 
+                        ? `Radical Shift: ${problemKeywords} Gamification` 
+                        : `Strategic Initiative ${i}: Optimized Workflow`,
+                    category: categories[i % categories.length],
+                    description: isCreative 
+                        ? "Implement a completely decentralized, token-based reward system to incentivize desired behaviors." 
+                        : "Standardize communication protocols and implement asynchronous daily standups to reduce meeting fatigue.",
+                    pros: ["High potential engagement", "Scalable solution", "Modern approach"],
+                    cons: ["High implementation cost", "Learning curve", "Requires cultural shift"],
+                    feasibility: isCreative ? "Low - Requires significant R&D" : "High - Can start immediately",
+                    impact: "High - Transformative potential",
+                    risks: ["User resistance", "Technical debt"]
+                });
+            }
+            return options;
+        }
+        
+        /**
+         * Main function to run the simulation.
+         * Orchestrates the UI updates, delays, and data rendering.
+         */
+        async function runSimulation() {
+            // Get Input Values
+            const problemInput = document.getElementById('problem');
+            const countInput = document.getElementById('option-count');
+            const creativeInput = document.getElementById('creative');
+        
+            const problem = problemInput.value;
+            const count = parseInt(countInput.value);
+            const creative = creativeInput.checked;
+        
+            // Validation
+            if (!problem) {
+                alert("Please enter a problem statement.");
+                return;
+            }
+        
+            // Reset UI for new run
+            const logTab = document.getElementById('tab-logs');
+            const optionsTab = document.getElementById('tab-options');
+            const analysisTab = document.getElementById('tab-analysis');
+            const summaryTab = document.getElementById('tab-summary');
+        
+            logTab.innerHTML = '';
+            optionsTab.innerHTML = '<div style="text-align:center; padding:20px;"><i data-lucide="loader" class="spin"></i> Generating...</div>';
+            analysisTab.innerHTML = '';
+            summaryTab.innerHTML = '';
+        
+            // Re-initialize icons for the loader
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        
+            // Switch to logs to show progress
+            switchTab('logs');
+        
+            // Step 1: Initialization
+            log(`Starting BrainstormingTask for: "${problem.substring(0, 30)}..."`);
+            log(`Configuration: Target=${count}, Creative=${creative}`);
+            await new Promise(r => setTimeout(r, 800));
+        
+            // Step 2: Generation
+            log("Generating options via ParsedAgent...", "info");
+            await new Promise(r => setTimeout(r, 1500));
+        
+            const data = generateMockData(problem, count, creative);
+            log(`Generated ${data.length} options.`, "success");
+        
+            // Render Options Tab
+            let optionsHtml = '';
+            data.forEach(opt => {
+                optionsHtml += `
+                    <div class="option-card">
+                        <div class="option-header">
+                            <span class="option-title">#${opt.id} ${opt.title}</span>
+                            <span class="option-category">${opt.category}</span>
+                        </div>
+                        <p style="color: #cbd5e1; font-size: 0.9rem;">${opt.description}</p>
+                    </div>
+                `;
+            });
+            optionsTab.innerHTML = optionsHtml;
+        
+            // Step 3: Analysis
+            log("Analyzing options independently...", "info");
+        
+            let analysisHtml = '';
+            for (let i = 0; i < data.length; i++) {
+                await new Promise(r => setTimeout(r, 600)); // Simulate thinking time per option
+                log(`Analyzed Option ${i+1}: ${data[i].title}`);
+        
+                analysisHtml += `
+                    <div class="option-card">
+                        <div class="option-header">
+                            <span class="option-title">${data[i].title}</span>
+                        </div>
+                        <div class="analysis-grid">
+                            <div class="analysis-col">
+                                <h4>Pros</h4>
+                                <ul class="analysis-list">
+                                    ${data[i].pros.map(p => `<li>${p}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div class="analysis-col">
+                                <h4>Cons</h4>
+                                <ul class="analysis-list">
+                                    ${data[i].cons.map(c => `<li>${c}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem;">
+                            <span style="color: var(--text-secondary);">Feasibility:</span> <span style="color: #fff;">${data[i].feasibility}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            analysisTab.innerHTML = analysisHtml;
+        
+            // Step 4: Summary
+            log("Synthesizing findings and recommendations...", "info");
+            await new Promise(r => setTimeout(r, 1000));
+        
+            const summaryHtml = `
+                <div class="option-card" style="border-color: var(--accent-primary);">
+                    <h3 style="color: var(--accent-secondary); margin-bottom: 15px;">Executive Summary</h3>
+                    <p style="margin-bottom: 15px;">Based on the analysis of ${count} options, the recommended approach is a hybrid strategy.</p>
+            
+                    <h4 style="color: white; margin-bottom: 10px;">Top Recommendation</h4>
+                    <p style="margin-bottom: 15px; color: #cbd5e1;"><strong>${data[1].title}</strong> offers the best balance of feasibility and impact. While it requires initial setup, the long-term benefits outweigh the risks.</p>
+            
+                    <h4 style="color: white; margin-bottom: 10px;">Alternative (High Risk/Reward)</h4>
+                    <p style="color: #cbd5e1;"><strong>${data[data.length-1].title}</strong> presents a unique opportunity for innovation if resources allow for R&D.</p>
+                </div>
+            `;
+            summaryTab.innerHTML = summaryHtml;
+        
+            log("Brainstorming Session Complete.", "success");
+        
+            // Auto switch to summary at end for better UX
+            switchTab('summary');
+        }
+        
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Range Slider Value Update
+            const rangeInput = document.getElementById('option-count');
+            const countVal = document.getElementById('count-val');
+        
+            if(rangeInput && countVal) {
+                rangeInput.addEventListener('input', (e) => {
+                    countVal.innerText = e.target.value;
+                });
+            }
+        });
+    </script>
+</body>
+</html>

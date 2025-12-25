@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -91,7 +90,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
                 writeTranscriptHeader(stream, subject, transformations, format)
             }
 
-            val api = defaultChatter ?: return
+            val api = defaultSmart ?: return
             log.info("Starting Structural Invariant Analysis: $subject")
 
             val tabbedDisplay = TabbedDisplay(task)

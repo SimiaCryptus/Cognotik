@@ -179,7 +179,7 @@ CRITICAL REQUIREMENTS:
 - You can modify the style of the modules (squares) but keep their positions
 - Background elements should not obscure the QR pattern""",
                 name = "QRCodeArtist",
-                model = orchestrationConfig.imageChatChatter,
+                model = orchestrationConfig.defaultImage,
             )
 
             var styledImage: BufferedImage? = null
@@ -517,6 +517,7 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
         private val log: Logger = LoggerFactory.getLogger(GenerateQRImageTask::class.java)
         val GenerateQRImage = TaskType(
             "GenerateQRImage",
+            "Writing",
             GenerateQRImageTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate artistic QR codes with AI styling",

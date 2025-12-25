@@ -127,6 +127,7 @@ class KnowledgeIndexingTask(
 
         val KnowledgeIndexing = TaskType( // TODO: This should be automatically done as needed during embedding search
             "KnowledgeIndexing",
+            "Knowledge",
             KnowledgeIndexingTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Index content for semantic search capabilities",

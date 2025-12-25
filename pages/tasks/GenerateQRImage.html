@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<!-- Prompt: A high-quality, abstract 3D illustration representing a QR code transforming into digital art. Glowing neon nodes in cyan and purple connecting to form a square matrix, dissolving into artistic brush strokes on the edges. Dark background with volumetric lighting. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenerateQRImage - Cognotik</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #38bdf8; /* Cyan */
+            --accent-secondary: #a855f7; /* Purple */
+            --accent-glow: rgba(56, 189, 248, 0.2);
+            --success: #22c55e;
+            --error: #ef4444;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-serif: 'Cinzel', serif;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        a { color: var(--accent-primary); text-decoration: none; transition: color 0.2s; }
+        a:hover { color: var(--accent-secondary); }
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .nav-links a:hover { color: var(--text-primary); }
+        /* Hero */
+        .hero {
+            padding: 8rem 2rem 4rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+        }
+        .hero h1 {
+            font-family: var(--font-serif);
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+        .hero-visual {
+            width: 100%;
+            height: 400px;
+            background: radial-gradient(circle at center, var(--bg-card), var(--bg-dark));
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .hero-visual::after {
+            content: "3D Visualization Placeholder";
+            color: var(--text-secondary);
+            font-family: var(--font-serif);
+            opacity: 0.5;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 20px var(--accent-glow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px var(--accent-glow);
+            color: white;
+        }
+        /* Features */
+        .features {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-primary);
+        }
+        .feature-icon {
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+        }
+        .feature-card h3 { margin-bottom: 0.5rem; }
+        .feature-card p { color: var(--text-secondary); font-size: 0.9rem; }
+        /* Simulator */
+        .simulator {
+            padding: 4rem 2rem;
+            background: rgba(0,0,0,0.2);
+        }
+        .sim-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            background: var(--bg-card);
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 600px;
+        }
+        .sim-sidebar {
+            padding: 2rem;
+            background: rgba(0,0,0,0.2);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-input);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            box-sizing: border-box;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        .range-wrap {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        input[type="range"] { flex-grow: 1; }
+        .sim-main {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-btn.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        .tab-content {
+            display: none;
+            flex-grow: 1;
+            background: #000;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+        .tab-content.active { display: block; }
+        .log-entry { margin-bottom: 0.5rem; }
+        .log-info { color: var(--accent-primary); }
+        .log-success { color: var(--success); }
+        .log-error { color: var(--error); }
+        .log-warn { color: #fbbf24; }
+        .visual-preview {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                #1e293b,
+                #1e293b 10px,
+                #0f172a 10px,
+                #0f172a 20px
+            );
+        }
+        #qr-canvas {
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            max-width: 100%;
+        }
+        /* Workflow */
+        .workflow {
+            padding: 4rem 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .step-list {
+            list-style: none;
+            counter-reset: step;
+        }
+        .step-item {
+            position: relative;
+            padding-left: 4rem;
+            margin-bottom: 2rem;
+        }
+        .step-item::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+        .step-item::after {
+            content: "";
+            position: absolute;
+            left: 1.2rem;
+            top: 2.6rem;
+            bottom: -1.5rem;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .step-item:last-child::after { display: none; }
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 2rem;
+            background: var(--bg-card);
+        }
+        .use-cases-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        @media (max-width: 768px) {
+            .sim-container { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i data-lucide="cpu"></i> Cognotik
+        </div>
+        <nav class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#demo">Simulator</a>
+        </nav>
+    </header>
+    <section class="hero">
+        <h1>Artistic QR Code Generator</h1>
+        <p>Creates stylized QR codes using AI image processing while maintaining scannability. Transform functional codes into brand assets.</p>
+        <div class="hero-visual">
+            <!-- Placeholder for 3D Image -->
+            <i data-lucide="qr-code" style="width: 64px; height: 64px; color: var(--accent-primary); opacity: 0.8;"></i>
+        </div>
+        <a href="#demo" class="cta-button">Try the Simulator</a>
+    </section>
+    <section id="features" class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <i data-lucide="wand-2" class="feature-icon"></i>
+                <h3>AI-Powered Styling</h3>
+                <p>Transforms standard QR codes into artistic images using natural language prompts and AI image generation.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="scan-line" class="feature-icon"></i>
+                <h3>Scannability Guarantee</h3>
+                <p>Automated verification loop ensures the artistic QR code remains readable by devices before finalizing.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="shield-check" class="feature-icon"></i>
+                <h3>High Error Correction</h3>
+                <p>Generates codes with H-level error correction (30%) to allow for significant artistic modification without data loss.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="refresh-cw" class="feature-icon"></i>
+                <h3>Adaptive Retries</h3>
+                <p>Automatically retries with conservative settings if the initial artistic attempt fails verification.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="image" class="feature-icon"></i>
+                <h3>Context Aware</h3>
+                <p>Can use reference images to guide the artistic style, ensuring brand consistency.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="file-output" class="feature-icon"></i>
+                <h3>Standard Output</h3>
+                <p>Produces standard PNG/JPG files ready for digital marketing or print.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="simulator">
+        <div class="sim-container">
+            <div class="sim-sidebar">
+                <h3>Configuration</h3>
+                <div class="form-group">
+                    <label>QR Content</label>
+                    <input type="text" id="qr_content" class="form-control" value="https://cognotik.com">
+                </div>
+                <div class="form-group">
+                    <label>Style Directive</label>
+                    <textarea id="style_directive" class="form-control" rows="3">Cyberpunk city with neon lights, blue and purple color scheme</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Output Filename</label>
+                    <input type="text" id="filename" class="form-control" value="qr_art.png">
+                </div>
+                <div class="form-group">
+                    <label>QR Size (px): <span id="size-val">500</span></label>
+                    <div class="range-wrap">
+                        <input type="range" id="qr_size" min="200" max="1000" step="50" value="500">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Max Retries: <span id="retry-val">3</span></label>
+                    <div class="range-wrap">
+                        <input type="range" id="max_retries" min="1" max="5" step="1" value="3">
+                    </div>
+                </div>
+                <button class="cta-button" onclick="runSimulation()" style="width: 100%; text-align: center;">Generate QR</button>
+            </div>
+            <div class="sim-main">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('visuals')">Visuals</button>
+                    <button class="tab-btn" onclick="switchTab('logs')">Logs</button>
+                    <button class="tab-btn" onclick="switchTab('code')">Config JSON</button>
+                </div>
+                <div id="tab-visuals" class="tab-content active" style="display: flex; flex-direction: column; align-items: center;">
+                    <div class="visual-preview" style="width: 100%; height: 400px; border-radius: 8px; overflow: hidden;">
+                        <canvas id="qr-canvas" width="500" height="500" style="display: none;"></canvas>
+                        <div id="placeholder-text" style="color: var(--text-secondary);">Click "Generate QR" to start</div>
+                    </div>
+                </div>
+                <div id="tab-logs" class="tab-content">
+                    <div id="log-container">
+                        <div class="log-entry log-info">> System ready. Waiting for input...</div>
+                    </div>
+                </div>
+                <div id="tab-code" class="tab-content">
+                    <pre><code id="config-code" style="color: #a5b4fc;">// Configuration will appear here</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section id="workflow" class="workflow">
+        <h2 style="text-align: center; margin-bottom: 3rem;">How It Works</h2>
+        <ul class="step-list">
+            <li class="step-item">
+                <h3>Configuration</h3>
+                <p>User provides the data to encode and a natural language description of the desired artistic style.</p>
+            </li>
+            <li class="step-item">
+                <h3>Base Generation</h3>
+                <p>The system generates a standard QR code with High (H) error correction, providing 30% redundancy for artistic modification.</p>
+            </li>
+            <li class="step-item">
+                <h3>AI Styling</h3>
+                <p>An Image Processing Agent applies the requested style to the QR code, preserving the position of key modules.</p>
+            </li>
+            <li class="step-item">
+                <h3>Verification Loop</h3>
+                <p>The system attempts to decode the styled image. If verification fails, it retries with more conservative settings until a scannable code is produced.</p>
+            </li>
+        </ul>
+    </section>
+    <section id="use-cases" class="use-cases">
+        <div class="use-cases-container">
+            <h2 style="margin-bottom: 2rem;">Use Cases</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Marketing Campaigns</h3>
+                    <p>Create branded QR codes for posters, billboards, and social media that align with visual identity.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Product Packaging</h3>
+                    <p>Integrate QR codes seamlessly into packaging design without breaking the aesthetic.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Digital Art</h3>
+                    <p>Generate interactive art pieces that link to portfolios, crypto wallets, or hidden content.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+        // UI Logic
+        const sizeSlider = document.getElementById('qr_size');
+        const sizeVal = document.getElementById('size-val');
+        sizeSlider.addEventListener('input', (e) => sizeVal.textContent = e.target.value);
+        const retrySlider = document.getElementById('max_retries');
+        const retryVal = document.getElementById('retry-val');
+        retrySlider.addEventListener('input', (e) => retryVal.textContent = e.target.value);
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabName).style.display = (tabName === 'visuals' ? 'flex' : 'block');
+            event.target.classList.add('active');
+        }
+        function log(msg, type = 'info') {
+            const container = document.getElementById('log-container');
+            const div = document.createElement('div');
+            div.className = `log-entry log-${type}`;
+            div.textContent = `> ${msg}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+        async function runSimulation() {
+            const content = document.getElementById('qr_content').value;
+            const style = document.getElementById('style_directive').value;
+            const size = document.getElementById('qr_size').value;
+            const retries = document.getElementById('max_retries').value;
+            const filename = document.getElementById('filename').value;
+            // Update Config Tab
+            const config = {
+                task_type: "GenerateQRImage",
+                files: [filename],
+                qr_content: content,
+                style_directive: style,
+                qr_size: parseInt(size),
+                max_retries: parseInt(retries)
+            };
+            document.getElementById('config-code').textContent = JSON.stringify(config, null, 2);
+            // Reset UI
+            document.getElementById('log-container').innerHTML = '';
+            document.getElementById('placeholder-text').style.display = 'none';
+            const canvas = document.getElementById('qr-canvas');
+            canvas.style.display = 'block';
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 500, 500);
+            switchTab('logs');
+            // Simulation Steps
+            log(`Starting GenerateQRImageTask...`);
+            await delay(800);
+            log(`Step 1: Generating Base QR Code (Error Correction Level H)`, 'info');
+            await delay(1000);
+            drawBaseQR(ctx);
+            log(`Base QR generated. Verifying...`, 'info');
+            await delay(500);
+            log(`✓ Base QR code verified successfully`, 'success');
+            log(`Step 2: Applying Artistic Style: "${style.substring(0, 30)}..."`, 'info');
+            await delay(1500);
+            // Simulate Attempt 1
+            log(`#### Attempt 1 of ${retries}`, 'warn');
+            log(`Calling ImageProcessingAgent...`, 'info');
+            await delay(2000);
+            drawStyledQR(ctx, style);
+            switchTab('visuals'); // Show result
+            log(`Step 3: Verifying Styled QR Code`, 'info');
+            await delay(1000);
+            // Random success/fail simulation
+            const success = Math.random() > 0.3;
+            if (success) {
+                log(`✓ Verification successful! QR code is readable.`, 'success');
+                log(`Task Complete. Saved to ${filename}`, 'success');
+            } else {
+                log(`✗ Verification failed. Content mismatch.`, 'error');
+                if (retries > 1) {
+                    log(`Retrying with more conservative settings...`, 'warn');
+                    await delay(1000);
+                    log(`#### Attempt 2 of ${retries}`, 'warn');
+                    drawStyledQR(ctx, style, true); // More conservative
+                    log(`✓ Verification successful! QR code is readable.`, 'success');
+                    log(`Task Complete. Saved to ${filename}`, 'success');
+                } else {
+                    log(`⚠️ Warning: Final QR code may not be scannable`, 'error');
+                }
+            }
+        }
+        function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+        function drawBaseQR(ctx) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 500, 500);
+            ctx.fillStyle = '#000000';
+            // Draw finder patterns
+            ctx.fillRect(50, 50, 100, 100);
+            ctx.fillRect(350, 50, 100, 100);
+            ctx.fillRect(50, 350, 100, 100);
+            // Random noise for data
+            for(let i=0; i<100; i++) {
+                ctx.fillRect(Math.random()*400+50, Math.random()*400+50, 10, 10);
+            }
+        }
+        function drawStyledQR(ctx, style, conservative = false) {
+            // Overlay colors based on style keywords
+            ctx.globalCompositeOperation = 'source-atop';
+            const gradient = ctx.createLinearGradient(0, 0, 500, 500);
+            if (style.toLowerCase().includes('fire')) {
+                gradient.addColorStop(0, 'red');
+                gradient.addColorStop(1, 'orange');
+            } else if (style.toLowerCase().includes('forest')) {
+                gradient.addColorStop(0, 'green');
+                gradient.addColorStop(1, 'darkgreen');
+            } else {
+                gradient.addColorStop(0, '#38bdf8'); // Cyan
+                gradient.addColorStop(1, '#a855f7'); // Purple
+            }
+            ctx.fillStyle = gradient;
+            ctx.globalAlpha = conservative ? 0.5 : 0.8;
+            ctx.fillRect(0, 0, 500, 500);
+            // Reset
+            ctx.globalAlpha = 1.0;
+            ctx.globalCompositeOperation = 'source-over';
+        }
+    </script>
+</body>
+</html>
