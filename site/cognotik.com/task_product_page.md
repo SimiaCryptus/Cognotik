@@ -68,6 +68,24 @@ Use the `task_type_docs.md` to populate the page content:
 
 ## 4. Technical Implementation Standards
 
+
+#### Directory Structure
+```text
+/site
+  ├── assets/
+  │   ├── data/
+  │   │   └── tasks.json          <-- Centralized Metadata
+  │   ├── scripts/
+  │   │   └── components/
+  │   │       └── CognotikHeader.js  <-- Reusable Web Component
+  │   └── styles/
+  │       └── main.css            <-- Shared variables & layout styles
+  ├── AnalysisTask.html
+  ├── BrainstormingTask.html
+  ├── CrawlerAgentTask.html
+  └── FileSearch.html
+```
+
 *   **Single File:** The output must be a single `.html` file containing HTML, CSS, and JS.
 *   **CSS Variables:** Define a `:root` block for easy theming.
     ```css
@@ -79,3 +97,111 @@ Use the `task_type_docs.md` to populate the page content:
     ```
 *   **No External Heavy Libs:** Do not require `npm install`. Use CDN links for Fonts (Google Fonts) or Icons (FontAwesome) if necessary, but prefer inline SVGs.
 *   **Responsive:** The Simulator must stack vertically on mobile devices.
+
+
+---
+
+### 2. Data Design: `tasks.json`
+
+This file serves as the single source of truth for the navigation menu. Adding a new task page in the future will only require adding an entry here.
+
+**Structure:**
+```json
+{
+  "siteName": "Cognotik",
+  "navigation": [
+    {
+      "label": "Home",
+      "url": "/index.html",
+      "type": "link"
+    },
+    {
+      "label": "Examples",
+      "type": "dropdown",
+      "items": [
+        {
+          "id": "analysis",
+          "label": "Analysis Task",
+          "url": "/pages/tasks/AnalysisTask.html",
+          "description": "Process inquiries without modifying files."
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+### 3. Component Design: `<cognotik-header>`
+
+We will utilize standard **HTML Web Components (Custom Elements API)** to create a header that can be dropped into any page.
+
+**Key Features:**
+1.  **Asynchronous Loading:** On `connectedCallback`, the component fetches `tasks.json`.
+2.  **Active State Highlighting:** The component accepts an attribute (e.g., `current-page="analysis"`) to visually highlight the active task in the menu.
+3.  **Shadow DOM:** Encapsulates the header styles so they don't bleed into the specific page content, while allowing global theme variables to pass through.
+
+**Component Interface:**
+```html
+<!-- Usage in HTML pages -->
+<cognotik-header current-page="crawler"></cognotik-header>
+```
+
+**Logic Flow (Pseudo-code):**
+1.  Initialize Shadow DOM.
+2.  Fetch `/assets/data/tasks.json`.
+3.  Parse JSON.
+4.  Generate HTML Template:
+    *   Create Logo/Brand area.
+    *   Loop through `navigation` array.
+    *   If item is `dropdown`, generate a sub-menu.
+    *   Check `current-page` attribute against JSON `id`s to apply `.active` CSS class.
+5.  Inject generated HTML + Component-specific CSS into Shadow DOM.
+
+---
+
+### 4. Page Integration Strategy
+
+To integrate the new design into a page, follow these steps to load assets and configure the menubar.
+
+#### Step 1: Load Assets
+Include the shared CSS and the Web Component script in the `<head>` of your HTML file. Adjust the paths based on your file's location relative to the `assets` folder.
+
+
+```html
+<head>
+    <!-- ... meta tags ... -->
+
+    <!-- Load Shared Styles -->
+    <link rel="stylesheet" href="assets/styles/main.css">
+
+    <!-- Load Component Script -->
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+```
+
+#### Step 2: Use the Menubar
+Insert the `<cognotik-header>` tag at the beginning of the `<body>`.
+
+**Configuration:**
+*   **Tag:** `<cognotik-header>`
+*   **Attribute `current-page`:** Set this to the `id` of the task (as defined in `tasks.json`) to highlight the active tab.
+
+**Example:**
+```html
+
+
+<body>
+
+    <!-- Active state for Analysis Task -->
+    <cognotik-header current-page="analysis"></cognotik-header>
+
+    <!-- Page Specific Content -->
+    <main class="task-container">
+        <h1>Analysis Task</h1>
+        <!-- ... -->
+    </main>
+
+</body>
+```
