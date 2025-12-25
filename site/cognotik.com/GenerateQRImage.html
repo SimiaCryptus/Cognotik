@@ -11,6 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -36,38 +38,6 @@
         }
         a { color: var(--accent-primary); text-decoration: none; transition: color 0.2s; }
         a:hover { color: var(--accent-secondary); }
-        /* Header */
-        header {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            padding: 1rem 2rem;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 100;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-        }
-        .logo {
-            font-weight: 700;
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-        }
-        .nav-links a {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        .nav-links a:hover { color: var(--text-primary); }
         /* Hero */
         .hero {
             padding: 8rem 2rem 4rem;
@@ -321,16 +291,7 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">
-            <i data-lucide="cpu"></i> Cognotik
-        </div>
-        <nav class="nav-links">
-            <a href="#features">Features</a>
-            <a href="#workflow">Workflow</a>
-            <a href="#demo">Simulator</a>
-        </nav>
-    </header>
+    <cognotik-header current-page="generate_qr_image"></cognotik-header>
     <section class="hero">
         <h1>Artistic QR Code Generator</h1>
         <p>Creates stylized QR codes using AI image processing while maintaining scannability. Transform functional codes into brand assets.</p>

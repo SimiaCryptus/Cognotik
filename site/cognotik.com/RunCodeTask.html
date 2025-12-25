@@ -13,6 +13,8 @@
     
     <!-- Icons: FontAwesome CDN for UI icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         /* 
@@ -118,95 +120,17 @@
         
         .text-muted { color: var(--text-muted); }
         
-        /* =========================================
-           2. Header & Navigation (Glassmorphism)
-           ========================================= */
-        .glass-nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: var(--nav-height);
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
         
-        .nav-container {
-            width: 100%;
-            max-width: var(--container-width);
-            padding: 0 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
         
-        .logo-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
         
-        .logo-icon {
-            color: var(--accent-primary);
-            font-size: 1.5rem;
-            filter: drop-shadow(0 0 5px var(--accent-glow));
-        }
         
-        .nav-menu {
-            display: flex;
-            gap: 32px;
-            align-items: center;
-        }
         
-        .nav-link {
-            font-size: 0.95rem;
-            color: var(--text-muted);
-            font-weight: 500;
-            position: relative;
-        }
         
-        .nav-link:hover {
-            color: var(--accent-primary);
-        }
         
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: -4px;
-            left: 0;
-            background-color: var(--accent-primary);
-            transition: width var(--transition-fast);
-        }
         
-        .nav-link:hover::after {
-            width: 100%;
-        }
         
-        .cta-link {
-            color: var(--accent-primary);
-            border: 1px solid var(--accent-primary);
-            padding: 8px 16px;
-            border-radius: var(--radius-sm);
-            transition: var(--transition-fast);
-        }
         
-        .cta-link:hover {
-            background: var(--accent-glow);
-            color: #fff;
-        }
         
-        .cta-link::after { display: none; } /* Remove underline for button-link */
         
         /* =========================================
            3. Hero Section
@@ -941,20 +865,7 @@
       "Abstract 3D illustration of a glowing digital terminal interface, floating code syntax fragments in neon cyan and gold, dark slate background, glassmorphism style, high-tech automation concept."
     -->
 
-    <!-- A. Header & Navigation -->
-    <header class="glass-nav">
-        <div class="nav-container">
-            <div class="logo-wrapper">
-                <i class="fa-solid fa-brain logo-icon"></i>
-                <span class="logo-text">Cognotik</span>
-            </div>
-            <nav class="nav-menu">
-                <a href="#features" class="nav-link">Features</a>
-                <a href="#workflow" class="nav-link">Workflow</a>
-                <a href="#simulator" class="nav-link cta-link">Try Simulator</a>
-            </nav>
-        </div>
-    </header>
+    <cognotik-header current-page="run_code"></cognotik-header>
 
     <main>
         <!-- B. Hero Section -->
@@ -972,7 +883,7 @@
                 </div>
                 <div class="hero-visual">
                     <!-- 3D Illustration: Hero Terminal -->
-                    <img src="runcode-hero-terminal.png" 
+                    <img src="assets/images/runcode-hero-terminal.png"
                          alt="Abstract 3D illustration of a futuristic command center interface with a glowing holographic terminal and floating code syntax" 
                          class="hero-image floating-anim">
                 </div>
@@ -988,7 +899,7 @@
             
             <!-- Visual Highlight: Secure Sandbox -->
             <div class="feature-showcase-container">
-                <img src="secure-sandbox-environment.png" 
+                <img src="assets/images/secure-sandbox-environment.png"
                      alt="Conceptual 3D render of a secure crystalline sandbox environment containing code structures" 
                      class="feature-showcase-image">
             </div>
@@ -1151,7 +1062,7 @@
             
             <!-- Visual Highlight: Pipeline Flow -->
             <div class="workflow-visual-container">
-                <img src="execution-pipeline-flow.png" 
+                <img src="assets/images/execution-pipeline-flow.png"
                      alt="Sleek isometric 3D visualization of a four-step digital workflow pipeline" 
                      class="workflow-image">
             </div>

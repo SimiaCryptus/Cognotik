@@ -14,6 +14,7 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         :root {
@@ -70,48 +71,11 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
             gap: 2rem;
         }
 
-        /* --- Header --- */
-        header {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding: 1rem 0;
-        }
 
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-weight: 700;
-            font-size: 1.25rem;
-            letter-spacing: -0.02em;
-        }
 
-        .logo svg {
-            width: 32px;
-            height: 32px;
-            color: var(--accent-primary);
-        }
 
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-        }
 
-        .nav-links a:hover {
-            color: var(--accent-secondary);
-            text-shadow: 0 0 8px var(--accent-secondary);
-        }
 
         /* --- Hero Section --- */
         .hero {
@@ -595,60 +559,12 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
             width: 100%;
         }
         
-        /* =========================================
-           3. Header & Navigation
-           ========================================= */
-        header {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--glass-border);
-            padding: 1rem 0;
-            transition: all var(--transition-speed);
-        }
         
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
         
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-weight: 700;
-            font-size: 1.25rem;
-            letter-spacing: -0.02em;
-            color: var(--text-main);
-        }
         
-        .logo svg {
-            width: 32px;
-            height: 32px;
-            color: var(--accent-primary);
-            filter: drop-shadow(0 0 5px var(--accent-glow));
-        }
         
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-        }
         
-        .nav-links a {
-            font-size: 0.95rem;
-            font-weight: 500;
-            color: var(--text-muted);
-        }
         
-        .nav-links a:hover {
-            color: var(--accent-secondary);
-            text-shadow: 0 0 8px var(--accent-cyan-glow);
-        }
         
         /* =========================================
            4. Hero Section
@@ -1233,26 +1149,12 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
 <body>
 
     <!-- Header -->
-    <header>
-        <div class="container nav-content">
-            <div class="logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-                <span>Cognotik</span>
-            </div>
-            <nav class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#simulator">Simulator</a>
-                <a href="#use-cases">Use Cases</a>
-            </nav>
-        </div>
-    </header>
+    <cognotik-header current-page="game_theory"></cognotik-header>
 
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-visual">
-            <img src="game-theory-hero.png" alt="Abstract 3D visualization of strategic game theory with glowing nodes and payoff matrices" style="width: 100%; height: 100%; object-fit: cover;">
+            <img src="assets/images/game-theory-hero.png" alt="Abstract 3D visualization of strategic game theory with glowing nodes and payoff matrices" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
         <div class="container">
             <div class="hero-content">
@@ -1277,7 +1179,7 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
                     </div>
                     <h3>Nash Equilibria</h3>
                     <p>Identifies pure and mixed strategy equilibria where no player can benefit by unilaterally deviating.</p>
-                    <img src="nash-equilibrium-concept.png" alt="Abstract 3D art representing Nash Equilibrium balance" style="width: 100%; height: auto; border-radius: 4px; margin-top: 1rem; opacity: 0.9;">
+                    <img src="assets/images/nash-equilibrium-concept.png" alt="Abstract 3D art representing Nash Equilibrium balance" style="width: 100%; height: auto; border-radius: 4px; margin-top: 1rem; opacity: 0.9;">
                 </div>
                 <!-- Feature 2 -->
                 <div class="feature-card">
@@ -1416,7 +1318,7 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
                             <h4>Ready to Analyze</h4>
                             <p>Configure the game scenario on the left and click "Run Analysis" to generate insights.</p>
                         </div>
-                        <img src="decision-tree-visualization.png" alt="Isometric 3D representation of a strategic decision tree" style="width: 100%; height: auto; border-radius: 8px; margin-top: 1rem; opacity: 0.9; border: 1px solid rgba(255,255,255,0.1);">
+                        <img src="assets/images/decision-tree-visualization.png" alt="Isometric 3D representation of a strategic decision tree" style="width: 100%; height: auto; border-radius: 8px; margin-top: 1rem; opacity: 0.9; border: 1px solid rgba(255,255,255,0.1);">
                     </div>
 
                     <div id="matrix" class="tab-content">

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cognotik | Decision Tree Agent</title>
     <meta name="description" content="Build interpretable, LLM-driven symbolic decision trees for complex data analysis.">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
         :root {
             --primary: #2563eb;
@@ -56,41 +58,10 @@
             padding: 4rem 0;
         }
 
-        /* Header */
-        header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
 
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
 
-        .logo {
-            font-weight: 800;
-            font-size: 1.5rem;
-            color: var(--primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
 
-        .nav-links a {
-            margin-left: 2rem;
-            text-decoration: none;
-            color: var(--text-light);
-            font-weight: 500;
-            transition: color 0.2s;
-        }
 
-        .nav-links a:hover { color: var(--primary); }
 
         /* Hero */
         .hero {
@@ -393,52 +364,12 @@
             padding: 5rem 0;
         }
         
-        /* =========================================
-           4. Header & Navigation
-           ========================================= */
-        header {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
         
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
         
-        .logo {
-            font-weight: 800;
-            font-size: 1.5rem;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
         
-        .logo svg {
-            color: var(--primary);
-        }
         
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-        }
         
-        .nav-links a {
-            color: var(--text-muted);
-            font-weight: 500;
-            font-size: 0.95rem;
-        }
         
-        .nav-links a:hover {
-            color: var(--primary);
-        }
         
         /* =========================================
            5. Hero Section
@@ -799,21 +730,7 @@
 </head>
 <body>
 
-    <header>
-        <div class="container">
-            <nav>
-                <a href="#" class="logo">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"></path><path d="M8.5 8.5a2.5 2.5 0 0 1 0 5"></path><path d="M15.5 15.5a2.5 2.5 0 0 1 0-5"></path></svg>
-                    Cognotik
-                </a>
-                <div class="nav-links">
-                    <a href="#features">Features</a>
-                    <a href="#demo">Live Demo</a>
-                    <a href="#docs">Documentation</a>
-                </div>
-            </nav>
-        </div>
-    </header>
+    <cognotik-header current-page="decision_tree"></cognotik-header>
 
     <main>
         <section class="hero">
@@ -822,7 +739,7 @@
                 <p>The <strong>DecisionTreeTask</strong> combines the semantic understanding of Large Language Models with the mathematical rigor of Information Gain algorithms to build interpretable, executable decision trees.</p>
                 <a href="#demo" class="btn btn-primary">Try the Simulation</a>
                 <div style="margin-top: 3rem;">
-                    <img src="decision-tree-hero.png" alt="High-tech 3D illustration of a decision tree structure growing upwards with glowing nodes" style="max-width: 100%; height: auto; border-radius: 1rem; box-shadow: var(--shadow);">
+                    <img src="assets/images/decision-tree-hero.png" alt="High-tech 3D illustration of a decision tree structure growing upwards with glowing nodes" style="max-width: 100%; height: auto; border-radius: 1rem; box-shadow: var(--shadow);">
                 </div>
             </div>
         </section>
@@ -831,7 +748,7 @@
             <div class="container">
                 <div class="features-grid">
                     <div class="feature-card">
-                        <img src="semantic-splitting-diagram.png" alt="Vector illustration of semantic text splitting logic" style="width: 100%; height: auto; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <img src="assets/images/semantic-splitting-diagram.png" alt="Vector illustration of semantic text splitting logic" style="width: 100%; height: auto; border-radius: 0.5rem; margin-bottom: 1.5rem;">
                         <h3>Semantic Splitting</h3>
                         <p>Unlike traditional trees that only handle numbers, our agent understands text. It generates rules like <code>description contains "error"</code> or <code>sku matches "^[A-Z]-123"</code>.</p>
                     </div>
@@ -843,7 +760,7 @@
                         <p>The LLM proposes the rules, but the data decides. We calculate Entropy and Information Gain for every proposal to ensure the tree is statistically sound.</p>
                     </div>
                     <div class="feature-card">
-                        <img src="tree-to-code-compiler.png" alt="Illustration of decision tree logic converting to Kotlin code" style="width: 100%; height: auto; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <img src="assets/images/tree-to-code-compiler.png" alt="Illustration of decision tree logic converting to Kotlin code" style="width: 100%; height: auto; border-radius: 0.5rem; margin-bottom: 1.5rem;">
                         <h3>Code Generation</h3>
                         <p>The final output isn't just a report—it's a compiled Kotlin function ready to be dropped into your production codebase.</p>
                     </div>

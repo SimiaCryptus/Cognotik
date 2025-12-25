@@ -1,0 +1,166 @@
+{
+  "siteName": "Cognotik",
+  "navigation": [
+    {
+        "label": "IntelliJ Plugin",
+        "url": "intellij-plugin.html",
+        "type": "link"
+    },
+    {
+      "label": "Reasoning",
+      "type": "dropdown",
+      "items": [
+        {
+          "id": "decisiontree",
+          "label": "Decision Tree Task",
+          "url": "DecisionTreeTask.html",
+          "description": "Navigate complex decision logic."
+        },
+        {
+          "id": "geneticoptimization",
+          "label": "Genetic Optimization Task",
+          "url": "GeneticOptimizationTask.html",
+          "description": "Optimize solutions using genetic algorithms."
+        },
+        {
+          "id": "subplanning",
+          "label": "Sub-Planning Task",
+          "url": "SubPlanningTask.html",
+          "description": "Break down tasks into sub-plans."
+        },
+        {
+          "id": "selfhealing",
+          "label": "Self-Healing Task",
+          "url": "SelfHealingTask.html",
+          "description": "Implement self-repairing systems."
+        },
+        {
+          "id": "runcode",
+          "label": "Run Code Task",
+          "url": "RunCodeTask.html",
+          "description": "Execute and validate code snippets."
+        },
+        {
+          "id": "brainstorming",
+          "label": "Brainstorming Task",
+          "url": "BrainstormingTask.html",
+          "description": "Generate creative ideas and solutions."
+        },
+        {
+          "id": "finitestatemachine",
+          "label": "Finite State Machine Task",
+          "url": "FiniteStateMachineTask.html",
+          "description": "Model and analyze finite state machines."
+        },
+        {
+          "id": "gametheory",
+          "label": "Game Theory Task",
+          "url": "GameTheoryTask.html",
+          "description": "Analyze strategic interactions using game theory."
+        }
+      ]
+    },
+    {
+      "label": "Files",
+      "type": "dropdown",
+      "items": [
+        {
+          "id": "analysis",
+          "label": "Analysis Task",
+          "url": "AnalysisTask.html",
+          "description": "Process inquiries without modifying files."
+        },
+        {
+          "id": "filemodification",
+          "label": "File Modification",
+          "url": "FileModification.html",
+          "description": "Modify existing files based on requirements."
+        },
+        {
+          "id": "filesearch",
+          "label": "File Search",
+          "url": "FileSearch.html",
+          "description": "Search across project files using regex."
+        },
+        {
+          "id": "illustratedocument",
+          "label": "Illustrate Document",
+          "url": "IllustrateDocument.html",
+          "description": "Generate illustrations for documents."
+        },
+        {
+          "id": "dataingest",
+          "label": "Data Ingest Task",
+          "url": "DataIngest.html",
+          "description": "Ingest and process various data formats."
+        },
+        {
+          "id": "crawleragent",
+          "label": "Crawler Agent Task",
+          "url": "CrawlerAgentTask.html",
+          "description": "Automate web crawling and data extraction."
+        },
+        {
+          "id": "imagegeneration",
+          "label": "Image Generation Task",
+          "url": "GenerateImage.html",
+          "description": "Generate images based on text prompts."
+        },
+        {
+          "id": "writehtml",
+          "label": "HTML Writing Task",
+          "url": "WriteHtml.html",
+          "description": "Generate and modify HTML content."
+        }
+      ]
+    },
+    {
+      "label": "Writing",
+      "type": "dropdown",
+      "items": [
+        {
+          "id": "presentation",
+          "label": "Generate Presentation",
+          "url": "GeneratePresentation.html",
+          "description": "Create presentation slides from content."
+        },
+        {
+          "id": "spritesheet",
+          "label": "Generate Sprite Sheet",
+          "url": "GenerateSpriteSheet.html",
+          "description": "Combine images into a sprite sheet."
+        },
+        {
+          "id": "qrimage",
+          "label": "Generate QR Image",
+          "url": "GenerateQRImage.html",
+          "description": "Create QR codes from text or URLs."
+        },
+        {
+          "id": "narrative",
+          "label": "Narrative Generation",
+          "url": "NarrativeGenerationTask.html",
+          "description": "Generate narrative content."
+        },
+        {
+          "id": "tablecompilation",
+          "label": "Table Compilation",
+          "url": "TableCompilationTask.html",
+          "description": "Compile data into structured tables."
+        },
+        {
+          "id": "imagetable",
+          "label": "Image Table Creation",
+          "url": "ImageTable.html",
+          "description": "Create tables populated with images."
+        },
+        {
+          "id": "neurallayer",
+          "label": "Neural Network Layer Task",
+          "url": "NeuralNetworkLayerTask.html",
+          "description": "Design and analyze neural network layers."
+        }
+      ]
+    }
+  ]
+}

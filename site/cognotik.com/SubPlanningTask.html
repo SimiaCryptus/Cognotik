@@ -13,6 +13,8 @@
 
     <!-- Icons (Lucide/Feather via CDN for demo purposes) -->
     <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <!-- 
     IMAGE GENERATION PROMPT:
@@ -917,27 +919,7 @@
 <body>
 
     <!-- Navigation -->
-    <header class="glass-nav fixed-top">
-        <div class="container nav-container">
-            <div class="logo">
-                <div class="logo-icon">
-                    <i data-feather="cpu"></i>
-                </div>
-                <span class="logo-text">Cognotik <span class="text-accent">SubPlanning</span></span>
-            </div>
-            <nav class="main-nav">
-                <ul>
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="#workflow">Workflow</a></li>
-                    <li><a href="#use-cases">Use Cases</a></li>
-                    <li><a href="#demo" class="btn-nav">Live Demo</a></li>
-                </ul>
-            </nav>
-            <div class="mobile-menu-toggle">
-                <i data-feather="menu"></i>
-            </div>
-        </div>
-    </header>
+    <cognotik-header current-page="sub_planning"></cognotik-header>
 
     <!-- Hero Section -->
     <section class="hero-section">
@@ -955,7 +937,7 @@
                 </div>
             </div>
             <div class="hero-visual">
-                <img src="subplanning-hero-recursive-nodes.png" alt="Abstract 3D recursive neural network nodes representing sub-planning" class="hero-img">
+                <img src="assets/images/subplanning-hero-recursive-nodes.png" alt="Abstract 3D recursive neural network nodes representing sub-planning" class="hero-img">
             </div>
         </div>
     </section>
@@ -1004,7 +986,7 @@
             </div>
             
             <div class="workflow-visual-container">
-                <img src="workflow-pipeline-schematic.png" alt="3D isometric visualization of cognitive execution pipeline" class="workflow-img">
+                <img src="assets/images/workflow-pipeline-schematic.png" alt="3D isometric visualization of cognitive execution pipeline" class="workflow-img">
             </div>
 
             <div class="workflow-stepper">
@@ -1155,7 +1137,7 @@
             </div>
             
             <div class="use-case-visual-container">
-                <img src="cognitive-architecture-abstract.png" alt="Abstract geometric composition representing organized complexity" class="use-case-img">
+                <img src="assets/images/cognitive-architecture-abstract.png" alt="Abstract geometric composition representing organized complexity" class="use-case-img">
             </div>
 
             <div class="cards-grid">

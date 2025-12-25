@@ -23,6 +23,7 @@ Style: Cyberpunk meets clean architectural blueprint.
     
     <!-- Icons: FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         /* CSS Variables and Base Styles will be injected here */
@@ -136,96 +137,18 @@ Style: Cyberpunk meets clean architectural blueprint.
             display: none !important;
         }
         
-        /* =========================================
-           2. Header & Navigation
-           ========================================= */
-        .glass-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: var(--header-height);
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-        }
         
-        .nav-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
         
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: var(--text-primary);
-        }
         
-        .logo-icon {
-            color: var(--accent-primary);
-            font-size: 1.5rem;
-        }
         
-        .logo-sub {
-            color: var(--accent-secondary);
-            font-weight: 400;
-            font-size: 0.9em;
-            margin-left: 4px;
-        }
         
-        .main-nav {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
         
-        .nav-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 500;
-            transition: var(--transition-fast);
-        }
         
-        .nav-link:hover {
-            color: var(--accent-primary);
-        }
         
-        .nav-cta {
-            background: rgba(56, 189, 248, 0.1);
-            color: var(--accent-primary);
-            padding: 8px 16px;
-            border-radius: var(--radius-full);
-            text-decoration: none;
-            font-weight: 600;
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            transition: var(--transition-fast);
-        }
         
-        .nav-cta:hover {
-            background: var(--accent-primary);
-            color: var(--bg-dark);
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
-        }
         
-        .mobile-menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
         
+
         /* =========================================
            3. Hero Section
            ========================================= */
@@ -974,23 +897,7 @@ Style: Cyberpunk meets clean architectural blueprint.
 <body>
 
     <!-- Navigation Header -->
-    <header class="glass-header">
-        <div class="container nav-container">
-            <div class="logo">
-                <i class="fa-solid fa-network-wired logo-icon"></i>
-                <span class="logo-text">Cognotik <span class="logo-sub">FSM</span></span>
-            </div>
-            <nav class="main-nav">
-                <a href="#features" class="nav-link">Features</a>
-                <a href="#workflow" class="nav-link">Workflow</a>
-                <a href="#use-cases" class="nav-link">Use Cases</a>
-                <a href="#simulator" class="nav-cta">Try Simulator</a>
-            </nav>
-            <button class="mobile-menu-toggle" aria-label="Toggle Menu">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-        </div>
-    </header>
+    <cognotik-header current-page="finite_state_machine"></cognotik-header>
 
     <main>
         <!-- Hero Section -->
@@ -1014,7 +921,7 @@ Style: Cyberpunk meets clean architectural blueprint.
                 <div class="hero-visual">
                     <!-- 3D Abstract Illustration -->
                     <div class="visual-container">
-                        <img src="fsm-hero-illustration.png"
+                        <img src="assets/images/fsm-hero-illustration.png"
                              alt="Abstract 3D illustration of a Finite State Machine with glowing nodes and connections in a cyberpunk architectural style" 
                              class="hero-illustration">
                     </div>
@@ -1032,7 +939,7 @@ Style: Cyberpunk meets clean architectural blueprint.
                 
                 <!-- Feature Highlight Visual -->
                 <div class="feature-highlight-visual">
-                    <img src="system-validation-isometric.png"
+                    <img src="assets/images/system-validation-isometric.png"
                          alt="Isometric 3D render representing system validation, edge case detection, and error state repair" 
                          class="validation-illustration">
                 </div>
@@ -1226,7 +1133,7 @@ Style: Cyberpunk meets clean architectural blueprint.
                 
                 <!-- Workflow Visual -->
                 <div class="workflow-visual-container">
-                    <img src="logic-pipeline-flow.png"
+                    <img src="assets/images/logic-pipeline-flow.png"
                          alt="Abstract visualization of a data processing pipeline transforming chaotic inputs into structured logic" 
                          class="pipeline-illustration">
                 </div>
@@ -1336,23 +1243,7 @@ Style: Cyberpunk meets clean architectural blueprint.
             // 1. Navigation & UI Logic
             // ==========================================
         
-            // Mobile Menu Toggle
-            const menuToggle = document.querySelector('.mobile-menu-toggle');
-            const mainNav = document.querySelector('.main-nav');
         
-            if (menuToggle && mainNav) {
-                menuToggle.addEventListener('click', () => {
-                    mainNav.classList.toggle('active');
-                    const icon = menuToggle.querySelector('i');
-                    if (mainNav.classList.contains('active')) {
-                        icon.classList.remove('fa-bars');
-                        icon.classList.add('fa-xmark');
-                    } else {
-                        icon.classList.remove('fa-xmark');
-                        icon.classList.add('fa-bars');
-                    }
-                });
-            }
         
             // Smooth Scrolling for Anchor Links
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -1362,12 +1253,6 @@ Style: Cyberpunk meets clean architectural blueprint.
                     const targetElement = document.querySelector(targetId);
             
                     if (targetElement) {
-                        // Close mobile menu if open
-                        if (mainNav.classList.contains('active')) {
-                            mainNav.classList.remove('active');
-                            menuToggle.querySelector('i').classList.remove('fa-xmark');
-                            menuToggle.querySelector('i').classList.add('fa-bars');
-                        }
         
                         window.scrollTo({
                             top: targetElement.offsetTop - 80, // Offset for fixed header

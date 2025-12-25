@@ -7,6 +7,8 @@
     <title>WriteHtml - Cognotik Task</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -301,17 +303,7 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">
-            <i data-lucide="cpu"></i>
-            <span>Cognotik</span>
-        </div>
-        <nav class="nav-links">
-            <a href="#features">Features</a>
-            <a href="#simulator">Simulator</a>
-            <a href="#use-cases">Use Cases</a>
-        </nav>
-    </header>
+    <cognotik-header current-page="write_html"></cognotik-header>
     <section class="hero">
         <div class="hero-badge">Task: WriteHtml</div>
         <h1>Web Engineering,<br>Automated.</h1>

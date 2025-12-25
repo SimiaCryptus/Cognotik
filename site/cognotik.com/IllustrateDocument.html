@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -445,23 +447,7 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
-                <path d="M12 12 2.1 12a10.1 10.1 0 0 0 1.6 4.3"></path>
-                <path d="M12 12v9.9a10 10 0 0 0 4.3-1.6"></path>
-            </svg>
-            Cognotik
-        </div>
-        <nav>
-            <ul>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#simulator">Simulator</a></li>
-                <li><a href="#use-cases">Use Cases</a></li>
-            </ul>
-        </nav>
-    </header>
+    <cognotik-header current-page="illustrate_document"></cognotik-header>
     <section class="hero">
         <h1>Illustrate Document</h1>
         <p class="subtitle">Intelligently analyze document content and generate contextually appropriate images to enhance understanding and visual appeal.</p>

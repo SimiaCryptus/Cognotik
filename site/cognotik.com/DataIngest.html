@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DataIngest - Cognotik Task</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -220,16 +221,7 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">
-            <i data-lucide="cpu"></i> Cognotik
-        </div>
-        <nav>
-            <a href="#features">Features</a>
-            <a href="#simulator">Simulator</a>
-            <a href="#use-cases">Use Cases</a>
-        </nav>
-    </header>
+    <cognotik-header current-page="data_ingest"></cognotik-header>
     <section class="hero">
         <h1>Data Ingest</h1>
         <p>Iteratively parse unstructured logs into structured data. Automates the creation of regex parsers for log files using LLM-driven pattern discovery.</p>

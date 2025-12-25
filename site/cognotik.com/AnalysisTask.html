@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -56,36 +58,6 @@
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 0 25px rgba(56, 189, 248, 0.5);
-        }
-        /* Header */
-        nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding: 1rem 0;
-        }
-        .nav-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .logo {
-            font-weight: 700;
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-        }
-        .nav-links a:hover {
-            color: var(--accent-primary);
         }
         /* Hero */
         .hero {
@@ -296,22 +268,7 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <nav>
-        <div class="container nav-content">
-            <div class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-                Cognotik
-            </div>
-            <div class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#demo">Simulator</a>
-                <a href="#use-cases">Use Cases</a>
-            </div>
-        </div>
-    </nav>
+    <cognotik-header current-page="analysis"></cognotik-header>
     <!-- Hero -->
     <!-- Prompt: A futuristic, glowing magnifying glass focusing on a network of code nodes, deep blue background with cyan data streams. High-tech, abstract 3D render. -->
     <header class="hero container">

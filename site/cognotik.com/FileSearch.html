@@ -9,6 +9,8 @@
      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
      <script src="https://unpkg.com/lucide@latest"></script>
+     <link rel="stylesheet" href="assets/styles/main.css">
+     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
      <style>
          :root {
              --bg-dark: #0f172a;
@@ -43,19 +45,6 @@
          /* Layout */
          .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
          section { padding: 6rem 0; }
-         /* Header */
-         header {
-             position: fixed; top: 0; width: 100%; z-index: 100;
-             background: rgba(15, 23, 42, 0.8);
-             backdrop-filter: blur(12px);
-             border-bottom: 1px solid rgba(255,255,255,0.1);
-             padding: 1rem 0;
-         }
-         .nav-content { display: flex; justify-content: space-between; align-items: center; }
-         .logo { font-weight: 700; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
-         .nav-links { display: flex; gap: 2rem; }
-         .nav-links a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; font-size: 0.9rem; }
-         .nav-links a:hover { color: var(--accent-primary); }
          /* Hero */
          .hero {
              min-height: 90vh; display: flex; align-items: center;
@@ -144,19 +133,7 @@
      </style>
 </head>
 <body>
-     <!-- Header -->
-     <header>
-         <div class="container nav-content">
-             <div class="logo">
-                 <i data-lucide="search-code"></i> Cognotik
-             </div>
-             <nav class="nav-links">
-                 <a href="#features">Features</a>
-                 <a href="#simulator">Simulator</a>
-                 <a href="#use-cases">Use Cases</a>
-             </nav>
-         </div>
-     </header>
+     <cognotik-header current-page="filesearch"></cognotik-header>
      <!-- Hero -->
      <section class="hero">
          <div class="container">

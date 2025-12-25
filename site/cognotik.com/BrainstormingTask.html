@@ -18,6 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -1264,20 +1265,7 @@
 <body>
 
     <!-- Navigation -->
-    <nav>
-        <div class="container nav-content">
-            <div class="logo">
-                <i data-lucide="brain-circuit" color="#8b5cf6"></i>
-                <span>COGNOTIK</span>
-            </div>
-            <div class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#simulator">Simulator</a>
-                <a href="#use-cases">Use Cases</a>
-            </div>
-            <a href="#simulator" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">Try Demo</a>
-        </div>
-    </nav>
+    <cognotik-header current-page="brainstorming"></cognotik-header>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -1291,7 +1279,7 @@
                 </a>
             </div>
             <div class="hero-visual">
-                <img src="brainstorming-hero.png" alt="Abstract 3D illustration of a glowing neural network converging into a radiant crystalline lightbulb structure" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="assets/images/brainstorming-hero.png" alt="Abstract 3D illustration of a glowing neural network converging into a radiant crystalline lightbulb structure" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
         </div>
     </section>
@@ -1305,7 +1293,7 @@
             
             <!-- Process Flow Visualization -->
             <div style="margin-bottom: 40px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                <img src="brainstorming-process-flow.png" alt="Futuristic 3D schematic visualization of a decision process splitting and reconverging" style="width: 100%; display: block;">
+                <img src="assets/images/brainstorming-process-flow.png" alt="Futuristic 3D schematic visualization of a decision process splitting and reconverging" style="width: 100%; display: block;">
             </div>
 
             <div class="features-grid">
@@ -1438,7 +1426,7 @@
             
             <!-- Analysis Visualization -->
             <div style="margin-bottom: 40px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); max-height: 300px;">
-                <img src="brainstorming-analysis-abstract.png" alt="Macro 3D render of a thought node being analyzed with holographic data rings" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="assets/images/brainstorming-analysis-abstract.png" alt="Macro 3D render of a thought node being analyzed with holographic data rings" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
 
             <div class="use-case-list">

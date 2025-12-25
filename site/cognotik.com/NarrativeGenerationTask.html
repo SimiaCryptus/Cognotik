@@ -12,6 +12,8 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     
     <style>
         :root {
@@ -81,48 +83,12 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         .grid-2 { grid-template-columns: 1fr 1fr; }
         .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 
-        /* Header */
-        header {
-            background: rgba(15, 17, 21, 0.95);
-            backdrop-filter: blur(10px);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
 
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 70px;
-        }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
 
-        .logo i { color: var(--accent-gold); }
 
-        .nav-links {
-            display: flex;
-            gap: var(--spacing-md);
-        }
 
-        .nav-links a {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-        }
 
-        .nav-links a:hover { color: var(--accent-gold); }
 
         /* Hero Section */
         .hero {
@@ -658,73 +624,14 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         }
         
-        /* =========================================
-           3. Header & Navigation
-           ========================================= */
-        header {
-            background: rgba(15, 17, 21, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            transition: var(--transition);
-        }
         
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 70px;
-        }
         
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--text-primary);
-        }
         
-        .logo i {
-            color: var(--accent-gold);
-        }
         
-        .nav-links {
-            display: flex;
-            gap: var(--spacing-md);
-        }
         
-        .nav-links a {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-            position: relative;
-        }
         
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: -5px;
-            left: 0;
-            background-color: var(--accent-gold);
-            transition: var(--transition);
-        }
         
-        .nav-links a:hover {
-            color: var(--accent-gold);
-        }
         
-        .nav-links a:hover::after {
-            width: 100%;
-        }
         
         /* =========================================
            4. Hero Section
@@ -1350,22 +1257,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
 </head>
 <body>
 
-    <!-- Navigation -->
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">
-                    <i class="fas fa-brain"></i> COGNOTIK
-                </div>
-                <div class="nav-links">
-                    <a href="#features">Features</a>
-                    <a href="#workflow">Workflow</a>
-                    <a href="#demo">Demo</a>
-                    <a href="#specs">Specs</a>
-                </div>
-            </nav>
-        </div>
-    </header>
+    <cognotik-header current-page="narrative"></cognotik-header>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -1379,7 +1271,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
                 </div>
             </div>
             <div class="hero-visual">
-                <img src="narrative-generation-hero.png" alt="Surreal concept art of a book with glowing code forming a fantasy landscape" class="hero-image" style="max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);">
+                <img src="assets/images/narrative-generation-hero.png" alt="Surreal concept art of a book with glowing code forming a fantasy landscape" class="hero-image" style="max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);">
             </div>
         </div>
     </section>
@@ -1608,7 +1500,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             <!-- Scene Tab -->
             <div id="tab-scene" class="tab-content">
                 <h3>Scene 1: The Neon Rain</h3>
-                <img src="scene-neon-rain-render.png" alt="Cyberpunk noodle bar window with pixelated rain" style="width: 100%; height: 250px; object-fit: cover; border-radius: 4px; margin-bottom: 1.5rem; border: 1px solid rgba(212, 175, 55, 0.3);">
+                <img src="assets/images/scene-neon-rain-render.png" alt="Cyberpunk noodle bar window with pixelated rain" style="width: 100%; height: 250px; object-fit: cover; border-radius: 4px; margin-bottom: 1.5rem; border: 1px solid rgba(212, 175, 55, 0.3);">
                 <p class="manuscript-text">
                     The rain in Sector 7 didn't fall; it rendered. Kael watched the pixelated droplets slide down the window of the noodle bar, leaving trails of temporary corruption in the glass texture. He adjusted his ocular implant, filtering out the aggressive neon advertisements for memory upgrades.
                 </p>
@@ -1642,7 +1534,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
                         </ul>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: center;">
-                        <img src="cyberpunk-detective-kael.png" alt="Portrait of Detective Kael with glitching trench coat and digital scar" style="width: 100%; height: auto; border-radius: 4px; border: 2px solid var(--accent-gold);">
+                        <img src="assets/images/cyberpunk-detective-kael.png" alt="Portrait of Detective Kael with glitching trench coat and digital scar" style="width: 100%; height: auto; border-radius: 4px; border: 2px solid var(--accent-gold);">
                     </div>
                 </div>
             </div>

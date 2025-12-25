@@ -13,6 +13,8 @@
     
     <!-- Icons: Lucide (Lightweight) -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
         /* 
@@ -1034,25 +1036,12 @@
     -->
 
     <!-- A. Header & Navigation -->
-    <header class="glass-nav">
-        <div class="container nav-content">
-            <div class="logo">
-                <i data-lucide="cpu"></i>
-                <span>COGNOTIK</span>
-            </div>
-            <nav class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#simulator">Simulator</a>
-                <a href="#use-cases">Use Cases</a>
-            </nav>
-            <a href="#simulator" class="btn btn-primary">Try Demo</a>
-        </div>
-    </header>
+    <cognotik-header current-page="self_healing"></cognotik-header>
 
     <!-- B. Hero Section -->
     <section class="hero-section">
         <div class="hero-bg-glow">
-            <img src="tech-grid-background.png" alt="Abstract wireframe grid background" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.3; mix-blend-mode: screen;">
+            <img src="assets/images/tech-grid-background.png" alt="Abstract wireframe grid background" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.3; mix-blend-mode: screen;">
         </div>
         <div class="container hero-grid">
             <div class="hero-content">
@@ -1070,7 +1059,7 @@
                 </div>
             </div>
             <div class="hero-visual">
-                <img src="self-healing-hero-visual.png" alt="Isometric 3D illustration of a self-healing digital network with glowing nodes and repair energy" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="assets/images/self-healing-hero-visual.png" alt="Isometric 3D illustration of a self-healing digital network with glowing nodes and repair energy" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
         </div>
     </section>
@@ -1085,7 +1074,7 @@
                 <!-- Feature 1 -->
                 <div class="feature-card">
                     <div class="feature-icon" style="overflow: hidden; padding: 0; background: transparent;">
-                        <img src="auto-fix-process-icon.png" alt="3D Digital patch icon" style="width: 100%; height: 100%; object-fit: contain;">
+                        <img src="assets/images/auto-fix-process-icon.png" alt="3D Digital patch icon" style="width: 100%; height: 100%; object-fit: contain;">
                     </div>
                     <h3>Auto-Fix Logic</h3>
                     <p>Automatically analyzes stderr output and exit codes to propose and apply patches without human intervention.</p>

@@ -9,6 +9,8 @@ pages/tasks/image_table.html
      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@600&display=swap" rel="stylesheet">
      <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
      <style>
          :root {
              --bg-dark: #0f172a;
@@ -180,16 +182,7 @@ pages/tasks/image_table.html
 </head>
 <body>
      <!-- Header -->
-     <header>
-         <div class="logo">
-             <i data-lucide="grid"></i> Cognotik
-         </div>
-         <nav class="nav-links">
-             <a href="#features">Features</a>
-             <a href="#simulator">Simulator</a>
-             <a href="#use-cases">Use Cases</a>
-         </nav>
-     </header>
+     <cognotik-header current-page="image_table"></cognotik-header>
      <!-- Hero Section -->
      <!-- Hero Image Prompt: A high-tech 3D holographic grid floating in a dark void. Each cell of the grid illuminates with a different vibrant color or abstract shape, representing generated images. Neon cyan and purple data streams flow into the grid rows and columns. -->
      <section class="hero">
