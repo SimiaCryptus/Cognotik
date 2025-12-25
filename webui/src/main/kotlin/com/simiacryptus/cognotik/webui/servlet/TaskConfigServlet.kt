@@ -48,7 +48,11 @@ class TaskConfigServlet : HttpServlet() {
                 if (type != null) {
                     val field = mutableMapOf<String, Any>(
                         "id" to prop.name,
-                        "label" to prop.name.replace(Regex("([a-z])([A-Z])"), "$1 $2").replace(Regex("([A-Z])([A-Z][a-z])"), "$1 $2").replaceFirstChar { it.titlecase() },
+                        "label" to prop.name
+                            .replace(Regex("([^_ ])_([^_ ])"), "$1 $2")
+                            .replace(Regex("([a-z])([A-Z])"), "$1 $2")
+                            .replace(Regex("([A-Z])([A-Z][a-z])"), "$1 $2")
+                            .split(' ').joinToString(" ") { it.replaceFirstChar(Char::titlecase) },
                         "type" to type
                     )
                     if (description != null) field["tooltip"] = description
