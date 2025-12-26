@@ -12,6 +12,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ToolData
+import com.simiacryptus.cognotik.models.ToolProvider
+import com.simiacryptus.cognotik.models.ToolProvider.Companion.discoverAllToolsFromPath
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 
 /**
@@ -36,18 +39,6 @@ interface UserSettingsInterface {
     fun updateUserSettings(user: User, settings: UserSettings)
 }
 
-/**
- * Represents configuration data for a tool/command that can be executed.
- *
- * @property name The display name of the tool
- * @property description A human-readable description of what the tool does
- * @property command The actual command or script to execute when the tool is invoked
- */
-data class ToolData(
-    val name: String? = null,
-    val description: String? = null,
-    val command: String? = null,
-)
 
 /**
  * Container for all user-specific settings and configurations.
@@ -56,6 +47,7 @@ data class ToolData(
  * @property apis List of API configurations for various providers (OpenAI, Anthropic, etc.)
  * @property tools List of custom tools/commands available to the user
  * @property etc Additional miscellaneous settings stored as key-value pairs
+* @property toolPaths Map of tool providers to their executable paths
  */
 @JsonSerialize(using = UserSettingsSerializer::class)
 @JsonDeserialize(using = UserSettingsDeserializer::class)
@@ -76,15 +68,6 @@ data class UserSettings(
         get() = apis.associate {
             it.provider!! to (it.baseUrl ?: "")
         }
-
-    /**
-     * @deprecated Use the 'tools' property instead. This provides backward compatibility
-     * for legacy code expecting a simple list of tool names.
-     * @return List of tool names extracted from the tools list
-     */
-    @get:JsonIgnore
-    @get:Deprecated("Use this.tools instead")
-    val localTools: List<String> = tools.mapNotNull { it.name }
 
 }
 
@@ -116,7 +99,7 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): UserSettings {
         val node = p.readValueAsTree<ObjectNode>()
         // Check if this is the new format (has apis/tools fields)
-        if (node.has("apis") || node.has("tools")) {
+        if (node.has("apis") || node.has("tools") || node.has("toolPaths")) {
             val apis = if (node.has("apis")) {
                 p.codec.treeToValue(node.get("apis"), Array<ApiData>::class.java).toMutableList()
             } else {
@@ -126,6 +109,9 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
                 p.codec.treeToValue(node.get("tools"), Array<ToolData>::class.java).toMutableList()
             } else {
                 mutableListOf()
+            }
+            if(tools.isEmpty()) {
+                tools.addAll(discoverAllToolsFromPath())
             }
             val etc = if (node.has("etc")) {
                 p.codec.treeToValue(node.get("etc"), MutableMap::class.java) as MutableMap<String, Any>
@@ -151,12 +137,7 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
         } else {
             emptyMap()
         }
-        val localTools = if (node.has("localTools")) {
-            p.codec.treeToValue(node.get("localTools"), Array<String>::class.java).toList()
-        } else {
-            emptyList()
-        }
-        return UserSettings(toApiList(apiKeys, apiBase), toTools(localTools))
+        return UserSettings(toApiList(apiKeys, apiBase), discoverAllToolsFromPath().toMutableList())
     }
 }
 
@@ -270,11 +251,3 @@ fun toApiList(
     ).validate()
 }.toMutableList()
 
-/**
- * Converts a simple list of tool names to ToolData objects.
- * Used for backward compatibility when migrating from old settings format.
- *
- * @param localTools List of tool names
- * @return MutableList of ToolData objects with the given names
- */
-fun toTools(localTools: List<String>): MutableList<ToolData> = localTools.map { ToolData(it) }.toMutableList()

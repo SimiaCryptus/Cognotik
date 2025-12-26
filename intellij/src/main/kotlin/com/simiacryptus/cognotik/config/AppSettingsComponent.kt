@@ -20,6 +20,8 @@ import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ToolData
+import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.util.LoggerFactory
 import java.awt.*
@@ -57,106 +59,6 @@ class AppSettingsComponent : Disposable {
   val storeMetadata = JTextArea().apply {
     lineWrap = true
     wrapStyleWord = true
-  }
-
-  val executablesModel = DefaultListModel<String>().apply {
-    AppSettingsState.instance.executables?.forEach { addElement(it) }
-  }
-  val executablesList = JBList(executablesModel)
-
-  @Name("Executables")
-  val executablesPanel = JPanel(BorderLayout()).apply {
-    val scrollPane = JScrollPane(executablesList)
-    scrollPane.preferredSize = Dimension(300, 200)
-    add(scrollPane, BorderLayout.CENTER)
-    val buttonPanel = JPanel()
-    val addButton = JButton("Add")
-    val removeButton = JButton("Remove")
-    val editButton = JButton("Edit")
-    removeButton.isEnabled = false
-    editButton.isEnabled = false
-
-    addButton.addActionListener {
-      val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
-      descriptor.title = "Select Executable"
-      try {
-        FileChooser.chooseFile(descriptor, null, null) { file ->
-          val executablePath = file.path
-          if (executablePath.isNotBlank() && !executablesModel.contains(executablePath)) {
-            executablesModel.addElement(executablePath)
-            AppSettingsState.instance.executables?.add(executablePath)
-            log.debug("Successfully added executable: $executablePath")
-          } else {
-            if (executablePath.isBlank()) {
-              log.warn("Attempted to add blank executable path")
-            } else {
-              log.warn("Executable already exists in list: $executablePath")
-            }
-          }
-        }
-      } catch (e: Exception) {
-        log.error("Failed to add executable: ${e.message}", e)
-        JOptionPane.showMessageDialog(
-          this, "Failed to add executable: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE
-        )
-      }
-    }
-    removeButton.addActionListener {
-      try {
-        val selectedIndices = executablesList.selectedIndices
-        if (selectedIndices.isEmpty()) {
-          log.warn("No executables selected for removal")
-          return@addActionListener
-        }
-        for (i in selectedIndices.reversed()) {
-          val removed = executablesModel.remove(i)
-          AppSettingsState.instance.executables?.remove(removed)
-          log.debug("Successfully removed executable: $removed")
-        }
-      } catch (e: Exception) {
-        log.error("Unexpected error removing executable: ${e.message}", e)
-        JOptionPane.showMessageDialog(
-          this, "Failed to remove executable: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE
-        )
-      }
-    }
-    editButton.addActionListener {
-      try {
-        val selectedIndex = executablesList.selectedIndex
-        if (selectedIndex == -1) {
-          log.warn("No executable selected for editing")
-          return@addActionListener
-        }
-        val currentValue = executablesModel.get(selectedIndex)
-        val newValue = JOptionPane.showInputDialog(this, "Edit executable path:", currentValue)
-        if (newValue != null && newValue.isNotBlank()) {
-          executablesModel.set(selectedIndex, newValue)
-          AppSettingsState.instance.executables?.remove(currentValue)
-          AppSettingsState.instance.executables?.add(newValue)
-          log.debug("Successfully updated executable from '$currentValue' to '$newValue'")
-        } else {
-          log.warn("Invalid new executable path provided: ${newValue ?: "null"}")
-        }
-      } catch (e: Exception) {
-        log.error("Unexpected error editing executable: ${e.message}", e)
-        JOptionPane.showMessageDialog(
-          this, "Failed to edit executable: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE
-        )
-      }
-    }
-    executablesList.addListSelectionListener(object : ListSelectionListener {
-      override fun valueChanged(e: ListSelectionEvent?) {
-        val hasSelection = executablesList.selectedIndex != -1
-        removeButton.isEnabled = hasSelection
-        editButton.isEnabled = hasSelection
-      }
-    })
-    buttonPanel.add(addButton)
-    buttonPanel.add(removeButton)
-    buttonPanel.add(editButton)
-    add(buttonPanel, BorderLayout.SOUTH)
-
-    executablesList.selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
   }
 
   @Name("Listening Port")
@@ -474,6 +376,158 @@ class AppSettingsComponent : Disposable {
     buttonPanel.add(editButton)
     add(buttonPanel, BorderLayout.SOUTH)
   }
+  @Name("Tools")
+  val tools = JBTable(DefaultTableModel(arrayOf("Tool", "Path"), 0)).apply {
+    columnModel.getColumn(0).preferredWidth = 100
+    columnModel.getColumn(1).preferredWidth = 400
+  }
+  @Name("Tool Management")
+  val toolManagementPanel = JPanel(BorderLayout()).apply {
+    val scrollPane = JScrollPane(tools)
+    scrollPane.preferredSize = Dimension(600, 300)
+    add(scrollPane, BorderLayout.CENTER)
+    val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+    val addButton = JButton("Add Tool")
+    val removeButton = JButton("Remove")
+    val editButton = JButton("Edit")
+    val autoDetectButton = JButton("Auto-Detect")
+    removeButton.isEnabled = false
+    editButton.isEnabled = false
+    addButton.addActionListener {
+      val model = tools.model as DefaultTableModel
+      val dialog = JDialog(null as Frame?, "Add Tool Configuration", true)
+      dialog.layout = GridBagLayout()
+      val gbc = GridBagConstraints()
+      gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST
+      dialog.add(JLabel("Tool Type:"), gbc)
+      gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+      val providerCombo = ComboBox(ToolProvider.values().map { it.name }.toTypedArray())
+      dialog.add(providerCombo, gbc)
+      gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+      dialog.add(JLabel("Path:"), gbc)
+      gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+      val pathField = JBTextField(30)
+      dialog.add(pathField, gbc)
+      val browseButton = JButton("Browse")
+      browseButton.addActionListener {
+        val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
+        FileChooser.chooseFile(descriptor, null, null) { file ->
+          pathField.text = file.path
+        }
+      }
+      gbc.gridx = 2; gbc.weightx = 0.0
+      dialog.add(browseButton, gbc)
+      gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 3; gbc.fill = GridBagConstraints.NONE
+      val buttonPanel = JPanel(FlowLayout())
+      val okButton = JButton("OK")
+      val cancelButton = JButton("Cancel")
+      okButton.addActionListener {
+        val provider = providerCombo.selectedItem as? String
+        val path = pathField.text
+        if (!provider.isNullOrBlank() && path.isNotBlank()) {
+          model.addRow(arrayOf(provider, path))
+          dialog.dispose()
+        }
+      }
+      cancelButton.addActionListener { dialog.dispose() }
+      buttonPanel.add(okButton)
+      buttonPanel.add(cancelButton)
+      dialog.add(buttonPanel, gbc)
+      dialog.pack()
+      dialog.setLocationRelativeTo(this)
+      dialog.isVisible = true
+    }
+    removeButton.addActionListener {
+      val selectedRows = tools.selectedRows
+      if (selectedRows.isNotEmpty()) {
+        val model = tools.model as DefaultTableModel
+        for (i in selectedRows.reversed()) {
+          model.removeRow(i)
+        }
+      }
+    }
+    editButton.addActionListener {
+      val selectedRow = tools.selectedRow
+      if (selectedRow != -1) {
+        val model = tools.model as DefaultTableModel
+        val currentProvider = model.getValueAt(selectedRow, 0) as String
+        val currentPath = model.getValueAt(selectedRow, 1) as String
+        val dialog = JDialog(null as Frame?, "Edit Tool Configuration", true)
+        dialog.layout = GridBagLayout()
+        val gbc = GridBagConstraints()
+        gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST
+        dialog.add(JLabel("Tool Type:"), gbc)
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+        val providerCombo = ComboBox(ToolProvider.values().map { it.name }.toTypedArray())
+        providerCombo.selectedItem = currentProvider
+        dialog.add(providerCombo, gbc)
+        gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0.0
+        dialog.add(JLabel("Path:"), gbc)
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0
+        val pathField = JBTextField(currentPath, 30)
+        dialog.add(pathField, gbc)
+        val browseButton = JButton("Browse")
+        browseButton.addActionListener {
+          val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor()
+          FileChooser.chooseFile(descriptor, null, null) { file ->
+            pathField.text = file.path
+          }
+        }
+        gbc.gridx = 2; gbc.weightx = 0.0
+        dialog.add(browseButton, gbc)
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 3; gbc.fill = GridBagConstraints.NONE
+        val buttonPanel = JPanel(FlowLayout())
+        val okButton = JButton("OK")
+        val cancelButton = JButton("Cancel")
+        okButton.addActionListener {
+          val provider = providerCombo.selectedItem as? String
+          val path = pathField.text
+          if (!provider.isNullOrBlank() && path.isNotBlank()) {
+            model.setValueAt(provider, selectedRow, 0)
+            model.setValueAt(path, selectedRow, 1)
+            dialog.dispose()
+          }
+        }
+        cancelButton.addActionListener { dialog.dispose() }
+        buttonPanel.add(okButton)
+        buttonPanel.add(cancelButton)
+        dialog.add(buttonPanel, gbc)
+        dialog.pack()
+        dialog.setLocationRelativeTo(this)
+        dialog.isVisible = true
+      }
+    }
+    autoDetectButton.addActionListener {
+      val model = tools.model as DefaultTableModel
+      val detected = ToolProvider.discoverAllToolsFromPath()
+      var addedCount = 0
+      detected.forEach { tool ->
+        var exists = false
+        for (i in 0 until model.rowCount) {
+          if (model.getValueAt(i, 0) == tool.provider?.name && model.getValueAt(i, 1) == tool.path) {
+            exists = true
+            break
+          }
+        }
+        if (!exists) {
+          model.addRow(arrayOf(tool.provider?.name, tool.path))
+          addedCount++
+        }
+      }
+      JOptionPane.showMessageDialog(this, "Detected and added $addedCount tools.")
+    }
+    tools.selectionModel.addListSelectionListener {
+      val hasSelection = tools.selectedRow != -1
+      removeButton.isEnabled = hasSelection
+      editButton.isEnabled = hasSelection
+    }
+    buttonPanel.add(addButton)
+    buttonPanel.add(removeButton)
+    buttonPanel.add(editButton)
+    buttonPanel.add(autoDetectButton)
+    add(buttonPanel, BorderLayout.SOUTH)
+  }
+
 
   @Name("Editor Actions")
   var usage = UsageTable(fileApplicationServices(AppSettingsState.Companion.pluginHome).usageManager)
@@ -481,20 +535,18 @@ class AppSettingsComponent : Disposable {
   init {
     log.debug("Initializing AppSettingsComponent")
     try {
-
       diffLoggingEnabled.isSelected = AppSettingsState.instance.diffLoggingEnabled
       awsProfile.text = AppSettingsState.instance.awsProfile ?: ""
       awsRegion.text = AppSettingsState.instance.awsRegion ?: ""
       awsBucket.text = AppSettingsState.instance.awsBucket ?: ""
       disableAutoOpenUrls.isSelected = AppSettingsState.instance.disableAutoOpenUrls
-
-      setExecutables(AppSettingsState.instance.executables ?: emptySet())
     } catch (e: Exception) {
       log.error("Error initializing basic settings: ${e.message}", e)
     }
     try {
       // Populate API table first
       populateApiTable()
+      populateToolsTable()
     } catch (e: Exception) {
       log.error("Error populating API table: ${e.message}", e)
     }
@@ -722,6 +774,25 @@ AppSettingsState.instance.fastModel?.model?.let { model ->
       )
     }
   }
+  private fun populateToolsTable() {
+    try {
+      log.debug("Populating Tools table")
+      val model = tools.model as DefaultTableModel
+      model.rowCount = 0
+      val userSettings = fileApplicationServices(
+        AppSettingsState.Companion.pluginHome
+      ).userSettingsManager.getUserSettings()
+      userSettings.tools.forEach { tool ->
+        val providerName = tool.provider?.name ?: ""
+        val path = tool.path ?: ""
+        model.addRow(arrayOf(providerName, path))
+      }
+      log.debug("Successfully populated Tools table with ${userSettings.tools.size} entries")
+    } catch (e: Exception) {
+      log.error("Failed to populate Tools table: ${e.message}", e)
+    }
+  }
+
 
   private fun getModelRenderer(): ListCellRenderer<in String> = object : SimpleListCellRenderer<String>() {
     override fun customize(
@@ -781,30 +852,6 @@ AppSettingsState.instance.fastModel?.model?.let { model ->
       } else {
         text = "Fuzzy Mode (Balanced)"
       }
-    }
-  }
-
-
-  fun getExecutables(): Set<String> {
-    return try {
-      val model =
-        ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<*>)?.model as? DefaultListModel<String>
-      model?.elements()?.toList()?.toSet() ?: emptySet()
-    } catch (e: Exception) {
-      log.error("Failed to get executables list: ${e.message}", e)
-      emptySet()
-    }
-  }
-
-  fun setExecutables(executables: Set<String>) {
-    try {
-      val model =
-        ((executablesPanel.getComponent(0) as? JScrollPane)?.viewport?.view as? JList<*>)?.model as? DefaultListModel<String>
-      model?.clear()
-      executables.forEach { model?.addElement(it) }
-      log.debug("Set ${executables.size} executables")
-    } catch (e: Exception) {
-      log.error("Failed to set executables: ${e.message}", e)
     }
   }
 

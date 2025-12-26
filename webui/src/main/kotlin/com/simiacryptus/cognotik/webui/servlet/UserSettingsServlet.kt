@@ -104,7 +104,7 @@ class UserSettingsServlet : HttpServlet() {
             }.toMutableList()
             val reconstructedSettings = UserSettings(
                 apis = reconstructedApis,
-                tools = (prevSettings.tools + settings.tools).distinctBy { it.name }.toMutableList(),
+                tools = (prevSettings.tools + settings.tools).distinctBy { it.provider?.name }.toMutableList(),
                 etc = settings.etc
             )
             ApplicationServices.fileApplicationServices().userSettingsManager.updateUserSettings(

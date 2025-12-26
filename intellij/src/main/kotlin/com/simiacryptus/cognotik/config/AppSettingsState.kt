@@ -71,7 +71,6 @@ data class AppSettingsState(
   var awsBucket: String? = null,
 
   /* System Configuration */
-  var executables: MutableSet<String>? = mutableSetOf(),
   var analyticsEnabled: Boolean = false,
   var diffLoggingEnabled: Boolean = false,
   var listeningPort: Int = Random.nextInt(3000, 9000),
@@ -146,11 +145,6 @@ data class AppSettingsState(
 
     XmlSerializerUtil.copyBean(fromJson, this)
 
-    /* Copy executables */
-//        executables?.clear()
-    fromJson.executables?.forEach { executable ->
-      executables?.add(executable)
-    }
     /* Copy savedCommandConfigsJson */
 //        savedCommandConfigsJson?.clear()
     fromJson.savedCommandConfigsJson?.forEach { (key, value) ->
@@ -209,7 +203,6 @@ if (useScratchesSystemPath != other.useScratchesSystemPath) return false
     if (awsProfile != other.awsProfile) return false
     if (awsRegion != other.awsRegion) return false
     if (awsBucket != other.awsBucket) return false
-    if (executables != other.executables) return false
     if (analyticsEnabled != other.analyticsEnabled) return false
     if (diffLoggingEnabled != other.diffLoggingEnabled) return false
     if (listeningPort != other.listeningPort) return false
@@ -257,7 +250,6 @@ result = 31 * result + useScratchesSystemPath.hashCode()
     result = 31 * result + (awsProfile?.hashCode() ?: 0)
     result = 31 * result + (awsRegion?.hashCode() ?: 0)
     result = 31 * result + (awsBucket?.hashCode() ?: 0)
-    result = 31 * result + (executables?.hashCode() ?: 0)
     result = 31 * result + analyticsEnabled.hashCode()
     result = 31 * result + diffLoggingEnabled.hashCode()
     result = 31 * result + listeningPort

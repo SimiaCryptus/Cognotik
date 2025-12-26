@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataSt
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.toApiList
-import com.simiacryptus.cognotik.platform.model.toTools
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
@@ -114,16 +113,14 @@ class ApiKeyServlet : HttpServlet() {
             } else if (record == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid API Key or User not found")
             } else {
-                val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
-                val settings = UserSettings(
-                    toApiList(
-                        apiKeys = mapOf(APIProvider.OpenAI to apiKey),
-                        apiBase = mapOf(APIProvider.OpenAI to "https://apps.simiacrypt.us/proxy"),
-                    ),
-                    toTools(userSettings.localTools)
-                )
                 fileApplicationServices().userSettingsManager.updateUserSettings(
-                    user, settings
+                    user, UserSettings(
+                        toApiList(
+                            apiKeys = mapOf(APIProvider.OpenAI to apiKey),
+                            apiBase = mapOf(APIProvider.OpenAI to "https://apps.simiacrypt.us/proxy"),
+                        ),
+                        mutableListOf()
+                    )
                 )
                 resp.sendRedirect("/")
 

@@ -7,6 +7,12 @@
         "type": "link"
     },
     {
+      "id": "taskplanning",
+      "label": "Task Planning",
+      "url": "TaskPlanning.html",
+      "type": "link"
+    },
+    {
       "label": "Reasoning",
       "type": "dropdown",
       "items": [

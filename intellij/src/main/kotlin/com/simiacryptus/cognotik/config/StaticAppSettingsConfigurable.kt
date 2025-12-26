@@ -5,6 +5,8 @@ import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.ToolData
+import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -88,8 +90,8 @@ add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
         add(JPanel().apply {
           layout = BoxLayout(this, BoxLayout.Y_AXIS)
           add(JPanel(BorderLayout()).apply {
-            add(JLabel("Executables:"), BorderLayout.NORTH)
-            add(component.executablesPanel, BorderLayout.CENTER)
+            add(JLabel("Configured Tools:"), BorderLayout.NORTH)
+            add(component.toolManagementPanel, BorderLayout.CENTER)
           })
         }, BorderLayout.NORTH)
       })
@@ -443,7 +445,6 @@ component.suppressErrors.isSelected = settings.suppressErrors
       component.shellCommand.text = settings.shellCommand
       component.showWelcomeScreen.isSelected = settings.showWelcomeScreen
       component.patchProcessor.selectedItem = settings.processor.label
-      component.setExecutables(settings.executables ?: emptySet())
       log.debug("Successfully wrote settings to UI components")
     } catch (e: Exception) {
       log.error("Failed to write settings to UI components", e)
@@ -482,8 +483,6 @@ settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
       settings.awsProfile = component.awsProfile.text.takeIf { it.isNotBlank() }
       settings.awsRegion = component.awsRegion.text.takeIf { it.isNotBlank() }
       settings.awsBucket = component.awsBucket.text.takeIf { it.isNotBlank() }
-      settings.executables?.clear()
-      settings.executables?.plusAssign(component.getExecutables().toMutableSet())
       settings.listeningPort = component.listeningPort.text.safeInt()
       settings.listeningEndpoint = component.listeningEndpoint.text
       settings.suppressErrors = component.suppressErrors.isSelected
@@ -543,6 +542,25 @@ settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
           }
         } catch (e: Exception) {
           log.error("Failed to read API configuration from row $row", e)
+        }
+      }
+      val toolsModel = component.tools.model as DefaultTableModel
+      log.debug("Reading Tools from table with ${toolsModel.rowCount} rows")
+      userSettings.tools.clear()
+      for (row in 0 until toolsModel.rowCount) {
+        try {
+          val providerName = (toolsModel.getValueAt(row, 0) as? String) ?: ""
+          val path = (toolsModel.getValueAt(row, 1) as? String) ?: ""
+          if (providerName.isNotBlank()) {
+            try {
+              val provider = ToolProvider.valueOf(providerName)
+              userSettings.tools.add(ToolData(provider, path))
+            } catch (e: Exception) {
+              log.warn("Unknown tool provider: $providerName")
+            }
+          }
+        } catch (e: Exception) {
+          log.error("Failed to read tool configuration from row $row", e)
         }
       }
       ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(
