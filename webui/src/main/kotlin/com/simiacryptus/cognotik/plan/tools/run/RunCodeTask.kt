@@ -51,11 +51,14 @@ class RunCodeTask(
         state = state
     )
 
-    override fun promptSegment() = """
-    RunCode - Use a code interpreter to solve and complete the user's request.
-      * Do not directly write code (yet)
-      * Include detailed technical requirements for the needed solution
-    """.trimIndent()
+    override fun promptSegment(): String {
+        val language = typeConfig?.codeRuntime?.name ?: "code"
+        return """
+        RunCode - Use a $language interpreter to solve and complete the user's request.
+          * Do not directly write code (yet)
+          * Include detailed technical requirements for the needed solution
+        """.trimIndent()
+    }
 
     override fun run(
         agent: TaskOrchestrator,

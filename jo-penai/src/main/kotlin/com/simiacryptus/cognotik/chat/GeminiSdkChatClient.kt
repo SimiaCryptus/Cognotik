@@ -110,23 +110,22 @@ class GeminiSdkChatClient(
         try {
             val config = buildGenerateContentConfig(chatRequest)
             val contents: List<Content> = convertToGeminiContents(chatRequest.messages)
+            val sysInstruct = config?.systemInstruction()?.getOrNull()?.text()?.indent("  ")
+            val contentStr = contents.joinToString("\n\n") { it.toMarkdown() }
+            val toJson = toJson(config).indent("  ")
+            val msg =
+                "\n<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelName} (${requestID})</summary>\n\n```json\n$toJson\n```\n\nSystem Prompt:\n```\n${sysInstruct}\n```\n\n$contentStr\n</details>"
             log(
-                "<details>\n<summary>Sending request to Gemini SDK for model: ${model.modelName} (${requestID})</summary>\n\n```json\n${
-                    toJson(config)
-                }\n```\n\nSystem Prompt:\n```\n${config?.systemInstruction()?.getOrNull()?.toString()?.indent("  ")}\n```\n\n${
-                    contents.joinToString("\n\n") {
-                        it.toMarkdown()
-                    }.indent("  ")
-                }\n</details>",
+                msg,
                 logStreams
             )
             val response = client.models.generateContent(model.modelName, contents, config)
             // Log response
             log(
-                "<details>\n<summary>Gemini SDK Response (${requestID})</summary>\n${
+                "\n<details>\n<summary>Gemini SDK Response (${requestID})</summary>\n\n${
                     response.candidates().orElse(emptyList()).joinToString("\n\n") { candidate ->
                         candidate.content().orElse(null)?.toMarkdown() ?: "\n\n**No content**\n\n"
-                    }.indent("  ")
+                    }
                 }\n</details>",
                 logStreams
             )
@@ -147,9 +146,15 @@ class GeminiSdkChatClient(
 
     private fun Content.toMarkdown(): CharSequence {
         val sb = StringBuilder()
+        this.role().getOrNull()?.let { role ->
+            sb.append("**Role:** ").append(role).append("\n\n")
+        }
         this.parts().orElse(emptyList()).forEach { part ->
             part.text().getOrNull()?.let { text ->
-                sb.append(text).append("\n")
+                sb
+                    .append("\n```text\n")
+                    .append(text.indent("    "))
+                    .append("\n```\n")
             }
             part.inlineData().getOrNull()?.let { inlineData ->
                 when (inlineData.mimeType().getOrNull()) {

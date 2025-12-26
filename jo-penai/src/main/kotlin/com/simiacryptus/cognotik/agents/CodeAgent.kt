@@ -457,6 +457,9 @@ Correct the code and try again.
                         }
                     }
 
+                    // HACK: Indented end-markdown blocks are still considered code blocks
+                    it.trim().startsWith("```") -> indent + "|```"
+
                     else -> indent + it
                 }
             }
@@ -538,4 +541,13 @@ Correct the code and try again.
         }
     }
 
+}
+
+private fun String.htmlEscape(): String {
+    return this.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("`", "&#96;")
+        .replace("'", "&#39;")
 }

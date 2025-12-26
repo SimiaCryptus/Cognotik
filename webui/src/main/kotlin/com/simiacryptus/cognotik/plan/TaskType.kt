@@ -2,10 +2,6 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
-import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask
-import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask.Companion.SubPlanning
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.Companion.DataIngest
 import com.simiacryptus.cognotik.plan.tools.file.*
@@ -21,12 +17,16 @@ import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.Companion.KnowledgeIndexing
 import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask.Companion.VectorSearch
-import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
+import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
+import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.run.RunShellCommandTask
+import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask.Companion.SubPlanning
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
 import com.simiacryptus.cognotik.plan.tools.social.*
 import com.simiacryptus.cognotik.plan.tools.writing.*
@@ -292,16 +292,21 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
         ) = getImpl(
             orchestrationConfig = orchestrationConfig,
             taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
-            planTask = planTask)
+            cfg = planTask)
 
         fun getImpl(
-            orchestrationConfig: OrchestrationConfig, taskType: TaskType<*, *>, planTask: TaskExecutionConfig? = null
+            orchestrationConfig: OrchestrationConfig, taskType: TaskType<*, *>, cfg: TaskExecutionConfig? = null
         ): AbstractTask<out TaskExecutionConfig, TaskTypeConfig> {
             val constructor = taskConstructors[taskType]
             if (constructor == null) {
                 throw RuntimeException("Unknown task type: ${taskType.name}")
             }
-            return constructor(orchestrationConfig, planTask)
+            val executionConfig: TaskExecutionConfig = cfg ?: try {
+                taskType.executionConfigClass.getDeclaredConstructor().newInstance() as TaskExecutionConfig
+            } catch (e: NoSuchMethodException) {
+                throw RuntimeException("Task execution config class ${taskType.executionConfigClass.name} does not have a no-arg constructor. Please provide a planTask instance.")
+            }
+            return constructor(orchestrationConfig, executionConfig)
         }
 
         fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig): List<TaskType<*, *>> {

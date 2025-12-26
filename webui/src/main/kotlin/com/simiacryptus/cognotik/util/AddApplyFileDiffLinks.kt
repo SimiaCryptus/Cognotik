@@ -259,6 +259,8 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
     protected open fun normalizeFilename(filename: String): String {
         return filename.trim()
             // Remove common prefixes
+            .removePrefix("Code:")
+            .removePrefix("code:")
             .removePrefix("File:")
             .removePrefix("file:")
             .removePrefix("Path:")
