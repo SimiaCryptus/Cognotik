@@ -305,7 +305,7 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
         private val log = LoggerFactory.getLogger(IterativeGraphGenerationTask::class.java)
         val IterativeGraphGeneration = TaskType(
             "IterativeGraphGeneration",
-            "Analysis",
+            "Writing",
             IterativeGraphGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Iteratively build a knowledge graph",
