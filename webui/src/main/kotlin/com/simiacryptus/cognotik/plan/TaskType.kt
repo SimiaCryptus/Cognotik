@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
 import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameNarrativeDesignTask
+import com.simiacryptus.cognotik.plan.tools.graph.IterativeGraphGenerationTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.Companion.KnowledgeIndexing
 import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
@@ -66,6 +67,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             }
             registerConstructor(StructuralInvariantAnalysisTask.StructuralInvariantAnalysis) { settings, task ->
                 StructuralInvariantAnalysisTask(settings, task)
+            }
+            registerConstructor(IterativeGraphGenerationTask.IterativeGraphGeneration) { settings, task ->
+                IterativeGraphGenerationTask(settings, task)
             }
             registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery) { settings, task ->
                 IsomorphismDiscoveryTask(settings, task)

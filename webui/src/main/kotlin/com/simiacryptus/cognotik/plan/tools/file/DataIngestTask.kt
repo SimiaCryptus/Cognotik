@@ -137,7 +137,12 @@ DataIngest - Parse unstructured logs/text into structured data
             var iteration = 0
             while (iteration < (executionConfig?.max_iterations ?: 10)) {
                 val coverage = 1.0 - (unparsedSample.size.toDouble() / sampleLines.size.toDouble())
-                discoveryTask.add(MarkdownUtil.renderMarkdown("**Iteration ${iteration + 1}** | Coverage: ${(coverage * 100).toInt()}% | Residuals: ${unparsedSample.size}", ui = ui))
+                discoveryTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        "**Iteration ${iteration + 1}** | Coverage: ${(coverage * 100).toInt()}% | Residuals: ${unparsedSample.size}",
+                        ui = ui
+                    )
+                )
                 task.update()
 
                 if (coverage >= (executionConfig?.coverage_threshold ?: 0.95) || unparsedSample.isEmpty()) {
@@ -147,15 +152,24 @@ DataIngest - Parse unstructured logs/text into structured data
 
                 // Take a chunk of residuals to analyze
                 val residualsToAnalyze = unparsedSample.take(20)
+                val knownFields = registry.flatMap { it.fields }.distinct().sorted()
 
                 val prompt = """
                     You are a Data Engineering expert. Your goal is to write a Java/Kotlin compatible Regular Expression (Regex) to parse the following log lines.
+                    ${if (!executionConfig?.task_description.isNullOrBlank()) "\n**Context:** ${executionConfig?.task_description}\n" else ""}
 
                     **Requirements:**
                     1. Use named capture groups `(?<name>...)` for all extractable fields. Note: Java regex group names must be alphanumeric only (no underscores).
                     2. Prefer specific character classes (e.g., `[^\]]+`) over greedy `.*`.
                     3. Anchor the regex with `^` and `$` if the pattern covers the whole line.
                     4. The regex must match the provided lines.
+                    ${
+                    if (knownFields.isNotEmpty()) "5. Reuse existing field names where appropriate: ${
+                        knownFields.joinToString(
+                            ", "
+                        )
+                    }" else ""
+                }
 
                     **Residual Log Lines:**
                     ${residualsToAnalyze.joinToString("\n")}
@@ -199,6 +213,7 @@ DataIngest - Parse unstructured logs/text into structured data
             // 4. Bulk Extraction
             log("## Phase 3: Bulk Extraction")
             val (dataFileLink, dataFile) = task.createFile("data.jsonl")
+            val (dataCsvLink, dataCsvFile) = task.createFile("data.csv")
             val (indexFileLink, indexFile) = task.createFile("index.csv")
             val (patternsFileLink, patternsFile) = task.createFile("patterns.json")
 
@@ -209,51 +224,72 @@ DataIngest - Parse unstructured logs/text into structured data
 
             var totalExtracted = 0
             var totalBytes = 0L
+            val allFields = (listOf("timestamp") + registry.flatMap { it.fields }).distinct().sorted()
 
             dataFile?.outputStream()?.buffered()?.use { dataOut ->
-                indexFile?.outputStream()?.buffered()?.use { indexOut ->
-                    // Write CSV Header
-                    indexOut.write("message_id,pattern_id,source_file,source_offset_start,source_offset_end,data_offset\n".toByteArray())
 
-                    files.forEach { file ->
-                        var fileOffset = 0L
-                        file.forEachLine { line ->
-                            val lineBytes = line.toByteArray(StandardCharsets.UTF_8)
-                            val lineLength = lineBytes.size + 1 // +1 for newline approximation
 
-                            // Try patterns
-                            for (pattern in registry) {
-                                val matcher = Pattern.compile(pattern.regex).matcher(line)
-                                if (matcher.find()) {
-                                    val recordId = UUID.randomUUID().toString()
-                                    val dataMap = mutableMapOf<String, Any>("timestamp" to LocalDateTime.now().toString()) // Default
+                dataCsvFile?.outputStream()?.buffered()?.use { csvOut ->
+                    csvOut.write(allFields.joinToString(",").toByteArray(StandardCharsets.UTF_8))
+                    csvOut.write("\n".toByteArray(StandardCharsets.UTF_8))
+                    indexFile?.outputStream()?.buffered()?.use { indexOut ->
+                        // Write CSV Header
+                        indexOut.write("message_id,pattern_id,source_file,source_offset_start,source_offset_end,data_offset\n".toByteArray())
 
-                                    pattern.fields.forEach { field ->
-                                        try {
-                                            dataMap[field] = matcher.group(field)
-                                        } catch (e: Exception) {
-                                            // Group might be optional and missing
+                        files.forEach { file ->
+                            var fileOffset = 0L
+                            file.forEachLine { line ->
+                                val lineBytes = line.toByteArray(StandardCharsets.UTF_8)
+                                val lineLength = lineBytes.size + 1 // +1 for newline approximation
+
+                                // Try patterns
+                                for (pattern in registry) {
+                                    val matcher = Pattern.compile(pattern.regex).matcher(line)
+                                    if (matcher.find()) {
+                                        val recordId = UUID.randomUUID().toString()
+                                        val dataMap = mutableMapOf<String, Any>(
+                                            "timestamp" to LocalDateTime.now().toString()
+                                        ) // Default
+
+                                        pattern.fields.forEach { field ->
+                                            try {
+                                                dataMap[field] = matcher.group(field)
+                                            } catch (e: Exception) {
+                                                // Group might be optional and missing
+                                            }
                                         }
+
+                                        val json = mapper.writeValueAsString(dataMap)
+                                        val jsonBytes = (json + "\n").toByteArray(StandardCharsets.UTF_8)
+
+                                        // Write Data
+                                        dataOut.write(jsonBytes)
+
+                                        // Write CSV
+                                        val csvRow = allFields.joinToString(",") { field ->
+                                            val value = dataMap[field]?.toString() ?: ""
+                                            if (value.any { it in ",\"\n" }) {
+                                                "\"" + value.replace("\"", "\"\"") + "\""
+                                            } else {
+                                                value
+                                            }
+                                        }
+                                        csvOut.write((csvRow + "\n").toByteArray(StandardCharsets.UTF_8))
+
+                                        // Write Index
+                                        // message_id, pattern_id, source_file, src_start, src_end, data_offset
+                                        val indexRow =
+                                            "$recordId,${pattern.id},${file.name},$fileOffset,${fileOffset + lineBytes.size},$totalBytes\n"
+                                        indexOut.write(indexRow.toByteArray(StandardCharsets.UTF_8))
+
+                                        totalBytes += jsonBytes.size
+                                        totalExtracted++
+                                        pattern.matchCount++
+                                        break // Stop at first match
                                     }
-
-                                    val json = mapper.writeValueAsString(dataMap)
-                                    val jsonBytes = (json + "\n").toByteArray(StandardCharsets.UTF_8)
-
-                                    // Write Data
-                                    dataOut.write(jsonBytes)
-
-                                    // Write Index
-                                    // message_id, pattern_id, source_file, src_start, src_end, data_offset
-                                    val indexRow = "$recordId,${pattern.id},${file.name},$fileOffset,${fileOffset + lineBytes.size},$totalBytes\n"
-                                    indexOut.write(indexRow.toByteArray(StandardCharsets.UTF_8))
-
-                                    totalBytes += jsonBytes.size
-                                    totalExtracted++
-                                    pattern.matchCount++
-                                    break // Stop at first match
                                 }
+                                fileOffset += lineLength
                             }
-                            fileOffset += lineLength
                         }
                     }
                 }
@@ -267,6 +303,7 @@ DataIngest - Parse unstructured logs/text into structured data
                 appendLine()
                 appendLine("## Artifacts")
                 appendLine("- [Structured Data (JSONL)]($dataFileLink)")
+                appendLine("- [Structured Data (CSV)]($dataCsvLink)")
                 appendLine("- [Search Index (CSV)]($indexFileLink)")
                 appendLine("- [Pattern Registry (JSON)]($patternsFileLink)")
                 appendLine()

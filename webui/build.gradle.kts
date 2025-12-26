@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.commons.io)
     implementation(libs.commons.codec)
     implementation(libs.slf4j.api)
+    implementation(libs.tinkerpop)
     implementation(libs.httpclient5) {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
