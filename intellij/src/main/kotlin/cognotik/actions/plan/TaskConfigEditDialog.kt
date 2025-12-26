@@ -16,10 +16,10 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.plan.newSettings
-import com.simiacryptus.cognotik.plan.tools.RunCodeTask
-import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.SubPlanningTask
-import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
+import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
+import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask
+import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.fetch.FetchMethod
 import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType

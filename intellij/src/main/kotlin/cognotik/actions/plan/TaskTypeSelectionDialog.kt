@@ -41,7 +41,7 @@ class TaskTypeSelectionDialog(
 
         // Group task types by package
         val tasksByPackage = TaskType.values()
-            .groupBy { getPackageGroup(it) }
+            .groupBy { it.category }
             .toSortedMap()
 
         tasksByPackage.forEach { (packageName, tasks) ->
@@ -157,49 +157,6 @@ class TaskTypeSelectionDialog(
     }
     override fun getDimensionServiceKey(): String = "TaskTypeSelectionDialog"
 
-
-    private fun getPackageGroup(taskType: TaskType<*, *>): String {
-        return when {
-            taskType.name in listOf(
-                "SocraticDialogue", "AnalogicalReasoning",
-                "CounterfactualAnalysis", "AbstractionLadder", "ConstraintSatisfaction",
-                "CausalInference", "DecompositionSynthesis", "AbductiveReasoning",
-                "AdversarialReasoning", "ConstraintRelaxation", "LateralThinking",
-                "ProbabilisticReasoning", "SystemsThinking", "TemporalReasoning",
-                "FiniteStateMachine", "Brainstorming",
-                "ChainOfThought", "MetaCognitiveReflection", "GeneticOptimization",
-            ) -> "Reasoning"
-
-            taskType.name in listOf(
-                "PoliticalOptimization", "MultiPerspectiveAnalysis", "DialecticalReasoning",
-                "GameTheory", "EthicalReasoning", "LLMExperiment",
-                "LLMPollSimulation", "PersuasiveEssay",
-            ) -> "Social"
-
-            taskType.name in listOf(
-                "GameLevelDesign", "GameNarrativeDesign", "GameMechanicsDesign", "GameEconomy",
-            ) -> "Gaming"
-
-            taskType.name in listOf(
-                "NarrativeGeneration", "NarrativeReasoning", "ArticleGeneration",
-                "TechnicalExplanation", "TutorialGeneration",
-                "BusinessProposal", "EmailCampaign", "InteractiveStory",
-                "ReportGeneration", "Scriptwriting", "JournalismReasoning",
-                "ResearchPaperGeneration",
-            ) -> "Writing"
-
-            taskType.name in listOf(
-                "Analysis", "FileModification", "FileSearch",
-                "WriteHtml", "GeneratePresentation", "GenerateImage",
-                "IllustrateDocument",
-            ) -> "File Operations"
-
-            taskType.name in listOf("VectorSearch", "KnowledgeIndexing") -> "Knowledge Management"
-
-
-            else -> taskType.category
-        }
-    }
 
     private fun updateDescription(taskTypes: List<TaskType<*, *>>) {
         if (taskTypes.isEmpty()) {

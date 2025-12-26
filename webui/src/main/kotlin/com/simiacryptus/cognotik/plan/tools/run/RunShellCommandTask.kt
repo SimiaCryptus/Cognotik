@@ -1,11 +1,18 @@
-package com.simiacryptus.cognotik.plan.tools.session
+package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.apps.code.CodingTask
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.interpreter.ProcessCodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TRIPLE_TILDE
+import com.simiacryptus.cognotik.plan.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -51,7 +58,7 @@ class RunShellCommandTask(
             }
 
             // Call parent validation
-            return ValidatedObject.validateFields(this)
+            return ValidatedObject.Companion.validateFields(this)
         }
     }
 
@@ -117,15 +124,15 @@ class RunShellCommandTask(
                 val result = super.execute(task, response) // Runs the interpreter, updates response.result
                 if (orchestrationConfig.autoFix) {
                     val resultString =
-                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n" +
-                                "## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n" + // STDOUT
-                                "## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n" // STDERR
+                        "## Command\n\n${TRIPLE_TILDE}\n${response.code}\n${TRIPLE_TILDE}\n" +
+                                "## Result\n${TRIPLE_TILDE}\n${response.result.resultValue}\n${TRIPLE_TILDE}\n" + // STDOUT
+                                "## Output\n${TRIPLE_TILDE}\n${response.result.resultOutput}\n${TRIPLE_TILDE}\n" // STDERR
                     markdownTranscript?.write(resultString.toByteArray())
                     markdownTranscript?.flush()
                     resultFn(resultString)
-                    "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n" +
-                            "## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n" + // STDOUT
-                            "## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n" // STDERR
+                    "## Command\n\n${TRIPLE_TILDE}\n${response.code}\n${TRIPLE_TILDE}\n" +
+                            "## Result\n${TRIPLE_TILDE}\n${response.result.resultValue}\n${TRIPLE_TILDE}\n" + // STDOUT
+                            "## Output\n${TRIPLE_TILDE}\n${response.result.resultOutput}\n${TRIPLE_TILDE}\n" // STDERR
                     resultFn(resultString)
                     semaphore.release()
                 }
@@ -185,9 +192,9 @@ class RunShellCommandTask(
             ): String {
                 return ui.hrefLink("Accept", "href-link play-button") {
                     response.let {
-                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n" +
-                                "## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n" +
-                                "## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n"
+                        "## Command\n\n${TRIPLE_TILDE}\n${response.code}\n${TRIPLE_TILDE}\n" +
+                                "## Result\n${TRIPLE_TILDE}\n${response.result.resultValue}\n${TRIPLE_TILDE}\n" +
+                                "## Output\n${TRIPLE_TILDE}\n${response.result.resultOutput}\n${TRIPLE_TILDE}\n"
                     }.apply {
                         markdownTranscript?.write(this.toByteArray())
                         markdownTranscript?.flush()

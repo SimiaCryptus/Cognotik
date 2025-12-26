@@ -185,6 +185,12 @@ abstract class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
 /**
  * Represents configuration data for a tool/command that can be executed.
  *
+ * Get via e.g.
+ * ```
+ *   val executables : List<String>? = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+ *        .tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
+ * ```
+ *
  * @property name The display name of the tool
  * @property description A human-readable description of what the tool does
  * @property command The actual command or script to execute when the tool is invoked

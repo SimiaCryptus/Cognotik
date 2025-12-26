@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools
+package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
@@ -314,7 +314,7 @@ class SubPlanningTask(
 
         val SubPlanning = TaskType(
             "SubPlanning",
-            "Planning & Orchestration",
+            "Execution & Automation",
             SubPlanningTaskExecutionConfigData::class.java,
             SubPlanningTaskTypeConfig::class.java,
             "Create and execute sub-plans using recursive planning",

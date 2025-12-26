@@ -1,13 +1,22 @@
-package com.simiacryptus.cognotik.plan.tools.mcp
+package com.simiacryptus.cognotik.plan.tools.online
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.mcp.MCPServerRegistry
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.AbstractTask
+import com.simiacryptus.cognotik.plan.ExecutionState
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskExecutionConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
+import java.io.IOException
+import java.net.SocketTimeoutException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
@@ -205,9 +214,9 @@ class MCPToolTask(
     private fun shouldRetry(e: Exception): Boolean {
         // Determine if the error is retryable
         return when {
-            e is java.net.SocketTimeoutException -> true
+            e is SocketTimeoutException -> true
             e is TimeoutException -> true
-            e is java.io.IOException -> true
+            e is IOException -> true
             e.message?.contains("connection", ignoreCase = true) == true -> true
             e.message?.contains("timeout", ignoreCase = true) == true -> true
             e.message?.contains("unavailable", ignoreCase = true) == true -> true

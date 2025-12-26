@@ -2,10 +2,10 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.cognotik.plan.tools.RunCodeTask
-import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.SubPlanningTask
-import com.simiacryptus.cognotik.plan.tools.SubPlanningTask.Companion.SubPlanning
+import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
+import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask.Companion.SubPlanning
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.Companion.DataIngest
 import com.simiacryptus.cognotik.plan.tools.file.*
@@ -21,12 +21,12 @@ import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.Companion.KnowledgeIndexing
 import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
 import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask.Companion.VectorSearch
-import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
+import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
-import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
+import com.simiacryptus.cognotik.plan.tools.run.RunShellCommandTask
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
 import com.simiacryptus.cognotik.plan.tools.social.*
 import com.simiacryptus.cognotik.plan.tools.writing.*

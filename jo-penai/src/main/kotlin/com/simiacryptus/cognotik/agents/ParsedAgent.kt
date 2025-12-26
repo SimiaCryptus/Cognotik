@@ -28,6 +28,7 @@ open class ParsedAgent<T : Any>(
         override val includeMethods: Boolean get() = false
     },
   var parserPrompt: String? = null,
+  val singleStage: Boolean = false,
 ) : BaseAgent<List<String>, ParsedResponse<T>>(
     prompt = prompt,
     name = name,
@@ -40,16 +41,41 @@ open class ParsedAgent<T : Any>(
         }
     }
 
-    override fun chatMessages(questions: List<String>) = arrayOf(
-        ModelSchema.ChatMessage(
-            role = ModelSchema.Role.system,
-            content = prompt.toContentList()
-        ),
-    ) + questions.map {
-        ModelSchema.ChatMessage(
-            role = ModelSchema.Role.user,
-            content = it.toContentList()
-        )
+    override fun chatMessages(questions: List<String>): Array<ModelSchema.ChatMessage> {
+        val systemPrompt = if (singleStage) {
+            describer.coverMethods = false
+            val describe = if (null == resultClass) "" else {
+                describer.describe(resultClass!!)
+            }
+            val jsonInstructions = """
+                |
+                |Response requires a json object described by:
+                |
+                |```yaml
+                |${describe.replace("\n", "\n  ")}
+                |```
+                |
+                |This is an example output:
+                |```json
+                |${JsonUtil.toJson(exampleInstance!!)}
+                |```
+                |${parserPrompt?.let { "\n$it" } ?: ""}
+            """.trimMargin()
+            if (prompt.isBlank()) jsonInstructions else "$prompt\n$jsonInstructions"
+        } else {
+            prompt
+        }
+        return arrayOf(
+            ModelSchema.ChatMessage(
+                role = ModelSchema.Role.system,
+                content = systemPrompt.toContentList()
+            ),
+        ) + questions.map {
+            ModelSchema.ChatMessage(
+                role = ModelSchema.Role.user,
+                content = it.toContentList()
+            )
+        }
     }
 
     private inner class ParsedResponseImpl(vararg messages: ModelSchema.ChatMessage) :
@@ -57,7 +83,18 @@ open class ParsedAgent<T : Any>(
         override val text =
             response(*messages).choices.firstOrNull()?.message?.content
                 ?: throw RuntimeException("No response")
-        private val _obj: T by lazy { getParser(parserPrompt).apply(text) }
+        private val _obj: T by lazy {
+            if (singleStage) {
+                try {
+                    parse(text)
+                } catch (e: Exception) {
+                    log.info("Failed to parse single-stage response, falling back to parser agent", e)
+                    getParser(parserPrompt).apply(text)
+                }
+            } else {
+                getParser(parserPrompt).apply(text)
+            }
+        }
         override val obj get() = _obj
     }
 
@@ -87,66 +124,12 @@ open class ParsedAgent<T : Any>(
                         ),
                     )
                 ).choices.first().message?.content
-                var contentUnwrapped = content?.trim() ?: throw RuntimeException("No response")
 
-                if (!contentUnwrapped.startsWith("{") && !contentUnwrapped.startsWith("```")) {
-                    val start = contentUnwrapped.indexOf("{").coerceAtMost(contentUnwrapped.indexOf("```"))
-                    val end =
-                        contentUnwrapped.lastIndexOf("}").coerceAtLeast(contentUnwrapped.lastIndexOf("```") + 2) + 1
-                    if (start < end && start >= 0) contentUnwrapped = contentUnwrapped.substring(start, end)
-                }
 
-                if (contentUnwrapped.startsWith("```json")) {
-                    val endIndex = contentUnwrapped.lastIndexOf("```")
-                    if (endIndex > 7) {
-                        contentUnwrapped = contentUnwrapped.substring(7, endIndex)
-                    } else {
-                        throw RuntimeException(
-                            "Failed to parse response: ${
-                                contentUnwrapped.replace(
-                                    "\n",
-                                    "\n  "
-                                )
-                            }"
-                        )
-                    }
-                }
 
-                contentUnwrapped.let {
-                    try {
-                      val fromJson = JsonUtil.fromJson<T>(
-                        it, resultClass
-                          ?: throw RuntimeException("Result class undefined")
-                      )
-                      if (validation) {
-                        if (fromJson is ValidatedObject) {
-                          val validate = fromJson.validate()
-                          if (null != validate) {
-                            throw RuntimeException("Validation failed: $validate")
-                          }
-                        }
-                      }
-                      return@Function fromJson
-                    } catch (e: Exception) {
-                        throw RuntimeException(
-                            "Failed to parse response: ${
-                                it.lineSequence()
-                                    .map {
-                                        when {
-                                            it.isBlank() -> {
-                                                when {
-                                                    it.length < "  ".length -> "  "
-                                                    else -> it
-                                                }
-                                            }
 
-                                            else -> "  " + it
-                                        }
-                                    }
-                                    .joinToString("\n")
-                            }", e)
-                    }
-                }
+                val contentUnwrapped = content?.trim() ?: throw RuntimeException("No response")
+                return@Function parse(contentUnwrapped)
             } catch (e: Exception) {
                 log.info("Failed to parse response", e)
                 exceptions.add(e)
@@ -154,6 +137,66 @@ open class ParsedAgent<T : Any>(
         }
         throw MultiExeption(exceptions)
     }
+    private fun parse(content: String): T {
+        var contentUnwrapped = content.trim()
+        if (!contentUnwrapped.startsWith("{") && !contentUnwrapped.startsWith("```")) {
+            val start = contentUnwrapped.indexOf("{").coerceAtMost(contentUnwrapped.indexOf("```"))
+            val end =
+                contentUnwrapped.lastIndexOf("}").coerceAtLeast(contentUnwrapped.lastIndexOf("```") + 2) + 1
+            if (start < end && start >= 0) contentUnwrapped = contentUnwrapped.substring(start, end)
+        }
+        if (contentUnwrapped.startsWith("```json")) {
+            val endIndex = contentUnwrapped.lastIndexOf("```")
+            if (endIndex > 7) {
+                contentUnwrapped = contentUnwrapped.substring(7, endIndex)
+            } else {
+                throw RuntimeException(
+                    "Failed to parse response: ${
+                        contentUnwrapped.replace(
+                            "\n",
+                            "\n  "
+                        )
+                    }"
+                )
+            }
+        }
+        return contentUnwrapped.let {
+            try {
+                val fromJson = JsonUtil.fromJson<T>(
+                    it, resultClass
+                        ?: throw RuntimeException("Result class undefined")
+                )
+                if (validation) {
+                    if (fromJson is ValidatedObject) {
+                        val validate = fromJson.validate()
+                        if (null != validate) {
+                            throw RuntimeException("Validation failed: $validate")
+                        }
+                    }
+                }
+                fromJson
+            } catch (e: Exception) {
+                throw RuntimeException(
+                    "Failed to parse response: ${
+                        it.lineSequence()
+                            .map {
+                                when {
+                                    it.isBlank() -> {
+                                        when {
+                                            it.length < "  ".length -> "  "
+                                            else -> it
+                                        }
+                                    }
+                                    else -> "  " + it
+                                }
+                            }
+                            .joinToString("\n")
+                    }", e
+                )
+            }
+        }
+    }
+
 
     override fun respond(input: List<String>, vararg messages: ModelSchema.ChatMessage): ParsedResponse<T> =
         try {
@@ -170,6 +213,11 @@ open class ParsedAgent<T : Any>(
         model = model,
         temperature = temperature,
         parsingChatter = parsingChatter,
+        deserializerRetries = deserializerRetries,
+        validation = validation,
+        describer = describer,
+        parserPrompt = parserPrompt,
+        singleStage = singleStage,
     )
 
     companion object {

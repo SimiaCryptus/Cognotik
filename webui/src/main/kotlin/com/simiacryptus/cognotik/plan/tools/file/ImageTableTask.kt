@@ -400,7 +400,7 @@ ImageTable - Generate a table/grid of AI-generated images
     private val log: Logger = LoggerFactory.getLogger(ImageTableTask::class.java)
     val ImageTable = TaskType(
       "ImageTable",
-      "File Operations",
+      "File",
       ImageTableTaskExecutionConfigData::class.java,
       ImageTableTaskTypeConfig::class.java,
       "Generate a table/grid of AI-generated images",

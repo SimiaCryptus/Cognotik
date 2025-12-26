@@ -11,8 +11,8 @@ import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
-import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.SelfHealingTask.SelfHealingTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask
+import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask.SelfHealingTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel

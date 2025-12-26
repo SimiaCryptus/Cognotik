@@ -33,7 +33,6 @@ import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import javax.swing.*
-import kotlin.io.path.Path
 
 class CommandAutofixAction : BaseAction() {
 
@@ -465,10 +464,8 @@ class CommandAutofixAction : BaseAction() {
           selectedItem = workingDirectory.absolutePath
           preferredSize = Dimension(400, preferredSize.height)
         }
-        val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
-        val executables : List<String>? = tools.flatMap { toolData ->
-          toolData.absoluteExecutablePaths()
-        }.distinct().sorted()
+        val executables : List<String>? = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+            .tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
         val commandField = ComboBox(executables?.toTypedArray() ?: emptyArray()).apply {
           isEditable = true
           preferredSize = Dimension(400, preferredSize.height)
