@@ -39,8 +39,8 @@ class CognotikHeader extends HTMLElement {
             <style>
                 :host {
                     display: block;
-                    background-color: var(--header-bg, #f8f9fa);
-                    border-bottom: 1px solid var(--border-color, #e9ecef);
+                    background-color: var(--header-bg, var(--surface-color, #1e293b));
+                    border-bottom: 1px solid var(--border-color, #334155);
                     font-family: var(--font-family, sans-serif);
                     position: sticky;
                     top: 0;
@@ -58,7 +58,7 @@ class CognotikHeader extends HTMLElement {
                 .brand {
                     font-weight: 700;
                     font-size: 1.25rem;
-                    color: var(--primary-color, #000);
+                    color: var(--primary-color, #f8fafc);
                     text-decoration: none;
                     white-space: nowrap;
                 }
@@ -74,7 +74,7 @@ class CognotikHeader extends HTMLElement {
                     position: relative;
                 }
                 .nav-link {
-                    color: var(--text-color, #333);
+                    color: var(--text-color, #e2e8f0);
                     text-decoration: none;
                     font-size: 0.95rem;
                     padding: 0.5rem;
@@ -85,8 +85,8 @@ class CognotikHeader extends HTMLElement {
                     align-items: center;
                 }
                 .nav-link:hover, .nav-link.active {
-                    color: var(--accent-color, #007bff);
-                    background-color: rgba(0, 0, 0, 0.05);
+                    color: var(--accent-color, #8b5cf6);
+                    background-color: rgba(255, 255, 255, 0.05);
                 }
                 
                 /* Dropdown Styles */
@@ -95,7 +95,7 @@ class CognotikHeader extends HTMLElement {
                     position: absolute;
                     top: 100%;
                     right: 0;
-                    background-color: #fff;
+                    background-color: var(--surface-color, #1e293b);
                     min-width: 240px;
                     
                     /* Updated for scrolling and columns */
@@ -104,8 +104,8 @@ class CognotikHeader extends HTMLElement {
                     width: max-content;
                     max-width: min(80vw, 800px);
                     
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    border: 1px solid var(--border-color, #e9ecef);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    border: 1px solid var(--border-color, #334155);
                     border-radius: 4px;
                     padding: 0.5rem;
                     z-index: 1001;
@@ -118,23 +118,23 @@ class CognotikHeader extends HTMLElement {
                 .dropdown-item {
                     display: block;
                     padding: 0.75rem 1rem;
-                    color: var(--text-color, #333);
+                    color: var(--text-color, #e2e8f0);
                     text-decoration: none;
                     font-size: 0.9rem;
-                    border-bottom: 1px solid #f1f1f1;
+                    border-bottom: 1px solid var(--border-color, #334155);
                     border-radius: 4px;
                 }
                 .dropdown-item:last-child {
                     border-bottom: none;
                 }
                 .dropdown-item:hover, .dropdown-item.active {
-                    background-color: #f8f9fa;
-                    color: var(--accent-color, #007bff);
+                    background-color: rgba(255, 255, 255, 0.05);
+                    color: var(--accent-color, #8b5cf6);
                 }
                 .dropdown-desc {
                     display: block;
                     font-size: 0.75rem;
-                    color: #6c757d;
+                    color: var(--text-muted, #94a3b8);
                     margin-top: 2px;
                 }
                 

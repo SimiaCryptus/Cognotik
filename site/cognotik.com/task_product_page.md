@@ -229,3 +229,146 @@ Insert the `<cognotik-header>` tag at the beginning of the `<body>`.
 
 </body>
 ```
+
+Here is a breakdown of the design system and HTML structure required to utilize `main.css`.
+
+### **1. Design Overview**
+*   **Theme:** Dark Mode / Sci-Fi / Tech.
+*   **Colors:** Dark Slate background (`#0f172a`), White/Grey text, Purple (`#8b5cf6`) primary accents, Cyan (`#06b6d4`) secondary accents.
+*   **Typography:**
+    *   **Headings:** Serif (`Cinzel`) — *You must import the 'Cinzel' font.*
+    *   **Body:** Sans-serif (`Inter` or system fonts).
+    *   **Code:** Monospace.
+
+---
+
+### **2. Required HTML Structure by Section**
+
+Here is how you need to structure your HTML to match the specific sections defined in the CSS.
+
+#### **A. Hero Section (`.hero`)**
+A centered, high-impact introduction with a radial gradient background.
+```html
+<section class="hero">
+    <!-- H1 has a text-gradient effect automatically applied -->
+    <h1>Cognotik AI</h1>
+    <p class="subtitle">Advanced cognitive simulation for the modern web.</p>
+    <button class="cta-button">Get Started</button>
+</section>
+```
+
+#### **B. Features Grid (`.features`)**
+A responsive grid of cards.
+```html
+<section class="features">
+    <h2>Key Features</h2>
+    <div class="features-grid">
+        <!-- Card 1 -->
+        <div class="feature-card">
+            <!-- CSS expects an <i> tag for icons (e.g., FontAwesome) -->
+            <i class="fa-solid fa-brain"></i>
+            <h3>Neural Mapping</h3>
+            <p>Description of the feature goes here.</p>
+        </div>
+        <!-- Card 2... -->
+    </div>
+</section>
+```
+
+#### **C. Modes Section (`.mode-grid`)**
+Cards with a distinct left-border accent color.
+```html
+<div class="modes-section">
+    <h2>System Modes</h2>
+    <div class="mode-grid">
+        <div class="mode-card">
+            <div class="mode-title">Autonomous Mode</div>
+            <p>System operates without intervention.</p>
+        </div>
+    </div>
+</div>
+```
+
+#### **D. The Simulator (`.simulator`)**
+This is the most complex UI component. It is a split-pane interface (Controls on left, Output on right) that stacks vertically on mobile.
+
+**Note:** You will need JavaScript to handle the Tab switching logic (toggling the `.active` class).
+
+```html
+<section class="simulator">
+    <h2>Simulation Engine</h2>
+
+    <div class="simulator-container">
+        <!-- Left Column: Controls -->
+        <div class="sim-controls">
+            <div class="control-group">
+                <label>Input Parameters</label>
+                <input type="text" placeholder="Enter value...">
+            </div>
+            <div class="control-group">
+                <label>Model Selection</label>
+                <select>
+                    <option>GPT-4</option>
+                    <option>Claude 3</option>
+                </select>
+            </div>
+            <button class="run-button">Run Simulation</button>
+        </div>
+
+        <!-- Right Column: Output with Tabs -->
+        <div class="sim-output">
+            <!-- Tab Headers -->
+            <div class="tabs">
+                <button class="tab active">Logs</button>
+                <button class="tab">Tree View</button>
+                <button class="tab">Plan</button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="tab-content active">
+                <!-- Helper classes for content: -->
+                <div class="chat-log ai">AI: Initializing sequence...</div>
+                <div class="chat-log">User: Confirm.</div>
+            </div>
+
+            <div class="tab-content">
+                <div class="plan-step">Step 1: Analyze Data</div>
+                <div class="tree-node">Node: Root -> Child A</div>
+            </div>
+        </div>
+    </div>
+</section>
+```
+
+---
+
+### **3. Global Components & Utilities**
+
+#### **Layout Wrapper**
+For standard content pages (like documentation or blog posts), wrap your content in `.task-container` to handle max-width and padding automatically.
+```html
+<div class="task-container">
+    <!-- Content goes here -->
+</div>
+```
+
+#### **Buttons**
+*   **Standard Button:** `<button>` or `<a class="btn">` (Purple background).
+*   **CTA Button:** `<button class="cta-button">` (Used in Hero, has glow effect).
+*   **Run Button:** `<button class="run-button">` (Used in Simulator, Cyan background, uppercase).
+
+#### **Forms**
+Standard `<input>`, `<textarea>`, and `<select>` elements are automatically styled with dark backgrounds and purple focus borders. No special classes are needed, just ensure they are inside a block container.
+
+#### **Code Blocks**
+Use standard HTML5 tags.
+```html
+<pre><code>const ai = new Cognotik();
+ai.init();</code></pre>
+```
+
+### **4. External Dependencies**
+To make the fonts work as intended, ensure you include these in your `<head>`:
+1.  **Inter** (Sans-serif)
+2.  **Cinzel** (Serif - *Critical for Headings*)
+3.  **Icon Library** (The CSS references `<i>` tags in feature cards, likely FontAwesome or similar).

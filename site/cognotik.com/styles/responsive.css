@@ -13,9 +13,6 @@
         font-size: 2rem;
     }
 
-    body {
-        padding-top: 60px;
-    }
 }
 
 @media (max-width: 991.98px) {
