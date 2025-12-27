@@ -68,6 +68,7 @@ open class CodeAgent(
                 if (evalFormat) """Code should be structured as appropriately parameterized function(s)
 
  with the final line invoking the function with the appropriate request parameters.""" else ""
+            val symbols = this.codeRuntime.getSymbols()
             return if (symbols.isNotEmpty()) {
                 """
 You are a coding assistant allows users actions to be enacted using $language and the script context.

@@ -50,6 +50,31 @@ class CodeRuntimes(
         val NodeJsRuntime = CodeRuntimes(
             "NodeJsRuntime", "Execute Node.js JavaScript code"
         )
+        val RubyRuntime = CodeRuntimes(
+            "RubyRuntime", "Execute Ruby scripts"
+        )
+        val PerlRuntime = CodeRuntimes(
+            "PerlRuntime", "Execute Perl scripts"
+        )
+        val RRuntime = CodeRuntimes(
+            "RRuntime", "Execute R scripts"
+        )
+        val PhpRuntime = CodeRuntimes(
+            "PhpRuntime", "Execute PHP scripts"
+        )
+        val LuaRuntime = CodeRuntimes(
+            "LuaRuntime", "Execute Lua scripts"
+        )
+        val GoRuntime = CodeRuntimes(
+            "GoRuntime", "Execute Go code"
+        )
+        val RustRuntime = CodeRuntimes(
+            "RustRuntime", "Execute Rust code"
+        )
+        val ScalaRuntime = CodeRuntimes(
+            "ScalaRuntime", "Execute Scala scripts"
+        )
+
 
         init {
             registerConstructor(KotlinRuntime) { defs -> KotlinCodeRuntime(defs) }
@@ -59,6 +84,14 @@ class CodeRuntimes(
             registerConstructor(CmdRuntime) { defs -> CmdCodeRuntime(defs) }
             registerConstructor(PythonRuntime) { defs -> PythonCodeRuntime(defs) }
             registerConstructor(NodeJsRuntime) { defs -> NodeJsCodeRuntime(defs) }
+            registerConstructor(RubyRuntime) { defs -> RubyCodeRuntime(defs) }
+            registerConstructor(PerlRuntime) { defs -> PerlCodeRuntime(defs) }
+            registerConstructor(RRuntime) { defs -> RCodeRuntime(defs) }
+            registerConstructor(PhpRuntime) { defs -> PhpCodeRuntime(defs) }
+            registerConstructor(LuaRuntime) { defs -> LuaCodeRuntime(defs) }
+            registerConstructor(GoRuntime) { defs -> GoCodeRuntime(defs) }
+            registerConstructor(RustRuntime) { defs -> RustCodeRuntime(defs) }
+            registerConstructor(ScalaRuntime) { defs -> ScalaCodeRuntime(defs) }
         }
 
         fun registerConstructor(
@@ -99,8 +132,9 @@ class CodeRuntimesDeserializer : DynamicEnumDeserializer<CodeRuntimes>(CodeRunti
 }
 
 
-private fun String.resolveTool() = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
-    .find { it.provider?.getExecutables()?.contains(this) == true }?.resolve(this) ?: this
+private fun String.resolveTool() =
+    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+        .find { it.provider?.getExecutables()?.contains(this) == true }?.resolve(this) ?: this
 
 class BashCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
     defs + mapOf(
@@ -138,5 +172,48 @@ class PythonCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntim
 class NodeJsCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
     defs + mapOf(
         "command" to listOf("node".resolveTool()), "language" to "javascript"
+    )
+)
+
+class RubyCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
+    defs + mapOf(
+        "command" to listOf("ruby".resolveTool()), "language" to "ruby"
+    )
+)
+
+class PerlCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
+    defs + mapOf(
+        "command" to listOf("perl".resolveTool()), "language" to "perl"
+    )
+)
+
+class RCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
+    defs + mapOf(
+        "command" to listOf("Rscript".resolveTool()), "language" to "r"
+    )
+)
+class PhpCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
+    defs + mapOf(
+        "command" to listOf("php".resolveTool()), "language" to "php"
+    )
+)
+class LuaCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
+    defs + mapOf(
+        "command" to listOf("lua".resolveTool()), "language" to "lua"
+    )
+)
+class GoCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
+    defs + mapOf(
+        "command" to listOf("go".resolveTool(), "run"), "language" to "go"
+    )
+)
+class RustCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
+    defs + mapOf(
+        "command" to listOf("rust-script".resolveTool()), "language" to "rust"
+    )
+)
+class ScalaCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
+    defs + mapOf(
+        "command" to listOf("scala".resolveTool()), "language" to "scala"
     )
 )

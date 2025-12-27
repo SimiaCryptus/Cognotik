@@ -72,6 +72,7 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
                 null
             }
         }
+
         val Git = object : ToolProvider("Git") {
             override fun getExecutables() = listOf("git")
             override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
@@ -100,6 +101,70 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             override fun getExecutables() = listOf("java", "javac")
             override fun getVersion(path: String) = runCommand(listOf(path, "-version"))
         }
+        val Docker = object : ToolProvider("Docker") {
+            override fun getExecutables() = listOf("docker")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Go = object : ToolProvider("Go") {
+            override fun getExecutables() = listOf("go")
+            override fun getVersion(path: String) = runCommand(listOf(path, "version"))
+        }
+        val Gradle = object : ToolProvider("Gradle") {
+            override fun getExecutables() = listOf("gradle", "gradle.bat")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Maven = object : ToolProvider("Maven") {
+            override fun getExecutables() = listOf("mvn", "mvn.cmd")
+            override fun getVersion(path: String) = runCommand(listOf(path, "-version"))
+        }
+        val Ant = object : ToolProvider("Ant") {
+            override fun getExecutables() = listOf("ant", "ant.bat", "ant.cmd")
+            override fun getVersion(path: String) = runCommand(listOf(path, "-version"))
+        }
+        val Bash = object : ToolProvider("Bash") {
+            override fun getExecutables() = listOf("bash")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Zsh = object : ToolProvider("Zsh") {
+            override fun getExecutables() = listOf("zsh")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Powershell = object : ToolProvider("Powershell") {
+            override fun getExecutables() = listOf("pwsh", "powershell")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Ruby = object : ToolProvider("Ruby") {
+            override fun getExecutables() = listOf("ruby")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Gcc = object : ToolProvider("Gcc") {
+            override fun getExecutables() = listOf("gcc", "g++")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Make = object : ToolProvider("Make") {
+            override fun getExecutables() = listOf("make")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Cmake = object : ToolProvider("Cmake") {
+            override fun getExecutables() = listOf("cmake")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Terraform = object : ToolProvider("Terraform") {
+            override fun getExecutables() = listOf("terraform")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Kubectl = object : ToolProvider("Kubectl") {
+            override fun getExecutables() = listOf("kubectl")
+            override fun getVersion(path: String) = runCommand(listOf(path, "version", "--client"))
+        }
+        val Gcloud = object : ToolProvider("Gcloud") {
+            override fun getExecutables() = listOf("gcloud", "gcloud.cmd")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Aws = object : ToolProvider("Aws") {
+            override fun getExecutables() = listOf("aws")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
 
         init {
             register(ToolProvider::class.java, Git)
@@ -109,6 +174,22 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             register(ToolProvider::class.java, Rust)
             register(ToolProvider::class.java, Node)
             register(ToolProvider::class.java, Jdk)
+            register(ToolProvider::class.java, Docker)
+            register(ToolProvider::class.java, Go)
+            register(ToolProvider::class.java, Gradle)
+            register(ToolProvider::class.java, Maven)
+            register(ToolProvider::class.java, Ant)
+            register(ToolProvider::class.java, Bash)
+            register(ToolProvider::class.java, Zsh)
+            register(ToolProvider::class.java, Powershell)
+            register(ToolProvider::class.java, Ruby)
+            register(ToolProvider::class.java, Gcc)
+            register(ToolProvider::class.java, Make)
+            register(ToolProvider::class.java, Cmake)
+            register(ToolProvider::class.java, Terraform)
+            register(ToolProvider::class.java, Kubectl)
+            register(ToolProvider::class.java, Gcloud)
+            register(ToolProvider::class.java, Aws)
         }
 
         @JvmStatic
@@ -134,7 +215,7 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
 
 
         @JvmStatic
-        fun discoverAllToolsFromPath() : List<ToolData> {
+        fun discoverAllToolsFromPath(): List<ToolData> {
             val result = mutableListOf<ToolData>()
             for (provider in values()) {
                 val paths = discoverFromPath(provider)
@@ -144,6 +225,7 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             }
             return result
         }
+
         @JvmStatic
         fun scanRecursive(root: File, depth: Int = 3): List<ToolData> {
             val results = mutableListOf<ToolData>()
@@ -165,6 +247,7 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             }
             return results
         }
+
         @JvmStatic
         fun discoverCommon(): List<ToolData> {
             val roots = mutableListOf<String>()

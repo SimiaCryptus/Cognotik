@@ -112,17 +112,9 @@ class TaskConfigEditDialog(
     private fun com.intellij.ui.dsl.builder.Panel.createRunCodeFields(config: RunCodeTask.RunCodeTaskTypeConfig) {
         group("Code Execution Settings") {
             row("Code Runtime:") {
-                val runtimes = arrayOf(
-                    "GroovyRuntime",
-                    "KotlinRuntime",
-                    "BashRuntime",
-                    "PowerShellRuntime",
-                    "CmdRuntime",
-                    "PythonRuntime",
-                    "NodeJSRuntime"
-                )
+                val runtimes = CodeRuntimes.values().map { it.name }.toTypedArray()
                 val combo = ComboBox(runtimes)
-                combo.selectedItem = config.codeRuntime?.name ?: "KotlinRuntime"
+                combo.selectedItem = config.codeRuntime?.name ?: runtimes.firstOrNull()
                 cell(combo)
                     .comment("Select the runtime environment for code execution")
                 configFields["codeRuntime"] = combo
