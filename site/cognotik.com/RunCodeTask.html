@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Cognotik RunCode Task - Secure code execution and automation environment.">
+    <meta name="description" content="Cognotik RunCode Task - Interactive code execution and automation environment.">
     <title>Cognotik | RunCode Task</title>
 
     <!-- Fonts: Inter for UI, JetBrains Mono for Code, Cinzel for Headers -->
@@ -852,11 +852,6 @@
             }
         }
     </style>
-<!-- Generated Images:
-     - runcode-hero-terminal.png: Abstract 3D illustration of a futuristic command center interface. A central, glowing holographic terminal window floats in a deep slate void (#0f172a). Surrounding the terminal are floating fragments of code syntax and mathematical symbols in neon cyan (#38bdf8) and amber gold (#fbbf24). The style is glassmorphism with soft blurs and high-contrast lighting, representing high-tech automation and secure execution.
-     - execution-pipeline-flow.png: A sleek, isometric 3D visualization of a four-step digital workflow pipeline. From left to right, four glass spheres connected by laser-like data streams. The first sphere contains a glowing brain icon (Planning), the second code brackets (Generation), the third a stylized processor chip (Runtime), and the fourth a shield checkmark (Result). The background is a dark matte texture, with the pipeline elements glowing in electric purple and cyan.
-     - secure-sandbox-environment.png: A conceptual 3D render representing a "secure sandbox" environment. A translucent, crystalline cube sits on a dark grid surface. Inside the cube, complex golden data nodes and code structures are swirling, fully contained. Outside the cube, the environment is calm and dark blue, emphasizing the isolation and safety of the execution environment. High-gloss reflections and neon rim lighting.
--->
 </head>
 <body>
 
@@ -874,7 +869,7 @@
                 <div class="hero-text-wrapper">
                     <h1 class="hero-title">RunCode Task</h1>
                     <p class="hero-subtitle">
-                        Executes code snippets in a controlled environment. Securely handle automation, configure working directories, and capture detailed execution outputs with interactive review.
+                        Executes code snippets with human oversight. Handle automation, configure working directories, and capture detailed execution outputs with interactive review.
                     </p>
                     <div class="hero-actions">
                         <a href="#simulator" class="btn btn-primary">Try the Simulator <i class="fa-solid fa-arrow-right"></i></a>
@@ -896,22 +891,15 @@
                 <h2>Core Capabilities</h2>
                 <div class="divider"></div>
             </div>
-            
-            <!-- Visual Highlight: Secure Sandbox -->
-            <div class="feature-showcase-container">
-                <img src="assets/images/secure-sandbox-environment.png"
-                     alt="Conceptual 3D render of a secure crystalline sandbox environment containing code structures" 
-                     class="feature-showcase-image">
-            </div>
 
             <div class="features-grid">
                 <!-- Feature 1 -->
                 <div class="feature-card">
                     <div class="icon-container">
-                        <i class="fa-solid fa-shield-halved"></i>
+                        <i class="fa-solid fa-layer-group"></i>
                     </div>
-                    <h3>Safe Execution</h3>
-                    <p>Executes code snippets in a controlled, sandboxed environment to ensure system integrity.</p>
+                    <h3>Versatile Runtimes</h3>
+                    <p>Support for internal JVM languages (Kotlin, Groovy) and external CLI tools (Python, Bash, Node.js).</p>
                 </div>
                 <!-- Feature 2 -->
                 <div class="feature-card">
@@ -940,10 +928,10 @@
                 <!-- Feature 5 -->
                 <div class="feature-card">
                     <div class="icon-container">
-                        <i class="fa-solid fa-rotate"></i>
+                        <i class="fa-solid fa-user-check"></i>
                     </div>
-                    <h3>Interactive Review</h3>
-                    <p>Human-in-the-loop capability to review code before execution and modify logic on the fly.</p>
+                    <h3>User-in-the-Loop</h3>
+                    <p>Review and approve code before execution. You retain full control over operations on your machine.</p>
                 </div>
                 <!-- Feature 6 -->
                 <div class="feature-card">
@@ -955,6 +943,40 @@
                 </div>
             </div>
         </section>
+        <!-- Supported Environments Section -->
+        <section class="runtimes-section" style="padding: 0 24px 80px; background: linear-gradient(to bottom, #131c31, var(--bg-dark));">
+            <div class="container">
+                <div class="section-header">
+                    <h3>Supported Environments</h3>
+                    <p class="text-muted">Choose between integrated JVM execution or external process orchestration.</p>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; margin-top: 40px;">
+                    <!-- Internal -->
+                    <div style="background: var(--bg-card); padding: 30px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h4 style="color: var(--accent-primary); margin-bottom: 15px;"><i class="fa-brands fa-java"></i> Internal JVM</h4>
+                        <p class="text-muted" style="margin-bottom: 20px;">High-performance execution within the agent's process. Ideal for data processing and logic.</p>
+                        <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Kotlin</li>
+                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Groovy</li>
+                        </ul>
+                    </div>
+                    <!-- External -->
+                    <div style="background: var(--bg-card); padding: 30px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h4 style="color: var(--accent-purple); margin-bottom: 15px;"><i class="fa-solid fa-terminal"></i> External Processes</h4>
+                        <p class="text-muted" style="margin-bottom: 20px;">Orchestrate installed tools and scripts available in your system's PATH.</p>
+                        <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Bash / Shell</li>
+                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> PowerShell / Cmd</li>
+                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Python</li>
+                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Node.js</li>
+                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Ruby / Perl / PHP</li>
+                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Go / Rust / Scala</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
 
         <!-- D. Interactive Simulator -->
         <section id="simulator" class="simulator-section">

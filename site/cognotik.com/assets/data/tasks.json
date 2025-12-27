@@ -47,6 +47,12 @@
           "description": "Execute and validate code snippets."
         },
         {
+          "id": "runtool",
+          "label": "Run Tool Task",
+          "url": "RunToolTask.html",
+          "description": "Execute external CLI tools and commands."
+        },
+        {
           "id": "brainstorming",
           "label": "Brainstorming Task",
           "url": "BrainstormingTask.html",

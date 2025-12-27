@@ -195,11 +195,11 @@ class RunCodeTask(
             "Execution & Automation",
             RunCodeTaskExecutionConfigData::class.java,
             RunCodeTaskTypeConfig::class.java,
-            "Execute code snippets safely",
+            "Execute code snippets with oversight",
             """
-          Executes code snippets in a controlled environment.
+          Executes code snippets in an interactive environment.
           <ul>
-            <li>Safe code execution handling</li>
+            <li>User-approved code execution</li>
             <li>Working directory configuration</li>
             <li>Output capture and formatting</li>
             <li>Error handling and reporting</li>

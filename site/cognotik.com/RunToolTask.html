@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cognotik RunTool Task - Orchestrate external CLI tools and system commands.">
+    <title>Cognotik | RunTool Task</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        /* =========================================
+           Variables & Theme
+           ========================================= */
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+        
+            /* Theme: Emerald & Violet for "System/Tooling" vibe */
+            --accent-primary: #10b981; /* Emerald 500 */
+            --accent-hover: #059669;   /* Emerald 600 */
+            --accent-glow: rgba(16, 185, 129, 0.4);
+        
+            --accent-secondary: #8b5cf6; /* Violet 500 */
+            --accent-purple: #a855f7;
+        
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-serif: 'Cinzel', serif;
+        
+            --nav-height: 70px;
+            --container-width: 1200px;
+            --radius-md: 12px;
+            --radius-sm: 6px;
+            --transition-fast: 0.2s ease;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        h1, h2, h3, h4 { color: var(--text-main); font-weight: 700; line-height: 1.2; }
+        h1, h2 { font-family: var(--font-serif); letter-spacing: -0.02em; }
+        a { text-decoration: none; color: inherit; transition: var(--transition-fast); }
+        ul { list-style: none; }
+        
+        .container { max-width: var(--container-width); margin: 0 auto; padding: 0 20px; }
+        .text-muted { color: var(--text-muted); }
+
+        /* =========================================
+           Hero Section
+           ========================================= */
+        .hero-section {
+            padding: calc(var(--nav-height) + 80px) 24px 80px;
+            max-width: var(--container-width);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 60px;
+            min-height: 90vh;
+        }
+        
+        .hero-content { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .hero-text-wrapper { flex: 1; max-width: 600px; }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero-subtitle { font-size: 1.125rem; color: var(--text-muted); margin-bottom: 40px; max-width: 540px; }
+        
+        .hero-actions { display: flex; gap: 16px; }
+        
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 24px; border-radius: var(--radius-sm);
+            font-weight: 600; font-size: 1rem; cursor: pointer;
+            transition: var(--transition-fast); border: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+            color: #fff;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 25px var(--accent-glow); }
+        
+        .btn-secondary { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+        .btn-secondary:hover { border-color: var(--text-muted); background: rgba(255,255,255,0.05); }
+        
+        .hero-visual { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; }
+        .visual-placeholder {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle at center, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            animation: float 6s ease-in-out infinite;
+        }
+        .visual-icon { font-size: 8rem; color: var(--accent-primary); filter: drop-shadow(0 0 20px var(--accent-primary)); }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        /* =========================================
+           Features Grid
+           ========================================= */
+        .features-section { padding: 100px 24px; background: linear-gradient(to bottom, var(--bg-dark), #131c31); }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-header h2 { font-size: 2.5rem; margin-bottom: 16px; }
+        .divider { height: 4px; width: 60px; background: var(--accent-primary); margin: 0 auto; border-radius: 2px; box-shadow: 0 0 10px var(--accent-glow); }
+        
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; max-width: var(--container-width); margin: 0 auto; }
+        
+        .feature-card {
+            background: var(--bg-card); padding: 32px; border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05); transition: var(--transition-fast);
+            position: relative; overflow: hidden;
+        }
+        .feature-card:hover { transform: translateY(-5px); border-color: var(--accent-primary); }
+        .feature-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .feature-card:hover::before { opacity: 1; }
+        
+        .icon-container {
+            width: 50px; height: 50px; background: rgba(16, 185, 129, 0.1);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            margin-bottom: 20px; color: var(--accent-primary); font-size: 1.5rem;
+        }
+
+        /* =========================================
+           Simulator
+           ========================================= */
+        .simulator-section { padding: 80px 24px; max-width: var(--container-width); margin: 0 auto; }
+        .simulator-container { display: flex; gap: 24px; margin-top: 40px; height: 600px; }
+        .sim-column { background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
+        
+        .sim-inputs { flex: 1; max-width: 400px; }
+        .panel-header { padding: 16px 24px; background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid var(--border-color); font-weight: 600; display: flex; align-items: center; gap: 10px; color: var(--accent-secondary); }
+        .sim-form { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+        
+        input[type="text"], select {
+            width: 100%; background: var(--bg-input); border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text-main);
+            font-family: var(--font-mono); font-size: 0.9rem; transition: var(--transition-fast);
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent-primary); }
+        .help-text { font-size: 0.75rem; color: var(--text-muted); }
+        .btn-full { width: 100%; margin-top: 10px; justify-content: center; }
+
+        .sim-outputs { flex: 2; display: flex; flex-direction: column; }
+        .tabs-nav { display: flex; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color); }
+        .tab-btn {
+            background: transparent; border: none; padding: 16px 24px; color: var(--text-muted);
+            cursor: pointer; font-family: var(--font-sans); font-weight: 600;
+            border-bottom: 2px solid transparent; transition: var(--transition-fast);
+        }
+        .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.02); }
+        .tab-btn.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+        
+        .tab-content { display: none; flex: 1; padding: 0; overflow: hidden; }
+        .tab-content.active { display: flex; flex-direction: column; }
+        
+        .terminal-window { flex: 1; background: #0d1117; padding: 20px; font-family: var(--font-mono); overflow-y: auto; }
+        .term-line { display: block; font-size: 0.9rem; margin-bottom: 4px; }
+        .term-prompt::before { content: '$ '; color: var(--accent-secondary); }
+        
+        /* =========================================
+           Use Cases & Footer
+           ========================================= */
+        .use-cases-section { padding: 80px 24px; background: var(--bg-card); }
+        .use-case-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; max-width: var(--container-width); margin: 0 auto; }
+        .use-case-card { background: rgba(255,255,255,0.02); padding: 24px; border-radius: var(--radius-sm); border-left: 4px solid var(--accent-secondary); }
+        
+        footer { background: #0b1120; padding: 60px 24px; border-top: 1px solid var(--border-color); }
+        .footer-content { max-width: var(--container-width); margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+        .footer-brand { font-size: 1.5rem; font-weight: 700; color: var(--text-muted); }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { color: var(--text-muted); font-size: 0.9rem; }
+        .footer-links a:hover { color: var(--accent-primary); }
+
+        @media (max-width: 992px) {
+            .hero-section { flex-direction: column; text-align: center; padding-top: 120px; }
+            .simulator-container { flex-direction: column; height: auto; }
+            .sim-outputs { height: 500px; }
+        }
+    </style>
+</head>
+<body>
+
+    <cognotik-header current-page="runtool"></cognotik-header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <div class="hero-text-wrapper">
+                    <h1 class="hero-title">RunTool Task</h1>
+                    <p class="hero-subtitle">
+                        Seamlessly integrate external command-line tools into your AI agent's workflow. Orchestrate builds, deployments, and system operations with precision.
+                    </p>
+                    <div class="hero-actions">
+                        <a href="#simulator" class="btn btn-primary">Try the Simulator <i class="fa-solid fa-arrow-right"></i></a>
+                        <a href="#docs" class="btn btn-secondary">View Documentation</a>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="visual-placeholder">
+                        <i class="fa-solid fa-terminal visual-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section id="features" class="features-section">
+            <div class="section-header">
+                <h2>Core Capabilities</h2>
+                <div class="divider"></div>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="icon-container"><i class="fa-solid fa-magnifying-glass-location"></i></div>
+                    <h3>Tool Discovery</h3>
+                    <p>Automatically locates installed tools (Git, Docker, Java, etc.) on the host system using the PATH environment.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-container"><i class="fa-solid fa-code-branch"></i></div>
+                    <h3>Argument Injection</h3>
+                    <p>Dynamically constructs command arguments based on task context and upstream dependencies.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-container"><i class="fa-solid fa-folder-closed"></i></div>
+                    <h3>Process Isolation</h3>
+                    <p>Executes commands in specific working directories to maintain file system context and safety.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-container"><i class="fa-solid fa-file-waveform"></i></div>
+                    <h3>Stream Capture</h3>
+                    <p>Real-time capture of standard output (stdout) and error streams (stderr) for detailed analysis.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-container"><i class="fa-brands fa-docker"></i></div>
+                    <h3>Broad Support</h3>
+                    <p>Native support for 20+ tools including Git, Docker, Kubernetes, AWS CLI, Gradle, Maven, and Python.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon-container"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h3>Exit Code Handling</h3>
+                    <p>Validates execution success via exit codes, allowing for automated retry logic or error handling.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Simulator -->
+        <section id="simulator" class="simulator-section">
+            <div class="section-header">
+                <h2>Task Simulator</h2>
+                <p>Configure the tool execution parameters and visualize the command output.</p>
+            </div>
+            
+            <div class="simulator-container">
+                <!-- Left Column: Inputs -->
+                <div class="sim-column sim-inputs">
+                    <div class="panel-header">
+                        <i class="fa-solid fa-sliders"></i> Configuration
+                    </div>
+                    <form id="runtool-form" class="sim-form">
+                        
+                        <div class="form-group">
+                            <label for="input-tool">Tool Provider</label>
+                            <select id="input-tool">
+                                <option value="git">Git</option>
+                                <option value="docker">Docker</option>
+                                <option value="python">Python</option>
+                                <option value="gradle">Gradle</option>
+                                <option value="kubectl">Kubectl</option>
+                                <option value="aws">AWS CLI</option>
+                            </select>
+                            <span class="help-text">Select the external tool to execute.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-args">Arguments</label>
+                            <input type="text" id="input-args" value="status" placeholder="e.g., commit -m 'Fix bug'">
+                            <span class="help-text">Space-separated arguments for the command.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-working-dir">Working Directory</label>
+                            <input type="text" id="input-working-dir" value="./project" placeholder="./">
+                            <span class="help-text">Relative path for execution context.</span>
+                        </div>
+
+                        <button type="submit" id="btn-execute" class="btn btn-primary btn-full">
+                            <i class="fa-solid fa-play"></i> Run Command
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right Column: Outputs -->
+                <div class="sim-column sim-outputs">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" data-tab="tab-console">Console Output</button>
+                        <button class="tab-btn" data-tab="tab-command">Command Preview</button>
+                    </div>
+
+                    <!-- Tab: Console -->
+                    <div id="tab-console" class="tab-content active">
+                        <div class="terminal-window" id="console-output">
+                            <span class="term-line text-muted">> System ready.</span>
+                            <span class="term-line text-muted">> Select a tool and click Run.</span>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Command -->
+                    <div id="tab-command" class="tab-content">
+                        <div class="terminal-window">
+                            <pre><code id="command-preview" style="color: #e6edf3;"># Command to be executed</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="use-cases-section">
+            <div class="section-header">
+                <h2>When to Use</h2>
+            </div>
+            <div class="use-case-grid">
+                <div class="use-case-card">
+                    <h3>Version Control</h3>
+                    <p>Automate git operations like committing changes, creating branches, or pushing code after generation.</p>
+                </div>
+                <div class="use-case-card">
+                    <h3>Build & Test</h3>
+                    <p>Trigger build tools (Gradle, Maven) or run test suites (Pytest, Jest) to validate generated code.</p>
+                </div>
+                <div class="use-case-card">
+                    <h3>Infrastructure</h3>
+                    <p>Manage cloud resources using Terraform, AWS CLI, or Kubectl directly from the agent's plan.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand"><i class="fa-solid fa-brain"></i> Cognotik</div>
+            <div class="footer-links">
+                <a href="#">Documentation</a>
+                <a href="#">API Reference</a>
+                <a href="#">Support</a>
+            </div>
+            <div class="footer-copyright">&copy; 2023 Simiacryptus. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tab Logic
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById(btn.dataset.tab).classList.add('active');
+                });
+            });
+
+            // Simulator Logic
+            const form = document.getElementById('runtool-form');
+            const consoleOutput = document.getElementById('console-output');
+            const commandPreview = document.getElementById('command-preview');
+            const executeBtn = document.getElementById('btn-execute');
+
+            const mockData = {
+                'git': {
+                    'status': "On branch main\nYour branch is up to date with 'origin/main'.\n\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)\n  (use \"git restore <file>...\" to discard changes in working directory)\n\tmodified:   src/main.kt\n\nno changes added to commit (use \"git add\" and/or \"git commit -a\")",
+                    'default': "git version 2.39.0"
+                },
+                'docker': {
+                    'ps': "CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS          PORTS     NAMES\na1b2c3d4e5f6   nginx:latest   \"/docker-entrypoint.…\"   2 minutes ago    Up 2 minutes    80/tcp    web-server",
+                    'default': "Docker version 20.10.21, build baeda1f"
+                },
+                'python': {
+                    '--version': "Python 3.10.6",
+                    'default': "Python 3.10.6"
+                },
+                'gradle': {
+                    'build': "Starting a Gradle Daemon (subsequent builds will be faster)\n> Task :compileKotlin\n> Task :compileJava NO-SOURCE\n> Task :processResources\n> Task :classes\n> Task :jar\n> Task :assemble\n> Task :build\n\nBUILD SUCCESSFUL in 3s\n5 actionable tasks: 5 executed",
+                    'default': "Welcome to Gradle 7.6!"
+                },
+                'kubectl': {
+                    'get pods': "NAME                     READY   STATUS    RESTARTS   AGE\nbackend-5f7d89c4-abcde   1/1     Running   0          5h\nfrontend-6b8c9d0e-12345  1/1     Running   0          5h",
+                    'default': "Client Version: v1.26.0\nKustomize Version: v4.5.7"
+                },
+                'aws': {
+                    's3 ls': "2023-01-01 12:00:00 my-bucket-logs\n2023-01-02 14:30:00 my-bucket-data",
+                    'default': "aws-cli/2.9.15 Python/3.9.11 Linux/5.15.0-56-generic exe/x86_64.ubuntu.22 prompt/off"
+                }
+            };
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const tool = document.getElementById('input-tool').value;
+                const args = document.getElementById('input-args').value;
+                const dir = document.getElementById('input-working-dir').value;
+
+                // UI Loading
+                const originalText = executeBtn.innerHTML;
+                executeBtn.disabled = true;
+                executeBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Running...';
+
+                // Update Command Preview
+                commandPreview.innerText = `cd ${dir} && ${tool} ${args}`;
+
+                // Clear Console
+                consoleOutput.innerHTML = '';
+                const log = (msg, type='') => {
+                    const span = document.createElement('span');
+                    span.className = `term-line ${type}`;
+                    if(type === 'prompt') span.classList.add('term-prompt');
+                    span.innerText = msg;
+                    consoleOutput.appendChild(span);
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                };
+
+                // Simulate Execution
+                log(`${tool} ${args}`, 'prompt');
+                await new Promise(r => setTimeout(r, 600));
+
+                let output = mockData[tool]['default'];
+                // Simple heuristic for mock data
+                for (const key in mockData[tool]) {
+                    if (args.includes(key)) {
+                        output = mockData[tool][key];
+                        break;
+                    }
+                }
+
+                const lines = output.split('\n');
+                for(const line of lines) {
+                    log(line);
+                    await new Promise(r => setTimeout(r, 50));
+                }
+
+                log('', '');
+                log(`Process finished with exit code 0`, 'text-muted');
+
+                executeBtn.disabled = false;
+                executeBtn.innerHTML = originalText;
+            });
+
+            // Update args placeholder on tool change
+            document.getElementById('input-tool').addEventListener('change', (e) => {
+                const map = {
+                    'git': 'status',
+                    'docker': 'ps',
+                    'python': '--version',
+                    'gradle': 'build',
+                    'kubectl': 'get pods',
+                    'aws': 's3 ls'
+                };
+                document.getElementById('input-args').value = map[e.target.value] || '';
+            });
+        });
+    </script>
+</body>
+</html>
