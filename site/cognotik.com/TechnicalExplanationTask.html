@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Task - Cognotik</title>
+    <title>Technical Explanation Task - Cognotik</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,21 +103,17 @@
             position: absolute;
             animation: pulse 4s infinite;
             box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .visual-node::before {
-            content: '';
-            position: absolute;
-            inset: -20px;
-            border: 1px solid var(--accent-secondary);
-            border-radius: 50%;
-            animation: spin 10s linear infinite;
+            content: '💡';
+            font-size: 4rem;
         }
         @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 1; }
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
         }
         /* Features */
         .features {
@@ -209,11 +205,6 @@
             resize: vertical;
             min-height: 100px;
         }
-        .toggle-group {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
         .sim-right {
             background: #0b1120;
         }
@@ -268,13 +259,12 @@
     </style>
 </head>
 <body>
-    <cognotik-header current-page="analysis"></cognotik-header>
+    <cognotik-header current-page="technical-explanation"></cognotik-header>
     <!-- Hero -->
-    <!-- Prompt: A futuristic, glowing magnifying glass focusing on a network of code nodes, deep blue background with cyan data streams. High-tech, abstract 3D render. -->
     <header class="hero container">
         <div class="hero-content">
-            <h1>Analysis Task</h1>
-            <p>Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.</p>
+            <h1>Technical Explanation Task</h1>
+            <p>Break down complex technical subjects into clear, digestible explanations and analogies.</p>
             <a href="#demo" class="btn btn-primary">Try the Simulator</a>
         </div>
         <div class="hero-visual">
@@ -287,71 +277,24 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </div>
-                    <h3>Zero Side Effects</h3>
-                    <p>Primarily processes and responds to user inquiries using the language model without modifying files.</p>
+                    <h3>Audience Adaptation</h3>
+                    <p>Adjusts language and depth for target audience, from layperson to expert.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                     </div>
-                    <h3>Context Aware</h3>
-                    <p>Reads project files via glob patterns to provide answers grounded in your actual codebase.</p>
+                    <h3>Analogy Generation</h3>
+                    <p>Uses relatable metaphors and analogies to explain abstract concepts clearly.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                     </div>
-                    <h3>Comprehensive Reports</h3>
-                    <p>Generates detailed markdown reports, explanations, and recommendations based on your queries.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- Supported Formats -->
-    <section id="supported-formats" style="padding: 4rem 0; background: var(--bg-dark);">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Supported Document Formats</h2>
-            <p style="text-align: center; color: var(--text-muted); margin-bottom: 3rem; max-width: 700px; margin-left: auto; margin-right: auto;">
-                Cognotik natively understands a wide range of document types, allowing you to analyze code, documentation, and data files seamlessly.
-            </p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem;">
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">PDF</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.pdf</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Word</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.docx, .doc</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Excel</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.xlsx, .xls</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">PowerPoint</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.pptx, .ppt</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">OpenOffice</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.odt</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Rich Text</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.rtf</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Web</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.html, .htm</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Email</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.eml</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Text</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.txt, code</div>
+                    <h3>Code & Visuals</h3>
+                    <p>Includes code examples and descriptions of visual aids to support understanding.</p>
                 </div>
             </div>
         </div>
@@ -365,34 +308,37 @@
                 <div class="sim-panel sim-left">
                     <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Configuration</h3>
                     <div class="form-group">
-                        <label>Inquiry Goal</label>
-                        <input type="text" id="inquiry_goal" class="form-control" placeholder="e.g., Understand the authentication flow" value="Analyze the security of the login module">
+                        <label>Topic</label>
+                        <input type="text" id="topic" class="form-control" value="Blockchain Technology">
                     </div>
                     <div class="form-group">
-                        <label>Inquiry Questions (One per line)</label>
-                        <textarea id="inquiry_questions" class="form-control" placeholder="Specific questions...">Are there any hardcoded credentials?
-Is the password hashing algorithm secure?
-How are sessions managed?</textarea>
+                        <label>Target Audience</label>
+                        <select id="audience" class="form-control">
+                            <option value="layperson">Layperson</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="expert">Expert</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Input Files (Glob Patterns)</label>
-                        <input type="text" id="input_files" class="form-control" value="src/auth/**/*.kt, config/*.yaml">
+                        <label>Level of Detail</label>
+                        <select id="detail" class="form-control">
+                            <option value="high_level_overview">High Level Overview</option>
+                            <option value="moderate_detail" selected>Moderate Detail</option>
+                            <option value="detailed_walkthrough">Detailed Walkthrough</option>
+                        </select>
                     </div>
-                    <div class="form-group toggle-group">
-                        <input type="checkbox" id="non_interactive" checked>
-                        <label for="non_interactive" style="margin:0; cursor:pointer;">Non-Interactive Mode</label>
-                    </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Run Analysis</button>
+                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Explain</button>
                 </div>
                 <!-- Outputs -->
                 <div class="sim-panel sim-right">
                     <div class="tabs">
-                        <div class="tab active" onclick="switchTab('report')">Report</div>
+                        <div class="tab active" onclick="switchTab('explanation')">Explanation</div>
                         <div class="tab" onclick="switchTab('logs')">Logs</div>
                     </div>
-                    <div id="output-report" class="output-area markdown-preview">
+                    <div id="output-explanation" class="output-area markdown-preview">
                         <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the analysis and click "Run" to see the output.
+                            Configure the explanation and click "Explain" to see the output.
                         </div>
                     </div>
                     <div id="output-logs" class="output-area" style="display: none; font-family: 'Courier New', monospace; font-size: 0.8rem;">
@@ -407,20 +353,20 @@ How are sessions managed?</textarea>
             <h2 style="margin-bottom: 2rem;">When to Use</h2>
             <div class="use-case-list">
                 <div class="use-case-item">
-                    <h4>Technical Q&A</h4>
-                    <p>Ask detailed questions about code, design, or project context without risking accidental changes.</p>
+                    <h4>Documentation</h4>
+                    <p>Create clear documentation for software, APIs, and technical processes.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Code Reviews</h4>
-                    <p>Get an automated second opinion on specific modules or files before merging.</p>
+                    <h4>Onboarding</h4>
+                    <p>Explain complex systems to new team members or customers.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Architectural Analysis</h4>
-                    <p>Understand high-level dependencies and data flows in complex legacy systems.</p>
+                    <h4>Education</h4>
+                    <p>Develop educational materials and tutorials for students.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Documentation Generation</h4>
-                    <p>Generate initial drafts of documentation based on current code implementation.</p>
+                    <h4>Knowledge Sharing</h4>
+                    <p>Share technical knowledge within organizations in an accessible way.</p>
                 </div>
             </div>
         </div>
@@ -429,30 +375,29 @@ How are sessions managed?</textarea>
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
-            document.getElementById('output-report').style.display = tabName === 'report' ? 'block' : 'none';
+            document.getElementById('output-explanation').style.display = tabName === 'explanation' ? 'block' : 'none';
             document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
         }
         function runSimulation() {
-            const goal = document.getElementById('inquiry_goal').value;
-            const questions = document.getElementById('inquiry_questions').value.split('\n').filter(q => q.trim());
-            const files = document.getElementById('input_files').value;
-            const isNonInteractive = document.getElementById('non_interactive').checked;
-            const reportEl = document.getElementById('output-report');
+            const topic = document.getElementById('topic').value;
+            const audience = document.getElementById('audience').value;
+            const detail = document.getElementById('detail').value;
+            const reportEl = document.getElementById('output-explanation');
             const logsEl = document.getElementById('output-logs');
-            // Reset
+            
             reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
             logsEl.innerHTML = '';
-            // Mock Logs
+            
             const logs = [
-                `[INFO] Initializing AnalysisTask...`,
-                `[INFO] Mode: ${isNonInteractive ? 'Non-Interactive' : 'Interactive'}`,
-                `[INFO] Scanning files matching: ${files}`,
-                `[INFO] Found 12 files. Reading content...`,
-                `[INFO] Constructing prompt with ${questions.length} questions...`,
-                `[INFO] Sending request to LLM (Insight Agent)...`,
-                `[INFO] Receiving stream...`,
-                `[SUCCESS] Analysis complete.`
+                `[INFO] Initializing TechnicalExplanationTask...`,
+                `[INFO] Topic: ${topic}`,
+                `[INFO] Audience: ${audience}`,
+                `[INFO] Creating outline...`,
+                `[INFO] Generating analogies...`,
+                `[INFO] Writing explanation...`,
+                `[SUCCESS] Explanation complete.`
             ];
+            
             let logIndex = 0;
             const logInterval = setInterval(() => {
                 if (logIndex < logs.length) {
@@ -466,30 +411,30 @@ How are sessions managed?</textarea>
                     logIndex++;
                 } else {
                     clearInterval(logInterval);
-                    renderReport(goal, questions, files);
+                    renderExplanation(topic);
                 }
-            }, 300);
+            }, 400);
         }
-        function renderReport(goal, questions, files) {
-            const reportEl = document.getElementById('output-report');
+        function renderExplanation(topic) {
+            const reportEl = document.getElementById('output-explanation');
             const markdown = `
-<h1>Analysis Report</h1>
-<h2>Goal</h2>
-<p>${goal}</p>
-<h2>Scope</h2>
-<p>Files analyzed: <code>${files}</code></p>
-<h2>Findings</h2>
-${questions.map((q, i) => `
-<h3>${i + 1}. ${q}</h3>
-<p>Based on the analysis of the provided files, here are the insights regarding this question:</p>
+<h1>Understanding ${topic}</h1>
+
+<h2>Overview</h2>
+<p>Blockchain is a decentralized digital ledger that records transactions across many computers so that the record cannot be altered retroactively without the alteration of all subsequent blocks and the consensus of the network.</p>
+
+<h2>The Analogy: A Shared Notebook</h2>
+<p>Imagine a group of friends who share a notebook to track expenses. Everyone has a copy of the notebook. When someone buys lunch, they announce it to the group. Everyone writes it down in their own notebook. If someone tries to change a past entry in their notebook, it won't match everyone else's, and the group will reject the change. This is how blockchain maintains integrity.</p>
+
+<h2>Key Concepts</h2>
 <ul>
-    <li>The implementation appears to follow standard practices, though specific configuration files in <code>config/</code> should be reviewed.</li>
-    <li>No critical vulnerabilities were immediately detected in the scanned paths.</li>
-    <li><strong>Recommendation:</strong> Consider adding unit tests for the edge cases identified in <code>AuthService.kt</code>.</li>
+    <li><strong>Decentralization:</strong> No single entity controls the data. It's distributed across the network.</li>
+    <li><strong>Immutability:</strong> Once data is recorded, it cannot be changed.</li>
+    <li><strong>Consensus:</strong> The network must agree on the validity of transactions.</li>
 </ul>
-`).join('')}
-<h2>Summary</h2>
-<p>The system architecture seems robust for the analyzed modules. The code is well-structured, but documentation could be improved in the authentication handlers.</p>
+
+<h2>Why It Matters</h2>
+<p>Blockchain enables secure, transparent transactions without the need for a central authority like a bank. This has applications in finance (cryptocurrency), supply chain management, and secure voting systems.</p>
             `;
             reportEl.innerHTML = markdown;
         }

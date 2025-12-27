@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counterfactual Analysis - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        :root { --bg-dark: #0f172a; --bg-card: #1e293b; --accent-primary: #ec4899; --accent-secondary: #d946ef; --text-main: #f8fafc; --text-muted: #94a3b8; --font-sans: 'Inter', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); margin: 0; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; border: none; cursor: pointer; }
+        .hero { padding: 8rem 0 4rem; min-height: 60vh; display: flex; align-items: center; }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid rgba(255,255,255,0.05); }
+        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.75rem; margin-bottom: 1rem; border-radius: 6px; }
+        .output-area { background: #0b1120; padding: 1rem; border-radius: 6px; font-family: monospace; color: #d1d5db; white-space: pre-wrap; height: 100%; }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="counterfactual-analysis"></cognotik-header>
+    <header class="hero container">
+        <div>
+            <h1>Counterfactual Analysis</h1>
+            <p style="max-width: 600px; font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem;">Explore "what-if" scenarios to understand causal relationships, validate decisions, and assess risks.</p>
+            <a href="#demo" class="btn-primary">Try the Simulator</a>
+        </div>
+    </header>
+    <section class="container" style="padding: 4rem 0;">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Scenario Generation</h3>
+                <p>Creates detailed alternative histories or future scenarios based on changing specific variables.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Outcome Comparison</h3>
+                <p>Compares the actual outcome with counterfactuals to isolate the impact of specific decisions.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Causal Insight</h3>
+                <p>Identifies true causal factors by observing what changes (or stays the same) across scenarios.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="container" style="padding-bottom: 4rem;">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Interactive Simulator</h2>
+        <div class="sim-container">
+            <div>
+                <label style="display:block; margin-bottom:0.5rem;">Actual Scenario</label>
+                <textarea class="form-control" rows="3">We launched the product on Friday. The server crashed due to high load.</textarea>
+                <label style="display:block; margin-bottom:0.5rem;">Counterfactuals (What if...)</label>
+                <textarea class="form-control" rows="3">1. We launched on Tuesday instead.
+2. We had enabled auto-scaling.</textarea>
+                <button class="btn-primary" style="width:100%">Analyze</button>
+            </div>
+            <div class="output-area">
+# Comparative Analysis
+
+## Actual: Friday Launch
+- **Outcome:** Crash. High weekend traffic + reduced staff availability.
+
+## Counterfactual 1: Tuesday Launch
+- **Analysis:** Traffic might have been lower or ramped up slower. Staff would be fully available to patch issues immediately.
+- **Likely Outcome:** Issues detected early, hotfix deployed, crash avoided.
+
+## Counterfactual 2: Auto-scaling Enabled
+- **Analysis:** Infrastructure would adapt to load spikes regardless of day.
+- **Likely Outcome:** No crash, but higher cloud costs.
+
+## Insight
+The root cause was lack of scalability, exacerbated by timing. Auto-scaling is the more robust preventive measure.
+            </div>
+        </div>
+    </section>
+</body>
+</html>

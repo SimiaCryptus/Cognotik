@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Task - Cognotik</title>
+    <title>Article Generation Task - Cognotik</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,21 +103,17 @@
             position: absolute;
             animation: pulse 4s infinite;
             box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .visual-node::before {
-            content: '';
-            position: absolute;
-            inset: -20px;
-            border: 1px solid var(--accent-secondary);
-            border-radius: 50%;
-            animation: spin 10s linear infinite;
+            content: '✍️';
+            font-size: 4rem;
         }
         @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 1; }
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
         }
         /* Features */
         .features {
@@ -209,11 +205,6 @@
             resize: vertical;
             min-height: 100px;
         }
-        .toggle-group {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
         .sim-right {
             background: #0b1120;
         }
@@ -268,13 +259,12 @@
     </style>
 </head>
 <body>
-    <cognotik-header current-page="analysis"></cognotik-header>
+    <cognotik-header current-page="article-generation"></cognotik-header>
     <!-- Hero -->
-    <!-- Prompt: A futuristic, glowing magnifying glass focusing on a network of code nodes, deep blue background with cyan data streams. High-tech, abstract 3D render. -->
     <header class="hero container">
         <div class="hero-content">
-            <h1>Analysis Task</h1>
-            <p>Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.</p>
+            <h1>Article Generation Task</h1>
+            <p>Generate publication-ready journalistic articles with proper structure, attribution, and style.</p>
             <a href="#demo" class="btn btn-primary">Try the Simulator</a>
         </div>
         <div class="hero-visual">
@@ -287,71 +277,24 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                    </div>
-                    <h3>Zero Side Effects</h3>
-                    <p>Primarily processes and responds to user inquiries using the language model without modifying files.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                     </div>
-                    <h3>Context Aware</h3>
-                    <p>Reads project files via glob patterns to provide answers grounded in your actual codebase.</p>
+                    <h3>Full Article Writing</h3>
+                    <p>Produces complete articles from headlines to conclusion, ready for publication.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                     </div>
-                    <h3>Comprehensive Reports</h3>
-                    <p>Generates detailed markdown reports, explanations, and recommendations based on your queries.</p>
+                    <h3>Style Adaptation</h3>
+                    <p>Supports news, features, opinion, and investigative formats tailored to your audience.</p>
                 </div>
-            </div>
-        </div>
-    </section>
-    <!-- Supported Formats -->
-    <section id="supported-formats" style="padding: 4rem 0; background: var(--bg-dark);">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Supported Document Formats</h2>
-            <p style="text-align: center; color: var(--text-muted); margin-bottom: 3rem; max-width: 700px; margin-left: auto; margin-right: auto;">
-                Cognotik natively understands a wide range of document types, allowing you to analyze code, documentation, and data files seamlessly.
-            </p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem;">
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">PDF</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.pdf</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Word</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.docx, .doc</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Excel</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.xlsx, .xls</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">PowerPoint</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.pptx, .ppt</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">OpenOffice</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.odt</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Rich Text</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.rtf</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Web</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.html, .htm</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Email</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.eml</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Text</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.txt, code</div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </div>
+                    <h3>Source Integration</h3>
+                    <p>Weaves in quotes, data, and expert analysis naturally for authoritative content.</p>
                 </div>
             </div>
         </div>
@@ -365,34 +308,33 @@
                 <div class="sim-panel sim-left">
                     <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Configuration</h3>
                     <div class="form-group">
-                        <label>Inquiry Goal</label>
-                        <input type="text" id="inquiry_goal" class="form-control" placeholder="e.g., Understand the authentication flow" value="Analyze the security of the login module">
+                        <label>Story Topic</label>
+                        <input type="text" id="story_topic" class="form-control" value="The Rise of Remote Work">
                     </div>
                     <div class="form-group">
-                        <label>Inquiry Questions (One per line)</label>
-                        <textarea id="inquiry_questions" class="form-control" placeholder="Specific questions...">Are there any hardcoded credentials?
-Is the password hashing algorithm secure?
-How are sessions managed?</textarea>
+                        <label>Article Format</label>
+                        <select id="article_format" class="form-control">
+                            <option value="news">News Report</option>
+                            <option value="feature" selected>Feature Story</option>
+                            <option value="opinion">Opinion Piece</option>
+                            <option value="investigative">Investigative</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Input Files (Glob Patterns)</label>
-                        <input type="text" id="input_files" class="form-control" value="src/auth/**/*.kt, config/*.yaml">
+                        <label>Target Publication</label>
+                        <input type="text" id="target_publication" class="form-control" value="TechCrunch">
                     </div>
-                    <div class="form-group toggle-group">
-                        <input type="checkbox" id="non_interactive" checked>
-                        <label for="non_interactive" style="margin:0; cursor:pointer;">Non-Interactive Mode</label>
-                    </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Run Analysis</button>
+                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Generate Article</button>
                 </div>
                 <!-- Outputs -->
                 <div class="sim-panel sim-right">
                     <div class="tabs">
-                        <div class="tab active" onclick="switchTab('report')">Report</div>
+                        <div class="tab active" onclick="switchTab('article')">Article</div>
                         <div class="tab" onclick="switchTab('logs')">Logs</div>
                     </div>
-                    <div id="output-report" class="output-area markdown-preview">
+                    <div id="output-article" class="output-area markdown-preview">
                         <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the analysis and click "Run" to see the output.
+                            Configure the article and click "Generate" to see the output.
                         </div>
                     </div>
                     <div id="output-logs" class="output-area" style="display: none; font-family: 'Courier New', monospace; font-size: 0.8rem;">
@@ -407,20 +349,20 @@ How are sessions managed?</textarea>
             <h2 style="margin-bottom: 2rem;">When to Use</h2>
             <div class="use-case-list">
                 <div class="use-case-item">
-                    <h4>Technical Q&A</h4>
-                    <p>Ask detailed questions about code, design, or project context without risking accidental changes.</p>
+                    <h4>Content Marketing</h4>
+                    <p>Create high-quality blog posts and articles to engage your audience.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Code Reviews</h4>
-                    <p>Get an automated second opinion on specific modules or files before merging.</p>
+                    <h4>News Reporting</h4>
+                    <p>Generate timely news reports on current events and industry updates.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Architectural Analysis</h4>
-                    <p>Understand high-level dependencies and data flows in complex legacy systems.</p>
+                    <h4>Thought Leadership</h4>
+                    <p>Draft opinion pieces and features that establish authority in your field.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Documentation Generation</h4>
-                    <p>Generate initial drafts of documentation based on current code implementation.</p>
+                    <h4>Internal Communications</h4>
+                    <p>Write newsletters and updates for employees and stakeholders.</p>
                 </div>
             </div>
         </div>
@@ -429,30 +371,30 @@ How are sessions managed?</textarea>
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
-            document.getElementById('output-report').style.display = tabName === 'report' ? 'block' : 'none';
+            document.getElementById('output-article').style.display = tabName === 'article' ? 'block' : 'none';
             document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
         }
         function runSimulation() {
-            const goal = document.getElementById('inquiry_goal').value;
-            const questions = document.getElementById('inquiry_questions').value.split('\n').filter(q => q.trim());
-            const files = document.getElementById('input_files').value;
-            const isNonInteractive = document.getElementById('non_interactive').checked;
-            const reportEl = document.getElementById('output-report');
+            const topic = document.getElementById('story_topic').value;
+            const format = document.getElementById('article_format').value;
+            const publication = document.getElementById('target_publication').value;
+            const reportEl = document.getElementById('output-article');
             const logsEl = document.getElementById('output-logs');
-            // Reset
+            
             reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
             logsEl.innerHTML = '';
-            // Mock Logs
+            
             const logs = [
-                `[INFO] Initializing AnalysisTask...`,
-                `[INFO] Mode: ${isNonInteractive ? 'Non-Interactive' : 'Interactive'}`,
-                `[INFO] Scanning files matching: ${files}`,
-                `[INFO] Found 12 files. Reading content...`,
-                `[INFO] Constructing prompt with ${questions.length} questions...`,
-                `[INFO] Sending request to LLM (Insight Agent)...`,
-                `[INFO] Receiving stream...`,
-                `[SUCCESS] Analysis complete.`
+                `[INFO] Initializing ArticleGenerationTask...`,
+                `[INFO] Topic: ${topic}`,
+                `[INFO] Format: ${format}`,
+                `[INFO] Investigating topic...`,
+                `[INFO] Creating outline...`,
+                `[INFO] Writing draft...`,
+                `[INFO] Refining style for ${publication}...`,
+                `[SUCCESS] Article generation complete.`
             ];
+            
             let logIndex = 0;
             const logInterval = setInterval(() => {
                 if (logIndex < logs.length) {
@@ -466,30 +408,29 @@ How are sessions managed?</textarea>
                     logIndex++;
                 } else {
                     clearInterval(logInterval);
-                    renderReport(goal, questions, files);
+                    renderArticle(topic, format);
                 }
-            }, 300);
+            }, 400);
         }
-        function renderReport(goal, questions, files) {
-            const reportEl = document.getElementById('output-report');
+        function renderArticle(topic, format) {
+            const reportEl = document.getElementById('output-article');
             const markdown = `
-<h1>Analysis Report</h1>
-<h2>Goal</h2>
-<p>${goal}</p>
-<h2>Scope</h2>
-<p>Files analyzed: <code>${files}</code></p>
-<h2>Findings</h2>
-${questions.map((q, i) => `
-<h3>${i + 1}. ${q}</h3>
-<p>Based on the analysis of the provided files, here are the insights regarding this question:</p>
-<ul>
-    <li>The implementation appears to follow standard practices, though specific configuration files in <code>config/</code> should be reviewed.</li>
-    <li>No critical vulnerabilities were immediately detected in the scanned paths.</li>
-    <li><strong>Recommendation:</strong> Consider adding unit tests for the edge cases identified in <code>AuthService.kt</code>.</li>
-</ul>
-`).join('')}
-<h2>Summary</h2>
-<p>The system architecture seems robust for the analyzed modules. The code is well-structured, but documentation could be improved in the authentication handlers.</p>
+<h1>Remote Work Revolution: A Permanent Shift?</h1>
+<h2>How the pandemic reshaped the global workforce and what lies ahead.</h2>
+<p><strong>By Cognotik AI</strong> | <em>${new Date().toLocaleDateString()}</em></p>
+
+<hr>
+
+<p>The traditional 9-to-5 office routine has been upended. What began as a temporary necessity has evolved into a fundamental shift in how we work. Companies worldwide are grappling with the new reality of hybrid and remote models.</p>
+
+<h3>The Productivity Paradox</h3>
+<p>Initial fears that remote work would lead to a slump in productivity have largely been debunked. "We've seen output actually increase," says Sarah Chen, HR Director at TechGlobal. "The challenge now is burnout, not laziness."</p>
+
+<h3>The Hybrid Compromise</h3>
+<p>Most organizations are settling on a hybrid model. This offers the flexibility employees crave while maintaining the collaborative benefits of in-person interaction. However, managing this balance requires new tools and management styles.</p>
+
+<h3>Looking Ahead</h3>
+<p>As technology evolves, the office will likely become a destination for collaboration rather than a daily requirement. The remote work revolution is not just about where we work, but how we define work itself.</p>
             `;
             reportEl.innerHTML = markdown;
         }

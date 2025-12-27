@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Functorial Mapping - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        :root { --bg-dark: #0f172a; --bg-card: #1e293b; --accent-primary: #0ea5e9; --accent-secondary: #2563eb; --text-main: #f8fafc; --text-muted: #94a3b8; --font-sans: 'Inter', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); margin: 0; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; border: none; cursor: pointer; }
+        .hero { padding: 8rem 0 4rem; min-height: 60vh; display: flex; align-items: center; }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid rgba(255,255,255,0.05); }
+        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.75rem; margin-bottom: 1rem; border-radius: 6px; }
+        .output-area { background: #0b1120; padding: 1rem; border-radius: 6px; font-family: monospace; color: #d1d5db; white-space: pre-wrap; height: 100%; }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="functorial-mapping"></cognotik-header>
+    <header class="hero container">
+        <div>
+            <h1>Functorial Mapping</h1>
+            <p style="max-width: 600px; font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem;">Translate problems from one domain to another using Category Theory. Solve difficult problems by mapping them to a domain where the solution is known.</p>
+            <a href="#demo" class="btn-primary">Try the Simulator</a>
+        </div>
+    </header>
+    <section class="container" style="padding: 4rem 0;">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Domain Formalization</h3>
+                <p>Defines source and target domains as Categories with Objects and Morphisms (relationships).</p>
+            </div>
+            <div class="feature-card">
+                <h3>Problem Transport</h3>
+                <p>Constructs a Functor to map the problem structure to the target domain, preserving relationships.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Solution Mapping</h3>
+                <p>Solves the problem in the target domain and maps the solution back to the source context.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="container" style="padding-bottom: 4rem;">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Interactive Simulator</h2>
+        <div class="sim-container">
+            <div>
+                <label style="display:block; margin-bottom:0.5rem;">Problem Statement</label>
+                <textarea class="form-control" rows="3">Optimize a delivery route for a fleet of trucks.</textarea>
+                <label style="display:block; margin-bottom:0.5rem;">Source Category</label>
+                <input type="text" class="form-control" value="Logistics (Trucks, Locations, Routes)">
+                <label style="display:block; margin-bottom:0.5rem;">Target Category</label>
+                <input type="text" class="form-control" value="Graph Theory (Nodes, Edges, Weights)">
+                <button class="btn-primary" style="width:100%">Map & Solve</button>
+            </div>
+            <div class="output-area">
+# Functorial Mapping Result
+
+## 1. Functor Construction
+- **Objects:** Locations -> Nodes
+- **Morphisms:** Routes -> Edges (Weighted by distance/time)
+
+## 2. Transported Problem
+Find the shortest path that visits all Nodes exactly once and returns to the start. (Traveling Salesperson Problem)
+
+## 3. Target Solution
+Apply Christofides algorithm or heuristic approximation to find optimal cycle in the graph.
+
+## 4. Inverse Mapping
+Convert the graph cycle back to a sequence of delivery locations.
+**Result:** An optimized itinerary for the fleet.
+            </div>
+        </div>
+    </section>
+</body>
+</html>

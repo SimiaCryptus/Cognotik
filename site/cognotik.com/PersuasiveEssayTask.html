@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persuasive Essay - Cognotik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --accent-primary: #f472b6; /* Pink */
+            --accent-secondary: #a855f7; /* Purple */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        .btn { display: inline-block; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-decoration: none; color: #fff; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); box-shadow: 0 0 15px rgba(244, 114, 182, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(244, 114, 182, 0.5); }
+        
+        .hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 80vh; }
+        .hero-content { flex: 1; padding-right: 2rem; }
+        .hero h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
+        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
+        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-primary); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(244, 114, 182, 0.2); }
+        
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+
+        .features { padding: 4rem 0; background: rgba(255,255,255,0.02); }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+        .feature-card:hover { border-color: var(--accent-primary); transform: translateY(-5px); }
+        .feature-icon { width: 48px; height: 48px; background: rgba(244, 114, 182, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: var(--accent-primary); }
+
+        .simulator { padding: 4rem 0; }
+        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); min-height: 600px; }
+        .sim-panel { padding: 2rem; display: flex; flex-direction: column; }
+        .sim-left { border-right: 1px solid rgba(255,255,255,0.05); }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); padding: 0.75rem; border-radius: 6px; font-family: monospace; font-size: 0.9rem; }
+        .form-control:focus { outline: none; border-color: var(--accent-primary); }
+        textarea.form-control { resize: vertical; min-height: 100px; }
+        .output-area { flex: 1; font-family: monospace; font-size: 0.9rem; color: #d1d5db; overflow-y: auto; white-space: pre-wrap; }
+        
+        .use-cases { padding: 4rem 0; }
+        .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .use-case-item { background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
+
+        @media (max-width: 768px) { .hero { flex-direction: column; text-align: center; padding-top: 6rem; } .sim-container { grid-template-columns: 1fr; } .sim-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); } }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="essay"></cognotik-header>
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>Persuasive Essay</h1>
+            <p>Generate compelling, well-structured persuasive essays with strong arguments and rhetorical flair.</p>
+            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </div>
+                    <h3>Structured Arguments</h3>
+                    <p>Develops clear claims supported by evidence, logic, and examples for maximum impact.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                    </div>
+                    <h3>Rhetorical Devices</h3>
+                    <p>Effectively employs ethos, pathos, and logos to persuade the target audience.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <h3>Counterarguments</h3>
+                    <p>Anticipates opposing viewpoints and provides strong rebuttals to strengthen the position.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="sim-container">
+                <div class="sim-panel sim-left">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Configuration</h3>
+                    <div class="form-group">
+                        <label>Thesis Statement</label>
+                        <textarea id="thesis" class="form-control">Space exploration is a vital investment for humanity's future.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Audience</label>
+                        <input type="text" id="audience" class="form-control" value="General Public">
+                    </div>
+                    <div class="form-group">
+                        <label>Tone</label>
+                        <input type="text" id="tone" class="form-control" value="Inspirational">
+                    </div>
+                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Generate Essay</button>
+                </div>
+                <div class="sim-panel sim-right">
+                    <div id="output-logs" class="output-area">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Enter a thesis and click "Generate" to see the essay structure.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>Opinion Pieces</h4>
+                    <p>Draft compelling op-eds and articles for publication.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Proposals</h4>
+                    <p>Create persuasive business or project proposals to win support.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Advocacy</h4>
+                    <p>Write speeches or letters to advocate for specific causes or policies.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function runSimulation() {
+            const thesis = document.getElementById('thesis').value;
+            const logsEl = document.getElementById('output-logs');
+            
+            logsEl.innerHTML = '';
+            const steps = [
+                `[INFO] Analyzing thesis: "${thesis.substring(0, 30)}..."`,
+                `[INFO] Creating outline...`,
+                `[INFO] Writing introduction...`,
+                `[INFO] Developing arguments...`,
+                `[INFO] Addressing counterarguments...`,
+                `[SUCCESS] Essay Generated.`
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < steps.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
+                    line.style.marginBottom = '4px';
+                    if (steps[i].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else line.style.color = '#f472b6';
+                    logsEl.appendChild(line);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    const result = document.createElement('div');
+                    result.innerHTML = `
+                        <br><strong>Essay Structure:</strong><br>
+                        1. <strong>Intro:</strong> The boundless frontier awaits.<br>
+                        2. <strong>Arg 1:</strong> Technological innovation spinoffs.<br>
+                        3. <strong>Arg 2:</strong> Resource acquisition and sustainability.<br>
+                        4. <strong>Counter:</strong> "It's too expensive" -> Rebuttal: ROI is massive.<br>
+                        5. <strong>Conclusion:</strong> A call to look upward.
+                    `;
+                    result.style.color = '#e2e8f0';
+                    result.style.marginTop = '1rem';
+                    result.style.padding = '1rem';
+                    result.style.border = '1px solid rgba(255,255,255,0.1)';
+                    result.style.borderRadius = '8px';
+                    logsEl.appendChild(result);
+                }
+            }, 800);
+        }
+    </script>
+</body>
+</html>

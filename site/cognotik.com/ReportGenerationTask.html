@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Task - Cognotik</title>
+    <title>Report Generation Task - Cognotik</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -99,25 +99,35 @@
             width: 200px;
             height: 200px;
             border: 2px solid var(--accent-primary);
-            border-radius: 50%;
+            border-radius: 12px;
             position: absolute;
             animation: pulse 4s infinite;
             box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .visual-node::before {
             content: '';
             position: absolute;
-            inset: -20px;
-            border: 1px solid var(--accent-secondary);
-            border-radius: 50%;
-            animation: spin 10s linear infinite;
+            width: 80%;
+            height: 2px;
+            background: var(--accent-secondary);
+            top: 30%;
+            left: 10%;
+        }
+        .visual-node::after {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 2px;
+            background: var(--accent-secondary);
+            top: 50%;
+            left: 10%;
         }
         @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 1; }
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
         }
         /* Features */
         .features {
@@ -209,11 +219,6 @@
             resize: vertical;
             min-height: 100px;
         }
-        .toggle-group {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
         .sim-right {
             background: #0b1120;
         }
@@ -268,17 +273,18 @@
     </style>
 </head>
 <body>
-    <cognotik-header current-page="analysis"></cognotik-header>
+    <cognotik-header current-page="report-generation"></cognotik-header>
     <!-- Hero -->
-    <!-- Prompt: A futuristic, glowing magnifying glass focusing on a network of code nodes, deep blue background with cyan data streams. High-tech, abstract 3D render. -->
     <header class="hero container">
         <div class="hero-content">
-            <h1>Analysis Task</h1>
-            <p>Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.</p>
+            <h1>Report Generation Task</h1>
+            <p>Generate comprehensive business reports with data analysis, visualizations, and actionable recommendations.</p>
             <a href="#demo" class="btn btn-primary">Try the Simulator</a>
         </div>
         <div class="hero-visual">
-            <div class="visual-node"></div>
+            <div class="visual-node">
+                <div style="font-size: 3rem; color: var(--accent-primary);">📊</div>
+            </div>
         </div>
     </header>
     <!-- Features -->
@@ -287,71 +293,24 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                     </div>
-                    <h3>Zero Side Effects</h3>
-                    <p>Primarily processes and responds to user inquiries using the language model without modifying files.</p>
+                    <h3>Data-Driven Analysis</h3>
+                    <p>Analyzes metrics and trends to provide evidence-based insights and trend analysis.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                     </div>
-                    <h3>Context Aware</h3>
-                    <p>Reads project files via glob patterns to provide answers grounded in your actual codebase.</p>
+                    <h3>Structured Reporting</h3>
+                    <p>Creates professional reports with executive summaries, detailed sections, and visualizations.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     </div>
-                    <h3>Comprehensive Reports</h3>
-                    <p>Generates detailed markdown reports, explanations, and recommendations based on your queries.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- Supported Formats -->
-    <section id="supported-formats" style="padding: 4rem 0; background: var(--bg-dark);">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Supported Document Formats</h2>
-            <p style="text-align: center; color: var(--text-muted); margin-bottom: 3rem; max-width: 700px; margin-left: auto; margin-right: auto;">
-                Cognotik natively understands a wide range of document types, allowing you to analyze code, documentation, and data files seamlessly.
-            </p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem;">
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">PDF</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.pdf</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Word</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.docx, .doc</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Excel</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.xlsx, .xls</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">PowerPoint</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.pptx, .ppt</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">OpenOffice</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.odt</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Rich Text</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.rtf</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Web</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.html, .htm</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Email</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.eml</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Text</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.txt, code</div>
+                    <h3>Actionable Recommendations</h3>
+                    <p>Generates strategic recommendations and risk assessments based on findings.</p>
                 </div>
             </div>
         </div>
@@ -365,24 +324,27 @@
                 <div class="sim-panel sim-left">
                     <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Configuration</h3>
                     <div class="form-group">
-                        <label>Inquiry Goal</label>
-                        <input type="text" id="inquiry_goal" class="form-control" placeholder="e.g., Understand the authentication flow" value="Analyze the security of the login module">
+                        <label>Report Topic</label>
+                        <input type="text" id="report_topic" class="form-control" value="Q3 Marketing Performance">
                     </div>
                     <div class="form-group">
-                        <label>Inquiry Questions (One per line)</label>
-                        <textarea id="inquiry_questions" class="form-control" placeholder="Specific questions...">Are there any hardcoded credentials?
-Is the password hashing algorithm secure?
-How are sessions managed?</textarea>
+                        <label>Report Type</label>
+                        <select id="report_type" class="form-control">
+                            <option value="status_update">Status Update</option>
+                            <option value="quarterly_review" selected>Quarterly Review</option>
+                            <option value="incident_report">Incident Report</option>
+                            <option value="performance_analysis">Performance Analysis</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Input Files (Glob Patterns)</label>
-                        <input type="text" id="input_files" class="form-control" value="src/auth/**/*.kt, config/*.yaml">
+                        <label>Target Audience</label>
+                        <input type="text" id="target_audience" class="form-control" value="Executive Team">
                     </div>
-                    <div class="form-group toggle-group">
-                        <input type="checkbox" id="non_interactive" checked>
-                        <label for="non_interactive" style="margin:0; cursor:pointer;">Non-Interactive Mode</label>
+                    <div class="form-group">
+                        <label>Key Metrics (Comma separated)</label>
+                        <textarea id="key_metrics" class="form-control">Conversion Rate, Customer Acquisition Cost, ROI, Traffic Growth</textarea>
                     </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Run Analysis</button>
+                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Generate Report</button>
                 </div>
                 <!-- Outputs -->
                 <div class="sim-panel sim-right">
@@ -392,7 +354,7 @@ How are sessions managed?</textarea>
                     </div>
                     <div id="output-report" class="output-area markdown-preview">
                         <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the analysis and click "Run" to see the output.
+                            Configure the report and click "Generate" to see the output.
                         </div>
                     </div>
                     <div id="output-logs" class="output-area" style="display: none; font-family: 'Courier New', monospace; font-size: 0.8rem;">
@@ -407,20 +369,20 @@ How are sessions managed?</textarea>
             <h2 style="margin-bottom: 2rem;">When to Use</h2>
             <div class="use-case-list">
                 <div class="use-case-item">
-                    <h4>Technical Q&A</h4>
-                    <p>Ask detailed questions about code, design, or project context without risking accidental changes.</p>
+                    <h4>Business Reporting</h4>
+                    <p>Create quarterly reviews, status updates, and performance analyses for stakeholders.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Code Reviews</h4>
-                    <p>Get an automated second opinion on specific modules or files before merging.</p>
+                    <h4>Project Summaries</h4>
+                    <p>Generate post-mortem reports and project completion summaries with key learnings.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Architectural Analysis</h4>
-                    <p>Understand high-level dependencies and data flows in complex legacy systems.</p>
+                    <h4>Market Research</h4>
+                    <p>Compile market analysis reports with trend data and competitive insights.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Documentation Generation</h4>
-                    <p>Generate initial drafts of documentation based on current code implementation.</p>
+                    <h4>Incident Analysis</h4>
+                    <p>Document technical incidents with root cause analysis and prevention strategies.</p>
                 </div>
             </div>
         </div>
@@ -433,26 +395,27 @@ How are sessions managed?</textarea>
             document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
         }
         function runSimulation() {
-            const goal = document.getElementById('inquiry_goal').value;
-            const questions = document.getElementById('inquiry_questions').value.split('\n').filter(q => q.trim());
-            const files = document.getElementById('input_files').value;
-            const isNonInteractive = document.getElementById('non_interactive').checked;
+            const topic = document.getElementById('report_topic').value;
+            const type = document.getElementById('report_type').value;
+            const audience = document.getElementById('target_audience').value;
+            const metrics = document.getElementById('key_metrics').value.split(',');
             const reportEl = document.getElementById('output-report');
             const logsEl = document.getElementById('output-logs');
-            // Reset
+            
             reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
             logsEl.innerHTML = '';
-            // Mock Logs
+            
             const logs = [
-                `[INFO] Initializing AnalysisTask...`,
-                `[INFO] Mode: ${isNonInteractive ? 'Non-Interactive' : 'Interactive'}`,
-                `[INFO] Scanning files matching: ${files}`,
-                `[INFO] Found 12 files. Reading content...`,
-                `[INFO] Constructing prompt with ${questions.length} questions...`,
-                `[INFO] Sending request to LLM (Insight Agent)...`,
-                `[INFO] Receiving stream...`,
-                `[SUCCESS] Analysis complete.`
+                `[INFO] Initializing ReportGenerationTask...`,
+                `[INFO] Topic: ${topic}`,
+                `[INFO] Type: ${type}`,
+                `[INFO] Analyzing metrics: ${metrics.length} items...`,
+                `[INFO] Generating executive summary...`,
+                `[INFO] Creating data visualizations...`,
+                `[INFO] Formulating recommendations...`,
+                `[SUCCESS] Report generation complete.`
             ];
+            
             let logIndex = 0;
             const logInterval = setInterval(() => {
                 if (logIndex < logs.length) {
@@ -466,30 +429,42 @@ How are sessions managed?</textarea>
                     logIndex++;
                 } else {
                     clearInterval(logInterval);
-                    renderReport(goal, questions, files);
+                    renderReport(topic, type, audience, metrics);
                 }
-            }, 300);
+            }, 400);
         }
-        function renderReport(goal, questions, files) {
+        function renderReport(topic, type, audience, metrics) {
             const reportEl = document.getElementById('output-report');
             const markdown = `
-<h1>Analysis Report</h1>
-<h2>Goal</h2>
-<p>${goal}</p>
-<h2>Scope</h2>
-<p>Files analyzed: <code>${files}</code></p>
-<h2>Findings</h2>
-${questions.map((q, i) => `
-<h3>${i + 1}. ${q}</h3>
-<p>Based on the analysis of the provided files, here are the insights regarding this question:</p>
+<h1>${topic}</h1>
+<p><strong>Type:</strong> ${type.replace('_', ' ').toUpperCase()}<br>
+<strong>Prepared for:</strong> ${audience}<br>
+<strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+
+<h2>Executive Summary</h2>
+<p>This report provides a comprehensive analysis of ${topic}. Key performance indicators show positive trends in customer acquisition, though retention metrics require attention. Overall, the strategic initiatives implemented in Q3 have yielded a 15% increase in ROI.</p>
+
+<h2>Key Metrics Analysis</h2>
 <ul>
-    <li>The implementation appears to follow standard practices, though specific configuration files in <code>config/</code> should be reviewed.</li>
-    <li>No critical vulnerabilities were immediately detected in the scanned paths.</li>
-    <li><strong>Recommendation:</strong> Consider adding unit tests for the edge cases identified in <code>AuthService.kt</code>.</li>
+    ${metrics.map(m => `<li><strong>${m.trim()}:</strong> Showing steady improvement. Current value exceeds target by 5%.</li>`).join('')}
 </ul>
-`).join('')}
-<h2>Summary</h2>
-<p>The system architecture seems robust for the analyzed modules. The code is well-structured, but documentation could be improved in the authentication handlers.</p>
+
+<h2>Trend Analysis</h2>
+<p>Comparing current performance to the previous period, we observe:</p>
+<ul>
+    <li><strong>Upward Trend:</strong> Traffic growth has accelerated by 20% month-over-month.</li>
+    <li><strong>Stable:</strong> Conversion rates remain consistent at 3.5%.</li>
+</ul>
+
+<h2>Recommendations</h2>
+<ol>
+    <li><strong>Optimize Ad Spend:</strong> Reallocate budget to high-performing channels identified in the analysis.</li>
+    <li><strong>Enhance Onboarding:</strong> Address the drop-off in user activation by simplifying the signup flow.</li>
+    <li><strong>Expand Content Strategy:</strong> Leverage the high engagement on blog posts to drive more organic traffic.</li>
+</ol>
+
+<h2>Risk Assessment</h2>
+<p><strong>Market Volatility:</strong> Moderate risk due to changing competitor landscape. Mitigation: Diversify marketing channels.</p>
             `;
             reportEl.innerHTML = markdown;
         }

@@ -215,7 +215,22 @@ class AnalysisTask(
                     FileSelectionUtils.filteredWalkAsciiTree(
                         path.toFile(),
                         20,
-                        treatDocumentsAsText = treatDocumentsAsText
+                        treatDocumentsAsText = treatDocumentsAsText,
+                        render = { file: File ->
+                            val name = file.name
+                            val size: String? = if (file.isFile) {
+                                val length = file.length()
+                                when {
+                                    length < 1024 -> "$length B"
+                                    length < 1024 * 1024 -> String.format("%.2f KB", length / 1024.0)
+                                    length < 1024 * 1024 * 1024 -> String.format("%.2f MB", length / (1024.0 * 1024.0))
+                                    else -> String.format("%.2f GB", length / (1024.0 * 1024.0 * 1024.0))
+                                }
+                            } else {
+                                null
+                            }
+                            if (size != null) "$name ($size)" else name
+                        }
                     )
                 )
             } catch (e: Exception) {

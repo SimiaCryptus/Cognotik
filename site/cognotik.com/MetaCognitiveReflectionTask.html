@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta-Cognitive Reflection - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        :root { --bg-dark: #0f172a; --bg-card: #1e293b; --accent-primary: #14b8a6; --accent-secondary: #06b6d4; --text-main: #f8fafc; --text-muted: #94a3b8; --font-sans: 'Inter', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); margin: 0; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; border: none; cursor: pointer; }
+        .hero { padding: 8rem 0 4rem; min-height: 60vh; display: flex; align-items: center; }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid rgba(255,255,255,0.05); }
+        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.75rem; margin-bottom: 1rem; border-radius: 6px; }
+        .output-area { background: #0b1120; padding: 1rem; border-radius: 6px; font-family: monospace; color: #d1d5db; white-space: pre-wrap; height: 100%; }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="meta-cognitive"></cognotik-header>
+    <header class="hero container">
+        <div>
+            <h1>Meta-Cognitive Reflection</h1>
+            <p style="max-width: 600px; font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem;">"Thinking about thinking." Reflect on and critique reasoning processes to identify biases, assumptions, and opportunities for improvement.</p>
+            <a href="#demo" class="btn-primary">Try the Simulator</a>
+        </div>
+    </header>
+    <section class="container" style="padding: 4rem 0;">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Bias Detection</h3>
+                <p>Identifies potential cognitive biases (e.g., confirmation bias, anchoring) in the reasoning process.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Assumption Check</h3>
+                <p>Surfaces implicit assumptions and evaluates their validity and impact on conclusions.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Quality Improvement</h3>
+                <p>Provides actionable suggestions to enhance logical consistency, completeness, and confidence.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="container" style="padding-bottom: 4rem;">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Interactive Simulator</h2>
+        <div class="sim-container">
+            <div>
+                <label style="display:block; margin-bottom:0.5rem;">Subject Task ID</label>
+                <input type="text" class="form-control" value="analysis-task-123">
+                <label style="display:block; margin-bottom:0.5rem;">Reflection Aspects</label>
+                <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
+                    <label><input type="checkbox" checked> Assumptions</label>
+                    <label><input type="checkbox" checked> Biases</label>
+                    <label><input type="checkbox" checked> Alternatives</label>
+                </div>
+                <button class="btn-primary" style="width:100%">Reflect</button>
+            </div>
+            <div class="output-area">
+# Reflection Analysis
+
+## Underlying Assumptions
+- **Implicit:** Assumed that user data is always available in JSON format.
+- **Critique:** This may not hold for legacy systems using XML.
+
+## Cognitive Biases
+- **Confirmation Bias:** The analysis focused heavily on evidence supporting the initial hypothesis while glossing over the outlier data points in Q3.
+
+## Alternative Approaches
+- Instead of a linear regression, a random forest model might capture the non-linear relationships observed in the dataset.
+
+## Recommendations
+1. Verify data format assumptions with the engineering team.
+2. Re-evaluate the outlier data to ensure it isn't a signal of a different trend.
+            </div>
+        </div>
+    </section>
+</body>
+</html>

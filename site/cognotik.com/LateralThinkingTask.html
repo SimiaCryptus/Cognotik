@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lateral Thinking - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        :root { --bg-dark: #0f172a; --bg-card: #1e293b; --accent-primary: #f43f5e; --accent-secondary: #fb7185; --text-main: #f8fafc; --text-muted: #94a3b8; --font-sans: 'Inter', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); margin: 0; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; border: none; cursor: pointer; }
+        .hero { padding: 8rem 0 4rem; min-height: 60vh; display: flex; align-items: center; }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid rgba(255,255,255,0.05); }
+        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.75rem; margin-bottom: 1rem; border-radius: 6px; }
+        .output-area { background: #0b1120; padding: 1rem; border-radius: 6px; font-family: monospace; color: #d1d5db; white-space: pre-wrap; height: 100%; }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="lateral-thinking"></cognotik-header>
+    <header class="hero container">
+        <div>
+            <h1>Lateral Thinking</h1>
+            <p style="max-width: 600px; font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem;">Break conventional thinking patterns to find innovative solutions. Apply techniques like reversal, random stimulus, and provocation.</p>
+            <a href="#demo" class="btn-primary">Try the Simulator</a>
+        </div>
+    </header>
+    <section class="container" style="padding: 4rem 0;">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Technique Application</h3>
+                <p>Systematically applies lateral thinking methods (Reversal, Exaggeration, Escape) to generate ideas.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Breakthrough Insights</h3>
+                <p>Identifies novel perspectives and hidden assumptions that block creative problem-solving.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Synthesis</h3>
+                <p>Combines unconventional ideas into practical, innovative approaches with feasibility assessments.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="container" style="padding-bottom: 4rem;">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Interactive Simulator</h2>
+        <div class="sim-container">
+            <div>
+                <label style="display:block; margin-bottom:0.5rem;">Problem</label>
+                <textarea class="form-control" rows="3">How to reduce waiting times in a hospital emergency room?</textarea>
+                <label style="display:block; margin-bottom:0.5rem;">Techniques</label>
+                <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
+                    <label><input type="checkbox" checked> Reversal</label>
+                    <label><input type="checkbox" checked> Random Stimulus</label>
+                    <label><input type="checkbox" checked> Exaggeration</label>
+                </div>
+                <button class="btn-primary" style="width:100%">Generate Ideas</button>
+            </div>
+            <div class="output-area">
+# Lateral Thinking Results
+
+## Technique: Reversal
+**Provocation:** Make patients wait *longer*.
+**Idea:** If waiting is inevitable, make it productive. Perform triage and initial testing *during* the wait or transport.
+**Breakthrough:** Shift medical process to the waiting period.
+
+## Technique: Random Stimulus
+**Stimulus:** "Hotel"
+**Idea:** Treat patients like guests. Give them pagers/apps so they can wait elsewhere comfortably.
+**Breakthrough:** Decouple "waiting" from "waiting room".
+
+## Recommended Approach
+Implement a "Mobile Triage" system where initial diagnostics happen before arrival or in the lobby, and allow patients to wait remotely for non-critical issues.
+            </div>
+        </div>
+    </section>
+</body>
+</html>

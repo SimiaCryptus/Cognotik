@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Task - Cognotik</title>
+    <title>Interactive Story Task - Cognotik</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,21 +103,17 @@
             position: absolute;
             animation: pulse 4s infinite;
             box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .visual-node::before {
-            content: '';
-            position: absolute;
-            inset: -20px;
-            border: 1px solid var(--accent-secondary);
-            border-radius: 50%;
-            animation: spin 10s linear infinite;
+            content: '🎮';
+            font-size: 4rem;
         }
         @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 1; }
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
         }
         /* Features */
         .features {
@@ -209,11 +205,6 @@
             resize: vertical;
             min-height: 100px;
         }
-        .toggle-group {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
         .sim-right {
             background: #0b1120;
         }
@@ -268,13 +259,12 @@
     </style>
 </head>
 <body>
-    <cognotik-header current-page="analysis"></cognotik-header>
+    <cognotik-header current-page="interactive-story"></cognotik-header>
     <!-- Hero -->
-    <!-- Prompt: A futuristic, glowing magnifying glass focusing on a network of code nodes, deep blue background with cyan data streams. High-tech, abstract 3D render. -->
     <header class="hero container">
         <div class="hero-content">
-            <h1>Analysis Task</h1>
-            <p>Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.</p>
+            <h1>Interactive Story Task</h1>
+            <p>Create immersive choose-your-own-adventure narratives with branching paths and multiple endings.</p>
             <a href="#demo" class="btn btn-primary">Try the Simulator</a>
         </div>
         <div class="hero-visual">
@@ -287,71 +277,24 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
                     </div>
-                    <h3>Zero Side Effects</h3>
-                    <p>Primarily processes and responds to user inquiries using the language model without modifying files.</p>
+                    <h3>Branching Narratives</h3>
+                    <p>Develops complex story trees with meaningful choices that impact the plot.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                     </div>
-                    <h3>Context Aware</h3>
-                    <p>Reads project files via glob patterns to provide answers grounded in your actual codebase.</p>
+                    <h3>State Tracking</h3>
+                    <p>Tracks inventory, health, relationships, and other variables across the story.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
                     </div>
-                    <h3>Comprehensive Reports</h3>
-                    <p>Generates detailed markdown reports, explanations, and recommendations based on your queries.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- Supported Formats -->
-    <section id="supported-formats" style="padding: 4rem 0; background: var(--bg-dark);">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Supported Document Formats</h2>
-            <p style="text-align: center; color: var(--text-muted); margin-bottom: 3rem; max-width: 700px; margin-left: auto; margin-right: auto;">
-                Cognotik natively understands a wide range of document types, allowing you to analyze code, documentation, and data files seamlessly.
-            </p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem;">
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">PDF</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.pdf</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Word</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.docx, .doc</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Excel</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.xlsx, .xls</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">PowerPoint</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.pptx, .ppt</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">OpenOffice</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.odt</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Rich Text</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.rtf</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Web</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.html, .htm</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Email</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.eml</div>
-                </div>
-                <div style="background: var(--bg-card); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.5rem;">Text</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">.txt, code</div>
+                    <h3>Multiple Endings</h3>
+                    <p>Generates distinct conclusions based on player actions and choices.</p>
                 </div>
             </div>
         </div>
@@ -365,34 +308,33 @@
                 <div class="sim-panel sim-left">
                     <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Configuration</h3>
                     <div class="form-group">
-                        <label>Inquiry Goal</label>
-                        <input type="text" id="inquiry_goal" class="form-control" placeholder="e.g., Understand the authentication flow" value="Analyze the security of the login module">
+                        <label>Premise</label>
+                        <input type="text" id="premise" class="form-control" value="You wake up in a mysterious forest with no memory.">
                     </div>
                     <div class="form-group">
-                        <label>Inquiry Questions (One per line)</label>
-                        <textarea id="inquiry_questions" class="form-control" placeholder="Specific questions...">Are there any hardcoded credentials?
-Is the password hashing algorithm secure?
-How are sessions managed?</textarea>
+                        <label>Genre</label>
+                        <select id="genre" class="form-control">
+                            <option value="fantasy" selected>Fantasy</option>
+                            <option value="sci-fi">Sci-Fi</option>
+                            <option value="mystery">Mystery</option>
+                            <option value="horror">Horror</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Input Files (Glob Patterns)</label>
-                        <input type="text" id="input_files" class="form-control" value="src/auth/**/*.kt, config/*.yaml">
+                        <label>Decision Points</label>
+                        <input type="number" id="decision_points" class="form-control" value="5">
                     </div>
-                    <div class="form-group toggle-group">
-                        <input type="checkbox" id="non_interactive" checked>
-                        <label for="non_interactive" style="margin:0; cursor:pointer;">Non-Interactive Mode</label>
-                    </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Run Analysis</button>
+                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Generate Story</button>
                 </div>
                 <!-- Outputs -->
                 <div class="sim-panel sim-right">
                     <div class="tabs">
-                        <div class="tab active" onclick="switchTab('report')">Report</div>
+                        <div class="tab active" onclick="switchTab('story')">Story Map</div>
                         <div class="tab" onclick="switchTab('logs')">Logs</div>
                     </div>
-                    <div id="output-report" class="output-area markdown-preview">
+                    <div id="output-story" class="output-area markdown-preview">
                         <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
-                            Configure the analysis and click "Run" to see the output.
+                            Configure the story and click "Generate" to see the output.
                         </div>
                     </div>
                     <div id="output-logs" class="output-area" style="display: none; font-family: 'Courier New', monospace; font-size: 0.8rem;">
@@ -407,20 +349,20 @@ How are sessions managed?</textarea>
             <h2 style="margin-bottom: 2rem;">When to Use</h2>
             <div class="use-case-list">
                 <div class="use-case-item">
-                    <h4>Technical Q&A</h4>
-                    <p>Ask detailed questions about code, design, or project context without risking accidental changes.</p>
+                    <h4>Interactive Fiction</h4>
+                    <p>Create engaging text adventures and interactive novels.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Code Reviews</h4>
-                    <p>Get an automated second opinion on specific modules or files before merging.</p>
+                    <h4>Training Scenarios</h4>
+                    <p>Develop role-playing scenarios for training and education.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Architectural Analysis</h4>
-                    <p>Understand high-level dependencies and data flows in complex legacy systems.</p>
+                    <h4>Game Design</h4>
+                    <p>Prototype narrative structures and quest lines for video games.</p>
                 </div>
                 <div class="use-case-item">
-                    <h4>Documentation Generation</h4>
-                    <p>Generate initial drafts of documentation based on current code implementation.</p>
+                    <h4>Marketing Campaigns</h4>
+                    <p>Build interactive brand experiences and gamified content.</p>
                 </div>
             </div>
         </div>
@@ -429,30 +371,29 @@ How are sessions managed?</textarea>
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
-            document.getElementById('output-report').style.display = tabName === 'report' ? 'block' : 'none';
+            document.getElementById('output-story').style.display = tabName === 'story' ? 'block' : 'none';
             document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
         }
         function runSimulation() {
-            const goal = document.getElementById('inquiry_goal').value;
-            const questions = document.getElementById('inquiry_questions').value.split('\n').filter(q => q.trim());
-            const files = document.getElementById('input_files').value;
-            const isNonInteractive = document.getElementById('non_interactive').checked;
-            const reportEl = document.getElementById('output-report');
+            const premise = document.getElementById('premise').value;
+            const genre = document.getElementById('genre').value;
+            const points = document.getElementById('decision_points').value;
+            const reportEl = document.getElementById('output-story');
             const logsEl = document.getElementById('output-logs');
-            // Reset
+            
             reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
             logsEl.innerHTML = '';
-            // Mock Logs
+            
             const logs = [
-                `[INFO] Initializing AnalysisTask...`,
-                `[INFO] Mode: ${isNonInteractive ? 'Non-Interactive' : 'Interactive'}`,
-                `[INFO] Scanning files matching: ${files}`,
-                `[INFO] Found 12 files. Reading content...`,
-                `[INFO] Constructing prompt with ${questions.length} questions...`,
-                `[INFO] Sending request to LLM (Insight Agent)...`,
-                `[INFO] Receiving stream...`,
-                `[SUCCESS] Analysis complete.`
+                `[INFO] Initializing InteractiveStoryTask...`,
+                `[INFO] Premise: ${premise}`,
+                `[INFO] Creating story structure...`,
+                `[INFO] Writing opening segment...`,
+                `[INFO] Generating decision points...`,
+                `[INFO] Creating endings...`,
+                `[SUCCESS] Story generation complete.`
             ];
+            
             let logIndex = 0;
             const logInterval = setInterval(() => {
                 if (logIndex < logs.length) {
@@ -466,30 +407,42 @@ How are sessions managed?</textarea>
                     logIndex++;
                 } else {
                     clearInterval(logInterval);
-                    renderReport(goal, questions, files);
+                    renderStory(premise);
                 }
-            }, 300);
+            }, 400);
         }
-        function renderReport(goal, questions, files) {
-            const reportEl = document.getElementById('output-report');
+        function renderStory(premise) {
+            const reportEl = document.getElementById('output-story');
             const markdown = `
-<h1>Analysis Report</h1>
-<h2>Goal</h2>
-<p>${goal}</p>
-<h2>Scope</h2>
-<p>Files analyzed: <code>${files}</code></p>
-<h2>Findings</h2>
-${questions.map((q, i) => `
-<h3>${i + 1}. ${q}</h3>
-<p>Based on the analysis of the provided files, here are the insights regarding this question:</p>
-<ul>
-    <li>The implementation appears to follow standard practices, though specific configuration files in <code>config/</code> should be reviewed.</li>
-    <li>No critical vulnerabilities were immediately detected in the scanned paths.</li>
-    <li><strong>Recommendation:</strong> Consider adding unit tests for the edge cases identified in <code>AuthService.kt</code>.</li>
-</ul>
-`).join('')}
-<h2>Summary</h2>
-<p>The system architecture seems robust for the analyzed modules. The code is well-structured, but documentation could be improved in the authentication handlers.</p>
+<h1>The Forgotten Forest</h1>
+
+<h2>START: Opening</h2>
+<p>${premise} The air is thick with mist, and strange, glowing flora illuminates the path ahead. You hear a rustling in the bushes to your right.</p>
+<p><strong>→ Continue to: decision_1</strong></p>
+
+<hr>
+
+<h2>decision_1</h2>
+<p>You stand at a fork in the path. To the left, the path leads towards a distant, crumbling tower. To the right, the sound of running water suggests a stream.</p>
+
+<h3>What do you do?</h3>
+<p><strong>Choice 1: Investigate the tower</strong><br>
+<em>State changes: courage +1</em><br>
+<strong>→ Continue to: decision_2a</strong></p>
+
+<p><strong>Choice 2: Head towards the water</strong><br>
+<em>State changes: health +10</em><br>
+<strong>→ Continue to: decision_2b</strong></p>
+
+<p><strong>Choice 3: Hide and wait</strong><br>
+<em>State changes: stealth +1</em><br>
+<strong>→ Continue to: decision_2c</strong></p>
+
+<hr>
+
+<h2>ending_1: The Guardian</h2>
+<p>You reach the tower and discover you are the guardian of this forest, returned to restore balance.</p>
+<p><strong>THE END</strong></p>
             `;
             reportEl.innerHTML = markdown;
         }

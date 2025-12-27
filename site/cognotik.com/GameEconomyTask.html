@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Economy Design - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        :root { --bg-dark: #0f172a; --bg-card: #1e293b; --accent-primary: #8b5cf6; --accent-secondary: #ec4899; --text-main: #f8fafc; --text-muted: #94a3b8; --font-sans: 'Inter', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); margin: 0; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; border: none; cursor: pointer; }
+        .hero { padding: 8rem 0 4rem; min-height: 60vh; display: flex; align-items: center; }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid rgba(255,255,255,0.05); }
+        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.75rem; margin-bottom: 1rem; border-radius: 6px; }
+        .output-area { background: #0b1120; padding: 1rem; border-radius: 6px; font-family: monospace; color: #d1d5db; white-space: pre-wrap; height: 100%; }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="game-economy"></cognotik-header>
+    <header class="hero container">
+        <div>
+            <h1>Game Economy Design</h1>
+            <p style="max-width: 600px; font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem;">Design complete game economic systems with balanced progression, resource flows, and monetization strategies.</p>
+            <a href="#demo" class="btn-primary">Try the Simulator</a>
+        </div>
+    </header>
+    <section class="container" style="padding: 4rem 0;">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Resource Systems</h3>
+                <p>Designs multi-resource economies with defined sources (faucets) and sinks to prevent inflation.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Monetization</h3>
+                <p>Creates fair monetization strategies, including battle passes and cosmetics, avoiding pay-to-win mechanics.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Economy Forecasting</h3>
+                <p>Projects economy health over time, predicting player wealth accumulation and potential imbalances.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="container" style="padding-bottom: 4rem;">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Interactive Simulator</h2>
+        <div class="sim-container">
+            <div>
+                <label style="display:block; margin-bottom:0.5rem;">Game Title</label>
+                <input type="text" class="form-control" value="Galactic Trader">
+                <label style="display:block; margin-bottom:0.5rem;">Game Type</label>
+                <input type="text" class="form-control" value="Space Sim / Strategy">
+                <label style="display:block; margin-bottom:0.5rem;">Monetization Model</label>
+                <select class="form-control">
+                    <option>Free-to-Play</option>
+                    <option>Premium</option>
+                    <option>Subscription</option>
+                </select>
+                <button class="btn-primary" style="width:100%">Design Economy</button>
+            </div>
+            <div class="output-area">
+# Economy Design: Galactic Trader
+
+## Resources
+1. **Credits (Soft Currency):** Earned by trading, missions. Used for ship repairs, fuel.
+2. **Dark Matter (Premium):** Purchased or rare drops. Used for cosmetics, convenience.
+3. **Scrap (Material):** Salvaged from battles. Used for crafting.
+
+## Sinks & Faucets
+- **Faucet:** Daily missions (Credits), Mining (Scrap).
+- **Sink:** Market taxes, Ship insurance, Crafting failure risk.
+
+## Monetization Strategy
+- **Battle Pass:** "Smuggler's Run" - 30 tiers of cosmetic ship skins.
+- **Convenience:** Inventory expansion slots.
+- **No Pay-to-Win:** Premium currency cannot buy endgame weapons directly.
+            </div>
+        </div>
+    </section>
+</body>
+</html>

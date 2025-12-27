@@ -2,15 +2,75 @@
   "siteName": "Cognotik",
   "navigation": [
     {
-        "label": "IntelliJ Plugin",
+        "label": "IntelliJ",
         "url": "intellij-plugin.html",
         "type": "link"
     },
     {
       "id": "taskplanning",
-      "label": "Task Planning",
+      "label": "Planning",
       "url": "TaskPlanning.html",
       "type": "link"
+    },
+    {
+      "label": "Tools",
+      "type": "dropdown",
+      "items": [
+        {
+          "id": "autofix",
+          "label": "Auto-Fix Task",
+          "url": "SelfHealingTask.html",
+          "description": "Run a command and automatically fix any issues that arise"
+        },
+        {
+          "id": "runcode",
+          "label": "Run Code Task",
+          "url": "RunCodeTask.html",
+          "description": "Execute code snippets with oversight"
+        },
+        {
+          "id": "runtool",
+          "label": "Run Tool Task",
+          "url": "RunToolTask.html",
+          "description": "Execute external tools"
+        },
+        {
+          "id": "crawleragent",
+          "label": "Crawler Agent Task",
+          "url": "CrawlerAgentTask.html",
+          "description": "Search Google, fetch top results, and analyze content"
+        },
+        {
+          "id": "subplanning",
+          "label": "Sub-Planning Task",
+          "url": "SubPlanningTask.html",
+          "description": "Create and execute sub-plans using recursive planning"
+       },
+       {
+         "id": "githubsearch",
+         "label": "GitHub Search",
+         "url": "GitHubSearchTask.html",
+         "description": "Perform advanced searches across GitHub"
+       },
+       {
+         "id": "llmexperiment",
+         "label": "LLM Experiment",
+         "url": "LLMExperimentTask.html",
+         "description": "Conduct controlled experiments on LLM behavior"
+       },
+       {
+         "id": "llmpoll",
+         "label": "LLM Poll Simulation",
+         "url": "LLMPollSimulationTask.html",
+         "description": "Simulate polls with diverse AI personas"
+       },
+       {
+         "id": "mcptool",
+         "label": "MCP Tool",
+         "url": "MCPToolTask.html",
+         "description": "Execute tools from Model Context Protocol servers"
+        }
+      ]
     },
     {
       "label": "Reasoning",
@@ -20,137 +80,221 @@
           "id": "decisiontree",
           "label": "Decision Tree Task",
           "url": "DecisionTreeTask.html",
-          "description": "Navigate complex decision logic."
+          "description": "Build an LLM-driven symbolic decision tree"
         },
         {
           "id": "geneticoptimization",
           "label": "Genetic Optimization Task",
           "url": "GeneticOptimizationTask.html",
-          "description": "Optimize solutions using genetic algorithms."
-        },
-        {
-          "id": "subplanning",
-          "label": "Sub-Planning Task",
-          "url": "SubPlanningTask.html",
-          "description": "Break down tasks into sub-plans."
-        },
-        {
-          "id": "selfhealing",
-          "label": "Self-Healing Task",
-          "url": "SelfHealingTask.html",
-          "description": "Implement self-repairing systems."
-        },
-        {
-          "id": "runcode",
-          "label": "Run Code Task",
-          "url": "RunCodeTask.html",
-          "description": "Execute and validate code snippets."
-        },
-        {
-          "id": "runtool",
-          "label": "Run Tool Task",
-          "url": "RunToolTask.html",
-          "description": "Execute external CLI tools and commands."
+          "description": "Iteratively evolve and perfect text through genetic algorithms"
         },
         {
           "id": "brainstorming",
           "label": "Brainstorming Task",
           "url": "BrainstormingTask.html",
-          "description": "Generate creative ideas and solutions."
+          "description": "Generate and analyze multiple solution options"
         },
         {
           "id": "finitestatemachine",
           "label": "Finite State Machine Task",
           "url": "FiniteStateMachineTask.html",
-          "description": "Model and analyze finite state machines."
+          "description": "Model concepts using finite state machine analysis"
         },
         {
           "id": "gametheory",
           "label": "Game Theory Task",
           "url": "GameTheoryTask.html",
-          "description": "Analyze strategic interactions using game theory."
+          "description": "Analyze strategic interactions using game theory"
         },
         {
           "id": "abstractionladder",
           "label": "Abstraction Ladder Task",
           "url": "AbstractionLadderTask.html",
-          "description": "Navigate different levels of abstraction."
+          "description": "Traverse abstraction levels to identify patterns and design insights"
         },
         {
           "id": "adversarialreasoning",
           "label": "Adversarial Reasoning Task",
           "url": "AdversarialReasoningTask.html",
-          "description": "Develop strategies in competitive scenarios."
+          "description": "Red team analysis to identify vulnerabilities and weaknesses"
         },
         {
           "id": "causalinference",
           "label": "Causal Inference Task",
           "url": "CausalInferenceTask.html",
-          "description": "Determine cause-and-effect relationships."
+          "description": "Identify causal relationships and root causes"
         },
         {
           "id": "chainofthought",
           "label": "Chain of Thought Task",
           "url": "ChainOfThoughtTask.html",
-          "description": "Enhance reasoning through step-by-step thinking."
+          "description": "Break down complex problems into explicit reasoning steps"
         },
         {
           "id": "constraintsatisfaction",
           "label": "Constraint Satisfaction Task",
           "url": "ConstraintSatisfactionTask.html",
-          "description": "Solve problems with multiple constraints."
+          "description": "Solve problems with multiple competing constraints"
         },
         {
           "id": "decompositionsynthesis",
           "label": "Decomposition Synthesis Task",
           "url": "DecompositionSynthesisTask.html",
-          "description": "Synthesize solutions by decomposing problems."
+          "description": "Decompose complex problems and synthesize solutions"
         },
         {
           "id": "isomorphismdiscovery",
           "label": "Isomorphism Discovery Task",
           "url": "IsomorphismDiscoveryTask.html",
-          "description": "Identify structural similarities between systems."
+          "description": "Search for and validate structural mappings between two distinct domains"
         },
         {
           "id": "mathematicalreasoning",
           "label": "Mathematical Reasoning Task",
           "url": "MathematicalReasoningTask.html",
-          "description": "Solve complex mathematical problems."
+          "description": "Solve mathematical problems through step-by-step logical reasoning with verifiable steps"
         },
         {
           "id": "probabilisticreasoning",
           "label": "Probabilistic Reasoning Task",
           "url": "ProbabilisticReasoningTask.html",
-          "description": "Make decisions under uncertainty."
+          "description": "Reason under uncertainty using Bayesian analysis"
         },
         {
           "id": "socraticdialogue",
           "label": "Socratic Dialogue Task",
           "url": "SocraticDialogueTask.html",
-          "description": "Engage in guided questioning to explore ideas."
+          "description": "Explore ideas through Socratic questioning"
         },
         {
           "id": "structuralinvariantanalysis",
           "label": "Structural Invariant Analysis Task",
           "url": "StructuralInvariantAnalysisTask.html",
-          "description": "Analyze properties that remain unchanged under transformations."
+          "description": "Distill an object down to its immutable properties and symmetries"
         },
         {
           "id": "systemsthinking",
           "label": "Systems Thinking Task",
           "url": "SystemsThinkingTask.html",
-          "description": "Understand and analyze complex systems."
+          "description": "Analyze complex systems through feedback loops and dynamics"
         },
         {
           "id": "temporalreasoning",
           "label": "Temporal Reasoning Task",
           "url": "TemporalReasoningTask.html",
-          "description": "Reason about time-dependent information."
+          "description": "Analyze how systems evolve over time and predict future states"
+       },
+       {
+         "id": "abductive",
+         "label": "Abductive Reasoning",
+         "url": "AbductiveReasoningTask.html",
+         "description": "Generate and evaluate explanatory hypotheses"
+       },
+       {
+         "id": "analogical",
+         "label": "Analogical Reasoning",
+         "url": "AnalogicalReasoningTask.html",
+         "description": "Solve problems by drawing parallels with other domains"
+       },
+       {
+         "id": "constraintrelaxation",
+         "label": "Constraint Relaxation",
+         "url": "ConstraintRelaxationTask.html",
+         "description": "Solve over-constrained problems by relaxing requirements"
+       },
+       {
+         "id": "counterfactual",
+         "label": "Counterfactual Analysis",
+         "url": "CounterfactualAnalysisTask.html",
+         "description": "Explore what-if scenarios to understand causal relationships"
+       },
+       {
+         "id": "dialectical",
+         "label": "Dialectical Reasoning",
+         "url": "DialecticalReasoningTask.html",
+         "description": "Resolve contradictions through thesis-antithesis-synthesis"
+       },
+       {
+         "id": "ethical",
+         "label": "Ethical Reasoning",
+         "url": "EthicalReasoningTask.html",
+         "description": "Analyze complex dilemmas through ethical frameworks"
+       },
+       {
+         "id": "functorial",
+         "label": "Functorial Mapping",
+         "url": "FunctorialMappingTask.html",
+         "description": "Translate problems between domains using Category Theory"
+       },
+       {
+         "id": "iterativegraph",
+         "label": "Iterative Graph Gen",
+         "url": "IterativeGraphGenerationTask.html",
+         "description": "Build comprehensive knowledge graphs iteratively"
+       },
+       {
+         "id": "lateral",
+         "label": "Lateral Thinking",
+         "url": "LateralThinkingTask.html",
+         "description": "Break conventional thinking patterns for innovation"
+       },
+       {
+         "id": "metacognitive",
+         "label": "Meta-Cognitive Reflection",
+         "url": "MetaCognitiveReflectionTask.html",
+         "description": "Reflect on and critique reasoning processes"
+       },
+       {
+         "id": "multiperspective",
+         "label": "Multi-Perspective Analysis",
+         "url": "MultiPerspectiveAnalysisTask.html",
+         "description": "Analyze problems from multiple viewpoints"
+       },
+       {
+         "id": "political",
+         "label": "Political Optimization",
+         "url": "PoliticalOptimizationTask.html",
+         "description": "Optimize text for consensus or specific political goals"
         }
       ]
     },
     {
+     "label": "Game Design",
+     "type": "dropdown",
+     "items": [
+       {
+         "id": "gamelevel",
+         "label": "Game Level Design",
+         "url": "GameLevelDesignTask.html",
+         "description": "Generate complete game level designs with layout and pacing"
+       },
+       {
+         "id": "gamemechanics",
+         "label": "Game Mechanics Design",
+         "url": "GameMechanicsDesignTask.html",
+         "description": "Generate comprehensive game mechanics with balance analysis"
+       },
+       {
+         "id": "gameeconomy",
+         "label": "Game Economy Design",
+         "url": "GameEconomyTask.html",
+         "description": "Design complete game economic systems"
+       },
+       {
+         "id": "gamenarrative",
+         "label": "Game Narrative Design",
+         "url": "GameNarrativeDesignTask.html",
+         "description": "Create interactive game narratives with branching storylines"
+       },
+       {
+         "id": "interactivestory",
+         "label": "Interactive Story",
+         "url": "InteractiveStoryTask.html",
+         "description": "Create immersive choose-your-own-adventure narratives"
+       }
+     ]
+   },
+   {
       "label": "Files",
       "type": "dropdown",
       "items": [
@@ -158,49 +302,37 @@
           "id": "analysis",
           "label": "Analysis Task",
           "url": "AnalysisTask.html",
-          "description": "Process inquiries without modifying files."
+          "description": "Directly answer questions or provide insights using the LLM, referencing files including documents"
         },
         {
           "id": "filemodification",
           "label": "File Modification",
           "url": "FileModification.html",
-          "description": "Modify existing files based on requirements."
+          "description": "Create new files or modify existing code with AI-powered assistance"
         },
         {
           "id": "filesearch",
           "label": "File Search",
           "url": "FileSearch.html",
-          "description": "Search across project files using regex."
+          "description": "Search project files using patterns with contextual results"
         },
         {
           "id": "illustratedocument",
           "label": "Illustrate Document",
           "url": "IllustrateDocument.html",
-          "description": "Generate illustrations for documents."
+          "description": "Analyze a document and generate images to enhance its content"
         },
         {
           "id": "dataingest",
           "label": "Data Ingest Task",
           "url": "DataIngest.html",
-          "description": "Ingest and process various data formats."
-        },
-        {
-          "id": "crawleragent",
-          "label": "Crawler Agent Task",
-          "url": "CrawlerAgentTask.html",
-          "description": "Automate web crawling and data extraction."
+          "description": "Iteratively parse unstructured logs into structured data"
         },
         {
           "id": "imagegeneration",
           "label": "Image Generation Task",
           "url": "GenerateImage.html",
-          "description": "Generate images based on text prompts."
-        },
-        {
-          "id": "writehtml",
-          "label": "HTML Writing Task",
-          "url": "WriteHtml.html",
-          "description": "Generate and modify HTML content."
+          "description": "Generate images using AI image generation models"
         }
       ]
     },
@@ -212,55 +344,121 @@
           "id": "presentation",
           "label": "Generate Presentation",
           "url": "GeneratePresentation.html",
-          "description": "Create presentation slides from content."
+          "description": "Create complete Reveal.js presentations with narration support"
         },
         {
           "id": "spritesheet",
           "label": "Generate Sprite Sheet",
           "url": "GenerateSpriteSheet.html",
-          "description": "Combine images into a sprite sheet."
+          "description": "Generate a sprite sheet and associated JSON metadata"
         },
         {
           "id": "qrimage",
           "label": "Generate QR Image",
           "url": "GenerateQRImage.html",
-          "description": "Create QR codes from text or URLs."
+          "description": "Generate artistic QR codes with AI styling"
         },
         {
           "id": "narrative",
           "label": "Narrative Generation",
           "url": "NarrativeGenerationTask.html",
-          "description": "Generate narrative content."
+          "description": "Generate complete narratives from analysis and outlines"
         },
         {
           "id": "tablecompilation",
           "label": "Table Compilation",
           "url": "TableCompilationTask.html",
-          "description": "Compile data into structured tables."
+          "description": "Generate structured tables with AI-computed cell values"
         },
         {
           "id": "imagetable",
           "label": "Image Table Creation",
           "url": "ImageTable.html",
-          "description": "Create tables populated with images."
+          "description": "Generate a table/grid of AI-generated images"
         },
         {
           "id": "neurallayer",
           "label": "Neural Network Layer Task",
           "url": "NeuralNetworkLayerTask.html",
-          "description": "Design and analyze neural network layers."
+          "description": "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations"
         },
         {
           "id": "comicbookgeneration",
           "label": "Comic Book Generation",
           "url": "ComicBookGenerationTask.html",
-          "description": "Create comic books from scripts and images."
+          "description": "Generate comic book scripts and visuals"
         },
         {
           "id": "softwaredesigndocument",
           "label": "Software Design Document",
           "url": "SoftwareDesignDocumentTask.html",
-          "description": "Generate detailed software design documents."
+          "description": "Generate comprehensive software design documentation"
+        },
+        {
+          "id": "writehtml",
+          "label": "HTML Writing Task",
+          "url": "WriteHtml.html",
+          "description": "Create complete HTML files with embedded CSS and JavaScript"
+       },
+       {
+         "id": "articlegen",
+         "label": "Article Generation",
+         "url": "ArticleGenerationTask.html",
+         "description": "Generate publication-ready journalistic articles"
+       },
+       {
+         "id": "businessproposal",
+         "label": "Business Proposal",
+         "url": "BusinessProposalTask.html",
+         "description": "Generate comprehensive business proposals"
+       },
+       {
+         "id": "emailcampaign",
+         "label": "Email Campaign",
+         "url": "EmailCampaignTask.html",
+         "description": "Generate complete email sequences"
+       },
+       {
+         "id": "journalism",
+         "label": "Journalism Reasoning",
+         "url": "JournalismReasoningTask.html",
+         "description": "Investigate stories using journalistic principles"
+       },
+       {
+         "id": "persuasiveessay",
+         "label": "Persuasive Essay",
+         "url": "PersuasiveEssayTask.html",
+         "description": "Generate compelling persuasive essays"
+       },
+       {
+         "id": "reportgen",
+         "label": "Report Generation",
+         "url": "ReportGenerationTask.html",
+         "description": "Generate comprehensive business reports"
+       },
+       {
+         "id": "researchpaper",
+         "label": "Research Paper",
+         "url": "ResearchPaperGenerationTask.html",
+         "description": "Generate academic research papers"
+       },
+       {
+         "id": "scriptwriting",
+         "label": "Scriptwriting",
+         "url": "ScriptwritingTask.html",
+         "description": "Generate scripts for videos and podcasts"
+       },
+       {
+         "id": "technicalexplanation",
+         "label": "Technical Explanation",
+         "url": "TechnicalExplanationTask.html",
+         "description": "Break down complex technical subjects"
+       },
+       {
+         "id": "tutorialgen",
+         "label": "Tutorial Generation",
+         "url": "TutorialGenerationTask.html",
+         "description": "Create step-by-step technical tutorials"
         }
       ]
     }
