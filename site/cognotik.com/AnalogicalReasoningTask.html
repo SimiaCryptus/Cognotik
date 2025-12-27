@@ -6,30 +6,17 @@
     <title>Analogical Reasoning - Cognotik</title>
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
-    <style>
-        :root { --bg-dark: #0f172a; --bg-card: #1e293b; --accent-primary: #8b5cf6; --accent-secondary: #a78bfa; --text-main: #f8fafc; --text-muted: #94a3b8; --font-sans: 'Inter', sans-serif; }
-        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); margin: 0; line-height: 1.6; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
-        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; border: none; cursor: pointer; }
-        .hero { padding: 8rem 0 4rem; min-height: 60vh; display: flex; align-items: center; }
-        .hero h1 { font-size: 3.5rem; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
-        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
-        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid rgba(255,255,255,0.05); }
-        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.75rem; margin-bottom: 1rem; border-radius: 6px; }
-        .output-area { background: #0b1120; padding: 1rem; border-radius: 6px; font-family: monospace; color: #d1d5db; white-space: pre-wrap; height: 100%; }
-    </style>
 </head>
 <body>
     <cognotik-header current-page="analogical-reasoning"></cognotik-header>
-    <header class="hero container">
+    <header class="hero">
         <div>
             <h1>Analogical Reasoning</h1>
-            <p style="max-width: 600px; font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem;">Solve problems by drawing parallels with similar situations in other domains. Transfer structural knowledge to find novel solutions.</p>
-            <a href="#demo" class="btn-primary">Try the Simulator</a>
+            <p class="subtitle">Solve problems by drawing parallels with similar situations in other domains. Transfer structural knowledge to find novel solutions.</p>
+            <a href="#demo" class="cta-button">Try the Simulator</a>
         </div>
     </header>
-    <section class="container" style="padding: 4rem 0;">
+    <section class="features">
         <div class="features-grid">
             <div class="feature-card">
                 <h3>Source Retrieval</h3>
@@ -45,17 +32,22 @@
             </div>
         </div>
     </section>
-    <section id="demo" class="container" style="padding-bottom: 4rem;">
-        <h2 style="text-align: center; margin-bottom: 2rem;">Interactive Simulator</h2>
-        <div class="sim-container">
-            <div>
-                <label style="display:block; margin-bottom:0.5rem;">Target Problem</label>
-                <textarea class="form-control" rows="3">How to design a self-healing computer network?</textarea>
-                <label style="display:block; margin-bottom:0.5rem;">Source Domain</label>
-                <input type="text" class="form-control" value="Biological Immune System">
-                <button class="btn-primary" style="width:100%">Find Analogy</button>
+    <section id="demo" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Target Problem</label>
+                    <textarea rows="3">How to design a self-healing computer network?</textarea>
+                </div>
+                <div class="control-group">
+                    <label>Source Domain</label>
+                    <input type="text" value="Biological Immune System">
+                </div>
+                <button class="run-button">Find Analogy</button>
             </div>
-            <div class="output-area">
+            <div class="sim-output">
+                <div class="tab-content active" style="white-space: pre-wrap;">
 # Analogical Mapping
 
 ## Source: Immune System
@@ -70,6 +62,7 @@
 
 ## Solution Transfer
 Design a decentralized network of "agent" nodes that constantly patrol for anomalies. When a threat is detected, they isolate it (inflammation) and generate a patch (antibody) that is distributed to all other nodes (immunity).
+                </div>
             </div>
         </div>
     </section>

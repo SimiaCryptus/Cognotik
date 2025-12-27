@@ -30,85 +30,34 @@
 
     <style>
         :root {
-            /* Color Palette - Future Professional */
-            --bg-dark: #0f172a;       /* Slate 900 */
-            --bg-darker: #020617;     /* Slate 950 */
-            --bg-card: #1e293b;       /* Slate 800 */
-            --bg-glass: rgba(30, 41, 59, 0.7);
         
-            /* Accents */
-            --primary: #06b6d4;       /* Cyan 500 */
+        
+        
+        
+            /* Map local variables to main.css variables */
+            --primary: var(--accent-secondary);
             --primary-glow: rgba(6, 182, 212, 0.5);
-            --secondary: #f59e0b;     /* Amber 500 */
-            --secondary-glow: rgba(245, 158, 11, 0.5);
-            --accent-purple: #8b5cf6; /* Violet 500 */
-        
-            /* Typography */
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-serif: 'Cinzel', serif;
-            --text-main: #f8fafc;     /* Slate 50 */
-            --text-muted: #94a3b8;    /* Slate 400 */
-        
-            /* Spacing & Layout */
-            --container-width: 1200px;
-            --header-height: 80px;
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 16px;
-        
-            /* Transitions */
-            --transition-fast: 0.2s ease;
-            --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --secondary: #f59e0b;
+            --accent-purple: var(--accent-color);
+            --bg-dark: var(--background-color);
+            --bg-card: var(--surface-color);
+            --text-main: var(--text-color);
+            --text-muted: var(--text-muted);
+            --radius-md: var(--border-radius);
         }
         
-        /* =========================================
-           Reset & Base Styles
-           ========================================= */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
         
-        html {
-            scroll-behavior: smooth;
-        }
         
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-sans);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
         
-        h1, h2, h3, h4, h5, h6 {
-            font-family: var(--font-serif);
-            font-weight: 700;
-            line-height: 1.2;
-            color: var(--text-main);
-        }
         
-        a {
-            text-decoration: none;
-            color: inherit;
-            transition: var(--transition-fast);
-        }
         
-        ul {
-            list-style: none;
-        }
         
-        /* Utilities */
         .container {
-            max-width: var(--container-width);
+            max-width: var(--container-max-width);
             margin: 0 auto;
             padding: 0 2rem;
         }
         
-        .text-accent {
-            color: var(--primary);
-        }
         
         .text-gradient {
             background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
@@ -118,38 +67,16 @@
         }
         
         .glass-panel {
-            background: rgba(30, 41, 59, 0.4);
+            background: rgba(30, 41, 59, 0.4); /* Fallback or specific glass effect */
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-lg);
+            border-radius: 16px;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
         
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            font-family: var(--font-sans);
-            cursor: pointer;
-            transition: var(--transition-fast);
-            border: none;
-        }
         
-        .btn-primary {
-            background: var(--primary);
-            color: var(--bg-darker);
-        }
         
-        .btn-primary:hover {
-            background: #22d3ee;
-            transform: translateY(-2px);
-        }
         
         .btn-glow {
             box-shadow: 0 0 15px var(--primary-glow);
@@ -159,15 +86,22 @@
             background: transparent;
             border: 1px solid var(--text-muted);
             color: var(--text-main);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            display: inline-block;
         }
         
         .btn-secondary:hover {
             border-color: var(--text-main);
             background: rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+            color: var(--text-main);
         }
         
         .btn-full {
             width: 100%;
+            text-align: center;
         }
         
         .btn-text {
@@ -183,80 +117,21 @@
             text-decoration: underline;
         }
         
-        /* =========================================
-           Navigation
-           ========================================= */
-        .glass-nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: var(--header-height);
-            z-index: 1000;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
         
-        .nav-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 100%;
-        }
         
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-family: var(--font-serif);
-            font-weight: 700;
-            font-size: 1.25rem;
-        }
         
-        .logo-icon {
-            color: var(--primary);
-        }
         
-        .main-nav ul {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
         
-        .main-nav a {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-muted);
-        }
         
-        .main-nav a:hover, .main-nav a.active {
-            color: var(--primary);
-        }
         
-        .btn-nav {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--primary);
-            border-radius: var(--radius-sm);
-            color: var(--primary) !important;
-        }
         
-        .btn-nav:hover {
-            background: var(--primary-glow);
-            color: var(--text-main) !important;
-        }
         
-        .mobile-menu-toggle {
-            display: none;
-            color: var(--text-main);
-            cursor: pointer;
-        }
         
         /* =========================================
            Hero Section
            ========================================= */
         .hero-section {
-            padding-top: calc(var(--header-height) + 4rem);
+            padding-top: calc(60px + 4rem); /* header height + spacing */
             padding-bottom: 4rem;
             min-height: 90vh;
             display: flex;
@@ -381,20 +256,12 @@
         /* =========================================
            Features Section
            ========================================= */
-        .features-section {
-            padding: 6rem 0;
-            background: linear-gradient(to bottom, var(--bg-dark), var(--bg-darker));
-        }
         
         .section-header {
             text-align: center;
             margin-bottom: 4rem;
         }
         
-        .section-header h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
         
         .section-header p {
             color: var(--text-muted);
@@ -402,31 +269,17 @@
             background: rgba(255,255,255,0.05);
             display: inline-block;
             padding: 0.25rem 0.5rem;
-            border-radius: var(--radius-sm);
-        }
         
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
         
-        .feature-card {
-            padding: 2rem;
-            transition: var(--transition-smooth);
-        }
         
-        .feature-card:hover {
-            transform: translateY(-10px);
-            border-color: var(--primary);
-            box-shadow: 0 10px 40px -10px rgba(6, 182, 212, 0.2);
+            border-radius: 4px;
         }
         
         .icon-container {
             width: 50px;
             height: 50px;
             background: rgba(6, 182, 212, 0.1);
-            border-radius: var(--radius-md);
+            border-radius: var(--border-radius);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -434,16 +287,7 @@
             margin-bottom: 1.5rem;
         }
         
-        .feature-card h3 {
-            font-family: var(--font-sans);
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
-        }
         
-        .feature-card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
         
         /* =========================================
            Workflow Section
@@ -485,11 +329,6 @@
             box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
         }
         
-        .step-content h4 {
-            font-family: var(--font-sans);
-            margin-bottom: 0.5rem;
-            color: var(--text-main);
-        }
         
         .step-content p {
             font-size: 0.875rem;
@@ -507,39 +346,18 @@
         /* =========================================
            Simulator Section
            ========================================= */
-        .simulator-section {
-            padding: 6rem 0;
-        }
         
         .simulator-container {
-            display: grid;
+        
+        
+            /* Override main.css grid to give more space to output */
             grid-template-columns: 350px 1fr;
-            min-height: 600px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        /* Left Column: Inputs */
-        .sim-inputs {
-            background: rgba(15, 23, 42, 0.6);
-            padding: 2rem;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        .sim-controls {
+            /* Ensure it matches main.css but with flex for full height if needed */
             display: flex;
             flex-direction: column;
-        }
-        
-        .sim-header {
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .sim-header h3 {
-            font-family: var(--font-sans);
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
         
         .form-group {
@@ -557,27 +375,7 @@
             color: var(--secondary);
         }
         
-        input[type="text"],
-        textarea,
-        select {
-            width: 100%;
-            background: var(--bg-darker);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-sm);
-            padding: 0.75rem;
-            color: var(--text-main);
-            font-family: var(--font-sans);
-            font-size: 0.9rem;
-            transition: var(--transition-fast);
-        }
         
-        input:focus,
-        textarea:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
-        }
         
         .slider {
             width: 100%;
@@ -606,62 +404,20 @@
             padding-top: 2rem;
         }
         
-        /* Right Column: Outputs */
-        .sim-outputs {
-            background: rgba(2, 6, 23, 0.4);
-            display: flex;
-            flex-direction: column;
+        /* Override main.css tab-content font for non-code tabs */
+        .tab-content {
+            font-family: var(--font-family-sans);
         }
         
-        .tabs-nav {
-            display: flex;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.2);
-        }
         
-        .tab-btn {
-            padding: 1rem 1.5rem;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-family: var(--font-sans);
-            font-size: 0.9rem;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: var(--transition-fast);
-        }
         
-        .tab-btn:hover {
-            color: var(--text-main);
-            background: rgba(255, 255, 255, 0.02);
-        }
         
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-            background: rgba(6, 182, 212, 0.05);
-        }
         
-        .tab-content-area {
-            flex: 1;
-            padding: 2rem;
-            position: relative;
-            overflow-y: auto;
-        }
         
-        .tab-pane {
-            display: none;
-            height: 100%;
-        }
         
-        .tab-pane.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+        #tab-logs {
+            font-family: var(--font-family-mono);
         }
         
         /* Empty State */
@@ -684,7 +440,7 @@
         /* Terminal Style */
         .terminal-window {
             background: #000;
-            border-radius: var(--radius-md);
+            border-radius: var(--border-radius);
             border: 1px solid #333;
             font-family: 'Courier New', monospace;
             height: 100%;
@@ -698,7 +454,7 @@
             display: flex;
             gap: 0.5rem;
             border-bottom: 1px solid #333;
-            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
         }
         
         .dot {
@@ -760,7 +516,7 @@
             background: var(--bg-card);
             border: 1px solid rgba(255, 255, 255, 0.05);
             padding: 2rem;
-            border-radius: var(--radius-md);
+            border-radius: var(--border-radius);
             border-left: 4px solid var(--accent-purple);
         }
         
@@ -832,41 +588,20 @@
                 height: auto;
             }
         
-            .sim-inputs {
+            .sim-controls {
                 border-right: none;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             }
         
-            .sim-outputs {
-                min-height: 500px;
+            .sim-output {
+                min-height: 400px;
             }
         }
         
         @media (max-width: 768px) {
-            .nav-container {
-                position: relative;
-            }
         
-            .main-nav {
-                display: none; /* In a real implementation, JS would toggle this */
-                position: absolute;
-                top: 100%;
-                left: 0;
-                width: 100%;
-                background: var(--bg-card);
-                padding: 1rem;
-                border-bottom: 1px solid rgba(255,255,255,0.1);
-            }
         
-            .main-nav ul {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
         
-            .mobile-menu-toggle {
-                display: block;
-            }
         
             .hero-grid {
                 grid-template-columns: 1fr;
@@ -932,7 +667,7 @@
                     to solve multi-stage problems with precision.
                 </p>
                 <div class="hero-cta">
-                    <a href="#demo" class="btn btn-primary btn-glow">Try the Simulator <i data-feather="arrow-down"></i></a>
+                    <a href="#demo" class="btn btn-glow">Try the Simulator <i data-feather="arrow-down"></i></a>
                     <a href="#workflow" class="btn btn-secondary">View Specs</a>
                 </div>
             </div>
@@ -943,15 +678,15 @@
     </section>
 
     <!-- Features Grid -->
-    <section id="features" class="features-section">
-        <div class="container">
+    <section id="features" class="features">
+        <div class="container"> <!-- Optional wrapper if needed, or rely on .features max-width -->
             <div class="section-header">
                 <h2>Core Capabilities</h2>
                 <p>Powered by the <code>SubPlanningTask</code> engine.</p>
             </div>
             <div class="features-grid">
                 <!-- Feature 1 -->
-                <div class="feature-card glass-panel">
+                <div class="feature-card">
                     <div class="icon-container">
                         <i data-feather="git-branch"></i>
                     </div>
@@ -959,7 +694,7 @@
                     <p>Supports multiple levels of recursion, allowing complex goals to be broken down into manageable sub-tasks automatically.</p>
                 </div>
                 <!-- Feature 2 -->
-                <div class="feature-card glass-panel">
+                <div class="feature-card">
                     <div class="icon-container">
                         <i data-feather="layers"></i>
                     </div>
@@ -967,7 +702,7 @@
                     <p>Configure specific cognitive strategies (Fast, Detailed, Creative) for different branches of the execution tree.</p>
                 </div>
                 <!-- Feature 3 -->
-                <div class="feature-card glass-panel">
+                <div class="feature-card">
                     <div class="icon-container">
                         <i data-feather="database"></i>
                     </div>
@@ -1026,18 +761,18 @@
     </section>
 
     <!-- Interactive Simulator -->
-    <section id="demo" class="simulator-section">
+    <section id="demo" class="simulator">
         <div class="container">
             <div class="section-header">
                 <h2>Task Simulator</h2>
                 <p>Configure the <code>SubPlanningTaskExecutionConfigData</code> and visualize the output.</p>
             </div>
             
-            <div class="simulator-container glass-panel">
+            <div class="simulator-container">
                 <!-- Left Column: Inputs -->
-                <div class="sim-column sim-inputs">
-                    <div class="sim-header">
-                        <h3><i data-feather="sliders"></i> Configuration</h3>
+                <div class="sim-controls">
+                    <div class="control-group">
+                        <label><i data-feather="sliders"></i> Configuration</label>
                     </div>
                     <form id="sim-form">
                         <!-- Planning Goal -->
@@ -1075,7 +810,7 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" id="run-sim-btn" class="btn btn-primary btn-full">
+                            <button type="submit" id="run-sim-btn" class="run-button">
                                 <i data-feather="play"></i> Execute SubPlan
                             </button>
                         </div>
@@ -1083,16 +818,16 @@
                 </div>
 
                 <!-- Right Column: Outputs -->
-                <div class="sim-column sim-outputs">
-                    <div class="tabs-nav">
-                        <button class="tab-btn active" data-target="tab-overview">Overview</button>
-                        <button class="tab-btn" data-target="tab-logs">Execution Logs</button>
-                        <button class="tab-btn" data-target="tab-summary">Final Summary</button>
+                <div class="sim-output">
+                    <div class="tabs">
+                        <button class="tab active" data-target="tab-overview">Overview</button>
+                        <button class="tab" data-target="tab-logs">Execution Logs</button>
+                        <button class="tab" data-target="tab-summary">Final Summary</button>
                     </div>
 
-                    <div class="tab-content-area">
+                    <div class="tab-content-wrapper"> <!-- Wrapper not in main.css but useful for flex/height if needed, or just direct children -->
                         <!-- Tab: Overview (Visual) -->
-                        <div id="tab-overview" class="tab-pane active">
+                        <div id="tab-overview" class="tab-content active">
                             <div class="empty-state">
                                 <i data-feather="activity"></i>
                                 <p>Ready to execute. Configure inputs and click Run.</p>
@@ -1104,7 +839,7 @@
                         </div>
 
                         <!-- Tab: Logs (Terminal style) -->
-                        <div id="tab-logs" class="tab-pane">
+                        <div id="tab-logs" class="tab-content">
                             <div class="terminal-window">
                                 <div class="terminal-header">
                                     <span class="dot red"></span>
@@ -1118,7 +853,7 @@
                         </div>
 
                         <!-- Tab: Summary (Markdown render) -->
-                        <div id="tab-summary" class="tab-pane">
+                        <div id="tab-summary" class="tab-content">
                             <div class="markdown-preview" id="summary-output">
                                 <!-- Result content will be injected here -->
                             </div>
@@ -1208,8 +943,8 @@
                 addContextBtn: document.getElementById('add-context-btn'),
                 form: document.getElementById('sim-form'),
                 runBtn: document.getElementById('run-sim-btn'),
-                tabs: document.querySelectorAll('.tab-btn'),
-                tabPanes: document.querySelectorAll('.tab-pane'),
+                tabs: document.querySelectorAll('.tab'),
+                tabPanes: document.querySelectorAll('.tab-content'),
                 logOutput: document.getElementById('log-output'),
                 summaryOutput: document.getElementById('summary-output'),
                 visualContainer: document.getElementById('visualization-container'),
@@ -1365,7 +1100,7 @@
             // 6. Helper Functions
         
             function triggerTab(tabId) {
-                const tabBtn = document.querySelector(`.tab-btn[data-target="${tabId}"]`);
+                const tabBtn = document.querySelector(`.tab[data-target="${tabId}"]`);
                 if (tabBtn) tabBtn.click();
             }
         

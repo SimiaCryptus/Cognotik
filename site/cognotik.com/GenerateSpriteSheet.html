@@ -16,27 +16,10 @@
      <style>
          /* CSS Variables & Reset */
          :root {
-             --bg-dark: #0f172a;
-             --bg-card: #1e293b;
              --accent-primary: #d946ef; /* Fuchsia for creative/sprites */
-             --accent-secondary: #8b5cf6; /* Violet */
-             --text-main: #f8fafc;
-             --text-muted: #94a3b8;
-             --font-sans: 'Inter', system-ui, sans-serif;
-             --font-serif: 'Cinzel', serif;
          }
-         * { box-sizing: border-box; margin: 0; padding: 0; }
-         body {
-             background-color: var(--bg-dark);
-             color: var(--text-main);
-             font-family: var(--font-sans);
-             line-height: 1.6;
-             overflow-x: hidden;
-         }
-         a { text-decoration: none; color: inherit; transition: 0.3s; }
-         ul { list-style: none; }
          /* Utilities */
-         .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+         .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 2rem; }
          .glass {
              background: rgba(30, 41, 59, 0.7);
              backdrop-filter: blur(12px);
@@ -46,18 +29,11 @@
          .neon-text {
              text-shadow: 0 0 10px rgba(217, 70, 239, 0.5);
          }
-         .btn {
-             display: inline-block;
-             padding: 0.75rem 1.5rem;
-             border-radius: 8px;
-             font-weight: 600;
-             cursor: pointer;
-             border: none;
-         }
          .btn-primary {
-             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+             background: linear-gradient(135deg, var(--accent-primary), var(--accent-color));
              color: white;
              box-shadow: 0 0 15px rgba(217, 70, 239, 0.4);
+             border: none;
          }
          .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(217, 70, 239, 0.6); }
          /* Hero */
@@ -67,17 +43,26 @@
              align-items: center;
              min-height: 90vh;
              position: relative;
+             text-align: left;
+             background: transparent;
          }
          .hero-content { flex: 1; padding-right: 2rem; }
          .hero-visual { flex: 1; display: flex; justify-content: center; }
-         .hero h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 1.5rem; font-family: var(--font-serif); }
+         .hero h1 { 
+             font-size: 3.5rem; 
+             line-height: 1.1; 
+             margin-bottom: 1.5rem; 
+             font-family: var(--font-family-serif);
+             background: none;
+             -webkit-text-fill-color: var(--primary-color);
+         }
          .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
          /* Abstract Visual Placeholder */
          .visual-placeholder {
              width: 400px;
              height: 400px;
              background: radial-gradient(circle at 30% 30%, var(--accent-primary), transparent 50%),
-                         radial-gradient(circle at 70% 70%, var(--accent-secondary), transparent 50%);
+                         radial-gradient(circle at 70% 70%, var(--accent-color), transparent 50%);
              border-radius: 50%;
              filter: blur(40px);
              opacity: 0.6;
@@ -87,15 +72,11 @@
          /* Features */
          .features { padding: 4rem 0; }
          .features-grid {
-             display: grid;
-             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-             gap: 2rem;
              margin-top: 3rem;
          }
          .feature-card {
-             padding: 2rem;
-             border-radius: 16px;
              transition: 0.3s;
+             text-align: left;
          }
          .feature-card:hover { transform: translateY(-5px); border-color: var(--accent-primary); }
          .icon-box {
@@ -106,10 +87,8 @@
              color: var(--accent-primary);
              margin-bottom: 1.5rem;
          }
-         .feature-card h3 { margin-bottom: 1rem; font-size: 1.25rem; }
-         .feature-card p { color: var(--text-muted); }
          /* Simulator */
-         .simulator { padding: 4rem 0; background: #0b1120; }
+         .simulator { padding: 4rem 0; }
          .sim-container {
              display: grid;
              grid-template-columns: 1fr 1fr;
@@ -128,16 +107,11 @@
          .form-group { margin-bottom: 1.5rem; }
          .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
          .form-control {
-             width: 100%;
-             padding: 0.75rem;
              background: rgba(0,0,0,0.3);
              border: 1px solid rgba(255,255,255,0.1);
-             border-radius: 8px;
              color: white;
-             font-family: var(--font-sans);
-             transition: 0.3s;
          }
-         .form-control:focus { outline: none; border-color: var(--accent-primary); }
+         .form-control:focus { border-color: var(--accent-primary); box-shadow: none; }
          textarea.form-control { min-height: 120px; resize: vertical; }
          /* Output Tabs */
          .tabs { display: flex; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
@@ -145,6 +119,7 @@
              background: none; border: none; color: var(--text-muted);
              padding: 0.5rem 1rem; cursor: pointer; font-weight: 600;
              border-bottom: 2px solid transparent;
+             font-family: var(--font-family-sans);
          }
          .tab-btn.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
          .output-content {
@@ -153,7 +128,7 @@
              border-radius: 8px;
              padding: 1rem;
              overflow: auto;
-             font-family: monospace;
+             font-family: var(--font-family-mono);
              font-size: 0.9rem;
              position: relative;
          }
@@ -188,7 +163,7 @@
          .use-cases { padding: 4rem 0; }
          .use-case-list { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
          .use-case-item {
-             background: var(--bg-card);
+             background: var(--surface-color);
              padding: 1rem 2rem;
              border-radius: 50px;
              border: 1px solid rgba(255,255,255,0.05);

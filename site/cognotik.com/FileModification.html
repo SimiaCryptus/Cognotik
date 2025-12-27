@@ -9,40 +9,28 @@
      <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
      <style>
          :root {
-             --bg-dark: #0f172a;
-             --bg-card: #1e293b;
-             --text-primary: #f8fafc;
-             --text-secondary: #94a3b8;
-             --accent-primary: #38bdf8; /* Cyan */
-             --accent-secondary: #a855f7; /* Purple */
              --accent-glow: rgba(56, 189, 248, 0.2);
-             --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-             --font-mono: 'Fira Code', monospace;
          }
-         * { box-sizing: border-box; margin: 0; padding: 0; }
-         body {
-             background-color: var(--bg-dark);
-             color: var(--text-primary);
-             font-family: var(--font-sans);
-             line-height: 1.6;
-             overflow-x: hidden;
-         }
-         /* Typography */
-         h1, h2, h3 { font-weight: 700; letter-spacing: -0.025em; }
-         h1 { font-size: 3.5rem; line-height: 1.1; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-         h2 { font-size: 2.25rem; margin-bottom: 1rem; }
-         h3 { font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--accent-primary); }
-         p { color: var(--text-secondary); margin-bottom: 1.5rem; }
+         
          /* Layout */
-         .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
-         section { padding: 6rem 0; }
+         .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 var(--spacing-lg); }
+         section { padding: var(--spacing-xl) 0; }
+         
          /* Hero */
-         .hero {
+         .hero-section {
              min-height: 90vh;
              display: flex;
              align-items: center;
              position: relative;
              overflow: hidden;
+         }
+         .hero-section h1 {
+             font-size: 3.5rem;
+             line-height: 1.1;
+             background: linear-gradient(to right, #fff, var(--accent-secondary));
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+             margin-bottom: var(--spacing-md);
          }
          .hero-content { max-width: 600px; z-index: 2; }
          .hero-visual {
@@ -59,80 +47,23 @@
              align-items: center;
              opacity: 0.6;
          }
-         .btn {
-             display: inline-block;
-             padding: 0.75rem 2rem;
-             background: var(--accent-primary);
-             color: var(--bg-dark);
-             font-weight: 600;
-             border-radius: 9999px;
-             text-decoration: none;
-             transition: transform 0.2s, box-shadow 0.2s;
-         }
-         .btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px var(--accent-glow); }
-         /* Features */
-         .features-grid {
-             display: grid;
-             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-             gap: 2rem;
-         }
-         .feature-card {
-             background: var(--bg-card);
-             padding: 2rem;
-             border-radius: 1rem;
-             border: 1px solid rgba(255,255,255,0.05);
-             transition: transform 0.3s;
-         }
-         .feature-card:hover { transform: translateY(-5px); border-color: var(--accent-primary); }
+         
          .icon-box {
              width: 48px; height: 48px;
-             background: rgba(56, 189, 248, 0.1);
+             background: rgba(6, 182, 212, 0.1);
              border-radius: 12px;
              display: flex; align-items: center; justify-content: center;
              margin-bottom: 1.5rem;
-             color: var(--accent-primary);
+             color: var(--accent-secondary);
          }
-         /* Simulator */
-         .simulator { background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); }
-         .sim-container {
-             display: grid;
-             grid-template-columns: 1fr 1fr;
-             gap: 0;
-             border: 1px solid rgba(255,255,255,0.1);
-             border-radius: 1rem;
-             overflow: hidden;
-             background: var(--bg-card);
-             min-height: 600px;
-         }
-         .sim-col { padding: 2rem; overflow-y: auto; }
-         .sim-left { border-right: 1px solid rgba(255,255,255,0.1); }
-         .form-group { margin-bottom: 1.5rem; }
-         label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); }
-         input[type="text"], textarea, select {
-             width: 100%;
-             padding: 0.75rem;
-             background: var(--bg-dark);
-             border: 1px solid rgba(255,255,255,0.1);
-             border-radius: 0.5rem;
-             color: var(--text-primary);
-             font-family: var(--font-mono);
-             font-size: 0.875rem;
-         }
-         input:focus, textarea:focus { outline: none; border-color: var(--accent-primary); }
+         
          .toggle-row { display: flex; align-items: center; gap: 1rem; }
-         .tabs { display: flex; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
-         .tab {
-             padding: 0.5rem 1rem;
-             cursor: pointer;
-             color: var(--text-secondary);
-             border-bottom: 2px solid transparent;
-         }
-         .tab.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+         
          .code-block {
              background: #0d1117;
              padding: 1rem;
-             border-radius: 0.5rem;
-             font-family: var(--font-mono);
+             border-radius: var(--border-radius);
+             font-family: var(--font-family-mono);
              font-size: 0.85rem;
              white-space: pre;
              overflow-x: auto;
@@ -141,39 +72,26 @@
          .diff-add { background: rgba(46, 160, 67, 0.15); color: #3fb950; display: block; }
          .diff-del { background: rgba(248, 81, 73, 0.15); color: #f85149; display: block; }
          .diff-ctx { color: #8b949e; display: block; }
-         /* Use Cases */
-         .use-cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-         .use-case-item {
-             background: rgba(255,255,255,0.03);
-             padding: 1.5rem;
-             border-radius: 0.75rem;
-             border-left: 3px solid var(--accent-secondary);
-         }
-         @media (max-width: 768px) {
-             h1 { font-size: 2.5rem; }
-             .sim-container { grid-template-columns: 1fr; }
-             .sim-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
-         }
      </style>
 </head>
 <body>
      <cognotik-header current-page="file_modification"></cognotik-header>
-     <section class="hero">
+     <section class="hero-section">
          <div class="container">
              <div class="hero-content">
                  <h1>File Modification</h1>
                  <p class="subtitle">Create new files or modify existing code with AI-powered assistance. Automate refactoring, feature implementation, and bug fixes while maintaining strict code quality standards.</p>
-                 <a href="#simulator" class="btn">Try the Simulator</a>
+                 <a href="#simulator" class="btn" style="background-color: var(--accent-secondary);">Try the Simulator</a>
              </div>
              <div class="hero-visual">
                  <!-- Abstract representation -->
-                 <svg width="400" height="400" viewBox="0 0 400 400" style="filter: drop-shadow(0 0 20px var(--accent-primary));">
-                     <rect x="100" y="100" width="200" height="240" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+                 <svg width="400" height="400" viewBox="0 0 400 400" style="filter: drop-shadow(0 0 20px var(--accent-secondary));">
+                     <rect x="100" y="100" width="200" height="240" rx="10" fill="var(--surface-color)" stroke="var(--accent-secondary)" stroke-width="2"/>
                      <path d="M120 140 H280" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
                      <path d="M120 170 H240" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-                     <path d="M120 200 H260" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
-                     <path d="M120 230 H220" stroke="#a855f7" stroke-width="4" stroke-linecap="round"/>
-                     <circle cx="320" cy="80" r="40" fill="#a855f7" opacity="0.5" style="mix-blend-mode: screen;"/>
+                     <path d="M120 200 H260" stroke="var(--accent-secondary)" stroke-width="4" stroke-linecap="round"/>
+                     <path d="M120 230 H220" stroke="var(--accent-color)" stroke-width="4" stroke-linecap="round"/>
+                     <circle cx="320" cy="80" r="40" fill="var(--accent-color)" opacity="0.5" style="mix-blend-mode: screen;"/>
                  </svg>
              </div>
          </div>
@@ -231,41 +149,41 @@
                  <h2>Interactive Simulator</h2>
                  <p>Configure the task parameters and see how the agent generates code modifications.</p>
              </div>
-             <div class="sim-container">
+             <div class="simulator-container">
                  <!-- Left: Inputs -->
-                 <div class="sim-col sim-left">
+                 <div class="sim-controls">
                      <h3>Configuration</h3>
                      <form id="sim-form" onsubmit="return false;">
-                         <div class="form-group">
+                         <div class="control-group">
                              <label>Target Files (comma separated)</label>
                              <input type="text" id="files" value="src/utils/api.ts" placeholder="e.g., src/main.kt">
                          </div>
-                         <div class="form-group">
+                         <div class="control-group">
                              <label>Related Files (Context)</label>
                              <input type="text" id="related" value="src/types/user.ts" placeholder="e.g., src/utils/helper.kt">
                          </div>
-                         <div class="form-group">
+                         <div class="control-group">
                              <label>Modification Goal</label>
                              <textarea id="goal" rows="4" placeholder="Describe what needs to be changed...">Add error handling to the fetchUser function and retry logic.</textarea>
                          </div>
-                         <div class="form-group toggle-row">
+                         <div class="control-group toggle-row">
                              <input type="checkbox" id="gitdiff" checked>
                              <label for="gitdiff" style="margin:0">Include Git Diff (Context)</label>
                          </div>
-                         <div class="form-group toggle-row">
+                         <div class="control-group toggle-row">
                              <input type="checkbox" id="autofix">
                              <label for="autofix" style="margin:0">Auto-Fix (Apply without prompt)</label>
                          </div>
-                         <button class="btn" style="width: 100%; text-align: center; cursor: pointer;" onclick="runSimulation()">Generate Modifications</button>
+                         <button class="run-button" onclick="runSimulation()">Generate Modifications</button>
                      </form>
                  </div>
                  <!-- Right: Outputs -->
-                 <div class="sim-col sim-right">
+                 <div class="sim-output">
                      <div class="tabs">
                          <div class="tab active" onclick="switchTab('diff')">Diff View</div>
                          <div class="tab" onclick="switchTab('logs')">Agent Logs</div>
                      </div>
-                     <div id="output-diff" class="output-content">
+                     <div id="output-diff" class="tab-content active">
                          <div class="code-block" id="code-display">
 <span class="diff-ctx">  // src/utils/api.ts</span>
 <span class="diff-ctx">  async function fetchUser(id: string) {</span>
@@ -282,7 +200,7 @@
 <span class="diff-ctx">  }</span>
                          </div>
                      </div>
-                     <div id="output-logs" class="output-content" style="display: none;">
+                     <div id="output-logs" class="tab-content">
                          <div class="code-block" style="color: #94a3b8;">
 > Initializing FileModificationTask...
 > Reading src/utils/api.ts...
@@ -299,20 +217,20 @@
      </section>
      <section id="use-cases" class="container">
          <h2>When to Use</h2>
-         <div class="use-cases">
-             <div class="use-case-item">
+         <div class="mode-grid">
+             <div class="mode-card">
                  <h3>Refactoring Legacy Code</h3>
                  <p>Safely update old functions or classes across multiple files while ensuring backward compatibility.</p>
              </div>
-             <div class="use-case-item">
+             <div class="mode-card">
                  <h3>Feature Implementation</h3>
                  <p>Implement new features that require changes to existing logic, ensuring all necessary files are updated.</p>
              </div>
-             <div class="use-case-item">
+             <div class="mode-card">
                  <h3>Bug Fixing</h3>
                  <p>Provide the agent with error logs and the relevant file to automatically generate a fix.</p>
              </div>
-             <div class="use-case-item">
+             <div class="mode-card">
                  <h3>Boilerplate Generation</h3>
                  <p>Create new files following specific patterns or templates defined in your project.</p>
              </div>
@@ -321,17 +239,17 @@
      <script>
          function switchTab(tabName) {
              document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-             document.querySelectorAll('.output-content').forEach(c => c.style.display = 'none');
+             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
              if(tabName === 'diff') {
                  document.querySelector('.tab:nth-child(1)').classList.add('active');
-                 document.getElementById('output-diff').style.display = 'block';
+                 document.getElementById('output-diff').classList.add('active');
              } else {
                  document.querySelector('.tab:nth-child(2)').classList.add('active');
-                 document.getElementById('output-logs').style.display = 'block';
+                 document.getElementById('output-logs').classList.add('active');
              }
          }
          function runSimulation() {
-             const btn = document.querySelector('#sim-form button');
+             const btn = document.querySelector('#sim-form .run-button');
              const originalText = btn.innerText;
              btn.innerText = 'Generating...';
              btn.style.opacity = '0.7';

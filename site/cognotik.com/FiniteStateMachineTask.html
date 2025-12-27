@@ -23,111 +23,37 @@ Style: Cyberpunk meets clean architectural blueprint.
     
     <!-- Icons: FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
-    <style>
-        /* CSS Variables and Base Styles will be injected here */
-        :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-primary: #38bdf8; /* Cyan */
-            --accent-secondary: #fbbf24; /* Gold */
-            --accent-tertiary: #a855f7; /* Purple */
-            --font-sans: 'Inter', system-ui, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
-    </style>
 
     <style>
         /* =========================================
-           1. Variables & Reset
+           Custom Page Styles
            ========================================= */
-        :root {
-            /* Colors */
-            --bg-dark: #0f172a;
-            --bg-darker: #020617;
-            --bg-card: #1e293b;
-            --bg-input: #334155;
         
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
         
-            --accent-primary: #38bdf8; /* Cyan */
-            --accent-secondary: #fbbf24; /* Gold */
-            --accent-tertiary: #a855f7; /* Purple */
-            --accent-danger: #ef4444;
-            --accent-success: #22c55e;
         
-            /* Gradients */
-            --gradient-primary: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
-            --gradient-glow: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
         
-            /* Typography */
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
         
-            /* Spacing & Layout */
-            --container-width: 1200px;
-            --header-height: 70px;
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 16px;
-            --radius-full: 9999px;
         
-            /* Transitions */
-            --transition-fast: 0.2s ease;
-            --transition-normal: 0.3s ease-in-out;
-        }
         
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
         
-        html {
-            scroll-behavior: smooth;
-        }
         
-        body {
-            font-family: var(--font-sans);
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
         
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
         
-        ::-webkit-scrollbar-track {
-            background: var(--bg-darker);
-        }
         
-        ::-webkit-scrollbar-thumb {
-            background: var(--bg-card);
-            border-radius: var(--radius-sm);
-        }
         
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-secondary);
-        }
         
         /* Utilities */
         .container {
-            max-width: var(--container-width);
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
         }
         
         .text-gradient {
-            background: var(--gradient-primary);
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
@@ -149,46 +75,16 @@ Style: Cyberpunk meets clean architectural blueprint.
         
         
 
-        /* =========================================
-           3. Hero Section
-           ========================================= */
-        .hero-section {
-            padding-top: calc(var(--header-height) + 60px);
-            padding-bottom: 80px;
-            position: relative;
-            overflow: hidden;
-        }
         
-        /* Background Grid Effect */
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
-            z-index: -1;
-        }
         
-        .hero-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            align-items: center;
-        }
         
         .badge {
             display: inline-block;
             padding: 6px 12px;
-            background: rgba(168, 85, 247, 0.1);
-            color: var(--accent-tertiary);
-            border: 1px solid rgba(168, 85, 247, 0.2);
-            border-radius: var(--radius-full);
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--accent-color);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 9999px;
             font-size: 0.85rem;
             font-weight: 600;
             margin-bottom: 20px;
@@ -196,66 +92,14 @@ Style: Cyberpunk meets clean architectural blueprint.
             letter-spacing: 0.05em;
         }
         
-        .hero-title {
-            font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 20px;
-            font-weight: 800;
-        }
         
-        .hero-subtitle {
-            font-size: 1.125rem;
-            color: var(--text-secondary);
-            margin-bottom: 40px;
-            max-width: 540px;
-        }
         
-        .hero-actions {
-            display: flex;
-            gap: 16px;
-        }
         
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            text-decoration: none;
-            transition: var(--transition-fast);
-            cursor: pointer;
-            border: none;
-            font-family: var(--font-sans);
-        }
         
-        .btn-primary {
-            background: var(--accent-primary);
-            color: var(--bg-dark);
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
-        }
         
-        .btn-primary:hover {
-            background: #7dd3fc;
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
-            transform: translateY(-2px);
-        }
         
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-primary);
-            border: 1px solid var(--bg-input);
-        }
         
-        .btn-secondary:hover {
-            border-color: var(--text-secondary);
-            background: rgba(255, 255, 255, 0.05);
-        }
         
-        .btn-block {
-            width: 100%;
-        }
         
         /* Hero Visual - CSS Only FSM Representation */
         .visual-container {
@@ -263,7 +107,7 @@ Style: Cyberpunk meets clean architectural blueprint.
             width: 100%;
             height: 400px;
             background: radial-gradient(circle at center, rgba(30, 41, 59, 0.5) 0%, transparent 70%);
-            border-radius: var(--radius-lg);
+            border-radius: var(--border-radius);
             perspective: 1000px;
         }
         
@@ -271,8 +115,8 @@ Style: Cyberpunk meets clean architectural blueprint.
             position: absolute;
             border-radius: 50%;
             background: rgba(15, 23, 42, 0.8);
-            border: 2px solid var(--accent-primary);
-            box-shadow: 0 0 15px var(--accent-primary);
+            border: 2px solid var(--accent-secondary);
+            box-shadow: 0 0 15px var(--accent-secondary);
             z-index: 2;
             backdrop-filter: blur(4px);
         }
@@ -290,8 +134,8 @@ Style: Cyberpunk meets clean architectural blueprint.
             height: 80px;
             bottom: 20%;
             right: 20%;
-            border-color: var(--accent-secondary);
-            box-shadow: 0 0 15px var(--accent-secondary);
+            border-color: #fbbf24;
+            box-shadow: 0 0 15px #fbbf24;
             animation: float 7s ease-in-out infinite reverse;
         }
         
@@ -300,8 +144,8 @@ Style: Cyberpunk meets clean architectural blueprint.
             height: 50px;
             top: 30%;
             right: 30%;
-            border-color: var(--accent-tertiary);
-            box-shadow: 0 0 15px var(--accent-tertiary);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-color);
             animation: pulse 3s infinite;
         }
         
@@ -311,7 +155,7 @@ Style: Cyberpunk meets clean architectural blueprint.
             left: 50%;
             width: 200px;
             height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+            background: linear-gradient(90deg, transparent, var(--accent-secondary), transparent);
             transform: translate(-50%, -50%) rotate(45deg);
             opacity: 0.5;
             z-index: 1;
@@ -324,311 +168,52 @@ Style: Cyberpunk meets clean architectural blueprint.
         
         @keyframes pulse {
             0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 25px var(--accent-tertiary); }
+            50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 25px var(--accent-color); }
             100% { transform: scale(1); opacity: 0.8; }
         }
         
-        /* =========================================
-           4. Features Grid
-           ========================================= */
-        .features-section {
-            padding: 80px 0;
-            background: var(--bg-darker);
-        }
         
-        .section-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
         
-        .section-header h2 {
-            font-size: 2.5rem;
-            margin-bottom: 16px;
-        }
         
-        .section-header p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-        }
         
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 30px;
-        }
         
-        .feature-card {
-            background: var(--bg-card);
-            padding: 30px;
-            border-radius: var(--radius-lg);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: var(--transition-normal);
-            position: relative;
-            overflow: hidden;
-        }
         
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(56, 189, 248, 0.3);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
         
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: var(--gradient-primary);
-            opacity: 0;
-            transition: var(--transition-fast);
-        }
         
-        .feature-card:hover::before {
-            opacity: 1;
-        }
         
-        .icon-container {
-            width: 50px;
-            height: 50px;
-            background: rgba(56, 189, 248, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            color: var(--accent-primary);
-            font-size: 1.25rem;
-        }
         
-        .feature-card h3 {
-            font-size: 1.25rem;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-        }
         
-        .feature-card p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
         
-        /* =========================================
-           5. Interactive Simulator
-           ========================================= */
-        .simulator-section {
-            padding: 100px 0;
-        }
         
-        .simulator-interface {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 30px;
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-            min-height: 600px;
-        }
         
-        /* Left Panel: Config */
-        .sim-config-panel {
-            padding: 24px;
-            background: rgba(15, 23, 42, 0.5);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            flex-direction: column;
-        }
         
-        .panel-header {
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
         
-        .panel-header h3 {
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--accent-secondary);
-        }
         
-        .form-group {
-            margin-bottom: 20px;
-        }
         
-        .form-group label {
-            display: block;
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-        }
         
-        .required {
-            color: var(--accent-danger);
-        }
         
-        .form-group input[type="text"],
-        .form-group textarea {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid transparent;
-            border-radius: var(--radius-sm);
-            padding: 10px 12px;
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            font-size: 0.9rem;
-            transition: var(--transition-fast);
-        }
         
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            background: var(--bg-dark);
-        }
         
-        .form-hint {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 6px;
-        }
         
-        /* Toggles */
-        .toggles-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-bottom: 24px;
-            background: rgba(0,0,0,0.2);
-            padding: 12px;
-            border-radius: var(--radius-md);
-        }
         
-        .toggle-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
         
-        .toggle-label {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
         
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 36px;
-            height: 20px;
-        }
         
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
         
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--bg-input);
-            transition: .4s;
-        }
         
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 14px;
-            width: 14px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-        }
         
-        .slider.round {
-            border-radius: 34px;
-        }
         
-        .slider.round:before {
-            border-radius: 50%;
-        }
         
-        input:checked + .slider {
-            background-color: var(--accent-primary);
-        }
         
-        input:checked + .slider:before {
-            transform: translateX(16px);
-        }
         
-        /* Right Panel: Output */
-        .sim-output-panel {
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-darker);
-        }
         
-        .tabs-nav {
-            display: flex;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            background: var(--bg-card);
-        }
         
-        .tab-btn {
-            background: transparent;
-            border: none;
-            padding: 16px 24px;
-            color: var(--text-secondary);
-            font-family: var(--font-sans);
-            font-weight: 500;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: var(--transition-fast);
-        }
         
-        .tab-btn:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.02);
-        }
         
-        .tab-btn.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
-        }
         
-        .tab-content {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-            position: relative;
-            min-height: 400px;
-        }
         
-        .tab-pane {
-            display: none;
-            height: 100%;
-        }
         
-        .tab-pane.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
         
         /* Diagram Placeholder */
         .diagram-placeholder {
@@ -637,7 +222,7 @@ Style: Cyberpunk meets clean architectural blueprint.
             align-items: center;
             justify-content: center;
             border: 2px dashed rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-md);
+            border-radius: var(--border-radius);
             color: var(--text-muted);
         }
         
@@ -654,7 +239,7 @@ Style: Cyberpunk meets clean architectural blueprint.
         /* Code Output */
         .code-block-wrapper {
             background: #0d1117;
-            border-radius: var(--radius-md);
+            border-radius: var(--border-radius);
             border: 1px solid rgba(255, 255, 255, 0.1);
             height: 100%;
             display: flex;
@@ -669,20 +254,11 @@ Style: Cyberpunk meets clean architectural blueprint.
             color: var(--text-secondary);
         }
         
-        pre {
-            margin: 0;
-            padding: 16px;
-            overflow: auto;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            color: #e6edf3;
-            flex: 1;
-        }
         
         /* Terminal Logs */
         .terminal-window {
             background: #000;
-            border-radius: var(--radius-md);
+            border-radius: var(--border-radius);
             padding: 16px;
             height: 100%;
             font-family: var(--font-mono);
@@ -698,14 +274,14 @@ Style: Cyberpunk meets clean architectural blueprint.
         }
         
         .log-line.error { color: var(--accent-danger); }
-        .log-line.info { color: var(--accent-primary); }
+        .log-line.info { color: var(--accent-secondary); }
         
         /* =========================================
            6. Workflow Section
            ========================================= */
         .workflow-section {
             padding: 80px 0;
-            background: var(--bg-dark);
+            background: var(--background-color);
         }
         
         .workflow-steps {
@@ -727,21 +303,21 @@ Style: Cyberpunk meets clean architectural blueprint.
         .step-number {
             width: 50px;
             height: 50px;
-            background: var(--bg-card);
-            border: 2px solid var(--accent-primary);
+            background: var(--surface-color);
+            border: 2px solid var(--accent-secondary);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
             font-weight: 700;
-            color: var(--accent-primary);
+            color: var(--accent-secondary);
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
         }
         
         .step-content h4 {
             margin-bottom: 10px;
-            color: var(--text-primary);
+            color: var(--text-color);
         }
         
         .step-content p {
@@ -764,7 +340,7 @@ Style: Cyberpunk meets clean architectural blueprint.
             left: 0;
             width: 0%;
             height: 100%;
-            background: var(--accent-primary);
+            background: var(--accent-secondary);
             transform: translateY(-50%);
             animation: connect 3s infinite;
         }
@@ -780,7 +356,7 @@ Style: Cyberpunk meets clean architectural blueprint.
            ========================================= */
         .use-cases-section {
             padding: 80px 0;
-            background: var(--bg-darker);
+            background: #020617;
         }
         
         .use-case-grid {
@@ -793,14 +369,14 @@ Style: Cyberpunk meets clean architectural blueprint.
             display: flex;
             gap: 20px;
             padding: 24px;
-            background: var(--bg-card);
-            border-radius: var(--radius-md);
-            border-left: 4px solid var(--accent-secondary);
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            border-left: 4px solid #fbbf24;
         }
         
         .use-case-item i {
             font-size: 1.5rem;
-            color: var(--accent-secondary);
+            color: #fbbf24;
             margin-top: 4px;
         }
         
@@ -818,7 +394,7 @@ Style: Cyberpunk meets clean architectural blueprint.
            8. Footer
            ========================================= */
         footer {
-            background: var(--bg-dark);
+            background: var(--background-color);
             padding: 40px 0;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -850,7 +426,7 @@ Style: Cyberpunk meets clean architectural blueprint.
         }
         
         .footer-links a:hover {
-            color: var(--accent-primary);
+            color: var(--accent-secondary);
         }
         
         .footer-copyright {
@@ -862,21 +438,22 @@ Style: Cyberpunk meets clean architectural blueprint.
            9. Responsive Design
            ========================================= */
         @media (max-width: 992px) {
-            .hero-title { font-size: 2.8rem; }
-            .features-grid { grid-template-columns: repeat(2, 1fr); }
-            .simulator-interface { grid-template-columns: 1fr; }
-            .sim-config-panel { border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+            /* .hero-title { font-size: 2.8rem; } handled by main.css */
+            /* .features-grid { grid-template-columns: repeat(2, 1fr); } handled by main.css auto-fit */
+            /* .simulator-interface { grid-template-columns: 1fr; } handled by main.css */
+            /* .sim-config-panel { border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.05); } handled by main.css */
         }
         
         @media (max-width: 768px) {
             .main-nav { display: none; } /* Simplified for this demo */
             .mobile-menu-toggle { display: block; }
         
-            .hero-grid { grid-template-columns: 1fr; text-align: center; }
-            .hero-subtitle { margin: 0 auto 40px; }
-            .hero-actions { justify-content: center; }
         
-            .features-grid { grid-template-columns: 1fr; }
+            /* .hero-grid { grid-template-columns: 1fr; text-align: center; } */
+            /* .hero-subtitle { margin: 0 auto 40px; } */
+            /* .hero-actions { justify-content: center; } */
+        
+            /* .features-grid { grid-template-columns: 1fr; } */
         
             .workflow-steps { flex-direction: column; gap: 30px; }
             .step-connector { display: none; }
@@ -901,24 +478,24 @@ Style: Cyberpunk meets clean architectural blueprint.
 
     <main>
         <!-- Hero Section -->
-        <section id="hero" class="hero-section">
-            <div class="container hero-grid">
-                <div class="hero-content">
+        <section id="hero" class="hero">
+            <div class="container">
+                <div class="hero-content" style="position: relative; z-index: 2;">
                     <div class="badge">Reasoning Engine</div>
-                    <h1 class="hero-title">Finite State Machine <span class="text-gradient">Modeler</span></h1>
-                    <p class="hero-subtitle">
+                    <h1>Finite State Machine <span class="text-gradient">Modeler</span></h1>
+                    <p class="subtitle">
                         Transform abstract concepts into deterministic logic. Analyze systems, map state transitions, validate properties, and generate test scenarios with AI-driven formal methods.
                     </p>
-                    <div class="hero-actions">
-                        <a href="#simulator" class="btn btn-primary">
+                    <div class="hero-actions" style="margin-bottom: 2rem;">
+                        <a href="#simulator" class="cta-button">
                             <i class="fa-solid fa-play"></i> Launch Simulator
                         </a>
-                        <a href="#features" class="btn btn-secondary">
+                        <a href="#features" class="btn" style="background: transparent; border: 1px solid var(--border-color);">
                             Explore Features
                         </a>
                     </div>
                 </div>
-                <div class="hero-visual">
+                <div class="hero-visual" style="max-width: 800px; margin: 0 auto;">
                     <!-- 3D Abstract Illustration -->
                     <div class="visual-container">
                         <img src="assets/images/fsm-hero-illustration.png"
@@ -930,11 +507,11 @@ Style: Cyberpunk meets clean architectural blueprint.
         </section>
 
         <!-- Features Grid -->
-        <section id="features" class="features-section">
+        <section id="features" class="features">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header" style="text-align: center; margin-bottom: 3rem;">
                     <h2>Core Capabilities</h2>
-                    <p>From concept to formal validation in seconds.</p>
+                    <p style="color: var(--text-muted);">From concept to formal validation in seconds.</p>
                 </div>
                 
                 <!-- Feature Highlight Visual -->
@@ -947,49 +524,37 @@ Style: Cyberpunk meets clean architectural blueprint.
                 <div class="features-grid">
                     <!-- Feature 1 -->
                     <div class="feature-card">
-                        <div class="icon-container">
-                            <i class="fa-solid fa-sitemap"></i>
-                        </div>
+                        <i class="fa-solid fa-sitemap"></i>
                         <h3>State Identification</h3>
                         <p>Automatically extracts all possible states (Initial, Normal, Error, Terminal) from a natural language concept description.</p>
                     </div>
                     <!-- Feature 2 -->
                     <div class="feature-card">
-                        <div class="icon-container">
-                            <i class="fa-solid fa-arrow-right-arrow-left"></i>
-                        </div>
+                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
                         <h3>Transition Mapping</h3>
                         <p>Maps events and triggers to state changes, identifying guard conditions and resulting actions.</p>
                     </div>
                     <!-- Feature 3 -->
                     <div class="feature-card">
-                        <div class="icon-container">
-                            <i class="fa-solid fa-diagram-project"></i>
-                        </div>
+                        <i class="fa-solid fa-diagram-project"></i>
                         <h3>Visual Diagrams</h3>
                         <p>Generates Mermaid.js compatible code to visualize the state machine structure instantly.</p>
                     </div>
                     <!-- Feature 4 -->
                     <div class="feature-card">
-                        <div class="icon-container">
-                            <i class="fa-solid fa-bug-slash"></i>
-                        </div>
+                        <i class="fa-solid fa-bug-slash"></i>
                         <h3>Edge Case Detection</h3>
                         <p>Identifies invalid transitions, race conditions, and missing error handling paths.</p>
                     </div>
                     <!-- Feature 5 -->
                     <div class="feature-card">
-                        <div class="icon-container">
-                            <i class="fa-solid fa-check-double"></i>
-                        </div>
+                        <i class="fa-solid fa-check-double"></i>
                         <h3>Property Validation</h3>
                         <p>Validates formal properties including determinism, completeness, reachability, and liveness.</p>
                     </div>
                     <!-- Feature 6 -->
                     <div class="feature-card">
-                        <div class="icon-container">
-                            <i class="fa-solid fa-vial"></i>
-                        </div>
+                        <i class="fa-solid fa-vial"></i>
                         <h3>Test Generation</h3>
                         <p>Creates comprehensive test scenarios covering happy paths, error paths, and boundary conditions.</p>
                     </div>
@@ -998,42 +563,42 @@ Style: Cyberpunk meets clean architectural blueprint.
         </section>
 
         <!-- Interactive Simulator -->
-        <section id="simulator" class="simulator-section">
+        <section id="simulator" class="simulator">
             <div class="container">
-                <div class="section-header">
+                <div class="section-header" style="text-align: center; margin-bottom: 3rem;">
                     <h2>Interactive Simulator</h2>
-                    <p>Configure the FSM parameters and visualize the generated logic.</p>
+                    <p style="color: var(--text-muted);">Configure the FSM parameters and visualize the generated logic.</p>
                 </div>
                 
-                <div class="simulator-interface">
+                <div class="simulator-container">
                     <!-- Left Column: Inputs -->
-                    <div class="sim-config-panel">
-                        <div class="panel-header">
-                            <h3><i class="fa-solid fa-sliders"></i> Configuration</h3>
+                    <div class="sim-controls">
+                        <div class="control-group">
+                            <h3 style="color: var(--accent-secondary); margin-bottom: 1rem;"><i class="fa-solid fa-sliders"></i> Configuration</h3>
                         </div>
                         <form id="fsm-config-form">
                             <!-- Concept Input -->
-                            <div class="form-group">
+                            <div class="control-group">
                                 <label for="concept_to_model">Concept to Model <span class="required">*</span></label>
                                 <input type="text" id="concept_to_model" name="concept_to_model" placeholder="e.g., User Authentication System" required>
-                                <small class="form-hint">The system or process you want to analyze.</small>
+                                <small class="form-hint" style="color: var(--text-muted); font-size: 0.8rem;">The system or process you want to analyze.</small>
                             </div>
 
                             <!-- Domain Context -->
-                            <div class="form-group">
+                            <div class="control-group">
                                 <label for="domain_context">Domain Context</label>
                                 <input type="text" id="domain_context" name="domain_context" placeholder="e.g., Web Security / OAuth2">
                             </div>
 
                             <!-- Initial States -->
-                            <div class="form-group">
+                            <div class="control-group">
                                 <label for="initial_states">Initial States (Optional)</label>
                                 <input type="text" id="initial_states" name="initial_states" placeholder="e.g., Unauthenticated, Idle">
-                                <small class="form-hint">Comma-separated list of starting states.</small>
+                                <small class="form-hint" style="color: var(--text-muted); font-size: 0.8rem;">Comma-separated list of starting states.</small>
                             </div>
 
                             <!-- Known Events -->
-                            <div class="form-group">
+                            <div class="control-group">
                                 <label for="known_events">Known Events (Optional)</label>
                                 <textarea id="known_events" name="known_events" rows="2" placeholder="e.g., login_attempt, logout_click, session_timeout"></textarea>
                             </div>
@@ -1063,58 +628,56 @@ Style: Cyberpunk meets clean architectural blueprint.
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary btn-block" id="run-simulation">
+                            <button type="submit" class="run-button" id="run-simulation">
                                 <i class="fa-solid fa-bolt"></i> Generate FSM
                             </button>
                         </form>
                     </div>
 
                     <!-- Right Column: Outputs -->
-                    <div class="sim-output-panel">
-                        <div class="tabs-nav">
-                            <button class="tab-btn active" data-tab="diagram">Diagram</button>
-                            <button class="tab-btn" data-tab="analysis">Analysis</button>
-                            <button class="tab-btn" data-tab="tests">Test Scenarios</button>
-                            <button class="tab-btn" data-tab="logs">Logs</button>
+                    <div class="sim-output">
+                        <div class="tabs">
+                            <button class="tab active" data-tab="diagram">Diagram</button>
+                            <button class="tab" data-tab="analysis">Analysis</button>
+                            <button class="tab" data-tab="tests">Test Scenarios</button>
+                            <button class="tab" data-tab="logs">Logs</button>
                         </div>
 
-                        <div class="tab-content">
-                            <!-- Diagram Tab -->
-                            <div id="diagram" class="tab-pane active">
-                                <div class="diagram-placeholder">
-                                    <div class="empty-state">
-                                        <i class="fa-solid fa-diagram-project"></i>
-                                        <p>Run simulation to generate State Diagram</p>
-                                    </div>
-                                    <!-- Canvas/Mermaid container will go here -->
-                                    <div id="mermaid-container" class="mermaid-output hidden"></div>
+                        <!-- Diagram Tab -->
+                        <div id="diagram" class="tab-content active">
+                            <div class="diagram-placeholder">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-diagram-project"></i>
+                                    <p>Run simulation to generate State Diagram</p>
                                 </div>
+                                <!-- Canvas/Mermaid container will go here -->
+                                <div id="mermaid-container" class="mermaid-output hidden"></div>
                             </div>
+                        </div>
 
-                            <!-- Analysis Tab -->
-                            <div id="analysis" class="tab-pane">
-                                <div class="code-block-wrapper">
-                                    <div class="code-header">
-                                        <span>Analysis Report</span>
-                                    </div>
-                                    <pre><code class="language-markdown" id="analysis-output">// Analysis results will appear here...</code></pre>
+                        <!-- Analysis Tab -->
+                        <div id="analysis" class="tab-content">
+                            <div class="code-block-wrapper">
+                                <div class="code-header">
+                                    <span>Analysis Report</span>
                                 </div>
+                                <pre><code class="language-markdown" id="analysis-output">// Analysis results will appear here...</code></pre>
                             </div>
+                        </div>
 
-                            <!-- Test Scenarios Tab -->
-                            <div id="tests" class="tab-pane">
-                                <div class="test-cases-list" id="test-cases-output">
-                                    <!-- Test case cards will be injected here -->
-                                    <div class="empty-state-text">No test scenarios generated yet.</div>
-                                </div>
+                        <!-- Test Scenarios Tab -->
+                        <div id="tests" class="tab-content">
+                            <div class="test-cases-list" id="test-cases-output">
+                                <!-- Test case cards will be injected here -->
+                                <div class="empty-state-text">No test scenarios generated yet.</div>
                             </div>
+                        </div>
 
-                            <!-- Logs Tab -->
-                            <div id="logs" class="tab-pane">
-                                <div class="terminal-window">
-                                    <div class="terminal-lines" id="simulation-logs">
-                                        <span class="log-line system">> System initialized. Waiting for input...</span>
-                                    </div>
+                        <!-- Logs Tab -->
+                        <div id="logs" class="tab-content">
+                            <div class="terminal-window">
+                                <div class="terminal-lines" id="simulation-logs">
+                                    <span class="log-line system">> System initialized. Waiting for input...</span>
                                 </div>
                             </div>
                         </div>
@@ -1265,8 +828,8 @@ Style: Cyberpunk meets clean architectural blueprint.
             // ==========================================
             // 2. Tab Switching Logic
             // ==========================================
-            const tabBtns = document.querySelectorAll('.tab-btn');
-            const tabPanes = document.querySelectorAll('.tab-pane');
+            const tabBtns = document.querySelectorAll('.tab');
+            const tabPanes = document.querySelectorAll('.tab-content');
         
             function switchTab(tabId) {
                 // Update Buttons

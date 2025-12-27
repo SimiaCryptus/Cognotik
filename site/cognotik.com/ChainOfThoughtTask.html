@@ -14,74 +14,36 @@
     <!-- Page Specific Styles -->
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-primary: #a855f7; /* Purple for Reasoning */
-            --accent-secondary: #06b6d4; /* Cyan for Logic */
-            --accent-glow: rgba(168, 85, 247, 0.3);
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-mono: 'Fira Code', monospace;
+            --accent-glow: rgba(139, 92, 246, 0.3);
         }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-sans);
-            margin: 0;
-            line-height: 1.6;
-        }
 
         /* Hero Section */
         .hero {
-            padding: 6rem 2rem;
+            padding: 6rem 2rem; /* Override main.css padding */
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 4rem;
             align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
+            text-align: left; /* Override main.css center */
+            background: none; /* Override main.css gradient */
         }
 
-        .hero-content h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+        .hero h1 {
+            text-align: left;
+            background: linear-gradient(to right, var(--accent-color), var(--accent-secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .hero-content .subtitle {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            margin-bottom: 2rem;
-        }
 
-        .btn-cta {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 0.5rem;
-            text-decoration: none;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: inline-block;
-            border: none;
-            cursor: pointer;
-        }
 
-        .btn-cta:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 20px var(--accent-glow);
-        }
 
         /* Visual Placeholder */
         .hero-visual {
             position: relative;
             height: 400px;
-            background: radial-gradient(circle at center, var(--bg-card), var(--bg-dark));
+            background: radial-gradient(circle at center, var(--surface-color), var(--background-color));
             border-radius: 1rem;
             border: 1px solid rgba(255,255,255,0.1);
             display: flex;
@@ -102,117 +64,33 @@
         }
         @keyframes pulse { 0% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.5); } 100% { opacity: 0.5; transform: scale(1); } }
 
-        /* Features Grid */
-        .features {
-            padding: 4rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
 
-        .feature-card {
-            background: var(--bg-card);
-            padding: 2rem;
-            border-radius: 1rem;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: transform 0.2s;
-        }
 
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-primary);
-        }
 
         .feature-icon {
-            color: var(--accent-primary);
+            color: var(--accent-color);
             margin-bottom: 1rem;
         }
 
         /* Simulator */
-        .simulator {
-            background: #161e2e;
-            padding: 4rem 2rem;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
 
-        .sim-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 2rem;
+        .simulator-container {
             height: 800px;
+            max-width: 1400px; /* Override main.css 1200px */
         }
 
-        .sim-controls {
-            background: var(--bg-card);
-            padding: 2rem;
-            border-radius: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            overflow-y: auto;
-        }
-
-        .sim-output {
-            background: #000;
-            border-radius: 1rem;
-            border: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .output-tabs {
-            display: flex;
-            background: rgba(255,255,255,0.05);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .tab-btn {
-            padding: 1rem 2rem;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            border-right: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .tab-btn.active {
-            background: var(--bg-card);
-            color: var(--accent-secondary);
-            border-bottom: 2px solid var(--accent-secondary);
-        }
-
-        .output-content {
-            padding: 2rem;
-            overflow-y: auto;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
+        .tab-content {
+            height: auto;
             flex-grow: 1;
         }
 
-        /* Form Elements */
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
 
-        input[type="text"], textarea, select {
-            width: 100%;
-            background: var(--bg-dark);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
+
+
+
+
+        /* Form Elements */
+
 
         input[type="range"] {
             width: 100%;
@@ -226,7 +104,7 @@
 
         /* Output Styling */
         .step-card {
-            border-left: 3px solid var(--accent-primary);
+            border-left: 3px solid var(--accent-color);
             background: rgba(255,255,255,0.02);
             padding: 1rem;
             margin-bottom: 1rem;
@@ -250,21 +128,10 @@
             color: #f87171;
         }
 
-        /* Use Cases */
-        .use-cases {
-            padding: 4rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
 
-        .use-case-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
 
         @media (max-width: 768px) {
-            .hero, .sim-container, .use-case-list {
+            .hero, .simulator-container {
                 grid-template-columns: 1fr;
             }
             .hero-visual {
@@ -286,7 +153,7 @@
                 Break down complex problems into explicit, validated reasoning steps.
                 Mimic human cognitive processes by analyzing problems sequentially, validating logic at every turn, and backtracking when necessary.
             </p>
-            <button class="btn-cta" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
+            <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
                 Try the Simulator
             </button>
         </div>
@@ -307,6 +174,7 @@
 
     <!-- Features -->
     <section class="features">
+        <div class="features-grid">
         <div class="feature-card">
             <div class="feature-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
@@ -328,51 +196,52 @@
             <h3>Context Awareness</h3>
             <p>Ingests related files and prior context to inform decision-making and ground reasoning in reality.</p>
         </div>
+        </div>
     </section>
 
     <!-- Simulator -->
     <section id="simulator" class="simulator">
-        <div class="sim-container">
+        <div class="simulator-container">
             <!-- Controls -->
             <div class="sim-controls">
                 <h2>Configuration</h2>
 
-                <div>
+                <div class="control-group">
                     <label>Problem Statement</label>
                     <textarea id="problem" rows="4" placeholder="e.g., Why is the authentication service failing under high load?">Analyze the potential causes for memory leaks in the connection pool.</textarea>
                 </div>
 
-                <div>
+                <div class="control-group">
                     <label>Reasoning Depth (Max Steps)</label>
                     <input type="range" id="depth" min="1" max="20" value="5" oninput="document.getElementById('depth-val').innerText = this.value">
                     <div style="text-align: right; font-size: 0.8rem; color: var(--text-muted);"><span id="depth-val">5</span> steps</div>
                 </div>
 
-                <div class="toggle-row">
+                <div class="toggle-row control-group">
                     <label style="margin:0">Validate Steps</label>
                     <input type="checkbox" id="validate" checked>
                 </div>
 
-                <div>
+                <div class="control-group">
                     <label>Related Files (Glob Patterns)</label>
                     <input type="text" value="src/**/*.kt" placeholder="**/*.kt">
                 </div>
 
-                <button class="btn-cta" onclick="runSimulation()">Start Reasoning</button>
+                <button class="run-button" onclick="runSimulation()">Start Reasoning</button>
             </div>
 
             <!-- Output -->
             <div class="sim-output">
-                <div class="output-tabs">
-                    <button class="tab-btn active" onclick="switchTab('chain')">Reasoning Chain</button>
-                    <button class="tab-btn" onclick="switchTab('summary')">Final Summary</button>
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('chain')">Reasoning Chain</button>
+                    <button class="tab" onclick="switchTab('summary')">Final Summary</button>
                 </div>
-                <div id="output-chain" class="output-content">
+                <div id="output-chain" class="tab-content active">
                     <div style="color: var(--text-muted); text-align: center; margin-top: 2rem;">
                         Configure the task and click "Start Reasoning" to see the agent in action.
                     </div>
                 </div>
-                <div id="output-summary" class="output-content" style="display: none;">
+                <div id="output-summary" class="tab-content">
                     <div style="color: var(--text-muted);">Waiting for reasoning to complete...</div>
                 </div>
             </div>
@@ -382,7 +251,7 @@
     <!-- Use Cases -->
     <section class="use-cases">
         <h2>When to Use</h2>
-        <div class="use-case-list">
+        <div class="features-grid">
             <div class="feature-card">
                 <h3>Complex Debugging</h3>
                 <p>Tracing the root cause of a bug through multiple system layers where simple stack traces aren't enough.</p>
@@ -404,10 +273,10 @@
 
     <script>
         function switchTab(tabId) {
-            document.querySelectorAll('.output-content').forEach(el => el.style.display = 'none');
-            document.getElementById('output-' + tabId).style.display = 'block';
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('output-' + tabId).classList.add('active');
 
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
         }
 

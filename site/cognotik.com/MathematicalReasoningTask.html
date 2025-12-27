@@ -24,81 +24,25 @@
     <!-- Component Script -->
     <script type="module" src="../assets/scripts/components/CognotikHeader.js"></script>
 
-    <style>
-        /* 
-           CSS Variables and Page-Specific Styles 
-           Theme: Deep Slate (#0f172a) with Gold/Cyan Accents for Logic/Math
-        */
-        :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-input: #334155;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-primary: #06b6d4; /* Cyan */
-            --accent-secondary: #fbbf24; /* Gold */
-            --font-sans: 'Inter', system-ui, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
 
-        /* CSS content will be added here */
-    </style>
 
     <style>
         /* =========================================
            1. Global Reset & Typography
            ========================================= */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
         
         :root {
-            /* Re-declaring variables for context, though defined in HTML */
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
+        
+        
+        
+        
+            /* Page-Specific Variables */
+            --accent-gold: #fbbf24;
+            --accent-hover-cyan: #22d3ee;
             --bg-input: #334155;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-primary: #06b6d4; /* Cyan */
-            --accent-secondary: #fbbf24; /* Gold */
-            --accent-hover: #22d3ee;
-            --danger: #ef4444;
-            --success: #10b981;
-            --font-sans: 'Inter', system-ui, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
             --radius-sm: 6px;
             --radius-md: 12px;
-            --radius-lg: 24px;
             --shadow-glow: 0 0 20px rgba(6, 182, 212, 0.15);
-        }
-        
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
-        }
-        
-        h1, h2, h3, h4 {
-            font-weight: 700;
-            line-height: 1.2;
-            color: var(--text-primary);
-        }
-        
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-        
-        button {
-            cursor: pointer;
-            font-family: inherit;
-            border: none;
-            outline: none;
         }
         
         /* Custom Scrollbar */
@@ -108,7 +52,7 @@
         }
         
         ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
+            background: var(--background-color);
         }
         
         ::-webkit-scrollbar-thumb {
@@ -117,17 +61,12 @@
         }
         
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-secondary);
+            background: var(--text-muted);
         }
         
         /* =========================================
            2. Layout & Container
            ========================================= */
-        .task-container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
         
         section {
             margin-bottom: 6rem;
@@ -152,7 +91,7 @@
             transform: translateX(-50%);
             width: 60px;
             height: 4px;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            background: linear-gradient(90deg, var(--accent-secondary), var(--accent-gold));
             border-radius: 2px;
         }
         
@@ -185,7 +124,7 @@
         
         .hero-badge {
             background: rgba(251, 191, 36, 0.1);
-            color: var(--accent-secondary);
+            color: var(--accent-gold);
             padding: 0.5rem 1rem;
             border-radius: 50px;
             font-size: 0.875rem;
@@ -212,13 +151,13 @@
         
         .hero-subtitle {
             font-size: 1.125rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             margin-bottom: 2.5rem;
             max-width: 600px;
         }
         
         .btn-cta {
-            background: linear-gradient(135deg, var(--accent-primary), #0891b2);
+            background: linear-gradient(135deg, var(--accent-secondary), #0891b2);
             color: white;
             padding: 1rem 2rem;
             border-radius: var(--radius-sm);
@@ -245,7 +184,7 @@
             width: 100%;
             max-width: 500px;
             aspect-ratio: 1/1;
-            background: radial-gradient(circle at center, var(--bg-card), var(--bg-dark));
+            background: radial-gradient(circle at center, var(--surface-color), var(--background-color));
             border-radius: 50%;
             border: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
@@ -259,8 +198,8 @@
         .hero-icon {
             width: 120px;
             height: 120px;
-            color: var(--accent-primary);
-            filter: drop-shadow(0 0 15px var(--accent-primary));
+            color: var(--accent-secondary);
+            filter: drop-shadow(0 0 15px var(--accent-secondary));
         }
         
         @keyframes float {
@@ -271,14 +210,9 @@
         /* =========================================
            4. Features Grid
            ========================================= */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
         
         .feature-card {
-            background: var(--bg-card);
+            background: var(--surface-color);
             padding: 2rem;
             border-radius: var(--radius-md);
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -299,7 +233,7 @@
             justify-content: center;
             align-items: center;
             margin-bottom: 1.5rem;
-            color: var(--accent-primary);
+            color: var(--accent-secondary);
         }
         
         .feature-card h3 {
@@ -308,7 +242,7 @@
         }
         
         .feature-card p {
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-size: 0.95rem;
         }
         
@@ -325,7 +259,7 @@
         }
         
         .simulator-header p {
-            color: var(--text-secondary);
+            color: var(--text-muted);
             margin-top: 0.5rem;
         }
         
@@ -349,7 +283,7 @@
         /* --- Left Column: Inputs --- */
         .sim-inputs {
             padding: 2rem;
-            background: var(--bg-card);
+            background: var(--surface-color);
             border-right: 1px solid rgba(255, 255, 255, 0.05);
             overflow-y: auto;
             flex: 0 0 350px;
@@ -372,7 +306,7 @@
             display: block;
             font-size: 0.875rem;
             font-weight: 500;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             margin-bottom: 0.5rem;
         }
         
@@ -384,8 +318,8 @@
             border: 1px solid transparent;
             border-radius: var(--radius-sm);
             padding: 0.75rem;
-            color: var(--text-primary);
-            font-family: var(--font-sans);
+            color: var(--primary-color);
+            font-family: var(--font-family-sans);
             font-size: 0.9rem;
             transition: all 0.2s;
         }
@@ -394,7 +328,7 @@
         textarea:focus,
         select:focus {
             outline: none;
-            border-color: var(--accent-primary);
+            border-color: var(--accent-secondary);
             box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
         }
         
@@ -414,8 +348,8 @@
         }
         
         .range-header span {
-            color: var(--accent-primary);
-            font-family: var(--font-mono);
+            color: var(--accent-secondary);
+            font-family: var(--font-family-mono);
             font-size: 0.875rem;
         }
         
@@ -432,7 +366,7 @@
             -webkit-appearance: none;
             width: 18px;
             height: 18px;
-            background: var(--accent-primary);
+            background: var(--accent-secondary);
             border-radius: 50%;
             cursor: pointer;
             transition: transform 0.1s;
@@ -452,7 +386,7 @@
         .checkbox-group input[type="checkbox"] {
             width: 18px;
             height: 18px;
-            accent-color: var(--accent-primary);
+            accent-color: var(--accent-secondary);
             cursor: pointer;
         }
         
@@ -464,8 +398,8 @@
         .btn-run {
             width: 100%;
             margin-top: 1rem;
-            background: var(--accent-primary);
-            color: var(--bg-dark);
+            background: var(--accent-secondary);
+            color: var(--background-color);
             padding: 0.875rem;
             border-radius: var(--radius-sm);
             font-weight: 700;
@@ -477,7 +411,7 @@
         }
         
         .btn-run:hover {
-            background: var(--accent-hover);
+            background: var(--accent-hover-cyan);
         }
         
         /* --- Right Column: Outputs --- */
@@ -498,7 +432,7 @@
         .tab-btn {
             padding: 1rem 1.5rem;
             background: transparent;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-size: 0.9rem;
             font-weight: 500;
             border-bottom: 2px solid transparent;
@@ -506,13 +440,13 @@
         }
         
         .tab-btn:hover {
-            color: var(--text-primary);
+            color: var(--primary-color);
             background: rgba(255, 255, 255, 0.02);
         }
         
         .tab-btn.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
+            color: var(--accent-secondary);
+            border-bottom-color: var(--accent-secondary);
             background: rgba(6, 182, 212, 0.05);
         }
         
@@ -545,7 +479,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             opacity: 0.5;
         }
         
@@ -556,7 +490,7 @@
         }
         
         .terminal-window {
-            font-family: var(--font-mono);
+            font-family: var(--font-family-mono);
             font-size: 0.85rem;
             color: #10b981;
         }
@@ -566,12 +500,12 @@
         }
         
         .t-dim {
-            color: var(--text-secondary);
+            color: var(--text-muted);
             opacity: 0.7;
         }
         
         .markdown-preview {
-            color: var(--text-primary);
+            color: var(--primary-color);
             font-size: 0.95rem;
         }
         
@@ -580,7 +514,7 @@
         .markdown-preview h3 {
             margin-top: 1.5rem;
             margin-bottom: 1rem;
-            color: var(--accent-secondary);
+            color: var(--accent-gold);
         }
         
         .markdown-preview p {
@@ -620,32 +554,32 @@
         .step-icon {
             width: 60px;
             height: 60px;
-            background: var(--bg-card);
-            border: 2px solid var(--accent-primary);
+            background: var(--surface-color);
+            border: 2px solid var(--accent-secondary);
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             margin-bottom: 1rem;
-            color: var(--accent-primary);
+            color: var(--accent-secondary);
             box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
             transition: transform 0.3s;
         }
         
         .step:hover .step-icon {
             transform: scale(1.1);
-            background: var(--accent-primary);
-            color: var(--bg-dark);
+            background: var(--accent-secondary);
+            color: var(--background-color);
         }
         
         .step h4 {
             margin-bottom: 0.5rem;
-            color: var(--text-primary);
+            color: var(--primary-color);
         }
         
         .step p {
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
         }
         
         .step-connector {
@@ -657,7 +591,7 @@
                 display: block;
                 flex: 1;
                 height: 2px;
-                background: linear-gradient(90deg, var(--accent-primary), var(--bg-input));
+                background: linear-gradient(90deg, var(--accent-secondary), var(--bg-input));
                 margin-top: 30px; /* Align with center of icon */
                 opacity: 0.5;
             }
@@ -674,7 +608,7 @@
         
         .use-case-item {
             background: rgba(255, 255, 255, 0.02);
-            border-left: 4px solid var(--accent-secondary);
+            border-left: 4px solid var(--accent-gold);
             padding: 1.5rem;
             border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
             transition: background 0.3s;
@@ -690,11 +624,11 @@
             gap: 0.75rem;
             font-size: 1.1rem;
             margin-bottom: 0.75rem;
-            color: var(--accent-secondary);
+            color: var(--accent-gold);
         }
         
         .use-case-item p {
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-size: 0.95rem;
         }
         
@@ -709,7 +643,7 @@
         }
         
         .footer-content p {
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-size: 0.875rem;
         }
     </style>

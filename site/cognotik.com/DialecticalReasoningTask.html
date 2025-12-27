@@ -11,151 +11,116 @@
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
-        :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --accent-primary: #8b5cf6; /* Violet */
-            --accent-secondary: #ec4899; /* Pink */
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
-        .btn { display: inline-block; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-decoration: none; color: #fff; }
-        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); box-shadow: 0 0 15px rgba(139, 92, 246, 0.3); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(139, 92, 246, 0.5); }
         
-        .hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 80vh; }
+        /* Page-specific overrides and animations */
+        .hero-split { display: flex; align-items: center; max-width: var(--container-max-width); margin: 0 auto; text-align: left; }
         .hero-content { flex: 1; padding-right: 2rem; }
-        .hero h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
         .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
-        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-primary); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); }
+        
+        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-color); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); }
         .visual-node::before { content: ''; position: absolute; inset: -20px; border: 1px solid var(--accent-secondary); border-radius: 50%; animation: spin 10s linear infinite; }
         
         @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .features { padding: 4rem 0; background: rgba(255,255,255,0.02); }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
-        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
-        .feature-card:hover { border-color: var(--accent-primary); transform: translateY(-5px); }
-        .feature-icon { width: 48px; height: 48px; background: rgba(139, 92, 246, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: var(--accent-primary); }
 
-        .simulator { padding: 4rem 0; }
-        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); min-height: 600px; }
-        .sim-panel { padding: 2rem; display: flex; flex-direction: column; }
-        .sim-left { border-right: 1px solid rgba(255,255,255,0.05); }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
-        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); padding: 0.75rem; border-radius: 6px; font-family: monospace; font-size: 0.9rem; }
-        .form-control:focus { outline: none; border-color: var(--accent-primary); }
-        textarea.form-control { resize: vertical; min-height: 100px; }
-        .output-area { flex: 1; font-family: monospace; font-size: 0.9rem; color: #d1d5db; overflow-y: auto; white-space: pre-wrap; }
         
-        .use-cases { padding: 4rem 0; }
-        .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-        .use-case-item { background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
 
-        @media (max-width: 768px) { .hero { flex-direction: column; text-align: center; padding-top: 6rem; } .hero-content { padding-right: 0; margin-bottom: 3rem; } .sim-container { grid-template-columns: 1fr; } .sim-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); } }
+        .sim-output-content { padding: 2rem; font-family: var(--font-family-mono); color: var(--text-muted); overflow-y: auto; height: 100%; }
+        
+        @media (max-width: 768px) { .hero-split { flex-direction: column; text-align: center; } .hero-content { padding-right: 0; margin-bottom: 3rem; } }
     </style>
 </head>
 <body>
     <cognotik-header current-page="dialectical"></cognotik-header>
-    <header class="hero container">
-        <div class="hero-content">
+    <header class="hero">
+        <div class="hero-split">
+            <div class="hero-content">
             <h1>Dialectical Reasoning</h1>
-            <p>Resolve contradictions and find higher truths through a structured thesis-antithesis-synthesis process.</p>
-            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
-        </div>
-        <div class="hero-visual">
-            <div class="visual-node"></div>
+                <p class="subtitle">Resolve contradictions and find higher truths through a structured thesis-antithesis-synthesis process.</p>
+                <a href="#demo" class="cta-button">Try the Simulator</a>
+            </div>
+            <div class="hero-visual">
+                <div class="visual-node"></div>
+            </div>
         </div>
     </header>
 
     <section id="features" class="features">
-        <div class="container">
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">
+                    <i>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                    </div>
+                    </i>
                     <h3>Deep Analysis</h3>
                     <p>Thoroughly examines both thesis and antithesis positions to understand core claims and underlying logic.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">
+                    <i>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
-                    </div>
+                    </i>
                     <h3>Synthesis Generation</h3>
                     <p>Creates a higher-level synthesis that transcends opposition while preserving valuable aspects of both sides.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">
+                    <i>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
+                    </i>
                     <h3>Iterative Process</h3>
                     <p>Iterates through multiple levels of synthesis (1-5) to reach progressively deeper insights.</p>
                 </div>
             </div>
-        </div>
     </section>
 
     <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="sim-container">
-                <div class="sim-panel sim-left">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Configuration</h3>
-                    <div class="form-group">
+            <h2>Interactive Simulator</h2>
+            <div class="simulator-container">
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
+                    <div class="control-group">
                         <label>Thesis</label>
-                        <textarea id="thesis" class="form-control" placeholder="Enter the initial position...">Remote work increases productivity and employee satisfaction.</textarea>
+                        <textarea id="thesis" placeholder="Enter the initial position...">Remote work increases productivity and employee satisfaction.</textarea>
                     </div>
-                    <div class="form-group">
+                    <div class="control-group">
                         <label>Antithesis</label>
-                        <textarea id="antithesis" class="form-control" placeholder="Enter the opposing position...">In-office work fosters collaboration and company culture.</textarea>
+                        <textarea id="antithesis" placeholder="Enter the opposing position...">In-office work fosters collaboration and company culture.</textarea>
                     </div>
-                    <div class="form-group">
+                    <div class="control-group">
                         <label>Context</label>
-                        <input type="text" id="context" class="form-control" value="Modern tech company post-pandemic">
+                        <input type="text" id="context" value="Modern tech company post-pandemic">
                     </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Run Analysis</button>
+                    <button class="run-button" onclick="runSimulation()">Run Analysis</button>
                 </div>
-                <div class="sim-panel sim-right">
-                    <div id="output-logs" class="output-area">
+                <div class="sim-output">
+                    <div id="output-logs" class="sim-output-content">
                         <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
                             Configure the dialectic and click "Run" to see the synthesis.
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
     </section>
 
-    <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="use-case-list">
-                <div class="use-case-item">
-                    <h4>Architectural Debates</h4>
+    <section id="use-cases" class="features">
+            <h2>When to Use</h2>
+            <div class="mode-grid">
+                <div class="mode-card">
+                    <div class="mode-title">Architectural Debates</div>
                     <p>Resolve conflicts between different technical approaches (e.g., Monolith vs. Microservices).</p>
                 </div>
-                <div class="use-case-item">
-                    <h4>Requirement Conflicts</h4>
+                <div class="mode-card">
+                    <div class="mode-title">Requirement Conflicts</div>
                     <p>Find solutions that satisfy competing stakeholder requirements.</p>
                 </div>
-                <div class="use-case-item">
-                    <h4>Design Philosophy</h4>
+                <div class="mode-card">
+                    <div class="mode-title">Design Philosophy</div>
                     <p>Explore tensions between design principles like flexibility vs. simplicity.</p>
                 </div>
-                <div class="use-case-item">
-                    <h4>Strategic Planning</h4>
+                <div class="mode-card">
+                    <div class="mode-title">Strategic Planning</div>
                     <p>Synthesize opposing strategic directions into a cohesive plan.</p>
                 </div>
             </div>
-        </div>
     </section>
 
     <script>

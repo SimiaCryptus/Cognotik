@@ -13,43 +13,28 @@
      <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
      <style>
          :root {
-             --bg-dark: #0f172a;
-             --bg-card: #1e293b;
-             --bg-input: #334155;
-             --text-primary: #f8fafc;
-             --text-secondary: #94a3b8;
-             --accent-primary: #06b6d4; /* Cyan */
-             --accent-secondary: #f59e0b; /* Gold */
+             --accent-gold: #f59e0b;
              --accent-glow: rgba(6, 182, 212, 0.3);
-             --font-sans: 'Inter', system-ui, sans-serif;
-             --font-mono: 'JetBrains Mono', monospace;
          }
-         * {
-             box-sizing: border-box;
-             margin: 0;
-             padding: 0;
-         }
-         body {
-             background-color: var(--bg-dark);
-             color: var(--text-primary);
-             font-family: var(--font-sans);
-             line-height: 1.6;
-             overflow-x: hidden;
-         }
-         /* Typography */
-         h1, h2, h3 { font-weight: 700; letter-spacing: -0.025em; }
-         h1 { font-size: 3.5rem; line-height: 1.1; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-         h2 { font-size: 2rem; margin-bottom: 1rem; }
-         h3 { font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--accent-primary); }
-         p { color: var(--text-secondary); margin-bottom: 1.5rem; }
          /* Layout */
-         .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+         .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 2rem; }
          section { padding: 6rem 0; }
          /* Hero */
          .hero {
-             min-height: 90vh; display: flex; align-items: center;
-             background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 70%);
-             position: relative; overflow: hidden;
+             min-height: 90vh; 
+             display: flex; 
+             align-items: center;
+             text-align: left;
+             background: radial-gradient(circle at 50% 50%, var(--surface-color) 0%, var(--background-color) 70%);
+             position: relative; 
+             overflow: hidden;
+             padding: 0;
+         }
+         .hero h1 {
+             background: linear-gradient(to right, #fff, var(--accent-secondary));
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+             margin-bottom: 1rem;
          }
          .hero-content { max-width: 600px; position: relative; z-index: 10; }
          .hero-visual {
@@ -58,77 +43,50 @@
              background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
              opacity: 0.6; filter: blur(60px); pointer-events: none;
          }
-         .btn-cta {
-             display: inline-block; padding: 1rem 2rem;
-             background: var(--accent-primary); color: #000;
-             font-weight: 600; text-decoration: none; border-radius: 8px;
-             transition: transform 0.2s, box-shadow 0.2s;
-         }
-         .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 0 20px var(--accent-glow); }
+         .cta-button { background: var(--accent-secondary); color: #0f172a; }
+         .cta-button:hover { box-shadow: 0 0 20px var(--accent-glow); }
+         
          /* Features */
-         .features-grid {
-             display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;
-         }
-         .feature-card {
-             background: var(--bg-card); padding: 2rem; border-radius: 12px;
-             border: 1px solid rgba(255,255,255,0.05);
-             transition: transform 0.2s;
-         }
-         .feature-card:hover { transform: translateY(-5px); border-color: var(--accent-primary); }
+         .feature-card { text-align: left; transition: transform 0.2s; }
+         .feature-card:hover { transform: translateY(-5px); border-color: var(--accent-secondary); }
          .icon-box {
              width: 48px; height: 48px; background: rgba(6, 182, 212, 0.1);
              border-radius: 8px; display: flex; align-items: center; justify-content: center;
-             color: var(--accent-primary); margin-bottom: 1.5rem;
+             color: var(--accent-secondary); margin-bottom: 1.5rem;
          }
          /* Simulator */
-         .simulator { background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); }
-         .sim-container {
-             display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem;
-             background: var(--bg-card); border-radius: 16px; overflow: hidden;
-             border: 1px solid rgba(255,255,255,0.1);
+         .simulator-container {
+             grid-template-columns: 1fr 1.5fr;
              min-height: 600px;
          }
-         /* Sim Left: Controls */
-         .sim-controls { padding: 2rem; border-right: 1px solid rgba(255,255,255,0.1); }
-         .form-group { margin-bottom: 1.5rem; }
-         .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary); }
-         .form-control {
-             width: 100%; padding: 0.75rem; background: var(--bg-input);
-             border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
-             color: var(--text-primary); font-family: var(--font-sans);
-         }
-         .form-control:focus { outline: none; border-color: var(--accent-primary); }
          .toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-         .range-val { float: right; color: var(--accent-primary); }
-         /* Sim Right: Output */
-         .sim-output { background: #0f172a; display: flex; flex-direction: column; }
-         .output-tabs {
-             display: flex; border-bottom: 1px solid rgba(255,255,255,0.1);
-             background: rgba(0,0,0,0.2);
+         .range-val { float: right; color: var(--accent-secondary); }
+         input[type="range"] { width: 100%; }
+         
+         .tab-content { 
+             display: block; 
+             padding: 2rem; 
+             flex-grow: 1; 
+             overflow-y: auto; 
+             font-family: var(--font-family-mono); 
+             font-size: 0.9rem; 
+             height: auto;
          }
-         .tab-btn {
-             padding: 1rem 1.5rem; background: none; border: none;
-             color: var(--text-secondary); cursor: pointer; font-family: var(--font-sans);
-             border-bottom: 2px solid transparent;
-         }
-         .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--accent-primary); }
-         .output-content { padding: 2rem; flex-grow: 1; overflow-y: auto; font-family: var(--font-mono); font-size: 0.9rem; }
+         
          /* Code Styling */
-         .code-block { color: #e2e8f0; white-space: pre-wrap; }
-         .code-header { color: var(--accent-secondary); font-weight: bold; margin-top: 1rem; }
-         .code-match { color: var(--accent-primary); font-weight: bold; }
-         .code-context { color: #64748b; }
+         .code-block { color: var(--text-color); white-space: pre-wrap; }
+         .code-header { color: var(--accent-gold); font-weight: bold; margin-top: 1rem; }
+         .code-match { color: var(--accent-secondary); font-weight: bold; }
+         .code-context { color: var(--text-muted); }
          .line-num { display: inline-block; width: 40px; text-align: right; margin-right: 10px; opacity: 0.5; user-select: none; }
          /* Use Cases */
          .use-cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
          .use-case-item {
              background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px;
-             border-left: 3px solid var(--accent-secondary);
+             border-left: 3px solid var(--accent-gold);
          }
          @media (max-width: 768px) {
-             h1 { font-size: 2.5rem; }
-             .sim-container { grid-template-columns: 1fr; }
-             .sim-controls { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+             .simulator-container { grid-template-columns: 1fr; }
          }
      </style>
 </head>
@@ -142,7 +100,7 @@
                  <p class="subtitle">
                      Search project files using patterns with contextual results. Locate code and content efficiently with regex support and smart filtering.
                  </p>
-                 <a href="#simulator" class="btn-cta">Try the Simulator</a>
+                 <a href="#simulator" class="cta-button">Try the Simulator</a>
              </div>
              <div class="hero-visual"></div>
          </div>
@@ -185,38 +143,38 @@
          <div class="container">
              <h2>Interactive Simulator</h2>
              <p>Configure the search parameters to see how the FileSearch task formats results.</p>
-             <div class="sim-container">
+             <div class="simulator-container">
                  <!-- Inputs -->
                  <div class="sim-controls">
                      <h3>Configuration</h3>
-                     <div class="form-group">
+                     <div class="control-group">
                          <label>Search Pattern</label>
-                         <input type="text" id="searchPattern" class="form-control" value="TaskExecutionConfig" placeholder="e.g. class MyClass">
+                         <input type="text" id="searchPattern" value="TaskExecutionConfig" placeholder="e.g. class MyClass">
                      </div>
-                     <div class="form-group toggle-row">
+                     <div class="control-group toggle-row">
                          <label>Use Regex</label>
                          <input type="checkbox" id="isRegex">
                      </div>
-                     <div class="form-group">
+                     <div class="control-group">
                          <label>Context Lines <span id="contextVal" class="range-val">2</span></label>
-                         <input type="range" id="contextLines" class="form-control" min="0" max="10" value="2">
+                         <input type="range" id="contextLines" min="0" max="10" value="2">
                      </div>
-                     <div class="form-group">
+                     <div class="control-group">
                          <label>Input Files (Glob Patterns)</label>
-                         <input type="text" id="inputFiles" class="form-control" value="src/**/*.kt" placeholder="e.g. src/**/*.kt">
+                         <input type="text" id="inputFiles" value="src/**/*.kt" placeholder="e.g. src/**/*.kt">
                      </div>
-                     <div class="form-group toggle-row">
+                     <div class="control-group toggle-row">
                          <label>Extract Content (PDF/HTML)</label>
                          <input type="checkbox" id="extractContent">
                      </div>
                  </div>
                  <!-- Outputs -->
                  <div class="sim-output">
-                     <div class="output-tabs">
-                         <button class="tab-btn active" onclick="switchTab('preview')">Result Preview</button>
-                         <button class="tab-btn" onclick="switchTab('raw')">Raw Markdown</button>
+                     <div class="tabs">
+                         <button class="tab active" onclick="switchTab('preview')">Result Preview</button>
+                         <button class="tab" onclick="switchTab('raw')">Raw Markdown</button>
                      </div>
-                     <div id="outputContent" class="output-content">
+                     <div id="outputContent" class="tab-content">
                          <!-- Content injected by JS -->
                      </div>
                  </div>
@@ -360,7 +318,7 @@
          }
          function switchTab(tab) {
              currentTab = tab;
-             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+             document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
              event.target.classList.add('active');
              updateSimulation();
          }

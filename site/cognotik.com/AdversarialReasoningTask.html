@@ -8,39 +8,22 @@
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --accent-primary: #ef4444; /* Red for Adversarial/Red Team */
+            /* Override main.css variables */
+            --accent-color: #ef4444; /* Red for Adversarial/Red Team */
+            --accent-hover: #dc2626;
+            --font-family-mono: 'JetBrains Mono', monospace;
+
+            /* Custom variables */
             --accent-secondary: #f59e0b; /* Amber for Warnings */
             --accent-glow: rgba(239, 68, 68, 0.3);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-sans);
-            margin: 0;
-            line-height: 1.6;
         }
 
         /* Hero Section */
         .hero {
-            padding: 6rem 2rem;
-            text-align: center;
-            background: radial-gradient(circle at top center, #2a1015 0%, var(--bg-dark) 70%);
-        }
 
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            background: linear-gradient(to right, #fff, var(--accent-primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            padding: 6rem 2rem; /* Override main.css padding */
+            background: radial-gradient(circle at top center, #2a1015 0%, var(--background-color) 70%);
         }
 
         .hero p {
@@ -51,7 +34,7 @@
         }
 
         .btn-cta {
-            background: var(--accent-primary);
+            background: var(--accent-color);
             color: white;
             padding: 1rem 2rem;
             border-radius: 8px;
@@ -70,17 +53,10 @@
         }
 
         /* Features Grid */
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            padding: 4rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        /* .features and .features-grid handled by main.css */
 
         .feature-card {
-            background: var(--bg-card);
+            background: var(--surface-color);
             padding: 2rem;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -89,11 +65,11 @@
 
         .feature-card:hover {
             transform: translateY(-5px);
-            border-color: var(--accent-primary);
+            border-color: var(--accent-color);
         }
 
         .feature-icon {
-            color: var(--accent-primary);
+            color: var(--accent-color);
             margin-bottom: 1rem;
         }
 
@@ -113,7 +89,7 @@
         }
 
         .sim-panel {
-            background: var(--bg-card);
+            background: var(--surface-color);
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
@@ -153,17 +129,17 @@
             width: 100%;
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--text-main);
+            color: var(--text-color);
             padding: 0.75rem;
             border-radius: 6px;
-            font-family: var(--font-mono);
+            font-family: var(--font-family-mono);
             font-size: 0.9rem;
             transition: border-color 0.2s;
         }
 
         .form-control:focus {
             outline: none;
-            border-color: var(--accent-primary);
+            border-color: var(--accent-color);
         }
 
         textarea.form-control {
@@ -201,18 +177,18 @@
         }
 
         .tab.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
         }
 
         .output-content {
-            font-family: var(--font-mono);
+            font-family: var(--font-family-mono);
             font-size: 0.9rem;
         }
 
         .vuln-item {
             background: rgba(255, 0, 0, 0.05);
-            border-left: 3px solid var(--accent-primary);
+            border-left: 3px solid var(--accent-color);
             padding: 1rem;
             margin-bottom: 1rem;
         }
@@ -257,7 +233,7 @@
             content: "→";
             position: absolute;
             left: 0;
-            color: var(--accent-primary);
+            color: var(--accent-color);
         }
 
         @media (max-width: 768px) {
@@ -285,6 +261,7 @@
 
     <!-- Features Grid -->
     <section class="features">
+        <div class="features-grid">
         <div class="feature-card">
             <div class="feature-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
@@ -306,6 +283,7 @@
             <h3>Adversary Simulation</h3>
             <p>Simulate attackers ranging from basic script kiddies to nation-state actors with advanced capabilities.</p>
         </div>
+        </div>
     </section>
 
     <!-- Simulator Section -->
@@ -315,7 +293,7 @@
             <div class="sim-panel">
                 <div class="panel-header">
                     <span>Configuration</span>
-                    <span style="font-size: 0.8rem; color: var(--accent-primary)">LIVE PREVIEW</span>
+                    <span style="font-size: 0.8rem; color: var(--accent-color)">LIVE PREVIEW</span>
                 </div>
                 <div class="panel-content">
                     <div class="form-group">
@@ -427,7 +405,7 @@
                 <p><strong>Adversary:</strong> ${capability.toUpperCase()}</p>
                 <p>Analysis identified <strong>${vulns.length} critical/high vulnerabilities</strong>. The system is susceptible to authentication bypass and logical manipulation.</p>
                 <br>
-                <div><strong>Risk Level:</strong> <span style="color: var(--accent-primary)">HIGH</span></div>
+                <div><strong>Risk Level:</strong> <span style="color: var(--accent-color)">HIGH</span></div>
             `,
             vulns: vulns.map(v => `
                 <div class="vuln-item">

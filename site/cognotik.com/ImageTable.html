@@ -13,54 +13,38 @@ pages/tasks/image_table.html
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
      <style>
          :root {
-             --bg-dark: #0f172a;
-             --bg-card: #1e293b;
-             --bg-input: #334155;
-             --text-primary: #f8fafc;
-             --text-secondary: #94a3b8;
-             --accent-primary: #38bdf8;
-             --accent-glow: rgba(56, 189, 248, 0.4);
-             --border-color: #334155;
-             --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-             --font-serif: 'Cinzel', serif;
+             --accent-glow: rgba(6, 182, 212, 0.4);
          }
-         * { box-sizing: border-box; margin: 0; padding: 0; }
          body {
-             background-color: var(--bg-dark);
-             color: var(--text-primary);
-             font-family: var(--font-sans);
-             line-height: 1.6;
              overflow-x: hidden;
          }
-         /* Typography */
-         h1, h2, h3 { color: var(--text-primary); line-height: 1.2; }
-         h1 { font-size: 3.5rem; font-weight: 700; letter-spacing: -0.02em; }
-         h2 { font-size: 2.25rem; font-weight: 600; margin-bottom: 1rem; }
-         p { color: var(--text-secondary); margin-bottom: 1.5rem; }
          /* Layout */
-         .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+         .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 2rem; }
          section { padding: 6rem 0; }
          /* Header */
          header {
              position: fixed; top: 0; left: 0; right: 0;
              padding: 1rem 2rem;
-             background: rgba(15, 23, 42, 0.8);
+             background: rgba(15, 23, 42, 0.9);
              backdrop-filter: blur(12px);
              border-bottom: 1px solid rgba(255,255,255,0.1);
              z-index: 1000;
              display: flex; justify-content: space-between; align-items: center;
+             height: var(--header-height);
          }
-         .logo { font-family: var(--font-serif); font-size: 1.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; }
+         .logo { font-family: var(--font-family-serif); font-size: 1.5rem; color: var(--text-color); display: flex; align-items: center; gap: 0.5rem; }
          .nav-links { display: flex; gap: 2rem; }
-         .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
-         .nav-links a:hover { color: var(--accent-primary); }
+         .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+         .nav-links a:hover { color: var(--accent-secondary); }
          /* Hero */
          .hero {
              min-height: 90vh;
              display: flex; align-items: center;
-             background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+             background: radial-gradient(circle at 50% 50%, var(--surface-color) 0%, var(--background-color) 100%);
              position: relative;
              overflow: hidden;
+             text-align: left; /* Override main.css center */
+             padding: 0; /* Override main.css padding */
          }
          .hero-content { max-width: 600px; position: relative; z-index: 2; }
          .hero-visual {
@@ -71,78 +55,27 @@ pages/tasks/image_table.html
              /* Placeholder for 3D visual */
              display: flex; justify-content: center; align-items: center;
          }
-         .hero-visual svg { width: 100%; height: 100%; color: var(--accent-primary); opacity: 0.2; }
-         .btn {
-             display: inline-block;
-             padding: 0.8rem 2rem;
-             background: var(--accent-primary);
-             color: var(--bg-dark);
-             font-weight: 600;
-             border-radius: 4px;
-             text-decoration: none;
-             transition: transform 0.2s, box-shadow 0.2s;
-         }
-         .btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px var(--accent-glow); }
+         .hero-visual svg { width: 100%; height: 100%; color: var(--accent-secondary); opacity: 0.2; }
+         
          /* Features */
-         .features-grid {
-             display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-             gap: 2rem;
-         }
-         .feature-card {
-             background: var(--bg-card);
-             padding: 2rem;
-             border-radius: 8px;
-             border: 1px solid var(--border-color);
-             transition: border-color 0.3s;
-         }
-         .feature-card:hover { border-color: var(--accent-primary); }
          .feature-icon {
              width: 48px; height: 48px;
-             background: rgba(56, 189, 248, 0.1);
+             background: rgba(6, 182, 212, 0.1);
              border-radius: 8px;
              display: flex; align-items: center; justify-content: center;
-             color: var(--accent-primary);
+             color: var(--accent-secondary);
              margin-bottom: 1.5rem;
+             margin-left: auto; margin-right: auto;
          }
          /* Simulator */
-         .simulator { background: #0b1120; }
-         .sim-container {
-             display: grid; grid-template-columns: 1fr 1fr;
-             gap: 0;
-             border: 1px solid var(--border-color);
-             border-radius: 12px;
-             overflow: hidden;
-             background: var(--bg-card);
-             min-height: 700px;
-         }
-         .sim-panel { padding: 2rem; overflow-y: auto; max-height: 800px; }
-         .sim-left { border-right: 1px solid var(--border-color); }
-         .form-group { margin-bottom: 1.5rem; }
-         .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; color: var(--text-primary); }
-         .form-control {
-             width: 100%;
-             padding: 0.75rem;
-             background: var(--bg-input);
-             border: 1px solid var(--border-color);
-             border-radius: 4px;
-             color: var(--text-primary);
-             font-family: var(--font-sans);
-             font-size: 0.9rem;
-         }
-         .form-control:focus { outline: none; border-color: var(--accent-primary); }
-         textarea.form-control { resize: vertical; min-height: 100px; }
+         .simulator-container { min-height: 700px; }
+         .sim-controls { overflow-y: auto; max-height: 800px; }
+         .sim-output { overflow-y: auto; max-height: 800px; }
+         .tab-content { height: auto; max-height: 600px; }
+         
          .range-wrap { display: flex; align-items: center; gap: 1rem; }
          input[type="range"] { flex: 1; }
-         .tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
-         .tab {
-             padding: 0.75rem 1.5rem;
-             cursor: pointer;
-             color: var(--text-secondary);
-             border-bottom: 2px solid transparent;
-         }
-         .tab.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
-         .tab-content { display: none; }
-         .tab-content.active { display: block; }
+         
          .preview-grid {
              display: grid;
              gap: 4px;
@@ -152,7 +85,7 @@ pages/tasks/image_table.html
              overflow: auto;
          }
          .grid-cell {
-             background: #334155;
+             background: var(--border-color);
              aspect-ratio: 1;
              display: flex; align-items: center; justify-content: center;
              font-size: 0.7rem;
@@ -161,23 +94,18 @@ pages/tasks/image_table.html
              padding: 4px;
              border: 1px solid #475569;
          }
-         .grid-header { font-weight: bold; color: var(--text-primary); background: #1e293b; }
-         pre { background: #0f172a; padding: 1rem; border-radius: 4px; overflow-x: auto; font-family: monospace; font-size: 0.85rem; color: #a5b4fc; }
+         .grid-header { font-weight: bold; color: var(--text-color); background: var(--surface-color); }
+         
          /* Use Cases */
          .use-cases-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
          .use-case-item {
              background: rgba(255,255,255,0.03);
              padding: 1.5rem;
-             border-left: 3px solid var(--accent-primary);
+             border-left: 3px solid var(--accent-secondary);
              border-radius: 0 4px 4px 0;
          }
-         .use-case-item h4 { color: var(--text-primary); margin-bottom: 0.5rem; }
+         .use-case-item h4 { color: var(--text-color); margin-bottom: 0.5rem; }
          .use-case-item p { font-size: 0.9rem; margin: 0; }
-         @media (max-width: 768px) {
-             .sim-container { grid-template-columns: 1fr; }
-             .sim-left { border-right: none; border-bottom: 1px solid var(--border-color); }
-             h1 { font-size: 2.5rem; }
-         }
      </style>
 </head>
 <body>
@@ -190,7 +118,7 @@ pages/tasks/image_table.html
              <div class="hero-content">
                  <h1>Image Table Generator</h1>
                  <p class="subtitle">Creates a grid of images by generating each cell using AI image generation. Define rows and columns, apply templates, and visualize complex matrices of visual data.</p>
-                 <a href="#simulator" class="btn">Try the Simulator</a>
+                 <a href="#simulator" class="btn" style="background-color: var(--accent-secondary);">Try the Simulator</a>
              </div>
              <div class="hero-visual">
                  <!-- Abstract representation -->
@@ -254,50 +182,50 @@ pages/tasks/image_table.html
          <div class="container">
              <h2>Interactive Simulator</h2>
              <p>Configure the matrix parameters to preview the generation logic and output structure.</p>
-             <div class="sim-container">
+             <div class="simulator-container">
                  <!-- Left: Inputs -->
-                 <div class="sim-panel sim-left">
-                     <div class="form-group">
+                 <div class="sim-controls">
+                     <div class="control-group">
                          <label>Row Labels (one per line)</label>
-                         <textarea id="rows" class="form-control" oninput="updateSim()">Cat
+                         <textarea id="rows" oninput="updateSim()">Cat
 Dog
 Robot</textarea>
                      </div>
-                     <div class="form-group">
+                     <div class="control-group">
                          <label>Column Labels (one per line)</label>
-                         <textarea id="cols" class="form-control" oninput="updateSim()">Cyberpunk
+                         <textarea id="cols" oninput="updateSim()">Cyberpunk
 Watercolor
 Pixel Art</textarea>
                      </div>
-                     <div class="form-group">
+                     <div class="control-group">
                          <label>Prompt Template</label>
-                         <input type="text" id="template" class="form-control" value="A cute {row} in {column} style" oninput="updateSim()">
+                         <input type="text" id="template" value="A cute {row} in {column} style" oninput="updateSim()">
                      </div>
-                     <div class="form-group">
+                     <div class="control-group">
                          <label>Base Style (Optional)</label>
-                         <input type="text" id="style" class="form-control" value="High quality, detailed" oninput="updateSim()">
+                         <input type="text" id="style" value="High quality, detailed" oninput="updateSim()">
                      </div>
-                     <div class="form-group">
+                     <div class="control-group">
                          <label>Image Format</label>
-                         <select id="format" class="form-control" onchange="updateSim()">
+                         <select id="format" onchange="updateSim()">
                              <option value="png">PNG</option>
                              <option value="jpg">JPG</option>
                              <option value="jpeg">JPEG</option>
                          </select>
                      </div>
-                     <div class="form-group">
+                     <div class="control-group">
                          <label>Parallel Generation: <span id="parallel-val">2</span></label>
                          <div class="range-wrap">
                              <input type="range" id="parallel" min="1" max="10" value="2" oninput="document.getElementById('parallel-val').innerText = this.value; updateSim()">
                          </div>
                      </div>
-                     <div class="form-group">
+                     <div class="control-group">
                          <label>Image Width: <span id="width-val">512</span>px</label>
                          <div class="range-wrap">
                              <input type="range" id="width" min="64" max="2048" step="64" value="512" oninput="document.getElementById('width-val').innerText = this.value; updateSim()">
                          </div>
                      </div>
-                     <div class="form-group">
+                     <div class="control-group">
                          <label>Image Height: <span id="height-val">512</span>px</label>
                          <div class="range-wrap">
                              <input type="range" id="height" min="64" max="2048" step="64" value="512" oninput="document.getElementById('height-val').innerText = this.value; updateSim()">
@@ -305,7 +233,7 @@ Pixel Art</textarea>
                      </div>
                  </div>
                  <!-- Right: Outputs -->
-                 <div class="sim-panel sim-right">
+                 <div class="sim-output">
                      <div class="tabs">
                          <div class="tab active" onclick="switchTab('preview')">Preview</div>
                          <div class="tab" onclick="switchTab('code')">Config JSON</div>

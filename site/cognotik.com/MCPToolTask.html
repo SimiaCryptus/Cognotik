@@ -10,53 +10,66 @@
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
-        :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --accent-primary: #f97316; /* Orange */
-            --accent-secondary: #eab308; /* Yellow */
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; }
+        /* Layout Utilities */
         .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
-        .btn { display: inline-block; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-decoration: none; color: #fff; }
-        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); box-shadow: 0 0 15px rgba(249, 115, 22, 0.3); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(249, 115, 22, 0.5); }
         
-        .hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 80vh; }
+        /* Hero Overrides */
+        .hero { 
+            display: flex; 
+            align-items: center; 
+            text-align: left;
+            padding: 8rem 0 4rem; 
+            min-height: 80vh; 
+            background: transparent;
+        }
         .hero-content { flex: 1; padding-right: 2rem; }
-        .hero h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero h1 { 
+            text-align: left;
+            font-size: 3.5rem; 
+            line-height: 1.1; 
+            margin-bottom: 1.5rem; 
+            background: linear-gradient(to right, #fff, var(--accent-color)); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
         .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
+        
         .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
-        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-primary); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(249, 115, 22, 0.2); }
+        .visual-node { 
+            width: 200px; height: 200px; 
+            border: 2px solid var(--accent-color); 
+            border-radius: 50%; 
+            position: absolute; 
+            animation: pulse 4s infinite; 
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); 
+        }
         
         @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+        /* Features Overrides */
 
         .features { padding: 4rem 0; background: rgba(255,255,255,0.02); }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
-        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
-        .feature-card:hover { border-color: var(--accent-primary); transform: translateY(-5px); }
-        .feature-icon { width: 48px; height: 48px; background: rgba(249, 115, 22, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: var(--accent-primary); }
+        .feature-card svg { width: 48px; height: 48px; color: var(--accent-secondary); margin-bottom: 1rem; }
 
-        .simulator { padding: 4rem 0; }
-        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); min-height: 600px; }
-        .sim-panel { padding: 2rem; display: flex; flex-direction: column; }
-        .sim-left { border-right: 1px solid rgba(255,255,255,0.05); }
+        /* Simulator Overrides */
+        .sim-output { padding: 2rem; overflow-y: auto; font-family: var(--font-family-mono); color: var(--text-muted); }
+        .sim-controls { display: flex; flex-direction: column; }
+        .run-button { margin-top: auto; }
         .form-group { margin-bottom: 1.5rem; }
         .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
-        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); padding: 0.75rem; border-radius: 6px; font-family: monospace; font-size: 0.9rem; }
-        .form-control:focus { outline: none; border-color: var(--accent-primary); }
-        textarea.form-control { resize: vertical; min-height: 100px; }
-        .output-area { flex: 1; font-family: monospace; font-size: 0.9rem; color: #d1d5db; overflow-y: auto; white-space: pre-wrap; }
+        textarea { resize: vertical; min-height: 100px; }
         
+        /* Use Cases */
         .use-cases { padding: 4rem 0; }
         .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
-        .use-case-item { background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
+        .use-case-item { background: var(--surface-color); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
+        .use-case-item h4 { color: var(--primary-color); margin-top: 0; }
 
-        @media (max-width: 768px) { .hero { flex-direction: column; text-align: center; padding-top: 6rem; } .sim-container { grid-template-columns: 1fr; } .sim-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); } }
+        @media (max-width: 768px) { 
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; } 
+            .hero h1 { text-align: center; }
+            .simulator-container { grid-template-columns: 1fr; } 
+            .sim-controls { border-right: none; border-bottom: 1px solid var(--border-color); } 
+        }
     </style>
 </head>
 <body>
@@ -65,7 +78,7 @@
         <div class="hero-content">
             <h1>MCP Tool Task</h1>
             <p>Execute tools from Model Context Protocol (MCP) servers to extend capabilities and integrate external services.</p>
-            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
+            <a href="#demo" class="btn">Try the Simulator</a>
         </div>
         <div class="hero-visual">
             <div class="visual-node"></div>
@@ -76,23 +89,17 @@
         <div class="container">
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    </div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                     <h3>Protocol Integration</h3>
                     <p>Seamlessly connects to standard MCP servers to discover and utilize available tools.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                    </div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                     <h3>Tool Execution</h3>
                     <p>Executes tools with custom arguments, handling input validation and output formatting.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     <h3>Robust Handling</h3>
                     <p>Includes configurable timeouts, automatic retries, and error handling for reliable execution.</p>
                 </div>
@@ -103,29 +110,27 @@
     <section id="demo" class="simulator">
         <div class="container">
             <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="sim-container">
-                <div class="sim-panel sim-left">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Configuration</h3>
+            <div class="simulator-container">
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
                     <div class="form-group">
                         <label>Server Name</label>
-                        <input type="text" id="server" class="form-control" value="weather-server">
+                        <input type="text" id="server" value="weather-server">
                     </div>
                     <div class="form-group">
                         <label>Tool Name</label>
-                        <input type="text" id="tool" class="form-control" value="get_forecast">
+                        <input type="text" id="tool" value="get_forecast">
                     </div>
                     <div class="form-group">
                         <label>Arguments (JSON)</label>
-                        <textarea id="args" class="form-control">{"city": "New York", "days": 3}</textarea>
+                        <textarea id="args">{"city": "New York", "days": 3}</textarea>
                     </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Execute Tool</button>
+                    <button class="run-button" onclick="runSimulation()">Execute Tool</button>
                 </div>
-                <div class="sim-panel sim-right">
-                    <div id="output-logs" class="output-area">
+                <div class="sim-output" id="output-logs">
                         <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
                             Configure the tool execution and click "Execute" to see results.
                         </div>
-                    </div>
                 </div>
             </div>
         </div>

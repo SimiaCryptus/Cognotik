@@ -18,555 +18,138 @@
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
-        :root {
-            /* Theme Variables - Dark Mode Default */
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-panel: #020617;
             
-            /* Task Specific Accents: Purple (Creative) & Gold (Narrative) */
-            --accent-primary: #a855f7; /* Purple */
-            --accent-secondary: #fbbf24; /* Gold */
-            --accent-glow: rgba(168, 85, 247, 0.3);
             
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
             
-            --font-ui: 'Inter', system-ui, sans-serif;
-            --font-display: 'Cinzel', serif;
             
-            --border-radius: 12px;
-            --transition-speed: 0.3s;
-        }
 
-        /* Base Reset & Layout */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-ui);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
 
-        /* Utility Classes */
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+
+        
+        
+
+
+        
+        
+
+
+        
+        
+
+        
+        
+        
+        
+
+        
+
+
+
+        /* Page-specific overrides and additions to main.css */
+        :root {
+        
+            --accent-secondary: #fbbf24; /* Gold override */
+            --accent-glow-gold: rgba(251, 191, 36, 0.3);
+        
+        
+        
+        }
+        
+        /* Layout Utility */
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 var(--spacing-lg);
+        }
         .hidden { display: none !important; }
-        .btn {
-            background: linear-gradient(135deg, var(--accent-primary), #7e22ce);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition-speed);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 0 15px var(--accent-glow); }
-
-        /* Hero Section */
-        .hero-section {
-            padding: 8rem 0 4rem;
+        
+        /* Hero Section - Extending main.css .hero */
+        .hero {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 4rem;
             align-items: center;
+            text-align: left;
             min-height: 80vh;
+            padding-top: calc(var(--header-height) + 4rem);
         }
         
-        .hero-content h1 {
-            font-family: var(--font-display);
+        .hero h1 {
             font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
             background: linear-gradient(to right, #fff, var(--accent-secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         
-        .hero-content p {
-            font-size: 1.125rem;
-            color: var(--text-muted);
-            margin-bottom: 2.5rem;
-            max-width: 500px;
-        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         .hero-visual {
             position: relative;
             height: 500px;
-            background: radial-gradient(circle at center, var(--bg-card), var(--bg-dark));
+            background: radial-gradient(circle at center, var(--surface-color), var(--background-color));
             border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.1);
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Features Grid */
-        .features-section { padding: 4rem 0; }
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        
-        .feature-card {
-            background: var(--bg-card);
-            padding: 2rem;
-            border-radius: var(--border-radius);
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: var(--transition-speed);
-        }
-        .feature-card:hover { border-color: var(--accent-primary); transform: translateY(-5px); }
-        
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-secondary);
-        }
-
-        /* Simulator Section */
-        .simulator-section { padding: 4rem 0; }
-        .simulator-container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 2rem;
-            background: var(--bg-panel);
-            border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.1);
-            overflow: hidden;
-            height: 800px;
-        }
-
-        /* Sim: Left Column (Controls) */
-        .sim-controls {
-            padding: 2rem;
-            background: var(--bg-card);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            overflow-y: auto;
-        }
-        
-        .control-group { display: flex; flex-direction: column; gap: 0.5rem; }
-        .control-group label { font-size: 0.875rem; font-weight: 600; color: var(--text-muted); }
-        
-        .sim-input, .sim-select {
-            background: var(--bg-dark);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-main);
-            padding: 0.75rem;
-            border-radius: 8px;
-            font-family: var(--font-ui);
-        }
-        .sim-input:focus { outline: 2px solid var(--accent-primary); border-color: transparent; }
-
-        .range-wrapper { display: flex; align-items: center; gap: 1rem; }
-        
-        /* Sim: Right Column (Output) */
-        .sim-output { display: flex; flex-direction: column; height: 100%; }
-        
-        .output-tabs {
-            display: flex;
-            background: rgba(0,0,0,0.3);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .tab-btn {
-            padding: 1rem 1.5rem;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: var(--transition-speed);
-        }
-        .tab-btn.active { color: var(--accent-secondary); border-bottom-color: var(--accent-secondary); }
-        
-        .output-content {
-            flex: 1;
-            padding: 2rem;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        /* Output Specifics */
-        .log-terminal {
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            color: #10b981;
-        }
-        .script-view { white-space: pre-wrap; font-family: serif; line-height: 1.8; }
-        
-        .char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
-        .char-card { background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; text-align: center; }
-        .char-img-placeholder { width: 100%; height: 150px; background: #000; margin-bottom: 0.5rem; border-radius: 4px; }
-
-        /* Use Cases */
-        .use-cases-section { padding: 4rem 0; }
-        .use-case-list { display: flex; flex-direction: column; gap: 1rem; }
-        .use-case-item {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            background: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            border-left: 4px solid var(--accent-primary);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero-section { grid-template-columns: 1fr; padding-top: 6rem; text-align: center; }
-            .hero-content p { margin: 0 auto 2rem; }
-            .simulator-container { grid-template-columns: 1fr; height: auto; }
-            .sim-controls { max-height: 400px; }
-            .sim-output { height: 500px; }
-        }
-    </style>
-
-    <style>
-        /* =========================================
-           1. Variables & Theme Configuration
-           ========================================= */
-        :root {
-            /* Color Palette - Dark Mode Base */
-            --bg-dark: #0f172a;       /* Slate 900 - Main Background */
-            --bg-card: #1e293b;       /* Slate 800 - Cards/Sections */
-            --bg-panel: #020617;      /* Slate 950 - Deep Panels/Terminal */
-            --bg-input: #334155;      /* Slate 700 - Form Inputs */
-        
-            /* Task Specific Accents: Creative Writing Theme */
-            --accent-primary: #a855f7;    /* Purple - Creative/Magic */
-            --accent-secondary: #fbbf24;  /* Gold - Narrative/Prestige */
-            --accent-glow: rgba(168, 85, 247, 0.4);
-            --accent-glow-gold: rgba(251, 191, 36, 0.3);
-        
-            /* Typography Colors */
-            --text-main: #f8fafc;     /* Slate 50 */
-            --text-muted: #94a3b8;    /* Slate 400 */
-            --text-highlight: #e2e8f0; /* Slate 200 */
-        
-            /* Fonts */
-            --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-display: 'Cinzel', serif; /* Narrative flair */
-            --font-mono: 'Fira Code', 'Courier New', monospace;
-        
-            /* UI Metrics */
-            --border-radius: 12px;
-            --border-radius-sm: 6px;
-            --transition-speed: 0.3s;
-            --container-width: 1200px;
-            --header-height: 70px;
-        }
-        
-        /* =========================================
-           2. Reset & Global Styles
-           ========================================= */
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-ui);
-            line-height: 1.6;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        /* Custom Scrollbar for Webkit */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #475569;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-primary);
-        }
-        
-        /* =========================================
-           3. Utility Classes
-           ========================================= */
-        .container {
-            max-width: var(--container-width);
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-        
-        .hidden {
-            display: none !important;
-        }
-        
-        /* Buttons */
-        .btn {
-            display: inline-block;
-            background: linear-gradient(135deg, var(--accent-primary), #7e22ce);
-            color: white;
-            border: none;
-            padding: 0.85rem 2rem;
-            border-radius: var(--border-radius);
-            font-family: var(--font-ui);
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all var(--transition-speed) ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px var(--accent-glow);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px var(--accent-glow);
-            filter: brightness(1.1);
-        }
-        
-        .btn:active {
-            transform: translateY(0);
-        }
-        
-        .btn:disabled {
-            background: var(--bg-input);
-            cursor: not-allowed;
-            box-shadow: none;
-            opacity: 0.7;
-        }
-        
-        /* =========================================
-           4. Hero Section
-           ========================================= */
-        .hero-section {
-            padding: calc(var(--header-height) + 4rem) 0 6rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-            min-height: 85vh;
-            position: relative;
-        }
-        
-        /* Background decorative glow */
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: -10%;
-            left: -10%;
-            width: 50%;
-            height: 50%;
-            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-            z-index: -1;
-            opacity: 0.5;
-            filter: blur(80px);
-        }
-        
-        .hero-content h1 {
-            font-family: var(--font-display);
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(to right, #fff 20%, var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 30px rgba(251, 191, 36, 0.2);
-        }
-        
-        .hero-content p {
-            font-size: 1.125rem;
-            color: var(--text-muted);
-            margin-bottom: 2.5rem;
-            max-width: 540px;
-        }
-        
-        .hero-visual {
-            position: relative;
-            height: 500px;
-            background: radial-gradient(circle at center, var(--bg-card), var(--bg-dark));
-            border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--border-color);
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: float 6s ease-in-out infinite;
         }
         
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-        
-        /* =========================================
-           5. Features Grid
-           ========================================= */
-        .features-section {
-            padding: 4rem 0;
-            position: relative;
-        }
-        
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        
-        .feature-card {
-            background: var(--bg-card);
-            padding: 2.5rem;
-            border-radius: var(--border-radius);
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: var(--transition-speed);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .feature-card:hover {
-            border-color: var(--accent-primary);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        
-        .feature-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            opacity: 0;
-            transition: opacity var(--transition-speed);
-        }
-        
-        .feature-card:hover::after {
-            opacity: 1;
-        }
-        
-        .feature-icon {
-            width: 56px;
-            height: 56px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-secondary);
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 0 15px var(--accent-glow-gold);
-        }
-        
-        .feature-card h3 {
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
-            color: var(--text-main);
-        }
-        
-        .feature-card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-        
-        /* =========================================
-           6. Interactive Simulator (The Core)
-           ========================================= */
-        .simulator-section {
-            padding: 4rem 0;
-        }
-        
+        /* Simulator Overrides */
         .simulator-container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 0; /* Gap handled by border */
-            background: var(--bg-panel);
-            border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.1);
-            overflow: hidden;
-            height: 800px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            height: 800px; /* Fixed height for this specific tool */
         }
         
-        /* --- Left Column: Controls --- */
-        .sim-controls {
-            padding: 2rem;
-            background: var(--bg-card);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            overflow-y: auto;
-        }
-        
-        .sim-controls h2 {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            color: var(--accent-secondary);
+        /* Custom Inputs for Simulator */
+        .sim-input, .sim-select {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--background-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: var(--border-radius);
             margin-bottom: 0.5rem;
         }
         
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+        /* Output Specifics */
+        .log-terminal {
+            font-family: var(--font-family-mono);
+            color: var(--success-color);
         }
         
-        .control-group label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-muted);
+        .script-view {
+            white-space: pre-wrap;
+            font-family: var(--font-family-serif);
+            line-height: 1.8;
+            color: var(--text-color);
         }
         
-        .sim-input, .sim-select {
-            background: var(--bg-dark);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-main);
-            padding: 0.75rem;
-            border-radius: 8px;
-            font-family: var(--font-ui);
-            font-size: 0.9rem;
-            transition: border-color 0.2s;
-            width: 100%;
-        }
         
-        .sim-input:focus, .sim-select:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
-        }
         
-        textarea.sim-input {
-            resize: vertical;
-            min-height: 100px;
-        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         /* Range Slider Styling */
         input[type=range] {
@@ -594,114 +177,19 @@
             border-radius: 2px;
         }
         
-        /* Checkbox/Toggle Styling */
-        .checkbox-container {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            cursor: pointer;
-            user-select: none;
-        }
         
-        .checkbox-container input[type="checkbox"] {
-            appearance: none;
-            background-color: var(--bg-input);
-            margin: 0;
-            font: inherit;
-            color: currentColor;
-            width: 2.5em;
-            height: 1.25em;
-            border-radius: 1em;
-            display: grid;
-            place-content: center;
-            transition: 0.2s ease-in-out;
-            position: relative;
-        }
         
-        .checkbox-container input[type="checkbox"]::before {
-            content: "";
-            width: 1em;
-            height: 1em;
-            border-radius: 50%;
-            background: white;
-            transform: translateX(-50%);
-            transition: 0.2s ease-in-out;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
         
-        .checkbox-container input[type="checkbox"]:checked {
-            background-color: var(--accent-primary);
-        }
         
-        .checkbox-container input[type="checkbox"]:checked::before {
-            transform: translateX(50%);
-        }
         
-        /* --- Right Column: Output --- */
-        .sim-output {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            background: var(--bg-panel);
-            position: relative;
-        }
         
-        .output-tabs {
-            display: flex;
-            background: rgba(0,0,0,0.3);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            overflow-x: auto;
-        }
         
-        .tab-btn {
-            padding: 1rem 1.5rem;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: var(--transition-speed);
-            font-weight: 500;
-            white-space: nowrap;
-        }
         
-        .tab-btn:hover {
-            color: var(--text-main);
-            background: rgba(255,255,255,0.02);
-        }
         
-        .tab-btn.active {
-            color: var(--accent-secondary);
-            border-bottom-color: var(--accent-secondary);
-            background: rgba(251, 191, 36, 0.05);
-        }
         
-        .output-content {
-            flex: 1;
-            padding: 2rem;
-            overflow-y: auto;
-            position: relative;
-        }
         
-        /* Output: Logs */
-        .log-terminal {
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            color: #10b981; /* Terminal Green */
-            line-height: 1.5;
-        }
         
-        /* Output: Script */
-        .script-view {
-            white-space: pre-wrap;
-            font-family: 'Merriweather', serif;
-            line-height: 1.8;
-            color: #e2e8f0;
-            max-width: 800px;
-            margin: 0 auto;
-        }
         
-        /* Output: Characters */
         .char-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -709,144 +197,60 @@
         }
         
         .char-card {
-            background: rgba(255,255,255,0.03);
+            background: rgba(255,255,255,0.05);
             padding: 1rem;
             border-radius: 8px;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
         }
         
         .char-img-placeholder {
             width: 100%;
-            height: 180px;
+            height: 150px;
             background: #000;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             border-radius: 4px;
-            border: 1px solid #333;
+        
+        
         }
         
-        .char-card h4 {
-            color: var(--accent-secondary);
-            margin-bottom: 0.25rem;
-        }
         
-        .char-card small {
-            color: var(--text-muted);
-            font-size: 0.8rem;
-        }
         
-        /* =========================================
-           7. Workflow Section
-           ========================================= */
-        .workflow-section {
-            padding: 4rem 0;
-        }
         
-        .workflow-section h2 {
-            text-align: center;
-            margin-bottom: 3rem;
-            font-size: 2rem;
-        }
-        
-        /* =========================================
-           8. Use Cases Section
-           ========================================= */
-        .use-cases-section {
-            padding: 4rem 0 8rem;
-        }
-        
-        .use-case-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+        /* Workflow & Use Cases */
+        .workflow-section, .use-cases-section { padding: 4rem 0; }
         
         .use-case-item {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 1.5rem;
-            background: var(--bg-card);
-            padding: 2rem;
+            background: var(--surface-color);
+            padding: 1.5rem;
             border-radius: var(--border-radius);
-            border-left: 4px solid var(--accent-primary);
+            border-left: 4px solid var(--accent-color);
+            margin-bottom: 1rem;
             transition: transform 0.2s;
         }
         
-        .use-case-item:hover {
-            transform: translateX(10px);
-            background: linear-gradient(90deg, var(--bg-card), rgba(168, 85, 247, 0.05));
-        }
         
-        .use-case-item h3 {
-            color: var(--text-main);
-            margin-bottom: 0.5rem;
-            font-family: var(--font-display);
-        }
         
-        .use-case-item p {
-            color: var(--text-muted);
-            margin: 0;
-        }
         
-        /* =========================================
-           9. Responsive Design
-           ========================================= */
-        @media (max-width: 1024px) {
-            .hero-section {
-                grid-template-columns: 1fr;
-                text-align: center;
-                padding-top: 8rem;
-                gap: 3rem;
-            }
         
-            .hero-content p {
-                margin: 0 auto 2.5rem;
-            }
         
-            .hero-visual {
-                height: 400px;
-            }
         
-            .simulator-container {
-                grid-template-columns: 1fr;
-                height: auto;
-                max-height: none;
-            }
         
-            .sim-controls {
-                border-right: none;
-                border-bottom: 1px solid rgba(255,255,255,0.1);
-                max-height: none;
-            }
         
-            .sim-output {
-                height: 600px; /* Fixed height for output on mobile to allow scrolling */
-            }
-        }
+        .use-case-item:hover { transform: translateX(10px); }
+        /* Responsive */
         
         @media (max-width: 768px) {
-            .hero-content h1 {
-                font-size: 2.5rem;
-            }
         
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
         
-            /* Workflow arrows rotate on mobile */
-            .workflow-section > div {
-                flex-direction: column;
-                align-items: center;
-            }
         
-            .workflow-section > div > div:nth-child(even) {
-                transform: rotate(90deg);
-                margin: 1rem 0;
-            }
         
-            .output-tabs {
-                justify-content: flex-start;
-            }
+            .hero { grid-template-columns: 1fr; text-align: center; padding-top: 6rem; }
+            .simulator-container { grid-template-columns: 1fr; height: auto; }
+            .sim-controls { border-right: none; border-bottom: 1px solid var(--border-color); }
         }
     </style>
 <!-- Generated Images:
@@ -868,7 +272,7 @@
             The panels show abstract silhouettes of heroes. The color palette is deep slate blue with 
             neon purple and gold outlines, emphasizing the "Writing" and "Creative" nature of the task.
         -->
-        <section class="hero-section container">
+        <section class="hero container">
             <div class="hero-content">
                 <h1>Comic Book Generator</h1>
                 <p>Transform raw ideas into fully realized graphic narratives. This agent orchestrates scriptwriting, character design, and panel layout visualization in a single workflow.</p>
@@ -883,7 +287,7 @@
         </section>
 
         <!-- Features Grid -->
-        <section class="features-section container">
+        <section class="features container">
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -910,7 +314,7 @@
         </section>
 
         <!-- Interactive Simulator -->
-        <section id="simulator" class="simulator-section container">
+        <section id="simulator" class="simulator container">
             <div class="simulator-container">
                 <!-- Left: Inputs -->
                 <div class="sim-controls">
@@ -953,15 +357,15 @@
 
                 <!-- Right: Outputs -->
                 <div class="sim-output">
-                    <div class="output-tabs">
-                        <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
-                        <button class="tab-btn" onclick="switchTab('script')">Script</button>
-                        <button class="tab-btn" onclick="switchTab('characters')">Characters</button>
-                        <button class="tab-btn" onclick="switchTab('visuals')">Visuals</button>
-                        <button class="tab-btn" onclick="switchTab('logs')">Logs</button>
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('overview')">Overview</button>
+                        <button class="tab" onclick="switchTab('script')">Script</button>
+                        <button class="tab" onclick="switchTab('characters')">Characters</button>
+                        <button class="tab" onclick="switchTab('visuals')">Visuals</button>
+                        <button class="tab" onclick="switchTab('logs')">Logs</button>
                     </div>
 
-                    <div id="tab-overview" class="output-content">
+                    <div id="tab-overview" class="tab-content active">
                         <h3>Ready to Create</h3>
                         <p class="text-muted">Configure the settings on the left and click "Generate Comic" to start the agent.</p>
                         <div style="margin-top: 2rem; opacity: 0.5; text-align: center;">
@@ -969,25 +373,25 @@
                         </div>
                     </div>
 
-                    <div id="tab-script" class="output-content hidden">
+                    <div id="tab-script" class="tab-content">
                         <div class="script-view" id="script-display">
                             <!-- Script content will be injected here -->
                         </div>
                     </div>
 
-                    <div id="tab-characters" class="output-content hidden">
+                    <div id="tab-characters" class="tab-content">
                         <div class="char-grid" id="char-display">
                             <!-- Character cards injected here -->
                         </div>
                     </div>
 
-                    <div id="tab-visuals" class="output-content hidden">
+                    <div id="tab-visuals" class="tab-content">
                         <div id="visuals-display">
                             <!-- Images injected here -->
                         </div>
                     </div>
 
-                    <div id="tab-logs" class="output-content hidden">
+                    <div id="tab-logs" class="tab-content">
                         <div class="log-terminal" id="log-display">
                             <span style="color: #64748b;">// System Ready...</span>
                         </div>
@@ -1053,14 +457,14 @@
         // Tab Switching Logic
         function switchTab(tabId) {
             // Remove active class from all buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
             // Add active class to clicked button
             event.target.classList.add('active');
             
             // Hide all content
-            document.querySelectorAll('.output-content').forEach(content => content.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             // Show target content
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById('tab-' + tabId).classList.add('active');
         }
 
         // Simulation Logic
@@ -1223,7 +627,7 @@
          */
         window.switchTab = function(tabId) {
             // 1. Update Button States
-            const buttons = document.querySelectorAll('.tab-btn');
+            const buttons = document.querySelectorAll('.tab');
             buttons.forEach(btn => {
                 // Check if this button's onclick matches the requested tabId
                 if (btn.getAttribute('onclick').includes(tabId)) {
@@ -1234,14 +638,14 @@
             });
         
             // 2. Update Content Visibility
-            const contents = document.querySelectorAll('.output-content');
+            const contents = document.querySelectorAll('.tab-content');
             contents.forEach(content => {
-                content.classList.add('hidden');
+                content.classList.remove('active');
             });
         
             const targetContent = document.getElementById(`tab-${tabId}`);
             if (targetContent) {
-                targetContent.classList.remove('hidden');
+                targetContent.classList.add('active');
             }
         };
         

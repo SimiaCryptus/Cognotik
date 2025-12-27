@@ -8,54 +8,19 @@
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --secondary: #64748b;
-            --accent: #0ea5e9;
-            --background: #f8fafc;
-            --surface: #ffffff;
-            --text: #0f172a;
-            --text-light: #64748b;
-            --code-bg: #1e293b;
-            --success: #10b981;
-            --border: #e2e8f0;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background);
-            color: var(--text);
-            line-height: 1.6;
-        }
 
-        /* Typography */
-        h1, h2, h3 {
-            line-height: 1.2;
-            font-weight: 700;
-        }
 
-        h1 { font-size: 2.5rem; margin-bottom: 1rem; }
-        h2 { font-size: 2rem; margin-bottom: 1.5rem; }
-        h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
-        p { margin-bottom: 1rem; color: var(--text-light); }
 
-        /* Layout */
         .container {
-            max-width: 1200px;
+            max-width: var(--container-max-width);
             margin: 0 auto;
-            padding: 0 2rem;
+            padding: 0 var(--spacing-md);
         }
 
         section {
-            padding: 4rem 0;
+            padding: var(--spacing-xl) 0;
         }
 
 
@@ -63,665 +28,131 @@
 
 
 
-        /* Hero */
-        .hero {
-            text-align: center;
-            padding: 6rem 0;
-            background: linear-gradient(to bottom, #eff6ff, #f8fafc);
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            background: linear-gradient(to right, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            font-size: 1.25rem;
-            max-width: 700px;
-            margin: 1rem auto 2rem;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.2s;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        /* Features Grid */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: var(--surface);
-            padding: 2rem;
-            border-radius: 1rem;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
-            transition: transform 0.2s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent);
-        }
-
-        .icon {
-            width: 48px;
-            height: 48px;
-            background: #eff6ff;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--primary);
-        }
-
-        /* Interactive Demo Section */
-        .demo-container {
-            display: grid;
+        /* Page Specific Overrides */
+        .simulator-container {
             grid-template-columns: 300px 1fr;
-            gap: 2rem;
-            background: var(--surface);
-            border-radius: 1rem;
-            border: 1px solid var(--border);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            height: 600px;
-        }
-
-        .demo-sidebar {
-            background: #f1f5f9;
-            padding: 1.5rem;
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .control-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .control-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--text);
-        }
-
-        .control-group input, .control-group select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-        }
-
-        .demo-main {
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .tab {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            font-weight: 500;
-            color: var(--text-light);
-        }
-
-        .tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
         }
 
         .viz-area {
-            flex: 1;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: 0.5rem;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            height: 500px;
             position: relative;
             overflow: hidden;
         }
 
         .terminal {
-            background: var(--code-bg);
-            color: #a5b4fc;
-            font-family: 'Courier New', Courier, monospace;
-            padding: 1rem;
-            border-radius: 0.5rem;
+            font-family: var(--font-family-mono);
+            padding: var(--spacing-md);
             height: 100%;
             overflow-y: auto;
-            font-size: 0.85rem;
+            color: var(--text-color);
         }
 
-        .log-entry { margin-bottom: 0.5rem; }
-        .log-success { color: var(--success); }
-        .log-info { color: #60a5fa; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        .log-entry { margin-bottom: 0.5rem; word-break: break-word; }
+        .log-success { color: var(--success-color); }
+        .log-info { color: var(--accent-secondary); }
+        .log-error { color: var(--error-color); }
 
         /* Tree Visualization Styles */
         svg { width: 100%; height: 100%; }
-        .node circle { fill: var(--surface); stroke: var(--primary); stroke-width: 2px; }
-        .node text { font-size: 12px; text-anchor: middle; dominant-baseline: middle; fill: var(--text); }
-        .link { stroke: var(--border); stroke-width: 2px; }
-        .node-label { font-size: 10px; fill: var(--text-light); background: white; }
 
-        /* Code Block */
-        pre {
-            background: var(--code-bg);
-            color: #e2e8f0;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            font-size: 0.9rem;
-        }
 
-        /* Footer */
-        footer {
-            background: var(--surface);
-            border-top: 1px solid var(--border);
-            padding: 3rem 0;
-            margin-top: 4rem;
-            text-align: center;
-            color: var(--text-light);
-        }
+        .node circle { fill: var(--surface-color); stroke: var(--accent-color); stroke-width: 2px; }
+        .node text { font-size: 12px; text-anchor: middle; dominant-baseline: middle; fill: var(--text-color); }
+        .link { stroke: var(--border-color); stroke-width: 2px; }
+        .node-label { font-size: 10px; fill: var(--text-muted); background: var(--surface-color); }
 
         @media (max-width: 768px) {
-            .hero h1 { font-size: 2.5rem; }
-            .demo-container { grid-template-columns: 1fr; height: auto; }
-            .demo-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
-            .viz-area { height: 300px; }
+            .simulator-container { grid-template-columns: 1fr; }
         }
     </style>
 
-    <style>
-        /* =========================================
-           1. Variables & Reset
-           ========================================= */
-        :root {
-            /* Color Palette */
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --primary-light: #eff6ff;
-            --secondary: #64748b;
-            --accent: #0ea5e9;
-        
-            /* Backgrounds & Surfaces */
-            --background: #f8fafc;
-            --surface: #ffffff;
-            --surface-alt: #f1f5f9;
-        
-            /* Text Colors */
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --text-inverse: #ffffff;
-        
-            /* UI Elements */
-            --border: #e2e8f0;
-            --border-focus: #2563eb;
-            --success: #10b981;
-            --danger: #ef4444;
-            --code-bg: #1e293b;
-        
-            /* Effects */
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
-            --radius-sm: 0.375rem;
-            --radius-md: 0.5rem;
-            --radius-lg: 1rem;
-            --transition: all 0.2s ease-in-out;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background);
-            color: var(--text-main);
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        /* =========================================
-           2. Typography
-           ========================================= */
-        h1, h2, h3, h4, h5, h6 {
-            color: var(--text-main);
-            line-height: 1.2;
-            font-weight: 700;
-        }
-        
-        h1 { font-size: 2.5rem; margin-bottom: 1rem; letter-spacing: -0.025em; }
-        h2 { font-size: 2rem; margin-bottom: 1.5rem; letter-spacing: -0.025em; }
-        h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
-        
-        p {
-            margin-bottom: 1rem;
-            color: var(--text-muted);
-        }
-        
-        a {
-            color: var(--primary);
-            text-decoration: none;
-            transition: var(--transition);
-        }
-        
-        a:hover {
-            color: var(--primary-dark);
-        }
-        
-        /* =========================================
-           3. Layout Utilities
-           ========================================= */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-            width: 100%;
-        }
-        
-        section {
-            padding: 5rem 0;
-        }
-        
-        
-        
         
         
         
         
         
-        /* =========================================
-           5. Hero Section
-           ========================================= */
-        .hero {
-            text-align: center;
-            padding: 8rem 0 6rem;
-            background: radial-gradient(circle at top center, var(--primary-light) 0%, var(--background) 70%);
-        }
-        
-        .hero h1 {
-            font-size: 3.5rem;
-            max-width: 900px;
-            margin: 0 auto 1.5rem;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .hero p {
-            font-size: 1.25rem;
-            max-width: 700px;
-            margin: 0 auto 2.5rem;
-            color: var(--text-muted);
-        }
-        
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: var(--transition);
-            font-size: 1rem;
-        }
-        
-        .btn-primary {
-            background: var(--primary);
-            color: var(--text-inverse);
-            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.3);
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.4);
-            color: var(--text-inverse);
-        }
-        
-        /* =========================================
-           6. Features Grid
-           ========================================= */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        
-        .feature-card {
-            background: var(--surface);
-            padding: 2rem;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            transition: var(--transition);
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--accent);
-        }
-        
-        .feature-card .icon {
-            width: 56px;
-            height: 56px;
-            background: var(--primary-light);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--primary);
-        }
-        
-        .feature-card code {
-            background: var(--surface-alt);
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.85em;
-            color: var(--primary-dark);
-            font-family: 'Courier New', Courier, monospace;
-        }
-        
-        /* =========================================
-           7. Interactive Demo Section
-           ========================================= */
-        .demo-container {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            background: var(--surface);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
-            overflow: hidden;
-            box-shadow: var(--shadow-md);
-            height: 650px;
-            margin-top: 2rem;
-        }
-        
-        /* Sidebar */
-        .demo-sidebar {
-            background: var(--surface-alt);
-            padding: 2rem;
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-        
-        .control-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .control-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--text-main);
-        }
-        
-        .control-group input, 
-        .control-group select {
-            width: 100%;
-            padding: 0.625rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            font-size: 0.875rem;
-            background: var(--surface);
-            color: var(--text-main);
-            transition: var(--transition);
-        }
-        
-        .control-group input:focus, 
-        .control-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        
-        .control-group select:disabled {
-            background: #e2e8f0;
-            cursor: not-allowed;
-        }
-        
-        /* Main Demo Area */
-        .demo-main {
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            background: var(--surface);
-            position: relative;
-        }
-        
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 0.5rem;
-        }
-        
-        .tab {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border-radius: var(--radius-sm);
-            font-weight: 500;
-            color: var(--text-muted);
-            transition: var(--transition);
-            font-size: 0.9rem;
-        }
-        
-        .tab:hover {
-            background: var(--surface-alt);
-            color: var(--text-main);
-        }
-        
-        .tab.active {
-            background: var(--primary-light);
-            color: var(--primary);
-            font-weight: 600;
-        }
-        
-        /* Visualization Panels */
-        .viz-area {
-            flex: 1;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            position: relative;
-            overflow: hidden;
-            height: 100%;
-        }
-        
-        /* Terminal Style */
-        .terminal {
-            background: var(--code-bg);
-            color: #e2e8f0;
-            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-            padding: 1.5rem;
-            height: 100%;
-            overflow-y: auto;
-            font-size: 0.85rem;
-            line-height: 1.5;
-        }
-        
-        .log-entry { margin-bottom: 0.5rem; word-break: break-word; }
-        .log-entry::before { content: "$ "; opacity: 0.5; margin-right: 0.5rem; }
-        .log-success { color: var(--success); }
-        .log-info { color: #60a5fa; }
-        .log-error { color: var(--danger); }
-        
-        /* Code Block */
-        pre {
-            background: var(--code-bg);
-            color: #e2e8f0;
-            padding: 1.5rem;
-            height: 100%;
-            overflow: auto;
-            font-size: 0.9rem;
-            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-        }
-        
-        /* SVG Tree Visualization */
-        svg { width: 100%; height: 100%; }
-        
-        .node circle { 
-            fill: var(--surface); 
-            stroke: var(--primary); 
-            stroke-width: 2px; 
-            transition: all 0.5s ease;
-        }
-        
-        .node text { 
-            font-size: 12px; 
-            text-anchor: middle; 
-            dominant-baseline: middle; 
-            fill: var(--text-main);
-            font-weight: 600;
-            pointer-events: none;
-        }
-        
-        .link { 
-            stroke: var(--border); 
-            stroke-width: 2px; 
-            transition: all 0.5s ease;
-        }
-        
-        .node-label { 
-            font-size: 11px; 
-            fill: var(--text-muted); 
-            background: white; /* Note: SVG doesn't support bg on text directly, usually requires a rect behind it, but keeping simple per HTML */
-            font-weight: 500;
-        }
-        
-        /* =========================================
-           8. Documentation Section
-           ========================================= */
-        #docs ul {
-            list-style: none;
-        }
-        
-        #docs li {
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 1.5rem;
-        }
-        
-        #docs li:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        
-        #docs code {
-            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-            color: var(--primary-dark);
-        }
-        
-        /* =========================================
-           9. Footer
-           ========================================= */
-        footer {
-            background: var(--surface);
-            border-top: 1px solid var(--border);
-            padding: 3rem 0;
-            margin-top: 4rem;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-        
-        /* =========================================
-           10. Responsive Design
-           ========================================= */
-        @media (max-width: 992px) {
-            .hero h1 { font-size: 3rem; }
-            .demo-container { grid-template-columns: 250px 1fr; }
-        }
-        
-        @media (max-width: 768px) {
-            /* Typography */
-            .hero h1 { font-size: 2.25rem; }
-            .hero p { font-size: 1.1rem; }
-        
-            /* Navigation */
-            .nav-links { display: none; } /* Simple hide for this demo */
-        
-            /* Layout */
-            .container { padding: 0 1rem; }
-        
-            /* Demo Section */
-            .demo-container { 
-                grid-template-columns: 1fr; 
-                height: auto; 
-                display: flex;
-                flex-direction: column;
-            }
-        
-            .demo-sidebar { 
-                border-right: none; 
-                border-bottom: 1px solid var(--border);
-                max-height: 300px; /* Allow scrolling if controls are long */
-            }
-        
-            .viz-area { 
-                height: 400px; 
-                min-height: 400px;
-            }
-        
-            .tabs {
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-        }
-    </style>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 <!-- Generated Images:
      - decision-tree-hero.png: A high-tech, bright, and clean 3D illustration of a decision tree structure growing upwards. The nodes are polished glass spheres glowing with soft blue light (#2563eb), connected by sleek metallic branches. The base of the tree emerges from a digital grid representing unstructured data. The background is a very light, airy gradient of white and pale slate, suitable for a modern SaaS hero section. The style conveys precision, logic, and artificial intelligence.
      - semantic-splitting-diagram.png: A modern, flat-style vector illustration depicting "Semantic Splitting". On the left, a document icon contains abstract text lines with specific keywords like "Error" and "Urgent" highlighted in bright cyan. These keywords flow into a central diamond-shaped decision node. Two arrows emerge from the node: one path leads to a checkmark icon (green), the other to a cross icon (red), visualizing how text meaning drives logic. The color palette uses the site's primary blue, slate grey, and white.
@@ -736,15 +167,15 @@
         <section class="hero">
             <div class="container">
                 <h1>Symbolic Logic meets LLM Intuition</h1>
-                <p>The <strong>DecisionTreeTask</strong> combines the semantic understanding of Large Language Models with the mathematical rigor of Information Gain algorithms to build interpretable, executable decision trees.</p>
-                <a href="#demo" class="btn btn-primary">Try the Simulation</a>
+                <p class="subtitle">The <strong>DecisionTreeTask</strong> combines the semantic understanding of Large Language Models with the mathematical rigor of Information Gain algorithms to build interpretable, executable decision trees.</p>
+                <a href="#demo" class="cta-button">Try the Simulation</a>
                 <div style="margin-top: 3rem;">
                     <img src="assets/images/decision-tree-hero.png" alt="High-tech 3D illustration of a decision tree structure growing upwards with glowing nodes" style="max-width: 100%; height: auto; border-radius: 1rem; box-shadow: var(--shadow);">
                 </div>
             </div>
         </section>
 
-        <section id="features">
+        <section id="features" class="features">
             <div class="container">
                 <div class="features-grid">
                     <div class="feature-card">
@@ -753,7 +184,7 @@
                         <p>Unlike traditional trees that only handle numbers, our agent understands text. It generates rules like <code>description contains "error"</code> or <code>sku matches "^[A-Z]-123"</code>.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="icon">
+                        <div style="margin-bottom: 1.5rem; color: var(--accent-secondary);">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                         </div>
                         <h3>Math-Verified Accuracy</h3>
@@ -768,13 +199,13 @@
             </div>
         </section>
 
-        <section id="demo">
+        <section id="demo" class="simulator">
             <div class="container">
                 <h2>Interactive Simulation</h2>
                 <p>See how the agent builds a tree to predict <strong>Customer Churn</strong> based on mixed data types.</p>
                 
-                <div class="demo-container">
-                    <div class="demo-sidebar">
+                <div class="simulator-container">
+                    <div class="sim-controls">
                         <div class="control-group">
                             <label>Target Column</label>
                             <select id="targetSelect" disabled>
@@ -789,7 +220,7 @@
                             <label>Candidate Rules per Node</label>
                             <input type="number" id="candidateRules" value="3" min="1" max="10">
                         </div>
-                        <button class="btn btn-primary" style="width: 100%" onclick="runSimulation()">Run Task</button>
+                        <button class="run-button" onclick="runSimulation()">Run Task</button>
                         
                         <div style="margin-top: 2rem; font-size: 0.8rem; color: var(--text-light);">
                             <strong>Dataset Preview:</strong><br>
@@ -800,7 +231,7 @@
                         </div>
                     </div>
                     
-                    <div class="demo-main">
+                    <div class="sim-output">
                         <div class="tabs">
                             <div class="tab active" onclick="switchTab('viz')">Tree Visualization</div>
                             <div class="tab" onclick="switchTab('log')">Agent Logs</div>
@@ -825,7 +256,7 @@
             </div>
         </section>
 
-        <section id="docs">
+        <section id="docs" class="features">
             <div class="container">
                 <h2>Configuration & Usage</h2>
                 <p>The <code>DecisionTreeTask</code> is configured via the <code>DecisionTreeTaskExecutionConfigData</code> class.</p>
@@ -834,19 +265,19 @@
                     <h3>Parameters</h3>
                     <ul style="list-style: none; margin-top: 1rem;">
                         <li style="margin-bottom: 1rem;">
-                            <code>data_file</code> <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">String</span><br>
+                            <code>data_file</code> <span style="background: var(--surface-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">String</span><br>
                             Path to the CSV or JSONL file containing the training data.
                         </li>
                         <li style="margin-bottom: 1rem;">
-                            <code>target_column</code> <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">String</span><br>
+                            <code>target_column</code> <span style="background: var(--surface-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">String</span><br>
                             The name of the column you want to predict.
                         </li>
                         <li style="margin-bottom: 1rem;">
-                            <code>max_depth</code> <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Int</span><br>
+                            <code>max_depth</code> <span style="background: var(--surface-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Int</span><br>
                             Limits the height of the tree to prevent overfitting. Default: 3.
                         </li>
                         <li style="margin-bottom: 1rem;">
-                            <code>candidate_rules</code> <span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Int</span><br>
+                            <code>candidate_rules</code> <span style="background: var(--surface-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Int</span><br>
                             How many splitting rules the LLM should propose for each node. Higher numbers increase accuracy but cost more tokens.
                         </li>
                     </ul>
@@ -1126,18 +557,18 @@
             };
         
             const colors = {
-                primary: '#2563eb',
-                success: '#10b981',
-                danger: '#ef4444',
-                surface: '#ffffff',
-                text: '#0f172a',
-                churn: '#fee2e2',
-                noChurn: '#dcfce7'
+                primary: '#8b5cf6',
+                success: '#4ade80',
+                danger: '#f87171',
+                surface: '#1e293b',
+                text: '#e2e8f0',
+                churn: '#f87171',
+                noChurn: '#4ade80'
             };
         
             // DOM Elements
             const ui = {
-                runBtn: document.querySelector('.btn-primary[onclick="runSimulation()"]'),
+                runBtn: document.querySelector('.run-button[onclick="runSimulation()"]'),
                 tabs: document.querySelectorAll('.tab'),
                 panels: {
                     viz: document.getElementById('viz-panel'),
@@ -1226,14 +657,14 @@
             
                     const circle = createSvgElement('circle', {
                         cx: x, cy: y, r: 20,
-                        style: `fill: ${bgColor}; stroke: ${colors.primary}; stroke-width: 2px;`
+                        style: `fill: ${bgColor};`
                     });
             
                     const text = createSvgElement('text', {
                         x: x, y: y,
                         'text-anchor': 'middle',
                         'dominant-baseline': 'middle',
-                        style: `fill: ${colors.text}; font-size: 12px;`
+                        style: `font-size: 12px;`
                     });
                     text.textContent = label;
         
@@ -1246,8 +677,7 @@
                     // Draw Line
                     const line = createSvgElement('line', {
                         x1, y1, x2, y2,
-                        class: 'link',
-                        style: 'stroke: #e2e8f0; stroke-width: 2px;'
+                        class: 'link'
                     });
                     ui.svg.prepend(line); // Prepend so lines are behind nodes
         
@@ -1260,7 +690,7 @@
                             x: midX, y: midY - 5,
                             class: 'node-label',
                             'text-anchor': 'middle',
-                            style: 'font-size: 10px; fill: #64748b; background: white;'
+                            style: 'font-size: 10px;'
                         });
                         text.textContent = label;
                         ui.svg.appendChild(text);

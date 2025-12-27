@@ -11,52 +11,42 @@
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --accent-primary: #ef4444; /* Red */
-            --accent-secondary: #3b82f6; /* Blue */
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --accent-primary: #ef4444;
+            --accent-secondary: #3b82f6;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); line-height: 1.6; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
-        .btn { display: inline-block; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-decoration: none; color: #fff; }
-        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(239, 68, 68, 0.5); }
         
-        .hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 80vh; }
+        .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 var(--spacing-lg); }
+        
+        /* Hero Section Overrides */
+        .hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 80vh; text-align: left; background: none; }
         .hero-content { flex: 1; padding-right: 2rem; }
         .hero h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
         .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
         .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-primary); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(239, 68, 68, 0.2); }
+        .btn-hero { display: inline-block; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-decoration: none; color: #fff; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+        .btn-hero:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(239, 68, 68, 0.5); }
         
         @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
 
-        .features { padding: 4rem 0; background: rgba(255,255,255,0.02); }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
-        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
-        .feature-card:hover { border-color: var(--accent-primary); transform: translateY(-5px); }
+        /* Features Overrides */
+        .features { background: rgba(255,255,255,0.02); }
+        .feature-card:hover { border-color: var(--accent-primary); transform: translateY(-5px); transition: 0.3s; }
         .feature-icon { width: 48px; height: 48px; background: rgba(239, 68, 68, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: var(--accent-primary); }
+        .feature-icon svg { width: 24px; height: 24px; }
 
-        .simulator { padding: 4rem 0; }
-        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); min-height: 600px; }
-        .sim-panel { padding: 2rem; display: flex; flex-direction: column; }
-        .sim-left { border-right: 1px solid rgba(255,255,255,0.05); }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
-        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); padding: 0.75rem; border-radius: 6px; font-family: monospace; font-size: 0.9rem; }
-        .form-control:focus { outline: none; border-color: var(--accent-primary); }
-        textarea.form-control { resize: vertical; min-height: 100px; }
-        .output-area { flex: 1; font-family: monospace; font-size: 0.9rem; color: #d1d5db; overflow-y: auto; white-space: pre-wrap; }
+        /* Simulator Overrides */
+        .simulator-container { min-height: 600px; }
+        .sim-output { padding: 2rem; }
+        .output-area { font-family: var(--font-family-mono); font-size: 0.9rem; color: #d1d5db; white-space: pre-wrap; height: 100%; overflow-y: auto; }
+        textarea { resize: vertical; min-height: 100px; }
         
+        /* Use Cases */
         .use-cases { padding: 4rem 0; }
         .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
         .use-case-item { background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
 
-        @media (max-width: 768px) { .hero { flex-direction: column; text-align: center; padding-top: 6rem; } .sim-container { grid-template-columns: 1fr; } .sim-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); } }
+        @media (max-width: 768px) { .hero { flex-direction: column; text-align: center; padding-top: 6rem; } }
     </style>
 </head>
 <body>
@@ -65,7 +55,7 @@
         <div class="hero-content">
             <h1>Political Optimization</h1>
             <p>Optimize text using multi-perspective consensus analysis to find unifying messages or identify wedge issues.</p>
-            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
+            <a href="#demo" class="btn btn-hero">Try the Simulator</a>
         </div>
         <div class="hero-visual">
             <div class="visual-node"></div>
@@ -103,23 +93,23 @@
     <section id="demo" class="simulator">
         <div class="container">
             <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="sim-container">
-                <div class="sim-panel sim-left">
+            <div class="simulator-container">
+                <div class="sim-controls">
                     <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Configuration</h3>
-                    <div class="form-group">
+                    <div class="control-group">
                         <label>Initial Text</label>
-                        <textarea id="text" class="form-control">We need to reform healthcare to ensure everyone has access.</textarea>
+                        <textarea id="text">We need to reform healthcare to ensure everyone has access.</textarea>
                     </div>
-                    <div class="form-group">
+                    <div class="control-group">
                         <label>Goal</label>
-                        <select id="goal" class="form-control">
+                        <select id="goal">
                             <option value="maximize">Maximize Consensus</option>
                             <option value="minimize">Maximize Divisiveness</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Run Optimization</button>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Run Optimization</button>
                 </div>
-                <div class="sim-panel sim-right">
+                <div class="sim-output">
                     <div id="output-logs" class="output-area">
                         <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
                             Configure the optimization and click "Run" to see results.

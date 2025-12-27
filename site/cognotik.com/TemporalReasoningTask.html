@@ -13,18 +13,16 @@
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
-        :root {
-            --accent-primary: #06b6d4; /* Cyan */
-            --accent-glow: rgba(6, 182, 212, 0.5);
-        }
 
         .hero-visual {
-            background: radial-gradient(circle at center, var(--bg-dark) 0%, #000 100%);
+            background: radial-gradient(circle at center, var(--background-color) 0%, #000 100%);
             position: relative;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: var(--border-radius);
+            min-height: 300px;
         }
 
         /* Abstract Timeline Animation */
@@ -32,7 +30,7 @@
             position: absolute;
             width: 200%;
             height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+            background: linear-gradient(90deg, transparent, var(--accent-secondary), transparent);
             animation: flow 3s linear infinite;
         }
 
@@ -41,59 +39,27 @@
             100% { transform: translateX(0%); }
         }
 
-        .simulator-grid {
+
+
+
+
+
+
+        .split-hero {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            min-height: 600px;
+            gap: 4rem;
+            align-items: center;
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            text-align: left;
         }
 
         @media (max-width: 768px) {
-            .simulator-grid {
+            .split-hero {
                 grid-template-columns: 1fr;
+                text-align: center;
             }
-        }
-
-        .config-panel, .output-panel {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .output-content {
-            flex-grow: 1;
-            background: #0f172a;
-            border-radius: 0.25rem;
-            padding: 1rem;
-            font-family: monospace;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            color: #e2e8f0;
-            font-size: 0.9rem;
-        }
-
-        .tab-nav {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .tab-btn {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-        }
-
-        .tab-btn.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
         }
     </style>
 </head>
@@ -111,73 +77,75 @@
     <main>
         <!-- Hero Section -->
         <section class="hero">
-            <div class="container split-hero">
+            <div class="split-hero">
                 <div class="hero-content">
                     <h1>Temporal Reasoning</h1>
                     <p class="subtitle">Analyze how systems evolve over time, identify patterns, and predict future states through advanced timeline analysis.</p>
-                    <button class="btn-primary" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
+                    <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
                 </div>
                 <div class="hero-visual">
                     <div class="timeline-stream" style="top: 30%; opacity: 0.3;"></div>
                     <div class="timeline-stream" style="top: 50%;"></div>
                     <div class="timeline-stream" style="top: 70%; opacity: 0.3;"></div>
                     <!-- Placeholder for 3D illustration -->
-                    <div style="z-index: 1; color: var(--accent-primary); font-size: 4rem;">⏳</div>
+                    <div style="z-index: 1; color: var(--accent-secondary); font-size: 4rem;">⏳</div>
                 </div>
             </div>
         </section>
 
         <!-- Features Grid -->
-        <section class="features container">
+        <section class="features">
+            <div class="features-grid">
             <div class="feature-card">
-                <div class="icon-glow">📅</div>
+                <i>📅</i>
                 <h3>Timeline Construction</h3>
                 <p>Automatically construct chronological timelines of significant events from logs and file history.</p>
             </div>
             <div class="feature-card">
-                <div class="icon-glow">🔄</div>
+                <i>🔄</i>
                 <h3>Pattern Recognition</h3>
                 <p>Identify recurring patterns, cycles, and seasonal trends in system behavior.</p>
             </div>
             <div class="feature-card">
-                <div class="icon-glow">🔮</div>
+                <i>🔮</i>
                 <h3>Future Prediction</h3>
                 <p>Extrapolate historical trends to predict future states and potential risks.</p>
             </div>
             <div class="feature-card">
-                <div class="icon-glow">📈</div>
+                <i>📈</i>
                 <h3>Rate of Change</h3>
                 <p>Analyze the velocity and acceleration of system evolution to detect instability.</p>
             </div>
             <div class="feature-card">
-                <div class="icon-glow">⚡</div>
+                <i>⚡</i>
                 <h3>Transition Points</h3>
                 <p>Pinpoint critical inflection points and phase transitions in the system's lifecycle.</p>
             </div>
             <div class="feature-card">
-                <div class="icon-glow">📊</div>
+                <i>📊</i>
                 <h3>Visualization</h3>
                 <p>Generate Mermaid diagrams to visualize the timeline and key events.</p>
+            </div>
             </div>
         </section>
 
         <!-- Simulator -->
-        <section id="simulator" class="container">
+        <section id="simulator" class="simulator">
             <h2>Interactive Simulator</h2>
-            <div class="simulator-grid">
+            <div class="simulator-container">
                 <!-- Inputs -->
-                <div class="config-panel">
+                <div class="sim-controls">
                     <h3>Configuration</h3>
                     <form id="sim-form">
-                        <div class="form-group">
+                        <div class="control-group">
                             <label>Subject</label>
                             <input type="text" id="subject" value="Payment Service" placeholder="e.g. System X">
                         </div>
-                        <div class="form-group">
+                        <div class="control-group">
                             <label>Time Range</label>
                             <input type="text" id="time_range" value="2023-01-01 to 2023-12-31">
                         </div>
-                        <div class="form-group">
+                        <div class="control-group">
                             <label>Granularity</label>
                             <select id="granularity">
                                 <option value="daily">Daily</option>
@@ -186,55 +154,55 @@
                                 <option value="quarterly">Quarterly</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="control-group">
                             <label>Input Files (Pattern)</label>
                             <input type="text" id="input_files" value="**/*.log">
                         </div>
-                        <div class="form-group">
+                        <div class="control-group">
                             <label>Critical Events (Optional)</label>
                             <input type="text" id="critical_events" placeholder="e.g. Black Friday, Migration">
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group checkbox">
+                        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
+                            <div>
                                 <input type="checkbox" id="identify_patterns" checked>
-                                <label for="identify_patterns">Identify Patterns</label>
+                                <label for="identify_patterns" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Identify Patterns</label>
                             </div>
-                            <div class="form-group checkbox">
+                            <div>
                                 <input type="checkbox" id="predict_future" checked>
-                                <label for="predict_future">Predict Future</label>
+                                <label for="predict_future" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Predict Future</label>
                             </div>
                         </div>
 
-                        <div class="form-group" id="horizon-group">
+                        <div class="control-group" id="horizon-group">
                             <label>Prediction Horizon</label>
                             <input type="text" id="prediction_horizon" value="3 months">
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group checkbox">
+                        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
+                            <div>
                                 <input type="checkbox" id="analyze_rate_of_change" checked>
-                                <label for="analyze_rate_of_change">Analyze Rate of Change</label>
+                                <label for="analyze_rate_of_change" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Analyze Rate of Change</label>
                             </div>
-                            <div class="form-group checkbox">
+                            <div>
                                 <input type="checkbox" id="identify_transitions" checked>
-                                <label for="identify_transitions">Identify Transitions</label>
+                                <label for="identify_transitions" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Identify Transitions</label>
                             </div>
                         </div>
 
-                        <button type="submit" class="btn-primary" style="margin-top: auto;">Run Analysis</button>
+                        <button type="submit" class="run-button" style="margin-top: auto;">Run Analysis</button>
                     </form>
                 </div>
 
                 <!-- Outputs -->
-                <div class="output-panel">
-                    <div class="tab-nav">
-                        <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
-                        <button class="tab-btn" onclick="switchTab('timeline')">Timeline</button>
-                        <button class="tab-btn" onclick="switchTab('viz')">Visualization</button>
-                        <button class="tab-btn" onclick="switchTab('json')">JSON</button>
+                <div class="sim-output">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('overview')">Overview</button>
+                        <button class="tab" onclick="switchTab('timeline')">Timeline</button>
+                        <button class="tab" onclick="switchTab('viz')">Visualization</button>
+                        <button class="tab" onclick="switchTab('json')">JSON</button>
                     </div>
-                    <div id="output-display" class="output-content">
+                    <div id="output-display" class="tab-content active">
                         <div class="placeholder-text" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #64748b;">
                             Configure and run analysis to see results...
                         </div>
@@ -244,18 +212,18 @@
         </section>
 
         <!-- Use Cases -->
-        <section class="container" style="margin-top: 4rem; margin-bottom: 4rem;">
+        <section class="features" style="margin-top: 4rem; margin-bottom: 4rem;">
             <h2>When to Use</h2>
-            <div class="grid-3">
-                <div class="card">
+            <div class="features-grid">
+                <div class="feature-card">
                     <h3>Technical Debt Analysis</h3>
                     <p>Track how code complexity and debt have accumulated over time to justify refactoring efforts.</p>
                 </div>
-                <div class="card">
+                <div class="feature-card">
                     <h3>System Evolution</h3>
                     <p>Understand how architecture has drifted from original designs through incremental changes.</p>
                 </div>
-                <div class="card">
+                <div class="feature-card">
                     <h3>Performance Degradation</h3>
                     <p>Correlate performance metrics with deployment events to find the root cause of slow degradation.</p>
                 </div>
@@ -268,7 +236,7 @@
         let currentData = null;
 
         function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
 
             if (!currentData) return;
@@ -280,7 +248,7 @@
             } else if (tabId === 'timeline') {
                 display.innerHTML = renderTimeline(currentData.timeline_events);
             } else if (tabId === 'viz') {
-                display.innerHTML = `<div style="color: var(--accent-primary)">\n${currentData.visualization}\n</div>`;
+                display.innerHTML = `<div style="color: var(--accent-secondary)">\n${currentData.visualization}\n</div>`;
             } else if (tabId === 'json') {
                 display.textContent = JSON.stringify(currentData, null, 2);
             }
@@ -300,8 +268,8 @@
                 currentData = generateMockData(subject, predict, patterns);
                 switchTab('overview');
                 // Reset active tab visual
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelector('.tab-btn').classList.add('active');
+                document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+                document.querySelector('.tab').classList.add('active');
             }, 1500);
         });
 

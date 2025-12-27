@@ -14,62 +14,26 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
-        :root {
-            /* Theme Colors */
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-input: #334155;
             
-            --accent-primary: #a855f7; /* Purple for Strategy/Math */
-            --accent-secondary: #06b6d4; /* Cyan for Logic */
-            --accent-glow: rgba(168, 85, 247, 0.5);
             
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
             
-            --font-display: 'Cinzel', serif;
-            --font-body: 'Inter', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
             
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 16px;
             
-            --shadow-glow: 0 0 20px var(--accent-glow);
-        }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-body);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
 
-        a { text-decoration: none; color: inherit; transition: 0.3s; }
-        ul { list-style: none; }
 
-        /* --- Layout Utilities --- */
+        /* Custom styles for Game Theory Task not covered by main.css */
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 2rem;
         }
 
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
 
 
 
@@ -77,67 +41,25 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
 
 
 
-        /* --- Hero Section --- */
         .hero {
-            padding: 8rem 0 4rem;
-            min-height: 90vh;
+            position: relative;
+            min-height: 80vh;
             display: flex;
             align-items: center;
-            position: relative;
-            overflow: hidden;
-        }
 
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -20%;
-            right: -10%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-            opacity: 0.4;
-            z-index: -1;
+            justify-content: center;
         }
 
         .hero-content {
-            max-width: 600px;
-            z-index: 1;
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
-        h1 {
-            font-family: var(--font-display);
-            font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #fff 0%, var(--accent-secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
 
-        .subtitle {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            margin-bottom: 2.5rem;
-        }
 
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 2rem;
-            background: var(--accent-primary);
-            color: white;
-            font-weight: 600;
-            border-radius: var(--radius-md);
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
-            background: #9333ea;
-        }
 
         .hero-visual {
             position: absolute;
@@ -146,126 +68,26 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
             transform: translateY(-50%);
             width: 50%;
             height: 80%;
-            /* Placeholder for the 3D illustration */
-            background: 
-                linear-gradient(45deg, transparent 48%, var(--accent-secondary) 49%, var(--accent-secondary) 51%, transparent 52%),
-                linear-gradient(-45deg, transparent 48%, var(--accent-primary) 49%, var(--accent-primary) 51%, transparent 52%);
-            background-size: 60px 60px;
-            mask-image: radial-gradient(circle, black 30%, transparent 70%);
             opacity: 0.3;
             pointer-events: none;
+            z-index: 1;
         }
 
-        /* --- Features Grid --- */
-        .features {
-            padding: 4rem 0;
-            background: linear-gradient(to bottom, var(--bg-dark), #131c2e);
-        }
 
-        .section-title {
-            font-family: var(--font-display);
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 3rem;
-        }
 
-        .feature-card {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(255,255,255,0.05);
-            padding: 2rem;
-            border-radius: var(--radius-lg);
-            transition: 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
 
-        .feature-card:hover {
-            background: rgba(30, 41, 59, 0.8);
-            border-color: var(--accent-primary);
-            transform: translateY(-5px);
-        }
 
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(168, 85, 247, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-primary);
-        }
 
-        .feature-card h3 {
-            margin-bottom: 0.75rem;
-            font-size: 1.25rem;
-        }
 
-        .feature-card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
 
-        /* --- Simulator --- */
-        .simulator {
-            padding: 4rem 0;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
 
-        .sim-container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 2rem;
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            border: 1px solid rgba(255,255,255,0.1);
-            overflow: hidden;
-            min-height: 700px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
 
-        /* Sim Left: Inputs */
-        .sim-config {
-            padding: 2rem;
-            background: rgba(0,0,0,0.2);
-            border-right: 1px solid rgba(255,255,255,0.05);
-            overflow-y: auto;
-        }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
 
-        .form-group label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-        }
 
-        .form-control {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            padding: 0.75rem;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-body);
-            transition: 0.2s;
-        }
 
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-secondary);
-            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
-        }
 
-        textarea.form-control {
-            resize: vertical;
-            min-height: 100px;
-        }
+        /* Toggle Switch */
 
         .toggle-group {
             display: flex;
@@ -281,7 +103,6 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
             font-size: 0.9rem;
         }
 
-        /* Custom Toggle Switch */
         .switch {
             position: relative;
             display: inline-block;
@@ -293,7 +114,7 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
             position: absolute;
             cursor: pointer;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #475569;
+            background-color: var(--border-color);
             transition: .4s;
             border-radius: 20px;
         }
@@ -308,68 +129,16 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
             transition: .4s;
             border-radius: 50%;
         }
-        input:checked + .slider { background-color: var(--accent-primary); }
+        input:checked + .slider { background-color: var(--accent-color); }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        .run-btn {
-            width: 100%;
-            margin-top: 2rem;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            border: none;
-            padding: 1rem;
-            color: white;
-            font-weight: 700;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: 0.3s;
-        }
-        .run-btn:hover { opacity: 0.9; box-shadow: 0 0 15px var(--accent-glow); }
-        .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Sim Right: Output */
-        .sim-output {
-            display: flex;
-            flex-direction: column;
-            background: #131c2e;
-        }
 
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            background: rgba(0,0,0,0.2);
-        }
 
-        .tab-btn {
-            padding: 1rem 1.5rem;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-weight: 600;
-            border-bottom: 2px solid transparent;
-            transition: 0.2s;
-        }
 
-        .tab-btn:hover { color: white; }
-        .tab-btn.active {
-            color: var(--accent-secondary);
-            border-bottom-color: var(--accent-secondary);
-            background: rgba(6, 182, 212, 0.05);
-        }
 
-        .tab-content {
-            padding: 2rem;
-            flex-grow: 1;
-            overflow-y: auto;
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
 
-        .tab-content.active { display: block; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Output Styling */
         .log-terminal {
@@ -381,664 +150,38 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
         .log-entry.info { border-color: var(--accent-secondary); }
         .log-entry.success { border-color: #4ade80; color: #86efac; }
         .log-entry.error { border-color: #f87171; color: #fca5a5; }
+        /* Payoff Table */
 
         .payoff-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
         }
         .payoff-table th, .payoff-table td {
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--border-color);
             padding: 1rem;
             text-align: center;
         }
         .payoff-table th { background: rgba(255,255,255,0.05); color: var(--accent-secondary); }
         .payoff-table td { font-family: var(--font-mono); }
+        /* Analysis Block */
         
         .analysis-block {
             background: rgba(255,255,255,0.03);
             padding: 1.5rem;
-            border-radius: var(--radius-md);
+            border-radius: var(--border-radius);
             margin-bottom: 1.5rem;
-            border-left: 3px solid var(--accent-primary);
+            border-left: 3px solid var(--accent-color);
         }
         .analysis-block h4 { color: var(--accent-secondary); margin-bottom: 0.5rem; }
 
-        /* --- Use Cases --- */
+        /* Use Cases */
         .use-cases {
             padding: 4rem 0;
+            background: var(--background-color);
         }
-        .use-case-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: center;
-        }
-        .use-case-tag {
-            padding: 0.75rem 1.5rem;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 50px;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            transition: 0.3s;
-        }
-        .use-case-tag:hover {
-            background: rgba(168, 85, 247, 0.1);
-            border-color: var(--accent-primary);
-            color: white;
-        }
-
-        /* --- Footer --- */
-        footer {
-            padding: 3rem 0;
-            text-align: center;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        /* Responsive */
-        @media (max-width: 900px) {
-            .sim-container { grid-template-columns: 1fr; }
-            .sim-config { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); max-height: 400px; }
-            h1 { font-size: 2.5rem; }
-        }
-    </style>
-
-    <style>
-        /* =========================================
-           1. Variables & Reset
-           ========================================= */
-        :root {
-            /* Color Palette - Future/Professional Dark Theme */
-            --bg-dark: #0f172a;       /* Slate 900 */
-            --bg-card: #1e293b;       /* Slate 800 */
-            --bg-card-hover: #334155; /* Slate 700 */
-            --bg-input: #020617;      /* Slate 950 */
-        
-            /* Accents */
-            --accent-primary: #a855f7;   /* Purple 500 */
-            --accent-primary-hover: #9333ea;
-            --accent-secondary: #06b6d4; /* Cyan 500 */
-            --accent-glow: rgba(168, 85, 247, 0.5);
-            --accent-cyan-glow: rgba(6, 182, 212, 0.3);
-        
-            /* Typography Colors */
-            --text-main: #f8fafc;     /* Slate 50 */
-            --text-muted: #94a3b8;    /* Slate 400 */
-            --text-dim: #64748b;      /* Slate 500 */
-        
-            /* Fonts */
-            --font-display: 'Cinzel', serif;
-            --font-body: 'Inter', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        
-            /* Spacing & Radius */
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 16px;
-        
-            /* Effects */
-            --shadow-glow: 0 0 20px var(--accent-glow);
-            --glass-bg: rgba(15, 23, 42, 0.8);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --transition-speed: 0.3s;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-body);
-            line-height: 1.6;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        
-        a {
-            text-decoration: none;
-            color: inherit;
-            transition: color var(--transition-speed);
-        }
-        
-        ul {
-            list-style: none;
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--bg-card-hover);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
-        
-        /* =========================================
-           2. Layout Utilities
-           ========================================= */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            width: 100%;
-        }
-        
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        
-        .section-title {
-            font-family: var(--font-display);
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 3rem;
-            color: var(--text-main);
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        /* =========================================
-           4. Hero Section
-           ========================================= */
-        .hero {
-            padding: 8rem 0 4rem;
-            min-height: 90vh;
-            display: flex;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        /* Ambient Glow Background */
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -20%;
-            right: -10%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-            opacity: 0.4;
-            z-index: -1;
-            pointer-events: none;
-        }
-        
-        .hero-content {
-            max-width: 600px;
-            z-index: 2;
-            position: relative;
-        }
-        
-        h1 {
-            font-family: var(--font-display);
-            font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #fff 0%, var(--accent-secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 20px rgba(6, 182, 212, 0.2));
-        }
-        
-        .subtitle {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            margin-bottom: 2.5rem;
-            max-width: 540px;
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 2rem;
-            background: var(--accent-primary);
-            color: white;
-            font-weight: 600;
-            border-radius: var(--radius-md);
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
-            cursor: pointer;
-            transition: all var(--transition-speed) ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 0.9rem;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(168, 85, 247, 0.6);
-            background: var(--accent-primary-hover);
-            border-color: white;
-        }
-        
-        /* Abstract 3D Visual Placeholder */
-        .hero-visual {
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 50%;
-            height: 80%;
-            background: 
-                linear-gradient(45deg, transparent 48%, var(--accent-secondary) 49%, var(--accent-secondary) 51%, transparent 52%),
-                linear-gradient(-45deg, transparent 48%, var(--accent-primary) 49%, var(--accent-primary) 51%, transparent 52%);
-            background-size: 60px 60px;
-            mask-image: radial-gradient(circle, black 30%, transparent 70%);
-            -webkit-mask-image: radial-gradient(circle, black 30%, transparent 70%);
-            opacity: 0.3;
-            pointer-events: none;
-            z-index: 0;
-            animation: float 10s infinite ease-in-out;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(-50%) scale(1); }
-            50% { transform: translateY(-52%) scale(1.05); }
-        }
-        
-        /* =========================================
-           5. Features Grid
-           ========================================= */
-        .features {
-            padding: 6rem 0;
-            background: linear-gradient(to bottom, var(--bg-dark), #131c2e);
-            position: relative;
-        }
-        
-        .feature-card {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid var(--glass-border);
-            padding: 2rem;
-            border-radius: var(--radius-lg);
-            transition: var(--transition-speed);
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(5px);
-        }
-        
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(180deg, rgba(168, 85, 247, 0.05) 0%, transparent 100%);
-            opacity: 0;
-            transition: opacity var(--transition-speed);
-        }
-        
-        .feature-card:hover {
-            background: rgba(30, 41, 59, 0.8);
-            border-color: var(--accent-primary);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-        }
-        
-        .feature-card:hover::before {
-            opacity: 1;
-        }
-        
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(168, 85, 247, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-primary);
-            border: 1px solid rgba(168, 85, 247, 0.2);
-        }
-        
-        .feature-card h3 {
-            margin-bottom: 0.75rem;
-            font-size: 1.25rem;
-            color: var(--text-main);
-        }
-        
-        .feature-card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-        
-        /* =========================================
-           6. Simulator (Interactive Core)
-           ========================================= */
-        .simulator {
-            padding: 6rem 0;
-            border-top: 1px solid var(--glass-border);
-            background: radial-gradient(circle at center, #1e293b 0%, var(--bg-dark) 100%);
-        }
-        
-        .sim-container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 0;
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--glass-border);
-            overflow: hidden;
-            min-height: 700px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        
-        /* --- Left: Configuration --- */
-        .sim-config {
-            padding: 2rem;
-            background: rgba(15, 23, 42, 0.6);
-            border-right: 1px solid var(--glass-border);
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-group label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .form-control {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--glass-border);
-            color: var(--text-main);
-            padding: 0.75rem;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-body);
-            font-size: 0.9rem;
-            transition: var(--transition-speed);
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-secondary);
-            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
-            background: #0f172a;
-        }
-        
-        textarea.form-control {
-            resize: vertical;
-            min-height: 100px;
-            line-height: 1.5;
-        }
-        
-        /* Toggles */
-        .toggle-group {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-top: 1rem;
-            background: rgba(0,0,0,0.2);
-            padding: 1rem;
-            border-radius: var(--radius-md);
-        }
-        
-        .toggle-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            color: var(--text-main);
-        }
-        
-        /* Custom Switch */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-        }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #475569;
-            transition: .4s;
-            border-radius: 24px;
-        }
-        
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        input:checked + .slider { background-color: var(--accent-primary); }
-        input:checked + .slider:before { transform: translateX(20px); }
-        
-        /* Run Button */
-        .run-btn {
-            width: 100%;
-            margin-top: auto;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            border: none;
-            padding: 1rem;
-            color: white;
-            font-weight: 700;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: var(--transition-speed);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .run-btn:hover {
-            opacity: 0.9;
-            box-shadow: 0 0 20px var(--accent-glow);
-            transform: translateY(-1px);
-        }
-        
-        .run-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            filter: grayscale(0.8);
-        }
-        
-        /* --- Right: Output --- */
-        .sim-output {
-            display: flex;
-            flex-direction: column;
-            background: #131c2e;
-            position: relative;
-        }
-        
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid var(--glass-border);
-            background: rgba(0,0,0,0.2);
-            padding: 0 1rem;
-        }
-        
-        .tab-btn {
-            padding: 1rem 1.5rem;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            border-bottom: 2px solid transparent;
-            transition: var(--transition-speed);
-            position: relative;
-        }
-        
-        .tab-btn:hover { color: var(--text-main); }
-        
-        .tab-btn.active {
-            color: var(--accent-secondary);
-            border-bottom-color: var(--accent-secondary);
-        }
-        
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to top, rgba(6, 182, 212, 0.1), transparent);
-            pointer-events: none;
-        }
-        
-        .tab-content {
-            padding: 2rem;
-            flex-grow: 1;
-            overflow-y: auto;
-            display: none;
-            animation: fadeIn 0.4s ease;
-        }
-        
-        .tab-content.active { display: block; }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Output Styling */
-        .log-terminal {
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            color: #a5b4fc;
-            background: #0f172a;
-            padding: 1.5rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--glass-border);
-            height: 100%;
-            overflow-y: auto;
-        }
-        
-        .log-entry {
-            margin-bottom: 0.5rem;
-            border-left: 2px solid transparent;
-            padding-left: 0.75rem;
-            line-height: 1.4;
-        }
-        .log-entry.info { border-color: var(--accent-secondary); }
-        .log-entry.success { border-color: #4ade80; color: #86efac; }
-        .log-entry.error { border-color: #f87171; color: #fca5a5; }
-        
-        .payoff-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-            background: var(--bg-dark);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-        }
-        
-        .payoff-table th, .payoff-table td {
-            border: 1px solid var(--glass-border);
-            padding: 1rem;
-            text-align: center;
-        }
-        
-        .payoff-table th {
-            background: rgba(255,255,255,0.05);
-            color: var(--accent-secondary);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-        }
-        
-        .payoff-table td {
-            font-family: var(--font-mono);
-            color: var(--text-main);
-        }
-        
-        .payoff-table td small {
-            display: block;
-            margin-top: 0.25rem;
-            color: var(--text-dim);
-            font-size: 0.75rem;
-        }
-        
-        .analysis-block {
-            background: rgba(255,255,255,0.03);
-            padding: 1.5rem;
-            border-radius: var(--radius-md);
-            margin-bottom: 1.5rem;
-            border-left: 3px solid var(--accent-primary);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        .analysis-block h4 {
-            color: var(--accent-secondary);
-            margin-bottom: 0.75rem;
-            font-family: var(--font-display);
-            font-size: 1.1rem;
-        }
-        
-        .analysis-block p {
-            margin-bottom: 0.5rem;
-            font-size: 0.95rem;
-        }
-        
-        .analysis-block ul {
-            list-style: disc;
-            padding-left: 1.5rem;
-            margin-top: 0.5rem;
-        }
-        
-        .analysis-block li {
-            margin-bottom: 0.5rem;
-            color: var(--text-muted);
-        }
-        
-        /* =========================================
-           7. Use Cases
-           ========================================= */
-        .use-cases {
-            padding: 6rem 0;
-            background: var(--bg-dark);
-        }
-        
         .use-case-list {
             display: flex;
             flex-wrap: wrap;
@@ -1047,99 +190,128 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
             max-width: 900px;
             margin: 0 auto;
         }
-        
         .use-case-tag {
             padding: 0.75rem 1.5rem;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--glass-border);
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
             border-radius: 50px;
             font-size: 0.9rem;
             color: var(--text-muted);
-            transition: var(--transition-speed);
-            cursor: default;
+            transition: 0.3s;
         }
-        
         .use-case-tag:hover {
-            background: rgba(168, 85, 247, 0.1);
-            border-color: var(--accent-primary);
-            color: white;
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+            border-color: var(--accent-color);
+            color: var(--text-color);
         }
-        
-        /* =========================================
-           8. Footer
-           ========================================= */
+
+        /* Footer */
         footer {
             padding: 3rem 0;
             text-align: center;
-            border-top: 1px solid var(--glass-border);
-            color: var(--text-dim);
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
             font-size: 0.9rem;
-            background: #0b1120;
         }
-        
-        /* =========================================
-           9. Responsive Design
-           ========================================= */
-        @media (max-width: 900px) {
-            .hero {
-                padding-top: 6rem;
-                text-align: center;
-            }
-        
-            .hero-content {
-                margin: 0 auto;
-            }
-        
-            .hero-visual {
-                width: 100%;
-                height: 100%;
-                opacity: 0.15;
-                top: 0;
-                transform: none;
-                animation: none;
-            }
-        
-            h1 {
-                font-size: 2.5rem;
-            }
-        
-            .sim-container {
-                grid-template-columns: 1fr;
-                min-height: auto;
-            }
-        
-            .sim-config {
-                border-right: none;
-                border-bottom: 1px solid var(--glass-border);
-                max-height: 400px;
-            }
-        
-            .sim-output {
-                min-height: 500px;
-            }
-        }
-        
-        @media (max-width: 600px) {
-            .nav-links {
-                display: none; /* Simple hide for mobile in this demo */
-            }
-        
-            .grid-3 {
-                grid-template-columns: 1fr;
-            }
-        
-            .tabs {
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-        
-            .form-group label {
-                font-size: 0.8rem;
-            }
+
+        /* Feature Icon adjustment */
+        .feature-card svg {
+            color: var(--accent-secondary);
+            margin-bottom: 1rem;
         }
     </style>
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 <!-- Generated Images:
      - game-theory-hero.png: Abstract 3D visualization of strategic game theory. Glowing geometric nodes representing agents (players) are connected by tension lines forming a complex network graph. In the background, translucent floating planes display mathematical payoff matrices and probability curves. The lighting is dramatic, using deep slate blues (#0f172a) as the void, with neon purple (#a855f7) and cyan (#06b6d4) highlights indicating optimal paths and equilibrium points. Cinematic, high-tech, data-driven aesthetic.
      - decision-tree-visualization.png: A high-tech, isometric 3D representation of a strategic decision tree. A central root node glows in bright cyan, branching out into multiple intricate pathways (strategies) that glow neon purple. The paths terminate in floating glass-like data blocks representing payoffs. The background is a deep dark blue void with faint digital grid lines. The style is clean, futuristic, and glassmorphic, emphasizing logic and flow.
@@ -1156,183 +328,176 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
         <div class="hero-visual">
             <img src="assets/images/game-theory-hero.png" alt="Abstract 3D visualization of strategic game theory with glowing nodes and payoff matrices" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
-        <div class="container">
-            <div class="hero-content">
-                <h1>Game Theory Analyst</h1>
-                <p class="subtitle">
-                    Perform comprehensive strategic analysis. Identify Nash equilibria, construct payoff matrices, and derive optimal strategies for complex multi-agent scenarios.
-                </p>
-                <a href="#simulator" class="btn">Try the Simulator</a>
-            </div>
+        <div class="hero-content">
+            <h1>Game Theory Analyst</h1>
+            <p class="subtitle">
+                Perform comprehensive strategic analysis. Identify Nash equilibria, construct payoff matrices, and derive optimal strategies for complex multi-agent scenarios.
+            </p>
+            <a href="#simulator" class="cta-button">Try the Simulator</a>
         </div>
     </section>
 
     <!-- Features Grid -->
     <section id="features" class="features">
-        <div class="container">
-            <h2 class="section-title">Capabilities</h2>
-            <div class="grid-3">
-                <!-- Feature 1 -->
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                    </div>
-                    <h3>Nash Equilibria</h3>
-                    <p>Identifies pure and mixed strategy equilibria where no player can benefit by unilaterally deviating.</p>
-                    <img src="assets/images/nash-equilibrium-concept.png" alt="Abstract 3D art representing Nash Equilibrium balance" style="width: 100%; height: auto; border-radius: 4px; margin-top: 1rem; opacity: 0.9;">
-                </div>
-                <!-- Feature 2 -->
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                    </div>
-                    <h3>Payoff Matrices</h3>
-                    <p>Automatically constructs detailed payoff matrices for all strategy combinations based on scenario descriptions.</p>
-                </div>
-                <!-- Feature 3 -->
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    </div>
-                    <h3>Strategic Recommendations</h3>
-                    <p>Provides actionable advice for each player, including optimal moves, risk assessments, and contingent strategies.</p>
-                </div>
-                <!-- Feature 4 -->
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                    </div>
-                    <h3>Repeated Games</h3>
-                    <p>Analyzes long-term dynamics, trigger strategies, and reputation effects in iterated game scenarios.</p>
-                </div>
-                <!-- Feature 5 -->
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    </div>
-                    <h3>Pareto Optimality</h3>
-                    <p>Finds outcomes where resources are allocated most efficiently, highlighting cooperation opportunities.</p>
-                </div>
-                <!-- Feature 6 -->
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                    </div>
-                    <h3>Dominant Strategies</h3>
-                    <p>Detects strictly and weakly dominant strategies to simplify complex decision trees.</p>
-                </div>
+        <h2>Capabilities</h2>
+        <div class="features-grid">
+            <!-- Feature 1 -->
+            <div class="feature-card">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <h3>Nash Equilibria</h3>
+                <p>Identifies pure and mixed strategy equilibria where no player can benefit by unilaterally deviating.</p>
+                <img src="assets/images/nash-equilibrium-concept.png" alt="Abstract 3D art representing Nash Equilibrium balance" style="width: 100%; height: auto; border-radius: 4px; margin-top: 1rem; opacity: 0.9;">
+            </div>
+            <!-- Feature 2 -->
+            <div class="feature-card">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                <h3>Payoff Matrices</h3>
+                <p>Automatically constructs detailed payoff matrices for all strategy combinations based on scenario descriptions.</p>
+            </div>
+            <!-- Feature 3 -->
+            <div class="feature-card">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <h3>Strategic Recommendations</h3>
+                <p>Provides actionable advice for each player, including optimal moves, risk assessments, and contingent strategies.</p>
+            </div>
+            <!-- Feature 4 -->
+            <div class="feature-card">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <h3>Repeated Games</h3>
+                <p>Analyzes long-term dynamics, trigger strategies, and reputation effects in iterated game scenarios.</p>
+            </div>
+            <!-- Feature 5 -->
+            <div class="feature-card">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <h3>Pareto Optimality</h3>
+                <p>Finds outcomes where resources are allocated most efficiently, highlighting cooperation opportunities.</p>
+            </div>
+            <!-- Feature 6 -->
+            <div class="feature-card">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                <h3>Dominant Strategies</h3>
+                <p>Detects strictly and weakly dominant strategies to simplify complex decision trees.</p>
             </div>
         </div>
     </section>
 
     <!-- Simulator Section -->
     <section id="simulator" class="simulator">
-        <div class="container">
-            <h2 class="section-title">Interactive Simulator</h2>
-            <div class="sim-container">
                 
-                <!-- Left: Configuration -->
-                <div class="sim-config">
-                    <form id="simForm">
-                        <div class="form-group">
-                            <label for="scenario">Game Scenario</label>
-                            <textarea id="scenario" class="form-control" placeholder="Describe the situation (e.g., Two companies competing for market share...)">Prisoner's Dilemma: Two criminals are arrested. They can either cooperate with each other (stay silent) or defect (betray the other).</textarea>
-                        </div>
 
-                        <div class="form-group">
-                            <label for="players">Players (comma separated)</label>
-                            <input type="text" id="players" class="form-control" value="Prisoner A, Prisoner B">
-                        </div>
 
-                        <div class="form-group">
-                            <label for="gameType">Game Type</label>
-                            <select id="gameType" class="form-control">
-                                <option value="non-cooperative" selected>Non-Cooperative</option>
-                                <option value="cooperative">Cooperative</option>
-                                <option value="zero-sum">Zero-Sum</option>
-                                <option value="sequential">Sequential</option>
-                            </select>
-                        </div>
 
-                        <div class="form-group">
-                            <label>Analysis Options</label>
-                            <div class="toggle-group">
-                                <div class="toggle-item">
-                                    <span>Payoff Matrix</span>
-                                    <label class="switch">
-                                        <input type="checkbox" id="optMatrix" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="toggle-item">
-                                    <span>Nash Equilibria</span>
-                                    <label class="switch">
-                                        <input type="checkbox" id="optNash" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="toggle-item">
-                                    <span>Dominant Strategies</span>
-                                    <label class="switch">
-                                        <input type="checkbox" id="optDominant" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="toggle-item">
-                                    <span>Pareto Optimal</span>
-                                    <label class="switch">
-                                        <input type="checkbox" id="optPareto" checked>
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="toggle-item">
-                                    <span>Repeated Game</span>
-                                    <label class="switch">
-                                        <input type="checkbox" id="optRepeated">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            
+            <!-- Left: Configuration -->
+            <div class="sim-controls">
+                <form id="simForm">
+                    <div class="control-group">
+                        <label for="scenario">Game Scenario</label>
+                        <textarea id="scenario" placeholder="Describe the situation (e.g., Two companies competing for market share...)">Prisoner's Dilemma: Two criminals are arrested. They can either cooperate with each other (stay silent) or defect (betray the other).</textarea>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="players">Players (comma separated)</label>
+                        <input type="text" id="players" value="Prisoner A, Prisoner B">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="gameType">Game Type</label>
+                        <select id="gameType">
+                            <option value="non-cooperative" selected>Non-Cooperative</option>
+                            <option value="cooperative">Cooperative</option>
+                            <option value="zero-sum">Zero-Sum</option>
+                            <option value="sequential">Sequential</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Analysis Options</label>
+                        <div class="toggle-group">
+                            <div class="toggle-item">
+                                <span>Payoff Matrix</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="optMatrix" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+
+
+
+
+
+
+                            <div class="toggle-item">
+                                <span>Nash Equilibria</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="optNash" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Dominant Strategies</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="optDominant" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Pareto Optimal</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="optPareto" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="toggle-item">
+                                <span>Repeated Game</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="optRepeated">
+                                    <span class="slider"></span>
+                                </label>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="form-group" id="iterationsGroup" style="display:none;">
-                            <label for="iterations">Iterations: <span id="iterVal">10</span></label>
-                            <input type="range" id="iterations" class="form-control" min="2" max="100" value="10">
-                        </div>
+                    <div class="control-group" id="iterationsGroup" style="display:none;">
+                        <label for="iterations">Iterations: <span id="iterVal">10</span></label>
+                        <input type="range" id="iterations" min="2" max="100" value="10">
+                    </div>
 
-                        <button type="submit" class="run-btn" id="runBtn">Run Analysis</button>
-                    </form>
+                    <button type="submit" class="run-button" id="runBtn">Run Analysis</button>
+                </form>
+            </div>
+
+            <!-- Right: Output -->
+            <div class="sim-output">
+                <div class="tabs">
+                    <button class="tab active" data-tab="overview">Overview</button>
+                    <button class="tab" data-tab="matrix">Payoff Matrix</button>
+                    <button class="tab" data-tab="analysis">Analysis</button>
+                    <button class="tab" data-tab="logs">Logs</button>
                 </div>
 
-                <!-- Right: Output -->
-                <div class="sim-output">
-                    <div class="tabs">
-                        <button class="tab-btn active" data-tab="overview">Overview</button>
-                        <button class="tab-btn" data-tab="matrix">Payoff Matrix</button>
-                        <button class="tab-btn" data-tab="analysis">Analysis</button>
-                        <button class="tab-btn" data-tab="logs">Logs</button>
+                <div id="overview" class="tab-content active">
+                    <div class="analysis-block">
+                        <h4>Ready to Analyze</h4>
+                        <p>Configure the game scenario on the left and click "Run Analysis" to generate insights.</p>
                     </div>
+                    <img src="assets/images/decision-tree-visualization.png" alt="Isometric 3D representation of a strategic decision tree" style="width: 100%; height: auto; border-radius: 8px; margin-top: 1rem; opacity: 0.9; border: 1px solid rgba(255,255,255,0.1);">
+                </div>
 
-                    <div id="overview" class="tab-content active">
-                        <div class="analysis-block">
-                            <h4>Ready to Analyze</h4>
-                            <p>Configure the game scenario on the left and click "Run Analysis" to generate insights.</p>
-                        </div>
-                        <img src="assets/images/decision-tree-visualization.png" alt="Isometric 3D representation of a strategic decision tree" style="width: 100%; height: auto; border-radius: 8px; margin-top: 1rem; opacity: 0.9; border: 1px solid rgba(255,255,255,0.1);">
-                    </div>
+                <div id="matrix" class="tab-content">
+                    <p class="text-muted">Matrix will be generated after analysis.</p>
+                </div>
 
-                    <div id="matrix" class="tab-content">
-                        <p class="text-muted">Matrix will be generated after analysis.</p>
-                    </div>
+                <div id="analysis" class="tab-content">
+                    <p class="text-muted">Results will appear here.</p>
+                </div>
 
-                    <div id="analysis" class="tab-content">
-                        <p class="text-muted">Results will appear here.</p>
-                    </div>
-
-                    <div id="logs" class="tab-content">
-                        <div class="log-terminal" id="logContainer">
-                            <div class="log-entry">> System initialized. Waiting for input...</div>
-                        </div>
+                <div id="logs" class="tab-content">
+                    <div class="log-terminal" id="logContainer">
+                        <div class="log-entry">> System initialized. Waiting for input...</div>
                     </div>
                 </div>
             </div>
@@ -1341,17 +506,15 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
 
     <!-- Use Cases -->
     <section id="use-cases" class="use-cases">
-        <div class="container">
-            <h2 class="section-title">When to Use</h2>
-            <div class="use-case-list">
-                <div class="use-case-tag">Competitive Market Analysis</div>
-                <div class="use-case-tag">Salary Negotiations</div>
-                <div class="use-case-tag">Geopolitical Conflict Resolution</div>
-                <div class="use-case-tag">Auction Strategy</div>
-                <div class="use-case-tag">Supply Chain Coordination</div>
-                <div class="use-case-tag">Pricing Wars</div>
-                <div class="use-case-tag">Voting Systems</div>
-            </div>
+        <h2 style="text-align: center; margin-bottom: 2rem;">When to Use</h2>
+        <div class="use-case-list">
+            <div class="use-case-tag">Competitive Market Analysis</div>
+            <div class="use-case-tag">Salary Negotiations</div>
+            <div class="use-case-tag">Geopolitical Conflict Resolution</div>
+            <div class="use-case-tag">Auction Strategy</div>
+            <div class="use-case-tag">Supply Chain Coordination</div>
+            <div class="use-case-tag">Pricing Wars</div>
+            <div class="use-case-tag">Voting Systems</div>
         </div>
     </section>
 
@@ -1365,7 +528,7 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Tab Switching Logic
-            const tabs = document.querySelectorAll('.tab-btn');
+            const tabs = document.querySelectorAll('.tab');
             const contents = document.querySelectorAll('.tab-content');
 
             tabs.forEach(tab => {
@@ -1540,7 +703,7 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
         document.addEventListener('DOMContentLoaded', () => {
             // --- Tab Switching Logic ---
             // Handles switching between Overview, Payoff Matrix, Analysis, and Logs tabs
-            const tabs = document.querySelectorAll('.tab-btn');
+            const tabs = document.querySelectorAll('.tab');
             const contents = document.querySelectorAll('.tab-content');
         
             tabs.forEach(tab => {

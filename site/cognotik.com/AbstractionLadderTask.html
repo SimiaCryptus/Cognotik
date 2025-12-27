@@ -19,49 +19,11 @@
     -->
 
     <style>
-        :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --accent-primary: #8b5cf6; /* Violet for Reasoning */
-            --accent-secondary: #06b6d4; /* Cyan */
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-        }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-sans);
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-        }
 
-        /* Hero Section */
-        .hero {
-            padding: 6rem 2rem;
-            text-align: center;
-            background: radial-gradient(circle at top center, #1e1b4b 0%, var(--bg-dark) 70%);
-            position: relative;
-            overflow: hidden;
-        }
 
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            background: linear-gradient(to right, var(--accent-secondary), var(--accent-primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
 
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            max-width: 800px;
-            margin: 0 auto 2rem;
-        }
+        /* Page Specific Styles */
 
         .hero-visual {
             width: 100%;
@@ -84,43 +46,10 @@
             letter-spacing: 1px;
         }
 
-        .cta-button {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            color: white;
-            font-weight: 600;
-            border-radius: 9999px;
-            text-decoration: none;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
 
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
-        }
 
-        /* Features Grid */
-        .features {
-            padding: 4rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
 
-        .feature-card {
-            background: var(--bg-card);
-            padding: 2rem;
-            border-radius: 1rem;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: border-color 0.3s;
-        }
 
-        .feature-card:hover {
-            border-color: var(--accent-primary);
-        }
 
         .feature-icon {
             width: 48px;
@@ -130,77 +59,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-primary);
-        }
 
-        .feature-card h3 {
-            margin: 0 0 1rem;
-            font-size: 1.25rem;
-        }
 
-        .feature-card p {
-            color: var(--text-muted);
-            margin: 0;
-        }
 
-        /* Simulator */
-        .simulator {
-            padding: 4rem 2rem;
-            background: #0b1120;
-        }
 
-        .sim-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 2rem;
-            background: var(--bg-card);
-            border-radius: 1.5rem;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
 
-        .sim-controls {
-            padding: 2rem;
-            background: rgba(0,0,0,0.2);
-            border-right: 1px solid rgba(255,255,255,0.05);
-        }
 
-        .sim-controls h2 {
-            margin-top: 0;
-            margin-bottom: 2rem;
-            font-size: 1.5rem;
-        }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-            color: var(--text-muted);
-        }
 
-        .form-control {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--bg-dark);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 0.5rem;
-            color: var(--text-main);
-            font-family: var(--font-sans);
-            transition: border-color 0.2s;
-            box-sizing: border-box;
-        }
 
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-primary);
+            margin: 0 auto 1.5rem;
+            color: var(--accent-color);
         }
 
         .toggle-group {
@@ -213,14 +83,14 @@
         .toggle-switch {
             width: 48px;
             height: 24px;
-            background: #334155;
+            background: var(--border-color);
             border-radius: 9999px;
             position: relative;
             transition: background 0.3s;
         }
 
         .toggle-switch.active {
-            background: var(--accent-primary);
+            background: var(--accent-color);
         }
 
         .toggle-switch::after {
@@ -239,81 +109,23 @@
             transform: translateX(24px);
         }
 
-        .run-btn {
-            width: 100%;
-            padding: 1rem;
-            background: var(--accent-primary);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 1rem;
-            transition: background 0.2s;
-        }
 
-        .run-btn:hover {
-            background: #7c3aed;
-        }
 
-        .sim-output {
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 600px;
-        }
 
-        .tabs {
-            display: flex;
-            background: rgba(0,0,0,0.2);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
 
-        .tab {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            color: var(--text-muted);
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
 
-        .tab:hover {
-            color: var(--text-main);
-        }
 
-        .tab.active {
-            color: var(--accent-secondary);
-            border-bottom-color: var(--accent-secondary);
-            background: rgba(6, 182, 212, 0.05);
-        }
 
-        .output-content {
-            padding: 2rem;
-            overflow-y: auto;
-            flex: 1;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.9rem;
-        }
 
-        .output-pane {
-            display: none;
-        }
 
-        .output-pane.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        input[type="range"] { width: 100%; }
 
         .markdown-mock h3 { color: var(--accent-secondary); margin-top: 1.5rem; }
         .markdown-mock ul { padding-left: 1.5rem; color: var(--text-muted); }
         .markdown-mock li { margin-bottom: 0.5rem; }
-        .markdown-mock code { background: rgba(255,255,255,0.1); padding: 0.2rem 0.4rem; border-radius: 4px; color: #e2e8f0; }
-        .markdown-mock pre { background: #0f172a; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); }
+        .markdown-mock code { background: rgba(255,255,255,0.1); padding: 0.2rem 0.4rem; border-radius: 4px; color: var(--text-color); }
+        .markdown-mock pre { background: var(--background-color); padding: 1rem; border-radius: 0.5rem; overflow-x: auto; border: 1px solid var(--border-color); }
 
         /* Use Cases */
         .use-cases {
@@ -342,7 +154,7 @@
 
         .use-case-item h4 {
             margin: 0 0 0.5rem;
-            color: var(--text-main);
+            color: var(--text-color);
         }
 
         .use-case-item p {
@@ -351,14 +163,6 @@
             font-size: 0.9rem;
         }
 
-        @media (max-width: 768px) {
-            .sim-container {
-                grid-template-columns: 1fr;
-            }
-            .sim-output {
-                height: 400px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -370,7 +174,7 @@
         <!-- Hero Section -->
         <section class="hero">
             <h1>Abstraction Ladder Analysis</h1>
-            <p>Traverse abstraction levels to uncover design patterns, architectural insights, and refactoring opportunities by generalizing up and concretizing down.</p>
+            <p class="subtitle">Traverse abstraction levels to uncover design patterns, architectural insights, and refactoring opportunities by generalizing up and concretizing down.</p>
             <div class="hero-visual">
                 <!-- Placeholder for 3D Visual -->
             </div>
@@ -379,6 +183,7 @@
 
         <!-- Features Grid -->
         <section class="features">
+            <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/><path d="m5 19 7 7 7-7"/></svg>
@@ -400,36 +205,37 @@
                 <h3>Context Aware</h3>
                 <p>Ingests specific input files and related context to provide relevant, codebase-specific insights.</p>
             </div>
+            </div>
         </section>
 
         <!-- Interactive Simulator -->
         <section id="simulator" class="simulator">
-            <div class="sim-container">
+            <div class="simulator-container">
                 <!-- Left: Inputs -->
                 <div class="sim-controls">
                     <h2>Configuration</h2>
                     <form id="sim-form" onsubmit="return false;">
-                        <div class="form-group">
+                        <div class="control-group">
                             <label for="concept">Concrete Concept</label>
-                            <input type="text" id="concept" class="form-control" value="Repository Pattern" placeholder="e.g. Singleton Pattern">
+                            <input type="text" id="concept" value="Repository Pattern" placeholder="e.g. Singleton Pattern">
                         </div>
 
-                        <div class="form-group">
+                        <div class="control-group">
                             <label for="direction">Direction</label>
-                            <select id="direction" class="form-control">
+                            <select id="direction">
                                 <option value="both">Both (Up & Down)</option>
                                 <option value="up">Up (Generalize)</option>
                                 <option value="down">Down (Concretize)</option>
                             </select>
                         </div>
 
-                        <div class="form-group">
+                        <div class="control-group">
                             <label for="levels">Levels (1-5)</label>
-                            <input type="range" id="levels" min="1" max="5" value="3" class="form-control" oninput="document.getElementById('level-val').innerText = this.value">
+                            <input type="range" id="levels" min="1" max="5" value="3" oninput="document.getElementById('level-val').innerText = this.value">
                             <div style="text-align: right; font-size: 0.8rem; color: var(--text-muted);">Value: <span id="level-val">3</span></div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="control-group">
                             <div class="toggle-group" onclick="togglePatterns()">
                                 <label style="margin:0; cursor:pointer;">Identify Patterns</label>
                                 <div id="pattern-toggle" class="toggle-switch active"></div>
@@ -437,7 +243,7 @@
                             <input type="hidden" id="identify_patterns" value="true">
                         </div>
 
-                        <button class="run-btn" onclick="runSimulation()">Run Analysis</button>
+                        <button class="run-button" onclick="runSimulation()">Run Analysis</button>
                     </form>
                 </div>
 
@@ -450,12 +256,12 @@
                         <div class="tab" onclick="switchTab('patterns')">Patterns</div>
                     </div>
 
-                    <div id="overview" class="output-pane active output-content markdown-mock">
+                    <div id="overview" class="tab-content active markdown-mock">
                         <!-- Content populated by JS -->
                     </div>
-                    <div id="upward" class="output-pane output-content markdown-mock"></div>
-                    <div id="downward" class="output-pane output-content markdown-mock"></div>
-                    <div id="patterns" class="output-pane output-content markdown-mock"></div>
+                    <div id="upward" class="tab-content markdown-mock"></div>
+                    <div id="downward" class="tab-content markdown-mock"></div>
+                    <div id="patterns" class="tab-content markdown-mock"></div>
                 </div>
             </div>
         </section>
@@ -501,7 +307,7 @@
             event.target.classList.add('active');
 
             // Update Panes
-            document.querySelectorAll('.output-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(p => p.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
         }
 
@@ -512,7 +318,7 @@
             const patterns = isPatternEnabled;
 
             // Show Loading State
-            const panes = document.querySelectorAll('.output-content');
+            const panes = document.querySelectorAll('.tab-content');
             panes.forEach(p => p.innerHTML = '<div style="color: var(--accent-secondary); text-align:center; margin-top: 2rem;">Analyzing... <span style="animation: blink 1s infinite">_</span></div>');
 
             setTimeout(() => {

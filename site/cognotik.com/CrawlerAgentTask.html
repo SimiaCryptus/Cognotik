@@ -12,68 +12,46 @@ No literal spiders, but rather a structural abstraction of network traversal and
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crawler Agent | Cognotik</title>
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link rel="stylesheet" href="assets/styles/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            /* Theme Colors */
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-input: #334155;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-primary: #0ea5e9; /* Cyan for Online/Search */
+            /* Page Specific Theme Overrides (Cyan) */
+            --accent-color: #0ea5e9;
+            --accent-hover: #0284c7;
+            --accent-secondary: #06b6d4;
             --accent-glow: rgba(14, 165, 233, 0.5);
-            --border-color: #334155;
+            --accent-dim: rgba(14, 165, 233, 0.1);
             
-            /* Typography */
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-serif: 'Cinzel', serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            
-            /* Spacing */
-            --container-width: 1200px;
+            /* Layout Overrides */
             --header-height: 70px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            
+            /* Local Aliases for existing code compatibility or specific needs */
+            --bg-dark: var(--background-color);
+            --bg-card: var(--surface-color);
+            --text-primary: var(--text-color);
+            --text-secondary: var(--text-muted);
+            --border-color: #334155; /* Matches main.css but useful to have explicit */
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
 
         /* Utilities */
         .container {
-            max-width: var(--container-width);
+            max-width: var(--container-max-width);
             margin: 0 auto;
             padding: 0 20px;
         }
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            border: none;
-        }
+        /* Button Extensions */
 
         .btn-primary {
-            background: var(--accent-primary);
+            background: var(--accent-color);
             color: white;
             box-shadow: 0 0 15px var(--accent-glow);
         }
@@ -108,7 +86,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
             display: flex;
             align-items: center;
             gap: 10px;
-            font-family: var(--font-serif);
+            font-family: var(--font-family-serif);
             font-weight: 700;
             font-size: 1.2rem;
             color: var(--text-primary);
@@ -127,7 +105,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
         }
 
         .nav-links a:hover {
-            color: var(--accent-primary);
+            color: var(--accent-color);
         }
 
         /* Hero Section */
@@ -136,6 +114,8 @@ No literal spiders, but rather a structural abstraction of network traversal and
             padding-bottom: 80px;
             position: relative;
             overflow: hidden;
+            text-align: left; /* Override main.css center */
+            background: none; /* Override main.css gradient */
         }
 
         .hero-content {
@@ -146,11 +126,11 @@ No literal spiders, but rather a structural abstraction of network traversal and
         }
 
         .hero-text h1 {
-            font-family: var(--font-serif);
+            font-family: var(--font-family-serif);
             font-size: 3.5rem;
             line-height: 1.1;
             margin-bottom: 20px;
-            background: linear-gradient(to right, #fff, var(--accent-primary));
+            background: linear-gradient(to right, #fff, var(--accent-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -179,9 +159,9 @@ No literal spiders, but rather a structural abstraction of network traversal and
             position: absolute;
             width: 10px;
             height: 10px;
-            background: var(--accent-primary);
+            background: var(--accent-color);
             border-radius: 50%;
-            box-shadow: 0 0 10px var(--accent-primary);
+            box-shadow: 0 0 10px var(--accent-color);
             animation: float 6s infinite ease-in-out;
             z-index: 1;
         }
@@ -189,7 +169,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
         .visual-line {
             position: absolute;
             height: 1px;
-            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
             opacity: 0.3;
             transform-origin: left center;
             z-index: 1;
@@ -206,25 +186,17 @@ No literal spiders, but rather a structural abstraction of network traversal and
             background: linear-gradient(to bottom, var(--bg-dark), #131c2e);
         }
 
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
-        }
 
         .feature-card {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 30px;
-            border-radius: 16px;
+            /* Extend main.css feature-card */
             transition: transform 0.3s;
+            background: rgba(30, 41, 59, 0.5);
         }
 
         .feature-card:hover {
             transform: translateY(-5px);
             background: rgba(30, 41, 59, 0.8);
-            border-color: var(--accent-primary);
+            border-color: var(--accent-color);
         }
 
         .feature-icon {
@@ -235,83 +207,26 @@ No literal spiders, but rather a structural abstraction of network traversal and
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--accent-primary);
+            color: var(--accent-color);
             margin-bottom: 20px;
         }
 
-        .feature-card h3 {
-            margin-bottom: 10px;
-            font-size: 1.2rem;
-        }
 
-        .feature-card p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
 
         /* Simulator Section */
-        .simulator {
-            padding: 80px 0;
-        }
 
         .simulator-container {
-            background: var(--bg-card);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 350px 1fr;
+            /* Extend main.css */
             min-height: 700px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
         }
 
-        /* Simulator Left: Inputs */
-        .sim-config {
-            padding: 30px;
-            border-right: 1px solid var(--border-color);
-            background: rgba(15, 23, 42, 0.5);
-            overflow-y: auto;
-        }
 
-        .sim-config h3 {
-            margin-bottom: 20px;
-            font-family: var(--font-serif);
-            color: var(--accent-primary);
-        }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
 
-        .form-control {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 10px 12px;
-            border-radius: 6px;
-            font-family: var(--font-sans);
-            font-size: 0.9rem;
-            transition: border-color 0.2s;
-        }
 
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-        }
 
-        textarea.form-control {
-            resize: vertical;
-            min-height: 80px;
-        }
 
         .range-wrap {
             display: flex;
@@ -320,61 +235,24 @@ No literal spiders, but rather a structural abstraction of network traversal and
         }
 
         .range-value {
-            font-family: var(--font-mono);
+            font-family: var(--font-family-mono);
             font-size: 0.85rem;
-            color: var(--accent-primary);
+            color: var(--accent-color);
             width: 30px;
         }
 
-        /* Simulator Right: Output */
-        .sim-output {
-            display: flex;
-            flex-direction: column;
-            background: #0b1221;
-        }
 
-        .sim-tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            background: var(--bg-card);
-        }
 
-        .sim-tab {
-            padding: 15px 25px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
 
-        .sim-tab:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.02);
-        }
 
-        .sim-tab.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
-            background: rgba(14, 165, 233, 0.05);
-        }
 
-        .sim-content {
+        /* Override main.css tab-content to allow flex growth if needed, or just styling */
+        .tab-content {
             flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            position: relative;
-        }
 
-        .tab-pane {
-            display: none;
-            height: 100%;
-        }
 
-        .tab-pane.active {
-            display: block;
+            height: auto; /* Override fixed height from main.css if we want it to fill */
+            min-height: 400px;
         }
 
         /* Log Styling */
@@ -382,6 +260,8 @@ No literal spiders, but rather a structural abstraction of network traversal and
             margin-bottom: 5px;
             display: flex;
             gap: 10px;
+            font-family: var(--font-family-mono);
+            font-size: 0.9em;
         }
 
         .log-time {
@@ -392,18 +272,18 @@ No literal spiders, but rather a structural abstraction of network traversal and
         .log-success { color: #4ade80; }
         .log-warn { color: #facc15; }
         .log-error { color: #f87171; }
-        .log-link { color: var(--accent-primary); text-decoration: underline; cursor: pointer; }
+        .log-link { color: var(--accent-color); text-decoration: underline; cursor: pointer; }
 
         /* Markdown Output Styling */
         .markdown-preview {
             color: #e2e8f0;
             line-height: 1.7;
         }
-        .markdown-preview h1 { font-size: 1.5rem; margin-bottom: 1rem; color: var(--accent-primary); }
+        .markdown-preview h1 { font-size: 1.5rem; margin-bottom: 1rem; color: var(--accent-color); }
         .markdown-preview h2 { font-size: 1.2rem; margin-top: 1.5rem; margin-bottom: 0.8rem; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
         .markdown-preview p { margin-bottom: 1rem; }
         .markdown-preview ul { margin-left: 20px; margin-bottom: 1rem; }
-        .markdown-preview a { color: var(--accent-primary); text-decoration: none; }
+        .markdown-preview a { color: var(--accent-color); text-decoration: none; }
         .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px; font-size: 0.85em; }
 
         /* Workflow Section */
@@ -452,8 +332,8 @@ No literal spiders, but rather a structural abstraction of network traversal and
         }
 
         .step:hover .step-icon {
-            border-color: var(--accent-primary);
-            color: var(--accent-primary);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
             box-shadow: 0 0 15px var(--accent-glow);
         }
 
@@ -483,7 +363,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
             background: linear-gradient(145deg, var(--bg-card), var(--bg-dark));
             padding: 25px;
             border-radius: 12px;
-            border-left: 4px solid var(--accent-primary);
+            border-left: 4px solid var(--accent-color);
         }
 
         .use-case-card h4 {
@@ -522,7 +402,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
                 height: auto;
             }
 
-            .sim-config {
+            .sim-controls {
                 border-right: none;
                 border-bottom: 1px solid var(--border-color);
                 max-height: 400px;
@@ -543,840 +423,119 @@ No literal spiders, but rather a structural abstraction of network traversal and
         }
     </style>
 
-    <style>
-        /* 
-         * COGNOTIK PRODUCT PAGE STYLES
-         * Theme: Future-Professional (Dark Mode)
-         * Primary Accent: Cyan (#0ea5e9)
-         */
-        
-        /* --- Root Variables & Theme Configuration --- */
-        :root {
-            /* Color Palette */
-            --bg-dark: #0f172a;       /* Deep Slate Void */
-            --bg-card: #1e293b;       /* Lighter Slate for cards */
-            --bg-input: #334155;      /* Input backgrounds */
-            --bg-panel: #0b1221;      /* Darker panel backgrounds */
-        
-            --text-primary: #f8fafc;  /* White/Off-white */
-            --text-secondary: #94a3b8; /* Muted Blue-Grey */
-        
-            --accent-primary: #0ea5e9; /* Electric Blue/Cyan */
-            --accent-glow: rgba(14, 165, 233, 0.5);
-            --accent-dim: rgba(14, 165, 233, 0.1);
-        
-            --border-color: #334155;
-            --success: #4ade80;
-            --warning: #facc15;
-            --error: #f87171;
-        
-            /* Typography */
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-serif: 'Cinzel', serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        
-            /* Layout Dimensions */
-            --container-width: 1200px;
-            --header-height: 70px;
-            --radius-md: 8px;
-            --radius-lg: 16px;
-            --radius-xl: 20px;
-        }
-        
-        /* --- Global Reset & Base Styles --- */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            line-height: 1.6;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--bg-input);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-secondary);
-        }
-        
-        /* --- Layout Utilities --- */
-        .container {
-            max-width: var(--container-width);
-            margin: 0 auto;
-            padding: 0 20px;
-            width: 100%;
-        }
-        
-        /* --- Button Components --- */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 24px;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-decoration: none;
-            border: none;
-            letter-spacing: 0.02em;
-        }
-        
-        .btn-primary {
-            background: var(--accent-primary);
-            color: white;
-            box-shadow: 0 0 15px var(--accent-glow);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px var(--accent-glow), 0 0 5px var(--accent-primary);
-        }
-        
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-        
-        /* --- Navigation Bar --- */
-        nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            height: var(--header-height);
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-        }
-        
-        nav .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-family: var(--font-serif);
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: var(--text-primary);
-            letter-spacing: 0.05em;
-        }
-        
-        .logo svg {
-            color: var(--accent-primary);
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 32px;
-        }
-        
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: color 0.2s ease;
-            position: relative;
-        }
-        
-        .nav-links a:hover {
-            color: var(--accent-primary);
-        }
-        
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: var(--accent-primary);
-            transition: width 0.3s ease;
-        }
-        
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-        
-        /* --- Hero Section --- */
-        .hero {
-            padding-top: calc(var(--header-height) + 80px);
-            padding-bottom: 80px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        /* Background mesh effect for hero */
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 15% 50%, rgba(14, 165, 233, 0.08) 0%, transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.05) 0%, transparent 25%);
-            z-index: -1;
-        }
-        
-        .hero-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            align-items: center;
-        }
-        
-        .hero-text h1 {
-            font-family: var(--font-serif);
-            font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 24px;
-            background: linear-gradient(135deg, #fff 0%, var(--accent-primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 30px rgba(14, 165, 233, 0.2);
-        }
-        
-        .hero-text p {
-            font-size: 1.125rem;
-            color: var(--text-secondary);
-            margin-bottom: 32px;
-            max-width: 540px;
-            line-height: 1.7;
-        }
-        
-        .hero-visual {
-            position: relative;
-            height: 400px;
-            background: radial-gradient(circle at center, var(--bg-card), var(--bg-dark));
-            border-radius: var(--radius-xl);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        
-        /* Abstract Visual Animation Elements */
-        .visual-node {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: var(--accent-primary);
-            border-radius: 50%;
-            box-shadow: 0 0 15px var(--accent-primary);
-            animation: floatNode 6s infinite ease-in-out;
-            z-index: 2;
-        }
-        
-        .visual-line {
-            position: absolute;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-            opacity: 0.4;
-            transform-origin: left center;
-            z-index: 1;
-        }
-        
-        @keyframes floatNode {
-            0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
-            50% { transform: translateY(-20px) scale(1.2); opacity: 1; }
-        }
-        
-        /* --- Features Section --- */
-        .features {
-            padding: 100px 0;
-            background: linear-gradient(to bottom, var(--bg-dark), #131c2e);
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        
-        .features h2 {
-            text-align: center;
-            margin-bottom: 16px;
-            font-family: var(--font-serif);
-            font-size: 2rem;
-        }
-        
-        .features > .container > p {
-            text-align: center;
-            color: var(--text-secondary);
-            margin-bottom: 60px;
-            font-size: 1.1rem;
-        }
-        
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 30px;
-        }
-        
-        .feature-card {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 32px;
-            border-radius: var(--radius-lg);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.06), transparent 40%);
-            opacity: 0;
-            transition: opacity 0.5s;
-            pointer-events: none;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-            background: rgba(30, 41, 59, 0.8);
-            border-color: var(--accent-primary);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-        }
-        
-        .feature-card:hover::before {
-            opacity: 1;
-        }
-        
-        .feature-icon {
-            width: 56px;
-            height: 56px;
-            background: var(--accent-dim);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--accent-primary);
-            margin-bottom: 24px;
-            transition: transform 0.3s ease;
-        }
-        
-        .feature-card:hover .feature-icon {
-            transform: scale(1.1) rotate(5deg);
-            background: rgba(14, 165, 233, 0.2);
-        }
-        
-        .feature-card h3 {
-            margin-bottom: 12px;
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-        
-        .feature-card p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-        
-        /* --- Simulator Section --- */
-        .simulator {
-            padding: 80px 0;
-        }
-        
-        .simulator h2 {
-            margin-bottom: 30px;
-            font-family: var(--font-serif);
-            font-size: 2rem;
-        }
-        
-        .simulator-container {
-            background: var(--bg-card);
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 380px 1fr;
-            min-height: 750px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-        
-        /* Simulator Left: Configuration */
-        .sim-config {
-            padding: 32px;
-            border-right: 1px solid var(--border-color);
-            background: rgba(15, 23, 42, 0.6);
-            overflow-y: auto;
-        }
-        
-        .sim-config h3 {
-            margin-bottom: 24px;
-            font-family: var(--font-serif);
-            color: var(--accent-primary);
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .form-group {
-            margin-bottom: 24px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .form-control {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 12px 16px;
-            border-radius: var(--radius-md);
-            font-family: var(--font-sans);
-            font-size: 0.9rem;
-            transition: all 0.2s;
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px var(--accent-dim);
-        }
-        
-        textarea.form-control {
-            resize: vertical;
-            min-height: 100px;
-            line-height: 1.5;
-        }
-        
-        /* Range Slider Styling */
-        .range-wrap {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-        }
-        
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
-            border-radius: 50%;
-            background: var(--accent-primary);
-            cursor: pointer;
-            margin-top: -6px;
-            box-shadow: 0 0 10px var(--accent-glow);
-        }
-        
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 4px;
-            cursor: pointer;
-            background: var(--bg-input);
-            border-radius: 2px;
-        }
-        
-        .range-value {
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            color: var(--accent-primary);
-            min-width: 24px;
-            text-align: right;
-        }
-        
-        /* Checkbox Styling */
-        input[type="checkbox"] {
-            accent-color: var(--accent-primary);
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-        
-        /* Simulator Right: Output */
-        .sim-output {
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-panel);
-            position: relative;
-        }
-        
-        .sim-tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            background: var(--bg-card);
-        }
-        
-        .sim-tab {
-            padding: 16px 24px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .sim-tab:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.02);
-        }
-        
-        .sim-tab.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
-            background: var(--accent-dim);
-        }
-        
-        .sim-content {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            position: relative;
-        }
-        
-        .tab-pane {
-            display: none;
-            height: 100%;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .tab-pane.active {
-            display: block;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Log Styling */
-        .log-entry {
-            margin-bottom: 8px;
-            display: flex;
-            gap: 12px;
-            line-height: 1.5;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            padding-bottom: 4px;
-        }
-        
-        .log-time {
-            color: #64748b;
-            font-size: 0.85em;
-            min-width: 70px;
-        }
-        
-        .log-info { color: #94a3b8; }
-        .log-success { color: var(--success); }
-        .log-warn { color: var(--warning); }
-        .log-error { color: var(--error); }
-        
-        /* Markdown Output Styling */
-        .markdown-preview {
-            color: #e2e8f0;
-            line-height: 1.7;
-            font-family: var(--font-sans);
-        }
-        
-        .markdown-preview h1 { 
-            font-size: 1.75rem; 
-            margin-bottom: 1.5rem; 
-            color: var(--accent-primary);
-            font-family: var(--font-serif);
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-        }
-        
-        .markdown-preview h2 { 
-            font-size: 1.4rem; 
-            margin-top: 2rem; 
-            margin-bottom: 1rem; 
-            color: var(--text-primary);
-        }
-        
-        .markdown-preview p { 
-            margin-bottom: 1rem; 
-        }
-        
-        .markdown-preview ul { 
-            margin-left: 24px; 
-            margin-bottom: 1.5rem; 
-        }
-        
-        .markdown-preview li {
-            margin-bottom: 0.5rem;
-        }
-        
-        .markdown-preview a { 
-            color: var(--accent-primary); 
-            text-decoration: none; 
-            border-bottom: 1px dotted var(--accent-primary);
-        }
-        
-        .markdown-preview a:hover {
-            border-bottom-style: solid;
-        }
-        
-        .markdown-preview strong {
-            color: #fff;
-            font-weight: 600;
-        }
-        
-        /* Queue Stats Styling */
-        #queue-stats {
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-        }
-        
-        #queue-stats p {
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            padding-bottom: 5px;
-        }
-        
-        /* --- Workflow Section --- */
-        .workflow {
-            padding: 100px 0;
-            background: var(--bg-card);
-            position: relative;
-        }
-        
-        .workflow h2 {
-            text-align: center;
-            font-family: var(--font-serif);
-            font-size: 2rem;
-            margin-bottom: 60px;
-        }
-        
-        .workflow-steps {
-            display: flex;
-            justify-content: space-between;
-            position: relative;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        /* Connecting Line */
-        .workflow-steps::before {
-            content: '';
-            position: absolute;
-            top: 30px;
-            left: 40px;
-            right: 40px;
-            height: 2px;
-            background: var(--border-color);
-            z-index: 0;
-        }
-        
-        .step {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-            flex: 1;
-            padding: 0 10px;
-        }
-        
-        .step-icon {
-            width: 60px;
-            height: 60px;
-            background: var(--bg-dark);
-            border: 2px solid var(--border-color);
-            border-radius: 50%;
-            margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
-            font-weight: 700;
-            font-family: var(--font-mono);
-            font-size: 1.2rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 0 0 5px var(--bg-card); /* Mask line behind */
-        }
-        
-        .step:hover .step-icon {
-            border-color: var(--accent-primary);
-            color: var(--accent-primary);
-            box-shadow: 0 0 0 5px var(--bg-card), 0 0 20px var(--accent-glow);
-            transform: scale(1.1);
-        }
-        
-        .step h4 {
-            margin-bottom: 8px;
-            font-size: 1.1rem;
-            color: var(--text-primary);
-        }
-        
-        .step p {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-        
-        /* --- Use Cases Section --- */
-        .use-cases {
-            padding: 100px 0;
-        }
-        
-        .use-cases h2 {
-            margin-bottom: 40px;
-            font-family: var(--font-serif);
-            font-size: 2rem;
-        }
-        
-        .use-case-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
-        }
-        
-        .use-case-card {
-            background: linear-gradient(145deg, var(--bg-card), #162032);
-            padding: 30px;
-            border-radius: var(--radius-lg);
-            border: 1px solid rgba(255,255,255,0.03);
-            border-left: 4px solid var(--accent-primary);
-            transition: transform 0.3s ease;
-        }
-        
-        .use-case-card:hover {
-            transform: translateY(-5px);
-            background: linear-gradient(145deg, #253248, #1a253a);
-        }
-        
-        .use-case-card h4 {
-            margin-bottom: 12px;
-            font-size: 1.2rem;
-            color: var(--text-primary);
-        }
-        
-        .use-case-card p {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-        
-        /* --- Footer --- */
-        footer {
-            background: #020617;
-            padding: 60px 0;
-            text-align: center;
-            border-top: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-        
-        /* --- Responsive Design --- */
-        @media (max-width: 968px) {
-            .hero-content {
-                grid-template-columns: 1fr;
-                text-align: center;
-                gap: 40px;
-            }
-        
-            .hero-text p {
-                margin: 0 auto 30px;
-            }
-        
-            .hero-visual {
-                height: 300px;
-            }
-        
-            .simulator-container {
-                grid-template-columns: 1fr;
-                height: auto;
-                min-height: auto;
-            }
-        
-            .sim-config {
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-                max-height: 400px;
-            }
-        
-            .sim-output {
-                height: 500px;
-            }
-        
-            .workflow-steps {
-                flex-direction: column;
-                gap: 40px;
-            }
-        
-            .workflow-steps::before {
-                display: none;
-            }
-        
-            .step {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-        }
-        
-        @media (max-width: 600px) {
-            .hero-text h1 {
-                font-size: 2.5rem;
-            }
-        
-            .nav-links {
-                display: none; /* Simple hide for mobile, ideally hamburger menu */
-            }
-        
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 <!-- Generated Images:
      - crawler-agent-hero.png: A high-quality, abstract 3D illustration representing a digital crawler. The scene features a glowing, cybernetic web of fiber-optic lines in cyan (#0ea5e9) and electric blue connecting floating data nodes and geometric shapes against a deep slate void (#0f172a). The composition focuses on a central "hub" or "eye" that emits scanning rays. The style is "Future-Professional," clean, high-contrast, with a shallow depth of field. No literal spiders, but a structural abstraction of network traversal.
      - recursive-network-graph.png: A 3D visualization of a recursive network search. Glowing nodes branch out from a single seed point, creating a fractal-like tree structure of connections. The nodes vary in size and brightness (representing relevance). The color palette uses deep blues (#1e293b) for the background and bright neon cyan for the active connections. The aesthetic is technical and data-driven, suitable for illustrating the "Recursive Crawling" feature.
@@ -1409,7 +568,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
     <!-- Features Grid -->
     <section id="features" class="features">
         <div class="container">
-            <h2 style="text-align: center; margin-bottom: 10px; font-family: var(--font-serif);">Core Capabilities</h2>
+            <h2 style="text-align: center; margin-bottom: 10px; font-family: var(--font-family-serif);">Core Capabilities</h2>
             <p style="text-align: center; color: var(--text-secondary); margin-bottom: 40px;">Powered by advanced fetching and processing strategies.</p>
             
             <div class="features-grid">
@@ -1466,25 +625,25 @@ No literal spiders, but rather a structural abstraction of network traversal and
     <!-- Interactive Simulator -->
     <section id="simulator" class="simulator">
         <div class="container">
-            <h2 style="margin-bottom: 20px; font-family: var(--font-serif);">Task Simulator</h2>
+            <h2 style="margin-bottom: 20px; font-family: var(--font-family-serif);">Task Simulator</h2>
             <div class="simulator-container">
                 <!-- Left: Configuration -->
-                <div class="sim-config">
+                <div class="sim-controls">
                     <h3>Configuration</h3>
                     <form id="sim-form">
                         <div class="form-group">
                             <label for="search_query">Search Query</label>
-                            <input type="text" id="search_query" class="form-control" placeholder="e.g., Latest AI Frameworks 2025" value="Generative AI Trends 2025">
+                            <input type="text" id="search_query" placeholder="e.g., Latest AI Frameworks 2025" value="Generative AI Trends 2025">
                         </div>
 
                         <div class="form-group">
                             <label for="content_queries">Analysis Goal (Prompt)</label>
-                            <textarea id="content_queries" class="form-control" placeholder="Describe what to extract...">Summarize key technological breakthroughs and market predictions.</textarea>
+                            <textarea id="content_queries" placeholder="Describe what to extract...">Summarize key technological breakthroughs and market predictions.</textarea>
                         </div>
 
                         <div class="form-group">
                             <label for="seed_method">Seed Method</label>
-                            <select id="seed_method" class="form-control">
+                            <select id="seed_method">
                                 <option value="GoogleProxy" selected>GoogleProxy</option>
                                 <option value="DirectUrls">DirectUrls</option>
                                 <option value="SearchIO_Google_Scholar">Google Scholar</option>
@@ -1494,7 +653,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
 
                         <div class="form-group">
                             <label for="processing_strategy">Processing Strategy</label>
-                            <select id="processing_strategy" class="form-control">
+                            <select id="processing_strategy">
                                 <option value="DefaultSummarizer" selected>Default Summarizer</option>
                                 <option value="FactChecking">Fact Checking</option>
                                 <option value="JobMatching">Job Matching</option>
@@ -1505,14 +664,14 @@ No literal spiders, but rather a structural abstraction of network traversal and
                         <div class="form-group">
                             <label for="max_pages">Max Pages: <span id="max_pages_val" class="range-value">5</span></label>
                             <div class="range-wrap">
-                                <input type="range" id="max_pages" class="form-control" min="1" max="30" value="5">
+                                <input type="range" id="max_pages" min="1" max="30" value="5">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="max_depth">Max Depth: <span id="max_depth_val" class="range-value">1</span></label>
                             <div class="range-wrap">
-                                <input type="range" id="max_depth" class="form-control" min="0" max="5" value="1">
+                                <input type="range" id="max_depth" min="0" max="5" value="1">
                             </div>
                         </div>
 
@@ -1529,33 +688,33 @@ No literal spiders, but rather a structural abstraction of network traversal and
 
                 <!-- Right: Output -->
                 <div class="sim-output">
-                    <div class="sim-tabs">
-                        <div class="sim-tab active" data-tab="logs">Live Logs</div>
-                        <div class="sim-tab" data-tab="results">Final Report</div>
-                        <div class="sim-tab" data-tab="queue">Queue Stats</div>
+                    <div class="tabs">
+                        <div class="tab active" data-tab="logs">Live Logs</div>
+                        <div class="tab" data-tab="results">Final Report</div>
+                        <div class="tab" data-tab="queue">Queue Stats</div>
                     </div>
                     
-                    <div class="sim-content">
-                        <!-- Logs Tab -->
-                        <div id="logs" class="tab-pane active">
-                            <div class="log-entry"><span class="log-time">[System]</span> <span class="log-info">Ready to start simulation. Configure settings and click Run.</span></div>
-                        </div>
 
-                        <!-- Results Tab -->
-                        <div id="results" class="tab-pane">
-                            <div class="markdown-preview" id="markdown-output">
-                                <em>No results generated yet. Run the simulation to see output.</em>
-                            </div>
-                        </div>
 
-                        <!-- Queue Tab -->
-                        <div id="queue" class="tab-pane">
-                            <div id="queue-stats">
-                                <p><strong>Status:</strong> Idle</p>
-                                <p><strong>Queue Size:</strong> 0</p>
-                                <p><strong>Processed:</strong> 0</p>
-                                <p><strong>Errors:</strong> 0</p>
-                            </div>
+                    <!-- Logs Tab -->
+                    <div id="logs" class="tab-content active">
+                        <div class="log-entry"><span class="log-time">[System]</span> <span class="log-info">Ready to start simulation. Configure settings and click Run.</span></div>
+                    </div>
+
+                    <!-- Results Tab -->
+                    <div id="results" class="tab-content">
+                        <div class="markdown-preview" id="markdown-output">
+                            <em>No results generated yet. Run the simulation to see output.</em>
+                        </div>
+                    </div>
+
+                    <!-- Queue Tab -->
+                    <div id="queue" class="tab-content">
+                        <div id="queue-stats">
+                            <p><strong>Status:</strong> Idle</p>
+                            <p><strong>Queue Size:</strong> 0</p>
+                            <p><strong>Processed:</strong> 0</p>
+                            <p><strong>Errors:</strong> 0</p>
                         </div>
                     </div>
                 </div>
@@ -1566,7 +725,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
     <!-- Workflow Section -->
     <section id="workflow" class="workflow">
         <div class="container">
-            <h2 style="text-align: center; font-family: var(--font-serif);">Execution Pipeline</h2>
+            <h2 style="text-align: center; font-family: var(--font-family-serif);">Execution Pipeline</h2>
             <div class="workflow-steps">
                 <div class="step">
                     <div class="step-icon">1</div>
@@ -1604,7 +763,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
     <!-- Use Cases -->
     <section id="use-cases" class="use-cases">
         <div class="container">
-            <h2 style="margin-bottom: 30px; font-family: var(--font-serif);">When to Use</h2>
+            <h2 style="margin-bottom: 30px; font-family: var(--font-family-serif);">When to Use</h2>
             <div class="use-case-grid">
                 <div class="use-case-card">
                     <h4>Market Research</h4>
@@ -1644,8 +803,8 @@ No literal spiders, but rather a structural abstraction of network traversal and
         });
 
         // Tab Switching
-        const tabs = document.querySelectorAll('.sim-tab');
-        const panes = document.querySelectorAll('.tab-pane');
+        const tabs = document.querySelectorAll('.tab');
+        const panes = document.querySelectorAll('.tab-content');
 
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
@@ -1852,8 +1011,8 @@ No literal spiders, but rather a structural abstraction of network traversal and
         
             // 2. Tab Switching Logic
             // Handles switching between Logs, Results, and Queue tabs in the simulator output
-            const tabs = document.querySelectorAll('.sim-tab');
-            const panes = document.querySelectorAll('.tab-pane');
+            const tabs = document.querySelectorAll('.tab');
+            const panes = document.querySelectorAll('.tab-content');
         
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {

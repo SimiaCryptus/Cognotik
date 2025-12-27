@@ -12,39 +12,16 @@
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-input: #334155;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
+            /* Page-specific accents */
             --accent-primary: #38bdf8; /* Cyan */
             --accent-secondary: #fbbf24; /* Gold */
-            --accent-tertiary: #a855f7; /* Purple */
-            --border-color: #334155;
-            --font-sans: 'Inter', system-ui, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
         }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        /* Overrides */
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-        /* Typography */
-        h1, h2, h3, h4 {
-            font-weight: 700;
-            line-height: 1.2;
+            overflow-x: hidden; /* Keep specific overflow behavior */
         }
         a {
             color: var(--accent-primary);
-            text-decoration: none;
-            transition: color 0.2s;
         }
         a:hover {
             color: var(--accent-secondary);
@@ -55,9 +32,9 @@
             top: 0;
             width: 100%;
             padding: 1rem 2rem;
-            background: rgba(15, 23, 42, 0.8);
+           background: rgba(15, 17, 42, 0.8);
             backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--border-color);
             z-index: 1000;
             display: flex;
             justify-content: space-between;
@@ -69,7 +46,7 @@
             gap: 0.75rem;
             font-weight: 700;
             font-size: 1.25rem;
-            color: var(--text-primary);
+            color: var(--text-color);
         }
         .logo svg {
             width: 32px;
@@ -82,12 +59,12 @@
             list-style: none;
         }
         nav a {
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-size: 0.9rem;
             font-weight: 500;
         }
         nav a:hover {
-            color: var(--text-primary);
+            color: var(--text-color);
         }
         /* Hero Section */
         .hero {
@@ -118,7 +95,7 @@
         }
         .hero .subtitle {
             font-size: 1.25rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             max-width: 700px;
             margin: 0 auto 3rem;
         }
@@ -127,7 +104,7 @@
             max-width: 800px;
             height: 400px;
             margin: 0 auto 3rem;
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            background: linear-gradient(135deg, var(--surface-color) 0%, var(--background-color) 100%);
             border-radius: 16px;
             border: 1px solid var(--border-color);
             position: relative;
@@ -139,7 +116,7 @@
         }
         .hero-visual-placeholder {
             text-align: center;
-            color: var(--text-secondary);
+            color: var(--text-muted);
         }
         .hero-visual-placeholder svg {
             width: 64px;
@@ -152,7 +129,7 @@
             display: inline-block;
             padding: 1rem 2.5rem;
             background: var(--accent-primary);
-            color: var(--bg-dark);
+            color: var(--background-color);
             font-weight: 700;
             border-radius: 99px;
             font-size: 1.1rem;
@@ -162,7 +139,7 @@
         .cta-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
-            color: var(--bg-dark);
+            color: var(--background-color);
         }
         /* Features Grid */
         .features {
@@ -176,7 +153,7 @@
             gap: 2rem;
         }
         .feature-card {
-            background: var(--bg-card);
+            background: var(--surface-color);
             padding: 2rem;
             border-radius: 12px;
             border: 1px solid var(--border-color);
@@ -202,7 +179,7 @@
             font-size: 1.25rem;
         }
         .feature-card p {
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-size: 0.95rem;
         }
         /* Simulator */
@@ -216,7 +193,7 @@
             display: grid;
             grid-template-columns: 350px 1fr;
             gap: 2rem;
-            background: var(--bg-card);
+            background: var(--surface-color);
             border-radius: 16px;
             border: 1px solid var(--border-color);
             overflow: hidden;
@@ -239,17 +216,17 @@
         .input-group label {
             font-size: 0.9rem;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: var(--text-muted);
         }
         .input-group input[type="text"],
         .input-group select,
         .input-group textarea {
-            background: var(--bg-input);
+            background: var(--surface-color);
             border: 1px solid var(--border-color);
-            color: var(--text-primary);
+            color: var(--text-color);
             padding: 0.75rem;
             border-radius: 6px;
-            font-family: var(--font-sans);
+            font-family: var(--font-family-sans);
             font-size: 0.9rem;
         }
         .input-group textarea {
@@ -279,7 +256,7 @@
             margin-top: auto;
             padding: 1rem;
             background: var(--accent-primary);
-            color: var(--bg-dark);
+            color: var(--background-color);
             border: none;
             border-radius: 6px;
             font-weight: 700;
@@ -290,7 +267,7 @@
             opacity: 0.9;
         }
         .sim-run-btn:disabled {
-            background: var(--text-secondary);
+            background: var(--text-muted);
             cursor: not-allowed;
         }
         /* Simulator Output */
@@ -309,7 +286,7 @@
         .tab-btn {
             background: none;
             border: none;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             padding: 0.75rem 0;
             cursor: pointer;
             font-weight: 600;
@@ -341,7 +318,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .log-window {
-            font-family: var(--font-mono);
+            font-family: var(--font-family-mono);
             font-size: 0.85rem;
             color: #a5b4fc;
             background: #000;
@@ -374,7 +351,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-secondary);
+            color: var(--text-muted);
         }
         .visual-preview img {
             width: 100%;
@@ -391,13 +368,13 @@
         }
         .visual-caption {
             font-size: 0.8rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
         }
         .code-block {
             background: #000;
             padding: 1rem;
             border-radius: 8px;
-            font-family: var(--font-mono);
+            font-family: var(--font-family-mono);
             font-size: 0.85rem;
             white-space: pre-wrap;
             color: #e2e8f0;

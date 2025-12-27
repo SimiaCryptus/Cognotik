@@ -11,84 +11,53 @@
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
-        :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --accent-primary: #38bdf8; /* Cyan */
-            --accent-secondary: #a855f7; /* Purple */
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-            --glass: rgba(30, 41, 59, 0.7);
-        }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-sans);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-        a { text-decoration: none; color: inherit; transition: 0.3s; }
-        ul { list-style: none; }
+        /* Page-specific overrides */
         /* Utilities */
         .container {
-            max-width: 1200px;
+            max-width: var(--container-max-width);
             margin: 0 auto;
-            padding: 0 2rem;
-        }
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
+            padding: 0 var(--spacing-lg);
         }
         .btn-primary {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
             color: #fff;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0 25px rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
         }
         /* Hero */
         .hero {
-            padding: 8rem 0 4rem;
+            padding: var(--spacing-xl) 0;
             display: flex;
             align-items: center;
             min-height: 80vh;
             position: relative;
+            text-align: left;
+            background: transparent;
         }
         .hero-content {
             flex: 1;
-            padding-right: 2rem;
+            padding-right: var(--spacing-lg);
         }
         .hero h1 {
-            font-size: 3.5rem;
             line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(to right, #fff, var(--accent-primary));
+            margin-bottom: var(--spacing-md);
+            background: linear-gradient(to right, #fff, var(--accent-secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         .hero p {
             font-size: 1.25rem;
             color: var(--text-muted);
-            margin-bottom: 2rem;
+            margin-bottom: var(--spacing-lg);
             max-width: 600px;
         }
         .hero-visual {
             flex: 1;
             height: 400px;
-            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -98,11 +67,11 @@
         .visual-node {
             width: 200px;
             height: 200px;
-            border: 2px solid var(--accent-primary);
+            border: 2px solid var(--accent-secondary);
             border-radius: 50%;
             position: absolute;
             animation: pulse 4s infinite;
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -115,146 +84,24 @@
             0%, 100% { transform: scale(1); opacity: 0.8; }
             50% { transform: scale(1.05); opacity: 1; }
         }
-        /* Features */
-        .features {
-            padding: 4rem 0;
-            background: rgba(255,255,255,0.02);
-        }
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-        .feature-card {
-            background: var(--bg-card);
-            padding: 2rem;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: 0.3s;
-        }
-        .feature-card:hover {
-            border-color: var(--accent-primary);
-            transform: translateY(-5px);
-        }
         .feature-icon {
             width: 48px;
             height: 48px;
-            background: rgba(56, 189, 248, 0.1);
+            background: rgba(6, 182, 212, 0.1);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-primary);
-        }
-        .feature-card h3 {
-            margin-bottom: 1rem;
-            font-size: 1.25rem;
-        }
-        .feature-card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-        /* Simulator */
-        .simulator {
-            padding: 4rem 0;
-        }
-        .sim-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            background: var(--bg-card);
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.05);
-            min-height: 600px;
-        }
-        .sim-panel {
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-        }
-        .sim-left {
-            border-right: 1px solid rgba(255,255,255,0.05);
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-        .form-control {
-            width: 100%;
-            background: var(--bg-dark);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-main);
-            padding: 0.75rem;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 0.9rem;
-        }
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-        }
-        textarea.form-control {
-            resize: vertical;
-            min-height: 100px;
-        }
-        .sim-right {
-            background: #0b1120;
-        }
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 1rem;
-        }
-        .tab {
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
-            color: var(--text-muted);
-            border-bottom: 2px solid transparent;
-        }
-        .tab.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
-        }
-        .output-area {
-            flex: 1;
-            font-family: monospace;
-            font-size: 0.9rem;
-            color: #d1d5db;
-            overflow-y: auto;
-            white-space: pre-wrap;
+            margin-bottom: var(--spacing-md);
+            color: var(--accent-secondary);
         }
         .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-primary); }
         .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-secondary); }
         .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
         .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
-        /* Use Cases */
-        .use-cases {
-            padding: 4rem 0;
-        }
-        .use-case-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-        .use-case-item {
-            background: rgba(255,255,255,0.03);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid var(--accent-secondary);
-        }
         @media (max-width: 768px) {
             .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
             .hero-content { padding-right: 0; margin-bottom: 3rem; }
-            .sim-container { grid-template-columns: 1fr; }
-            .sim-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
         }
     </style>
 </head>
@@ -273,7 +120,6 @@
     </header>
     <!-- Features -->
     <section id="features" class="features">
-        <div class="container">
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -297,82 +143,82 @@
                     <p>Weaves in quotes, data, and expert analysis naturally for authoritative content.</p>
                 </div>
             </div>
-        </div>
     </section>
     <!-- Simulator -->
     <section id="demo" class="simulator">
-        <div class="container">
             <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
-            <div class="sim-container">
+            <div class="simulator-container">
                 <!-- Inputs -->
-                <div class="sim-panel sim-left">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Configuration</h3>
-                    <div class="form-group">
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                    <div class="control-group">
                         <label>Story Topic</label>
-                        <input type="text" id="story_topic" class="form-control" value="The Rise of Remote Work">
+                        <input type="text" id="story_topic" value="The Rise of Remote Work">
                     </div>
-                    <div class="form-group">
+                    <div class="control-group">
                         <label>Article Format</label>
-                        <select id="article_format" class="form-control">
+                        <select id="article_format">
                             <option value="news">News Report</option>
                             <option value="feature" selected>Feature Story</option>
                             <option value="opinion">Opinion Piece</option>
                             <option value="investigative">Investigative</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="control-group">
                         <label>Target Publication</label>
-                        <input type="text" id="target_publication" class="form-control" value="TechCrunch">
+                        <input type="text" id="target_publication" value="TechCrunch">
                     </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Generate Article</button>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: 2rem;">Generate Article</button>
                 </div>
                 <!-- Outputs -->
-                <div class="sim-panel sim-right">
+                <div class="sim-output">
                     <div class="tabs">
                         <div class="tab active" onclick="switchTab('article')">Article</div>
                         <div class="tab" onclick="switchTab('logs')">Logs</div>
                     </div>
-                    <div id="output-article" class="output-area markdown-preview">
+                    <div id="output-article" class="tab-content active markdown-preview">
                         <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
                             Configure the article and click "Generate" to see the output.
                         </div>
                     </div>
-                    <div id="output-logs" class="output-area" style="display: none; font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
                     </div>
                 </div>
             </div>
-        </div>
     </section>
     <!-- Use Cases -->
-    <section id="use-cases" class="use-cases">
-        <div class="container">
+    <section id="use-cases" class="features">
             <h2 style="margin-bottom: 2rem;">When to Use</h2>
-            <div class="use-case-list">
-                <div class="use-case-item">
+            <div class="mode-grid">
+                <div class="mode-card">
                     <h4>Content Marketing</h4>
                     <p>Create high-quality blog posts and articles to engage your audience.</p>
                 </div>
-                <div class="use-case-item">
+                <div class="mode-card">
                     <h4>News Reporting</h4>
                     <p>Generate timely news reports on current events and industry updates.</p>
                 </div>
-                <div class="use-case-item">
+                <div class="mode-card">
                     <h4>Thought Leadership</h4>
                     <p>Draft opinion pieces and features that establish authority in your field.</p>
                 </div>
-                <div class="use-case-item">
+                <div class="mode-card">
                     <h4>Internal Communications</h4>
                     <p>Write newsletters and updates for employees and stakeholders.</p>
                 </div>
             </div>
-        </div>
     </section>
     <script>
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
-            document.getElementById('output-article').style.display = tabName === 'article' ? 'block' : 'none';
-            document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
+            
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (tabName === 'article') {
+                document.getElementById('output-article').classList.add('active');
+            } else {
+                document.getElementById('output-logs').classList.add('active');
+            }
         }
         function runSimulation() {
             const topic = document.getElementById('story_topic').value;

@@ -17,108 +17,16 @@
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
     <style>
-        /* 
-           CSS Variables and Styles will be injected here.
-           Planned Variables:
-           :root {
-               --bg-dark: #0f172a;
-               --bg-card: #1e293b;
-               --accent-primary: #38bdf8; (Cyan)
-               --accent-secondary: #fbbf24; (Gold)
-               --text-main: #f8fafc;
-               --text-muted: #94a3b8;
-               --font-sans: 'Inter', sans-serif;
-               --font-mono: 'JetBrains Mono', monospace;
-               --font-serif: 'Cinzel', serif;
-           }
-        */
-    </style>
 
-    <style>
-        /* =========================================
-           1. Variables & Reset
-           ========================================= */
-        :root {
-            /* Color Palette - Future Professional */
-            --bg-dark: #0f172a;       /* Slate 900 */
-            --bg-card: #1e293b;       /* Slate 800 */
-            --bg-input: #334155;      /* Slate 700 */
-        
-            --accent-primary: #38bdf8; /* Cyan 400 */
-            --accent-hover: #0ea5e9;   /* Cyan 500 */
-            --accent-glow: rgba(56, 189, 248, 0.4);
-        
-            --accent-secondary: #fbbf24; /* Amber 400 */
-            --accent-purple: #a855f7;    /* Purple 500 */
-        
-            --text-main: #f8fafc;     /* Slate 50 */
-            --text-muted: #94a3b8;    /* Slate 400 */
-        
-            --border-color: #334155;
-        
-            /* Typography */
-            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            --font-serif: 'Cinzel', serif;
-        
-            /* Spacing & Layout */
-            --nav-height: 70px;
-            --container-width: 1200px;
-            --radius-md: 12px;
-            --radius-sm: 6px;
-        
-            /* Transitions */
-            --transition-fast: 0.2s ease;
-            --transition-normal: 0.3s ease-in-out;
-        }
         
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
         
-        html {
-            scroll-behavior: smooth;
-        }
         
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-sans);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
         
-        h1, h2, h3, h4 {
-            color: var(--text-main);
-            font-weight: 700;
-            line-height: 1.2;
-        }
         
-        h1, h2 {
-            font-family: var(--font-serif); /* Stylistic choice for major headers */
-            letter-spacing: -0.02em;
-        }
         
-        a {
-            text-decoration: none;
-            color: inherit;
-            transition: var(--transition-fast);
-        }
         
-        ul {
-            list-style: none;
-        }
         
-        /* Utility Classes */
-        .container {
-            max-width: var(--container-width);
-            margin: 0 auto;
-            padding: 0 20px;
-        }
         
-        .text-muted { color: var(--text-muted); }
         
         
         
@@ -132,543 +40,131 @@
         
         
         
-        /* =========================================
-           3. Hero Section
-           ========================================= */
-        .hero-section {
-            padding: calc(var(--nav-height) + 80px) 24px 80px;
-            max-width: var(--container-width);
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 60px;
-            min-height: 90vh;
-        }
         
-        .hero-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-        }
         
-        .hero-text-wrapper {
-            flex: 1;
-            max-width: 600px;
-        }
         
-        .hero-title {
-            font-size: 3.5rem;
-            margin-bottom: 24px;
-            background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
         
-        .hero-subtitle {
-            font-size: 1.125rem;
-            color: var(--text-muted);
-            margin-bottom: 40px;
-            max-width: 540px;
-        }
         
-        .hero-actions {
-            display: flex;
-            gap: 16px;
-        }
         
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border-radius: var(--radius-sm);
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: var(--transition-fast);
-            border: none;
-        }
         
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
-            color: #000;
-            box-shadow: 0 0 15px var(--accent-glow);
-        }
         
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px var(--accent-glow);
-        }
         
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-        }
         
-        .btn-secondary:hover {
-            border-color: var(--text-muted);
-            background: rgba(255,255,255,0.05);
-        }
         
-        /* Hero Visual - Abstract 3D Placeholder */
-        .hero-visual {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
         
-        .visual-placeholder {
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            animation: float 6s ease-in-out infinite;
-        }
         
-        .visual-icon {
-            font-size: 8rem;
-            color: var(--accent-primary);
-            z-index: 2;
-            filter: drop-shadow(0 0 20px var(--accent-primary));
-        }
         
-        .glow-effect {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 2px solid rgba(56, 189, 248, 0.2);
-            border-radius: 50%;
-            animation: pulse 3s infinite;
-        }
         
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
         
-        @keyframes pulse {
-            0% { transform: scale(0.9); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 0.1; }
-            100% { transform: scale(0.9); opacity: 0.5; }
-        }
         
-        /* =========================================
-           4. Features Grid
-           ========================================= */
-        .features-section {
-            padding: 100px 24px;
-            background: linear-gradient(to bottom, var(--bg-dark), #131c31);
-        }
         
-        .section-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
         
-        .section-header h2 {
-            font-size: 2.5rem;
-            margin-bottom: 16px;
-        }
         
-        .section-header p {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
         
-        .divider {
-            height: 4px;
-            width: 60px;
-            background: var(--accent-primary);
-            margin: 0 auto;
-            border-radius: 2px;
-            box-shadow: 0 0 10px var(--accent-glow);
-        }
         
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 32px;
-            max-width: var(--container-width);
-            margin: 0 auto;
-        }
         
-        .feature-card {
-            background: var(--bg-card);
-            padding: 32px;
-            border-radius: var(--radius-md);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: var(--transition-normal);
-            position: relative;
-            overflow: hidden;
-        }
         
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-primary);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-        }
         
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
         
-        .feature-card:hover::before {
-            opacity: 1;
-        }
         
-        .icon-container {
-            width: 50px;
-            height: 50px;
-            background: rgba(56, 189, 248, 0.1);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            color: var(--accent-primary);
-            font-size: 1.5rem;
-        }
         
-        .feature-card h3 {
-            font-size: 1.25rem;
-            margin-bottom: 12px;
-            font-family: var(--font-sans);
-        }
         
-        .feature-card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
         
-        /* =========================================
-           5. Interactive Simulator
-           ========================================= */
-        .simulator-section {
-            padding: 80px 24px;
-            max-width: var(--container-width);
-            margin: 0 auto;
-        }
         
-        .simulator-container {
-            display: flex;
-            gap: 24px;
-            margin-top: 40px;
-            height: 600px; /* Fixed height for desktop */
-        }
         
-        .sim-column {
-            background: var(--bg-card);
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
         
-        /* Left Column: Inputs */
-        .sim-inputs {
-            flex: 1;
-            max-width: 400px;
-        }
         
-        .panel-header {
-            padding: 16px 24px;
-            background: rgba(0, 0, 0, 0.2);
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--accent-secondary);
-        }
         
-        .sim-form {
-            padding: 24px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
         
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
         
-        .form-group label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-main);
-        }
         
-        .input-wrapper {
-            position: relative;
-        }
         
-        .input-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
         
-        input[type="text"],
-        textarea,
-        select {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            padding: 10px 12px;
-            color: var(--text-main);
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            transition: var(--transition-fast);
-        }
         
-        .input-wrapper input {
-            padding-left: 36px;
-        }
         
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
-        }
         
-        .help-text {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
         
-        /* Toggle Switch */
-        .toggle-group {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255,255,255,0.03);
-            padding: 12px;
-            border-radius: var(--radius-sm);
-        }
         
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-        }
         
-        .switch input { opacity: 0; width: 0; height: 0; }
-        
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--bg-input);
-            transition: .4s;
-            border-radius: 24px;
-        }
         
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
         
-        input:checked + .slider {
-            background-color: var(--accent-primary);
-        }
         
-        input:checked + .slider:before {
-            transform: translateX(20px);
-        }
         
-        .btn-full {
-            width: 100%;
-            margin-top: 10px;
-            justify-content: center;
-        }
         
-        /* Right Column: Outputs */
-        .sim-outputs {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-        }
         
-        .tabs-nav {
-            display: flex;
-            background: rgba(0,0,0,0.2);
-            border-bottom: 1px solid var(--border-color);
-        }
         
-        .tab-btn {
-            background: transparent;
-            border: none;
-            padding: 16px 24px;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-family: var(--font-sans);
-            font-weight: 600;
-            border-bottom: 2px solid transparent;
-            transition: var(--transition-fast);
-        }
         
-        .tab-btn:hover {
-            color: var(--text-main);
-            background: rgba(255,255,255,0.02);
-        }
         
-        .tab-btn.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
-        }
         
-        .tab-content {
-            display: none;
-            flex: 1;
-            padding: 0;
-            overflow: hidden;
-        }
         
-        .tab-content.active {
-            display: flex;
-            flex-direction: column;
-        }
         
-        /* Code Window Styling */
-        .code-window {
-            flex: 1;
-            background: #0d1117; /* Darker for code */
-            padding: 20px;
-            font-family: var(--font-mono);
-            overflow: auto;
-            display: flex;
-            flex-direction: column;
-        }
         
-        .window-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
         
-        .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-        .red { background: #ff5f56; }
-        .yellow { background: #ffbd2e; }
-        .green { background: #27c93f; }
-        
-        .lang-badge {
-            margin-left: auto;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            border: 1px solid var(--border-color);
-            padding: 2px 8px;
-            border-radius: 4px;
-        }
         
-        pre {
-            margin: 0;
-            color: #e6edf3;
-        }
         
-        code {
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-        }
         
-        /* Terminal Styling */
-        .terminal-window {
-            flex: 1;
-            background: #000;
-            padding: 20px;
-            font-family: var(--font-mono);
-            overflow-y: auto;
-        }
         
-        .terminal-text {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
         
-        .term-line {
-            font-size: 0.9rem;
-        }
         
-        .term-line::before {
-            content: '$ ';
-            color: var(--accent-secondary);
-        }
         
-        /* Result Styling */
-        .result-card {
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            height: 100%;
-        }
         
-        .result-box {
-            flex: 1;
-            background: rgba(255,255,255,0.03);
-            border: 1px dashed var(--border-color);
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
-        /* =========================================
-           6. Workflow Section
-           ========================================= */
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        /* Custom styles for sections not in main.css */
+        .runtimes-section {
+            padding: 4rem 2rem;
+            background: linear-gradient(to bottom, #131c31, var(--background-color));
+        }
         .workflow-section {
-            padding: 100px 24px;
-            background: var(--bg-dark);
+            padding: 4rem 2rem;
+            background: var(--background-color);
         }
-        
         .workflow-steps {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            max-width: var(--container-width);
+            max-width: var(--container-max-width);
             margin: 0 auto;
             position: relative;
         }
-        
         .step-item {
             flex: 1;
             text-align: center;
@@ -676,180 +172,80 @@
             z-index: 2;
             padding: 0 10px;
         }
-        
         .step-number {
             width: 50px;
             height: 50px;
-            background: var(--bg-card);
-            border: 2px solid var(--accent-primary);
+            background: var(--surface-color);
+            border: 2px solid var(--accent-secondary);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
             font-weight: 700;
-            color: var(--accent-primary);
-            box-shadow: 0 0 15px var(--accent-glow);
+            color: var(--accent-secondary);
         }
-        
-        .step-content h4 {
-            margin-bottom: 10px;
-            color: var(--text-main);
-        }
-        
-        .step-content p {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-        
         .step-connector {
             flex: 1;
             height: 2px;
-            background: linear-gradient(90deg, var(--accent-primary), transparent);
-            margin-top: 25px; /* Align with center of circle */
+            background: linear-gradient(90deg, var(--accent-secondary), transparent);
+            margin-top: 25px;
             opacity: 0.3;
         }
-        
-        /* =========================================
-           7. Use Cases
-           ========================================= */
-        .use-cases-section {
-            padding: 80px 24px;
-            background: var(--bg-card);
-        }
-        
-        .use-case-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-            max-width: var(--container-width);
-            margin: 0 auto;
-        }
-        
-        .use-case-card {
-            background: rgba(255,255,255,0.02);
-            padding: 24px;
-            border-radius: var(--radius-sm);
-            border-left: 4px solid var(--accent-secondary);
-        }
-        
-        .use-case-card h3 {
-            margin-bottom: 12px;
-            color: var(--text-main);
-        }
-        
-        .use-case-card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-        
-        /* =========================================
-           8. Footer
-           ========================================= */
+        /* Footer */
         footer {
             background: #0b1120;
             padding: 60px 24px;
             border-top: 1px solid var(--border-color);
         }
-        
         .footer-content {
-            max-width: var(--container-width);
+            max-width: var(--container-max-width);
             margin: 0 auto;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 24px;
         }
-        
-        .footer-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
         .footer-links {
             display: flex;
             gap: 24px;
         }
-        
         .footer-links a {
             color: var(--text-muted);
-            font-size: 0.9rem;
         }
-        
         .footer-links a:hover {
-            color: var(--accent-primary);
+            color: var(--accent-color);
         }
-        
-        .footer-copyright {
-            color: #475569;
-            font-size: 0.8rem;
+        /* Adjustments for Simulator Inputs */
+        .sim-controls textarea {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
         }
-        
-        /* =========================================
-           9. Responsive Design
-           ========================================= */
-        @media (max-width: 992px) {
-            .hero-section {
-                flex-direction: column;
-                text-align: center;
-                padding-top: 120px;
-            }
-        
-            .hero-text-wrapper {
-                margin: 0 auto;
-            }
-        
-            .hero-actions {
-                justify-content: center;
-            }
-        
-            .simulator-container {
-                flex-direction: column;
-                height: auto;
-            }
-        
-            .sim-inputs {
-                max-width: 100%;
-            }
-        
-            .sim-outputs {
-                height: 500px;
-            }
+        /* Code Window */
+        .code-window {
+            background: #0d1117;
+            padding: 20px;
+            font-family: var(--font-family-mono);
+            overflow: auto;
+            flex: 1;
         }
-        
-        @media (max-width: 768px) {
-            .nav-menu {
-                display: none; /* Simplified for this snippet, normally would be a hamburger menu */
-            }
-        
-            .hero-title {
-                font-size: 2.5rem;
-            }
-        
-            .workflow-steps {
-                flex-direction: column;
-                gap: 40px;
-            }
-        
-            .step-connector {
-                display: none;
-            }
-        
-            .step-item {
-                display: flex;
-                align-items: center;
-                text-align: left;
-                gap: 20px;
-            }
-        
-            .step-number {
-                margin: 0;
-                min-width: 50px;
-            }
+        .terminal-window {
+            background: #000;
+            padding: 20px;
+            font-family: var(--font-family-mono);
+            overflow-y: auto;
+            flex: 1;
+        }
+        .result-card {
+            padding: 2rem;
+        }
+        .result-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px dashed var(--border-color);
+            padding: 1rem;
+            text-align: center;
+            font-family: var(--font-family-mono);
         }
     </style>
 </head>
@@ -864,113 +260,85 @@
 
     <main>
         <!-- B. Hero Section -->
-        <section class="hero-section">
-            <div class="hero-content">
-                <div class="hero-text-wrapper">
-                    <h1 class="hero-title">RunCode Task</h1>
-                    <p class="hero-subtitle">
-                        Executes code snippets with human oversight. Handle automation, configure working directories, and capture detailed execution outputs with interactive review.
-                    </p>
-                    <div class="hero-actions">
-                        <a href="#simulator" class="btn btn-primary">Try the Simulator <i class="fa-solid fa-arrow-right"></i></a>
-                        <a href="#docs" class="btn btn-secondary">View Documentation</a>
-                    </div>
-                </div>
-                <div class="hero-visual">
-                    <!-- 3D Illustration: Hero Terminal -->
-                    <img src="assets/images/runcode-hero-terminal.png"
-                         alt="Abstract 3D illustration of a futuristic command center interface with a glowing holographic terminal and floating code syntax" 
-                         class="hero-image floating-anim">
-                </div>
-            </div>
+        <section class="hero">
+            <h1>RunCode Task</h1>
+            <p class="subtitle">
+                Executes code snippets with human oversight. Handle automation, configure working directories, and capture detailed execution outputs with interactive review.
+            </p>
+            <a href="#simulator" class="cta-button">Try the Simulator <i class="fa-solid fa-arrow-right"></i></a>
         </section>
 
         <!-- C. Features Grid -->
-        <section id="features" class="features-section">
-            <div class="section-header">
+        <section id="features" class="features">
                 <h2>Core Capabilities</h2>
-                <div class="divider"></div>
-            </div>
 
             <div class="features-grid">
                 <!-- Feature 1 -->
                 <div class="feature-card">
-                    <div class="icon-container">
-                        <i class="fa-solid fa-layer-group"></i>
-                    </div>
+                    <i class="fa-solid fa-layer-group"></i>
                     <h3>Versatile Runtimes</h3>
                     <p>Support for internal JVM languages (Kotlin, Groovy) and external CLI tools (Python, Bash, Node.js).</p>
                 </div>
                 <!-- Feature 2 -->
                 <div class="feature-card">
-                    <div class="icon-container">
-                        <i class="fa-solid fa-folder-tree"></i>
-                    </div>
+                    <i class="fa-solid fa-folder-tree"></i>
                     <h3>Directory Config</h3>
                     <p>Full control over the working directory path for file system operations and context.</p>
                 </div>
                 <!-- Feature 3 -->
                 <div class="feature-card">
-                    <div class="icon-container">
-                        <i class="fa-solid fa-file-code"></i>
-                    </div>
+                    <i class="fa-solid fa-file-code"></i>
                     <h3>Output Capture</h3>
                     <p>Comprehensive capture of standard output, return values, and error streams for analysis.</p>
                 </div>
                 <!-- Feature 4 -->
                 <div class="feature-card">
-                    <div class="icon-container">
-                        <i class="fa-solid fa-bug-slash"></i>
-                    </div>
+                    <i class="fa-solid fa-bug-slash"></i>
                     <h3>Error Handling</h3>
                     <p>Robust error reporting and stack trace analysis to facilitate debugging and auto-fixing.</p>
                 </div>
                 <!-- Feature 5 -->
                 <div class="feature-card">
-                    <div class="icon-container">
-                        <i class="fa-solid fa-user-check"></i>
-                    </div>
+                    <i class="fa-solid fa-user-check"></i>
                     <h3>User-in-the-Loop</h3>
                     <p>Review and approve code before execution. You retain full control over operations on your machine.</p>
                 </div>
                 <!-- Feature 6 -->
                 <div class="feature-card">
-                    <div class="icon-container">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    </div>
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
                     <h3>Auto-Fix</h3>
                     <p>Optional automated correction of code based on execution errors or feedback.</p>
                 </div>
             </div>
         </section>
         <!-- Supported Environments Section -->
-        <section class="runtimes-section" style="padding: 0 24px 80px; background: linear-gradient(to bottom, #131c31, var(--bg-dark));">
+        <section class="runtimes-section">
             <div class="container">
-                <div class="section-header">
+                <div style="text-align: center; margin-bottom: 40px;">
                     <h3>Supported Environments</h3>
-                    <p class="text-muted">Choose between integrated JVM execution or external process orchestration.</p>
+                    <p style="color: var(--text-muted);">Choose between integrated JVM execution or external process orchestration.</p>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; margin-top: 40px;">
                     <!-- Internal -->
-                    <div style="background: var(--bg-card); padding: 30px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                        <h4 style="color: var(--accent-primary); margin-bottom: 15px;"><i class="fa-brands fa-java"></i> Internal JVM</h4>
-                        <p class="text-muted" style="margin-bottom: 20px;">High-performance execution within the agent's process. Ideal for data processing and logic.</p>
+                    <div style="background: var(--surface-color); padding: 30px; border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+                        <h4 style="color: var(--accent-secondary); margin-bottom: 15px;"><i class="fa-brands fa-java"></i> Internal JVM</h4>
+                        <p style="color: var(--text-muted); margin-bottom: 20px;">High-performance execution within the agent's process. Ideal for data processing and logic.</p>
                         <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Kotlin</li>
-                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Groovy</li>
+                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Kotlin</li>
+                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Groovy</li>
                         </ul>
                     </div>
                     <!-- External -->
-                    <div style="background: var(--bg-card); padding: 30px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                        <h4 style="color: var(--accent-purple); margin-bottom: 15px;"><i class="fa-solid fa-terminal"></i> External Processes</h4>
-                        <p class="text-muted" style="margin-bottom: 20px;">Orchestrate installed tools and scripts available in your system's PATH.</p>
+                    <div style="background: var(--surface-color); padding: 30px; border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+                        <h4 style="color: var(--accent-color); margin-bottom: 15px;"><i class="fa-solid fa-terminal"></i> External Processes</h4>
+                        <p style="color: var(--text-muted); margin-bottom: 20px;">Orchestrate installed tools and scripts available in your system's PATH.</p>
                         <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Bash / Shell</li>
-                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> PowerShell / Cmd</li>
-                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Python</li>
-                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Node.js</li>
-                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Ruby / Perl / PHP</li>
-                            <li style="color: var(--text-main);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Go / Rust / Scala</li>
+                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Bash / Shell</li>
+                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> PowerShell / Cmd</li>
+                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Python</li>
+                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Node.js</li>
+                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Ruby / Perl / PHP</li>
+                            <li style="color: var(--text-color);"><i class="fa-solid fa-check" style="color: var(--accent-secondary); margin-right: 8px;"></i> Go / Rust / Scala</li>
                         </ul>
                     </div>
                 </div>
@@ -979,46 +347,36 @@
 
 
         <!-- D. Interactive Simulator -->
-        <section id="simulator" class="simulator-section">
-            <div class="section-header">
+        <section id="simulator" class="simulator">
                 <h2>Task Simulator</h2>
-                <p>Configure the execution parameters and visualize the runtime output.</p>
-            </div>
             
             <div class="simulator-container">
                 <!-- Left Column: Inputs (ExecutionConfigData) -->
-                <div class="sim-column sim-inputs">
-                    <div class="panel-header">
-                        <i class="fa-solid fa-sliders"></i> Configuration
-                    </div>
+                <div class="sim-controls">
                     <form id="runcode-form" class="sim-form">
                         
                         <!-- Input: Goal -->
-                        <div class="form-group">
+                        <div class="control-group">
                             <label for="input-goal">Goal / Instruction</label>
                             <textarea id="input-goal" rows="4" placeholder="E.g., Calculate the Fibonacci sequence up to 100 and save it to a file."></textarea>
-                            <span class="help-text">The task or goal to be accomplished by the code.</span>
                         </div>
 
                         <!-- Input: Working Directory -->
-                        <div class="form-group">
+                        <div class="control-group">
                             <label for="input-working-dir">Working Directory</label>
-                            <div class="input-wrapper">
-                                <i class="fa-solid fa-folder input-icon"></i>
+                            <div>
                                 <input type="text" id="input-working-dir" value="./workspace" placeholder="./">
                             </div>
-                            <span class="help-text">Relative file path for execution context.</span>
                         </div>
 
                         <!-- Input: Dependencies (List) -->
-                        <div class="form-group">
+                        <div class="control-group">
                             <label for="input-dependencies">Dependencies</label>
                             <input type="text" id="input-dependencies" placeholder="E.g., task_init, data_load">
-                            <span class="help-text">Comma-separated list of task IDs this execution depends on.</span>
                         </div>
 
                         <!-- Input: Auto-Fix Toggle (Derived from OrchestrationConfig logic) -->
-                        <div class="form-group toggle-group">
+                        <div class="control-group toggle-group">
                             <label for="input-autofix">Enable Auto-Fix</label>
                             <label class="switch">
                                 <input type="checkbox" id="input-autofix">
@@ -1026,19 +384,19 @@
                             </label>
                         </div>
 
-                        <button type="submit" id="btn-execute" class="btn btn-primary btn-full">
+                        <button type="submit" id="btn-execute" class="run-button">
                             <i class="fa-solid fa-play"></i> Generate & Run
                         </button>
                     </form>
                 </div>
 
                 <!-- Right Column: Outputs -->
-                <div class="sim-column sim-outputs">
+                <div class="sim-output">
                     <!-- Output Tabs -->
-                    <div class="tabs-nav">
-                        <button class="tab-btn active" data-tab="tab-code">Generated Code</button>
-                        <button class="tab-btn" data-tab="tab-console">Console Output</button>
-                        <button class="tab-btn" data-tab="tab-result">Result Value</button>
+                    <div class="tabs">
+                        <button class="tab active" data-tab="tab-code">Generated Code</button>
+                        <button class="tab" data-tab="tab-console">Console Output</button>
+                        <button class="tab" data-tab="tab-result">Result Value</button>
                     </div>
 
                     <!-- Tab Content: Code -->
@@ -1077,13 +435,11 @@
         </section>
 
         <!-- E. Workflow / Process -->
-        <section id="workflow" class="workflow-section">
-            <div class="section-header">
-                <h2>Execution Pipeline</h2>
-            </div>
+        <section id="workflow" class="workflow-section" style="text-align: center;">
+            <h2 style="margin-bottom: 40px;">Execution Pipeline</h2>
             
             <!-- Visual Highlight: Pipeline Flow -->
-            <div class="workflow-visual-container">
+            <div class="workflow-visual-container" style="margin-bottom: 40px;">
                 <img src="assets/images/execution-pipeline-flow.png"
                      alt="Sleek isometric 3D visualization of a four-step digital workflow pipeline" 
                      class="workflow-image">
@@ -1132,22 +488,20 @@
         </section>
 
         <!-- F. Use Cases -->
-        <section class="use-cases-section">
-            <div class="section-header">
-                <h2>When to Use</h2>
-            </div>
-            <div class="use-case-grid">
-                <div class="use-case-card">
-                    <h3>Data Processing</h3>
-                    <p>Perfect for on-the-fly manipulation of datasets, file parsing, and format conversion tasks.</p>
+        <section class="modes-section" style="padding: 4rem 2rem; background: var(--surface-color);">
+            <h2>When to Use</h2>
+            <div class="mode-grid">
+                <div class="mode-card">
+                    <div class="mode-title">Data Processing</div>
+                    <p style="color: var(--text-muted);">Perfect for on-the-fly manipulation of datasets, file parsing, and format conversion tasks.</p>
                 </div>
-                <div class="use-case-card">
-                    <h3>System Automation</h3>
-                    <p>Automate repetitive file system operations, backups, or environment setup scripts.</p>
+                <div class="mode-card">
+                    <div class="mode-title">System Automation</div>
+                    <p style="color: var(--text-muted);">Automate repetitive file system operations, backups, or environment setup scripts.</p>
                 </div>
-                <div class="use-case-card">
-                    <h3>Math & Logic</h3>
-                    <p>Solve complex algorithmic problems that require computational accuracy beyond standard LLM capabilities.</p>
+                <div class="mode-card">
+                    <div class="mode-title">Math & Logic</div>
+                    <p style="color: var(--text-muted);">Solve complex algorithmic problems that require computational accuracy beyond standard LLM capabilities.</p>
                 </div>
             </div>
         </section>
@@ -1210,7 +564,7 @@
             // ==========================================
             // 2. Tab Interface Logic
             // ==========================================
-            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabButtons = document.querySelectorAll('.tab');
             const tabContents = document.querySelectorAll('.tab-content');
         
             function switchTab(tabId) {
@@ -1219,7 +573,7 @@
                 tabContents.forEach(content => content.classList.remove('active'));
         
                 // Activate target
-                const targetBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+                const targetBtn = document.querySelector(`.tab[data-tab="${tabId}"]`);
                 const targetContent = document.getElementById(tabId);
         
                 if (targetBtn && targetContent) {

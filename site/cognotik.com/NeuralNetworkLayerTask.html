@@ -7,174 +7,33 @@
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
-        :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-input: #334155;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-primary: #38bdf8; /* Sky Blue */
-            --accent-secondary: #818cf8; /* Indigo */
-            --accent-success: #4ade80;
-            --border-color: #334155;
-            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            --font-mono: 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
-        }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
 
-        body {
-            font-family: var(--font-sans);
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
 
-        /* Typography */
-        h1, h2, h3, h4 {
-            font-weight: 700;
-            line-height: 1.2;
-            margin-bottom: 1rem;
-        }
 
-        h1 { font-size: 3rem; background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        h2 { font-size: 2rem; }
-        h3 { font-size: 1.25rem; color: var(--text-primary); }
-        p { color: var(--text-secondary); margin-bottom: 1.5rem; }
         
-        code {
-            font-family: var(--font-mono);
-            background: rgba(0,0,0,0.3);
-            padding: 0.2em 0.4em;
-            border-radius: 4px;
-            color: var(--accent-primary);
-            font-size: 0.9em;
-        }
 
-        /* Layout Utilities */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
 
-        .section {
-            padding: 5rem 0;
-            border-bottom: 1px solid var(--border-color);
-        }
 
-        .grid {
-            display: grid;
-            gap: 2rem;
-        }
 
-        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 
-        /* Hero Section */
-        .hero {
-            text-align: center;
-            padding: 8rem 0 5rem;
-            background: radial-gradient(circle at top center, #1e293b 0%, #0f172a 70%);
-        }
 
-        .hero-subtitle {
-            font-size: 1.25rem;
-            max-width: 700px;
-            margin: 0 auto 2rem;
-        }
 
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.2s;
-            cursor: pointer;
-            border: none;
-        }
 
-        .btn-primary {
-            background: var(--accent-primary);
-            color: var(--bg-dark);
-        }
 
-        .btn-primary:hover {
-            background: var(--accent-secondary);
-            transform: translateY(-2px);
-        }
 
-        /* Feature Cards */
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 2rem;
-            transition: transform 0.2s;
-        }
 
-        .card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-primary);
-        }
 
-        .icon-box {
-            width: 48px;
-            height: 48px;
-            background: rgba(56, 189, 248, 0.1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-primary);
-        }
 
-        /* Interactive Simulator */
-        .simulator-container {
-            background: #162032;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            min-height: 600px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
 
-        /* Simulator Sidebar (Input) */
-        .sim-sidebar {
-            background: var(--bg-card);
-            padding: 1.5rem;
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-        }
 
-        .form-group { margin-bottom: 1.25rem; }
-        .form-label { display: block; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
-        .form-input, .form-select, .form-textarea {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
-            font-family: var(--font-mono);
-            font-size: 0.875rem;
-        }
-        .form-textarea { resize: vertical; min-height: 80px; }
+        /* Custom styles not covered by main.css */
         
         .checkbox-group {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            margin-top: 0.5rem;
         }
         
         .checkbox-item {
@@ -182,61 +41,17 @@
             align-items: center;
             gap: 0.5rem;
             font-size: 0.875rem;
-            color: var(--text-secondary);
+
+
+
+
+
+
+
+
+            color: var(--text-muted);
         }
-
-        /* Simulator Main (Output) */
-        .sim-main {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sim-tabs {
-            display: flex;
-            background: #0f172a;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .sim-tab {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .sim-tab:hover { color: var(--text-primary); }
-        .sim-tab.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
-            background: rgba(56, 189, 248, 0.05);
-        }
-
-        .sim-content {
-            padding: 2rem;
-            flex: 1;
-            overflow-y: auto;
-            font-family: var(--font-sans);
-        }
-
-        .sim-content-pane { display: none; animation: fadeIn 0.3s ease; }
-        .sim-content-pane.active { display: block; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Simulated Code Block */
-        .code-preview {
-            background: #0d1117;
-            padding: 1.5rem;
-            border-radius: 8px;
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            color: #e6edf3;
-            overflow-x: auto;
-            border: 1px solid var(--border-color);
-        }
+        /* Syntax Highlighting */
         .kw { color: #ff7b72; } /* Keyword */
         .fn { color: #d2a8ff; } /* Function */
         .str { color: #a5d6ff; } /* String */
@@ -244,7 +59,7 @@
 
         /* Math Preview */
         .math-block {
-            background: var(--bg-input);
+            background: var(--surface-color);
             padding: 1.5rem;
             border-radius: 8px;
             text-align: center;
@@ -252,539 +67,95 @@
             font-style: italic;
             font-size: 1.2rem;
             margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
         }
 
         /* Footer */
         footer {
             padding: 3rem 0;
             text-align: center;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-size: 0.875rem;
-        }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .simulator-container { grid-template-columns: 1fr; }
-            .sim-sidebar { border-right: none; border-bottom: 1px solid var(--border-color); }
-            h1 { font-size: 2rem; }
-        }
-    </style>
-
-    <style>
-        /* =========================================
-           1. Variables & Reset
-           ========================================= */
-        :root {
-            /* Color Palette */
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-input: #334155;
-            --bg-code: #0d1117;
-        
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-        
-            --accent-primary: #38bdf8;   /* Sky Blue */
-            --accent-secondary: #818cf8; /* Indigo */
-            --accent-success: #4ade80;   /* Green */
-            --accent-warning: #fbbf24;   /* Amber */
-            --accent-danger: #f87171;    /* Red */
-        
-            --border-color: #334155;
-            --border-hover: #475569;
-        
-            /* Typography */
-            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            --font-mono: 'JetBrains Mono', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
-        
-            /* Spacing & Radius */
-            --radius-sm: 6px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --radius-xl: 16px;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        body {
-            font-family: var(--font-sans);
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        
-        /* =========================================
-           2. Typography
-           ========================================= */
-        h1, h2, h3, h4, h5, h6 {
-            font-weight: 700;
-            line-height: 1.2;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-        }
-        
-        h1 {
-            font-size: 3.5rem;
-            letter-spacing: -0.02em;
-            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 1.5rem;
-        }
-        
-        h2 {
-            font-size: 2.25rem;
-            letter-spacing: -0.01em;
-        }
-        
-        h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-        
-        p {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            font-size: 1rem;
-        }
-        
-        code {
-            font-family: var(--font-mono);
-            background: rgba(56, 189, 248, 0.1);
-            padding: 0.2em 0.4em;
-            border-radius: 4px;
-            color: var(--accent-primary);
-            font-size: 0.9em;
-        }
-        
-        /* =========================================
-           3. Layout Utilities
-           ========================================= */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            width: 100%;
-        }
-        
-        .section {
-            padding: 6rem 0;
-            border-bottom: 1px solid var(--border-color);
-            position: relative;
-        }
-        
-        .grid {
-            display: grid;
-            gap: 2rem;
-        }
-        
-        .grid-2 {
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        }
-        
-        .grid-3 {
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        }
-        
-        /* =========================================
-           4. Components: Buttons & Inputs
-           ========================================= */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            border: none;
-            font-size: 1rem;
-        }
-        
-        .btn-primary {
-            background: var(--accent-primary);
-            color: var(--bg-dark);
-            box-shadow: 0 4px 14px 0 rgba(56, 189, 248, 0.39);
-        }
-        
-        .btn-primary:hover {
-            background: var(--accent-secondary);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.23);
-        }
-        
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-        
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 0.5rem;
-        }
-        
-        .form-input, 
-        .form-select, 
-        .form-textarea {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 0.75rem;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-mono);
-            font-size: 0.875rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        
-        .form-input:focus, 
-        .form-textarea:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
-        }
-        
-        .form-textarea {
-            resize: vertical;
-            min-height: 100px;
-            line-height: 1.5;
-        }
-        
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            background: rgba(0,0,0,0.2);
-            padding: 1rem;
-            border-radius: var(--radius-sm);
-        }
-        
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-        }
-        
-        .checkbox-item input[type="checkbox"] {
-            accent-color: var(--accent-primary);
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-        
-        /* =========================================
-           5. Hero Section
-           ========================================= */
-        .hero {
-            text-align: center;
-            padding: 10rem 0 6rem;
-            background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 70%);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            pointer-events: none;
-            mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
-        }
-        
-        .hero-subtitle {
-            font-size: 1.25rem;
-            max-width: 700px;
-            margin: 0 auto 2.5rem;
-            line-height: 1.7;
-            color: var(--text-secondary);
-        }
-        
-        /* =========================================
-           6. Feature Cards
-           ========================================= */
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-primary);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-        }
-        
-        .icon-box {
-            width: 56px;
-            height: 56px;
-            background: rgba(56, 189, 248, 0.1);
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            color: var(--accent-primary);
-            transition: background 0.3s;
-        }
-        
-        .card:hover .icon-box {
-            background: rgba(56, 189, 248, 0.2);
-        }
-        
-        .card h3 {
-            margin-bottom: 0.75rem;
-        }
-        
-        .card p {
-            margin-bottom: 0;
-            font-size: 0.95rem;
-        }
-        
-        /* =========================================
-           7. Interactive Simulator
-           ========================================= */
-        .simulator-container {
-            background: #162032;
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            min-height: 700px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-        
-        /* Sidebar */
-        .sim-sidebar {
-            background: var(--bg-card);
-            padding: 1.5rem;
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-        
-        /* Main Content Area */
-        .sim-main {
-            display: flex;
-            flex-direction: column;
-            background: #0f172a;
-            position: relative;
-        }
-        
-        /* Tabs */
-        .sim-tabs {
-            display: flex;
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border-color);
-            overflow-x: auto;
-        }
-        
-        .sim-tab {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            font-weight: 600;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-        
-        .sim-tab:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.02);
-        }
-        
-        .sim-tab.active {
-            color: var(--accent-primary);
-            border-bottom-color: var(--accent-primary);
-            background: rgba(56, 189, 248, 0.05);
-        }
-        
-        /* Content Panes */
-        .sim-content {
-            padding: 2rem;
-            flex: 1;
-            overflow-y: auto;
-            font-family: var(--font-sans);
-        }
-        
-        /* Custom Scrollbar for Simulator */
-        .sim-content::-webkit-scrollbar,
-        .sim-sidebar::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .sim-content::-webkit-scrollbar-track,
-        .sim-sidebar::-webkit-scrollbar-track {
-            background: var(--bg-dark);
-        }
-        
-        .sim-content::-webkit-scrollbar-thumb,
-        .sim-sidebar::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
-        }
-        
-        .sim-content-pane {
-            display: none;
-        }
-        
-        .sim-content-pane.active {
-            display: block;
-            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Code Preview Block */
-        .code-preview {
-            background: var(--bg-code);
-            padding: 1.5rem;
-            border-radius: var(--radius-md);
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            line-height: 1.7;
-            color: #e6edf3;
-            overflow-x: auto;
-            border: 1px solid var(--border-color);
-            white-space: pre;
-        }
-        
-        /* Syntax Highlighting Colors */
-        .kw { color: #ff7b72; font-weight: bold; } /* Keyword */
-        .fn { color: #d2a8ff; } /* Function */
-        .str { color: #a5d6ff; } /* String */
-        .com { color: #8b949e; font-style: italic; } /* Comment */
-        
-        /* Math Block */
-        .math-block {
-            background: var(--bg-input);
-            padding: 2rem;
-            border-radius: var(--radius-md);
-            text-align: center;
-            font-family: 'Times New Roman', serif;
-            font-style: italic;
-            font-size: 1.3rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--border-color);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        /* =========================================
-           8. Footer
-           ========================================= */
-        footer {
-            padding: 4rem 0;
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
             border-top: 1px solid var(--border-color);
-            background: var(--bg-card);
+            margin-top: 4rem;
         }
         
-        /* =========================================
-           9. Responsive Design
-           ========================================= */
-        @media (max-width: 1024px) {
-            .simulator-container {
-                grid-template-columns: 280px 1fr;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2.5rem;
-            }
-        
-            .hero {
-                padding: 6rem 0 4rem;
-            }
-        
-            .simulator-container {
-                grid-template-columns: 1fr;
-                height: auto;
-                min-height: auto;
-            }
-        
-            .sim-sidebar {
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-                max-height: 400px;
-            }
-        
-            .sim-main {
-                min-height: 500px;
-            }
-        
-            .grid-3, .grid-2 {
-                grid-template-columns: 1fr;
-            }
-        
-            .container {
-                padding: 0 1.5rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 2rem;
-            }
-        
-            .sim-tabs {
-                flex-wrap: nowrap;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-        
-            .sim-tab {
-                padding: 1rem;
-                font-size: 0.8rem;
-            }
+        /* Override main.css monospace for tab content generally, but keep for code */
+        .tab-content {
+            font-family: var(--font-family-sans);
         }
     </style>
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 <!-- Generated Images:
      - neural-layer-hero.png: A futuristic, abstract 3D visualization of a neural network layer being constructed. Glowing blue and indigo nodes (#38bdf8, #818cf8) connected by data streams against a deep dark slate background (#0f172a). In the center, a holographic wireframe of a tensor cube is being manipulated. High-tech, clean, professional software aesthetic.
      - math-code-flow.png: A conceptual illustration showing the transformation of math into code. On the left, floating glowing mathematical equations (calculus, linear algebra) in white and cyan. They pass through a central prism or lens and emerge on the right as structured, syntax-highlighted computer code (Python/TensorFlow style) in green and purple. Dark background.
@@ -798,10 +169,10 @@
     <section class="hero">
         <div class="container">
             <h1>Neural Network Layer Designer</h1>
-            <p class="hero-subtitle">
+            <p class="subtitle">
                 Bridge the gap between intuition and implementation. Design custom layers with rigorous mathematical analysis, stability proofs, and auto-generated code.
             </p>
-            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
+            <a href="#demo" class="cta-button">Try the Simulator</a>
             
             <!-- Hero Image -->
             <div style="margin-top: 4rem;">
@@ -811,59 +182,59 @@
     </section>
 
     <!-- Features Grid -->
-    <section class="section">
+    <section class="features">
         <div class="container">
-            <div class="grid grid-3">
+            <div class="features-grid">
                 <!-- Feature 1 -->
-                <div class="card">
-                    <div class="icon-box">
+                <div class="feature-card">
+                    <i>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-                    </div>
+                    </i>
                     <h3>Executive Summary</h3>
                     <p>Get a high-level overview of your layer's capabilities, including computational cost, training difficulty, and decision criteria for when to use it.</p>
                 </div>
 
                 <!-- Feature 2 -->
-                <div class="card">
-                    <div class="icon-box">
+                <div class="feature-card">
+                    <i>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    </div>
+                    </i>
                     <h3>Rigorous Math</h3>
                     <p>Automatically derive forward equations, backward pass gradients (Chain Rule), and higher-order derivatives like the Hessian.</p>
                 </div>
 
                 <!-- Feature 3 -->
-                <div class="card">
-                    <div class="icon-box">
+                <div class="feature-card">
+                    <i>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                    </div>
+                    </i>
                     <h3>Auto-Implementation</h3>
                     <p>Generate production-ready code in TensorFlow.js, Python (PyTorch/NumPy), or pseudocode, complete with initialization logic.</p>
                 </div>
 
                 <!-- Feature 4 -->
-                <div class="card">
-                    <div class="icon-box">
+                <div class="feature-card">
+                    <i>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"></path><path d="m19 5-7 7-7-7"></path></svg>
-                    </div>
+                    </i>
                     <h3>Stability Analysis</h3>
                     <p>Ensure convergence with Lyapunov stability analysis, Lipschitz continuity checks, and numerical stability warnings (overflow/underflow).</p>
                 </div>
 
                 <!-- Feature 5 -->
-                <div class="card">
-                    <div class="icon-box">
+                <div class="feature-card">
+                    <i>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    </div>
+                    </i>
                     <h3>Intuitive Explanations</h3>
                     <p>Understand the "why" with real-world analogies, visual data flow descriptions, and mental models for gradient behavior.</p>
                 </div>
 
                 <!-- Feature 6 -->
-                <div class="card">
-                    <div class="icon-box">
+                <div class="feature-card">
+                    <i>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-                    </div>
+                    </i>
                     <h3>Complexity Analysis</h3>
                     <p>Evaluate time and space complexity for both forward and backward passes to optimize for memory bandwidth and parallelization.</p>
                 </div>
@@ -872,7 +243,7 @@
     </section>
 
     <!-- Interactive Demo Section -->
-    <section class="section" id="demo">
+    <section class="simulator" id="demo">
         <div class="container">
             <div style="margin-bottom: 2rem;">
                 <h2>Interactive Simulator</h2>
@@ -881,26 +252,26 @@
 
             <div class="simulator-container">
                 <!-- Sidebar -->
-                <div class="sim-sidebar">
-                    <div class="form-group">
-                        <label class="form-label">Layer Name</label>
-                        <input type="text" class="form-input" value="GatedAttentionUnit" id="layerName">
+                <div class="sim-controls">
+                    <div class="control-group">
+                        <label>Layer Name</label>
+                        <input type="text" value="GatedAttentionUnit" id="layerName">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Forward Function Description</label>
-                        <textarea class="form-textarea" id="layerDesc">Computes element-wise product of input and a sigmoid-activated gate derived from a linear projection.</textarea>
+                    <div class="control-group">
+                        <label>Forward Function Description</label>
+                        <textarea id="layerDesc">Computes element-wise product of input and a sigmoid-activated gate derived from a linear projection.</textarea>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Input Shape</label>
-                        <input type="text" class="form-input" value="[batch, seq_len, d_model]">
+                    <div class="control-group">
+                        <label>Input Shape</label>
+                        <input type="text" value="[batch, seq_len, d_model]">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Parameters</label>
-                        <input type="text" class="form-input" value="W_gate: [d_model, d_model], b_gate: [d_model]">
+                    <div class="control-group">
+                        <label>Parameters</label>
+                        <input type="text" value="W_gate: [d_model, d_model], b_gate: [d_model]">
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">Analysis Options</label>
+                    <div class="control-group">
+                        <label>Analysis Options</label>
                         <div class="checkbox-group">
                             <label class="checkbox-item"><input type="checkbox" checked> Higher-Order Derivatives</label>
                             <label class="checkbox-item"><input type="checkbox" checked> Lyapunov Stability</label>
@@ -909,21 +280,21 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Analyze Layer</button>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Analyze Layer</button>
                 </div>
 
                 <!-- Main Content -->
-                <div class="sim-main">
-                    <div class="sim-tabs">
-                        <div class="sim-tab active" onclick="switchTab('overview')">Overview</div>
-                        <div class="sim-tab" onclick="switchTab('math')">Formal Definition</div>
-                        <div class="sim-tab" onclick="switchTab('code')">Implementation</div>
-                        <div class="sim-tab" onclick="switchTab('stability')">Stability</div>
+                <div class="sim-output">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('overview')">Overview</div>
+                        <div class="tab" onclick="switchTab('math')">Formal Definition</div>
+                        <div class="tab" onclick="switchTab('code')">Implementation</div>
+                        <div class="tab" onclick="switchTab('stability')">Stability</div>
                     </div>
 
-                    <div class="sim-content">
+                    <div>
                         <!-- Overview Tab -->
-                        <div id="overview" class="sim-content-pane active">
+                        <div id="overview" class="tab-content active">
                             <h2>Executive Summary</h2>
                             <p><strong>One-Liner:</strong> A gating mechanism that allows information to flow selectively based on a learned linear projection.</p>
                             
@@ -937,7 +308,7 @@
                             <h3>Intuitive Analogy</h3>
                             <p>Think of this layer like a volume knob for specific frequencies in an audio equalizer. The "gate" decides how loud each feature should be. If the gate is closed (0), the feature is silenced; if open (1), it passes through unchanged.</p>
 
-                            <div class="grid grid-2" style="margin-top: 1.5rem;">
+                            <div class="features-grid" style="margin-top: 1.5rem;">
                                 <div>
                                     <h4>✅ Strengths</h4>
                                     <ul style="list-style-position: inside; color: var(--text-secondary);">
@@ -957,7 +328,7 @@
                         </div>
 
                         <!-- Math Tab -->
-                        <div id="math" class="sim-content-pane">
+                        <div id="math" class="tab-content">
                             <h2>Formal Definition</h2>
                             <div class="math-block">
                                 y = x ⊙ σ(xW_{gate} + b_{gate})
@@ -979,9 +350,9 @@
                         </div>
 
                         <!-- Code Tab -->
-                        <div id="code" class="sim-content-pane">
+                        <div id="code" class="tab-content">
                             <h2>TensorFlow.js Implementation</h2>
-                            <div class="code-preview">
+                            <pre class="code-preview"><code>
 <span class="kw">class</span> GatedAttentionUnit <span class="kw">extends</span> tf.layers.Layer {
   <span class="fn">constructor</span>(config) {
     <span class="kw">super</span>(config);
@@ -1013,12 +384,12 @@
       <span class="kw">return</span> tf.mul(inputs, gate);
     });
   }
-}
-                            </div>
+}</code>
+                            </pre>
                         </div>
 
                         <!-- Stability Tab -->
-                        <div id="stability" class="sim-content-pane">
+                        <div id="stability" class="tab-content">
                             <h2>Lyapunov Stability Analysis</h2>
                             
                             <!-- Stability Visualization Image -->
@@ -1044,10 +415,10 @@
     </section>
 
     <!-- Use Cases -->
-    <section class="section">
+    <section class="features">
         <div class="container">
             <h2 style="text-align: center; margin-bottom: 3rem;">Who is this for?</h2>
-            <div class="grid grid-3">
+            <div class="features-grid">
                 <div>
                     <h3>🎓 Researchers</h3>
                     <p>Rapidly prototype novel layer ideas. Get immediate feedback on theoretical properties like Lipschitz continuity and Hessian structure before writing a paper.</p>
@@ -1075,12 +446,12 @@
         // Tab Switching Logic
         function switchTab(tabId) {
             // Remove active class from all tabs
-            document.querySelectorAll('.sim-tab').forEach(tab => {
+            document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
             
             // Remove active class from all content panes
-            document.querySelectorAll('.sim-content-pane').forEach(pane => {
+            document.querySelectorAll('.tab-content').forEach(pane => {
                 pane.classList.remove('active');
             });
 
@@ -1093,9 +464,9 @@
 
         // Simulation Logic (Visual effect only)
         function runSimulation() {
-            const btn = document.querySelector('.btn-primary');
+            const btn = document.querySelector('.run-button');
             const originalText = btn.innerText;
-            const content = document.querySelector('.sim-content');
+            const content = document.querySelector('.sim-output');
             
             btn.innerText = "Analyzing...";
             btn.style.opacity = "0.7";
@@ -1132,15 +503,15 @@
              * DOM Elements
              */
             const elements = {
-                tabs: document.querySelectorAll('.sim-tab'),
-                panes: document.querySelectorAll('.sim-content-pane'),
-                analyzeBtn: document.querySelector('.sim-sidebar .btn-primary'),
+                tabs: document.querySelectorAll('.tab'),
+                panes: document.querySelectorAll('.tab-content'),
+                analyzeBtn: document.querySelector('.run-button'),
                 inputs: {
                     name: document.getElementById('layerName'),
                     desc: document.getElementById('layerDesc'),
                     // Selecting inputs without IDs based on structure
-                    shape: document.querySelectorAll('.form-input')[2], 
-                    params: document.querySelectorAll('.form-input')[3]
+                    shape: document.querySelectorAll('input[type="text"]')[1], 
+                    params: document.querySelectorAll('input[type="text"]')[2]
                 },
                 outputs: {
                     overviewTitle: document.querySelector('#overview h2'),
@@ -1224,7 +595,7 @@
                     setLoadingState(false);
             
                     // Visual feedback: flash the content
-                    const activePane = document.querySelector('.sim-content-pane.active');
+                    const activePane = document.querySelector('.tab-content.active');
                     if (activePane) {
                         activePane.style.opacity = '0.5';
                         setTimeout(() => activePane.style.opacity = '1', 200);
@@ -1235,7 +606,7 @@
             function setLoadingState(isLoading) {
                 state.isAnalyzing = isLoading;
                 const btn = elements.analyzeBtn;
-                const content = document.querySelector('.sim-content');
+                const content = document.querySelector('.sim-output');
         
                 if (isLoading) {
                     btn.dataset.originalText = btn.innerText;

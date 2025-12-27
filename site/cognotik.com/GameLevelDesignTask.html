@@ -9,82 +9,58 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
-    <style>
-        :root { --bg-dark: #0f172a; --bg-card: #1e293b; --accent-primary: #10b981; --accent-secondary: #3b82f6; --text-main: #f8fafc; --text-muted: #94a3b8; --font-sans: 'Inter', sans-serif; }
-        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-sans); margin: 0; line-height: 1.6; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
-        .btn { display: inline-block; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; text-decoration: none; transition: 0.3s; border: none; cursor: pointer; }
-        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #fff; }
-        .hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 60vh; }
-        .hero-content { flex: 1; padding-right: 2rem; }
-        .hero h1 { font-size: 3.5rem; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .features { padding: 4rem 0; background: rgba(255,255,255,0.02); }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
-        .feature-card { background: var(--bg-card); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
-        .simulator { padding: 4rem 0; }
-        .sim-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: var(--bg-card); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
-        .sim-panel { padding: 2rem; display: flex; flex-direction: column; }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-control { width: 100%; background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); padding: 0.75rem; border-radius: 6px; }
-        .output-area { background: #0b1120; padding: 1rem; border-radius: 6px; font-family: monospace; min-height: 300px; white-space: pre-wrap; color: #d1d5db; }
-    </style>
 </head>
 <body>
     <cognotik-header current-page="game-level-design"></cognotik-header>
-    <header class="hero container">
-        <div class="hero-content">
-            <h1>Game Level Design</h1>
-            <p>Generate complete game level designs with layout, pacing, and encounters. Create immersive worlds with structured zones, balanced challenges, and rewarding exploration.</p>
-            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
-        </div>
+    <header class="hero">
+        <h1>Game Level Design</h1>
+        <p class="subtitle">Generate complete game level designs with layout, pacing, and encounters. Create immersive worlds with structured zones, balanced challenges, and rewarding exploration.</p>
+        <a href="#demo" class="btn cta-button">Try the Simulator</a>
     </header>
     <section class="features">
-        <div class="container">
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3>Structured Layouts</h3>
-                    <p>Creates detailed level layouts with distinct zones, logical connections, and ASCII visualizations.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Encounter Design</h3>
-                    <p>Designs combat and puzzle encounters with appropriate difficulty progression and rewards.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Pacing Analysis</h3>
-                    <p>Analyzes and visualizes pacing curves to ensure optimal flow and player engagement.</p>
-                </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Structured Layouts</h3>
+                <p>Creates detailed level layouts with distinct zones, logical connections, and ASCII visualizations.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Encounter Design</h3>
+                <p>Designs combat and puzzle encounters with appropriate difficulty progression and rewards.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Pacing Analysis</h3>
+                <p>Analyzes and visualizes pacing curves to ensure optimal flow and player engagement.</p>
             </div>
         </div>
     </section>
     <section id="demo" class="simulator">
-        <div class="container">
-            <h2 style="text-align: center; margin-bottom: 2rem;">Interactive Simulator</h2>
-            <div class="sim-container">
-                <div class="sim-panel">
-                    <div class="form-group">
-                        <label>Level Name</label>
-                        <input type="text" class="form-control" value="The Forgotten Catacombs">
-                    </div>
-                    <div class="form-group">
-                        <label>Game Type</label>
-                        <input type="text" class="form-control" value="Action RPG">
-                    </div>
-                    <div class="form-group">
-                        <label>Theme</label>
-                        <input type="text" class="form-control" value="Ancient underground ruins, dark, mysterious">
-                    </div>
-                    <div class="form-group">
-                        <label>Difficulty</label>
-                        <select class="form-control">
-                            <option>Easy</option>
-                            <option selected>Medium</option>
-                            <option>Hard</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-primary">Generate Level</button>
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Level Name</label>
+                    <input type="text" value="The Forgotten Catacombs">
                 </div>
-                <div class="sim-panel" style="background: #0b1120;">
-                    <div class="output-area">
+                <div class="control-group">
+                    <label>Game Type</label>
+                    <input type="text" value="Action RPG">
+                </div>
+                <div class="control-group">
+                    <label>Theme</label>
+                    <input type="text" value="Ancient underground ruins, dark, mysterious">
+                </div>
+                <div class="control-group">
+                    <label>Difficulty</label>
+                    <select>
+                        <option>Easy</option>
+                        <option selected>Medium</option>
+                        <option>Hard</option>
+                    </select>
+                </div>
+                <button class="run-button">Generate Level</button>
+            </div>
+            <div class="sim-output">
+                <div class="tab-content active" style="white-space: pre-wrap;">
 # Level Design: The Forgotten Catacombs
 
 ## Overview
@@ -109,7 +85,6 @@
 - Start: Low intensity (exploration)
 - Mid: Medium intensity (combat & puzzle)
 - Climax: High intensity (Boss fight)
-                    </div>
                 </div>
             </div>
         </div>

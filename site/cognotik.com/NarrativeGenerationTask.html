@@ -15,592 +15,132 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     
-    <style>
-        :root {
-            --bg-primary: #0f1115;
-            --bg-secondary: #1a1d24;
-            --bg-tertiary: #252932;
-            --accent-gold: #d4af37;
-            --accent-gold-dim: #8a701e;
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --text-muted: #606060;
-            --font-heading: 'Cinzel', serif;
-            --font-body: 'Inter', sans-serif;
-            --font-narrative: 'Merriweather', serif;
-            --spacing-sm: 1rem;
-            --spacing-md: 2rem;
-            --spacing-lg: 4rem;
-            --border-radius: 8px;
-            --transition: all 0.3s ease;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: var(--font-body);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        h1, h2, h3, h4 {
-            font-family: var(--font-heading);
-            color: var(--text-primary);
-        }
-
-        a {
-            text-decoration: none;
-            color: var(--accent-gold);
-            transition: var(--transition);
-        }
-
-        a:hover {
-            color: #fff;
-        }
-
-        /* Layout Utilities */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 var(--spacing-md);
-        }
-
-        .section {
-            padding: var(--spacing-lg) 0;
-        }
-
-        .grid {
-            display: grid;
-            gap: var(--spacing-md);
-        }
-
-        .grid-2 { grid-template-columns: 1fr 1fr; }
-        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-
-
-
-
-
-
-
-
-        /* Hero Section */
-        .hero {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            position: relative;
-            background: radial-gradient(circle at 70% 30%, rgba(212, 175, 55, 0.05) 0%, transparent 60%);
-            padding-top: 70px;
-        }
-
-        .hero-content {
-            max-width: 600px;
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            line-height: 1.2;
-            margin-bottom: var(--spacing-md);
-            background: linear-gradient(to right, #fff, #a0a0a0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 12px 30px;
-            background: var(--accent-gold);
-            color: var(--bg-primary);
-            font-weight: 600;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: 1px solid var(--accent-gold);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn:hover {
-            background: transparent;
-            color: var(--accent-gold);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--text-primary);
-            border: 1px solid var(--text-muted);
-            margin-left: var(--spacing-sm);
-        }
-
-        .btn-outline:hover {
-            border-color: var(--text-primary);
-        }
-
-        /* Hero Visual (CSS Art) */
-        .hero-visual {
-            position: relative;
-            height: 400px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .book-container {
-            position: relative;
-            width: 240px;
-            height: 320px;
-            transform-style: preserve-3d;
-            transform: rotateY(-25deg) rotateX(10deg);
-            transition: transform 0.5s ease;
-        }
-
-        .book-container:hover {
-            transform: rotateY(-15deg) rotateX(5deg) translateY(-10px);
-        }
-
-        .book-cover {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
-            border: 2px solid var(--accent-gold);
-            border-radius: 4px 8px 8px 4px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 10px 10px 30px rgba(0,0,0,0.5);
-            z-index: 2;
-        }
-
-        .book-spine {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 40px;
-            height: 100%;
-            background: var(--bg-secondary);
-            transform: rotateY(90deg) translateZ(-20px);
-            border-left: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .book-pages {
-            position: absolute;
-            right: 0;
-            top: 5px;
-            width: 38px;
-            height: calc(100% - 10px);
-            background: #ddd;
-            transform: rotateY(90deg) translateZ(-2px);
-            background: repeating-linear-gradient(to right, #eee 0px, #ddd 1px, #eee 2px);
-        }
-
-        .book-title {
-            font-family: var(--font-heading);
-            color: var(--accent-gold);
-            font-size: 1.5rem;
-            text-align: center;
-            padding: 20px;
-            border: 1px solid var(--accent-gold-dim);
-            margin: 20px;
-        }
-
-        /* Features Section */
-        .feature-card {
-            background: var(--bg-secondary);
-            padding: var(--spacing-md);
-            border-radius: var(--border-radius);
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: var(--transition);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-gold-dim);
-        }
-
-        .feature-icon {
-            font-size: 2rem;
-            color: var(--accent-gold);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .feature-card h3 {
-            margin-bottom: var(--spacing-sm);
-            font-size: 1.2rem;
-        }
-
-        .feature-card p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-
-        /* Workflow Section */
-        .workflow-steps {
-            position: relative;
-            margin-top: var(--spacing-lg);
-        }
-
-        .workflow-steps::before {
-            content: '';
-            position: absolute;
-            top: 25px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: var(--bg-tertiary);
-            z-index: 0;
-        }
-
-        .step {
-            position: relative;
-            z-index: 1;
-            background: var(--bg-primary);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-gold);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0 auto var(--spacing-sm);
-            color: var(--accent-gold);
-            font-weight: bold;
-            transition: var(--transition);
-        }
-
-        .step-container {
-            text-align: center;
-            opacity: 0.5;
-            transition: var(--transition);
-            cursor: pointer;
-        }
-
-        .step-container.active {
-            opacity: 1;
-        }
-
-        .step-container.active .step {
-            background: var(--accent-gold);
-            color: var(--bg-primary);
-            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
-        }
-
-        .step-content {
-            background: var(--bg-secondary);
-            padding: var(--spacing-md);
-            border-radius: var(--border-radius);
-            margin-top: var(--spacing-md);
-            border-left: 3px solid var(--accent-gold);
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .step-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Configuration Demo */
-        .config-panel {
-            background: var(--bg-secondary);
-            padding: var(--spacing-md);
-            border-radius: var(--border-radius);
-        }
-
-        .form-group {
-            margin-bottom: var(--spacing-md);
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px;
-            background: var(--bg-primary);
-            border: 1px solid var(--bg-tertiary);
-            color: var(--text-primary);
-            border-radius: 4px;
-            font-family: var(--font-body);
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-gold);
-        }
-
-        input[type="range"] {
-            width: 100%;
-            accent-color: var(--accent-gold);
-        }
-
-        .toggle-group {
-            display: flex;
-            gap: var(--spacing-md);
-            flex-wrap: wrap;
-        }
-
-        .toggle-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-        }
-
-        .toggle-checkbox {
-            width: 40px;
-            height: 20px;
-            background: var(--bg-tertiary);
-            border-radius: 20px;
-            position: relative;
-            transition: var(--transition);
-        }
-
-        .toggle-checkbox::after {
-            content: '';
-            position: absolute;
-            left: 2px;
-            top: 2px;
-            width: 16px;
-            height: 16px;
-            background: var(--text-secondary);
-            border-radius: 50%;
-            transition: var(--transition);
-        }
-
-        .toggle-item.active .toggle-checkbox {
-            background: var(--accent-gold-dim);
-        }
-
-        .toggle-item.active .toggle-checkbox::after {
-            left: 22px;
-            background: #fff;
-        }
-
-        .stats-preview {
-            background: var(--bg-tertiary);
-            padding: var(--spacing-md);
-            border-radius: var(--border-radius);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .stat-value {
-            font-family: var(--font-heading);
-            color: var(--accent-gold);
-        }
-
-        /* Output Showcase */
-        .tabs {
-            display: flex;
-            gap: 2px;
-            margin-bottom: var(--spacing-md);
-            border-bottom: 1px solid var(--bg-tertiary);
-        }
-
-        .tab-btn {
-            padding: 10px 20px;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-family: var(--font-body);
-            font-weight: 600;
-            position: relative;
-        }
-
-        .tab-btn.active {
-            color: var(--accent-gold);
-        }
-
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: var(--accent-gold);
-        }
-
-        .tab-content {
-            background: #f4f1ea; /* Paper color */
-            color: #1a1d24;
-            padding: var(--spacing-lg);
-            border-radius: 4px;
-            min-height: 400px;
-            font-family: var(--font-narrative);
-            display: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .tab-content h3 {
-            color: #2c3e50;
-            margin-bottom: var(--spacing-md);
-            font-family: var(--font-heading);
-        }
-
-        .manuscript-text {
-            font-size: 1.1rem;
-            line-height: 1.8;
-            margin-bottom: 1.5rem;
-        }
-
-        .outline-list {
-            list-style: none;
-        }
-
-        .outline-list li {
-            margin-bottom: 1rem;
-            padding-left: 1.5rem;
-            border-left: 3px solid var(--accent-gold);
-        }
-
-        .outline-meta {
-            font-size: 0.9rem;
-            color: #666;
-            font-family: var(--font-body);
-            margin-top: 0.5rem;
-        }
-
-        /* Footer */
-        footer {
-            background: var(--bg-secondary);
-            padding: var(--spacing-lg) 0;
-            margin-top: var(--spacing-lg);
-            border-top: 1px solid rgba(255,255,255,0.05);
-            text-align: center;
-            color: var(--text-muted);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2.5rem; }
-            .grid-2 { grid-template-columns: 1fr; }
-            .workflow-steps::before { display: none; }
-            .step-container { margin-bottom: var(--spacing-md); }
-            .step { margin: 0 auto 10px; }
-        }
-    </style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     <style>
         /* =========================================
            1. Variables & Reset
            ========================================= */
         :root {
-            /* Color Palette */
-            --bg-primary: #0f1115;
-            --bg-secondary: #1a1d24;
+            /* Theme Overrides for main.css */
+            --background-color: #0f1115;
+            --surface-color: #1a1d24;
+            --accent-color: #d4af37;
+            --accent-hover: #8a701e;
+            --text-color: #e0e0e0;
+            --text-muted: #606060;
+
+            /* Local Variables & Mappings */
+            --bg-primary: var(--background-color);
+            --bg-secondary: var(--surface-color);
             --bg-tertiary: #252932;
-            --accent-gold: #d4af37;
-            --accent-gold-dim: #8a701e;
+            
+            --accent-gold: var(--accent-color);
+            --accent-gold-dim: var(--accent-hover);
             --accent-gold-glow: rgba(212, 175, 55, 0.3);
         
-            /* Text Colors */
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --text-muted: #606060;
+            --text-primary: var(--text-color);
+            --text-secondary: var(--text-muted);
             --text-paper: #2c3e50; /* For the paper/manuscript sections */
         
-            /* Typography */
-            --font-heading: 'Cinzel', serif;
-            --font-body: 'Inter', sans-serif;
+            /* Typography Mappings */
+            --font-heading: var(--font-family-serif);
+            --font-body: var(--font-family-sans);
             --font-narrative: 'Merriweather', serif;
         
-            /* Spacing & Layout */
-            --spacing-xs: 0.5rem;
-            --spacing-sm: 1rem;
-            --spacing-md: 2rem;
-            --spacing-lg: 4rem;
-            --border-radius: 8px;
         
             /* Effects */
-            --transition: all 0.3s ease;
             --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.2);
             --shadow-glow: 0 0 15px var(--accent-gold-glow);
         }
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
         
         html {
             scroll-behavior: smooth;
         }
         
-        body {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: var(--font-body);
-            line-height: 1.6;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
         
-        h1, h2, h3, h4, h5, h6 {
-            font-family: var(--font-heading);
-            color: var(--text-primary);
-            font-weight: 700;
-        }
         
-        a {
-            text-decoration: none;
-            color: var(--accent-gold);
-            transition: var(--transition);
-        }
         
-        a:hover {
-            color: #fff;
-            text-shadow: 0 0 8px var(--accent-gold-glow);
-        }
         
-        ul {
-            list-style: none;
-        }
         
         /* =========================================
            2. Layout Utilities
            ========================================= */
         .container {
-            max-width: 1200px;
+            max-width: var(--container-max-width);
             margin: 0 auto;
             padding: 0 var(--spacing-md);
             width: 100%;
@@ -644,6 +184,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             background: radial-gradient(circle at 70% 30%, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
             padding-top: 80px; /* Offset for fixed header */
             overflow: hidden;
+            text-align: left; /* Override main.css */
         }
         
         .hero-content {
@@ -670,24 +211,15 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         
         /* Buttons */
         .btn {
-            display: inline-block;
             padding: 14px 32px;
-            background: var(--accent-gold);
-            color: var(--bg-primary);
-            font-weight: 600;
-            border-radius: 4px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            border: 1px solid var(--accent-gold);
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 0.9rem;
             box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
         }
         
         .btn:hover {
             background: transparent;
-            color: var(--accent-gold);
+            color: var(--accent-color);
             box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
             transform: translateY(-2px);
         }
@@ -701,8 +233,8 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         }
         
         .btn-outline:hover {
-            border-color: var(--accent-gold);
-            color: var(--accent-gold);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
             background: rgba(212, 175, 55, 0.05);
         }
         
@@ -740,7 +272,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             width: 100%;
             height: 100%;
             background: linear-gradient(135deg, var(--bg-tertiary), #111);
-            border: 2px solid var(--accent-gold);
+            border: 2px solid var(--accent-color);
             border-radius: 2px 6px 6px 2px;
             display: flex;
             flex-direction: column;
@@ -756,7 +288,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             top: 0;
             width: 40px;
             height: 100%;
-            background: var(--bg-secondary);
+            background: var(--surface-color);
             transform: rotateY(90deg) translateZ(-20px);
             border-left: 1px solid rgba(255,255,255,0.1);
             box-shadow: inset 5px 0 10px rgba(0,0,0,0.5);
@@ -776,7 +308,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         
         .book-title {
             font-family: var(--font-heading);
-            color: var(--accent-gold);
+            color: var(--accent-color);
             font-size: 1.8rem;
             text-align: center;
             padding: 20px;
@@ -790,13 +322,11 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
            5. Features Section
            ========================================= */
         .feature-card {
-            background: var(--bg-secondary);
-            padding: var(--spacing-md);
-            border-radius: var(--border-radius);
+            background: var(--surface-color);
             border: 1px solid rgba(255,255,255,0.03);
-            transition: var(--transition);
             position: relative;
             overflow: hidden;
+            text-align: left; /* Override main.css */
         }
         
         .feature-card::before {
@@ -806,7 +336,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             left: 0;
             width: 100%;
             height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
             transform: scaleX(0);
             transition: transform 0.4s ease;
         }
@@ -823,7 +353,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         
         .feature-icon {
             font-size: 2rem;
-            color: var(--accent-gold);
+            color: var(--accent-color);
             margin-bottom: var(--spacing-sm);
             display: inline-block;
         }
@@ -879,35 +409,35 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         }
         
         .step {
-            background: var(--bg-primary);
+            background: var(--background-color);
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            border: 2px solid var(--accent-gold);
+            border: 2px solid var(--accent-color);
             display: flex;
             justify-content: center;
             align-items: center;
             margin: 0 auto var(--spacing-sm);
-            color: var(--accent-gold);
+            color: var(--accent-color);
             font-weight: bold;
             font-family: var(--font-heading);
             font-size: 1.2rem;
             transition: var(--transition);
-            box-shadow: 0 0 0 5px var(--bg-secondary); /* Fake gap for line */
+            box-shadow: 0 0 0 5px var(--surface-color); /* Fake gap for line */
         }
         
         .step-container.active .step {
-            background: var(--accent-gold);
-            color: var(--bg-primary);
+            background: var(--accent-color);
+            color: var(--background-color);
             box-shadow: 0 0 20px var(--accent-gold-glow);
         }
         
         .step-content {
-            background: var(--bg-secondary);
+            background: var(--surface-color);
             padding: var(--spacing-md);
             border-radius: var(--border-radius);
             margin-top: var(--spacing-md);
-            border-left: 4px solid var(--accent-gold);
+            border-left: 4px solid var(--accent-color);
             display: none;
             animation: fadeIn 0.5s ease;
             box-shadow: var(--shadow-card);
@@ -918,7 +448,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         }
         
         .step-content h3 {
-            color: var(--accent-gold);
+            color: var(--accent-color);
             margin-bottom: 0.5rem;
         }
         
@@ -932,7 +462,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             content: '›';
             position: absolute;
             left: 0;
-            color: var(--accent-gold);
+            color: var(--accent-color);
             font-weight: bold;
         }
         
@@ -945,7 +475,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
            7. Configuration Demo
            ========================================= */
         .config-panel {
-            background: var(--bg-secondary);
+            background: var(--surface-color);
             padding: var(--spacing-md);
             border-radius: var(--border-radius);
             border: 1px solid rgba(255,255,255,0.05);
@@ -968,7 +498,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         .form-control {
             width: 100%;
             padding: 12px 15px;
-            background: var(--bg-primary);
+            background: var(--background-color);
             border: 1px solid var(--bg-tertiary);
             color: var(--text-primary);
             border-radius: 4px;
@@ -979,7 +509,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         
         .form-control:focus {
             outline: none;
-            border-color: var(--accent-gold);
+            border-color: var(--accent-color);
             box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
         }
         
@@ -995,7 +525,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             height: 20px;
             width: 20px;
             border-radius: 50%;
-            background: var(--accent-gold);
+            background: var(--accent-color);
             cursor: pointer;
             margin-top: -8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -1049,7 +579,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         
         .toggle-item.active .toggle-checkbox {
             background: var(--accent-gold-dim);
-            border-color: var(--accent-gold);
+            border-color: var(--accent-color);
         }
         
         .toggle-item.active .toggle-checkbox::after {
@@ -1068,7 +598,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         
         /* Stats Preview */
         .stats-preview {
-            background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary));
+            background: linear-gradient(145deg, var(--bg-tertiary), var(--surface-color));
             padding: var(--spacing-md);
             border-radius: var(--border-radius);
             height: 100%;
@@ -1093,7 +623,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         
         .stat-value {
             font-family: var(--font-heading);
-            color: var(--accent-gold);
+            color: var(--accent-color);
             font-size: 1.2rem;
             font-weight: bold;
         }
@@ -1168,7 +698,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             color: #1a1d24;
             margin-bottom: var(--spacing-md);
             font-family: var(--font-heading);
-            border-bottom: 2px solid var(--accent-gold);
+            border-bottom: 2px solid var(--accent-color);
             padding-bottom: 10px;
             display: inline-block;
         }
@@ -1187,7 +717,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         .outline-list li {
             margin-bottom: 1.5rem;
             padding-left: 1.5rem;
-            border-left: 3px solid var(--accent-gold);
+            border-left: 3px solid var(--accent-color);
             background: rgba(212, 175, 55, 0.05);
             padding: 1rem;
             border-radius: 0 4px 4px 0;
@@ -1205,7 +735,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
            9. Footer
            ========================================= */
         footer {
-            background: var(--bg-secondary);
+            background: var(--surface-color);
             padding: var(--spacing-lg) 0;
             margin-top: var(--spacing-lg);
             border-top: 1px solid rgba(255,255,255,0.05);

@@ -7,52 +7,19 @@
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
-        :root {
-            --accent-primary: #8b5cf6;
-            --accent-glow: rgba(139, 92, 246, 0.5);
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-        }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: system-ui, -apple-system, sans-serif;
-            margin: 0;
-        }
 
-        .hero {
-            padding: 4rem 2rem;
-            text-align: center;
-            background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg-dark) 100%);
-        }
 
-        .hero h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(to right, #fff, var(--accent-primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
 
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            max-width: 800px;
-            margin: 0 auto 2rem;
-            line-height: 1.6;
-        }
 
         .visual-placeholder {
             width: 100%;
             max-width: 800px;
             height: 400px;
             margin: 0 auto;
-            background: linear-gradient(45deg, #1e293b, #0f172a);
-            border: 1px solid #334155;
-            border-radius: 1rem;
+            background: linear-gradient(45deg, var(--surface-color), var(--background-color));
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -64,9 +31,9 @@
         .visual-shape {
             width: 150px;
             height: 150px;
-            border: 2px solid var(--accent-primary);
+            border: 2px solid var(--accent-color);
             transform: rotate(45deg);
-            box-shadow: 0 0 30px var(--accent-glow);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
             position: relative;
         }
         .visual-shape::before {
@@ -77,122 +44,57 @@
             transform: rotate(-45deg);
         }
 
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            padding: 4rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
+
+
+
+
+
+
+
+
+        /* Ensure number input matches other inputs from main.css */
+        input[type="number"] {
+            display: block;
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--surface-color);
+            background-clip: padding-box;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
         }
 
-        .feature-card {
-            background: var(--bg-card);
+        input[type="number"]:focus {
+            border-color: var(--accent-color);
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
+        }
+
+
+
+        .output-terminal {
+            font-family: var(--font-family-mono);
+            white-space: pre-wrap;
+            color: var(--text-color);
+            line-height: 1.5;
             padding: 2rem;
-            border-radius: 1rem;
-            border: 1px solid #334155;
-            transition: transform 0.2s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-primary);
-        }
-
-        .simulator-section {
-            padding: 4rem 2rem;
-            background: #020617;
-        }
-
-        .simulator-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
-            height: 800px;
-        }
-
-        .sim-panel {
-            background: var(--bg-card);
-            border-radius: 1rem;
-            border: 1px solid #334155;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
+            height: 100%;
             overflow-y: auto;
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: var(--text-main);
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 2px var(--accent-glow);
-        }
-
-        .btn-primary {
-            background: var(--accent-primary);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 0.5rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: 100%;
-        }
-
-        .btn-primary:hover {
-            filter: brightness(1.1);
-            box-shadow: 0 0 20px var(--accent-glow);
-        }
-
-        .output-terminal {
-            font-family: 'JetBrains Mono', monospace;
-            white-space: pre-wrap;
-            color: #e2e8f0;
-            line-height: 1.5;
-        }
-
         .output-header {
-            color: var(--accent-primary);
+            color: var(--accent-color);
             font-weight: bold;
             margin-top: 1rem;
             margin-bottom: 0.5rem;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 0.25rem;
         }
 
-        @media (max-width: 768px) {
-            .simulator-container {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-            .hero h1 { font-size: 2.5rem; }
-        }
     </style>
 </head>
 <body>
@@ -201,53 +103,55 @@
     <main>
         <section class="hero">
             <h1>Constraint Satisfaction</h1>
-            <p>Solve complex problems with multiple competing constraints. Define hard rules that must be met and soft goals to optimize, using advanced search strategies to find the best possible trade-offs.</p>
+            <p class="subtitle">Solve complex problems with multiple competing constraints. Define hard rules that must be met and soft goals to optimize, using advanced search strategies to find the best possible trade-offs.</p>
 
             <div class="visual-placeholder">
                 <div class="visual-shape"></div>
             </div>
 
             <div style="margin-top: 2rem;">
-                <button class="btn-primary" style="width: auto;" onclick="document.querySelector('.simulator-section').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
+                <button class="cta-button" onclick="document.querySelector('.simulator').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
             </div>
         </section>
 
-        <section class="features-grid">
-            <div class="feature-card">
-                <h3>Hard Constraints</h3>
-                <p>Define non-negotiable requirements that must be satisfied in any valid solution.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Soft Optimization</h3>
-                <p>Balance competing objectives using weighted priorities (0.0 - 1.0) to find the optimal compromise.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Multi-Strategy Search</h3>
-                <p>Choose between Backtracking (systematic), Forward (greedy), or Local (hill-climbing) search algorithms.</p>
+        <section class="features">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Hard Constraints</h3>
+                    <p>Define non-negotiable requirements that must be satisfied in any valid solution.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Soft Optimization</h3>
+                    <p>Balance competing objectives using weighted priorities (0.0 - 1.0) to find the optimal compromise.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Multi-Strategy Search</h3>
+                    <p>Choose between Backtracking (systematic), Forward (greedy), or Local (hill-climbing) search algorithms.</p>
+                </div>
             </div>
         </section>
 
-        <section class="simulator-section">
+        <section class="simulator">
             <h2 style="text-align: center; margin-bottom: 2rem;">Interactive Simulator</h2>
             <div class="simulator-container">
-                <div class="sim-panel">
-                    <div class="form-group">
+                <div class="sim-controls">
+                    <div class="control-group">
                         <label>Problem Description</label>
                         <textarea id="problem" rows="3">Schedule a project team meeting.</textarea>
                     </div>
-                    <div class="form-group">
+                    <div class="control-group">
                         <label>Hard Constraints (One per line)</label>
                         <textarea id="hardConstraints" rows="3">All team leads must attend
 Room must have a projector
 Must be within working hours (9-5)</textarea>
                     </div>
-                    <div class="form-group">
+                    <div class="control-group">
                         <label>Soft Constraints (Format: Description : Weight 0.0-1.0)</label>
                         <textarea id="softConstraints" rows="3">Prefer morning slot : 0.8
 Avoid Friday afternoon : 0.6
 Minimize gap between other meetings : 0.4</textarea>
                     </div>
-                    <div class="form-group">
+                    <div class="control-group">
                         <label>Search Strategy</label>
                         <select id="strategy">
                             <option value="backtracking">Backtracking (Systematic)</option>
@@ -255,14 +159,14 @@ Minimize gap between other meetings : 0.4</textarea>
                             <option value="local">Local (Hill Climbing)</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="control-group">
                         <label>Max Iterations</label>
                         <input type="number" id="iterations" value="100">
                     </div>
-                    <button class="btn-primary" onclick="runSimulation()">Solve Constraints</button>
+                    <button class="run-button" onclick="runSimulation()">Solve Constraints</button>
                 </div>
 
-                <div class="sim-panel">
+                <div class="sim-output">
                     <div id="output" class="output-terminal">
                         <span style="color: var(--text-muted)">// Output will appear here...</span>
                     </div>
@@ -270,18 +174,20 @@ Minimize gap between other meetings : 0.4</textarea>
             </div>
         </section>
 
-        <section class="features-grid">
-            <div class="feature-card">
-                <h3>Architectural Decisions</h3>
-                <p>Balance performance, maintainability, and cost trade-offs in system design.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Resource Allocation</h3>
-                <p>Optimize schedule and resource usage across competing projects and priorities.</p>
-            </div>
-            <div class="feature-card">
-                <h3>Configuration Tuning</h3>
-                <p>Find optimal system parameters that satisfy stability requirements while maximizing throughput.</p>
+        <section class="features">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Architectural Decisions</h3>
+                    <p>Balance performance, maintainability, and cost trade-offs in system design.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Resource Allocation</h3>
+                    <p>Optimize schedule and resource usage across competing projects and priorities.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Configuration Tuning</h3>
+                    <p>Find optimal system parameters that satisfy stability requirements while maximizing throughput.</p>
+                </div>
             </div>
         </section>
     </main>
@@ -294,7 +200,7 @@ Minimize gap between other meetings : 0.4</textarea>
             const soft = document.getElementById('softConstraints').value.split('\n').filter(l => l.trim());
             const strategy = document.getElementById('strategy').value;
 
-            output.innerHTML = '<span style="color: var(--accent-primary)">Running ' + strategy + ' search...</span>';
+            output.innerHTML = '<span style="color: var(--accent-color)">Running ' + strategy + ' search...</span>';
 
             setTimeout(() => {
                 let result = '';
@@ -332,7 +238,7 @@ Minimize gap between other meetings : 0.4</textarea>
                 // Overall
                 const finalScore = totalWeight > 0 ? (totalScore / totalWeight * 100).toFixed(1) : 100;
                 result += `<div class="output-header">### Overall Score</div>`;
-                result += `<div style="font-size: 1.2em; font-weight: bold; color: var(--accent-primary)">${finalScore}% Satisfaction</div>`;
+                result += `<div style="font-size: 1.2em; font-weight: bold; color: var(--accent-color)">${finalScore}% Satisfaction</div>`;
 
                 // Reasoning
                 result += `<div class="output-header">### Reasoning</div>`;
