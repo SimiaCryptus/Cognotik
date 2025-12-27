@@ -1,7 +1,10 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode.Companion.requestToTask
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
@@ -10,12 +13,13 @@ import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
-import kotlin.io.path.relativeTo
 
 open class ParallelMode(
     override val task: SessionTask,
@@ -31,49 +35,73 @@ open class ParallelMode(
     }
 
     override fun contextData(): List<String> = emptyList()
+    enum class CombinationMode {
+        CrossJoin,
+        Zip
+    }
 
     data class Config(
         val variables: Map<String, Any> = emptyMap(),
         val template: String = "",
-        val concurrency: Int = 4
+        val concurrency: Int = 4,
+        val mode: CombinationMode = CombinationMode.CrossJoin
     )
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         try {
+            task.echo(userMessage.renderMarkdown)
+
             val config = parseConfig(userMessage)
             val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
                 ?: task.ui.dataStorage?.getSessionDir(user, session)?.toPath()
                 ?: File(".").toPath()
 
-            val expandedVariables = config.variables.mapValues { (key, value) ->
-                expandVariable(key, value, root)
-            }
+            val expandedVariables = config.variables.mapValues { (_, value) -> expandVariable(value, root) }
+            val combinations = generateCombinations(expandedVariables, config.mode)
 
-            val combinations = generateCombinations(expandedVariables)
-
-            task.echo("Running ${combinations.size} tasks with concurrency ${config.concurrency}...")
+            task.add("Running ${combinations.size} tasks with concurrency ${config.concurrency}...")
 
             val tabs = TabbedDisplay(task)
             val processor = FixedConcurrencyProcessor(task.ui.pool, config.concurrency)
 
             val futures = combinations.map { combination ->
                 processor.submit {
-                    val subTask = task.ui.newTask(cancelable = false, root = false)
+                    val task = task.ui.newTask(cancelable = false, root = false)
                     val label = combination.values.joinToString(",") { it.toString() }.take(30)
                     synchronized(tabs) {
-                        tabs[label] = subTask.placeholder
+                        tabs[label] = task.placeholder
                     }
 
                     try {
                         val renderedMessage = renderTemplate(config.template, combination)
-                        subTask.add("Parameters: ${JsonUtil.toJson(combination)}".renderMarkdown())
-
-                        // Delegate to WaterfallMode for execution
-                        val mode = WaterfallMode(subTask, orchestrationConfig, session, user)
-                        mode.initialize()
-                        mode.handleUserMessage(renderedMessage, subTask)
+                        task.add("Parameters: \n```json\n${JsonUtil.toJson(combination)}\n```".renderMarkdown())
+                        task.add("Rendered Message: \n```text\n${renderedMessage}\n```".renderMarkdown())
+                        val (_, chosenTask) = requestToTask(
+                            defaultModel = orchestrationConfig.defaultSmart.getChildClient(task),
+                            fastModel = orchestrationConfig.defaultFast.getChildClient(task),
+                            userMessage = renderedMessage,
+                            orchestrationConfig = orchestrationConfig,
+                            singleStage = true
+                        )
+                        task.add("Config: \n```json\n${JsonUtil.toJson(chosenTask)}\n```".renderMarkdown())
+                        val coordinator = TaskOrchestrator(
+                            user = user,
+                            session = session,
+                            dataStorage = task.ui.dataStorage!!,
+                            root = root
+                        )
+                        val impl = TaskType.getImpl(orchestrationConfig, chosenTask)
+                        impl.run(
+                            agent = coordinator,
+                            messages = listOf(userMessage),
+                            task = task,
+                            resultFn = { result ->
+                                task.complete(result.renderMarkdown())
+                            },
+                            orchestrationConfig = orchestrationConfig
+                        )
                     } catch (e: Throwable) {
-                        subTask.error(e)
+                        task.error(e)
                         log.error("Error in parallel task $label", e)
                     }
                 }
@@ -95,20 +123,46 @@ open class ParallelMode(
     }
 
     private fun parseConfig(message: String): Config {
-        try {
-            return JsonUtil.fromJson(message, Config::class.java)
-        } catch (e: Exception) {
-            val jsonBlock = Regex("```json\\s*(\\{.*?\\})\\s*```", RegexOption.DOT_MATCHES_ALL).find(message)
-                ?: Regex("\\{.*\\}", RegexOption.DOT_MATCHES_ALL).find(message)
-
-            if (jsonBlock != null) {
-                return JsonUtil.fromJson(jsonBlock.groupValues.last(), Config::class.java)
-            }
-            throw IllegalArgumentException("Could not parse configuration. Please provide a JSON object with 'variables' and 'template'.")
+        val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
+        val taskDescriptions = availableTaskTypes.joinToString("\n") { taskType ->
+            val impl = TaskType.getImpl(orchestrationConfig, taskType)
+            "* ${taskType.name}: ${impl.promptSegment()}"
         }
+
+        val describer = TaskContextYamlDescriber(orchestrationConfig)
+        Tasks.initDescriber(orchestrationConfig, describer)
+        val agent = ParsedAgent(
+            name = "ParallelConfigParser",
+            resultClass = Config::class.java,
+            exampleInstance = Config(
+                variables = mapOf("file" to listOf("src/main.kt", "src/utils.kt")),
+                template = """{"task_type": "CodingTask", "prompt": "Review the code in {{file}}"}""",
+                concurrency = 2,
+                mode = CombinationMode.CrossJoin
+            ),
+            prompt = """
+Analyze the user request to identify parallel execution parameters.
+Extract variables that represent lists of items to process (e.g., files, inputs).
+Construct a template string that uses these variables (e.g., "{{variableName}}") to formulate a request describing the task to be performed.
+
+Available task types that the downstream agent can perform:
+$taskDescriptions
+
+If the user mentions specific files or globs, include them in the variables map.
+If the user specifies concurrency, set it; otherwise default to 4.
+If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mode to Zip. Default is CrossJoin.
+            """ + (orchestrationConfig.workingDir?.let {root ->
+                "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
+            } ?: ""),
+            model = orchestrationConfig.defaultSmart.getChildClient(task),
+            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
+            temperature = 0.1,
+            describer = describer
+        )
+        return agent.answer(listOf(message)).obj
     }
 
-    private fun expandVariable(key: String, value: Any, root: Path): List<Any> {
+    private fun expandVariable(value: Any, root: Path): List<Any> {
         return when (value) {
             is String -> {
                 if (value.contains("*") || value.contains("?") || (value.contains("[") && value.contains("]"))) {
@@ -134,27 +188,39 @@ open class ParallelMode(
                     listOf(value)
                 }
             }
+
             is List<*> -> value.filterNotNull()
             else -> listOf(value)
         }
     }
 
-    private fun generateCombinations(variables: Map<String, List<Any>>): List<Map<String, Any>> {
+    private fun generateCombinations(variables: Map<String, List<Any>>, mode: CombinationMode): List<Map<String, Any>> {
         if (variables.isEmpty()) return listOf(emptyMap())
 
         val keys = variables.keys.toList()
-        var combinations = variables[keys[0]]!!.map { mapOf(keys[0] to it) }
 
-        for (i in 1 until keys.size) {
-            val key = keys[i]
-            val values = variables[key]!!
-            combinations = combinations.flatMap { map ->
-                values.map { value ->
-                    map + (key to value)
+        return when (mode) {
+            CombinationMode.CrossJoin -> {
+                var combinations = variables[keys[0]]!!.map { mapOf(keys[0] to it) }
+                for (i in 1 until keys.size) {
+                    val key = keys[i]
+                    val values = variables[key]!!
+                    combinations = combinations.flatMap { map ->
+                        values.map { value ->
+                            map + (key to value)
+                        }
+                    }
+                }
+                combinations
+            }
+
+            CombinationMode.Zip -> {
+                val size = variables.values.minOf { it.size }
+                (0 until size).map { i ->
+                    keys.associateWith { key -> variables[key]!![i] }
                 }
             }
         }
-        return combinations
     }
 
     private fun renderTemplate(template: String, variables: Map<String, Any>): String {

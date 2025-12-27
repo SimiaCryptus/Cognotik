@@ -326,7 +326,7 @@ class LanguageServerTask(
         private val log = LoggerFactory.getLogger(LanguageServerTask::class.java)
         val LanguageServer = TaskType(
             "LanguageServer",
-            "Code Analysis",
+            "File",
             LanguageServerTaskExecutionConfigData::class.java,
             LanguageServerTaskTypeConfig::class.java,
             "Interact with Language Servers (LSP)",
