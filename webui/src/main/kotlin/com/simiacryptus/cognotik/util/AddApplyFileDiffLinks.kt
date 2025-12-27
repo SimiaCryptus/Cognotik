@@ -257,7 +257,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
     }
 
     protected open fun normalizeFilename(filename: String): String {
-        return filename.trim()
+        val newValue = filename.trim()
             // Remove common prefixes
             .removePrefix("Code:")
             .removePrefix("code:")
@@ -284,11 +284,13 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             .removePrefix("\"").removeSuffix("\"")
             .removePrefix("'").removeSuffix("'")
             .removePrefix("`").removeSuffix("`")
-            // Clean up whitespace
-            .trim()
+            // Remove any number with a period
+            .replace(Regex("^\\d+\\.\\s*"), "")
             // Remove markdown formatting
             .replace("**", "")
             .replace("*", "")
+            // Clean up whitespace
+            .trim()
             // Remove code block language indicators that might be mistaken for filenames
             .let { name ->
                 if (name.matches(
@@ -304,6 +306,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                 }
             }
             .trim()
+        return if (newValue != filename) normalizeFilename(newValue) else newValue
     }
 
     private fun SocketManager.renderNewFile(

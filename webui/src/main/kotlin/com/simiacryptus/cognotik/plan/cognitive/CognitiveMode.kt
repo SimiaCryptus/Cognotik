@@ -95,5 +95,16 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             return HierarchicalPlanningMode(task, orchestrationConfig, session, user)
         }
     },
+    Parallel {
+        override val inputCnt: Int get() = ParallelMode.inputCnt
+        override fun getCognitiveMode(
+            task: SessionTask,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User
+        ): CognitiveMode {
+            return ParallelMode(task, orchestrationConfig, session, user)
+        }
+    },
     ;
 }

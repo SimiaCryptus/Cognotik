@@ -72,6 +72,14 @@
           "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/MCPToolTask.kt"
         },
         {
+          "id": "languageserver",
+          "label": "Language Server Task",
+          "url": "LanguageServerTask.html",
+          "description": "Query code intelligence (LSP) for definitions, references, and diagnostics",
+          "image": "assets/images/workflow-pipeline-schematic.png",
+          "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/LanguageServerTask.kt"
+        },
+        {
           "id": "llmexperiment",
           "label": "LLM Experiment",
           "url": "LLMExperimentTask.html",

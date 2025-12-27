@@ -66,6 +66,7 @@
             'Adaptive': 'Adaptive',
             'Hierarchical': 'Hierarchical',
             'Waterfall': 'Waterfall',
+            'Parallel': 'Parallel',
         };
 
         const cognitiveModeSummary = this.document.getElementById('cognitive-mode-summary');

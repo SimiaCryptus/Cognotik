@@ -12,15 +12,14 @@ import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
 import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameNarrativeDesignTask
-import com.simiacryptus.cognotik.plan.tools.writing.IterativeGraphGenerationTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
 import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
+import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.run.RunToolTask
-import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.Companion.SubPlan
 import com.simiacryptus.cognotik.plan.tools.social.*
@@ -242,6 +241,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             }
             registerConstructor(JournalismReasoningTask.JournalismReasoning) { settings, task ->
                 JournalismReasoningTask(settings, task)
+            }
+            registerConstructor(LanguageServerTask.LanguageServer) { settings, task ->
+                LanguageServerTask(settings, task)
             }
             registerConstructor(TechnicalExplanationTask.TechnicalExplanation) { settings, task ->
                 TechnicalExplanationTask(settings, task)
