@@ -2,12 +2,11 @@
   "siteName": "Cognotik",
   "navigation": [
     {
-      "label": "IntelliJ",
+      "label": "IDE",
       "url": "intellij-plugin.html",
       "type": "link"
     },
     {
-      "id": "taskplanning",
       "label": "Planning",
       "url": "TaskPlanning.html",
       "type": "link"
