@@ -68,6 +68,7 @@ open class CodeAgent(
                 if (evalFormat) """Code should be structured as appropriately parameterized function(s)
 
  with the final line invoking the function with the appropriate request parameters.""" else ""
+            val symbols = this.codeRuntime.getSymbols()
             return if (symbols.isNotEmpty()) {
                 """
 You are a coding assistant allows users actions to be enacted using $language and the script context.
@@ -457,6 +458,9 @@ Correct the code and try again.
                         }
                     }
 
+                    // HACK: Indented end-markdown blocks are still considered code blocks
+                    it.trim().startsWith("```") -> indent + "|```"
+
                     else -> indent + it
                 }
             }
@@ -538,4 +542,13 @@ Correct the code and try again.
         }
     }
 
+}
+
+private fun String.htmlEscape(): String {
+    return this.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("`", "&#96;")
+        .replace("'", "&#39;")
 }

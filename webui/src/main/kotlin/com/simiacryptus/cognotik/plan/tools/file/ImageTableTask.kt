@@ -106,13 +106,7 @@ ImageTable - Generate a table/grid of AI-generated images
      - Product variation displays (colors vs sizes)
      - Character emotion charts (characters vs emotions)
      - Concept exploration matrices (themes vs settings)
-Available files:
-${
-      AnalysisTask.getAvailableFiles(
-        root
-      ).joinToString("\n") { "  - $it" }
-    }
-        """
+      """
   }
 
   override fun run(
@@ -154,7 +148,7 @@ ${
     var completedImages = 0
 
     // Create the image generation agent
-    val imageChatChatter = orchestrationConfig.imageChatChatter.getChildClient(task)
+    val imageChatChatter = orchestrationConfig.defaultImage.getChildClient(task)
     val imageAgent = ImageProcessingAgent(
       prompt = "Transform the user request into an image. Generate exactly what is described.",
       name = "ImageTableGenerator",
@@ -406,7 +400,7 @@ ${
     private val log: Logger = LoggerFactory.getLogger(ImageTableTask::class.java)
     val ImageTable = TaskType(
       "ImageTable",
-      "File Operations",
+      "File",
       ImageTableTaskExecutionConfigData::class.java,
       ImageTableTaskTypeConfig::class.java,
       "Generate a table/grid of AI-generated images",

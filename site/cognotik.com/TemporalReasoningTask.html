@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temporal Reasoning - Cognotik</title>
+    <meta name="description" content="Analyze how systems evolve over time and predict future states using temporal reasoning.">
+
+    <!-- Load Shared Styles -->
+    <link rel="stylesheet" href="assets/styles/main.css">
+
+    <!-- Load Component Script -->
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+
+        .hero-visual {
+            background: radial-gradient(circle at center, var(--background-color) 0%, #000 100%);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--border-radius);
+            min-height: 300px;
+        }
+
+        /* Abstract Timeline Animation */
+        .timeline-stream {
+            position: absolute;
+            width: 200%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-secondary), transparent);
+            animation: flow 3s linear infinite;
+        }
+
+        @keyframes flow {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0%); }
+        }
+
+
+
+
+
+
+
+        .split-hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        @media (max-width: 768px) {
+            .split-hero {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!--
+      Hero Image Prompt:
+      Abstract 3D visualization of a glowing timeline flowing through dark space.
+      Nodes of light represent events, connected by data streams.
+      Branching paths extend into the future representing predictions.
+      Cyberpunk aesthetic, deep blue and cyan neon colors.
+    -->
+
+    <cognotik-header current-page="temporal-reasoning"></cognotik-header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="split-hero">
+                <div class="hero-content">
+                    <h1>Temporal Reasoning</h1>
+                    <p class="subtitle">Analyze how systems evolve over time, identify patterns, and predict future states through advanced timeline analysis.</p>
+                    <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
+                </div>
+                <div class="hero-visual">
+                    <div class="timeline-stream" style="top: 30%; opacity: 0.3;"></div>
+                    <div class="timeline-stream" style="top: 50%;"></div>
+                    <div class="timeline-stream" style="top: 70%; opacity: 0.3;"></div>
+                    <!-- Placeholder for 3D illustration -->
+                    <div style="z-index: 1; color: var(--accent-secondary); font-size: 4rem;">⏳</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="features">
+            <div class="features-grid">
+            <div class="feature-card">
+                <i>📅</i>
+                <h3>Timeline Construction</h3>
+                <p>Automatically construct chronological timelines of significant events from logs and file history.</p>
+            </div>
+            <div class="feature-card">
+                <i>🔄</i>
+                <h3>Pattern Recognition</h3>
+                <p>Identify recurring patterns, cycles, and seasonal trends in system behavior.</p>
+            </div>
+            <div class="feature-card">
+                <i>🔮</i>
+                <h3>Future Prediction</h3>
+                <p>Extrapolate historical trends to predict future states and potential risks.</p>
+            </div>
+            <div class="feature-card">
+                <i>📈</i>
+                <h3>Rate of Change</h3>
+                <p>Analyze the velocity and acceleration of system evolution to detect instability.</p>
+            </div>
+            <div class="feature-card">
+                <i>⚡</i>
+                <h3>Transition Points</h3>
+                <p>Pinpoint critical inflection points and phase transitions in the system's lifecycle.</p>
+            </div>
+            <div class="feature-card">
+                <i>📊</i>
+                <h3>Visualization</h3>
+                <p>Generate Mermaid diagrams to visualize the timeline and key events.</p>
+            </div>
+            </div>
+        </section>
+
+        <!-- Simulator -->
+        <section id="simulator" class="simulator">
+            <h2>Interactive Simulator</h2>
+            <div class="simulator-container">
+                <!-- Inputs -->
+                <div class="sim-controls">
+                    <h3>Configuration</h3>
+                    <form id="sim-form">
+                        <div class="control-group">
+                            <label>Subject</label>
+                            <input type="text" id="subject" value="Payment Service" placeholder="e.g. System X">
+                        </div>
+                        <div class="control-group">
+                            <label>Time Range</label>
+                            <input type="text" id="time_range" value="2023-01-01 to 2023-12-31">
+                        </div>
+                        <div class="control-group">
+                            <label>Granularity</label>
+                            <select id="granularity">
+                                <option value="daily">Daily</option>
+                                <option value="weekly" selected>Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label>Input Files (Pattern)</label>
+                            <input type="text" id="input_files" value="**/*.log">
+                        </div>
+                        <div class="control-group">
+                            <label>Critical Events (Optional)</label>
+                            <input type="text" id="critical_events" placeholder="e.g. Black Friday, Migration">
+                        </div>
+
+                        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
+                            <div>
+                                <input type="checkbox" id="identify_patterns" checked>
+                                <label for="identify_patterns" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Identify Patterns</label>
+                            </div>
+                            <div>
+                                <input type="checkbox" id="predict_future" checked>
+                                <label for="predict_future" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Predict Future</label>
+                            </div>
+                        </div>
+
+                        <div class="control-group" id="horizon-group">
+                            <label>Prediction Horizon</label>
+                            <input type="text" id="prediction_horizon" value="3 months">
+                        </div>
+
+                        <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
+                            <div>
+                                <input type="checkbox" id="analyze_rate_of_change" checked>
+                                <label for="analyze_rate_of_change" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Analyze Rate of Change</label>
+                            </div>
+                            <div>
+                                <input type="checkbox" id="identify_transitions" checked>
+                                <label for="identify_transitions" style="display:inline; text-transform:none; color:inherit; margin-left: 0.5rem;">Identify Transitions</label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="run-button" style="margin-top: auto;">Run Analysis</button>
+                    </form>
+                </div>
+
+                <!-- Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('overview')">Overview</button>
+                        <button class="tab" onclick="switchTab('timeline')">Timeline</button>
+                        <button class="tab" onclick="switchTab('viz')">Visualization</button>
+                        <button class="tab" onclick="switchTab('json')">JSON</button>
+                    </div>
+                    <div id="output-display" class="tab-content active">
+                        <div class="placeholder-text" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #64748b;">
+                            Configure and run analysis to see results...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="features" style="margin-top: 4rem; margin-bottom: 4rem;">
+            <h2>When to Use</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Technical Debt Analysis</h3>
+                    <p>Track how code complexity and debt have accumulated over time to justify refactoring efforts.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>System Evolution</h3>
+                    <p>Understand how architecture has drifted from original designs through incremental changes.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Performance Degradation</h3>
+                    <p>Correlate performance metrics with deployment events to find the root cause of slow degradation.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Tab Switching
+        let currentData = null;
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (!currentData) return;
+
+            const display = document.getElementById('output-display');
+
+            if (tabId === 'overview') {
+                display.innerHTML = renderOverview(currentData);
+            } else if (tabId === 'timeline') {
+                display.innerHTML = renderTimeline(currentData.timeline_events);
+            } else if (tabId === 'viz') {
+                display.innerHTML = `<div style="color: var(--accent-secondary)">\n${currentData.visualization}\n</div>`;
+            } else if (tabId === 'json') {
+                display.textContent = JSON.stringify(currentData, null, 2);
+            }
+        }
+
+        // Mock Data Generation
+        document.getElementById('sim-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const display = document.getElementById('output-display');
+            display.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%">🔄 Analyzing temporal data...</div>';
+
+            const subject = document.getElementById('subject').value;
+            const predict = document.getElementById('predict_future').checked;
+            const patterns = document.getElementById('identify_patterns').checked;
+
+            setTimeout(() => {
+                currentData = generateMockData(subject, predict, patterns);
+                switchTab('overview');
+                // Reset active tab visual
+                document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+                document.querySelector('.tab').classList.add('active');
+            }, 1500);
+        });
+
+        function generateMockData(subject, predict, patterns) {
+            return {
+                subject: subject,
+                timeline_events: [
+                    { date: "2023-02-15", type: "Deployment", description: "Initial release of v1.0", significance: "High" },
+                    { date: "2023-04-10", type: "Incident", description: "Database latency spike detected", significance: "Medium" },
+                    { date: "2023-06-20", type: "Feature", description: "Added multi-region support", significance: "High" },
+                    { date: "2023-09-05", type: "Refactor", description: "Migration to async processing", significance: "Medium" }
+                ],
+                patterns: patterns ? [
+                    { type: "Recurring", description: "Traffic spikes every Monday morning", confidence: "High" },
+                    { type: "Trend", description: "Steady increase in memory usage (5% per month)", confidence: "Medium" }
+                ] : [],
+                predictions: predict ? [
+                    "Memory limit likely to be reached by 2024-01-15",
+                    "Transaction volume expected to double in Q4"
+                ] : [],
+                visualization: "```mermaid\ntimeline\n    title History of " + subject + "\n    2023-02-15 : v1.0 Release\n    2023-04-10 : Latency Incident\n    2023-06-20 : Multi-region\n    2023-09-05 : Async Migration\n```"
+            };
+        }
+
+        function renderOverview(data) {
+            let html = `<h3>Analysis Summary for ${data.subject}</h3>`;
+            html += `<p><strong>Events Analyzed:</strong> ${data.timeline_events.length}</p>`;
+
+            if (data.patterns.length > 0) {
+                html += `<p><strong>Patterns Found:</strong> ${data.patterns.length}</p>`;
+                html += `<ul>${data.patterns.map(p => `<li>${p.description}</li>`).join('')}</ul>`;
+            }
+
+            if (data.predictions.length > 0) {
+                html += `<p><strong>Future Predictions:</strong></p>`;
+                html += `<ul>${data.predictions.map(p => `<li>${p}</li>`).join('')}</ul>`;
+            }
+
+            return html;
+        }
+
+        function renderTimeline(events) {
+            return events.map(e =>
+                `[${e.date}] ${e.type.toUpperCase()}\n${e.description}\nSignificance: ${e.significance}\n---`
+            ).join('\n\n');
+        }
+
+        // Toggle Horizon visibility
+        document.getElementById('predict_future').addEventListener('change', (e) => {
+            document.getElementById('horizon-group').style.display = e.target.checked ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>

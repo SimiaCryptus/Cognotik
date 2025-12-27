@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Generation Task - Cognotik</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        /* Page-specific overrides */
+        /* Utilities */
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 var(--spacing-lg);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
+            color: #fff;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+        }
+        /* Hero */
+        .hero {
+            padding: var(--spacing-xl) 0;
+            display: flex;
+            align-items: center;
+            min-height: 80vh;
+            position: relative;
+            text-align: left;
+            background: transparent;
+        }
+        .hero-content {
+            flex: 1;
+            padding-right: var(--spacing-lg);
+        }
+        .hero h1 {
+            line-height: 1.1;
+            margin-bottom: var(--spacing-md);
+            background: linear-gradient(to right, #fff, var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-lg);
+            max-width: 600px;
+        }
+        .hero-visual {
+            flex: 1;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        /* Abstract Visual Placeholder */
+        .visual-node {
+            width: 200px;
+            height: 200px;
+            border: 2px solid var(--accent-secondary);
+            border-radius: 50%;
+            position: absolute;
+            animation: pulse 4s infinite;
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .visual-node::before {
+            content: '✍️';
+            font-size: 4rem;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--spacing-md);
+            color: var(--accent-secondary);
+        }
+        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-primary); }
+        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-secondary); }
+        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
+        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
+        @media (max-width: 768px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
+            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="article-generation"></cognotik-header>
+    <!-- Hero -->
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>Article Generation Task</h1>
+            <p>Generate publication-ready journalistic articles with proper structure, attribution, and style.</p>
+            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+    <!-- Features -->
+    <section id="features" class="features">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </div>
+                    <h3>Full Article Writing</h3>
+                    <p>Produces complete articles from headlines to conclusion, ready for publication.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    </div>
+                    <h3>Style Adaptation</h3>
+                    <p>Supports news, features, opinion, and investigative formats tailored to your audience.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </div>
+                    <h3>Source Integration</h3>
+                    <p>Weaves in quotes, data, and expert analysis naturally for authoritative content.</p>
+                </div>
+            </div>
+    </section>
+    <!-- Simulator -->
+    <section id="demo" class="simulator">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <!-- Inputs -->
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                    <div class="control-group">
+                        <label>Story Topic</label>
+                        <input type="text" id="story_topic" value="The Rise of Remote Work">
+                    </div>
+                    <div class="control-group">
+                        <label>Article Format</label>
+                        <select id="article_format">
+                            <option value="news">News Report</option>
+                            <option value="feature" selected>Feature Story</option>
+                            <option value="opinion">Opinion Piece</option>
+                            <option value="investigative">Investigative</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Target Publication</label>
+                        <input type="text" id="target_publication" value="TechCrunch">
+                    </div>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: 2rem;">Generate Article</button>
+                </div>
+                <!-- Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('article')">Article</div>
+                        <div class="tab" onclick="switchTab('logs')">Logs</div>
+                    </div>
+                    <div id="output-article" class="tab-content active markdown-preview">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the article and click "Generate" to see the output.
+                        </div>
+                    </div>
+                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                    </div>
+                </div>
+            </div>
+    </section>
+    <!-- Use Cases -->
+    <section id="use-cases" class="features">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="mode-grid">
+                <div class="mode-card">
+                    <h4>Content Marketing</h4>
+                    <p>Create high-quality blog posts and articles to engage your audience.</p>
+                </div>
+                <div class="mode-card">
+                    <h4>News Reporting</h4>
+                    <p>Generate timely news reports on current events and industry updates.</p>
+                </div>
+                <div class="mode-card">
+                    <h4>Thought Leadership</h4>
+                    <p>Draft opinion pieces and features that establish authority in your field.</p>
+                </div>
+                <div class="mode-card">
+                    <h4>Internal Communications</h4>
+                    <p>Write newsletters and updates for employees and stakeholders.</p>
+                </div>
+            </div>
+    </section>
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (tabName === 'article') {
+                document.getElementById('output-article').classList.add('active');
+            } else {
+                document.getElementById('output-logs').classList.add('active');
+            }
+        }
+        function runSimulation() {
+            const topic = document.getElementById('story_topic').value;
+            const format = document.getElementById('article_format').value;
+            const publication = document.getElementById('target_publication').value;
+            const reportEl = document.getElementById('output-article');
+            const logsEl = document.getElementById('output-logs');
+            
+            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
+            logsEl.innerHTML = '';
+            
+            const logs = [
+                `[INFO] Initializing ArticleGenerationTask...`,
+                `[INFO] Topic: ${topic}`,
+                `[INFO] Format: ${format}`,
+                `[INFO] Investigating topic...`,
+                `[INFO] Creating outline...`,
+                `[INFO] Writing draft...`,
+                `[INFO] Refining style for ${publication}...`,
+                `[SUCCESS] Article generation complete.`
+            ];
+            
+            let logIndex = 0;
+            const logInterval = setInterval(() => {
+                if (logIndex < logs.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
+                    line.style.marginBottom = '4px';
+                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
+                    logsEl.appendChild(line);
+                    logsEl.scrollTop = logsEl.scrollHeight;
+                    logIndex++;
+                } else {
+                    clearInterval(logInterval);
+                    renderArticle(topic, format);
+                }
+            }, 400);
+        }
+        function renderArticle(topic, format) {
+            const reportEl = document.getElementById('output-article');
+            const markdown = `
+<h1>Remote Work Revolution: A Permanent Shift?</h1>
+<h2>How the pandemic reshaped the global workforce and what lies ahead.</h2>
+<p><strong>By Cognotik AI</strong> | <em>${new Date().toLocaleDateString()}</em></p>
+
+<hr>
+
+<p>The traditional 9-to-5 office routine has been upended. What began as a temporary necessity has evolved into a fundamental shift in how we work. Companies worldwide are grappling with the new reality of hybrid and remote models.</p>
+
+<h3>The Productivity Paradox</h3>
+<p>Initial fears that remote work would lead to a slump in productivity have largely been debunked. "We've seen output actually increase," says Sarah Chen, HR Director at TechGlobal. "The challenge now is burnout, not laziness."</p>
+
+<h3>The Hybrid Compromise</h3>
+<p>Most organizations are settling on a hybrid model. This offers the flexibility employees crave while maintaining the collaborative benefits of in-person interaction. However, managing this balance requires new tools and management styles.</p>
+
+<h3>Looking Ahead</h3>
+<p>As technology evolves, the office will likely become a destination for collaboration rather than a daily requirement. The remote work revolution is not just about where we work, but how we define work itself.</p>
+            `;
+            reportEl.innerHTML = markdown;
+        }
+    </script>
+</body>
+</html>

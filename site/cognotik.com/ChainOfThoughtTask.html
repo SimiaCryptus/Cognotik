@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain of Thought - Cognotik</title>
+
+    <!-- Load Shared Styles -->
+    <link rel="stylesheet" href="assets/styles/main.css">
+
+    <!-- Load Component Script -->
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <!-- Page Specific Styles -->
+    <style>
+        :root {
+            --accent-glow: rgba(139, 92, 246, 0.3);
+        }
+
+
+        /* Hero Section */
+        .hero {
+            padding: 6rem 2rem; /* Override main.css padding */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            text-align: left; /* Override main.css center */
+            background: none; /* Override main.css gradient */
+        }
+
+        .hero h1 {
+            text-align: left;
+            background: linear-gradient(to right, var(--accent-color), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+
+
+
+        /* Visual Placeholder */
+        .hero-visual {
+            position: relative;
+            height: 400px;
+            background: radial-gradient(circle at center, var(--surface-color), var(--background-color));
+            border-radius: 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Abstract Node Animation */
+        .node {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-secondary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-secondary);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.5); } 100% { opacity: 0.5; transform: scale(1); } }
+
+
+
+
+        .feature-icon {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+        /* Simulator */
+
+        .simulator-container {
+            height: 800px;
+            max-width: 1400px; /* Override main.css 1200px */
+        }
+
+        .tab-content {
+            height: auto;
+            flex-grow: 1;
+        }
+
+
+
+
+
+
+        /* Form Elements */
+
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Output Styling */
+        .step-card {
+            border-left: 3px solid var(--accent-color);
+            background: rgba(255,255,255,0.02);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--accent-secondary);
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        .validation-badge {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+        .validation-badge.fail {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+
+
+        @media (max-width: 768px) {
+            .hero, .simulator-container {
+                grid-template-columns: 1fr;
+            }
+            .hero-visual {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <cognotik-header current-page="chain-of-thought"></cognotik-header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Chain of Thought Reasoning</h1>
+            <p class="subtitle">
+                Break down complex problems into explicit, validated reasoning steps.
+                Mimic human cognitive processes by analyzing problems sequentially, validating logic at every turn, and backtracking when necessary.
+            </p>
+            <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
+                Try the Simulator
+            </button>
+        </div>
+        <!--
+            Visual Prompt: A glowing, multi-layered neural pathway structure, where nodes light up sequentially in a chain.
+            Some nodes branch off and fade (rejected paths), while the main path glows brightly in cyan and gold.
+        -->
+        <div class="hero-visual">
+            <div class="node" style="top: 50%; left: 20%"></div>
+            <div class="node" style="top: 40%; left: 40%; animation-delay: 0.5s"></div>
+            <div class="node" style="top: 60%; left: 60%; animation-delay: 1s"></div>
+            <div class="node" style="top: 50%; left: 80%; animation-delay: 1.5s"></div>
+            <svg width="100%" height="100%" style="position: absolute; top:0; left:0; pointer-events: none;">
+                <path d="M 120 200 Q 240 160 360 240 T 600 200" stroke="rgba(6, 182, 212, 0.3)" stroke-width="2" fill="none" />
+            </svg>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            </div>
+            <h3>Step-by-Step Analysis</h3>
+            <p>Deconstructs complex queries into manageable logical units, ensuring no detail is overlooked.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            <h3>Self-Correction</h3>
+            <p>Validates every reasoning step for logical consistency before proceeding to the next.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+            <h3>Context Awareness</h3>
+            <p>Ingests related files and prior context to inform decision-making and ground reasoning in reality.</p>
+        </div>
+        </div>
+    </section>
+
+    <!-- Simulator -->
+    <section id="simulator" class="simulator">
+        <div class="simulator-container">
+            <!-- Controls -->
+            <div class="sim-controls">
+                <h2>Configuration</h2>
+
+                <div class="control-group">
+                    <label>Problem Statement</label>
+                    <textarea id="problem" rows="4" placeholder="e.g., Why is the authentication service failing under high load?">Analyze the potential causes for memory leaks in the connection pool.</textarea>
+                </div>
+
+                <div class="control-group">
+                    <label>Reasoning Depth (Max Steps)</label>
+                    <input type="range" id="depth" min="1" max="20" value="5" oninput="document.getElementById('depth-val').innerText = this.value">
+                    <div style="text-align: right; font-size: 0.8rem; color: var(--text-muted);"><span id="depth-val">5</span> steps</div>
+                </div>
+
+                <div class="toggle-row control-group">
+                    <label style="margin:0">Validate Steps</label>
+                    <input type="checkbox" id="validate" checked>
+                </div>
+
+                <div class="control-group">
+                    <label>Related Files (Glob Patterns)</label>
+                    <input type="text" value="src/**/*.kt" placeholder="**/*.kt">
+                </div>
+
+                <button class="run-button" onclick="runSimulation()">Start Reasoning</button>
+            </div>
+
+            <!-- Output -->
+            <div class="sim-output">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('chain')">Reasoning Chain</button>
+                    <button class="tab" onclick="switchTab('summary')">Final Summary</button>
+                </div>
+                <div id="output-chain" class="tab-content active">
+                    <div style="color: var(--text-muted); text-align: center; margin-top: 2rem;">
+                        Configure the task and click "Start Reasoning" to see the agent in action.
+                    </div>
+                </div>
+                <div id="output-summary" class="tab-content">
+                    <div style="color: var(--text-muted);">Waiting for reasoning to complete...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="use-cases">
+        <h2>When to Use</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Complex Debugging</h3>
+                <p>Tracing the root cause of a bug through multiple system layers where simple stack traces aren't enough.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Architectural Decisions</h3>
+                <p>Weighing pros and cons of different design patterns with a structured, documented thought process.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Root Cause Analysis</h3>
+                <p>Investigating system failures or security incidents by logically eliminating impossibilities.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Code Refactoring</h3>
+                <p>Planning a safe migration path for legacy code by analyzing dependencies step-by-step.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('output-' + tabId).classList.add('active');
+
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        async function runSimulation() {
+            const chainDiv = document.getElementById('output-chain');
+            const summaryDiv = document.getElementById('output-summary');
+            const problem = document.getElementById('problem').value;
+            const maxSteps = document.getElementById('depth').value;
+            const validate = document.getElementById('validate').checked;
+
+            chainDiv.innerHTML = `<div style="color: var(--accent-secondary)">Initializing Chain of Thought...<br>Problem: ${problem}</div><br>`;
+            summaryDiv.innerHTML = "Generating...";
+            switchTab('chain');
+
+            const steps = [
+                { reasoning: "Analyzing the problem statement regarding memory leaks. I need to examine the connection pool implementation.", conclusion: "The issue likely lies in object lifecycle management.", next: "Check ConnectionPool.kt for release logic." },
+                { reasoning: "Examining `ConnectionPool.kt`. The `release()` method puts connections back in the queue but doesn't check for stale references.", conclusion: "Potential leak identified in `release()`.", next: "Verify if stale connections are ever purged." },
+                { reasoning: "Looking for purge logic. There is a scheduled task, but it only runs every 24 hours.", conclusion: "Purge interval is too long for high load scenarios.", next: "Propose a fix for the interval." },
+                { reasoning: "Calculating optimal purge interval based on load patterns. 10 minutes seems appropriate.", conclusion: "Reduce purge interval to 10m.", next: null }
+            ];
+
+            let limit = Math.min(maxSteps, steps.length);
+
+            for (let i = 0; i < limit; i++) {
+                // Simulate thinking time
+                await new Promise(r => setTimeout(r, 800));
+
+                const step = steps[i];
+                const stepNum = i + 1;
+
+                let validationHtml = "";
+                if (validate) {
+                    chainDiv.innerHTML += `<div style="color: var(--text-muted); font-size: 0.8rem; margin-left: 1rem;">* Validating step ${stepNum}...</div>`;
+                    await new Promise(r => setTimeout(r, 600));
+                    validationHtml = `<span class="validation-badge">Valid</span>`;
+                }
+
+                const html = `
+                    <div class="step-card">
+                        <div class="step-header">
+                            <span>Step ${stepNum}</span>
+                            ${validationHtml}
+                        </div>
+                        <div style="margin-bottom: 0.5rem;"><strong>Reasoning:</strong> ${step.reasoning}</div>
+                        <div style="margin-bottom: 0.5rem;"><strong>Conclusion:</strong> ${step.conclusion}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Confidence: ${(0.85 + (Math.random() * 0.1)).toFixed(2)}</div>
+                    </div>
+                `;
+
+                // Remove the "Validating..." text and append real step
+                if (validate) {
+                    chainDiv.lastElementChild.remove();
+                }
+                chainDiv.innerHTML += html;
+                chainDiv.scrollTop = chainDiv.scrollHeight;
+            }
+
+            // Final Summary
+            await new Promise(r => setTimeout(r, 500));
+            const summaryHtml = `
+                <h3>Final Analysis</h3>
+                <p>Based on the step-by-step reasoning, the memory leak is caused by an insufficient purge interval in the connection pool under high load.</p>
+                <h4>Recommendations:</h4>
+                <ul>
+                    <li>Modify <code>ConnectionPool.kt</code> to check for stale references on release.</li>
+                    <li>Decrease the scheduled purge task interval from 24 hours to 10 minutes.</li>
+                </ul>
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(6, 182, 212, 0.1); border-radius: 0.5rem;">
+                    <strong>Status:</strong> ✅ Complete
+                </div>
+            `;
+            summaryDiv.innerHTML = summaryHtml;
+
+            chainDiv.innerHTML += `<div style="color: var(--accent-secondary); margin-top: 1rem;"><strong>Reasoning Complete.</strong> See Summary tab.</div>`;
+        }
+    </script>
+</body>
+</html>

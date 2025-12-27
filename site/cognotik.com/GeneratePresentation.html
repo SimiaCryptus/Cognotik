@@ -1,0 +1,398 @@
+<!--
+    Image Prompt: A futuristic holographic projector displaying a sequence of floating data panels (slides) in a spiral formation.
+    The panels are translucent glass with glowing purple and gold data visualizations.
+    Dark background with volumetric lighting emphasizing the flow of information.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentation Generator - Cognotik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        :root {
+            /* Page specific overrides */
+            --accent-gold: #fbbf24;
+        }
+        body {
+            overflow-x: hidden;
+        }
+        /* Hero Section */
+        .hero-text h1 {
+            font-family: var(--font-family-serif);
+            background: linear-gradient(to right, #fff, var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glow-container {
+            position: relative;
+        }
+        .glow-container::before {
+            content: '';
+            position: absolute;
+            top: -20px; left: -20px; right: -20px; bottom: -20px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+            z-index: -1;
+        }
+        /* Feature Cards */
+        .feature-card {
+            background: var(--surface-color);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+        /* Simulator Styles */
+        .sim-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+        }
+        .sim-input:focus {
+            border-color: var(--accent-color);
+            outline: none;
+        }
+        .tab-active {
+            border-bottom: 2px solid var(--accent-color);
+            color: var(--text-color);
+        }
+        .tab-inactive {
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+        }
+        .tab-inactive:hover {
+            color: var(--text-color);
+        }
+        /* Code Block */
+        pre {
+            background: #000;
+            font-size: 0.875rem;
+            color: #a5b4fc;
+        }
+        /* Range Slider */
+        input[type=range] {
+            accent-color: var(--accent-color);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <cognotik-header current-page="presentation"></cognotik-header>
+    <!-- B. Hero Section -->
+    <section class="pt-32 pb-20 px-6 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+            <div class="hero-text z-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-900/30 border border-purple-500/30 text-purple-300 text-xs font-medium mb-6">
+                    <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                    Reveal.js Generator
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold leading-tight mb-6">
+                    Presentation Generator
+                </h1>
+                <p class="text-xl text-slate-400 mb-8 leading-relaxed">
+                    Create professional, interactive Reveal.js presentations instantly.
+                    Generates complete HTML decks with AI-written speaker notes, custom CSS styling, and optional DALL-E imagery.
+                </p>
+                <div class="flex gap-4">
+                    <a href="#simulator" class="bg-white text-slate-900 px-8 py-3 rounded-lg font-bold hover:bg-slate-200 transition flex items-center gap-2">
+                        Start Building <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </a>
+                    <a href="#features" class="px-8 py-3 rounded-lg font-medium text-slate-300 border border-slate-700 hover:border-slate-500 transition">
+                        Learn More
+                    </a>
+                </div>
+            </div>
+            <div class="relative z-0 glow-container">
+                <!-- Abstract Visual Representation -->
+                <div class="aspect-square rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-8 flex items-center justify-center shadow-2xl">
+                    <div class="relative w-full h-64 bg-slate-950 rounded border border-slate-800 p-4 transform rotate-y-12 rotate-x-6 shadow-xl">
+                        <div class="h-4 w-1/3 bg-purple-500/20 rounded mb-4"></div>
+                        <div class="h-32 w-full bg-slate-800/50 rounded mb-4 flex items-center justify-center text-slate-600">
+                            <i data-lucide="image" class="w-12 h-12 opacity-20"></i>
+                        </div>
+                        <div class="h-2 w-3/4 bg-slate-700/30 rounded mb-2"></div>
+                        <div class="h-2 w-1/2 bg-slate-700/30 rounded"></div>
+                        <!-- Floating Elements -->
+                        <div class="absolute -right-12 -top-8 bg-slate-800 p-3 rounded-lg border border-slate-700 shadow-lg animate-bounce" style="animation-duration: 3s;">
+                            <i data-lucide="mic" class="text-gold-400 text-yellow-500 w-6 h-6"></i>
+                        </div>
+                        <div class="absolute -left-8 bottom-12 bg-slate-800 p-3 rounded-lg border border-slate-700 shadow-lg animate-bounce" style="animation-duration: 4s;">
+                            <i data-lucide="code" class="text-purple-400 w-6 h-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- C. Features Grid -->
+    <section id="features" class="py-20 bg-slate-900/50">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-3xl font-bold mb-12 text-center">Key Capabilities</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="feature-card p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-purple-900/30 rounded-lg flex items-center justify-center mb-4 text-purple-400">
+                        <i data-lucide="layout"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Reveal.js Integration</h3>
+                    <p class="text-slate-400">Generates complete, self-contained HTML presentations using the robust Reveal.js framework.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="feature-card p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-yellow-900/30 rounded-lg flex items-center justify-center mb-4 text-yellow-400">
+                        <i data-lucide="mic-2"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Smart Speaker Notes</h3>
+                    <p class="text-slate-400">Automatically writes detailed speaker notes for every slide to assist in delivery.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="feature-card p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-blue-900/30 rounded-lg flex items-center justify-center mb-4 text-blue-400">
+                        <i data-lucide="palette"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Custom Styling</h3>
+                    <p class="text-slate-400">Creates a dedicated CSS file with custom themes, fonts, and transitions tailored to your topic.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="feature-card p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-pink-900/30 rounded-lg flex items-center justify-center mb-4 text-pink-400">
+                        <i data-lucide="image-plus"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">AI Imagery</h3>
+                    <p class="text-slate-400">Optional integration with DALL-E 3 to generate professional visuals for key slides.</p>
+                </div>
+                <!-- Feature 5 -->
+                <div class="feature-card p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-green-900/30 rounded-lg flex items-center justify-center mb-4 text-green-400">
+                        <i data-lucide="file-code"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Single File Output</h3>
+                    <p class="text-slate-400">Delivers a portable HTML file that works offline without complex build steps.</p>
+                </div>
+                <!-- Feature 6 -->
+                <div class="feature-card p-6 rounded-xl">
+                    <div class="w-12 h-12 bg-indigo-900/30 rounded-lg flex items-center justify-center mb-4 text-indigo-400">
+                        <i data-lucide="play-circle"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Narration Ready</h3>
+                    <p class="text-slate-400">Includes UI controls for autoplay and voice selection for automated presentations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- D. Interactive Simulator -->
+    <section id="simulator" class="py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="mb-10">
+                <h2 class="text-3xl font-bold mb-4">Task Simulator</h2>
+                <p class="text-slate-400">Configure the presentation parameters and visualize the generation process.</p>
+            </div>
+            <div class="grid lg:grid-cols-12 gap-8 h-[800px]">
+                <!-- Left Column: Inputs -->
+                <div class="lg:col-span-4 bg-slate-900 rounded-xl border border-slate-800 p-6 overflow-y-auto">
+                    <h3 class="text-lg font-semibold mb-6 flex items-center gap-2">
+                        <i data-lucide="settings" class="w-5 h-5 text-purple-400"></i> Configuration
+                    </h3>
+                    <form id="simForm" class="space-y-6">
+                        <!-- File Name -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Output Filename</label>
+                            <input type="text" name="filename" value="pitch_deck.html" class="sim-input w-full px-4 py-2 rounded-lg text-sm font-mono">
+                            <p class="text-xs text-slate-500 mt-1">Must end in .html</p>
+                        </div>
+                        <!-- Description -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Presentation Topic & Details</label>
+                            <textarea name="description" rows="5" class="sim-input w-full px-4 py-2 rounded-lg text-sm" placeholder="Describe the topic, audience, and key points..."></textarea>
+                        </div>
+                        <!-- Image Generation Toggle -->
+                        <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                            <label class="text-sm font-medium text-slate-300">Generate Images</label>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="genImages" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+                        <!-- Image Model -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Image Model</label>
+                            <select name="model" class="sim-input w-full px-4 py-2 rounded-lg text-sm">
+                                <option value="DallE3">DallE3</option>
+                                <option value="DallE2">DallE2</option>
+                            </select>
+                        </div>
+                        <!-- Max Images -->
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-sm font-medium text-slate-300">Max Images</label>
+                                <span id="maxImagesVal" class="text-sm text-purple-400">5</span>
+                            </div>
+                            <input type="range" name="maxImages" min="1" max="10" value="5" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition flex items-center justify-center gap-2">
+                            <i data-lucide="play" class="w-4 h-4"></i> Generate Presentation
+                        </button>
+                    </form>
+                </div>
+                <!-- Right Column: Outputs -->
+                <div class="lg:col-span-8 bg-slate-900 rounded-xl border border-slate-800 flex flex-col overflow-hidden">
+                    <!-- Tabs -->
+                    <div class="flex border-b border-slate-800 bg-slate-950/50">
+                        <button class="tab-btn tab-active px-6 py-3 text-sm font-medium transition" onclick="switchTab('logs')">Logs</button>
+                        <button class="tab-btn tab-inactive px-6 py-3 text-sm font-medium transition" onclick="switchTab('code')">HTML Code</button>
+                        <button class="tab-btn tab-inactive px-6 py-3 text-sm font-medium transition" onclick="switchTab('preview')">Visual Preview</button>
+                    </div>
+                    <!-- Content -->
+                    <div class="flex-1 overflow-y-auto p-6 relative">
+                        <!-- Logs Tab -->
+                        <div id="logs" class="tab-content font-mono text-sm space-y-2">
+                            <div class="text-slate-500">Waiting for input...</div>
+                        </div>
+                        <!-- Code Tab -->
+                        <div id="code" class="tab-content hidden">
+                            <pre><code class="language-html" id="codeOutput">// Generated HTML will appear here</code></pre>
+                        </div>
+                        <!-- Preview Tab -->
+                        <div id="preview" class="tab-content hidden h-full flex items-center justify-center bg-slate-950 rounded border border-slate-800">
+                            <div class="text-center p-8">
+                                <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i data-lucide="monitor" class="text-slate-600"></i>
+                                </div>
+                                <p class="text-slate-500">Run generation to see slide preview</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- F. Use Cases -->
+    <section id="use-cases" class="py-20 bg-slate-900/30 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-3xl font-bold mb-12">Common Use Cases</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+                    <h3 class="text-lg font-bold text-white mb-2">Client Proposals</h3>
+                    <p class="text-slate-400 text-sm">Rapidly generate professional pitch decks from a simple text outline, complete with speaker notes for the presenter.</p>
+                </div>
+                <div class="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+                    <h3 class="text-lg font-bold text-white mb-2">Educational Lectures</h3>
+                    <p class="text-slate-400 text-sm">Convert lesson plans into structured Reveal.js slides with embedded diagrams and clear topic transitions.</p>
+                </div>
+                <div class="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+                    <h3 class="text-lg font-bold text-white mb-2">Technical Documentation</h3>
+                    <p class="text-slate-400 text-sm">Transform technical specs and code snippets into a presentable format for team reviews.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        // Icons
+        lucide.createIcons();
+        // Slider Value Update
+        const slider = document.querySelector('input[name="maxImages"]');
+        const sliderVal = document.getElementById('maxImagesVal');
+        slider.addEventListener('input', (e) => sliderVal.textContent = e.target.value);
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('tab-inactive');
+            });
+            event.target.classList.remove('tab-inactive');
+            event.target.classList.add('tab-active');
+        }
+        // Simulation Logic
+        document.getElementById('simForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const logs = document.getElementById('logs');
+            const codeOutput = document.getElementById('codeOutput');
+            const preview = document.getElementById('preview');
+            // Reset
+            logs.innerHTML = '';
+            switchTab('logs');
+            const addLog = (msg, type = 'info') => {
+                const div = document.createElement('div');
+                div.className = type === 'error' ? 'text-red-400' : (type === 'success' ? 'text-green-400' : 'text-slate-300');
+                div.innerHTML = `<span class="opacity-50 mr-2">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+                logs.appendChild(div);
+                logs.scrollTop = logs.scrollHeight;
+            };
+            addLog(`Initializing GeneratePresentationTask...`);
+            await new Promise(r => setTimeout(r, 800));
+            addLog(`Reading configuration: ${formData.get('filename')}`);
+            addLog(`Topic: "${formData.get('description').substring(0, 30)}..."`);
+            await new Promise(r => setTimeout(r, 1000));
+            addLog(`Step 1: Generating Presentation Structure (LLM)...`);
+            await new Promise(r => setTimeout(r, 1500));
+            addLog(`Generated 5 slides with speaker notes.`, 'success');
+            if (formData.get('genImages')) {
+                addLog(`Step 1.5: Generating Images (${formData.get('model')})...`);
+                for(let i=1; i<=3; i++) {
+                    await new Promise(r => setTimeout(r, 800));
+                    addLog(`Generating image for Slide ${i}...`, 'info');
+                }
+                addLog(`Images generated successfully.`, 'success');
+            }
+            addLog(`Step 2: Generating Custom CSS...`);
+            await new Promise(r => setTimeout(r, 1000));
+            addLog(`Step 3: Writing files to disk...`);
+            addLog(`> presentation.js written`);
+            addLog(`> presentation.css written`);
+            addLog(`> ${formData.get('filename')} written`, 'success');
+            // Generate Mock Code
+            const mockHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="presentation.css">
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <h1>${formData.get('description').split(' ')[0] || 'Presentation'} Title</h1>
+        <p class="subtitle">Generated by Cognotik</p>
+        <aside class="notes">
+          Welcome everyone. Today we will discuss...
+        </aside>
+      </section>
+      <section>
+        <h2>Key Points</h2>
+        <ul>
+          <li class="fragment">Automated Structure</li>
+          <li class="fragment">AI Content Generation</li>
+          <li class="fragment">Instant Deployment</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</body>
+</html>`;
+            codeOutput.textContent = mockHtml.trim();
+            // Generate Mock Preview
+            preview.innerHTML = `
+                <div class="w-full h-full flex items-center justify-center bg-black text-white p-8" style="font-family: sans-serif;">
+                    <div class="text-center">
+                        <h1 class="text-4xl font-bold mb-4 text-purple-400">${formData.get('description').split(' ')[0] || 'Presentation'} Title</h1>
+                        <p class="text-xl text-slate-400">Generated by Cognotik</p>
+                        <div class="mt-12 text-sm text-slate-600 border-t border-slate-800 pt-4">
+                            [Speaker Notes: Welcome everyone. Today we will discuss...]
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>

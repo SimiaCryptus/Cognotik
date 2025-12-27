@@ -13,6 +13,9 @@ import com.intellij.ui.treeStructure.Tree
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.UsageTable
+import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.models.ToolProvider
+import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -40,6 +43,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private var smartModelTree: Tree? = null
         private var fastModelTree: Tree? = null
         private var imageChatModelTree: Tree? = null
+        private var patchProcessorList: JBList<PatchProcessors>? = null
         private val sessionsList = JBList<Session>()
         private val sessionsListModel = DefaultListModel<Session>()
         private fun getSmartModelTree(): Tree {
@@ -62,10 +66,44 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
             return imageChatModelTree!!
         }
+        private fun getPatchProcessorList(): JBList<PatchProcessors> {
+            if (patchProcessorList == null) {
+                val listModel = DefaultListModel<PatchProcessors>()
+                PatchProcessors.values().forEach { listModel.addElement(it) }
+                patchProcessorList = JBList(listModel).apply {
+                    cellRenderer = object : DefaultListCellRenderer() {
+                        override fun getListCellRendererComponent(
+                            list: JList<*>?,
+                            value: Any?,
+                            index: Int,
+                            isSelected: Boolean,
+                            cellHasFocus: Boolean
+                        ): Component {
+                            val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+                            if (value is PatchProcessors) {
+                                text = value.label
+                            }
+                            return component
+                        }
+                    }
+                    selectionMode = ListSelectionModel.SINGLE_SELECTION
+                    addListSelectionListener {
+                        val selected = selectedValue
+                        if (selected != null) {
+                            AppSettingsState.instance.processor = selected
+                            statusBar?.updateWidget(ID())
+                        }
+                    }
+                }
+            }
+            patchProcessorList?.setSelectedValue(AppSettingsState.instance.processor, true)
+            return patchProcessorList!!
+        }
 
 
         private fun recreateModelTrees() {
             smartModelTree = null
+                        patchProcessorList?.setSelectedValue(AppSettingsState.instance.processor, true)
             fastModelTree = null
             imageChatModelTree = null
         }
@@ -334,6 +372,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         init {
+            require(TaskType.values().isNotEmpty())
+            require(ToolProvider.values().isNotEmpty())
             AppSettingsState.onSettingsLoadedListeners.add {
                 Thread {
                     statusBar?.updateWidget(ID())
@@ -440,6 +480,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             fastModelPanel.add(JScrollPane(getFastModelTree()), BorderLayout.CENTER)
             val imageChatModelPanel = JPanel(BorderLayout())
             imageChatModelPanel.add(JScrollPane(getImageChatModelTree()), BorderLayout.CENTER)
+            val patchProcessorPanel = JPanel(BorderLayout())
+            patchProcessorPanel.add(JScrollPane(getPatchProcessorList()), BorderLayout.CENTER)
 
 
             val usagePanel = JPanel(BorderLayout())
@@ -451,6 +493,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             tabbedPane.addTab(getMessage("tab.smartModel"), smartModelPanel)
             tabbedPane.addTab(getMessage("tab.fastModel"), fastModelPanel)
             tabbedPane.addTab(getMessage("tab.imageChatModel"), imageChatModelPanel)
+            tabbedPane.addTab("Patch Processor", patchProcessorPanel)
             tabbedPane.addTab(getMessage("tab.server"), createServerControlPanel())
             tabbedPane.addTab(getMessage("tab.usage"), usagePanel)
 
@@ -477,6 +520,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
     Smart Model: ${AppSettingsState.instance.smartModel?.model?.modelName ?: "Not configured"}<br/>
     Fast Model: ${AppSettingsState.instance.fastModel?.model?.modelName ?: "Not configured"}<br/>
     Image Chat Model: ${AppSettingsState.instance.imageChatModel?.model?.modelName ?: "Not configured"}<br/>
+    Patch Processor: ${AppSettingsState.instance.processor.label}<br/>
     Temperature: ${AppSettingsState.instance.temperature}<br/>
     ${
             if (CognotikAppServer.isRunning()) {

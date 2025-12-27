@@ -1,0 +1,140 @@
+<!--
+Image Prompt: A high-quality, abstract 3D illustration of a geometric object being analyzed, stripped of its outer layers to reveal a glowing, crystalline core structure. Deep blues and neon cyan accents.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structural Invariant Analysis - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+
+<cognotik-header current-page="structural-invariant-analysis"></cognotik-header>
+
+<main class="task-container">
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Structural Invariant Analysis</h1>
+        <p class="subtitle">Distill any object down to its immutable properties and symmetries through rigorous decontextualization and theoretical stress-testing.</p>
+        <div class="hero-visual">
+            <!-- Placeholder for 3D Illustration -->
+            <div style="width: 100%; height: 300px; background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid rgba(6, 182, 212, 0.3);">
+                <span style="color: var(--accent-secondary); font-size: 1.2rem;">[Abstract 3D Core Structure]</span>
+            </div>
+        </div>
+        <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="features">
+        <div class="features-grid">
+        <div class="feature-card">
+            <i>🔍</i>
+            <h3>Decontextualization</h3>
+            <p>Removes domain-specific bias to reveal the underlying abstract structure.</p>
+        </div>
+        <div class="feature-card">
+            <i>🔄</i>
+            <h3>Stress Testing</h3>
+            <p>Applies theoretical transformations like scaling and rotation to test robustness.</p>
+        </div>
+        <div class="feature-card">
+            <i>💎</i>
+            <h3>Invariant Extraction</h3>
+            <p>Identifies properties that remain constant across all applied transformations.</p>
+        </div>
+        </div>
+    </section>
+
+    <!-- Interactive Simulator -->
+    <section id="simulator" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label for="subject">Subject Object</label>
+                    <input type="text" id="subject" placeholder="e.g., A Prime Number, A Black Hole" value="A Prime Number">
+                </div>
+                <div class="control-group">
+                    <label for="transformations">Transformations (comma separated)</label>
+                    <input type="text" id="transformations" value="symmetry_groups, limit_cases, context_inversion">
+                </div>
+                <div class="control-group">
+                    <label for="format">Output Format</label>
+                    <select id="format">
+                        <option value="fingerprint">Fingerprint (List of Invariants)</option>
+                        <option value="signature">Signature (Hashable Summary)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="input_files">Input Files (Optional)</label>
+                    <input type="text" id="input_files" placeholder="e.g., src/main/kotlin/*.kt">
+                </div>
+                <button class="run-button">Run Analysis</button>
+            </div>
+            <div class="sim-output">
+                <div class="tabs">
+                    <button class="tab active">Result</button>
+                </div>
+                <div id="output-content" class="tab-content active">
+                    <!-- Output will appear here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="use-cases">
+        <h2>When to Use</h2>
+        <ul>
+            <li><strong>Cross-Domain Mapping:</strong> When you need to find analogies between disparate fields (e.g., Biology vs. Economics).</li>
+            <li><strong>First Principles Thinking:</strong> When you need to strip away assumptions and understand the core mechanics of a system.</li>
+            <li><strong>Robustness Testing:</strong> To verify if a concept holds true under extreme theoretical conditions.</li>
+        </ul>
+    </section>
+</main>
+
+<script>
+    const subjectInput = document.getElementById('subject');
+    const transformationsInput = document.getElementById('transformations');
+    const formatInput = document.getElementById('format');
+    const outputContent = document.getElementById('output-content');
+    const runBtn = document.querySelector('.run-button');
+
+    function generateMockOutput() {
+        const subject = subjectInput.value || 'Unknown Object';
+        const format = formatInput.value;
+        
+        outputContent.innerHTML = 'Analyzing ' + subject + '...\\nApplying transformations...\\n\\n';
+        
+        setTimeout(() => {
+            let result = `## Analysis Result: ${subject}\n\n`;
+            result += `### Decontextualized Description\n`;
+            result += `An abstract entity defined by indivisibility and sequential position within a set.\n\n`;
+            
+            result += `### Identified Invariants\n`;
+            result += `- **Indivisibility:** Cannot be decomposed into smaller factors of the same type.\n`;
+            result += `- **Distribution Regularity:** Follows asymptotic distribution laws.\n\n`;
+            
+            result += `### Structural ${format.charAt(0).toUpperCase() + format.slice(1)}\n`;
+            if (format === 'fingerprint') {
+                result += `- Invariant A: True\n- Invariant B: True\n- Symmetry: None`;
+            } else {
+                result += `Hash: 0x8F3A2C1B\nType: NumberTheory.Primitive`;
+            }
+            
+            outputContent.innerText = result;
+        }, 800);
+    }
+
+    runBtn.addEventListener('click', generateMockOutput);
+    
+    // Initial run
+    generateMockOutput();
+</script>
+
+</body>
+</html>

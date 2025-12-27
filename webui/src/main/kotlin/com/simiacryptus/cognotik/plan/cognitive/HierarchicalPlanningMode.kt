@@ -138,7 +138,7 @@ open class HierarchicalPlanningMode(
                     user,
                     session
                 )?.toPath() ?: File(".").toPath())
-        val planningChatter = orchestrationConfig.defaultChatter.getChildClient(task)
+        val planningChatter = orchestrationConfig.defaultSmart.getChildClient(task)
 
         try {
             val initialGoals = parseInitialGoals(userMessage, planningChatter)
@@ -596,7 +596,7 @@ open class HierarchicalPlanningMode(
                         ${availableTaskTypes.joinToString("\n") { it.name }}
                     """.trimIndent(),
             model = chatInterface,
-            parsingChatter = orchestrationConfig.parsingChatter,
+            parsingChatter = orchestrationConfig.defaultFast,
             temperature = orchestrationConfig.temperature,
             describer = describer,
             parserPrompt = ("Task Subtype Schema:\n" + availableTaskTypes.joinToString("\n\n") { taskType ->
@@ -700,7 +700,7 @@ open class HierarchicalPlanningMode(
                 Return a list of goal objects with unique IDs and descriptions.
             """.trimIndent(),
             model = chatInterface,
-            parsingChatter = orchestrationConfig.parsingChatter,
+            parsingChatter = orchestrationConfig.defaultFast,
             temperature = orchestrationConfig.temperature,
             describer = describer
         )
@@ -788,7 +788,7 @@ open class HierarchicalPlanningMode(
             promptStr
         },
         model = chatInterface,
-        parsingChatter = orchestrationConfig.parsingChatter,
+        parsingChatter = orchestrationConfig.defaultFast,
         temperature = orchestrationConfig.temperature,
         describer = describer
     )

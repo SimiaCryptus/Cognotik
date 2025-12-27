@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cognotik SubPlanning Task - Recursive planning and execution engine for complex cognitive workflows.">
+    <title>SubPlanning Task | Cognotik</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Icons (Lucide/Feather via CDN for demo purposes) -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <!-- 
+    IMAGE GENERATION PROMPT:
+    A high-quality, abstract 3D illustration representing a recursive neural network or decision tree. 
+    The visual should feature a central glowing node (Gold/Cyan) branching out into smaller, self-similar nodes 
+    connected by luminous data streams against a deep slate/dark blue void. 
+    Style: Cyberpunk-professional, glassmorphism, neon accents. 
+    -->
+
+    <style>
+        /* CSS will be added here */
+    </style>
+
+    <style>
+        :root {
+        
+        
+        
+        
+            /* Map local variables to main.css variables */
+            --primary: var(--accent-secondary);
+            --primary-glow: rgba(6, 182, 212, 0.5);
+            --secondary: #f59e0b;
+            --accent-purple: var(--accent-color);
+            --bg-dark: var(--background-color);
+            --bg-card: var(--surface-color);
+            --text-main: var(--text-color);
+            --text-muted: var(--text-muted);
+            --radius-md: var(--border-radius);
+        }
+        
+        
+        
+        
+        
+        
+        
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        
+        .text-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.4); /* Fallback or specific glass effect */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        
+        
+        
+        .btn-glow {
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--text-muted);
+            color: var(--text-main);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+            color: var(--text-main);
+        }
+        
+        .btn-full {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .btn-text {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        .btn-text:hover {
+            text-decoration: underline;
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        /* =========================================
+           Hero Section
+           ========================================= */
+        .hero-section {
+            padding-top: calc(60px + 4rem); /* header height + spacing */
+            padding-bottom: 4rem;
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Background ambient glow */
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+            opacity: 0.2;
+            z-index: -1;
+        }
+        
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 540px;
+        }
+        
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        /* Hero Visual Animation */
+        .hero-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+            position: relative;
+        }
+        
+        .visual-placeholder {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .glowing-node-center {
+            width: 60px;
+            height: 60px;
+            background: var(--secondary);
+            border-radius: 50%;
+            box-shadow: 0 0 50px var(--secondary), inset 0 0 20px #fff;
+            z-index: 2;
+            animation: pulse 3s infinite ease-in-out;
+        }
+        
+        .orbit-ring {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 2px solid rgba(6, 182, 212, 0.3);
+            border-radius: 50%;
+            transform: rotateX(60deg);
+            animation: spin 10s linear infinite;
+        }
+        
+        .orbit-ring::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary);
+        }
+        
+        .orbit-ring-2 {
+            position: absolute;
+            width: 280px;
+            height: 280px;
+            border: 1px dashed rgba(139, 92, 246, 0.4);
+            border-radius: 50%;
+            transform: rotateY(45deg) rotateX(45deg);
+            animation: spin-reverse 15s linear infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotateX(60deg) rotate(0deg); }
+            100% { transform: rotateX(60deg) rotate(360deg); }
+        }
+        
+        @keyframes spin-reverse {
+            0% { transform: rotateY(45deg) rotateX(45deg) rotate(0deg); }
+            100% { transform: rotateY(45deg) rotateX(45deg) rotate(-360deg); }
+        }
+        
+        /* =========================================
+           Features Section
+           ========================================= */
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        
+        .section-header p {
+            color: var(--text-muted);
+            font-family: monospace;
+            background: rgba(255,255,255,0.05);
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+        
+        
+        
+            border-radius: 4px;
+        }
+        
+        .icon-container {
+            width: 50px;
+            height: 50px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+        
+        
+        
+        /* =========================================
+           Workflow Section
+           ========================================= */
+        .workflow-section {
+            padding: 6rem 0;
+            position: relative;
+        }
+        
+        .workflow-stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+            margin-top: 3rem;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            padding: 0 1rem;
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: var(--bg-card);
+            border: 2px solid var(--secondary);
+            color: var(--secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin: 0 auto 1.5rem;
+            font-family: var(--font-serif);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+        }
+        
+        
+        .step-content p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        
+        .step-connector {
+            flex-grow: 1;
+            height: 2px;
+            background: linear-gradient(to right, var(--secondary), var(--bg-card));
+            margin-top: 25px; /* Half of step-number height */
+            opacity: 0.3;
+        }
+        
+        /* =========================================
+           Simulator Section
+           ========================================= */
+        
+        .simulator-container {
+        
+        
+            /* Override main.css grid to give more space to output */
+            grid-template-columns: 350px 1fr;
+        }
+        
+        .sim-controls {
+            /* Ensure it matches main.css but with flex for full height if needed */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        
+        .required {
+            color: var(--secondary);
+        }
+        
+        
+        
+        .slider {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-card);
+            border-radius: 2px;
+            appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--primary);
+        }
+        
+        .context-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-actions {
+            margin-top: auto;
+            padding-top: 2rem;
+        }
+        
+        /* Override main.css tab-content font for non-code tabs */
+        .tab-content {
+            font-family: var(--font-family-sans);
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        #tab-logs {
+            font-family: var(--font-family-mono);
+        }
+        
+        /* Empty State */
+        .empty-state {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            gap: 1rem;
+        }
+        
+        .empty-state i {
+            width: 48px;
+            height: 48px;
+            opacity: 0.5;
+        }
+        
+        /* Terminal Style */
+        .terminal-window {
+            background: #000;
+            border-radius: var(--border-radius);
+            border: 1px solid #333;
+            font-family: 'Courier New', monospace;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .terminal-header {
+            background: #1a1a1a;
+            padding: 0.5rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid #333;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+        
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .red { background: #ef4444; }
+        .yellow { background: #f59e0b; }
+        .green { background: #22c55e; }
+        
+        .terminal-body {
+            padding: 1rem;
+            color: #22c55e;
+            font-size: 0.85rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .log-line {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .text-dim {
+            color: #666;
+        }
+        
+        /* Tree Visual Mockup */
+        .tree-visual-mockup {
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 50% 20%, var(--secondary) 5px, transparent 6px),
+                radial-gradient(circle at 30% 50%, var(--primary) 4px, transparent 5px),
+                radial-gradient(circle at 70% 50%, var(--primary) 4px, transparent 5px),
+                linear-gradient(to bottom right, transparent 48%, rgba(255,255,255,0.1) 49%, transparent 51%),
+                linear-gradient(to bottom left, transparent 48%, rgba(255,255,255,0.1) 49%, transparent 51%);
+            background-size: 100% 100%;
+            opacity: 0.8;
+        }
+        
+        /* =========================================
+           Use Cases Section
+           ========================================= */
+        .use-cases-section {
+            padding: 6rem 0;
+            background: var(--bg-darker);
+        }
+        
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .use-case-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--accent-purple);
+        }
+        
+        .use-case-card h4 {
+            font-family: var(--font-sans);
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+        }
+        
+        .use-case-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* =========================================
+           Footer
+           ========================================= */
+        footer {
+            padding: 3rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: var(--bg-dark);
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+        
+        .footer-brand {
+            font-family: var(--font-serif);
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .footer-links a {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+        
+        .footer-copy {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        
+        /* =========================================
+           Responsive Design
+           ========================================= */
+        @media (max-width: 992px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+        
+            .simulator-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        
+            .sim-controls {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        
+            .sim-output {
+                min-height: 400px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+        
+        
+        
+        
+            .hero-grid {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        
+            .hero-content {
+                order: 2;
+            }
+        
+            .hero-visual {
+                order: 1;
+                height: 300px;
+            }
+        
+            .hero-subtitle {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        
+            .hero-cta {
+                justify-content: center;
+            }
+        
+            .workflow-stepper {
+                flex-direction: column;
+                align-items: center;
+                gap: 2rem;
+            }
+        
+            .step-connector {
+                width: 2px;
+                height: 40px;
+                margin: 0;
+                background: linear-gradient(to bottom, var(--secondary), var(--bg-card));
+            }
+        
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+<!-- Generated Images:
+     - subplanning-hero-recursive-nodes.png: A high-quality, abstract 3D illustration representing a recursive neural network or decision tree. The visual features a central, large glowing node in Gold and Cyan, branching out into smaller, self-similar nodes connected by luminous data streams. The structure resembles a fractal tree made of glass and light, set against a deep slate and dark blue void (#0f172a). The lighting is dramatic, with neon accents highlighting the connections, emphasizing the concept of breaking complex goals into sub-tasks. Style: Cyberpunk-professional, glassmorphism, octane render, high contrast.
+     - workflow-pipeline-schematic.png: A 3D isometric visualization of a cognitive execution pipeline. The image depicts a linear flow of information transforming from a raw "Goal" block on the left into a structured, multi-layered architectural blueprint on the right. The flow is represented by glowing purple and blue fiber-optic lines passing through floating glass gates (representing the cognitive modes). The background is a technical grid in dark slate. This image represents the "Goal -> Strategy -> Execution -> Aggregation" workflow. Style: Technical, clean, schematic, neon-lit.
+     - cognitive-architecture-abstract.png: An abstract geometric composition representing "organized complexity." The image shows a series of floating, translucent cubes and tetrahedrons arranging themselves into a cohesive vertical stack or tower. The shapes are semi-transparent with glowing edges in Cyan and faint Purple. This serves as a secondary visual for the "Use Cases" section, symbolizing the construction of complex research or software architecture from smaller sub-plans. The background is a soft, out-of-focus deep blue gradient to ensure it doesn't distract from adjacent text. Style: Minimalist 3D, architectural, futuristic.
+-->
+</head>
+<body>
+
+    <!-- Navigation -->
+    <cognotik-header current-page="sub_planning"></cognotik-header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <h1 class="hero-title">Recursive Cognitive <br><span class="text-gradient">Orchestration</span></h1>
+                <p class="hero-subtitle">
+                    Create and execute complex sub-plans using recursive planning strategies. 
+                    Dynamically switch cognitive modes, propagate context, and aggregate results 
+                    to solve multi-stage problems with precision.
+                </p>
+                <div class="hero-cta">
+                    <a href="#demo" class="btn btn-glow">Try the Simulator <i data-feather="arrow-down"></i></a>
+                    <a href="#workflow" class="btn btn-secondary">View Specs</a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <img src="assets/images/subplanning-hero-recursive-nodes.png" alt="Abstract 3D recursive neural network nodes representing sub-planning" class="hero-img">
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section id="features" class="features">
+        <div class="container"> <!-- Optional wrapper if needed, or rely on .features max-width -->
+            <div class="section-header">
+                <h2>Core Capabilities</h2>
+                <p>Powered by the <code>SubPlanningTask</code> engine.</p>
+            </div>
+            <div class="features-grid">
+                <!-- Feature 1 -->
+                <div class="feature-card">
+                    <div class="icon-container">
+                        <i data-feather="git-branch"></i>
+                    </div>
+                    <h3>Recursive Planning</h3>
+                    <p>Supports multiple levels of recursion, allowing complex goals to be broken down into manageable sub-tasks automatically.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="feature-card">
+                    <div class="icon-container">
+                        <i data-feather="layers"></i>
+                    </div>
+                    <h3>Adaptive Cognition</h3>
+                    <p>Configure specific cognitive strategies (Fast, Detailed, Creative) for different branches of the execution tree.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="feature-card">
+                    <div class="icon-container">
+                        <i data-feather="database"></i>
+                    </div>
+                    <h3>Context Propagation</h3>
+                    <p>Seamlessly passes context and dependencies down to sub-plans and aggregates results back up for summarization.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Workflow / Process Visualization -->
+    <section id="workflow" class="workflow-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Execution Pipeline</h2>
+            </div>
+            
+            <div class="workflow-visual-container">
+                <img src="assets/images/workflow-pipeline-schematic.png" alt="3D isometric visualization of cognitive execution pipeline" class="workflow-img">
+            </div>
+
+            <div class="workflow-stepper">
+                <div class="step">
+                    <div class="step-number">01</div>
+                    <div class="step-content">
+                        <h4>Goal Definition</h4>
+                        <p>User defines high-level <code>planning_goal</code> and optional context.</p>
+                    </div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-number">02</div>
+                    <div class="step-content">
+                        <h4>Strategy Selection</h4>
+                        <p>System selects <code>CognitiveMode</code> and decomposes the problem.</p>
+                    </div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-number">03</div>
+                    <div class="step-content">
+                        <h4>Recursive Execution</h4>
+                        <p>Sub-tasks are spawned, executed, and monitored for depth limits.</p>
+                    </div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-number">04</div>
+                    <div class="step-content">
+                        <h4>Aggregation</h4>
+                        <p>Results are collected and summarized into a final report.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Simulator -->
+    <section id="demo" class="simulator">
+        <div class="container">
+            <div class="section-header">
+                <h2>Task Simulator</h2>
+                <p>Configure the <code>SubPlanningTaskExecutionConfigData</code> and visualize the output.</p>
+            </div>
+            
+            <div class="simulator-container">
+                <!-- Left Column: Inputs -->
+                <div class="sim-controls">
+                    <div class="control-group">
+                        <label><i data-feather="sliders"></i> Configuration</label>
+                    </div>
+                    <form id="sim-form">
+                        <!-- Planning Goal -->
+                        <div class="form-group">
+                            <label for="planning_goal">Planning Goal <span class="required">*</span></label>
+                            <textarea id="planning_goal" name="planning_goal" rows="3" placeholder="E.g., Research the viability of quantum computing for cryptography..."></textarea>
+                        </div>
+
+                        <!-- Cognitive Mode (from TypeConfig) -->
+                        <div class="form-group">
+                            <label for="cognitive_mode">Cognitive Strategy</label>
+                            <select id="cognitive_mode" name="cognitive_mode">
+                                <option value="Adaptive">Adaptive (Default)</option>
+                                <option value="Fast">Fast / Heuristic</option>
+                                <option value="Deep">Deep Analysis</option>
+                                <option value="Creative">Creative / Divergent</option>
+                            </select>
+                        </div>
+
+                        <!-- Context List -->
+                        <div class="form-group">
+                            <label>Context Items</label>
+                            <div id="context-list-container">
+                                <div class="context-item">
+                                    <input type="text" class="context-input" placeholder="Add context (e.g., 'Focus on post-2023 papers')">
+                                </div>
+                            </div>
+                            <button type="button" id="add-context-btn" class="btn-text">+ Add Context Item</button>
+                        </div>
+
+                        <!-- Recursion Depth (Mock Config) -->
+                        <div class="form-group">
+                            <label for="recursion_depth">Max Recursion Depth: <span id="depth-val">2</span></label>
+                            <input type="range" id="recursion_depth" min="1" max="5" value="2" class="slider">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" id="run-sim-btn" class="run-button">
+                                <i data-feather="play"></i> Execute SubPlan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Right Column: Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <button class="tab active" data-target="tab-overview">Overview</button>
+                        <button class="tab" data-target="tab-logs">Execution Logs</button>
+                        <button class="tab" data-target="tab-summary">Final Summary</button>
+                    </div>
+
+                    <div class="tab-content-wrapper"> <!-- Wrapper not in main.css but useful for flex/height if needed, or just direct children -->
+                        <!-- Tab: Overview (Visual) -->
+                        <div id="tab-overview" class="tab-content active">
+                            <div class="empty-state">
+                                <i data-feather="activity"></i>
+                                <p>Ready to execute. Configure inputs and click Run.</p>
+                            </div>
+                            <div id="visualization-container" class="hidden">
+                                <!-- Canvas or DOM elements for tree visualization will go here -->
+                                <div class="tree-visual-mockup"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Logs (Terminal style) -->
+                        <div id="tab-logs" class="tab-content">
+                            <div class="terminal-window">
+                                <div class="terminal-header">
+                                    <span class="dot red"></span>
+                                    <span class="dot yellow"></span>
+                                    <span class="dot green"></span>
+                                </div>
+                                <div class="terminal-body" id="log-output">
+                                    <span class="log-line text-dim">Waiting for execution...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Summary (Markdown render) -->
+                        <div id="tab-summary" class="tab-content">
+                            <div class="markdown-preview" id="summary-output">
+                                <!-- Result content will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section id="use-cases" class="use-cases-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>When to Use</h2>
+            </div>
+            
+            <div class="use-case-visual-container">
+                <img src="assets/images/cognitive-architecture-abstract.png" alt="Abstract geometric composition representing organized complexity" class="use-case-img">
+            </div>
+
+            <div class="cards-grid">
+                <div class="use-case-card">
+                    <h4>Complex Research</h4>
+                    <p>When a topic requires breaking down into historical, technical, and social sub-analyses before synthesis.</p>
+                </div>
+                <div class="use-case-card">
+                    <h4>Software Architecture</h4>
+                    <p>Planning a system where sub-components (Database, API, UI) need individual planning strategies.</p>
+                </div>
+                <div class="use-case-card">
+                    <h4>Strategic Reporting</h4>
+                    <p>Generating comprehensive business reports that require aggregating data from multiple distinct domains.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span>Cognotik</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#">Documentation</a>
+                    <a href="#">API Reference</a>
+                    <a href="#">Support</a>
+                </div>
+                <div class="footer-copy">
+                    &copy; 2023 Simiacryptus. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript will be added here -->
+    <script>
+        // Placeholder for Feather Icons initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Initialize Icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        
+            // 2. UI State Management Variables
+            const state = {
+                isSimulating: false,
+                depth: 2,
+                mode: 'Adaptive'
+            };
+        
+            // 3. DOM Elements
+            const elements = {
+                slider: document.getElementById('recursion_depth'),
+                depthDisplay: document.getElementById('depth-val'),
+                contextContainer: document.getElementById('context-list-container'),
+                addContextBtn: document.getElementById('add-context-btn'),
+                form: document.getElementById('sim-form'),
+                runBtn: document.getElementById('run-sim-btn'),
+                tabs: document.querySelectorAll('.tab'),
+                tabPanes: document.querySelectorAll('.tab-content'),
+                logOutput: document.getElementById('log-output'),
+                summaryOutput: document.getElementById('summary-output'),
+                visualContainer: document.getElementById('visualization-container'),
+                emptyState: document.querySelector('.empty-state'),
+                mobileMenuToggle: document.querySelector('.mobile-menu-toggle'),
+                navMenu: document.querySelector('.main-nav')
+            };
+        
+            // 4. Event Listeners
+        
+            // Range Slider Update
+            elements.slider.addEventListener('input', (e) => {
+                state.depth = e.target.value;
+                elements.depthDisplay.textContent = state.depth;
+            });
+        
+            // Mobile Menu Toggle
+            if (elements.mobileMenuToggle) {
+                elements.mobileMenuToggle.addEventListener('click', () => {
+                    elements.navMenu.classList.toggle('active');
+                });
+            }
+        
+            // Tab Switching Logic
+            elements.tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs and panes
+                    elements.tabs.forEach(t => t.classList.remove('active'));
+                    elements.tabPanes.forEach(p => p.classList.remove('active'));
+        
+                    // Add active class to clicked tab and target pane
+                    tab.classList.add('active');
+                    const targetId = tab.getAttribute('data-target');
+                    document.getElementById(targetId).classList.add('active');
+                });
+            });
+        
+            // Dynamic Context Inputs
+            elements.addContextBtn.addEventListener('click', () => {
+                const div = document.createElement('div');
+                div.className = 'context-item';
+                div.innerHTML = `
+                    <input type="text" class="context-input" placeholder="Additional context...">
+                    <button type="button" class="btn-icon-only remove-ctx" aria-label="Remove">
+                        <i data-feather="x"></i>
+                    </button>
+                `;
+                elements.contextContainer.appendChild(div);
+                feather.replace(); // Re-render icons for new element
+        
+                // Add delete functionality to new button
+                div.querySelector('.remove-ctx').addEventListener('click', () => {
+                    div.remove();
+                });
+            });
+        
+            // Simulator Form Submission
+            elements.form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (state.isSimulating) return;
+        
+                const formData = {
+                    goal: document.getElementById('planning_goal').value,
+                    mode: document.getElementById('cognitive_mode').value,
+                    depth: elements.slider.value,
+                    context: Array.from(document.querySelectorAll('.context-input'))
+                        .map(input => input.value)
+                        .filter(val => val.trim() !== '')
+                };
+        
+                if (!formData.goal) {
+                    alert("Please enter a planning goal.");
+                    return;
+                }
+        
+                runSimulation(formData);
+            });
+        
+            // 5. Simulation Logic
+        
+            async function runSimulation(data) {
+                state.isSimulating = true;
+                elements.runBtn.disabled = true;
+                elements.runBtn.innerHTML = `<i data-feather="loader" class="spin"></i> Processing...`;
+                feather.replace();
+        
+                // Reset Outputs
+                elements.logOutput.innerHTML = '';
+                elements.summaryOutput.innerHTML = '';
+                elements.visualContainer.innerHTML = '';
+                elements.visualContainer.classList.remove('hidden');
+                elements.emptyState.style.display = 'none';
+        
+                // Switch to Logs tab initially
+                triggerTab('tab-logs');
+        
+                // Step 1: Initialization
+                await log(`Initializing SubPlanningTask...`, 'info');
+                await wait(500);
+                await log(`Goal: "${data.goal.substring(0, 40)}..."`, 'info');
+                await log(`Cognitive Mode: ${data.mode}`, 'accent');
+                await log(`Max Recursion Depth: ${data.depth}`, 'info');
+        
+                // Step 2: Planning & Recursion Simulation
+                const totalSteps = parseInt(data.depth) * 2 + 2;
+        
+                for (let i = 1; i <= parseInt(data.depth); i++) {
+                    await wait(800);
+                    await log(`[Depth ${i}] Analyzing dependencies...`, 'dim');
+            
+                    // Visualize Node Creation
+                    addVisualNode(i, data.mode);
+            
+                    await wait(600);
+                    await log(`[Depth ${i}] Spawning sub-agents for decomposition...`, 'info');
+            
+                    if (data.context.length > 0 && i === 1) {
+                        await log(`Injecting ${data.context.length} context items into prompt window.`, 'success');
+                    }
+                }
+        
+                // Step 3: Execution & Aggregation
+                await wait(1000);
+                await log(`Recursion limit reached or atomic tasks identified.`, 'warning');
+                await log(`Executing leaf nodes...`, 'info');
+        
+                // Simulate "Thinking"
+                const thinkingPhases = ['Querying Knowledge Base', 'Synthesizing Logic', 'Validating Constraints'];
+                for (const phase of thinkingPhases) {
+                    await wait(600);
+                    await log(`>> ${phase}...`, 'dim');
+                }
+        
+                await log(`Aggregating results from ${parseInt(data.depth) * 3} sub-plans.`, 'success');
+        
+                // Step 4: Finalization
+                await wait(800);
+                const summary = generateMockSummary(data);
+                elements.summaryOutput.innerHTML = summary;
+        
+                await log(`Summary generated. Task Complete.`, 'success');
+        
+                // Switch to Summary tab
+                triggerTab('tab-summary');
+        
+                // Reset Button
+                elements.runBtn.disabled = false;
+                elements.runBtn.innerHTML = `<i data-feather="play"></i> Execute SubPlan`;
+                feather.replace();
+                state.isSimulating = false;
+            }
+        
+            // 6. Helper Functions
+        
+            function triggerTab(tabId) {
+                const tabBtn = document.querySelector(`.tab[data-target="${tabId}"]`);
+                if (tabBtn) tabBtn.click();
+            }
+        
+            async function log(message, type = 'dim') {
+                const line = document.createElement('div');
+                line.className = `log-line text-${type}`;
+                const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+                line.innerHTML = `<span class="opacity-50">[${timestamp}]</span> ${message}`;
+                elements.logOutput.appendChild(line);
+                elements.logOutput.scrollTop = elements.logOutput.scrollHeight;
+            }
+        
+            function wait(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        
+            function addVisualNode(depth, mode) {
+                // Simple visualization of nested boxes to represent recursion
+                const node = document.createElement('div');
+                node.className = 'sim-node glass-panel';
+                node.style.marginLeft = `${(depth - 1) * 20}px`;
+                node.style.marginTop = '10px';
+                node.style.padding = '10px';
+                node.style.borderLeft = `3px solid var(--accent-primary)`;
+                node.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i data-feather="git-commit" style="width:16px;"></i>
+                        <strong>Level ${depth} Plan</strong>
+                        <span class="badge">${mode}</span>
+                    </div>
+                    <div class="text-xs opacity-70 mt-1">Decomposing objective...</div>
+                `;
+                elements.visualContainer.appendChild(node);
+                feather.replace();
+            }
+        
+            function generateMockSummary(data) {
+                // Generates a markdown-like HTML summary based on inputs
+                return `
+                    <h3>Execution Summary</h3>
+                    <p><strong>Objective:</strong> ${data.goal}</p>
+                    <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
+            
+                    <h4>Key Findings</h4>
+                    <ul>
+                        <li>Primary objective decomposed into <strong>${data.depth} recursive layers</strong>.</li>
+                        <li>Cognitive Strategy <code>${data.mode}</code> successfully identified core constraints.</li>
+                        <li>Context integration resolved 3 potential ambiguity vectors.</li>
+                    </ul>
+        
+                    <h4>Strategic Plan Generated</h4>
+                    <div class="code-block" style="background:rgba(0,0,0,0.3); padding:1rem; border-radius:4px; font-family:monospace;">
+                        1. Phase I: Foundation Analysis
+                           - Validated initial assumptions
+                           - Mapped dependency graph
+                        2. Phase II: Recursive Execution
+                           - Executed sub-tasks at depth ${data.depth}
+                           - Aggregated leaf-node results
+                        3. Phase III: Synthesis
+                           - Combined ${data.depth * 3} data points into final coherence check.
+                    </div>
+        
+                    <p class="text-success"><i data-feather="check-circle" style="width:14px; display:inline;"></i> Plan validated and ready for orchestration.</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

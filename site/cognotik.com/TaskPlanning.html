@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognitive Task Planning Framework - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+        
+
+
+
+
+
+
+</head>
+<body>
+    <!-- Header Component -->
+    <cognotik-header current-page="taskplanning"></cognotik-header>
+
+    <main>
+        <!-- Hero -->
+        <section class="hero">
+            <!-- Prompt: A glowing, central neural core connecting to various geometric modules representing tasks. -->
+            <h1>Cognitive Task Planning Framework</h1>
+            <p class="subtitle">
+                The central nervous system of Cognotik. It understands high-level goals, formulates intelligent plans, 
+                and orchestrates a vast library of tasks to execute complex workflows autonomously.
+            </p>
+            <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
+                Try the Simulator
+            </button>
+        </section>
+
+        <!-- Features -->
+        <section class="features">
+            <h2>Core Concepts</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i data-lucide="brain"></i>
+                    <h3>Cognitive Modes</h3>
+                    <p>Distinct "thinking styles" ranging from linear planning to autonomous, adaptive agents.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="layout-list"></i>
+                    <h3>Abstract Tasks</h3>
+                    <p>A unified interface for specialized tools, from file operations to complex reasoning engines.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="network"></i>
+                    <h3>Orchestration</h3>
+                    <p>Intelligent dependency management and context passing between tasks in a workflow.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modes Detail -->
+        <section class="modes-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <h2>Cognitive Modes</h2>
+            <div class="mode-grid">
+                <div class="mode-card">
+                    <div class="mode-title">Waterfall Mode</div>
+                    <p><strong>The Architect.</strong> Analyzes the entire request upfront and generates a comprehensive, sequential plan. It allows for user review and modification before any code runs. Ideal for well-defined tasks where the path to the solution is clear.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Conversational Mode</div>
+                    <p><strong>The Partner.</strong> Operates interactively, executing one step at a time based on the immediate conversation context. It maintains a full history of the session. Perfect for exploratory work, debugging, or when you need to guide the AI closely.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Adaptive Planning</div>
+                    <p><strong>The Strategist.</strong> Uses an iterative "Think, Act, Reflect" loop. It maintains a dynamic internal state of goals, facts, and hypotheses, allowing it to adjust its strategy based on task results. Best for ambiguous or evolving problems.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Hierarchical Planning</div>
+                    <p><strong>The Manager.</strong> Tackles massive goals by recursively decomposing them into sub-goals and concrete tasks. It manages a dependency tree, ensuring prerequisites are met before execution. Essential for complex, multi-component projects.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Parallel Mode</div>
+                    <p><strong>The Factory.</strong> Designed for high-throughput batch operations. It takes a template and a set of variables (like file patterns), generates all combinations, and executes them simultaneously. Ideal for applying changes across a codebase or running parameter sweeps.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Simulator -->
+        <section id="simulator" class="simulator">
+            <h2>Planning Simulator</h2>
+            <div class="simulator-container">
+                <div class="sim-controls">
+                    <h3>Configuration</h3>
+                    <div class="control-group">
+                        <label>Cognitive Mode</label>
+                        <select id="modeSelect">
+                            <option value="waterfall">Waterfall Mode</option>
+                            <option value="chat">Conversational Mode</option>
+                            <option value="adaptive">Adaptive Planning Mode</option>
+                            <option value="hierarchical">Hierarchical Planning Mode</option>
+                            <option value="parallel">Parallel Mode</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>User Goal</label>
+                        <textarea id="userGoal" rows="4">Build a web app to display stock data.</textarea>
+                    </div>
+                    <button id="runPlanBtn" class="run-button">Generate Plan</button>
+                </div>
+                <div class="sim-output">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('overview')">Plan Overview</button>
+                        <button class="tab" onclick="switchTab('json')">JSON Structure</button>
+                    </div>
+                    <div id="output-overview" class="tab-content active">
+                        <div style="color: #94a3b8; text-align: center; margin-top: 2rem;">
+                            Select a mode and click Generate to see how the framework approaches the problem.
+                        </div>
+                    </div>
+                    <div id="output-json" class="tab-content">
+                        <pre><code class="language-json">{}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Find the button that was clicked (or corresponds to the tabId if called programmatically)
+            const buttons = document.querySelectorAll('.tab');
+            for(let btn of buttons) {
+                if(btn.textContent.toLowerCase().includes(tabId === 'json' ? 'json' : 'overview')) {
+                    btn.classList.add('active');
+                }
+            }
+            
+            document.getElementById('output-' + tabId).classList.add('active');
+        }
+
+        document.getElementById('runPlanBtn').addEventListener('click', () => {
+            const mode = document.getElementById('modeSelect').value;
+            const goal = document.getElementById('userGoal').value;
+            const outputDiv = document.getElementById('output-overview');
+            const jsonDiv = document.querySelector('#output-json code');
+
+            outputDiv.innerHTML = '<div style="color: var(--accent-secondary); text-align: center; margin-top: 2rem;">Analyzing goal and formulating plan...</div>';
+            
+            setTimeout(() => {
+                let planHtml = '';
+                let planJson = {};
+
+                if (mode === 'waterfall') {
+                    planHtml = `
+                        <div class="plan-step"><strong>1. Analysis Phase</strong><br>Analyze requirements for: "${goal}"</div>
+                        <div class="plan-step"><strong>2. Design Phase (SubPlanningTask)</strong><br>Create database schema and API specification.</div>
+                        <div class="plan-step"><strong>3. Implementation (RunCodeTask)</strong><br>Implement backend services based on design.</div>
+                        <div class="plan-step"><strong>4. Frontend Generation (WriteHtmlTask)</strong><br>Generate user interface components.</div>
+                        <div class="plan-step" style="border-left-color: var(--accent-secondary)"><strong>5. User Review</strong><br>Waiting for approval...</div>
+                    `;
+                    planJson = { 
+                        mode: "Waterfall", 
+                        status: "WAITING_FOR_APPROVAL",
+                        plan: [
+                            { id: "task_1", type: "AnalysisTask", status: "PENDING" },
+                            { id: "task_2", type: "SubPlanningTask", goal: "Design Schema", status: "PENDING" },
+                            { id: "task_3", type: "RunCodeTask", dependsOn: ["task_2"], status: "PENDING" }
+                        ] 
+                    };
+                } else if (mode === 'chat') {
+                    planHtml = `
+                        <div class="chat-log"><strong>User:</strong> ${goal}</div>
+                        <div class="chat-log ai"><strong>AI:</strong> I need to check what tools are available for stock data.</div>
+                        <div class="plan-step" style="border-left-color: var(--accent-secondary)"><strong>Executing: FileSearchTask</strong><br>Searching for 'stock api' in documentation...</div>
+                    `;
+                    planJson = { 
+                        mode: "Conversational", 
+                        history: [{ role: "user", content: goal }],
+                        nextAction: { type: "FileSearchTask", query: "stock api" } 
+                    };
+                } else if (mode === 'adaptive') {
+                    planHtml = `
+                        <div class="plan-step"><strong>Cycle 1: Exploration</strong><br>Researching available stock data providers.</div>
+                        <div class="plan-step"><strong>Cycle 2: Hypothesis</strong><br>AlphaVantage API seems viable. Testing connection...</div>
+                        <div class="plan-step" style="border-left-color: var(--accent-secondary)"><strong>Cycle 3: Adaptation</strong><br>Connection successful. Updating plan to use AlphaVantage.</div>
+                    `;
+                    planJson = { 
+                        mode: "Adaptive", 
+                        state: "REFLECTING", 
+                        knowledge: ["Goal: Stock App", "Provider: AlphaVantage"],
+                        nextSteps: ["Draft Schema", "Generate API Key"]
+                    };
+                } else if (mode === 'hierarchical') {
+                    planHtml = `
+                        <div class="tree-node"><strong>Root Goal:</strong> ${goal}</div>
+                        <div class="tree-node" style="margin-left: 20px">├─ <strong>Sub-Goal: Backend</strong> (Status: IN_PROGRESS)</div>
+                        <div class="tree-node" style="margin-left: 40px">│  ├─ Task: Design DB Schema (COMPLETED)</div>
+                        <div class="tree-node" style="margin-left: 40px">│  └─ Task: Implement API Routes (RUNNING)</div>
+                        <div class="tree-node" style="margin-left: 20px">└─ <strong>Sub-Goal: Frontend</strong> (Status: PENDING)</div>
+                        <div class="tree-node" style="margin-left: 40px">   └─ Task: Create Dashboard UI (PENDING)</div>
+                    `;
+                    planJson = { 
+                        mode: "Hierarchical", 
+                        root: {
+                            goal: goal,
+                            children: [
+                                { name: "Backend", status: "IN_PROGRESS" },
+                                { name: "Frontend", status: "PENDING" }
+                            ]
+                        }
+                    };
+                } else if (mode === 'parallel') {
+                    planHtml = `
+                        <div class="plan-step"><strong>Configuration</strong><br>Template: "Analyze {{file}}"<br>Files: *.kt</div>
+                        <div class="plan-step" style="border-left-color: var(--accent-secondary)"><strong>Execution (Concurrency: 4)</strong></div>
+                        <div class="tree-node" style="margin-left: 20px">├─ Thread 1: Analyze User.kt (RUNNING)</div>
+                        <div class="tree-node" style="margin-left: 20px">├─ Thread 2: Analyze Session.kt (RUNNING)</div>
+                        <div class="tree-node" style="margin-left: 20px">├─ Thread 3: Analyze Task.kt (COMPLETED)</div>
+                        <div class="tree-node" style="margin-left: 20px">└─ Thread 4: Analyze Utils.kt (PENDING)</div>
+                    `;
+                    planJson = {
+                        mode: "Parallel",
+                        config: {
+                            template: "Analyze {{file}}",
+                            variables: { file: ["User.kt", "Session.kt", "Task.kt", "Utils.kt"] }
+                        },
+                        status: "RUNNING"
+                    };
+                }
+
+                outputDiv.innerHTML = planHtml;
+                jsonDiv.textContent = JSON.stringify(planJson, null, 2);
+            }, 600);
+        });
+    </script>
+</body>
+</html>

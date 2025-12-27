@@ -67,10 +67,7 @@ class AnalysisTask(
     * Specify the questions and the goal of the inquiry.
     * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
     * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
-  """) + """
-  Available files:
-  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
-  """
+  """)
 
     override fun run(
         agent: TaskOrchestrator,
@@ -100,7 +97,7 @@ class AnalysisTask(
                 Ensure the information is accurate, up-to-date, and well-organized to facilitate easy understanding.
                 """.trimIndent(),
             model = (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
-                ?: this.orchestrationConfig.defaultChatter).getChildClient(task),
+                ?: defaultSmart).getChildClient(task),
             temperature = this.orchestrationConfig.temperature,
         )
         val inquiryResult = if (orchestrationConfig.autoFix || typeConfig.non_interactive) {
@@ -191,6 +188,7 @@ class AnalysisTask(
         private val log = LoggerFactory.getLogger(AnalysisTask::class.java)
         val Analysis = TaskType(
             "Analysis",
+            "File",
             AnalysisTaskExecutionConfigData::class.java,
             AnalysisTaskTypeConfig::class.java,
             "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
@@ -217,7 +215,22 @@ class AnalysisTask(
                     FileSelectionUtils.filteredWalkAsciiTree(
                         path.toFile(),
                         20,
-                        treatDocumentsAsText = treatDocumentsAsText
+                        treatDocumentsAsText = treatDocumentsAsText,
+                        render = { file: File ->
+                            val name = file.name
+                            val size: String? = if (file.isFile) {
+                                val length = file.length()
+                                when {
+                                    length < 1024 -> "$length B"
+                                    length < 1024 * 1024 -> String.format("%.2f KB", length / 1024.0)
+                                    length < 1024 * 1024 * 1024 -> String.format("%.2f MB", length / (1024.0 * 1024.0))
+                                    else -> String.format("%.2f GB", length / (1024.0 * 1024.0 * 1024.0))
+                                }
+                            } else {
+                                null
+                            }
+                            if (size != null) "$name ($size)" else name
+                        }
                     )
                 )
             } catch (e: Exception) {

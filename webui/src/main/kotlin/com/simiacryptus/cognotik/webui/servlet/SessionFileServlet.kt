@@ -34,7 +34,7 @@ class SessionFileServlet(val dataStorage: StorageInterface) : FileServlet() {
         // If not found, check if this is a request for HTML/PDF with an equivalent .md file
         val requestedFile = getFile(dirs.first(), pathSegments, req)
         val fileName = requestedFile.name
-        if (fileName.endsWith(".html") || fileName.endsWith(".pdf")) {
+        if (fileName.endsWith(".html") || fileName.endsWith(".pdf") || fileName.endsWith(".txt")) {
             val mdFileName = fileName.substringBeforeLast(".") + ".md"
             val mdMatch = dirs.firstOrNull {
                 val mdFile = File(getFile(it, pathSegments, req).parentFile, mdFileName)

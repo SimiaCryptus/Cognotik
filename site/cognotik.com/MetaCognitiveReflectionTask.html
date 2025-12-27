@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta-Cognitive Reflection - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header current-page="meta-cognitive"></cognotik-header>
+    <div class="hero">
+        <h1>Meta-Cognitive Reflection</h1>
+        <p class="subtitle">"Thinking about thinking." Reflect on and critique reasoning processes to identify biases, assumptions, and opportunities for improvement.</p>
+        <a href="#demo" class="cta-button">Try the Simulator</a>
+    </div>
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Bias Detection</h3>
+                <p>Identifies potential cognitive biases (e.g., confirmation bias, anchoring) in the reasoning process.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Assumption Check</h3>
+                <p>Surfaces implicit assumptions and evaluates their validity and impact on conclusions.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Quality Improvement</h3>
+                <p>Provides actionable suggestions to enhance logical consistency, completeness, and confidence.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Subject Task ID</label>
+                    <input type="text" value="analysis-task-123">
+                </div>
+                <div class="control-group">
+                    <label>Reflection Aspects</label>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:0.5rem;">
+                        <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Assumptions</label>
+                        <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Biases</label>
+                        <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Alternatives</label>
+                    </div>
+                </div>
+                <button class="run-button">Reflect</button>
+            </div>
+            <div class="sim-output">
+                <div style="padding: 2rem; white-space: pre-wrap; font-family: monospace; color: var(--text-muted);">
+# Reflection Analysis
+
+## Underlying Assumptions
+- **Implicit:** Assumed that user data is always available in JSON format.
+- **Critique:** This may not hold for legacy systems using XML.
+
+## Cognitive Biases
+- **Confirmation Bias:** The analysis focused heavily on evidence supporting the initial hypothesis while glossing over the outlier data points in Q3.
+
+## Alternative Approaches
+- Instead of a linear regression, a random forest model might capture the non-linear relationships observed in the dataset.
+
+## Recommendations
+1. Verify data format assumptions with the engineering team.
+2. Re-evaluate the outlier data to ensure it isn't a signal of a different trend.
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

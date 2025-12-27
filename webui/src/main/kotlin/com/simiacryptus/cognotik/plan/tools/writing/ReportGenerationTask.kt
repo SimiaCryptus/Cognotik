@@ -286,7 +286,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
 
@@ -428,7 +428,7 @@ Be specific with numbers and percentages where available.
           """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             val dataAnalyses = dataAnalysisAgent.answer(listOf("Analyze data")).obj.analyses
@@ -531,7 +531,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
           """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             val outline = outlineAgent.answer(listOf("Create outline")).obj
@@ -684,7 +684,7 @@ Be specific, data-driven, and actionable.
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 var generatedSection = sectionAgent.answer(listOf("Write section")).obj
@@ -779,7 +779,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 val recommendations = recommendationAgent.answer(listOf("Generate recommendations")).obj.recommendations
@@ -890,7 +890,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
           """.trimIndent(),
                     model = api,
                     temperature = 0.6,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 val riskAssessment = riskAgent.answer(listOf("Assess risks")).obj.risks
@@ -1259,6 +1259,7 @@ Provide the complete revised report.
         private val log: Logger = LoggerFactory.getLogger(ReportGenerationTask::class.java)
         val ReportGeneration = TaskType(
             "ReportGeneration",
+            "Writing",
             ReportGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comprehensive business reports with data analysis and recommendations",

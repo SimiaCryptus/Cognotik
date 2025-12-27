@@ -1,0 +1,208 @@
+<!-- Prompt: Abstract 3D visualization of a chaotic stream of binary code and log lines flowing into a funnel and emerging as organized, glowing geometric data blocks (cubes and spheres) in cyan and gold. Dark background, cinematic lighting, depth of field. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataIngest - Cognotik Task</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <style>
+        /* Page-specific overrides */
+        .hero-visual {
+            width: 100%;
+            height: 400px;
+            background: radial-gradient(circle at center, var(--surface-color) 0%, var(--background-color) 70%);
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-visual::after {
+            content: "3D Visual Placeholder: Abstract Data Stream";
+            color: rgba(255,255,255,0.2);
+            font-weight: 700;
+        }
+        
+        /* Fix for Lucide icons in feature cards */
+        .feature-card svg {
+            width: 48px;
+            height: 48px;
+            color: var(--accent-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        /* Use Cases Section */
+        .use-cases {
+            padding: 4rem 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .use-case-item {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            align-items: flex-start;
+        }
+        .check-icon { color: var(--accent-color); flex-shrink: 0; }
+        
+        /* Log styling */
+        .log-entry { margin-bottom: 0.5rem; }
+        .log-info { color: var(--text-muted); }
+        .log-success { color: var(--success-color); }
+        .log-warn { color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="data_ingest"></cognotik-header>
+    <section class="hero">
+        <h1>Data Ingest</h1>
+        <p class="subtitle">Iteratively parse unstructured logs into structured data. Automates the creation of regex parsers for log files using LLM-driven pattern discovery.</p>
+        <div class="hero-visual">
+            <!-- Visual placeholder -->
+        </div>
+        <a href="#simulator" class="cta-button">Try the Simulator</a>
+    </section>
+    <section id="features" class="features">
+        <h2>Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i data-lucide="search"></i>
+                <h3>Pattern Discovery</h3>
+                <p>Automatically samples data and uses LLMs to discover regex patterns, handling complex log formats without manual rule writing.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="filter"></i>
+                <h3>Residual Targeting</h3>
+                <p>Iteratively targets unparsed lines to ensure high coverage, refining patterns until the threshold is met.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="database"></i>
+                <h3>Structured Output</h3>
+                <p>Generates JSONL data, a pattern registry, and a CSV index linking data back to source lines for full traceability.</p>
+            </div>
+        </div>
+    </section>
+    <section id="simulator" class="simulator">
+        <h2>Simulator</h2>
+        <div class="simulator-container">
+            <!-- Inputs -->
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Input Files (Glob Pattern)</label>
+                    <input type="text" id="inputFiles" value="**/*.log">
+                </div>
+                <div class="control-group">
+                    <label>Sample Size (Lines)</label>
+                    <input type="number" id="sampleSize" value="1000">
+                </div>
+                <div class="control-group">
+                    <label>Max Iterations</label>
+                    <input type="range" min="1" max="20" value="10" id="maxIterations" oninput="this.nextElementSibling.value = this.value">
+                    <output>10</output>
+                </div>
+                <div class="control-group">
+                    <label>Coverage Threshold</label>
+                    <input type="range" min="0.1" max="1.0" step="0.05" value="0.95" id="coverageThreshold" oninput="this.nextElementSibling.value = (this.value * 100) + '%'">
+                    <output>95%</output>
+                </div>
+                <button class="run-button" onclick="runSimulation()">Run Ingestion</button>
+            </div>
+            <!-- Outputs -->
+            <div class="sim-output">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('logs')">Execution Logs</button>
+                    <button class="tab" onclick="switchTab('data')">Data Preview</button>
+                </div>
+                <div id="outputLogs" class="tab-content active">
+                    <div class="log-info">Ready to start ingestion...</div>
+                </div>
+                <div id="outputData" class="tab-content">
+                    <div class="log-info">No data generated yet.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section id="use-cases" class="use-cases">
+        <h2>When to Use</h2>
+        <div class="use-case-item">
+            <div class="check-icon"><i data-lucide="check-circle"></i></div>
+            <div>
+                <h3>Log Analysis</h3>
+                <p>Convert messy server logs into structured databases for SQL querying and analytics.</p>
+            </div>
+        </div>
+        <div class="use-case-item">
+            <div class="check-icon"><i data-lucide="check-circle"></i></div>
+            <div>
+                <h3>Legacy Data Migration</h3>
+                <p>Parse old, undocumented flat files into modern formats during system upgrades.</p>
+            </div>
+        </div>
+    </section>
+    <script>
+        lucide.createIcons();
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if(tab === 'logs') document.getElementById('outputLogs').classList.add('active');
+            if(tab === 'data') document.getElementById('outputData').classList.add('active');
+        }
+        async function runSimulation() {
+            const logs = document.getElementById('outputLogs');
+            const data = document.getElementById('outputData');
+            logs.innerHTML = '';
+            switchTab('logs');
+            const addLog = (msg, type='info') => {
+                const div = document.createElement('div');
+                div.className = `log-entry log-${type}`;
+                div.innerText = `> ${msg}`;
+                logs.appendChild(div);
+                logs.scrollTop = logs.scrollHeight;
+            };
+            addLog("Initializing DataIngestTask...", "info");
+            await new Promise(r => setTimeout(r, 800));
+            addLog(`Resolving files for pattern: ${document.getElementById('inputFiles').value}`, "info");
+            await new Promise(r => setTimeout(r, 600));
+            addLog("Found 3 files (server.log, access.log, error.log)", "success");
+            addLog("## Phase 1: Sampling", "warn");
+            await new Promise(r => setTimeout(r, 500));
+            addLog(`Loaded ${document.getElementById('sampleSize').value} sample lines.`, "info");
+            addLog("## Phase 2: Pattern Discovery", "warn");
+            const iterations = 3;
+            for(let i=1; i<=iterations; i++) {
+                await new Promise(r => setTimeout(r, 1000));
+                const coverage = Math.min(98, i * 30 + 10);
+                addLog(`**Iteration ${i}** | Coverage: ${coverage}% | Residuals: ${100-coverage}`, "info");
+                if(i === 1) addLog("✅ Discovered Pattern: `^(?<timestamp>\\S+) (?<level>\\w+) (?<msg>.*)$`", "success");
+                if(i === 2) addLog("✅ Discovered Pattern: `^Exception in thread \"(?<thread>.*)\": (?<error>.*)$`", "success");
+            }
+            addLog("Coverage threshold reached.", "success");
+            addLog("## Phase 3: Bulk Extraction", "warn");
+            await new Promise(r => setTimeout(r, 800));
+            addLog("Writing data.jsonl...", "info");
+            addLog("Writing index.csv...", "info");
+            addLog("Ingestion Complete. Extracted 15,420 records.", "success");
+            // Mock Data Output
+            data.innerHTML = JSON.stringify({
+                timestamp: "2023-10-27T10:00:00",
+                level: "INFO",
+                msg: "User login successful",
+                source_file: "server.log"
+            }, null, 2) + "\n" + JSON.stringify({
+                timestamp: "2023-10-27T10:00:05",
+                level: "ERROR",
+                msg: "Connection timeout",
+                source_file: "error.log"
+            }, null, 2);
+        }
+    </script>
+</body>
+</html>

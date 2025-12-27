@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Generation Task - Cognotik</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        ul { list-style: none; }
+        /* Utilities */
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
+            color: #fff;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+        }
+        /* Hero */
+        .hero {
+            padding: 8rem 2rem 4rem;
+            display: flex;
+            align-items: center;
+            min-height: 80vh;
+            position: relative;
+            background: none;
+            text-align: left;
+        }
+        .hero-content {
+            flex: 1;
+            padding-right: 2rem;
+        }
+        .hero h1 {
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        .hero-visual {
+            flex: 1;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        /* Abstract Visual Placeholder */
+        .visual-node {
+            width: 200px;
+            height: 200px;
+            border: 2px solid var(--accent-secondary);
+            border-radius: 12px;
+            position: absolute;
+            animation: pulse 4s infinite;
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .visual-node::before {
+            content: '';
+            position: absolute;
+            width: 80%;
+            height: 2px;
+            background: var(--accent-color);
+            top: 30%;
+            left: 10%;
+        }
+        .visual-node::after {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 2px;
+            background: var(--accent-color);
+            top: 50%;
+            left: 10%;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        /* Features */
+        .features {
+            padding: 4rem 0;
+            max-width: none;
+            margin: 0;
+            background: rgba(255,255,255,0.02);
+        }
+        .features-grid {
+            margin-top: 2rem;
+        }
+        .feature-card {
+            background: var(--surface-color);
+            transition: 0.3s;
+        }
+        .feature-card:hover {
+            border-color: var(--accent-secondary);
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-secondary);
+        }
+        /* Simulator */
+        .sim-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            background: var(--surface-color);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            min-height: 600px;
+        }
+        .sim-panel {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .sim-left {
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .form-control {
+            width: 100%;
+            background: var(--background-color);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-color);
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .sim-right {
+            background: #0b1120;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 1rem;
+        }
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            color: var(--accent-secondary);
+            border-bottom-color: var(--accent-secondary);
+        }
+        .output-area {
+            flex: 1;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #d1d5db;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
+        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
+        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
+        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 0;
+        }
+        .use-case-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .use-case-item {
+            background: rgba(255,255,255,0.03);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+        }
+        @media (max-width: 768px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
+            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+            .sim-container { grid-template-columns: 1fr; }
+            .sim-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="report-generation"></cognotik-header>
+    <!-- Hero -->
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>Report Generation Task</h1>
+            <p>Generate comprehensive business reports with data analysis, visualizations, and actionable recommendations.</p>
+            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node">
+                <div style="font-size: 3rem; color: var(--accent-secondary);">📊</div>
+            </div>
+        </div>
+    </header>
+    <!-- Features -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    </div>
+                    <h3>Data-Driven Analysis</h3>
+                    <p>Analyzes metrics and trends to provide evidence-based insights and trend analysis.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </div>
+                    <h3>Structured Reporting</h3>
+                    <p>Creates professional reports with executive summaries, detailed sections, and visualizations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <h3>Actionable Recommendations</h3>
+                    <p>Generates strategic recommendations and risk assessments based on findings.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Simulator -->
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="sim-container">
+                <!-- Inputs -->
+                <div class="sim-panel sim-left">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                    <div class="form-group">
+                        <label>Report Topic</label>
+                        <input type="text" id="report_topic" class="form-control" value="Q3 Marketing Performance">
+                    </div>
+                    <div class="form-group">
+                        <label>Report Type</label>
+                        <select id="report_type" class="form-control">
+                            <option value="status_update">Status Update</option>
+                            <option value="quarterly_review" selected>Quarterly Review</option>
+                            <option value="incident_report">Incident Report</option>
+                            <option value="performance_analysis">Performance Analysis</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Audience</label>
+                        <input type="text" id="target_audience" class="form-control" value="Executive Team">
+                    </div>
+                    <div class="form-group">
+                        <label>Key Metrics (Comma separated)</label>
+                        <textarea id="key_metrics" class="form-control">Conversion Rate, Customer Acquisition Cost, ROI, Traffic Growth</textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Generate Report</button>
+                </div>
+                <!-- Outputs -->
+                <div class="sim-panel sim-right">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('report')">Report</div>
+                        <div class="tab" onclick="switchTab('logs')">Logs</div>
+                    </div>
+                    <div id="output-report" class="output-area markdown-preview">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the report and click "Generate" to see the output.
+                        </div>
+                    </div>
+                    <div id="output-logs" class="output-area" style="display: none; font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Use Cases -->
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>Business Reporting</h4>
+                    <p>Create quarterly reviews, status updates, and performance analyses for stakeholders.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Project Summaries</h4>
+                    <p>Generate post-mortem reports and project completion summaries with key learnings.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Market Research</h4>
+                    <p>Compile market analysis reports with trend data and competitive insights.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Incident Analysis</h4>
+                    <p>Document technical incidents with root cause analysis and prevention strategies.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('output-report').style.display = tabName === 'report' ? 'block' : 'none';
+            document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
+        }
+        function runSimulation() {
+            const topic = document.getElementById('report_topic').value;
+            const type = document.getElementById('report_type').value;
+            const audience = document.getElementById('target_audience').value;
+            const metrics = document.getElementById('key_metrics').value.split(',');
+            const reportEl = document.getElementById('output-report');
+            const logsEl = document.getElementById('output-logs');
+            
+            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
+            logsEl.innerHTML = '';
+            
+            const logs = [
+                `[INFO] Initializing ReportGenerationTask...`,
+                `[INFO] Topic: ${topic}`,
+                `[INFO] Type: ${type}`,
+                `[INFO] Analyzing metrics: ${metrics.length} items...`,
+                `[INFO] Generating executive summary...`,
+                `[INFO] Creating data visualizations...`,
+                `[INFO] Formulating recommendations...`,
+                `[SUCCESS] Report generation complete.`
+            ];
+            
+            let logIndex = 0;
+            const logInterval = setInterval(() => {
+                if (logIndex < logs.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
+                    line.style.marginBottom = '4px';
+                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
+                    logsEl.appendChild(line);
+                    logsEl.scrollTop = logsEl.scrollHeight;
+                    logIndex++;
+                } else {
+                    clearInterval(logInterval);
+                    renderReport(topic, type, audience, metrics);
+                }
+            }, 400);
+        }
+        function renderReport(topic, type, audience, metrics) {
+            const reportEl = document.getElementById('output-report');
+            const markdown = `
+<h1>${topic}</h1>
+<p><strong>Type:</strong> ${type.replace('_', ' ').toUpperCase()}<br>
+<strong>Prepared for:</strong> ${audience}<br>
+<strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+
+<h2>Executive Summary</h2>
+<p>This report provides a comprehensive analysis of ${topic}. Key performance indicators show positive trends in customer acquisition, though retention metrics require attention. Overall, the strategic initiatives implemented in Q3 have yielded a 15% increase in ROI.</p>
+
+<h2>Key Metrics Analysis</h2>
+<ul>
+    ${metrics.map(m => `<li><strong>${m.trim()}:</strong> Showing steady improvement. Current value exceeds target by 5%.</li>`).join('')}
+</ul>
+
+<h2>Trend Analysis</h2>
+<p>Comparing current performance to the previous period, we observe:</p>
+<ul>
+    <li><strong>Upward Trend:</strong> Traffic growth has accelerated by 20% month-over-month.</li>
+    <li><strong>Stable:</strong> Conversion rates remain consistent at 3.5%.</li>
+</ul>
+
+<h2>Recommendations</h2>
+<ol>
+    <li><strong>Optimize Ad Spend:</strong> Reallocate budget to high-performing channels identified in the analysis.</li>
+    <li><strong>Enhance Onboarding:</strong> Address the drop-off in user activation by simplifying the signup flow.</li>
+    <li><strong>Expand Content Strategy:</strong> Leverage the high engagement on blog posts to drive more organic traffic.</li>
+</ol>
+
+<h2>Risk Assessment</h2>
+<p><strong>Market Volatility:</strong> Moderate risk due to changing competitor landscape. Mitigation: Diversify marketing channels.</p>
+            `;
+            reportEl.innerHTML = markdown;
+        }
+    </script>
+</body>
+</html>

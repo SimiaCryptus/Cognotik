@@ -33,6 +33,7 @@ class GeneticOptimizationTask(
     private val log: Logger = LoggerFactory.getLogger(GeneticOptimizationTask::class.java)
     val GeneticOptimization = TaskType(
       "GeneticOptimization",
+      "Reasoning",
       GeneticOptimizationTaskExecutionConfigData::class.java,
       TaskTypeConfig::class.java,
       "Iteratively evolve and perfect text through genetic algorithms",
@@ -239,7 +240,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
       log.info("Configuration validated: generations=$numGenerations, population=$populationSize, selection=$selectionSize, crossover=$enableCrossover")
 
       val tabs = TabbedDisplay(task)
-      val api = orchestrationConfig.defaultChatter
+      val api = defaultSmart
       transcript?.write("# Genetic Optimization Task Transcript\n\n".toByteArray())
 
       // Create overview tab
@@ -950,7 +951,7 @@ Use this feedback to guide your mutation:
       model = api,
       temperature = 0.8,
       name = "MutationGenerator",
-      parsingChatter = orchestrationConfig.parsingChatter,
+      parsingChatter = defaultFast,
     ).answer(
       listOf(
         """
@@ -1108,7 +1109,7 @@ Be objective and consistent in your evaluation.
       model = api,
       temperature = 0.3,
       name = "VariantEvaluator",
-      parsingChatter = orchestrationConfig.parsingChatter,
+      parsingChatter = defaultFast,
     ).answer(
       listOf(
         """

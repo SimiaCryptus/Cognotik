@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abductive Reasoning - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header current-page="abductive-reasoning"></cognotik-header>
+    <header class="hero">
+        <h1>Abductive Reasoning</h1>
+        <p class="subtitle">Generate and evaluate explanatory hypotheses for observations. Use "Inference to the Best Explanation" to solve complex problems.</p>
+        <a href="#demo" class="cta-button">Try the Simulator</a>
+    </header>
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Hypothesis Generation</h3>
+                <p>Creates multiple plausible explanations for a set of observations, ranging from common to rare causes.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Rigorous Evaluation</h3>
+                <p>Scores hypotheses based on explanatory power, simplicity (Occam's Razor), and testability.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Validation Tests</h3>
+                <p>Suggests specific experiments or data collection steps to confirm or refute the top hypotheses.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Observations</label>
+                    <textarea rows="5">1. System latency spiked at 2:00 AM.
+2. Database CPU usage was normal.
+3. Web server logs show no increase in traffic.
+4. Backup job usually runs at 3:00 AM.</textarea>
+                </div>
+                <div class="control-group">
+                    <label>Max Hypotheses</label>
+                    <input type="text" value="3">
+                </div>
+                <button class="run-button">Generate Hypotheses</button>
+            </div>
+            <div class="sim-output">
+                <div class="tab-content active" style="white-space: pre-wrap;">
+# Best Explanation
+
+## Hypothesis 1: Scheduled Task Misconfiguration
+**Score:** 0.85 (Excellent)
+**Explanation:** A scheduled task (like the backup) may have been misconfigured to run an hour early (2:00 AM instead of 3:00 AM) or a different maintenance job triggered. This explains the latency without traffic or DB load (disk I/O bottleneck).
+
+## Evaluation
+- **Explanatory Power:** High. Explains all observations.
+- **Simplicity:** High. Common configuration error.
+- **Testability:** High. Check cron jobs/task scheduler logs.
+
+## Next Steps
+- [ ] Check server cron logs for jobs starting at 2:00 AM.
+- [ ] Verify disk I/O metrics during the spike.
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

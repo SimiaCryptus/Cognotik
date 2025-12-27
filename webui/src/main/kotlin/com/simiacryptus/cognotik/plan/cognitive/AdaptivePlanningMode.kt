@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
@@ -19,6 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.io.path.Path
 
 /**
  * A cognitive mode that implements the auto-planning strategy with iterative thinking.
@@ -311,7 +313,9 @@ ${JsonUtil.toJson(taskConfig)}
                                     TaskType.getImpl(orchestrationConfig, taskType).promptSegment().trim()
                                         .trimIndent()
                                         .indent("  ")
-                                }"
+                                }" + (orchestrationConfig.workingDir?.let {root ->
+                                    "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
+                                } ?: "")
                             }
                         }
                         .joinToString("\n\n"))
@@ -325,8 +329,8 @@ ${JsonUtil.toJson(taskConfig)}
                     append("\nYou can specify which configuration to use by setting the task_config_name field.")
                 }
             },
-            model = orchestrationConfig.defaultChatter.getChildClient(task),
-            parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task),
+            model = orchestrationConfig.defaultSmart.getChildClient(task),
+            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
             temperature = orchestrationConfig.temperature,
             describer = describer,
             parserPrompt = ("Task Subtype Schema:\n" + TaskType.getAvailableTaskTypes(orchestrationConfig)
@@ -470,8 +474,8 @@ ${JsonUtil.toJson(taskConfig)}
         * Maintain alignment between short-term actions and long-term goals
         * Ensure scalability and maintainability of the approach
       """.trimIndent(),
-            model = orchestrationConfig.defaultChatter.getChildClient(task),
-            parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task),
+            model = orchestrationConfig.defaultSmart.getChildClient(task),
+            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
             temperature = orchestrationConfig.temperature,
             describer = describer
         ).answer(listOf(userMessage) + contextData()).obj
@@ -540,8 +544,8 @@ ${JsonUtil.toJson(taskConfig)}
       Reassess the goals (paying attention to priorities and rigidity) and adjust the confidence level.
       If error patterns are recurring or progress slows, trigger a reflection loop by adding a 'reflect' task.
     """.trimIndent(),
-        model = orchestrationConfig.defaultChatter.getChildClient(task),
-        parsingChatter = orchestrationConfig.parsingChatter,
+        model = orchestrationConfig.defaultSmart.getChildClient(task),
+        parsingChatter = orchestrationConfig.defaultFast,
         temperature = orchestrationConfig.temperature,
         describer = describer
     ).answer(

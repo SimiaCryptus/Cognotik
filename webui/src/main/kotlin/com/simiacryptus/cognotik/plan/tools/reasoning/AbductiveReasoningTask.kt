@@ -134,7 +134,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)
@@ -726,7 +726,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             prompt = prompt.toString(),
             model = api,
             temperature = 0.7,
-            parsingChatter = orchestrationConfig.parsingChatter
+            parsingChatter = defaultFast
         )
 
         val response = parsedAgent.answer(listOf(prompt.toString())).obj
@@ -783,7 +783,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             prompt = prompt.toString(),
             model = api,
             temperature = 0.5,
-            parsingChatter = orchestrationConfig.parsingChatter
+            parsingChatter = defaultFast
         )
 
         val response = parsedAgent.answer(listOf(prompt.toString())).obj
@@ -943,6 +943,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         private val log: Logger = LoggerFactory.getLogger(AbductiveReasoningTask::class.java)
         val AbductiveReasoning = TaskType(
             "AbductiveReasoning",
+            "Reasoning",
             AbductiveReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate and evaluate explanatory hypotheses",

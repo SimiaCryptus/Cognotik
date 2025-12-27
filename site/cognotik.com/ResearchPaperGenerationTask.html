@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Paper Generation Task - Cognotik</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        /* Utilities */
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 var(--spacing-lg);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
+            color: #fff;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+            border: none;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+        }
+        /* Hero */
+        .hero {
+            /* Override main.css .hero defaults */
+            padding: 8rem 0 4rem;
+            display: flex;
+            align-items: center;
+            text-align: left;
+            min-height: 80vh;
+            position: relative;
+            background: transparent;
+        }
+        .hero-content {
+            flex: 1;
+            padding-right: 2rem;
+        }
+        .hero h1 {
+            /* Inherit size from main.css or override */
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        .hero-visual {
+            flex: 1;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        /* Abstract Visual Placeholder */
+        .visual-node {
+            width: 200px;
+            height: 200px;
+            border: 2px solid var(--accent-secondary);
+            border-radius: 50%;
+            position: absolute;
+            animation: pulse 4s infinite;
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .visual-node::before {
+            content: '🎓';
+            font-size: 4rem;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        .feature-card:hover {
+            border-color: var(--accent-secondary);
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-secondary);
+        }
+        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
+        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
+        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
+        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
+        @media (max-width: 768px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
+            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="research-paper-generation"></cognotik-header>
+    <!-- Hero -->
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>Research Paper Generation Task</h1>
+            <p>Generate comprehensive academic research papers with literature reviews, methodology, and citations.</p>
+            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+    <!-- Features -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    </div>
+                    <h3>Academic Rigor</h3>
+                    <p>Adheres to academic standards and citation styles (APA, MLA, Chicago, IEEE).</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </div>
+                    <h3>Literature Synthesis</h3>
+                    <p>Analyzes and synthesizes existing research to identify gaps and build arguments.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <h3>Structured Sections</h3>
+                    <p>Generates abstract, introduction, methodology, results, and discussion sections.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Simulator -->
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <!-- Inputs -->
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                    <div class="control-group">
+                        <label>Research Topic</label>
+                        <input type="text" id="research_topic" value="Machine Learning in Healthcare">
+                    </div>
+                    <div class="control-group">
+                        <label>Paper Type</label>
+                        <select id="paper_type">
+                            <option value="review">Literature Review</option>
+                            <option value="empirical">Empirical Study</option>
+                            <option value="theoretical">Theoretical Paper</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Academic Level</label>
+                        <select id="academic_level">
+                            <option value="undergraduate">Undergraduate</option>
+                            <option value="masters" selected>Masters</option>
+                            <option value="phd">PhD</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Generate Paper</button>
+                </div>
+                <!-- Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('paper')">Paper</div>
+                        <div class="tab" onclick="switchTab('logs')">Logs</div>
+                    </div>
+                    <div id="output-paper" class="tab-content active markdown-preview">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the paper and click "Generate" to see the output.
+                        </div>
+                    </div>
+                    <div id="output-logs" class="tab-content" style="display: none; font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Use Cases -->
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="mode-grid">
+                <div class="mode-card">
+                    <div class="mode-title">Academic Research</div>
+                    <p>Draft research papers, thesis chapters, and literature reviews.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">White Papers</div>
+                    <p>Create authoritative white papers for industry and business contexts.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Grant Proposals</div>
+                    <p>Develop research proposals with strong theoretical foundations.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Knowledge Synthesis</div>
+                    <p>Summarize complex topics and existing literature for internal knowledge bases.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            document.getElementById('output-' + tabName).style.display = 'block';
+        }
+        function runSimulation() {
+            const topic = document.getElementById('research_topic').value;
+            const type = document.getElementById('paper_type').value;
+            const level = document.getElementById('academic_level').value;
+            const reportEl = document.getElementById('output-paper');
+            const logsEl = document.getElementById('output-logs');
+            
+            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
+            logsEl.innerHTML = '';
+            
+            const logs = [
+                `[INFO] Initializing ResearchPaperGenerationTask...`,
+                `[INFO] Topic: ${topic}`,
+                `[INFO] Analyzing literature...`,
+                `[INFO] Creating outline...`,
+                `[INFO] Writing sections...`,
+                `[INFO] Generating bibliography...`,
+                `[SUCCESS] Paper generation complete.`
+            ];
+            
+            let logIndex = 0;
+            const logInterval = setInterval(() => {
+                if (logIndex < logs.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
+                    line.style.marginBottom = '4px';
+                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
+                    logsEl.appendChild(line);
+                    logsEl.scrollTop = logsEl.scrollHeight;
+                    logIndex++;
+                } else {
+                    clearInterval(logInterval);
+                    renderPaper(topic);
+                }
+            }, 400);
+        }
+        function renderPaper(topic) {
+            const reportEl = document.getElementById('output-paper');
+            const markdown = `
+<h1>${topic}: A Comprehensive Review</h1>
+
+<h2>Abstract</h2>
+<p>This paper explores the transformative impact of machine learning algorithms in modern healthcare diagnostics. By analyzing recent studies, we identify key trends in predictive analytics and image recognition, while addressing ethical concerns regarding data privacy and algorithmic bias.</p>
+
+<h2>1. Introduction</h2>
+<p>The integration of artificial intelligence (AI) into healthcare systems has accelerated rapidly in the last decade. Machine learning (ML), a subset of AI, offers unprecedented opportunities for improving patient outcomes through early diagnosis and personalized treatment plans (Smith et al., 2023).</p>
+
+<h2>2. Literature Review</h2>
+<p>Recent literature highlights the efficacy of deep learning models in radiology. Jones (2022) demonstrated that convolutional neural networks (CNNs) can outperform human radiologists in detecting specific anomalies in X-rays. However, limitations remain regarding the interpretability of these "black box" models.</p>
+
+<h2>3. Methodology</h2>
+<p>This review synthesizes data from 50 peer-reviewed articles published between 2019 and 2024. Sources were selected based on relevance, citation count, and methodological rigor.</p>
+
+<h2>4. Discussion</h2>
+<p>While the technical capabilities of ML models are impressive, implementation challenges persist. Integration with existing Electronic Health Records (EHR) systems remains a significant hurdle.</p>
+
+<h2>References</h2>
+<ul>
+    <li>Jones, A. (2022). <em>Deep Learning in Radiology</em>. Journal of Medical AI.</li>
+    <li>Smith, B., et al. (2023). <em>The Future of Personalized Medicine</em>. Healthcare Tech Review.</li>
+</ul>
+            `;
+            reportEl.innerHTML = markdown;
+        }
+    </script>
+</body>
+</html>

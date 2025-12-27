@@ -1,0 +1,1111 @@
+<!-- 
+IMAGE PROMPT: 
+A high-quality, abstract 3D illustration representing a Finite State Machine. 
+The visual should feature glowing, translucent nodes (spheres) in deep cyan and gold, 
+connected by directional beams of light (edges) representing transitions. 
+The background is a deep void (#0f172a) with subtle grid lines. 
+One node is highlighted as the "active" state, emitting a pulse. 
+Style: Cyberpunk meets clean architectural blueprint.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finite State Machine Modeler | Cognotik</title>
+    <meta name="description" content="Model concepts using finite state machine analysis. Identify states, map transitions, and validate system logic.">
+    
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons: FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+
+    <style>
+        /* =========================================
+           Custom Page Styles
+           ========================================= */
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        /* Utilities */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--accent-color);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        /* Hero Visual - CSS Only FSM Representation */
+        .visual-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(30, 41, 59, 0.5) 0%, transparent 70%);
+            border-radius: var(--border-radius);
+            perspective: 1000px;
+        }
+        
+        .abstract-node {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid var(--accent-secondary);
+            box-shadow: 0 0 15px var(--accent-secondary);
+            z-index: 2;
+            backdrop-filter: blur(4px);
+        }
+        
+        .node-1 {
+            width: 60px;
+            height: 60px;
+            top: 20%;
+            left: 20%;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .node-2 {
+            width: 80px;
+            height: 80px;
+            bottom: 20%;
+            right: 20%;
+            border-color: #fbbf24;
+            box-shadow: 0 0 15px #fbbf24;
+            animation: float 7s ease-in-out infinite reverse;
+        }
+        
+        .node-3 {
+            width: 50px;
+            height: 50px;
+            top: 30%;
+            right: 30%;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-color);
+            animation: pulse 3s infinite;
+        }
+        
+        .connection-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-secondary), transparent);
+            transform: translate(-50%, -50%) rotate(45deg);
+            opacity: 0.5;
+            z-index: 1;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 25px var(--accent-color); }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        /* Diagram Placeholder */
+        .diagram-placeholder {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            color: var(--text-muted);
+        }
+        
+        .empty-state {
+            text-align: center;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        /* Code Output */
+        .code-block-wrapper {
+            background: #0d1117;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .code-header {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        
+        /* Terminal Logs */
+        .terminal-window {
+            background: #000;
+            border-radius: var(--border-radius);
+            padding: 16px;
+            height: 100%;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #22c55e;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+        
+        .log-line {
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .log-line.error { color: var(--accent-danger); }
+        .log-line.info { color: var(--accent-secondary); }
+        
+        /* =========================================
+           6. Workflow Section
+           ========================================= */
+        .workflow-section {
+            padding: 80px 0;
+            background: var(--background-color);
+        }
+        
+        .workflow-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 60px;
+            position: relative;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            padding: 0 10px;
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: var(--surface-color);
+            border: 2px solid var(--accent-secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-weight: 700;
+            color: var(--accent-secondary);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+        
+        .step-content h4 {
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+        
+        .step-content p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .step-connector {
+            flex: 1;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 25px;
+            position: relative;
+        }
+        
+        .step-connector::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 0%;
+            height: 100%;
+            background: var(--accent-secondary);
+            transform: translateY(-50%);
+            animation: connect 3s infinite;
+        }
+        
+        @keyframes connect {
+            0% { width: 0%; left: 0; opacity: 0; }
+            50% { opacity: 1; }
+            100% { width: 100%; left: 100%; opacity: 0; }
+        }
+        
+        /* =========================================
+           7. Use Cases
+           ========================================= */
+        .use-cases-section {
+            padding: 80px 0;
+            background: #020617;
+        }
+        
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+        }
+        
+        .use-case-item {
+            display: flex;
+            gap: 20px;
+            padding: 24px;
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            border-left: 4px solid #fbbf24;
+        }
+        
+        .use-case-item i {
+            font-size: 1.5rem;
+            color: #fbbf24;
+            margin-top: 4px;
+        }
+        
+        .use-case-text h4 {
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .use-case-text p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        
+        /* =========================================
+           8. Footer
+           ========================================= */
+        footer {
+            background: var(--background-color);
+            padding: 40px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+        
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition-fast);
+        }
+        
+        .footer-links a:hover {
+            color: var(--accent-secondary);
+        }
+        
+        .footer-copyright {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        
+        /* =========================================
+           9. Responsive Design
+           ========================================= */
+        @media (max-width: 992px) {
+            /* .hero-title { font-size: 2.8rem; } handled by main.css */
+            /* .features-grid { grid-template-columns: repeat(2, 1fr); } handled by main.css auto-fit */
+            /* .simulator-interface { grid-template-columns: 1fr; } handled by main.css */
+            /* .sim-config-panel { border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.05); } handled by main.css */
+        }
+        
+        @media (max-width: 768px) {
+            .main-nav { display: none; } /* Simplified for this demo */
+            .mobile-menu-toggle { display: block; }
+        
+        
+            /* .hero-grid { grid-template-columns: 1fr; text-align: center; } */
+            /* .hero-subtitle { margin: 0 auto 40px; } */
+            /* .hero-actions { justify-content: center; } */
+        
+            /* .features-grid { grid-template-columns: 1fr; } */
+        
+            .workflow-steps { flex-direction: column; gap: 30px; }
+            .step-connector { display: none; }
+            .step { width: 100%; display: flex; align-items: center; gap: 20px; text-align: left; }
+            .step-number { margin: 0; flex-shrink: 0; }
+        
+            .use-case-grid { grid-template-columns: 1fr; }
+        
+            .footer-content { flex-direction: column; gap: 20px; text-align: center; }
+        }
+    </style>
+<!-- Generated Images:
+     - fsm-hero-illustration.png: A high-quality, abstract 3D illustration representing a Finite State Machine in a "Future-Professional" style. The scene features a network of translucent, glass-like spheres (nodes) floating in a deep void (color #0f172a). These nodes are connected by sharp, laser-like beams of light (edges) in neon cyan (#38bdf8) and electric purple (#a855f7). One central node is highlighted in glowing gold (#fbbf24), representing the active state, emitting a soft volumetric pulse. The composition should feel like a complex architectural blueprint brought to life in a cyberpunk environment, with subtle grid lines in the background and a shallow depth of field to emphasize the central logic structure.
+     - logic-pipeline-flow.png: An abstract visualization of a data processing pipeline to represent the "Execution Pipeline" workflow. On the left, a cloud of chaotic, unstructured binary code and text particles (representing raw concepts) flows into a central, glowing ring mechanism. As the particles pass through the ring, they are organized into a structured, crystalline geometric lattice on the right side. The background is a dark slate gradient. The chaotic elements are faint blue, the processing ring is bright purple, and the resulting structured output is solid, glowing cyan. The style is clean, high-tech, and isometric.
+     - system-validation-isometric.png: An isometric 3D render representing "System Validation" and "Edge Case Detection." The image shows a complex, multi-layered cubic structure made of dark metal and glass. A scanning beam of light (gold color) is sweeping across the structure. Where the light touches, the internal wiring glows, highlighting the connectivity. In one small section, a "glitch" effect in red is being repaired/overwritten by the gold scanning light, symbolizing the identification and fixing of error states. The lighting is dramatic, with high contrast against a dark navy background (#1e293b).
+-->
+</head>
+<body>
+
+    <!-- Navigation Header -->
+    <cognotik-header current-page="finite_state_machine"></cognotik-header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="hero" class="hero">
+            <div class="container">
+                <div class="hero-content" style="position: relative; z-index: 2;">
+                    <div class="badge">Reasoning Engine</div>
+                    <h1>Finite State Machine <span class="text-gradient">Modeler</span></h1>
+                    <p class="subtitle">
+                        Transform abstract concepts into deterministic logic. Analyze systems, map state transitions, validate properties, and generate test scenarios with AI-driven formal methods.
+                    </p>
+                    <div class="hero-actions" style="margin-bottom: 2rem;">
+                        <a href="#simulator" class="cta-button">
+                            <i class="fa-solid fa-play"></i> Launch Simulator
+                        </a>
+                        <a href="#features" class="btn" style="background: transparent; border: 1px solid var(--border-color);">
+                            Explore Features
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-visual" style="max-width: 800px; margin: 0 auto;">
+                    <!-- 3D Abstract Illustration -->
+                    <div class="visual-container">
+                        <img src="assets/images/fsm-hero-illustration.png"
+                             alt="Abstract 3D illustration of a Finite State Machine with glowing nodes and connections in a cyberpunk architectural style" 
+                             class="hero-illustration">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section id="features" class="features">
+            <div class="container">
+                <div class="section-header" style="text-align: center; margin-bottom: 3rem;">
+                    <h2>Core Capabilities</h2>
+                    <p style="color: var(--text-muted);">From concept to formal validation in seconds.</p>
+                </div>
+                
+                <!-- Feature Highlight Visual -->
+                <div class="feature-highlight-visual">
+                    <img src="assets/images/system-validation-isometric.png"
+                         alt="Isometric 3D render representing system validation, edge case detection, and error state repair" 
+                         class="validation-illustration">
+                </div>
+
+                <div class="features-grid">
+                    <!-- Feature 1 -->
+                    <div class="feature-card">
+                        <i class="fa-solid fa-sitemap"></i>
+                        <h3>State Identification</h3>
+                        <p>Automatically extracts all possible states (Initial, Normal, Error, Terminal) from a natural language concept description.</p>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="feature-card">
+                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                        <h3>Transition Mapping</h3>
+                        <p>Maps events and triggers to state changes, identifying guard conditions and resulting actions.</p>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="feature-card">
+                        <i class="fa-solid fa-diagram-project"></i>
+                        <h3>Visual Diagrams</h3>
+                        <p>Generates Mermaid.js compatible code to visualize the state machine structure instantly.</p>
+                    </div>
+                    <!-- Feature 4 -->
+                    <div class="feature-card">
+                        <i class="fa-solid fa-bug-slash"></i>
+                        <h3>Edge Case Detection</h3>
+                        <p>Identifies invalid transitions, race conditions, and missing error handling paths.</p>
+                    </div>
+                    <!-- Feature 5 -->
+                    <div class="feature-card">
+                        <i class="fa-solid fa-check-double"></i>
+                        <h3>Property Validation</h3>
+                        <p>Validates formal properties including determinism, completeness, reachability, and liveness.</p>
+                    </div>
+                    <!-- Feature 6 -->
+                    <div class="feature-card">
+                        <i class="fa-solid fa-vial"></i>
+                        <h3>Test Generation</h3>
+                        <p>Creates comprehensive test scenarios covering happy paths, error paths, and boundary conditions.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Simulator -->
+        <section id="simulator" class="simulator">
+            <div class="container">
+                <div class="section-header" style="text-align: center; margin-bottom: 3rem;">
+                    <h2>Interactive Simulator</h2>
+                    <p style="color: var(--text-muted);">Configure the FSM parameters and visualize the generated logic.</p>
+                </div>
+                
+                <div class="simulator-container">
+                    <!-- Left Column: Inputs -->
+                    <div class="sim-controls">
+                        <div class="control-group">
+                            <h3 style="color: var(--accent-secondary); margin-bottom: 1rem;"><i class="fa-solid fa-sliders"></i> Configuration</h3>
+                        </div>
+                        <form id="fsm-config-form">
+                            <!-- Concept Input -->
+                            <div class="control-group">
+                                <label for="concept_to_model">Concept to Model <span class="required">*</span></label>
+                                <input type="text" id="concept_to_model" name="concept_to_model" placeholder="e.g., User Authentication System" required>
+                                <small class="form-hint" style="color: var(--text-muted); font-size: 0.8rem;">The system or process you want to analyze.</small>
+                            </div>
+
+                            <!-- Domain Context -->
+                            <div class="control-group">
+                                <label for="domain_context">Domain Context</label>
+                                <input type="text" id="domain_context" name="domain_context" placeholder="e.g., Web Security / OAuth2">
+                            </div>
+
+                            <!-- Initial States -->
+                            <div class="control-group">
+                                <label for="initial_states">Initial States (Optional)</label>
+                                <input type="text" id="initial_states" name="initial_states" placeholder="e.g., Unauthenticated, Idle">
+                                <small class="form-hint" style="color: var(--text-muted); font-size: 0.8rem;">Comma-separated list of starting states.</small>
+                            </div>
+
+                            <!-- Known Events -->
+                            <div class="control-group">
+                                <label for="known_events">Known Events (Optional)</label>
+                                <textarea id="known_events" name="known_events" rows="2" placeholder="e.g., login_attempt, logout_click, session_timeout"></textarea>
+                            </div>
+
+                            <!-- Toggles Grid -->
+                            <div class="toggles-grid">
+                                <div class="toggle-group">
+                                    <label class="switch">
+                                        <input type="checkbox" id="identify_edge_cases" name="identify_edge_cases" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="toggle-label">Edge Cases</span>
+                                </div>
+                                <div class="toggle-group">
+                                    <label class="switch">
+                                        <input type="checkbox" id="validate_properties" name="validate_properties" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="toggle-label">Validate Properties</span>
+                                </div>
+                                <div class="toggle-group">
+                                    <label class="switch">
+                                        <input type="checkbox" id="generate_test_scenarios" name="generate_test_scenarios" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="toggle-label">Test Scenarios</span>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="run-button" id="run-simulation">
+                                <i class="fa-solid fa-bolt"></i> Generate FSM
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Outputs -->
+                    <div class="sim-output">
+                        <div class="tabs">
+                            <button class="tab active" data-tab="diagram">Diagram</button>
+                            <button class="tab" data-tab="analysis">Analysis</button>
+                            <button class="tab" data-tab="tests">Test Scenarios</button>
+                            <button class="tab" data-tab="logs">Logs</button>
+                        </div>
+
+                        <!-- Diagram Tab -->
+                        <div id="diagram" class="tab-content active">
+                            <div class="diagram-placeholder">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-diagram-project"></i>
+                                    <p>Run simulation to generate State Diagram</p>
+                                </div>
+                                <!-- Canvas/Mermaid container will go here -->
+                                <div id="mermaid-container" class="mermaid-output hidden"></div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Tab -->
+                        <div id="analysis" class="tab-content">
+                            <div class="code-block-wrapper">
+                                <div class="code-header">
+                                    <span>Analysis Report</span>
+                                </div>
+                                <pre><code class="language-markdown" id="analysis-output">// Analysis results will appear here...</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Test Scenarios Tab -->
+                        <div id="tests" class="tab-content">
+                            <div class="test-cases-list" id="test-cases-output">
+                                <!-- Test case cards will be injected here -->
+                                <div class="empty-state-text">No test scenarios generated yet.</div>
+                            </div>
+                        </div>
+
+                        <!-- Logs Tab -->
+                        <div id="logs" class="tab-content">
+                            <div class="terminal-window">
+                                <div class="terminal-lines" id="simulation-logs">
+                                    <span class="log-line system">> System initialized. Waiting for input...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workflow Visualization -->
+        <section id="workflow" class="workflow-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Execution Pipeline</h2>
+                    <p>How the FSM Task processes your request.</p>
+                </div>
+                
+                <!-- Workflow Visual -->
+                <div class="workflow-visual-container">
+                    <img src="assets/images/logic-pipeline-flow.png"
+                         alt="Abstract visualization of a data processing pipeline transforming chaotic inputs into structured logic" 
+                         class="pipeline-illustration">
+                </div>
+
+                <div class="workflow-steps">
+                    <div class="step">
+                        <div class="step-number">01</div>
+                        <div class="step-content">
+                            <h4>State ID</h4>
+                            <p>LLM analyzes concept to identify all potential states.</p>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step">
+                        <div class="step-number">02</div>
+                        <div class="step-content">
+                            <h4>Transition Map</h4>
+                            <p>Events are mapped to state changes with guard conditions.</p>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step">
+                        <div class="step-number">03</div>
+                        <div class="step-content">
+                            <h4>Validation</h4>
+                            <p>Check for determinism, reachability, and deadlocks.</p>
+                        </div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step">
+                        <div class="step-number">04</div>
+                        <div class="step-content">
+                            <h4>Output</h4>
+                            <p>Generate diagrams, reports, and test cases.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section id="use-cases" class="use-cases-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>When to Use</h2>
+                </div>
+                <div class="use-case-grid">
+                    <div class="use-case-item">
+                        <i class="fa-solid fa-microchip"></i>
+                        <div class="use-case-text">
+                            <h4>System Design</h4>
+                            <p>Architecting complex software behaviors and ensuring logic completeness before coding.</p>
+                        </div>
+                    </div>
+                    <div class="use-case-item">
+                        <i class="fa-solid fa-file-contract"></i>
+                        <div class="use-case-text">
+                            <h4>Protocol Analysis</h4>
+                            <p>Verifying communication protocols and handshake sequences.</p>
+                        </div>
+                    </div>
+                    <div class="use-case-item">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        <div class="use-case-text">
+                            <h4>Missing Requirements</h4>
+                            <p>Identifying gaps in business logic by finding unhandled states.</p>
+                        </div>
+                    </div>
+                    <div class="use-case-item">
+                        <i class="fa-solid fa-list-check"></i>
+                        <div class="use-case-text">
+                            <h4>QA Automation</h4>
+                            <p>Generating exhaustive test cases for state-dependent logic.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <i class="fa-solid fa-network-wired"></i>
+                <span>Cognotik</span>
+            </div>
+            <div class="footer-links">
+                <a href="#">Documentation</a>
+                <a href="#">API Reference</a>
+                <a href="#">Support</a>
+            </div>
+            <div class="footer-copyright">
+                &copy; 2023 Cognotik. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript will be added here -->
+    <script>
+        // Placeholder for Simulator Logic
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ==========================================
+            // 1. Navigation & UI Logic
+            // ==========================================
+        
+        
+        
+            // Smooth Scrolling for Anchor Links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+            
+                    if (targetElement) {
+        
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80, // Offset for fixed header
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        
+            // ==========================================
+            // 2. Tab Switching Logic
+            // ==========================================
+            const tabBtns = document.querySelectorAll('.tab');
+            const tabPanes = document.querySelectorAll('.tab-content');
+        
+            function switchTab(tabId) {
+                // Update Buttons
+                tabBtns.forEach(btn => {
+                    if (btn.dataset.tab === tabId) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+        
+                // Update Panes
+                tabPanes.forEach(pane => {
+                    if (pane.id === tabId) {
+                        pane.classList.add('active');
+                    } else {
+                        pane.classList.remove('active');
+                    }
+                });
+            }
+        
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchTab(btn.dataset.tab);
+                });
+            });
+        
+            // ==========================================
+            // 3. Simulator Logic
+            // ==========================================
+            const form = document.getElementById('fsm-config-form');
+            const runBtn = document.getElementById('run-simulation');
+            const logContainer = document.getElementById('simulation-logs');
+        
+            // Output Containers
+            const mermaidContainer = document.getElementById('mermaid-container');
+            const analysisOutput = document.getElementById('analysis-output');
+            const testCasesOutput = document.getElementById('test-cases-output');
+            const diagramPlaceholder = document.querySelector('.diagram-placeholder .empty-state');
+        
+            // Helper: Add Log Entry
+            function addLog(message, type = 'info') {
+                const line = document.createElement('div');
+                line.className = `log-line ${type}`;
+        
+                const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+        
+                let icon = '';
+                if (type === 'success') icon = '✅ ';
+                if (type === 'error') icon = '❌ ';
+                if (type === 'warning') icon = '⚠️ ';
+                if (type === 'system') icon = '> ';
+        
+                line.textContent = `[${timestamp}] ${icon}${message}`;
+                logContainer.appendChild(line);
+        
+                // Auto-scroll to bottom
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+        
+            // Helper: Sleep function for realistic delays
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        
+            // Main Simulation Handler
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+        
+                // 1. Get Form Data
+                const formData = new FormData(form);
+                const config = {
+                    concept: formData.get('concept_to_model'),
+                    domain: formData.get('domain_context') || 'General',
+                    initialStates: formData.get('initial_states'),
+                    edgeCases: formData.get('identify_edge_cases') === 'on',
+                    validate: formData.get('validate_properties') === 'on',
+                    tests: formData.get('generate_test_scenarios') === 'on'
+                };
+        
+                // 2. Reset UI State
+                runBtn.disabled = true;
+                runBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+                logContainer.innerHTML = ''; // Clear logs
+                mermaidContainer.classList.add('hidden');
+                diagramPlaceholder.style.display = 'flex';
+        
+                // Switch to Logs tab to show progress
+                switchTab('logs');
+        
+                try {
+                    // 3. Start Simulation Sequence
+                    addLog(`Initializing FSM Analysis for: "${config.concept}"`, 'system');
+                    await sleep(800);
+        
+                    // Step 1: State Identification
+                    addLog('Step 1: Analyzing concept semantics...', 'info');
+                    await sleep(1200);
+                    addLog(`Identified domain context: ${config.domain}`, 'info');
+                    addLog('Extracting potential states...', 'info');
+                    await sleep(1000);
+                    addLog('States Identified: Idle, Processing, Validating, Error, Completed', 'success');
+        
+                    // Step 2: Transition Mapping
+                    addLog('Step 2: Mapping state transitions and events...', 'info');
+                    await sleep(1500);
+                    addLog('Found 7 valid transitions', 'info');
+                    addLog('Identified 2 guard conditions', 'info');
+        
+                    // Step 3: Diagram Generation
+                    addLog('Step 3: Generating Mermaid.js visualization...', 'info');
+                    await sleep(1000);
+                    generateMockDiagram(config.concept);
+                    addLog('Diagram generated successfully', 'success');
+        
+                    // Step 4: Edge Cases (Conditional)
+                    if (config.edgeCases) {
+                        addLog('Step 4: Analyzing edge cases...', 'info');
+                        await sleep(1200);
+                        addLog('Detected potential race condition in "Processing" state', 'warning');
+                        addLog('Identified missing recovery path from "Error"', 'warning');
+                    }
+        
+                    // Step 5: Validation (Conditional)
+                    if (config.validate) {
+                        addLog('Step 5: Validating FSM properties...', 'info');
+                        await sleep(1000);
+                        addLog('Determinism check: PASSED', 'success');
+                        addLog('Reachability check: PASSED', 'success');
+                        addLog('Liveness check: WARNING (Potential deadlock in Error state)', 'warning');
+                    }
+        
+                    // Step 6: Test Scenarios (Conditional)
+                    if (config.tests) {
+                        addLog('Step 6: Generating test vectors...', 'info');
+                        await sleep(1500);
+                        generateMockTests(config.concept);
+                        addLog('Generated 5 test scenarios', 'success');
+                    }
+        
+                    // Finalize
+                    addLog('Analysis Complete. Results ready.', 'system');
+                    generateMockAnalysis(config);
+            
+                    // Update UI to finished state
+                    runBtn.innerHTML = '<i class="fa-solid fa-check"></i> Complete';
+                    runBtn.classList.add('btn-success'); // Assuming CSS has this or it just adds a class
+            
+                    // Switch to Diagram tab to show result
+                    setTimeout(() => {
+                        switchTab('diagram');
+                        runBtn.disabled = false;
+                        runBtn.innerHTML = '<i class="fa-solid fa-bolt"></i> Regenerate FSM';
+                        runBtn.classList.remove('btn-success');
+                    }, 1000);
+        
+                } catch (error) {
+                    addLog(`Error: ${error.message}`, 'error');
+                    runBtn.disabled = false;
+                    runBtn.innerHTML = '<i class="fa-solid fa-bolt"></i> Retry';
+                }
+            });
+        
+            // ==========================================
+            // 4. Mock Data Generators
+            // ==========================================
+        
+            function generateMockDiagram(concept) {
+                // Hide placeholder, show container
+                diagramPlaceholder.style.display = 'none';
+                mermaidContainer.classList.remove('hidden');
+        
+                // Create a mock Mermaid code block
+                // In a real app, mermaid.init() would render this
+                const mermaidCode = `stateDiagram-v2
+            classDef active fill:#38bdf8,color:#0f172a,stroke:#38bdf8,stroke-width:2px;
+            classDef error fill:#ef4444,color:#fff,stroke:#ef4444;
+        
+            [*] --> Idle
+            Idle --> Processing : start_request
+            Processing --> Validating : data_received
+        
+            state Validating {
+                [*] --> CheckFormat
+                CheckFormat --> CheckLogic
+            }
+        
+            Validating --> Completed : success
+            Validating --> ErrorState : failure
+        
+            ErrorState --> Idle : reset_system
+            Completed --> [*]
+        
+            class Processing active
+            class ErrorState error`;
+        
+                mermaidContainer.innerHTML = `
+                    <div class="mock-mermaid-render">
+                        <pre><code class="language-mermaid">${mermaidCode}</code></pre>
+                        <div class="render-note"><i class="fa-solid fa-info-circle"></i> Mermaid code generated. In production, this renders as a graphical diagram.</div>
+                    </div>
+                `;
+            }
+        
+            function generateMockAnalysis(config) {
+                const content = `
+        # FSM Analysis: ${config.concept}
+        
+        ## Executive Summary
+        The system analyzed represents a **${config.domain}** process. The model consists of 5 distinct states with a cyclomatic complexity of 4.
+        
+        ## State Definitions
+        1. **Idle** (Initial): System waiting for input.
+        2. **Processing**: Active computation state.
+        3. **Validating**: Composite state checking constraints.
+        4. **ErrorState**: Exception handling (requires manual reset).
+        5. **Completed** (Terminal): Successful operation.
+        
+        ## Validation Report
+        - **Determinism:** ✅ deterministic.
+        - **Completeness:** ⚠️ Partial. Event 'cancel' not handled in 'Validating'.
+        - **Reachability:** ✅ All states reachable.
+        
+        ## Recommendations
+        1. Add a timeout transition to the **Processing** state to prevent hanging.
+        2. Define explicit exit strategy for **ErrorState**.
+                `;
+        
+                analysisOutput.textContent = content.trim();
+            }
+        
+            function generateMockTests(concept) {
+                const tests = [
+                    {
+                        name: "Happy Path Flow",
+                        steps: "Idle -> Processing -> Validating -> Completed",
+                        expected: "System returns success code 200",
+                        type: "success"
+                    },
+                    {
+                        name: "Validation Failure",
+                        steps: "Idle -> Processing -> Validating -> ErrorState",
+                        expected: "System logs error and awaits reset",
+                        type: "warning"
+                    },
+                    {
+                        name: "Double Start Attempt",
+                        steps: "Idle -> Processing -> (start_request)",
+                        expected: "Event ignored, remains in Processing",
+                        type: "neutral"
+                    }
+                ];
+        
+                testCasesOutput.innerHTML = ''; // Clear
+        
+                tests.forEach(test => {
+                    const card = document.createElement('div');
+                    card.className = 'test-case-card';
+                    // Inline styles for the mock since CSS might not cover specific dynamic classes
+                    card.style.background = 'rgba(255,255,255,0.05)';
+                    card.style.padding = '1rem';
+                    card.style.marginBottom = '1rem';
+                    card.style.borderRadius = '8px';
+                    card.style.borderLeft = `4px solid ${test.type === 'success' ? '#4ade80' : test.type === 'warning' ? '#fbbf24' : '#94a3b8'}`;
+        
+                    card.innerHTML = `
+                        <h4 style="margin:0 0 0.5rem 0; color: var(--text-primary)">${test.name}</h4>
+                        <div style="font-family: var(--font-mono); font-size: 0.9rem; color: var(--accent-primary); margin-bottom: 0.5rem">
+                            <i class="fa-solid fa-arrow-right"></i> ${test.steps}
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary)">
+                            <strong>Expect:</strong> ${test.expected}
+                        </div>
+                    `;
+                    testCasesOutput.appendChild(card);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

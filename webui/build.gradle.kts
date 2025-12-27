@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 group = providers.gradleProperty("libraryGroup").get()
 version = providers.gradleProperty("libraryVersion").get()
 
@@ -53,6 +55,7 @@ dependencies {
     implementation(libs.commons.io)
     implementation(libs.commons.codec)
     implementation(libs.slf4j.api)
+    implementation(libs.tinkerpop)
     implementation(libs.httpclient5) {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
@@ -221,4 +224,8 @@ tasks.javadoc {
     if (JavaVersion.current().isJava9Compatible) {
         (options as StandardJavadocDocletOptions).addBooleanOption("html5", true)
     }
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.compilerOptions {
+    freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
 }

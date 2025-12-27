@@ -129,7 +129,7 @@ GenerateImage - Create images using AI image generation models
             val imageAgent = ImageProcessingAgent(
                 prompt = "Transform the user request into an image",
                 name = "ImageGenerator",
-                model = orchestrationConfig.imageChatChatter,
+                model = orchestrationConfig.defaultImage,
             )
 
             val result = imageAgent.answer(listOf(ImageAndText(imagePrompt)) + inputImages)
@@ -193,6 +193,7 @@ GenerateImage - Create images using AI image generation models
         private val log: Logger = LoggerFactory.getLogger(GenerateImageTask::class.java)
         val GenerateImage = TaskType(
             "GenerateImage",
+            "Writing",
             GenerateImageTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate images using AI image generation models",

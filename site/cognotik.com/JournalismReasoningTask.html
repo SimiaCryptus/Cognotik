@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journalism Reasoning Task - Cognotik</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        /* Page Specific Overrides */
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-color));
+            color: #fff;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+        }
+
+        /* Hero */
+        .hero {
+            padding: 8rem 0 4rem;
+            display: flex;
+            align-items: center;
+            min-height: 80vh;
+            position: relative;
+            background: transparent; /* Override main.css radial gradient */
+            text-align: left; /* Override main.css center alignment */
+        }
+        .hero-content {
+            flex: 1;
+            padding-right: 2rem;
+        }
+        .hero h1 {
+            background: linear-gradient(to right, #fff, var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-visual {
+            flex: 1;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .visual-node {
+            width: 200px;
+            height: 200px;
+            border: 2px solid var(--accent-secondary);
+            border-radius: 50%;
+            position: absolute;
+            animation: pulse 4s infinite;
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .visual-node::before {
+            content: '📰';
+            font-size: 4rem;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem auto;
+            color: var(--accent-secondary);
+        }
+
+        /* Markdown Preview */
+        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
+        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
+        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
+        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
+        
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 0;
+        }
+        .use-case-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .use-case-item {
+            background: rgba(255,255,255,0.03);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+        }
+        @media (max-width: 768px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
+            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="journalism-reasoning"></cognotik-header>
+    <!-- Hero -->
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>Journalism Reasoning Task</h1>
+            <p>Investigate stories using professional journalistic principles, fact-checking, and multi-perspective analysis.</p>
+            <a href="#demo" class="btn btn-primary">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+    <!-- Features -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <h3>Fact Verification</h3>
+                    <p>Rigorously checks claims against evidence and sources to ensure accuracy.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <h3>Multi-Perspective</h3>
+                    <p>Identifies and analyzes diverse viewpoints and stakeholders for balanced reporting.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    <h3>Contextual Analysis</h3>
+                    <p>Provides historical background, broader implications, and trend analysis.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Simulator -->
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center; color: var(--primary-color);">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <!-- Inputs -->
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                    <div class="control-group">
+                        <label>Story Topic</label>
+                        <input type="text" id="story_topic" value="Impact of AI on Creative Jobs">
+                    </div>
+                    <div class="control-group">
+                        <label>Journalism Elements</label>
+                        <textarea id="elements" placeholder="Who, What, Where, When, Why, How">Who: Artists, Writers, Designers
+What: Generative AI tools
+Why: Efficiency vs. Displacement</textarea>
+                    </div>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Investigate</button>
+                </div>
+                <!-- Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('report')">Investigation</div>
+                        <div class="tab" onclick="switchTab('logs')">Logs</div>
+                    </div>
+                    <div id="output-report" class="tab-content active markdown-preview">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the investigation and click "Investigate" to see the output.
+                        </div>
+                    </div>
+                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Use Cases -->
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>Investigative Reporting</h4>
+                    <p>Deep dive into complex topics to uncover facts and connections.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Fact-Checking</h4>
+                    <p>Verify claims and statements against reliable sources and evidence.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Editorial Planning</h4>
+                    <p>Identify angles, gaps, and key questions for story development.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Bias Analysis</h4>
+                    <p>Detect potential biases and ensure balanced coverage of sensitive topics.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('output-' + tabName).classList.add('active');
+        }
+        function runSimulation() {
+            const topic = document.getElementById('story_topic').value;
+            const elements = document.getElementById('elements').value;
+            const reportEl = document.getElementById('output-report');
+            const logsEl = document.getElementById('output-logs');
+            
+            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
+            logsEl.innerHTML = '';
+            
+            const logs = [
+                `[INFO] Initializing JournalismReasoningTask...`,
+                `[INFO] Topic: ${topic}`,
+                `[INFO] Verifying facts...`,
+                `[INFO] Identifying perspectives...`,
+                `[INFO] Analyzing context...`,
+                `[INFO] Checking for bias...`,
+                `[SUCCESS] Investigation complete.`
+            ];
+            
+            let logIndex = 0;
+            const logInterval = setInterval(() => {
+                if (logIndex < logs.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
+                    line.style.marginBottom = '4px';
+                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
+                    logsEl.appendChild(line);
+                    logsEl.scrollTop = logsEl.scrollHeight;
+                    logIndex++;
+                } else {
+                    clearInterval(logInterval);
+                    renderReport(topic);
+                }
+            }, 400);
+        }
+        function renderReport(topic) {
+            const reportEl = document.getElementById('output-report');
+            const markdown = `
+<h1>Investigation: ${topic}</h1>
+
+<h2>Key Facts Verified</h2>
+<ul>
+    <li>✅ <strong>Claim:</strong> AI tools are increasing efficiency. <strong>Status:</strong> Verified. Studies show 30-50% time savings in drafting phases.</li>
+    <li>⚠️ <strong>Claim:</strong> AI is replacing all junior roles. <strong>Status:</strong> Partially True. Some displacement observed, but new roles are emerging.</li>
+</ul>
+
+<h2>Perspectives</h2>
+<ul>
+    <li><strong>Creative Professionals:</strong> Concerned about copyright and devaluation of human skill.</li>
+    <li><strong>Tech Advocates:</strong> Emphasize democratization of creativity and new toolsets.</li>
+    <li><strong>Legal Experts:</strong> Focused on intellectual property rights and regulation.</li>
+</ul>
+
+<h2>Context Analysis</h2>
+<p>This shift parallels previous technological disruptions like the advent of photography or digital design software. The rapid pace of adoption is the primary differentiator.</p>
+
+<h2>Information Gaps</h2>
+<ul>
+    <li>Long-term impact on wages in creative sectors.</li>
+    <li>Specific legal precedents for AI-generated works in current courts.</li>
+</ul>
+
+<h2>Editorial Synthesis</h2>
+<p>The story is not just about job loss, but a fundamental shift in the definition of creativity and the value of human input. Coverage should balance economic realities with cultural implications.</p>
+            `;
+            reportEl.innerHTML = markdown;
+        }
+    </script>
+</body>
+</html>

@@ -19,6 +19,8 @@ import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.CmdPatchApp
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.models.ToolProvider
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -75,7 +77,8 @@ class CommandAutofixAction : BaseAction() {
                 val executable = File(
                   cmdPanel.commandField.selectedItem?.toString() ?: throw IllegalArgumentException("No executable selected")
                 )
-                AppSettingsState.instance.executables?.plusAssign(executable.absolutePath)
+                val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+                tools.addAll(ToolProvider.scanRecursive(File(executable.absolutePath)))
                 val argument = cmdPanel.argumentsField.selectedItem?.toString() ?: ""
                 AppSettingsState.instance.recentArguments?.remove(argument)
                 AppSettingsState.instance.recentArguments?.add(0, argument)
@@ -461,7 +464,9 @@ class CommandAutofixAction : BaseAction() {
           selectedItem = workingDirectory.absolutePath
           preferredSize = Dimension(400, preferredSize.height)
         }
-        val commandField = ComboBox(AppSettingsState.instance.executables?.toTypedArray() ?: emptyArray()).apply {
+        val executables : List<String>? = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+            .tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
+        val commandField = ComboBox(executables?.toTypedArray() ?: emptyArray()).apply {
           isEditable = true
           preferredSize = Dimension(400, preferredSize.height)
         }

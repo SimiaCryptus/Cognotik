@@ -147,7 +147,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
 
         log.info("Configuration: hypotheses=${hypotheses.size}, evidence=${evidence.size}, context=$decisionContext")
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)
@@ -836,6 +836,7 @@ Generate the experiment recommendations now:
         private val log: Logger = LoggerFactory.getLogger(ProbabilisticReasoningTask::class.java)
         val ProbabilisticReasoning = TaskType(
             "ProbabilisticReasoning",
+            "Reasoning",
             ProbabilisticReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Reason under uncertainty using Bayesian analysis",

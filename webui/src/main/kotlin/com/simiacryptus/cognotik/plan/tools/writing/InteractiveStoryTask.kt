@@ -267,7 +267,7 @@ class InteractiveStoryTask(
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
 
@@ -468,7 +468,7 @@ Focus on structure and connections, not detailed prose.
           """.trimIndent(),
                 model = api,
                 temperature = 0.5,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             val structure = structureAgent.answer(listOf("Create detailed structure from outline")).obj
@@ -638,7 +638,7 @@ Make it immersive and compelling. The reader should feel invested immediately.
           """.trimIndent(),
                 model = api,
                 temperature = 0.8,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             var openingSegment = openingAgent.answer(listOf("Write opening")).obj
@@ -768,7 +768,7 @@ Make the reader feel the weight of their choice. Each option should feel viable 
           """.trimIndent(),
                     model = api,
                     temperature = 0.8,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 var segment = decisionAgent.answer(listOf("Write decision point")).obj.copy(id = decisionPoint.id)
@@ -900,7 +900,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
           """.trimIndent(),
                     model = api,
                     temperature = 0.8,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 var endingSegment = endingAgent.answer(listOf("Write ending")).obj.copy(id = ending.id)
@@ -1246,6 +1246,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
         private val log: Logger = LoggerFactory.getLogger(InteractiveStoryTask::class.java)
         val InteractiveStory = TaskType(
             "InteractiveStory",
+            "Writing",
             InteractiveStoryTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create choose-your-own-adventure narratives with branching paths",

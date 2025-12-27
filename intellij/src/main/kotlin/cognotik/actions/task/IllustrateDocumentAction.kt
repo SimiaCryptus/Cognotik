@@ -21,7 +21,6 @@ import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -351,11 +350,11 @@ override fun handle(e: AnActionEvent) {
       }
 
       return OrchestrationConfig(
-        defaultModel = textModel ?: AppSettingsState.instance.smartModel
+        defaultSmartModel = textModel ?: AppSettingsState.instance.smartModel
         ?: throw IllegalStateException("No model configured"),
-        parsingModel = AppSettingsState.instance.fastModel
+        defaultFastModel = AppSettingsState.instance.fastModel
           ?: throw IllegalStateException("Fast model not configured"),
-        imageChatModel = imageModel ?: AppSettingsState.instance.imageChatModel
+        defaultImageModel = imageModel ?: AppSettingsState.instance.imageChatModel
         ?: throw IllegalStateException("No image model configured"),
         temperature = temperatureSlider.value / 100.0,
         autoFix = true,

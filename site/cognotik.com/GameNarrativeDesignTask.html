@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Narrative Design - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header current-page="game-narrative"></cognotik-header>
+    <header class="hero">
+        <h1>Game Narrative Design</h1>
+        <p class="subtitle">Create interactive game narratives with branching storylines, dynamic character arcs, and meaningful player choices.</p>
+        <a href="#demo" class="cta-button">Try the Simulator</a>
+    </header>
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Branching Storylines</h3>
+                <p>Designs complex narrative structures with multiple paths, decision points, and endings based on player agency.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Interactive Dialogue</h3>
+                <p>Generates dialogue trees with emotional beats and consequences that affect relationships and story outcomes.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Character Arcs</h3>
+                <p>Develops deep character backgrounds and dynamic arcs that evolve in response to the game's events.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Game Title</label>
+                    <input type="text" value="The Last Signal">
+                </div>
+                <div class="control-group">
+                    <label>Genre</label>
+                    <input type="text" value="Sci-Fi Mystery">
+                </div>
+                <div class="control-group">
+                    <label>Narrative Style</label>
+                    <select>
+                        <option>Linear</option>
+                        <option selected>Branching</option>
+                        <option>Open-ended</option>
+                    </select>
+                </div>
+                <button class="run-button">Generate Narrative</button>
+            </div>
+            <div class="sim-output">
+                <div class="tab-content active" style="white-space: pre-wrap;">
+# Narrative Design: The Last Signal
+
+## Premise
+A lone operator at a deep-space listening post receives a transmission that predates humanity.
+
+## Branching Point: The Decryption
+**Context:** The signal is encrypted with a hazardous memetic virus.
+- **Choice A:** Isolate the signal to protect the network. (Safety)
+- **Choice B:** Interface directly to decode it faster. (Risk)
+
+## Consequences
+- **If A:** The signal degrades. You gain partial info but stay sane.
+- **If B:** You learn the truth about the "Precursors" but begin hallucinating.
+
+## Endings
+1. **The Guardian:** You destroy the signal to save Earth.
+2. **The Prophet:** You merge with the signal and ascend.
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematical Reasoning Task | Cognotik</title>
+    <meta name="description" content="Solve mathematical problems through step-by-step logical reasoning with verifiable steps and LaTeX output.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- MathJax for rendering LaTeX outputs -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Icons (Lucide/Feather via CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Shared Styles (Relative path based on directory structure) -->
+    <link rel="stylesheet" href="../assets/styles/main.css">
+
+    <!-- Component Script -->
+    <script type="module" src="../assets/scripts/components/CognotikHeader.js"></script>
+
+
+
+    <style>
+        /* =========================================
+           1. Global Reset & Typography
+           ========================================= */
+        
+        :root {
+        
+        
+        
+        
+            /* Page-Specific Variables */
+            --accent-gold: #fbbf24;
+            --accent-hover-cyan: #22d3ee;
+            --bg-input: #334155;
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --shadow-glow: 0 0 20px rgba(6, 182, 212, 0.15);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--background-color);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-input);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+        
+        /* =========================================
+           2. Layout & Container
+           ========================================= */
+        
+        section {
+            margin-bottom: 6rem;
+            padding-top: 2rem; /* Offset for anchor scrolling */
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-secondary), var(--accent-gold));
+            border-radius: 2px;
+        }
+        
+        /* =========================================
+           3. Hero Section
+           ========================================= */
+        .hero-section {
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            gap: 3rem;
+            min-height: 85vh;
+            justify-content: center;
+            padding-top: 4rem;
+        }
+        
+        @media (min-width: 1024px) {
+            .hero-section {
+                flex-direction: row;
+                text-align: left;
+            }
+        }
+        
+        .hero-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .hero-badge {
+            background: rgba(251, 191, 36, 0.1);
+            color: var(--accent-gold);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        @media (min-width: 768px) {
+            .hero-title {
+                font-size: 4rem;
+            }
+        }
+        
+        .hero-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+        }
+        
+        .btn-cta {
+            background: linear-gradient(135deg, var(--accent-secondary), #0891b2);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+        }
+        
+        .btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.6);
+        }
+        
+        .hero-visual {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .visual-placeholder {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1/1;
+            background: radial-gradient(circle at center, var(--surface-color), var(--background-color));
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 0 50px rgba(6, 182, 212, 0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .hero-icon {
+            width: 120px;
+            height: 120px;
+            color: var(--accent-secondary);
+            filter: drop-shadow(0 0 15px var(--accent-secondary));
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        /* =========================================
+           4. Features Grid
+           ========================================= */
+        
+        .feature-card {
+            background: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+        
+        .icon-container {
+            width: 50px;
+            height: 50px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-secondary);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        
+        /* =========================================
+           5. Interactive Simulator
+           ========================================= */
+        .simulator-section {
+            scroll-margin-top: 100px;
+        }
+        
+        .simulator-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .simulator-header p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+        
+        .simulator-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            background: #162032; /* Slightly lighter than bg-dark */
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+        }
+        
+        @media (min-width: 1024px) {
+            .simulator-container {
+                flex-direction: row;
+                height: 750px; /* Fixed height for desktop dashboard feel */
+            }
+        }
+        
+        /* --- Left Column: Inputs --- */
+        .sim-inputs {
+            padding: 2rem;
+            background: var(--surface-color);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            overflow-y: auto;
+            flex: 0 0 350px;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .form-group.half {
+            flex: 1;
+        }
+        
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: 0.75rem;
+            color: var(--primary-color);
+            font-family: var(--font-family-sans);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+        }
+        
+        textarea {
+            resize: vertical;
+        }
+        
+        /* Range Slider Styling */
+        .range-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .range-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .range-header span {
+            color: var(--accent-secondary);
+            font-family: var(--font-family-mono);
+            font-size: 0.875rem;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-input);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-secondary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-secondary);
+            cursor: pointer;
+        }
+        
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+        
+        .btn-run {
+            width: 100%;
+            margin-top: 1rem;
+            background: var(--accent-secondary);
+            color: var(--background-color);
+            padding: 0.875rem;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+        
+        .btn-run:hover {
+            background: var(--accent-hover-cyan);
+        }
+        
+        /* --- Right Column: Outputs --- */
+        .sim-outputs {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #131c2e;
+            min-height: 500px;
+        }
+        
+        .tabs-nav {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn:hover {
+            color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .tab-btn.active {
+            color: var(--accent-secondary);
+            border-bottom-color: var(--accent-secondary);
+            background: rgba(6, 182, 212, 0.05);
+        }
+        
+        .tab-content-container {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .tab-pane {
+            display: none;
+            height: 100%;
+        }
+        
+        .tab-pane.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Output Content Styles */
+        .empty-state {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+        
+        .empty-state i {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+        }
+        
+        .terminal-window {
+            font-family: var(--font-family-mono);
+            font-size: 0.85rem;
+            color: #10b981;
+        }
+        
+        .terminal-line {
+            margin-bottom: 0.25rem;
+        }
+        
+        .t-dim {
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+        
+        .markdown-preview {
+            color: var(--primary-color);
+            font-size: 0.95rem;
+        }
+        
+        .markdown-preview h1, 
+        .markdown-preview h2, 
+        .markdown-preview h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent-gold);
+        }
+        
+        .markdown-preview p {
+            margin-bottom: 1rem;
+        }
+        
+        /* =========================================
+           6. Workflow Visualization
+           ========================================= */
+        .workflow-stepper {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            align-items: center;
+            margin-top: 2rem;
+        }
+        
+        @media (min-width: 768px) {
+            .workflow-stepper {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+        }
+        
+        .step {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 250px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--surface-color);
+            border: 2px solid var(--accent-secondary);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--accent-secondary);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+            transition: transform 0.3s;
+        }
+        
+        .step:hover .step-icon {
+            transform: scale(1.1);
+            background: var(--accent-secondary);
+            color: var(--background-color);
+        }
+        
+        .step h4 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .step p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .step-connector {
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
+            .step-connector {
+                display: block;
+                flex: 1;
+                height: 2px;
+                background: linear-gradient(90deg, var(--accent-secondary), var(--bg-input));
+                margin-top: 30px; /* Align with center of icon */
+                opacity: 0.5;
+            }
+        }
+        
+        /* =========================================
+           7. Use Cases
+           ========================================= */
+        .use-case-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .use-case-item {
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 4px solid var(--accent-gold);
+            padding: 1.5rem;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            transition: background 0.3s;
+        }
+        
+        .use-case-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .use-case-item h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--accent-gold);
+        }
+        
+        .use-case-item p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        
+        /* =========================================
+           8. Footer
+           ========================================= */
+        footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 2rem 0;
+            margin-top: 4rem;
+            text-align: center;
+        }
+        
+        .footer-content p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+    </style>
+<!-- Generated Images:
+     - math-reasoning-hero.png: A high-quality, abstract 3D illustration representing mathematical logic and structure. A complex, glowing polyhedron floats in a deep slate-blue void (`#0f172a`). The edges of the shape are formed by fine, luminous golden threads (`#fbbf24`), representing logical connections. The vertices are bright cyan nodes (`#06b6d4`). In the background, faint, holographic mathematical symbols (integrals, summation sigmas, pi) float like a digital nebula. The lighting is cinematic and high-contrast, emphasizing the "Future-Professional" aesthetic.
+     - search-path-visualization.png: A 3D data visualization representing the "Multi-Path Search" algorithm. The image shows a fractal-like branching structure originating from the left. Multiple faint blue paths branch out into darkness, representing explored but failed attempts. One distinct, vibrant gold path weaves through the network, illuminating the correct sequence of steps from start to finish. The style is clean and isometric, set against a dark grid background, symbolizing the engine finding the optimal solution through a maze of possibilities.
+     - atomic-verification-abstract.png: An abstract macro representation of "Atomic Verification." Close-up of interlocking glass or crystal geometric shapes (cubes and pyramids) fitting together perfectly without gaps. The point of connection glows with a bright, neon cyan light, symbolizing a verified step. The surrounding environment is dark and blurry (bokeh effect), keeping the focus on the precision and solidity of the connected shapes. This represents the rigorous, step-by-step validation process of the task.
+-->
+</head>
+<body>
+
+    <!-- 
+        Header Component 
+        current-page attribute matches id in tasks.json
+    -->
+    <cognotik-header current-page="math-reasoning"></cognotik-header>
+
+    <main class="task-container">
+
+        <!-- 
+            HERO SECTION 
+            Image Prompt: A high-quality, abstract 3D illustration representing mathematical logic. 
+            Glowing geometric nodes connected by golden threads forming a complex polyhedron, 
+            floating in a deep blue void. Mathematical symbols (integral, sigma, pi) faintly 
+            glowing in the background nebula.
+        -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <div class="hero-badge">Reasoning Engine</div>
+                <h1 class="hero-title">Mathematical Reasoning</h1>
+                <p class="hero-subtitle">
+                    Solve complex mathematical problems through rigorous, step-by-step logical reasoning. 
+                    This task breaks down theorems and equations into verifiable atomic steps, explores multiple solution paths, 
+                    and generates formal proofs with LaTeX precision.
+                </p>
+                <button class="btn-cta" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
+                    Try the Simulator
+                </button>
+            </div>
+            <div class="hero-visual">
+                <img src="assets/images/math-reasoning-hero.png" alt="Abstract 3D illustration of a glowing polyhedron with golden threads and cyan nodes representing mathematical logic" class="hero-image">
+            </div>
+        </section>
+
+        <!-- FEATURES GRID -->
+        <section class="features-section">
+            <h2 class="section-title">Key Capabilities</h2>
+            <div class="features-grid">
+                <!-- Feature 1 -->
+                <div class="feature-card">
+                    <img src="assets/images/search-path-visualization.png" alt="3D visualization of a branching search path with a single golden successful route" class="feature-image">
+                    <div class="icon-container">
+                        <i data-lucide="git-branch"></i>
+                    </div>
+                    <h3>Multi-Path Search</h3>
+                    <p>Explores multiple solution branches simultaneously, backtracking from dead ends to find the optimal proof path.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="feature-card">
+                    <img src="assets/images/atomic-verification-abstract.png" alt="Abstract macro view of interlocking crystal shapes glowing with verification light" class="feature-image">
+                    <div class="icon-container">
+                        <i data-lucide="check-circle-2"></i>
+                    </div>
+                    <h3>Atomic Verification</h3>
+                    <p>Every logical step is isolated and verified for mathematical validity before proceeding to the next.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="feature-card">
+                    <div class="icon-container">
+                        <i data-lucide="function-square"></i>
+                    </div>
+                    <h3>LaTeX Integration</h3>
+                    <p>Natively speaks MathJax/LaTeX, rendering complex algebraic and calculus notations beautifully.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- INTERACTIVE SIMULATOR -->
+        <section id="simulator" class="simulator-section">
+            <div class="simulator-header">
+                <h2>Interactive Simulator</h2>
+                <p>Configure the reasoning engine and watch it solve problems in real-time.</p>
+            </div>
+
+            <div class="simulator-container">
+                <!-- Left Column: Inputs (ExecutionConfig) -->
+                <div class="sim-inputs">
+                    <form id="task-config-form">
+                        <div class="form-group">
+                            <label for="problem_statement">Problem Statement</label>
+                            <textarea id="problem_statement" rows="4" placeholder="e.g., Prove that the square root of 2 is irrational..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="goal">Goal</label>
+                            <input type="text" id="goal" placeholder="e.g., Prove by contradiction">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="domain">Domain</label>
+                                <select id="domain">
+                                    <option value="general">General</option>
+                                    <option value="algebra">Algebra</option>
+                                    <option value="calculus">Calculus</option>
+                                    <option value="number_theory">Number Theory</option>
+                                    <option value="geometry">Geometry</option>
+                                    <option value="linear_algebra">Linear Algebra</option>
+                                </select>
+                            </div>
+                            <div class="form-group half">
+                                <label for="detail_level">Detail Level</label>
+                                <select id="detail_level">
+                                    <option value="brief">Brief</option>
+                                    <option value="standard" selected>Standard</option>
+                                    <option value="detailed">Detailed</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="given_information">Given Information (One per line)</label>
+                            <textarea id="given_information" rows="3" placeholder="x > 0&#10;y is an integer"></textarea>
+                        </div>
+
+                        <div class="form-group range-group">
+                            <div class="range-header">
+                                <label for="max_depth">Max Depth</label>
+                                <span id="max_depth_val">20</span>
+                            </div>
+                            <input type="range" id="max_depth" min="1" max="100" value="20">
+                        </div>
+
+                        <div class="form-group range-group">
+                            <div class="range-header">
+                                <label for="max_alternatives">Max Alternatives</label>
+                                <span id="max_alternatives_val">3</span>
+                            </div>
+                            <input type="range" id="max_alternatives" min="1" max="10" value="3">
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="show_all_paths">
+                            <label for="show_all_paths">Show all explored paths</label>
+                        </div>
+
+                        <button type="submit" class="btn-run">
+                            <i data-lucide="play"></i> Start Reasoning
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right Column: Outputs -->
+                <div class="sim-outputs">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" data-tab="overview">Overview</button>
+                        <button class="tab-btn" data-tab="solution">Solution Steps</button>
+                        <button class="tab-btn" data-tab="proof">Formal Proof</button>
+                        <button class="tab-btn" data-tab="logs">Logs</button>
+                    </div>
+
+                    <div class="tab-content-container">
+                        <!-- Overview Tab -->
+                        <div id="overview" class="tab-pane active">
+                            <div class="empty-state">
+                                <i data-lucide="activity"></i>
+                                <p>Run the simulation to see the analysis overview.</p>
+                            </div>
+                        </div>
+
+                        <!-- Solution Steps Tab (Visualizing ReasoningPath) -->
+                        <div id="solution" class="tab-pane">
+                            <div class="step-list-placeholder">
+                                <!-- Dynamic content will be injected here -->
+                            </div>
+                        </div>
+
+                        <!-- Formal Proof Tab (Markdown/LaTeX) -->
+                        <div id="proof" class="tab-pane">
+                            <div class="markdown-preview">
+                                <!-- Dynamic content will be injected here -->
+                            </div>
+                        </div>
+
+                        <!-- Logs Tab (Terminal style) -->
+                        <div id="logs" class="tab-pane">
+                            <div class="terminal-window">
+                                <div class="terminal-line"><span class="t-dim">System:</span> Ready to initialize...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- WORKFLOW VISUALIZATION -->
+        <section class="workflow-section">
+            <h2 class="section-title">Reasoning Pipeline</h2>
+            <div class="workflow-stepper">
+                <div class="step">
+                    <div class="step-icon"><i data-lucide="file-input"></i></div>
+                    <h4>Input Analysis</h4>
+                    <p>Parses problem statement and identifies goal state.</p>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-icon"><i data-lucide="search"></i></div>
+                    <h4>Path Search</h4>
+                    <p>Generates atomic steps and explores alternative branches.</p>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-icon"><i data-lucide="shield-check"></i></div>
+                    <h4>Verification</h4>
+                    <p>Validates each step against mathematical axioms.</p>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-icon"><i data-lucide="file-check"></i></div>
+                    <h4>Formal Proof</h4>
+                    <p>Compiles successful path into a readable proof.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- USE CASES -->
+        <section class="use-cases-section">
+            <h2 class="section-title">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h3><i data-lucide="graduation-cap"></i> Educational Support</h3>
+                    <p>Generate detailed, step-by-step explanations for calculus or algebra problems to aid learning.</p>
+                </div>
+                <div class="use-case-item">
+                    <h3><i data-lucide="sigma-square"></i> Theorem Proving</h3>
+                    <p>Assist in validating mathematical hypotheses by exploring logical consequences of axioms.</p>
+                </div>
+                <div class="use-case-item">
+                    <h3><i data-lucide="code-2"></i> Algorithm Verification</h3>
+                    <p>Formally prove the correctness of mathematical logic used within software algorithms.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2024 Cognotik AI. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript will be added here -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Logic for tabs, sliders, and simulator mocking will go here
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Initialize Icons
+            lucide.createIcons();
+        
+            // 2. Setup UI Components
+            setupRangeSliders();
+            setupTabs();
+            setupSimulator();
+        });
+        
+        /**
+         * Handles the interactive range sliders (updating the value display)
+         */
+        function setupRangeSliders() {
+            const sliders = [
+                { input: 'max_depth', display: 'max_depth_val' },
+                { input: 'max_alternatives', display: 'max_alternatives_val' }
+            ];
+        
+            sliders.forEach(config => {
+                const input = document.getElementById(config.input);
+                const display = document.getElementById(config.display);
+        
+                if (input && display) {
+                    input.addEventListener('input', (e) => {
+                        display.textContent = e.target.value;
+                    });
+                }
+            });
+        }
+        
+        /**
+         * Handles Tab switching logic for the Output section
+         */
+        function setupTabs() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+        
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active state from all
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabPanes.forEach(p => p.classList.remove('active'));
+        
+                    // Add active state to clicked
+                    btn.classList.add('active');
+                    const targetId = btn.getAttribute('data-tab');
+                    document.getElementById(targetId).classList.add('active');
+                });
+            });
+        }
+        
+        /**
+         * Core Simulator Logic
+         * Handles form submission, mocking backend processing, and rendering results
+         */
+        function setupSimulator() {
+            const form = document.getElementById('task-config-form');
+            const btn = form.querySelector('.btn-run');
+            const originalBtnContent = btn.innerHTML;
+        
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+        
+                // 1. UI Loading State
+                setLoadingState(true, btn);
+        
+                // 2. Gather Input Data
+                const config = {
+                    problem: document.getElementById('problem_statement').value || "Prove that the square root of 2 is irrational",
+                    goal: document.getElementById('goal').value || "Prove by contradiction",
+                    domain: document.getElementById('domain').value,
+                    detail: document.getElementById('detail_level').value,
+                    depth: document.getElementById('max_depth').value,
+                    alternatives: document.getElementById('max_alternatives').value
+                };
+        
+                // 3. Switch to Logs tab to show progress
+                document.querySelector('[data-tab="logs"]').click();
+                const logContainer = document.querySelector('#logs .terminal-window');
+                logContainer.innerHTML = '<div class="terminal-line"><span class="t-dim">System:</span> Initializing Reasoning Engine...</div>';
+        
+                // 4. Simulate Processing (Async)
+                try {
+                    await simulateLogs(logContainer, config);
+            
+                    // 5. Generate and Render Results
+                    renderOverview(config);
+                    renderSolution(config);
+                    renderProof(config);
+        
+                    // 6. Re-render MathJax for new content
+                    if (window.MathJax) {
+                        await MathJax.typesetPromise();
+                    }
+        
+                    // 7. Switch to Solution tab automatically after success
+                    setTimeout(() => {
+                        document.querySelector('[data-tab="solution"]').click();
+                    }, 1000);
+        
+                } catch (error) {
+                    console.error("Simulation error:", error);
+                    logContainer.innerHTML += `<div class="terminal-line error">Error: ${error.message}</div>`;
+                } finally {
+                    setLoadingState(false, btn, originalBtnContent);
+                }
+            });
+        }
+        
+        /**
+         * Helper: Toggles button loading state
+         */
+        function setLoadingState(isLoading, btn, originalContent = '') {
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Reasoning...`;
+                lucide.createIcons(); // Re-init icon
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                lucide.createIcons();
+            }
+        }
+        
+        /**
+         * Simulates terminal logs with delays
+         */
+        async function simulateLogs(container, config) {
+            const addLog = (text, type = 'info') => {
+                const line = document.createElement('div');
+                line.className = 'terminal-line';
+                const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+        
+                let colorClass = 't-green';
+                if (type === 'warn') colorClass = 't-yellow';
+                if (type === 'dim') colorClass = 't-dim';
+        
+                line.innerHTML = `<span class="t-dim">[${timestamp}]</span> <span class="${colorClass}">${text}</span>`;
+                container.appendChild(line);
+                container.scrollTop = container.scrollHeight;
+            };
+        
+            const delay = ms => new Promise(res => setTimeout(res, ms));
+        
+            await delay(500);
+            addLog(`Parsing problem statement in domain: ${config.domain}...`);
+            await delay(800);
+            addLog(`Goal identified: ${config.goal}`);
+            await delay(600);
+            addLog(`Initializing search (Max Depth: ${config.depth})...`, 'dim');
+        
+            // Simulate path exploration
+            for (let i = 1; i <= Math.min(3, config.alternatives); i++) {
+                await delay(400);
+                addLog(`Exploring Path ${i}...`);
+                await delay(300);
+                if (i < 2) {
+                    addLog(`Path ${i} hit dead end. Backtracking.`, 'warn');
+                } else {
+                    addLog(`Path ${i} looks promising. Verifying steps...`);
+                }
+            }
+        
+            await delay(800);
+            addLog(`Validating atomic steps...`);
+            await delay(400);
+            addLog(`Generating formal proof (Detail: ${config.detail})...`);
+            await delay(200);
+            addLog(`Success. Solution found.`, 'info');
+        }
+        
+        /**
+         * Renders the Overview Tab
+         */
+        function renderOverview(config) {
+            const container = document.getElementById('overview');
+            const now = new Date().toLocaleString();
+        
+            container.innerHTML = `
+                <div class="overview-card">
+                    <h3>Task Summary</h3>
+                    <table class="data-table">
+                        <tr><td><strong>Status</strong></td><td><span class="badge success">Completed</span></td></tr>
+                        <tr><td><strong>Time Taken</strong></td><td>2.4s</td></tr>
+                        <tr><td><strong>Confidence</strong></td><td>98.5%</td></tr>
+                        <tr><td><strong>Timestamp</strong></td><td>${now}</td></tr>
+                    </table>
+                </div>
+                <div class="overview-card">
+                    <h3>Input Configuration</h3>
+                    <p><strong>Problem:</strong> ${config.problem.substring(0, 100)}${config.problem.length > 100 ? '...' : ''}</p>
+                    <p><strong>Domain:</strong> ${config.domain}</p>
+                    <p><strong>Goal:</strong> ${config.goal}</p>
+                </div>
+            `;
+        }
+        
+        /**
+         * Renders the Step-by-Step Solution
+         * Generates mock math content based on domain
+         */
+        function renderSolution(config) {
+            const container = document.querySelector('#solution .step-list-placeholder');
+            let steps = [];
+        
+            // Mock content generation based on domain
+            if (config.domain === 'calculus') {
+                steps = [
+                    { id: 'S0', type: 'Initial', text: 'Define the integral.', latex: '\\int x^2 dx' },
+                    { id: 'S1', type: 'Rule Application', text: 'Apply the power rule for integration.', latex: '\\int x^n dx = \\frac{x^{n+1}}{n+1} + C' },
+                    { id: 'S2', type: 'Substitution', text: 'Substitute n = 2.', latex: '\\frac{x^{2+1}}{2+1} + C' },
+                    { id: 'S3', type: 'Simplification', text: 'Simplify the fraction.', latex: '\\frac{x^3}{3} + C' }
+                ];
+            } else if (config.domain === 'algebra') {
+                steps = [
+                    { id: 'S0', type: 'Initial', text: 'State the equation.', latex: '2x + 5 = 15' },
+                    { id: 'S1', type: 'Operation', text: 'Subtract 5 from both sides.', latex: '2x = 10' },
+                    { id: 'S2', type: 'Operation', text: 'Divide by 2.', latex: 'x = 5' },
+                    { id: 'S3', type: 'Verification', text: 'Substitute back to verify.', latex: '2(5) + 5 = 15 \\implies 15 = 15' }
+                ];
+            } else {
+                // General/Logic fallback
+                steps = [
+                    { id: 'S0', type: 'Assumption', text: 'Assume the negation of the conclusion.', latex: '\\neg P' },
+                    { id: 'S1', type: 'Inference', text: 'Derive implication from given axioms.', latex: '\\neg P \\implies Q' },
+                    { id: 'S2', type: 'Contradiction', text: 'Show that Q contradicts known fact R.', latex: 'Q \\land \\neg Q' },
+                    { id: 'S3', type: 'Conclusion', text: 'Therefore, the original premise must be true.', latex: '\\therefore P' }
+                ];
+            }
+        
+            let html = '';
+            steps.forEach(step => {
+                html += `
+                    <div class="step-card">
+                        <div class="step-header">
+                            <span class="step-id">${step.id}</span>
+                            <span class="step-type">${step.type}</span>
+                        </div>
+                        <div class="step-content">
+                            <p>${step.text}</p>
+                            <div class="math-block">$$${step.latex}$$</div>
+                        </div>
+                    </div>
+                `;
+            });
+        
+            container.innerHTML = html;
+        }
+        
+        /**
+         * Renders the Formal Proof (Markdown style)
+         */
+        function renderProof(config) {
+            const container = document.querySelector('#proof .markdown-preview');
+        
+            // Simple mock proof text
+            const proofContent = `
+                <h3>Formal Proof</h3>
+                <p><strong>Theorem:</strong> The derived solution satisfies the given constraints.</p>
+                <hr style="border-color: var(--bg-input); margin: 1rem 0;">
+        
+                <p><strong>Proof:</strong></p>
+                <p>Let $S$ be the set of statements defined in the problem.</p>
+        
+                <p>1. We begin with the initial state:</p>
+                <p>$$ \\text{State}_0 = \\{ \\text{Given Information} \\} $$</p>
+        
+                <p>2. Applying the transformation $T$ defined by the domain axioms:</p>
+                <p>$$ T(\\text{State}_0) \\implies \\text{Intermediate Result} $$</p>
+        
+                <p>3. Through rigorous verification of atomic steps, we arrive at:</p>
+                <p>$$ \\text{Final Result} \\equiv \\text{Goal} $$</p>
+        
+                <p style="text-align: right; margin-top: 2rem;"><strong>Q.E.D.</strong> $\\blacksquare$</p>
+            `;
+        
+            container.innerHTML = proofContent;
+        }
+    </script>
+</body>
+</html>

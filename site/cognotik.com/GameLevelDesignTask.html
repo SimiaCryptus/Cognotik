@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Level Design - Cognotik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header current-page="game-level-design"></cognotik-header>
+    <header class="hero">
+        <h1>Game Level Design</h1>
+        <p class="subtitle">Generate complete game level designs with layout, pacing, and encounters. Create immersive worlds with structured zones, balanced challenges, and rewarding exploration.</p>
+        <a href="#demo" class="btn cta-button">Try the Simulator</a>
+    </header>
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Structured Layouts</h3>
+                <p>Creates detailed level layouts with distinct zones, logical connections, and ASCII visualizations.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Encounter Design</h3>
+                <p>Designs combat and puzzle encounters with appropriate difficulty progression and rewards.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Pacing Analysis</h3>
+                <p>Analyzes and visualizes pacing curves to ensure optimal flow and player engagement.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Level Name</label>
+                    <input type="text" value="The Forgotten Catacombs">
+                </div>
+                <div class="control-group">
+                    <label>Game Type</label>
+                    <input type="text" value="Action RPG">
+                </div>
+                <div class="control-group">
+                    <label>Theme</label>
+                    <input type="text" value="Ancient underground ruins, dark, mysterious">
+                </div>
+                <div class="control-group">
+                    <label>Difficulty</label>
+                    <select>
+                        <option>Easy</option>
+                        <option selected>Medium</option>
+                        <option>Hard</option>
+                    </select>
+                </div>
+                <button class="run-button">Generate Level</button>
+            </div>
+            <div class="sim-output">
+                <div class="tab-content active" style="white-space: pre-wrap;">
+# Level Design: The Forgotten Catacombs
+
+## Overview
+**Theme:** Ancient underground ruins
+**Difficulty:** Medium
+**Est. Duration:** 15-20 mins
+
+## Layout
+[Start] -> [Hall of Echoes] -> [Puzzle Chamber] -> [Boss Arena]
+                  |
+            [Hidden Armory]
+
+## Zones
+1. **Hall of Echoes**: A long, narrow corridor filled with skeletal warriors.
+   - *Encounter:* 3 Skeleton Warriors, 1 Archer.
+2. **Puzzle Chamber**: A room with pressure plates and locked doors.
+   - *Mechanic:* Sequence puzzle to unlock the path forward.
+3. **Hidden Armory** (Secret): Accessible via a cracked wall in the Hall.
+   - *Reward:* Rare weapon chest.
+
+## Pacing
+- Start: Low intensity (exploration)
+- Mid: Medium intensity (combat & puzzle)
+- Climax: High intensity (Boss fight)
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

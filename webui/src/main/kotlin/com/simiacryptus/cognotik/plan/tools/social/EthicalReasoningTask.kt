@@ -31,6 +31,7 @@ class EthicalReasoningTask(
         private val log: Logger = LoggerFactory.getLogger(EthicalReasoningTask::class.java)
         val EthicalReasoning = TaskType(
             "EthicalReasoning",
+            "Reasoning",
             EthicalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze a dilemma through multiple ethical frameworks to guide decision-making.",
@@ -140,7 +141,7 @@ class EthicalReasoningTask(
         val context = executionConfig?.context ?: ""
 
         val ui = task.ui
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
         val tabs = TabbedDisplay(task)
         val transcript = transcript(task)
         val overviewTask = task.ui.newTask(false)

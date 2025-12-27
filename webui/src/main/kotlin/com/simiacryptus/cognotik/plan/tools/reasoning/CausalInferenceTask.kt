@@ -114,7 +114,7 @@ CausalInference - Identify causal relationships and root causes
 
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
-        val api = orchestrationConfig.defaultChatter ?: run {
+        val api = defaultSmart ?: run {
             log.error("No default chatter available")
             markdownTranscript?.write("# Error\n\nNo API available\n".toByteArray())
             markdownTranscript?.close()
@@ -606,6 +606,7 @@ Generate the causal analysis now:
         private val log: Logger = LoggerFactory.getLogger(CausalInferenceTask::class.java)
         val CausalInference = TaskType(
             "CausalInference",
+            "Reasoning",
             CausalInferenceTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Identify causal relationships and root causes",

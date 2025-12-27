@@ -83,7 +83,7 @@ Task Type: `${taskType.name}`
 
             // Get the task implementation
             val taskImpl = TaskType.getImpl(
-                orchestrationConfig = orchestrationConfig, taskType = taskType, planTask = taskConfig
+                orchestrationConfig = orchestrationConfig, taskType = taskType, cfg = taskConfig
             )
 
             // Execute the task

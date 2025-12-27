@@ -27,6 +27,7 @@ class DecompositionSynthesisTask(
         private val log: Logger = LoggerFactory.getLogger(DecompositionSynthesisTask::class.java)
         val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
             "DecompositionSynthesis",
+            "Reasoning",
             DecompositionSynthesisTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Decompose complex problems and synthesize solutions",
@@ -203,7 +204,7 @@ class DecompositionSynthesisTask(
             log.error("Failed to initialize transcript", e)
             null
         }
-        val api = orchestrationConfig.defaultChatter ?: run {
+        val api = defaultSmart ?: run {
             log.error("No default chatter available")
             task.complete("ERROR: No API available")
             resultFn("ERROR: No API available")
@@ -801,7 +802,7 @@ class DecompositionSynthesisTask(
             resultClass = ProblemDecomposition::class.java,
             prompt = prompt,
             model = api,
-            parsingChatter = orchestrationConfig.parsingChatter,
+            parsingChatter = defaultFast,
         )
 
         val decomposition = decompositionAgent.answer(listOf(problem)).obj
@@ -883,7 +884,7 @@ class DecompositionSynthesisTask(
                 resultClass = SubproblemSolution::class.java,
                 prompt = prompt,
                 model = api,
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = defaultFast,
             )
 
             val solution = solutionAgent.answer(listOf(subproblem.description)).obj
@@ -993,7 +994,7 @@ class DecompositionSynthesisTask(
             resultClass = SynthesizedSolution::class.java,
             prompt = prompt,
             model = api,
-            parsingChatter = orchestrationConfig.parsingChatter,
+            parsingChatter = defaultFast,
         )
 
         val synthesized: SynthesizedSolution = synthesisAgent.answer(listOf(problem)).obj
@@ -1042,7 +1043,7 @@ class DecompositionSynthesisTask(
             resultClass = CoherenceValidation::class.java,
             prompt = prompt,
             model = api,
-            parsingChatter = orchestrationConfig.parsingChatter,
+            parsingChatter = defaultFast,
         )
 
         val validation: CoherenceValidation = validationAgent.answer(listOf(synthesized.solution)).obj

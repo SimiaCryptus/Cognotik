@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constraint Relaxation - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header current-page="constraint-relaxation"></cognotik-header>
+    <header class="hero">
+        <div>
+            <h1>Constraint Relaxation</h1>
+            <p class="subtitle">Solve over-constrained problems by systematically identifying and relaxing requirements to find viable solutions.</p>
+            <a href="#demo" class="cta-button">Try the Simulator</a>
+        </div>
+    </header>
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Constraint Analysis</h3>
+                <p>Categorizes constraints into "hard" (immutable) and "soft" (negotiable) to identify flexibility.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Relaxation Strategy</h3>
+                <p>Systematically relaxes soft constraints to expand the solution space while minimizing impact.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Trade-off Evaluation</h3>
+                <p>Analyzes the cost/benefit of each relaxation to recommend the optimal compromise.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Problem</label>
+                    <textarea rows="2">Schedule a project meeting.</textarea>
+                </div>
+                <div class="control-group">
+                    <label>Constraints</label>
+                    <textarea rows="4">1. Must be this week.
+2. All 5 team members must attend.
+3. Must be 2 hours long.
+4. Must be in Conference Room A.</textarea>
+                </div>
+                <button class="run-button">Find Solution</button>
+            </div>
+            <div class="sim-output">
+                <div class="tab-content active" style="white-space: pre-wrap;">
+# Analysis: Over-constrained
+No slot available satisfying all conditions.
+
+## Relaxation Options
+
+### Option 1: Relax Duration
+- **Change:** Reduce to 1 hour.
+- **Result:** Slot found on Thursday.
+- **Impact:** Low. Can follow up via email.
+
+### Option 2: Relax Location
+- **Change:** Use Room B or Zoom.
+- **Result:** Slot found on Wednesday.
+- **Impact:** None.
+
+### Option 3: Relax Attendance
+- **Change:** Proceed without the intern.
+- **Result:** Slot found on Tuesday.
+- **Impact:** Medium.
+
+## Recommendation
+**Option 2 (Relax Location)** offers the best solution with zero negative impact on the meeting's purpose.
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
+import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.input.isDocumentFile
 import com.simiacryptus.cognotik.util.FileSelectionUtils
@@ -22,9 +23,16 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         get() = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
             ?: throw IllegalStateException("Working directory not set")
 
+    open val taskType: String = executionConfig?.task_type ?: this::class.simpleName ?: "UnknownTask"
+
     open val typeConfig: U?
-        get() = executionConfig?.task_type
-            ?.let { task_type -> orchestrationConfig.taskSettings.values.firstOrNull { it.task_type == task_type } as? U }
+        get() = taskType.let { task_type -> orchestrationConfig.taskSettings.values.firstOrNull { it.task_type == task_type } as? U }
+
+    open val defaultSmart: ChatInterface
+        get() = typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: orchestrationConfig.defaultSmart
+
+    open val defaultFast: ChatInterface
+        get() = orchestrationConfig.defaultFast
 
     enum class TaskState {
         Pending,

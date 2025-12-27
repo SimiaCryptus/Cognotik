@@ -113,7 +113,7 @@ class MultiPerspectiveAnalysisTask(
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: run {
+        val api = defaultSmart ?: run {
             log.error("No default chatter available")
             task.complete("ERROR: No API available")
             resultFn("ERROR: No API available")
@@ -378,6 +378,7 @@ Provide a comprehensive synthesis that integrates all perspectives.
         private val log: Logger = LoggerFactory.getLogger(MultiPerspectiveAnalysisTask::class.java)
         val MultiPerspectiveAnalysis = TaskType(
             "MultiPerspectiveAnalysis",
+            "Social",
             MultiPerspectiveAnalysisTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze problems from multiple viewpoints with synthesis",

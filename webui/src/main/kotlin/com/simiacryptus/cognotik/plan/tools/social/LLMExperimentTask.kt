@@ -113,7 +113,7 @@ class LLMExperimentTask(
         val repetitions = executionConfig?.repetitions ?: 5
         val metrics = executionConfig?.metrics ?: listOf("response_length", "response_time")
         val statisticalAnalysis = executionConfig?.statistical_analysis ?: true
-        val api = orchestrationConfig.defaultChatter.getChildClient(task)
+        val api = defaultSmart.getChildClient(task)
 
         val (transcriptLink, transcriptStream) = createTranscriptFile(task)
         val transcriptWriter = transcriptStream?.bufferedWriter()
@@ -1338,6 +1338,7 @@ Be specific and reference the data provided.
         private val log: Logger = LoggerFactory.getLogger(LLMExperimentTask::class.java)
         val LLMExperiment = TaskType(
             "LLMExperiment",
+            "Social",
             LLMExperimentTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Conduct controlled experiments on LLM behavior",

@@ -305,11 +305,11 @@ class WriteHtmlAction : BaseAction() {
       }
 
       return OrchestrationConfig(
-        defaultModel = model ?: AppSettingsState.instance.smartModel
+        defaultSmartModel = model ?: AppSettingsState.instance.smartModel
         ?: throw IllegalStateException("No model configured"),
-        parsingModel = AppSettingsState.instance.fastModel
+        defaultFastModel = AppSettingsState.instance.fastModel
           ?: throw IllegalStateException("Fast model not configured"),
-        imageChatModel = imageModel ?: AppSettingsState.instance.smartModel
+        defaultImageModel = imageModel ?: AppSettingsState.instance.smartModel
         ?: throw IllegalStateException("No image model configured"),
         temperature = temperatureSlider.value / 100.0,
         autoFix = autoFixCheckbox.isSelected,

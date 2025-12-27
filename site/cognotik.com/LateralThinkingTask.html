@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lateral Thinking - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header current-page="lateral-thinking"></cognotik-header>
+    <header class="hero">
+        <h1>Lateral Thinking</h1>
+        <p class="subtitle">Break conventional thinking patterns to find innovative solutions. Apply techniques like reversal, random stimulus, and provocation.</p>
+        <a href="#demo" class="cta-button">Try the Simulator</a>
+    </header>
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Technique Application</h3>
+                <p>Systematically applies lateral thinking methods (Reversal, Exaggeration, Escape) to generate ideas.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Breakthrough Insights</h3>
+                <p>Identifies novel perspectives and hidden assumptions that block creative problem-solving.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Synthesis</h3>
+                <p>Combines unconventional ideas into practical, innovative approaches with feasibility assessments.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Problem</label>
+                    <textarea rows="3">How to reduce waiting times in a hospital emergency room?</textarea>
+                </div>
+                <div class="control-group">
+                    <label>Techniques</label>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                        <label><input type="checkbox" checked> Reversal</label>
+                        <label><input type="checkbox" checked> Random Stimulus</label>
+                        <label><input type="checkbox" checked> Exaggeration</label>
+                    </div>
+                </div>
+                <button class="run-button">Generate Ideas</button>
+            </div>
+            <div class="sim-output">
+                <div class="tab-content active" style="white-space: pre-wrap;">
+# Lateral Thinking Results
+
+## Technique: Reversal
+**Provocation:** Make patients wait *longer*.
+**Idea:** If waiting is inevitable, make it productive. Perform triage and initial testing *during* the wait or transport.
+**Breakthrough:** Shift medical process to the waiting period.
+
+## Technique: Random Stimulus
+**Stimulus:** "Hotel"
+**Idea:** Treat patients like guests. Give them pagers/apps so they can wait elsewhere comfortably.
+**Breakthrough:** Decouple "waiting" from "waiting room".
+
+## Recommended Approach
+Implement a "Mobile Triage" system where initial diagnostics happen before arrival or in the lobby, and allow patients to wait remotely for non-critical issues.
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

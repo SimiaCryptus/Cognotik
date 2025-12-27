@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Server Task - Cognotik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        /* Layout Utilities */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        
+        /* Hero Overrides */
+        .hero { 
+            display: flex; 
+            align-items: center; 
+            text-align: left;
+            padding: 8rem 0 4rem; 
+            min-height: 80vh; 
+            background: transparent;
+        }
+        .hero-content { flex: 1; padding-right: 2rem; }
+        .hero h1 { 
+            text-align: left;
+            font-size: 3.5rem; 
+            line-height: 1.1; 
+            margin-bottom: 1.5rem; 
+            background: linear-gradient(to right, #fff, var(--accent-color)); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
+        
+        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
+        .visual-node { 
+            width: 200px; height: 200px; 
+            border: 2px solid var(--accent-color); 
+            border-radius: 10%; 
+            position: absolute; 
+            transform: rotate(45deg);
+            animation: pulse 4s infinite; 
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); 
+        }
+        .visual-node::before {
+            content: '{}';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-family: monospace;
+            font-size: 4rem;
+            color: var(--accent-secondary);
+        }
+        
+        @keyframes pulse { 0%, 100% { transform: rotate(45deg) scale(1); opacity: 0.5; } 50% { transform: rotate(45deg) scale(1.1); opacity: 1; } }
+
+        /* Features Overrides */
+        .features { padding: 4rem 0; background: rgba(255,255,255,0.02); }
+        .feature-card svg { width: 48px; height: 48px; color: var(--accent-secondary); margin-bottom: 1rem; }
+
+        /* Simulator Overrides */
+        .sim-output { padding: 2rem; overflow-y: auto; font-family: var(--font-family-mono); color: var(--text-muted); }
+        .sim-controls { display: flex; flex-direction: column; }
+        .run-button { margin-top: auto; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+        
+        /* Use Cases */
+        .use-cases { padding: 4rem 0; }
+        .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .use-case-item { background: var(--surface-color); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
+        .use-case-item h4 { color: var(--primary-color); margin-top: 0; }
+
+        @media (max-width: 768px) { 
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; } 
+            .hero h1 { text-align: center; }
+            .simulator-container { grid-template-columns: 1fr; } 
+            .sim-controls { border-right: none; border-bottom: 1px solid var(--border-color); } 
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="languageserver"></cognotik-header>
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>Language Server Task</h1>
+            <p>Leverage the Language Server Protocol (LSP) to provide deep code intelligence, including definitions, references, and diagnostics.</p>
+            <a href="#demo" class="btn">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <h3>Symbol Navigation</h3>
+                    <p>Instantly locate definitions and find all references of variables, functions, and classes across your codebase.</p>
+                </div>
+                <div class="feature-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <h3>Diagnostics</h3>
+                    <p>Detect syntax errors, type mismatches, and warnings in real-time without running the code.</p>
+                </div>
+                <div class="feature-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <h3>Contextual Hover</h3>
+                    <p>Retrieve documentation, type signatures, and other metadata by querying specific file positions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
+                    <div class="form-group">
+                        <label>Action</label>
+                        <select id="action">
+                            <option value="diagnostics">Diagnostics</option>
+                            <option value="definition">Definition</option>
+                            <option value="references">References</option>
+                            <option value="hover">Hover</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>File Path</label>
+                        <input type="text" id="file" value="src/main.py">
+                    </div>
+                    <div class="form-group">
+                        <label>Line (0-indexed)</label>
+                        <input type="number" id="line" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Character (0-indexed)</label>
+                        <input type="number" id="character" value="15">
+                    </div>
+                    <button class="run-button" onclick="runSimulation()">Execute LSP Query</button>
+                </div>
+                <div class="sim-output" id="output-logs">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the LSP query and click "Execute" to see results.
+                        </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>Automated Code Analysis</h4>
+                    <p>Programmatically check for errors and code quality issues in CI/CD pipelines or agent workflows.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Code Exploration</h4>
+                    <p>Allow AI agents to understand codebase structure by following definitions and references.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Refactoring Support</h4>
+                    <p>Identify all usages of a symbol before renaming or modifying it to ensure safety.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function runSimulation() {
+            const action = document.getElementById('action').value;
+            const file = document.getElementById('file').value;
+            const line = document.getElementById('line').value;
+            const char = document.getElementById('character').value;
+            const logsEl = document.getElementById('output-logs');
+            
+            logsEl.innerHTML = '';
+            const steps = [
+                `[INFO] Initializing Language Server for ${file.split('.').pop()}...`,
+                `[INFO] Opening document: ${file}`,
+                `[INFO] Sending '${action}' request at ${line}:${char}...`,
+                `[SUCCESS] Response received.`
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < steps.length) {
+                    const lineEl = document.createElement('div');
+                    lineEl.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
+                    lineEl.style.marginBottom = '4px';
+                    if (steps[i].includes('SUCCESS')) lineEl.style.color = '#4ade80';
+                    else lineEl.style.color = '#fb923c';
+                    logsEl.appendChild(lineEl);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    let resultText = "";
+                    
+                    if (action === 'diagnostics') {
+                        resultText = `[
+  {
+    "range": { "start": { "line": 10, "character": 4 }, "end": { "line": 10, "character": 12 } },
+    "severity": 1,
+    "message": "Undefined variable 'myVar'",
+    "source": "pylsp"
+  }
+]`;
+                    } else if (action === 'definition') {
+                        resultText = `- src/utils.py:45:8`;
+                    } else if (action === 'references') {
+                        resultText = `- src/main.py:10:15\n- src/main.py:22:4\n- src/tests/test_main.py:5:12`;
+                    } else if (action === 'hover') {
+                        resultText = `def process_data(data: List[str]) -> Dict[str, int]\n\nProcess the input data and return frequency counts.`;
+                    }
+
+                    const result = document.createElement('div');
+                    result.innerHTML = `
+                        <br><strong>Result:</strong><br>
+                        <pre style="background:rgba(0,0,0,0.2); padding:0.5rem; border-radius:4px;">${resultText}</pre>
+                    `;
+                    result.style.color = '#e2e8f0';
+                    result.style.marginTop = '1rem';
+                    result.style.padding = '1rem';
+                    result.style.border = '1px solid rgba(255,255,255,0.1)';
+                    result.style.borderRadius = '8px';
+                    logsEl.appendChild(result);
+                }
+            }, 600);
+        }
+    </script>
+</body>
+</html>

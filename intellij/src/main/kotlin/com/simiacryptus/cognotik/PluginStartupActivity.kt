@@ -11,9 +11,8 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
+import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
@@ -33,7 +32,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
-      require(TaskType.values().isNotEmpty())
+        require(TaskType.values().isNotEmpty())
+        require(ToolProvider.values().isNotEmpty())
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")
@@ -123,39 +123,6 @@ class PluginStartupActivity : ProjectActivity {
             }
         }
         require(TaskType.values().isNotEmpty())
-        VectorSearchTask.embedderClient = {
-            val modelName = it ?: AppSettingsState.instance.embeddingModel
-            val apis =
-                fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.getUserSettings().apis
-            val availableEmbeddingModels = try {
-                apis.filter { api ->
-                    api.key != null
-                }.flatMap { api ->
-                    try {
-                        val embeddingModels: List<EmbeddingModel>? =
-                            api.provider?.getEmbeddingModels(api.key!!, api.baseUrl)
-                        embeddingModels?.filter { model ->
-                            isVisible(model)
-                        }?.map { it.modelName to it } ?: emptyList()
-                    } catch (e: Exception) {
-                        log.warn("Failed to get chat models for provider ${api.provider?.name}: ${e.message}")
-                        emptyList()
-                    }
-                }.toMap().toSortedMap(compareBy { it })
-            } catch (e: Exception) {
-                log.error("Failed to load available models: ${e.message}", e)
-                emptyMap()
-            }
-            var embeddingModel: EmbeddingModel? = availableEmbeddingModels[modelName]
-            if(embeddingModel == null && availableEmbeddingModels.isNotEmpty()) {
-                embeddingModel = availableEmbeddingModels.values.first()
-                log.warn("Embedding model $modelName not found. Defaulting to ${embeddingModel.modelName}")
-            } else if(embeddingModel == null) {
-                throw IllegalArgumentException("No available embedding models found.")
-            }
-            val apiData = apis.first { api -> api.provider == embeddingModel.provider && api.key != null }
-            embeddingModel.instance(key = apiData.key!!, base = apiData.baseUrl)
-        }
         AppSettingsState.instance.apply {
             log.debug("Configuring AWS platform - profile: $awsProfile, region: $awsRegion, bucket: $awsBucket")
             ApplicationServices.cloud = when {

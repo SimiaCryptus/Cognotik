@@ -60,12 +60,6 @@ class FileModificationTask(
 FileModification - Modify existing files or create new files
   * For each file, specify the relative file path and the goal of the modification or creation
   * List input files/tasks to be examined when designing the modifications or new files
-Available files:
-${
-        AnalysisTask.getAvailableFiles(
-            root
-        ).joinToString("\n") { "  - $it" }
-    }
 """.trimIndent()
 
 
@@ -89,7 +83,7 @@ ${
                 task.ui.pool.submit {
                     val chatInterface =
                         (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
-                            ?: this.orchestrationConfig.defaultChatter).getChildClient(task)
+                            ?: this.defaultSmart).getChildClient(task)
                     val chatAgent = ChatAgent(
                         name = "FileModification",
                         prompt = """
@@ -248,6 +242,7 @@ ${
 
         val FileModification = TaskType(
             "FileModification",
+            "File",
             FileModificationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create new files or modify existing code with AI-powered assistance",

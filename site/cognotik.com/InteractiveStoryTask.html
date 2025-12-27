@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Story Task - Cognotik</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        ul { list-style: none; }
+        /* Utilities */
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        /* Hero */
+        .hero {
+            padding: 8rem 0 4rem;
+            display: flex;
+            align-items: center;
+            min-height: 80vh;
+            position: relative;
+            text-align: left;
+            background: transparent;
+        }
+        .hero-content {
+            flex: 1;
+            padding-right: 2rem;
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        .hero-visual {
+            flex: 1;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        /* Abstract Visual Placeholder */
+        .visual-node {
+            width: 200px;
+            height: 200px;
+            border: 2px solid var(--accent-secondary);
+            border-radius: 50%;
+            position: absolute;
+            animation: pulse 4s infinite;
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .visual-node::before {
+            content: '🎮';
+            font-size: 4rem;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-secondary);
+        }
+        /* Missing input type number in main.css */
+        input[type="number"] {
+            display: block;
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--surface-color);
+            background-clip: padding-box;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-primary); }
+        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-secondary); }
+        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
+        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
+        
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 0;
+        }
+        .use-case-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .use-case-item {
+            background: rgba(255,255,255,0.03);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+        }
+        @media (max-width: 768px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
+            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="interactive-story"></cognotik-header>
+    <!-- Hero -->
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>Interactive Story Task</h1>
+            <p>Create immersive choose-your-own-adventure narratives with branching paths and multiple endings.</p>
+            <a href="#demo" class="btn">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+    <!-- Features -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                    </div>
+                    <h3>Branching Narratives</h3>
+                    <p>Develops complex story trees with meaningful choices that impact the plot.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </div>
+                    <h3>State Tracking</h3>
+                    <p>Tracks inventory, health, relationships, and other variables across the story.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                    </div>
+                    <h3>Multiple Endings</h3>
+                    <p>Generates distinct conclusions based on player actions and choices.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Simulator -->
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <!-- Inputs -->
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                    <div class="control-group">
+                        <label>Premise</label>
+                        <input type="text" id="premise" value="You wake up in a mysterious forest with no memory.">
+                    </div>
+                    <div class="control-group">
+                        <label>Genre</label>
+                        <select id="genre">
+                            <option value="fantasy" selected>Fantasy</option>
+                            <option value="sci-fi">Sci-Fi</option>
+                            <option value="mystery">Mystery</option>
+                            <option value="horror">Horror</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Decision Points</label>
+                        <input type="number" id="decision_points" value="5">
+                    </div>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Generate Story</button>
+                </div>
+                <!-- Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('story')">Story Map</div>
+                        <div class="tab" onclick="switchTab('logs')">Logs</div>
+                    </div>
+                    <div id="output-story" class="tab-content active markdown-preview">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the story and click "Generate" to see the output.
+                        </div>
+                    </div>
+                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Use Cases -->
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>Interactive Fiction</h4>
+                    <p>Create engaging text adventures and interactive novels.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Training Scenarios</h4>
+                    <p>Develop role-playing scenarios for training and education.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Game Design</h4>
+                    <p>Prototype narrative structures and quest lines for video games.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Marketing Campaigns</h4>
+                    <p>Build interactive brand experiences and gamified content.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if(tabName === 'story') document.getElementById('output-story').classList.add('active');
+            if(tabName === 'logs') document.getElementById('output-logs').classList.add('active');
+        }
+        function runSimulation() {
+            const premise = document.getElementById('premise').value;
+            const genre = document.getElementById('genre').value;
+            const points = document.getElementById('decision_points').value;
+            const reportEl = document.getElementById('output-story');
+            const logsEl = document.getElementById('output-logs');
+            
+            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
+            logsEl.innerHTML = '';
+            
+            const logs = [
+                `[INFO] Initializing InteractiveStoryTask...`,
+                `[INFO] Premise: ${premise}`,
+                `[INFO] Creating story structure...`,
+                `[INFO] Writing opening segment...`,
+                `[INFO] Generating decision points...`,
+                `[INFO] Creating endings...`,
+                `[SUCCESS] Story generation complete.`
+            ];
+            
+            let logIndex = 0;
+            const logInterval = setInterval(() => {
+                if (logIndex < logs.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
+                    line.style.marginBottom = '4px';
+                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
+                    logsEl.appendChild(line);
+                    logsEl.scrollTop = logsEl.scrollHeight;
+                    logIndex++;
+                } else {
+                    clearInterval(logInterval);
+                    renderStory(premise);
+                }
+            }, 400);
+        }
+        function renderStory(premise) {
+            const reportEl = document.getElementById('output-story');
+            const markdown = `
+<h1>The Forgotten Forest</h1>
+
+<h2>START: Opening</h2>
+<p>${premise} The air is thick with mist, and strange, glowing flora illuminates the path ahead. You hear a rustling in the bushes to your right.</p>
+<p><strong>→ Continue to: decision_1</strong></p>
+
+<hr>
+
+<h2>decision_1</h2>
+<p>You stand at a fork in the path. To the left, the path leads towards a distant, crumbling tower. To the right, the sound of running water suggests a stream.</p>
+
+<h3>What do you do?</h3>
+<p><strong>Choice 1: Investigate the tower</strong><br>
+<em>State changes: courage +1</em><br>
+<strong>→ Continue to: decision_2a</strong></p>
+
+<p><strong>Choice 2: Head towards the water</strong><br>
+<em>State changes: health +10</em><br>
+<strong>→ Continue to: decision_2b</strong></p>
+
+<p><strong>Choice 3: Hide and wait</strong><br>
+<em>State changes: stealth +1</em><br>
+<strong>→ Continue to: decision_2c</strong></p>
+
+<hr>
+
+<h2>ending_1: The Guardian</h2>
+<p>You reach the tower and discover you are the guardian of this forest, returned to restore balance.</p>
+<p><strong>THE END</strong></p>
+            `;
+            reportEl.innerHTML = markdown;
+        }
+    </script>
+</body>
+</html>

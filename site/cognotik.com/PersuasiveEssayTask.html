@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persuasive Essay - Cognotik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        
+        
+
+
+        
+
+        /* Custom styles for this page */
+        .output-area { padding: 2rem; flex: 1; font-family: var(--font-family-mono); font-size: 0.9rem; color: var(--text-color); overflow-y: auto; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="essay"></cognotik-header>
+    <section class="hero">
+        <h1>Persuasive Essay</h1>
+        <p class="subtitle">Generate compelling, well-structured persuasive essays with strong arguments and rhetorical flair.</p>
+        <a href="#demo" class="cta-button">Try the Simulator</a>
+    </section>
+
+    <section id="features" class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <i>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </i>
+                <h3>Structured Arguments</h3>
+                <p>Develops clear claims supported by evidence, logic, and examples for maximum impact.</p>
+            </div>
+            <div class="feature-card">
+                <i>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                </i>
+                <h3>Rhetorical Devices</h3>
+                <p>Effectively employs ethos, pathos, and logos to persuade the target audience.</p>
+            </div>
+            <div class="feature-card">
+                <i>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </i>
+                <h3>Counterarguments</h3>
+                <p>Anticipates opposing viewpoints and provides strong rebuttals to strengthen the position.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="simulator">
+        <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
+                <div class="control-group">
+                    <label>Thesis Statement</label>
+                    <textarea id="thesis">Space exploration is a vital investment for humanity's future.</textarea>
+                </div>
+                <div class="control-group">
+                    <label>Target Audience</label>
+                    <input type="text" id="audience" value="General Public">
+                </div>
+                <div class="control-group">
+                    <label>Tone</label>
+                    <input type="text" id="tone" value="Inspirational">
+                </div>
+                <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Generate Essay</button>
+            </div>
+            <div class="sim-output">
+                <div id="output-logs" class="output-area">
+                    <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                        Enter a thesis and click "Generate" to see the essay structure.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="use-cases" class="features">
+        <h2 style="margin-bottom: 2rem;">When to Use</h2>
+        <div class="mode-grid">
+            <div class="mode-card">
+                <div class="mode-title">Opinion Pieces</div>
+                <p>Draft compelling op-eds and articles for publication.</p>
+            </div>
+            <div class="mode-card">
+                <div class="mode-title">Proposals</div>
+                <p>Create persuasive business or project proposals to win support.</p>
+            </div>
+            <div class="mode-card">
+                <div class="mode-title">Advocacy</div>
+                <p>Write speeches or letters to advocate for specific causes or policies.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function runSimulation() {
+            const thesis = document.getElementById('thesis').value;
+            const logsEl = document.getElementById('output-logs');
+            
+            logsEl.innerHTML = '';
+            const steps = [
+                `[INFO] Analyzing thesis: "${thesis.substring(0, 30)}..."`,
+                `[INFO] Creating outline...`,
+                `[INFO] Writing introduction...`,
+                `[INFO] Developing arguments...`,
+                `[INFO] Addressing counterarguments...`,
+                `[SUCCESS] Essay Generated.`
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < steps.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
+                    line.style.marginBottom = '4px';
+                    if (steps[i].includes('SUCCESS')) line.style.color = 'var(--success-color)';
+                    else line.style.color = 'var(--accent-color)';
+                    logsEl.appendChild(line);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    const result = document.createElement('div');
+                    result.innerHTML = `
+                        <br><strong>Essay Structure:</strong><br>
+                        1. <strong>Intro:</strong> The boundless frontier awaits.<br>
+                        2. <strong>Arg 1:</strong> Technological innovation spinoffs.<br>
+                        3. <strong>Arg 2:</strong> Resource acquisition and sustainability.<br>
+                        4. <strong>Counter:</strong> "It's too expensive" -> Rebuttal: ROI is massive.<br>
+                        5. <strong>Conclusion:</strong> A call to look upward.
+                    `;
+                    result.style.color = 'var(--text-color)';
+                    result.style.marginTop = '1rem';
+                    result.style.padding = '1rem';
+                    result.style.border = '1px solid rgba(255,255,255,0.1)';
+                    result.style.borderRadius = '8px';
+                    logsEl.appendChild(result);
+                }
+            }, 800);
+        }
+    </script>
+</body>
+</html>

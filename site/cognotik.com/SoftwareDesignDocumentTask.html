@@ -1,0 +1,1374 @@
+<!-- 
+IMAGE PROMPT: 
+A high-tech, holographic architectural blueprint floating in a deep blue void. 
+The blueprint transforms from wireframe code blocks on the left into a glowing, 
+3D isometric city structure on the right, representing the transition from 
+abstract requirements to concrete software architecture. 
+Neon cyan and electric purple lines connect nodes, symbolizing data flow and dependencies.
+Style: Cyberpunk professional, clean lines, volumetric lighting.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cognotik Software Design Document Task - Generate comprehensive technical specifications, architecture diagrams, and project plans.">
+    <title>Software Design Document | Cognotik</title>
+
+    <!-- 
+      CSS SECTION 
+      In the final build, this would contain the contents of assets/styles/main.css 
+      plus page-specific overrides.
+    -->
+    <style>
+        /* 
+           :root variables for "Future-Professional" theme
+           --bg-dark: #0f172a
+           --accent-primary: #38bdf8 (Cyan)
+           --accent-secondary: #a855f7 (Purple)
+           --text-main: #f8fafc
+        */
+    </style>
+
+    <!-- 
+      COMPONENT SCRIPT
+      In the final build, this would contain the logic for <cognotik-header>
+    -->
+    <script type="module">
+        // import { CognotikHeader } from './assets/scripts/components/CognotikHeader.js';
+    </script>
+
+    <style>
+        /* =========================================
+           1. VARIABLES & RESET
+           ========================================= */
+        :root {
+            /* Theme Colors */
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #020617;
+        
+            --accent-primary: #38bdf8; /* Cyan */
+            --accent-secondary: #a855f7; /* Purple */
+            --accent-glow: rgba(56, 189, 248, 0.3);
+        
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(148, 163, 184, 0.1);
+        
+            /* Typography */
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Fira Code', 'Courier New', monospace;
+        
+            /* Spacing */
+            --container-width: 1200px;
+            --section-spacing: 5rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 1rem;
+        }
+        
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        h1, h2, h3, h4 {
+            line-height: 1.2;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        ul {
+            list-style: none;
+        }
+        
+        /* =========================================
+           2. UTILITIES & LAYOUT
+           ========================================= */
+        .container {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--accent-primary);
+            border-radius: 2px;
+            box-shadow: 0 0 10px var(--accent-primary);
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), #0ea5e9);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px var(--accent-glow);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(56, 189, 248, 0.1);
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        /* =========================================
+           3. HERO SECTION
+           ========================================= */
+        .hero-section {
+            padding: 8rem 0 5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Background Grid Effect */
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+            z-index: -1;
+        }
+        
+        .hero-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+        
+        .hero-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-secondary);
+            border: 1px solid var(--accent-secondary);
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 540px;
+        }
+        
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        /* Hero Visual - Abstract 3D Placeholder */
+        .visual-placeholder {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.1), transparent 70%);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            perspective: 1000px;
+        }
+        
+        .blueprint-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(56, 189, 248, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            transform: rotateX(60deg) scale(1.5);
+            opacity: 0.5;
+        }
+        
+        .floating-node {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--accent-primary);
+            box-shadow: 0 0 10px var(--accent-primary);
+            border-radius: 4px;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .node-1 { width: 60px; height: 60px; top: 30%; left: 20%; animation-delay: 0s; }
+        .node-2 { width: 80px; height: 80px; top: 50%; left: 50%; animation-delay: 2s; border-color: var(--accent-secondary); box-shadow: 0 0 10px var(--accent-secondary); }
+        .node-3 { width: 50px; height: 50px; top: 20%; left: 70%; animation-delay: 4s; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        /* =========================================
+           4. FEATURES GRID
+           ========================================= */
+        .features-section {
+            padding: var(--section-spacing) 0;
+            background-color: var(--bg-dark);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-primary);
+        }
+        
+        .icon-container {
+            width: 50px;
+            height: 50px;
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-primary);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        
+        /* =========================================
+           5. INTERACTIVE SIMULATOR
+           ========================================= */
+        .simulator-section {
+            padding: var(--section-spacing) 0;
+            background: linear-gradient(to bottom, var(--bg-dark), #0b1120);
+        }
+        
+        .simulator-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .simulator-header p {
+            color: var(--text-muted);
+        }
+        
+        .simulator-interface {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Left Column: Inputs */
+        .sim-inputs {
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        
+        input[type="text"],
+        textarea {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        
+        /* Toggles Grid */
+        .toggles-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .toggle-control {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+        
+        .toggle-control input {
+            display: none;
+        }
+        
+        .toggle-slider {
+            width: 40px;
+            height: 20px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            position: relative;
+            transition: 0.3s;
+        }
+        
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: 0.3s;
+        }
+        
+        .toggle-control input:checked + .toggle-slider {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-primary);
+        }
+        
+        .toggle-control input:checked + .toggle-slider::before {
+            transform: translateX(20px);
+            background: var(--accent-primary);
+        }
+        
+        .toggle-label {
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+        
+        /* Range Slider */
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-input);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+        
+        /* Right Column: Outputs */
+        .sim-output {
+            display: flex;
+            flex-direction: column;
+            height: 600px; /* Fixed height for scrolling content */
+        }
+        
+        .output-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+        
+        .tab-btn.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(56, 189, 248, 0.05);
+        }
+        
+        .output-content {
+            padding: 2rem;
+            overflow-y: auto;
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Output Styling */
+        .markdown-preview h1 { font-size: 1.8rem; margin-bottom: 1rem; }
+        .markdown-preview h3 { font-size: 1.2rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--accent-primary); }
+        .markdown-preview p { color: var(--text-muted); margin-bottom: 1rem; }
+        .markdown-preview ul { padding-left: 1.5rem; color: var(--text-muted); }
+        .markdown-preview li { margin-bottom: 0.5rem; }
+        
+        .status-badge {
+            background: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .code-block {
+            background: #020617;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #a5b4fc;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        
+        .code-block-header {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        
+        /* Mermaid Mock Visualization */
+        .mermaid-mock {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--radius-md);
+        }
+        
+        .mock-node {
+            padding: 0.5rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--accent-primary);
+            border-radius: 4px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
+        }
+        
+        .node-db { border-radius: 0 0 4px 4px; border-top: 3px double var(--accent-primary); }
+        
+        .mock-arrow, .arrow-left, .arrow-right {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+        
+        .mock-row {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .mock-arrow-split {
+            display: flex;
+            gap: 4rem;
+        }
+        
+        /* Terminal Logs */
+        .terminal-window {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+        
+        .log-line { margin-bottom: 0.5rem; }
+        .log-time { color: var(--text-muted); margin-right: 0.5rem; }
+        .log-info { color: var(--accent-primary); }
+        .log-debug { color: #eab308; }
+        .log-success { color: #22c55e; }
+        
+        /* =========================================
+           6. WORKFLOW SECTION
+           ========================================= */
+        .workflow-section {
+            padding: var(--section-spacing) 0;
+            background: var(--bg-dark);
+        }
+        
+        .workflow-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 3rem;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 0 1rem;
+        }
+        
+        .step-number {
+            font-size: 3rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.05);
+            line-height: 1;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .step-number::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 2px;
+            background: var(--accent-secondary);
+        }
+        
+        .step h3 {
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+        }
+        
+        .step p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        
+        .step-connector {
+            flex: 0 0 50px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+            margin-top: 4rem; /* Align with visual center */
+        }
+        
+        /* =========================================
+           7. USE CASES SECTION
+           ========================================= */
+        .use-cases-section {
+            padding: var(--section-spacing) 0;
+            background: linear-gradient(to top, var(--bg-dark), #0b1120);
+        }
+        
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .use-case-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            transition: 0.3s;
+        }
+        
+        .use-case-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-secondary);
+        }
+        
+        .use-case-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .use-case-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* =========================================
+           8. FOOTER
+           ========================================= */
+        footer {
+            padding: 2rem 0;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        /* =========================================
+           9. RESPONSIVE DESIGN
+           ========================================= */
+        @media (max-width: 992px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        
+            .hero-subtitle {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        
+            .hero-actions {
+                justify-content: center;
+            }
+        
+            .simulator-interface {
+                grid-template-columns: 1fr;
+            }
+        
+            .sim-inputs {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        
+            .sim-output {
+                height: 500px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+        
+            .workflow-steps {
+                flex-direction: column;
+                gap: 2rem;
+            }
+        
+            .step-connector {
+                display: none;
+            }
+        
+            .output-tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+    </style>
+<!-- Generated Images:
+     - software-design-hero.png: A high-tech, holographic architectural blueprint floating in a deep blue void (#0f172a). The blueprint transforms from wireframe code blocks and floating text syntax on the left into a glowing, 3D isometric city structure on the right. This represents the transition from abstract requirements to concrete software architecture. Neon cyan and electric purple lines connect nodes, symbolizing data flow and dependencies. The lighting is volumetric and moody, with a shallow depth of field focusing on the center structure. Style: Cyberpunk professional, clean lines, 3D render.
+     - architecture-layers-visual.png: An abstract 3D representation of the C4 model (Context, Containers, Components). Three floating, translucent glass layers stacked vertically. The top layer is a broad circle (System Context), the middle layer contains several glowing cubes (Containers), and the bottom layer shows intricate circuitry and nodes (Components). Golden data streams flow vertically connecting the layers. The background is a dark slate (#1e293b) with subtle grid lines. The aesthetic is clean, glassmorphism, and technical.
+     - agile-planning-hologram.png: A visualization of the "Project Data JSON" output. Floating, glowing rectangular tiles arranged in a 3D space resembling a futuristic Kanban board or Gantt timeline. The tiles are color-coded (Cyan for Epics, Purple for Tasks) and connected by faint dependency lines. In the foreground, a stylized JSON bracket structure `{ }` frames the floating tiles, implying that the visual plan is generated from code. The lighting is soft and neon, emphasizing structure and organization. Background is deep dark blue.
+-->
+
+    <!-- Web Component Script -->
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body class="bg-dark text-light">
+
+    <!-- 
+      A. HEADER & NAVIGATION 
+      Custom Web Component that loads navigation from tasks.json
+    -->
+    <cognotik-header current-page="software-design"></cognotik-header>
+
+    <main>
+        <!-- 
+          B. HERO SECTION 
+          Introduction to the task with visual and CTA
+        -->
+        <section class="hero-section">
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <div class="hero-badge">Writing Tool</div>
+                    <h1 class="hero-title">Software Design <span class="text-gradient">Architect</span></h1>
+                    <p class="hero-subtitle">
+                        Transform abstract system descriptions into production-ready technical specifications. 
+                        Generate comprehensive architecture diagrams (C4), data models (ERD), test plans, 
+                        and agile project structures automatically using Mermaid syntax and structured JSON.
+                    </p>
+                    <div class="hero-actions">
+                        <button class="btn btn-primary" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
+                            Try the Simulator
+                        </button>
+                        <button class="btn btn-secondary">View Documentation</button>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <!-- Hero Image: Holographic blueprint transforming into 3D city -->
+                    <img src="assets/images/software-design-hero.png"
+                         alt="Holographic architectural blueprint transforming from wireframe code into a glowing 3D isometric city structure" 
+                         class="hero-image glow-effect">
+                </div>
+            </div>
+        </section>
+
+        <!-- 
+          C. FEATURES GRID 
+          Key capabilities extracted from SoftwareDesignDocumentTask.kt
+        -->
+        <section class="features-section">
+            <div class="container">
+                <h2 class="section-title">Capabilities</h2>
+                <div class="features-grid">
+                    <!-- Feature 1: Architecture -->
+                    <div class="feature-card">
+                        <div class="icon-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                        </div>
+                        <h3>C4 Architecture</h3>
+                        <p>Generates System Context, Container, and Component diagrams using Mermaid syntax to visualize system topology.</p>
+                    </div>
+
+                    <!-- Feature 2: Data Modeling -->
+                    <div class="feature-card">
+                        <div class="icon-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                        </div>
+                        <h3>Data Modeling</h3>
+                        <p>Creates Entity-Relationship Diagrams (ERD) and data dictionaries, defining schemas, keys, and relationships.</p>
+                    </div>
+
+                    <!-- Feature 3: Requirements -->
+                    <div class="feature-card">
+                        <div class="icon-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        </div>
+                        <h3>Requirements Spec</h3>
+                        <p>Defines Functional (FR) and Non-Functional (NFR) requirements, prioritized via MoSCoW method with traceability.</p>
+                    </div>
+
+                    <!-- Feature 4: Agile Planning -->
+                    <div class="feature-card">
+                        <div class="icon-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        </div>
+                        <h3>Project Planning</h3>
+                        <p>Outputs structured JSON containing Epics, User Stories, Sprints, and Releases calculated based on velocity.</p>
+                    </div>
+
+                    <!-- Feature 5: Flow Analysis -->
+                    <div class="feature-card">
+                        <div class="icon-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        </div>
+                        <h3>Flow Diagrams</h3>
+                        <p>Maps critical user journeys and complex logic using Sequence and Activity diagrams.</p>
+                    </div>
+
+                    <!-- Feature 6: QA Strategy -->
+                    <div class="feature-card">
+                        <div class="icon-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        </div>
+                        <h3>Test Strategy</h3>
+                        <p>Generates comprehensive test plans, including unit, integration, and acceptance test cases.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 
+          D. INTERACTIVE SIMULATOR 
+          Split screen: Configuration (Left) vs Output (Right)
+        -->
+        <section id="simulator" class="simulator-section">
+            <div class="container">
+                <div class="simulator-header">
+                    <h2>Interactive Simulator</h2>
+                    <p>Configure the design parameters to generate a mock specification.</p>
+                </div>
+                
+                <div class="simulator-interface">
+                    <!-- Left Column: Inputs -->
+                    <form class="sim-inputs" id="configForm">
+                        <div class="input-group">
+                            <label for="projectName">Project Name</label>
+                            <input type="text" id="projectName" placeholder="e.g., E-Commerce Microservices" value="Cognotik Analytics Platform">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="systemDesc">System Description</label>
+                            <textarea id="systemDesc" rows="5" placeholder="Describe the system...">A distributed analytics platform that processes high-volume event streams. It needs to ingest data via API, process it using Kafka streams, store aggregations in ClickHouse, and provide a React dashboard for real-time visualization.</textarea>
+                        </div>
+
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label for="targetAudience">Target Audience</label>
+                                <input type="text" id="targetAudience" value="Data Engineers & CTOs">
+                            </div>
+                            <div class="input-group">
+                                <label for="techStack">Tech Stack (Comma sep.)</label>
+                                <input type="text" id="techStack" value="Kotlin, Kafka, React, AWS">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Generation Options</label>
+                            <div class="toggles-grid">
+                                <label class="toggle-control">
+                                    <input type="checkbox" checked name="gen_usecases">
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Use Cases</span>
+                                </label>
+                                <label class="toggle-control">
+                                    <input type="checkbox" checked name="gen_arch">
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Architecture</span>
+                                </label>
+                                <label class="toggle-control">
+                                    <input type="checkbox" checked name="gen_data">
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Data Model</span>
+                                </label>
+                                <label class="toggle-control">
+                                    <input type="checkbox" checked name="gen_json">
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Project JSON</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Sprint Planning</label>
+                            <div class="range-control">
+                                <label for="sprintCount">Sprints: <span id="sprintCountVal">6</span></label>
+                                <input type="range" id="sprintCount" min="2" max="12" value="6">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-generate">
+                            <span class="icon-play">▶</span> Generate Design Document
+                        </button>
+                    </form>
+
+                    <!-- Right Column: Outputs -->
+                    <div class="sim-output">
+                        <div class="output-tabs">
+                            <button class="tab-btn active" data-tab="overview">Overview</button>
+                            <button class="tab-btn" data-tab="diagrams">Architecture (C4)</button>
+                            <button class="tab-btn" data-tab="json">Project Data (JSON)</button>
+                            <button class="tab-btn" data-tab="logs">Logs</button>
+                        </div>
+
+                        <div class="output-content">
+                            <!-- Tab: Overview -->
+                            <div id="overview" class="tab-pane active">
+                                <div class="markdown-preview">
+                                    <h1>Software Design Document</h1>
+                                    <p><strong>Project:</strong> <span class="dynamic-project-name">Cognotik Analytics Platform</span></p>
+                                    <p><strong>Status:</strong> <span class="status-badge">Draft</span></p>
+                                    <hr>
+                                    <h3>1. Executive Summary</h3>
+                                    <p class="skeleton-text">The Cognotik Analytics Platform is designed to handle high-throughput event ingestion...</p>
+                                    
+                                    <h3>2. Scope</h3>
+                                    <ul>
+                                        <li>✅ Real-time data ingestion</li>
+                                        <li>✅ Stream processing pipeline</li>
+                                        <li>✅ User dashboard</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Diagrams -->
+                            <div id="diagrams" class="tab-pane">
+                                <div class="code-block-header">Mermaid Output</div>
+                                <div class="mermaid-mock">
+                                    <!-- CSS-based mock of a flowchart -->
+                                    <div class="mock-node node-user">User</div>
+                                    <div class="mock-arrow">⬇</div>
+                                    <div class="mock-node node-lb">Load Balancer</div>
+                                    <div class="mock-arrow-split">
+                                        <div class="arrow-left">↙</div>
+                                        <div class="arrow-right">↘</div>
+                                    </div>
+                                    <div class="mock-row">
+                                        <div class="mock-node node-svc">API Service</div>
+                                        <div class="mock-node node-svc">Stream Worker</div>
+                                    </div>
+                                    <div class="mock-arrow">⬇</div>
+                                    <div class="mock-node node-db">Database Cluster</div>
+                                </div>
+                                <pre class="code-block"><code class="language-mermaid">graph TB
+    User[User] --> LB[Load Balancer]
+    LB --> API[API Service]
+    API --> Kafka[Kafka Stream]
+    Kafka --> Worker[Stream Worker]
+    Worker --> DB[(ClickHouse)]</code></pre>
+                            </div>
+
+                            <!-- Tab: JSON -->
+                            <div id="json" class="tab-pane">
+                                <pre class="code-block"><code class="language-json">{
+  "project_name": "Cognotik Analytics Platform",
+  "epics": [
+    {
+      "id": "EPIC-ARCH",
+      "name": "Architecture Setup",
+      "priority": "High",
+      "story_points": 21
+    }
+  ],
+  "sprints": [
+    {
+      "id": "SPRINT-1",
+      "goals": ["Setup Infra", "Core API"],
+      "capacity": 40
+    }
+  ]
+}</code></pre>
+                            </div>
+
+                            <!-- Tab: Logs -->
+                            <div id="logs" class="tab-pane">
+                                <div class="terminal-window">
+                                    <div class="log-line"><span class="log-time">10:00:01</span> <span class="log-info">[INFO]</span> Initializing SoftwareDesignDocumentTask...</div>
+                                    <div class="log-line"><span class="log-time">10:00:02</span> <span class="log-debug">[DEBUG]</span> Analyzing system description...</div>
+                                    <div class="log-line"><span class="log-time">10:00:05</span> <span class="log-info">[INFO]</span> Generating C4 Container Diagram...</div>
+                                    <div class="log-line"><span class="log-time">10:00:08</span> <span class="log-info">[INFO]</span> Extracting Epics from Use Cases...</div>
+                                    <div class="log-line"><span class="log-time">10:00:12</span> <span class="log-success">[SUCCESS]</span> Document generated successfully.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 
+          E. WORKFLOW 
+          Visualizing the agent's process
+        -->
+        <section class="workflow-section">
+            <div class="container">
+                <h2 class="section-title">How It Works</h2>
+                <div class="workflow-steps">
+                    <div class="step">
+                        <div class="step-number">01</div>
+                        <h3>Context Analysis</h3>
+                        <p>The agent analyzes your description, input files, and constraints to understand the domain.</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step">
+                        <div class="step-number">02</div>
+                        <!-- Visualizing the Architecture Layering Process -->
+                        <img src="assets/images/architecture-layers-visual.png"
+                             alt="Abstract 3D representation of C4 model layers (Context, Containers, Components)" 
+                             class="step-visual">
+                        <h3>Structural Design</h3>
+                        <p>Generates architectural patterns (C4) and data schemas (ERD) best suited for the requirements.</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step">
+                        <div class="step-number">03</div>
+                        <!-- Visualizing the Project Data Generation -->
+                        <img src="assets/images/agile-planning-hologram.png"
+                             alt="Futuristic 3D Kanban board visualizing the generated Project Data JSON" 
+                             class="step-visual">
+                        <h3>Project Breakdown</h3>
+                        <p>Decomposes the design into Epics, Stories, and Tasks, assigning them to Sprints.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 
+          F. USE CASES 
+          When to use this task
+        -->
+        <section class="use-cases-section">
+            <div class="container">
+                <h2 class="section-title">Use Cases</h2>
+                <div class="use-case-grid">
+                    <div class="use-case-card">
+                        <h3>🚀 Project Kickoff</h3>
+                        <p>Rapidly generate a "Strawman" architecture and backlog to jumpstart a new development team.</p>
+                    </div>
+                    <div class="use-case-card">
+                        <h3>📄 Technical Specs</h3>
+                        <p>Create formal documentation for stakeholders, ensuring all non-functional requirements are addressed.</p>
+                    </div>
+                    <div class="use-case-card">
+                        <h3>📅 Sprint Planning</h3>
+                        <p>Automatically populate your issue tracker (Jira/Linear) via the generated Project Data JSON.</p>
+                    </div>
+                    <div class="use-case-card">
+                        <h3>🤝 Onboarding</h3>
+                        <p>Provide new developers with a clear map of the system, data flows, and architectural decisions.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Cognotik. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- 
+      JAVASCRIPT SECTION
+      In the final build, this would contain the logic for the simulator
+    -->
+    <script>
+        // Logic for tabs, sliders, and form simulation will go here
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ==========================================
+            // 1. Tab Interface Logic
+            // ==========================================
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+        
+            function switchTab(tabId) {
+                // Deactivate all tabs and panes
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabPanes.forEach(pane => pane.classList.remove('active'));
+        
+                // Activate specific tab and pane
+                const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+                const activePane = document.getElementById(tabId);
+        
+                if (activeBtn && activePane) {
+                    activeBtn.classList.add('active');
+                    activePane.classList.add('active');
+                }
+            }
+        
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchTab(btn.dataset.tab);
+                });
+            });
+        
+            // ==========================================
+            // 2. Range Slider Logic
+            // ==========================================
+            const sprintSlider = document.getElementById('sprintCount');
+            const sprintDisplay = document.getElementById('sprintCountVal');
+        
+            if (sprintSlider && sprintDisplay) {
+                sprintSlider.addEventListener('input', (e) => {
+                    sprintDisplay.textContent = e.target.value;
+                });
+            }
+        
+            // ==========================================
+            // 3. Simulator / Form Logic
+            // ==========================================
+            const configForm = document.getElementById('configForm');
+            const generateBtn = document.querySelector('.btn-generate');
+        
+            if (configForm) {
+                configForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    runSimulation();
+                });
+            }
+        
+            function runSimulation() {
+                // 1. Gather Input Data
+                const data = {
+                    projectName: document.getElementById('projectName').value || "Untitled Project",
+                    description: document.getElementById('systemDesc').value,
+                    audience: document.getElementById('targetAudience').value,
+                    techStack: document.getElementById('techStack').value.split(',').map(s => s.trim()),
+                    sprintCount: parseInt(document.getElementById('sprintCount').value),
+                    options: {
+                        useCases: document.querySelector('input[name="gen_usecases"]').checked,
+                        arch: document.querySelector('input[name="gen_arch"]').checked,
+                        data: document.querySelector('input[name="gen_data"]').checked,
+                        json: document.querySelector('input[name="gen_json"]').checked
+                    }
+                };
+        
+                // 2. UI Feedback (Loading State)
+                const originalBtnText = generateBtn.innerHTML;
+                generateBtn.innerHTML = `<span class="icon-spin">↻</span> Processing...`;
+                generateBtn.disabled = true;
+        
+                // Switch to logs tab to show progress
+                switchTab('logs');
+        
+                // 3. Run Log Simulation
+                simulateTerminalLogs(data, () => {
+                    // Callback when logs finish
+                    updateOverview(data);
+                    updateDiagrams(data);
+                    updateJson(data);
+            
+                    // Reset Button
+                    generateBtn.innerHTML = originalBtnText;
+                    generateBtn.disabled = false;
+            
+                    // Switch to Overview to show results
+                    setTimeout(() => switchTab('overview'), 500);
+                });
+            }
+        
+            // ==========================================
+            // 4. Output Generation Helpers
+            // ==========================================
+        
+            function updateOverview(data) {
+                // Update Project Name
+                const nameElements = document.querySelectorAll('.dynamic-project-name');
+                nameElements.forEach(el => el.textContent = data.projectName);
+        
+                // Update Status
+                const statusBadge = document.querySelector('.status-badge');
+                if(statusBadge) {
+                    statusBadge.textContent = "Generated";
+                    statusBadge.style.background = "rgba(56, 189, 248, 0.2)";
+                    statusBadge.style.color = "#38bdf8";
+                }
+        
+                // Update Executive Summary (Skeleton Text replacement)
+                const summaryEl = document.querySelector('#overview .skeleton-text');
+                if (summaryEl) {
+                    const descSnippet = data.description.substring(0, 100);
+                    summaryEl.innerHTML = `
+                        The <strong>${data.projectName}</strong> is designed for ${data.audience}. 
+                        ${descSnippet}... It leverages a technology stack including ${data.techStack.join(', ')} 
+                        to deliver a robust solution.
+                    `;
+                }
+            }
+        
+            function updateDiagrams(data) {
+                const codeBlock = document.querySelector('#diagrams code');
+                if (!codeBlock) return;
+        
+                // Generate a dynamic Mermaid string based on inputs
+                const techNodes = data.techStack.slice(0, 3).map((tech, i) => {
+                    return `    Node${i}[${tech} Service]`;
+                }).join('\n');
+        
+                const mermaidCode = `graph TB
+            User[${data.audience}] --> LB[Load Balancer]
+            LB --> API[API Gateway]
+        ${techNodes}
+            API --> Node0
+            Node0 --> DB[(Primary Database)]
+            ${data.techStack.length > 1 ? `Node0 --> Node1` : ''}
+            classDef primary fill:#1e293b,stroke:#38bdf8,stroke-width:2px;
+            class User,LB,API,Node0,DB primary;`;
+        
+                codeBlock.textContent = mermaidCode;
+            }
+        
+            function updateJson(data) {
+                const codeBlock = document.querySelector('#json code');
+                if (!codeBlock) return;
+        
+                // Generate Sprints
+                const sprints = [];
+                for (let i = 1; i <= data.sprintCount; i++) {
+                    sprints.push({
+                        id: `SPRINT-${i}`,
+                        name: `Sprint ${i}`,
+                        goals: i === 1 ? ["Setup Infrastructure", "Hello World"] : ["Feature Implementation", "Testing"],
+                        capacity: 40
+                    });
+                }
+        
+                // Construct Object
+                const projectData = {
+                    project_name: data.projectName,
+                    created_at: new Date().toISOString(),
+                    tech_stack: data.techStack,
+                    epics: [
+                        { id: "EPIC-ARCH", name: "System Architecture", priority: "High", story_points: 21 },
+                        { id: "EPIC-CORE", name: "Core Features", priority: "High", story_points: 34 }
+                    ],
+                    sprints: sprints,
+                    releases: [
+                        { version: "1.0.0", target_date: "2024-12-01", status: "Planned" }
+                    ]
+                };
+        
+                codeBlock.textContent = JSON.stringify(projectData, null, 2);
+            }
+        
+            function simulateTerminalLogs(data, onComplete) {
+                const terminal = document.querySelector('.terminal-window');
+                if (!terminal) {
+                    if (onComplete) onComplete();
+                    return;
+                }
+        
+                terminal.innerHTML = ''; // Clear previous logs
+        
+                const logSteps = [
+                    { msg: `Initializing SoftwareDesignDocumentTask for '${data.projectName}'...`, type: 'info', delay: 0 },
+                    { msg: `Analyzing system description (${data.description.length} chars)...`, type: 'debug', delay: 600 },
+                    { msg: `Identified tech stack: ${data.techStack.join(', ')}`, type: 'info', delay: 1200 },
+                    { msg: `Generating C4 Context and Container diagrams...`, type: 'info', delay: 1800 },
+                    { msg: `Defining data models and ERD relationships...`, type: 'info', delay: 2400 },
+                    { msg: `Calculating velocity for ${data.sprintCount} sprints...`, type: 'debug', delay: 3000 },
+                    { msg: `Structuring Project Data JSON...`, type: 'info', delay: 3600 },
+                    { msg: `Document generation complete.`, type: 'success', delay: 4200 }
+                ];
+        
+                let completedSteps = 0;
+        
+                logSteps.forEach(step => {
+                    setTimeout(() => {
+                        const line = document.createElement('div');
+                        line.className = 'log-line';
+                
+                        // Format time
+                        const now = new Date();
+                        const timeStr = now.toTimeString().split(' ')[0];
+                
+                        // Determine color class based on type
+                        let typeClass = 'log-info';
+                        if (step.type === 'debug') typeClass = 'log-debug'; // usually gray
+                        if (step.type === 'success') typeClass = 'log-success'; // green
+        
+                        line.innerHTML = `<span class="log-time">${timeStr}</span> <span class="${typeClass}">[${step.type.toUpperCase()}]</span> ${step.msg}`;
+                
+                        terminal.appendChild(line);
+                        terminal.scrollTop = terminal.scrollHeight; // Auto scroll to bottom
+        
+                        completedSteps++;
+                        if (completedSteps === logSteps.length && onComplete) {
+                            setTimeout(onComplete, 500);
+                        }
+                    }, step.delay);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

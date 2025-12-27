@@ -19,7 +19,7 @@ class CommandSessionTask(
     companion object {
         val CommandSession = TaskType(
             "CommandSession",
-            "Execution & Automation",
+            "Session",
             CommandSessionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Execute commands in a stateful, interactive session",

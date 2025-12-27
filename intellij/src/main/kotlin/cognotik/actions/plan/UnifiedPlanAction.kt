@@ -40,9 +40,9 @@ open class UnifiedPlanAction(
         val dialog = PlanConfigDialog(
             e.project,
             OrchestrationConfig(
-                defaultModel = AppSettingsState.instance.smartModel
+                defaultSmartModel = AppSettingsState.instance.smartModel
                     ?: throw IllegalStateException("Smart model not configured"),
-                parsingModel = AppSettingsState.instance.fastModel
+                defaultFastModel = AppSettingsState.instance.fastModel
                     ?: throw IllegalStateException("Fast model not configured"),
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"

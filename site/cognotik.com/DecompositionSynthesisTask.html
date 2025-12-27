@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decomposition Synthesis - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+
+
+
+
+
+
+
+
+
+        /* Custom styles extending main.css */
+
+        .feature-icon {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+
+
+
+
+
+
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+
+
+
+
+
+        .log-entry { margin-bottom: 0.5rem; }
+        .log-info { color: #38bdf8; }
+        .log-success { color: #4ade80; }
+        .log-warn { color: #facc15; }
+
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 2rem;
+            background: radial-gradient(circle at bottom center, #1e1b4b 0%, var(--background-color) 70%);
+        }
+
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="decomposition"></cognotik-header>
+
+    <section class="hero">
+        <h1>Decomposition Synthesis</h1>
+        <p class="subtitle">Decompose complex problems into manageable subproblems, solve them independently, and synthesize a coherent, validated solution using divide-and-conquer reasoning.</p>
+        <button class="cta-button" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">Try the Simulator</button>
+    </section>
+
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                </div>
+                <h3>Multi-Strategy Decomposition</h3>
+                <p>Choose from functional, temporal, spatial, or hierarchical strategies to break down problems effectively.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+                <h3>Coherence Validation</h3>
+                <p>Automatically validates the synthesized solution for logical consistency and completeness.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                </div>
+                <h3>Confidence Tracking</h3>
+                <p>Monitors confidence levels at both the subproblem and final synthesis stages.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="simulator" class="simulator">
+
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <h2>Configuration</h2>
+                <div class="control-group">
+                    <label>Complex Problem</label>
+                    <textarea id="inputProblem" rows="4" placeholder="Describe the complex problem...">Design a scalable microservices architecture for a global e-commerce platform.</textarea>
+                </div>
+                <div class="control-group">
+                    <label>Strategy</label>
+                    <select id="inputStrategy">
+                        <option value="functional">Functional</option>
+                        <option value="temporal">Temporal</option>
+                        <option value="spatial">Spatial</option>
+                        <option value="hierarchical">Hierarchical</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Max Depth: <span id="depthVal">3</span></label>
+                    <input type="range" id="inputDepth" min="1" max="5" value="3" oninput="document.getElementById('depthVal').innerText = this.value" style="width: 100%">
+                </div>
+                <div class="toggle-row">
+                    <label>Synthesize Solution</label>
+                    <input type="checkbox" id="inputSynthesize" checked>
+                </div>
+                <div class="toggle-row">
+                    <label>Validate Coherence</label>
+                    <input type="checkbox" id="inputValidate" checked>
+                </div>
+                <button class="run-button" onclick="runSimulation()">Run Analysis</button>
+            </div>
+
+            <div class="sim-output">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('overview')">Overview</button>
+                    <button class="tab" onclick="switchTab('decomposition')">Decomposition</button>
+                    <button class="tab" onclick="switchTab('synthesis')">Synthesis</button>
+                </div>
+                <div id="outputOverview" class="tab-content active">
+                    <div style="color: var(--text-muted); text-align: center; padding-top: 2rem;">
+                        Ready to analyze. Click "Run Analysis" to start.
+                    </div>
+                </div>
+                <div id="outputDecomposition" class="tab-content"></div>
+                <div id="outputSynthesis" class="tab-content"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="use-cases">
+        <div style="text-align: center; margin-bottom: 3rem;">
+            <h2>When to Use</h2>
+            <p style="color: var(--text-muted);">Ideal for scenarios requiring structured breakdown of complexity.</p>
+        </div>
+        <div class="use-case-grid">
+            <div class="feature-card">
+                <h3>System Architecture</h3>
+                <p>Designing complex software systems by breaking them down into components, services, and interfaces.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Strategic Planning</h3>
+                <p>Developing comprehensive business strategies by analyzing market, operational, and financial dimensions.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Research Analysis</h3>
+                <p>Synthesizing findings from multiple sources or domains into a coherent research paper or report.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById('output' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).classList.add('active');
+        }
+
+        async function runSimulation() {
+            const problem = document.getElementById('inputProblem').value;
+            const strategy = document.getElementById('inputStrategy').value;
+            const overview = document.getElementById('outputOverview');
+            const decomp = document.getElementById('outputDecomposition');
+            const synth = document.getElementById('outputSynthesis');
+
+            // Reset
+            overview.innerHTML = '';
+            decomp.innerHTML = '';
+            synth.innerHTML = '';
+            switchTab('overview');
+
+            const log = (msg, type='info') => {
+                const div = document.createElement('div');
+                div.className = `log-entry log-${type}`;
+                div.innerText = `> ${msg}`;
+                overview.appendChild(div);
+                overview.scrollTop = overview.scrollHeight;
+            };
+
+            log(`Initializing DecompositionSynthesisTask...`);
+            log(`Problem: ${problem.substring(0, 50)}...`);
+            log(`Strategy: ${strategy}`);
+
+            await new Promise(r => setTimeout(r, 800));
+            log(`Analyzing problem structure...`, 'warn');
+
+            await new Promise(r => setTimeout(r, 1200));
+            log(`Decomposition complete. Identified 4 subproblems.`, 'success');
+
+            // Mock Decomposition Data
+            const subproblems = [
+                { id: "SP1", desc: "User Authentication & Identity Management", complexity: 6 },
+                { id: "SP2", desc: "Product Catalog & Inventory Service", complexity: 7 },
+                { id: "SP3", desc: "Order Processing & Payment Gateway", complexity: 8 },
+                { id: "SP4", desc: "Frontend Client Application", complexity: 5 }
+            ];
+
+            let decompHtml = `### Problem Decomposition\n\n**Rationale:** The problem requires a separation of concerns based on business domains.\n\n`;
+            subproblems.forEach(sp => {
+                decompHtml += `**${sp.id}**: ${sp.desc}\n   Complexity: ${sp.complexity}/10\n\n`;
+            });
+            decomp.innerText = decompHtml;
+
+            // Solving
+            for (const sp of subproblems) {
+                await new Promise(r => setTimeout(r, 600));
+                log(`Solving ${sp.id}...`);
+            }
+            log(`All subproblems solved.`, 'success');
+
+            // Synthesis
+            if (document.getElementById('inputSynthesize').checked) {
+                await new Promise(r => setTimeout(r, 1000));
+                log(`Synthesizing solution...`, 'warn');
+
+                if (document.getElementById('inputValidate').checked) {
+                    await new Promise(r => setTimeout(r, 800));
+                    log(`Validating coherence...`, 'info');
+                    log(`Validation passed. Coherent: Yes.`, 'success');
+                }
+
+                const synthText = `### Synthesized Solution\n\n**Approach:** Microservices Pattern\n**Confidence:** 92%\n\nTo address the requirement for a scalable e-commerce platform, we propose a microservices architecture centered around domain-driven design:\n\n1. **Identity Service (SP1)**: Handles OAuth2/OIDC for secure access.\n2. **Catalog Service (SP2)**: Manages high-read throughput for products using caching strategies.\n3. **Order Service (SP3)**: Implements Saga patterns for distributed transactions across inventory and payments.\n4. **Frontend (SP4)**: A Single Page Application (SPA) interacting via an API Gateway.\n\nThis architecture ensures loose coupling and independent scalability of components.`;
+                synth.innerText = synthText;
+            }
+
+            log(`Task completed successfully.`, 'success');
+        }
+    </script>
+</body>
+</html>

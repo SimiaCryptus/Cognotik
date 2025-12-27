@@ -28,6 +28,7 @@ class MathematicalReasoningTask(
         private val log: Logger = LoggerFactory.getLogger(MathematicalReasoningTask::class.java)
         val MathematicalReasoning = TaskType(
             "MathematicalReasoning",
+            "Reasoning",
             MathematicalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Solve mathematical problems through step-by-step logical reasoning with verifiable steps",
@@ -216,7 +217,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
             val detailLevel = executionConfig?.detail_level ?: "standard"
 
             val tabs = TabbedDisplay(task)
-            val api = orchestrationConfig.defaultChatter
+            val api = defaultSmart
 
             // Create overview tab
             val overviewTask = task.ui.newTask(false)
@@ -484,7 +485,7 @@ Create the initial reasoning step that captures the starting state of the proble
                 model = api,
                 temperature = 0.3,
                 name = "InitialStateAnalyzer",
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             ).answer(listOf("Analyze the initial state")).obj
         } catch (e: Exception) {
             log.warn("Failed to analyze initial state", e)
@@ -679,7 +680,7 @@ Focus on making progress toward: $goal
                 model = api,
                 temperature = 0.4,
                 name = "StepGenerator",
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             ).answer(listOf("Generate the next step")).obj
         } catch (e: Exception) {
             log.warn("Failed to generate next step", e)
@@ -727,7 +728,7 @@ Be rigorous but fair - minor notation issues are acceptable if the mathematics i
                 model = api,
                 temperature = 0.2,
                 name = "StepVerifier",
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             ).answer(listOf("Verify this step")).obj
         } catch (e: Exception) {
             log.warn("Failed to verify step", e)
@@ -774,7 +775,7 @@ Determine if the goal has been achieved:
                 model = api,
                 temperature = 0.2,
                 name = "GoalChecker",
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             ).answer(listOf("Check if goal is reached")).obj
         } catch (e: Exception) {
             log.warn("Failed to check goal", e)
@@ -828,7 +829,7 @@ Rank them by likelihood of success.
                 model = api,
                 temperature = 0.6,
                 name = "AlternativeGenerator",
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             ).answer(listOf("Generate alternatives")).obj
         } catch (e: Exception) {
             log.warn("Failed to generate alternatives", e)

@@ -279,7 +279,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
 
@@ -436,7 +436,7 @@ Ensure the outline:
           """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             var outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -638,7 +638,7 @@ Guidelines:
           """.trimIndent(),
                     model = api,
                     temperature = 0.5,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 var tutorialStep = stepAgent.answer(listOf("Write step")).obj
@@ -771,7 +771,7 @@ Focus on issues that:
           """.trimIndent(),
                     model = api,
                     temperature = 0.5,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 troubleshootingSection = troubleshootingAgent.answer(listOf("Create troubleshooting")).obj
@@ -869,7 +869,7 @@ Make suggestions:
           """.trimIndent(),
                     model = api,
                     temperature = 0.6,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 nextSteps = nextStepsAgent.answer(listOf("Generate next steps")).obj
@@ -1299,6 +1299,7 @@ Make suggestions:
         private val log: Logger = LoggerFactory.getLogger(TutorialGenerationTask::class.java)
         val TutorialGeneration = TaskType(
             "TutorialGeneration",
+            "Writing",
             TutorialGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create complete, step-by-step tutorials for processes and projects",

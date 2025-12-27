@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Economy Design - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header current-page="game-economy"></cognotik-header>
+    <header class="hero">
+        <h1>Game Economy Design</h1>
+        <p class="subtitle">Design complete game economic systems with balanced progression, resource flows, and monetization strategies.</p>
+        <a href="#demo" class="cta-button">Try the Simulator</a>
+    </header>
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Resource Systems</h3>
+                <p>Designs multi-resource economies with defined sources (faucets) and sinks to prevent inflation.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Monetization</h3>
+                <p>Creates fair monetization strategies, including battle passes and cosmetics, avoiding pay-to-win mechanics.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Economy Forecasting</h3>
+                <p>Projects economy health over time, predicting player wealth accumulation and potential imbalances.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Game Title</label>
+                    <input type="text" value="Galactic Trader">
+                </div>
+                <div class="control-group">
+                    <label>Game Type</label>
+                    <input type="text" value="Space Sim / Strategy">
+                </div>
+                <div class="control-group">
+                    <label>Monetization Model</label>
+                    <select>
+                        <option>Free-to-Play</option>
+                        <option>Premium</option>
+                        <option>Subscription</option>
+                    </select>
+                </div>
+                <button class="run-button">Design Economy</button>
+            </div>
+            <div class="sim-output">
+                <div class="tab-content active" style="white-space: pre-wrap;">
+# Economy Design: Galactic Trader
+
+## Resources
+1. **Credits (Soft Currency):** Earned by trading, missions. Used for ship repairs, fuel.
+2. **Dark Matter (Premium):** Purchased or rare drops. Used for cosmetics, convenience.
+3. **Scrap (Material):** Salvaged from battles. Used for crafting.
+
+## Sinks & Faucets
+- **Faucet:** Daily missions (Credits), Mining (Scrap).
+- **Sink:** Market taxes, Ship insurance, Crafting failure risk.
+
+## Monetization Strategy
+- **Battle Pass:** "Smuggler's Run" - 30 tiers of cosmetic ship skins.
+- **Convenience:** Inventory expansion slots.
+- **No Pay-to-Win:** Premium currency cannot buy endgame weapons directly.
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

@@ -138,7 +138,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             val verify = executionConfig?.verify_operations ?: true
 
             val tabs = TabbedDisplay(task)
-            val api = orchestrationConfig.defaultChatter ?: return
+            val api = defaultSmart ?: return
             transcriptStream = task.transcript()
             
             writeTranscriptHeader(transcriptStream, sourceDomain, targetDomain, strictness)
@@ -218,7 +218,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
                 prompt = prompt,
                 model = api,
                 temperature = 0.2,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             var result = parser.answer(listOf(prompt)).obj

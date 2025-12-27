@@ -2,10 +2,7 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.cognotik.plan.tools.RunCodeTask
-import com.simiacryptus.cognotik.plan.tools.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.SubPlanningTask
-import com.simiacryptus.cognotik.plan.tools.SubPlanningTask.Companion.SubPlanning
+import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.Companion.DataIngest
 import com.simiacryptus.cognotik.plan.tools.file.*
@@ -16,17 +13,16 @@ import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
 import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameNarrativeDesignTask
-import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
-import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.Companion.KnowledgeIndexing
-import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
-import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask.Companion.VectorSearch
-import com.simiacryptus.cognotik.plan.tools.mcp.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
+import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
-import com.simiacryptus.cognotik.plan.tools.session.RunShellCommandTask
-import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
+import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
+import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
+import com.simiacryptus.cognotik.plan.tools.run.RunToolTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.Companion.SubPlan
 import com.simiacryptus.cognotik.plan.tools.social.*
 import com.simiacryptus.cognotik.plan.tools.writing.*
 import com.simiacryptus.cognotik.plan.tools.writing.ResearchPaperGenerationTask.Companion.ResearchPaperGeneration
@@ -38,27 +34,12 @@ import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 @JsonSerialize(using = TaskTypeSerializer::class)
 class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
     name: String,
-    val category: String = "",
+    val category: String,
     val executionConfigClass: Class<out T>,
     val taskSettingsClass: Class<out U>,
     val description: String? = null,
     val tooltipHtml: String? = null,
 ) : DynamicEnum<TaskType<*, *>>(name) {
-    constructor(
-        name: String,
-        executionConfigClass: Class<out T>,
-        taskSettingsClass: Class<out U>,
-        description: String? = null,
-        tooltipHtml: String? = null,
-    ) : this(
-        name,
-        "",
-        executionConfigClass,
-        taskSettingsClass,
-        description,
-        tooltipHtml,
-    )
-
     companion object {
 
         private val taskConstructors by lazy {
@@ -73,11 +54,17 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 }
                 register(taskType)
             }
+            registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet) { settings, task ->
+                GenerateSpriteSheetTask(settings, task)
+            }
             registerConstructor(FunctorialMappingTask.FunctorialMapping) { settings, task ->
                 FunctorialMappingTask(settings, task)
             }
             registerConstructor(StructuralInvariantAnalysisTask.StructuralInvariantAnalysis) { settings, task ->
                 StructuralInvariantAnalysisTask(settings, task)
+            }
+            registerConstructor(IterativeGraphGenerationTask.IterativeGraphGeneration) { settings, task ->
+                IterativeGraphGenerationTask(settings, task)
             }
             registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery) { settings, task ->
                 IsomorphismDiscoveryTask(settings, task)
@@ -130,26 +117,23 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(FileSearch) { settings, task ->
                 FileSearchTask(settings, task)
             }
-            registerConstructor(KnowledgeIndexing) { settings, task ->
-                KnowledgeIndexingTask(settings, task)
-            }
             registerConstructor(GitHubSearchTask.GitHubSearch) { settings, task ->
                 GitHubSearchTask(settings, task)
-            }
-            registerConstructor(RunShellCommandTask.RunShellCommand) { settings, task ->
-                RunShellCommandTask(settings, task)
             }
             registerConstructor(RunCodeTask.RunCode) { settings, task ->
                 RunCodeTask(settings, task)
             }
-            registerConstructor(SeleniumSessionTask.SeleniumSession) { settings, task ->
-                SeleniumSessionTask(settings, task)
+            registerConstructor(RunToolTask.RunTool) { settings, task ->
+                RunToolTask(settings, task)
             }
-            registerConstructor(SelfHealingTask.SelfHealing) { settings, task ->
-                SelfHealingTask(settings, task)
-            }
-            registerConstructor(VectorSearch) { settings, task ->
-                VectorSearchTask(settings, task)
+//            registerConstructor(SeleniumSessionTask.SeleniumSession) { settings, task ->
+//                SeleniumSessionTask(settings, task)
+//            }
+//            registerConstructor(CommandSessionTask.CommandSession) { settings, task ->
+//                CommandSessionTask(settings, task)
+//            }
+            registerConstructor(AutoFixTask.AutoFix) { settings, task ->
+                AutoFixTask(settings, task)
             }
             registerConstructor(MCPToolTask.MCPTool) { settings, task ->
                 MCPToolTask(settings, task)
@@ -235,8 +219,8 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(NeuralNetworkLayerTask.NeuralNetworkLayer) { settings, task ->
                 NeuralNetworkLayerTask(settings, task)
             }
-            registerConstructor(SubPlanning) { settings, task ->
-                SubPlanningTask(settings, task)
+            registerConstructor(SubPlan) { settings, task ->
+                SubPlanTask(settings, task)
             }
             registerConstructor(EthicalReasoningTask.EthicalReasoning) { settings, task ->
                 EthicalReasoningTask(settings, task)
@@ -258,6 +242,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             }
             registerConstructor(JournalismReasoningTask.JournalismReasoning) { settings, task ->
                 JournalismReasoningTask(settings, task)
+            }
+            registerConstructor(LanguageServerTask.LanguageServer) { settings, task ->
+                LanguageServerTask(settings, task)
             }
             registerConstructor(TechnicalExplanationTask.TechnicalExplanation) { settings, task ->
                 TechnicalExplanationTask(settings, task)
@@ -300,16 +287,21 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
         ) = getImpl(
             orchestrationConfig = orchestrationConfig,
             taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
-            planTask = planTask)
+            cfg = planTask)
 
         fun getImpl(
-            orchestrationConfig: OrchestrationConfig, taskType: TaskType<*, *>, planTask: TaskExecutionConfig? = null
+            orchestrationConfig: OrchestrationConfig, taskType: TaskType<*, *>, cfg: TaskExecutionConfig? = null
         ): AbstractTask<out TaskExecutionConfig, TaskTypeConfig> {
             val constructor = taskConstructors[taskType]
             if (constructor == null) {
                 throw RuntimeException("Unknown task type: ${taskType.name}")
             }
-            return constructor(orchestrationConfig, planTask)
+            val executionConfig: TaskExecutionConfig = cfg ?: try {
+                taskType.executionConfigClass.getDeclaredConstructor().newInstance() as TaskExecutionConfig
+            } catch (e: NoSuchMethodException) {
+                throw RuntimeException("Task execution config class ${taskType.executionConfigClass.name} does not have a no-arg constructor. Please provide a planTask instance.")
+            }
+            return constructor(orchestrationConfig, executionConfig)
         }
 
         fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig): List<TaskType<*, *>> {

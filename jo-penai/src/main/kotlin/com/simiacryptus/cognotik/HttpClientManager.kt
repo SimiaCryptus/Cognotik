@@ -297,7 +297,7 @@ abstract class HttpClientManager(
 
     protected open fun formatMessage(msg: String, level: Level) =
         "\n* [$level] [${"%.3f".format((System.currentTimeMillis() - startTime) / 1000.0)}] ${
-        (msg.trim().takeIf { it.isNotEmpty() } ?: "").indent("  ")}\n"
+        (msg.takeIf { it.isNotBlank() } ?: "")}\n"
 
     protected open fun logSys(level: Level, message: String) {
         when (level) {

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Functorial Mapping - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header current-page="functorial-mapping"></cognotik-header>
+    <section class="hero">
+        <h1>Functorial Mapping</h1>
+        <p class="subtitle">Translate problems from one domain to another using Category Theory. Solve difficult problems by mapping them to a domain where the solution is known.</p>
+        <a href="#demo" class="cta-button">Try the Simulator</a>
+    </section>
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Domain Formalization</h3>
+                <p>Defines source and target domains as Categories with Objects and Morphisms (relationships).</p>
+            </div>
+            <div class="feature-card">
+                <h3>Problem Transport</h3>
+                <p>Constructs a Functor to map the problem structure to the target domain, preserving relationships.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Solution Mapping</h3>
+                <p>Solves the problem in the target domain and maps the solution back to the source context.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Problem Statement</label>
+                    <textarea rows="3">Optimize a delivery route for a fleet of trucks.</textarea>
+                </div>
+                <div class="control-group">
+                    <label>Source Category</label>
+                    <input type="text" value="Logistics (Trucks, Locations, Routes)">
+                </div>
+                <div class="control-group">
+                    <label>Target Category</label>
+                    <input type="text" value="Graph Theory (Nodes, Edges, Weights)">
+                </div>
+                <button class="run-button">Map & Solve</button>
+            </div>
+            <div class="sim-output">
+                <div style="padding: 2rem; font-family: monospace; color: var(--text-muted); white-space: pre-wrap;">
+# Functorial Mapping Result
+
+## 1. Functor Construction
+- **Objects:** Locations -> Nodes
+- **Morphisms:** Routes -> Edges (Weighted by distance/time)
+
+## 2. Transported Problem
+Find the shortest path that visits all Nodes exactly once and returns to the start. (Traveling Salesperson Problem)
+
+## 3. Target Solution
+Apply Christofides algorithm or heuristic approximation to find optimal cycle in the graph.
+
+## 4. Inverse Mapping
+Convert the graph cycle back to a sequence of delivery locations.
+**Result:** An optimized itinerary for the fleet.
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

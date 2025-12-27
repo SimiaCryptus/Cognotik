@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probabilistic Reasoning - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /* Page-specific overrides and additions to main.css */
+        
+        /* Ensure input[type="number"] matches main.css input[type="text"] */
+        input[type="number"] {
+            display: block;
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--surface-color);
+            background-clip: padding-box;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        input[type="number"]:focus {
+            border-color: var(--accent-color);
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
+        }
+
+        /* Feature icons */
+        .feature-icon svg {
+            color: var(--accent-secondary);
+            width: 48px;
+            height: 48px;
+        }
+        
+        /* Simulator overrides */
+        .tab-content {
+            height: 600px; /* Taller than default for this tool */
+        }
+
+        .hypothesis-row {
+            display: grid;
+            grid-template-columns: 1fr 100px 40px;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            color: var(--error-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-add {
+            background-color: rgba(139, 92, 246, 0.1); /* var(--accent-color) with opacity */
+            color: var(--accent-color);
+            border: 1px dashed var(--accent-color);
+            width: 100%;
+            padding: var(--spacing-sm);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+
+
+
+
+
+            margin-top: var(--spacing-sm);
+            transition: background-color 0.2s;
+        }
+        
+        .btn-add:hover {
+            background-color: rgba(139, 92, 246, 0.2);
+        }
+
+        .output-area {
+            font-family: var(--font-family-mono);
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+
+            color: var(--text-color);
+        }
+
+        .markdown-h1 { font-size: 1.5rem; font-weight: bold; color: var(--accent-color); margin: 1rem 0; }
+        .markdown-h2 { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); margin: 1rem 0 0.5rem; }
+        .markdown-bold { font-weight: bold; color: var(--primary-color); }
+        .markdown-list { margin-left: 1rem; }
+
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 2rem;
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+        }
+
+        .use-cases h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .uc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .uc-card {
+            background: linear-gradient(145deg, var(--surface-color), #151e2e);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="probabilistic_reasoning"></cognotik-header>
+
+    <main>
+        <!-- Hero -->
+        <section class="hero">
+            <h1>Probabilistic Reasoning</h1>
+            <p class="subtitle">Navigate uncertainty with rigorous Bayesian analysis. Update beliefs based on evidence, quantify risks, and design experiments to resolve ambiguity.</p>
+            <a href="#demo" class="cta-button">Try the Simulator</a>
+        </section>
+
+        <!-- Features -->
+        <section class="features">
+            <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <h3>Bayesian Updates</h3>
+                <p>Apply Bayes' theorem to rigorously update hypothesis probabilities based on new evidence.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </div>
+                <h3>Risk Analysis</h3>
+                <p>Calculate expected values and identify tail risks to inform decision making under uncertainty.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2v20"/></svg>
+                </div>
+                <h3>Experiment Design</h3>
+                <p>Get AI-generated suggestions for experiments that yield the highest information value.</p>
+            </div>
+            </div>
+        </section>
+
+        <!-- Simulator -->
+        <section class="simulator" id="demo">
+            <div class="simulator-container">
+                <!-- Inputs -->
+                <div class="sim-controls">
+                    <div class="control-group">
+                        <label>Decision Context</label>
+                        <textarea id="context">System is experiencing intermittent 500 errors during peak load.</textarea>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Hypotheses (Must sum to 1.0)</label>
+                        <div id="hypotheses-list">
+                            <!-- Populated by JS -->
+                        </div>
+
+
+                        <button class="btn-add" onclick="addHypothesis()">+ Add Hypothesis</button>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Evidence</label>
+                        <textarea id="evidence" style="min-height: 80px;">Database CPU is at 40%
+Web server logs show connection timeouts</textarea>
+
+
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">One item per line</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Risk Tolerance</label>
+                        <select id="risk">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <button class="run-button" onclick="runSimulation()">Run Analysis</button>
+                </div>
+
+                <!-- Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <button class="tab active">Analysis Output</button>
+                    </div>
+                    <div class="tab-content active output-area" id="output">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 2rem;">
+                            Configure hypotheses and evidence, then click Run Analysis.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="use-cases">
+            <h2>When to Use</h2>
+            <div class="uc-grid">
+                <div class="uc-card">
+                    <h3>Root Cause Analysis</h3>
+                    <p>Diagnose complex system failures where multiple causes are possible but not certain.</p>
+                </div>
+                <div class="uc-card">
+                    <h3>Strategic Decisions</h3>
+                    <p>Evaluate market entry or product launch decisions with incomplete information.</p>
+                </div>
+                <div class="uc-card">
+                    <h3>A/B Testing</h3>
+                    <p>Interpret ambiguous test results and decide whether to roll out features.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Initial Data
+        const initialHypotheses = [
+            { name: "Database Lock Contention", prob: 0.4 },
+            { name: "Network Latency", prob: 0.3 },
+            { name: "Memory Leak", prob: 0.2 },
+            { name: "Disk I/O Saturation", prob: 0.1 }
+        ];
+
+        function renderHypotheses() {
+            const container = document.getElementById('hypotheses-list');
+            container.innerHTML = '';
+            initialHypotheses.forEach((h, index) => {
+                const row = document.createElement('div');
+                row.className = 'hypothesis-row';
+                row.innerHTML = `
+                    <input type="text" value="${h.name}" onchange="updateHypothesis(${index}, 'name', this.value)">
+                    <input type="number" step="0.01" value="${h.prob}" onchange="updateHypothesis(${index}, 'prob', this.value)">
+                    <button class="btn-icon" onclick="removeHypothesis(${index})">×</button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function updateHypothesis(index, field, value) {
+            if (field === 'prob') value = parseFloat(value);
+            initialHypotheses[index][field] = value;
+        }
+
+        function addHypothesis() {
+            initialHypotheses.push({ name: "New Hypothesis", prob: 0.0 });
+            renderHypotheses();
+        }
+
+        function removeHypothesis(index) {
+            initialHypotheses.splice(index, 1);
+            renderHypotheses();
+        }
+
+        function runSimulation() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<div style="text-align:center; margin-top:2rem;">Running Bayesian Analysis...</div>';
+            
+            // Simulate delay
+            setTimeout(() => {
+                const context = document.getElementById('context').value;
+                const evidence = document.getElementById('evidence').value.split('\n').filter(e => e.trim());
+                
+                // Mock Logic: Just shuffle probabilities slightly
+                const results = initialHypotheses.map(h => {
+                    const change = (Math.random() - 0.5) * 0.2;
+                    let newProb = Math.max(0, Math.min(1, h.prob + change));
+                    return { ...h, newProb };
+                });
+                
+                // Normalize
+                const total = results.reduce((sum, h) => sum + h.newProb, 0);
+                results.forEach(h => h.newProb = h.newProb / total);
+                results.sort((a, b) => b.newProb - a.newProb);
+
+                let md = `<div class="markdown-h1">Analysis Results</div>`;
+                md += `<div class="markdown-h2">Bayesian Update</div>`;
+                md += `<p>Based on the evidence provided, here are the updated beliefs:</p><br>`;
+                
+                results.forEach(h => {
+                    const pct = (h.newProb * 100).toFixed(1);
+                    const delta = ((h.newProb - h.prob) * 100).toFixed(1);
+                    const sign = delta >= 0 ? '+' : '';
+                    const color = delta >= 0 ? '#4ade80' : '#f87171';
+                    md += `<div><span class="markdown-bold">${h.name}</span>: ${pct}% (<span style="color:${color}">${sign}${delta}%</span>)</div>`;
+                });
+
+                md += `<br><div class="markdown-h2">Key Insight</div>`;
+                md += `<p>The evidence strongly suggests <b>${results[0].name}</b> is the most likely cause. The observation "${evidence[0] || 'of the evidence'}" was highly diagnostic.</p>`;
+
+                md += `<br><div class="markdown-h2">Suggested Experiment</div>`;
+                md += `<p>Check the specific error codes in the transaction logs to differentiate between ${results[0].name} and ${results[1].name}.</p>`;
+
+                output.innerHTML = md;
+            }, 1500);
+        }
+
+        // Init
+        renderHypotheses();
+    </script>
+</body>
+</html>

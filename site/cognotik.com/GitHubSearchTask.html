@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Search - Cognotik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        
+        /* Local overrides */
+        .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 2rem; }
+        
+        /* Hero Section Overrides */
+        .hero { 
+            padding: 8rem 2rem 4rem; 
+            display: flex; 
+            align-items: center; 
+            min-height: 80vh; 
+            text-align: left; 
+            background: none; /* Override main.css gradient */
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+        }
+        .hero-content { flex: 1; padding-right: 2rem; }
+        .hero h1 { 
+            font-size: 3.5rem; 
+            line-height: 1.1; 
+            margin-bottom: 1.5rem; 
+            background: linear-gradient(to right, #fff, var(--accent-color)); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
+        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
+        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-color); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); }
+        
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+
+        /* Feature Icons */
+        .feature-card svg { width: 48px; height: 48px; color: var(--accent-secondary); margin-bottom: 1rem; }
+
+        /* Simulator Overrides */
+        .sim-output { padding: 2rem; overflow-y: auto; font-family: var(--font-family-mono); }
+        
+        .use-cases { padding: 4rem 0; }
+        .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .use-case-item { background: var(--surface-color); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
+
+        @media (max-width: 768px) { .hero { flex-direction: column; text-align: center; padding-top: 6rem; } }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="github"></cognotik-header>
+    <header class="hero">
+        <div class="hero-content">
+            <h1>GitHub Search</h1>
+            <p>Perform advanced searches across GitHub repositories, code, issues, and users to find exactly what you need.</p>
+            <a href="#demo" class="btn">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <h3>Deep Search</h3>
+                <p>Access repositories, code snippets, commits, and issues directly from the interface.</p>
+            </div>
+            <div class="feature-card">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/></svg>
+                <h3>Advanced Filtering</h3>
+                <p>Filter results by language, stars, update date, and other metadata for precision.</p>
+            </div>
+            <div class="feature-card">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <h3>Contextual Results</h3>
+                <p>Results are formatted with relevant details like descriptions, stars, and links for easy integration.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="simulator">
+        <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                <div class="control-group">
+                    <label>Search Query</label>
+                    <input type="text" id="query" value="machine learning language:python stars:>1000">
+                </div>
+                <div class="control-group">
+                    <label>Search Type</label>
+                    <select id="type">
+                        <option value="repositories">Repositories</option>
+                        <option value="code">Code</option>
+                        <option value="issues">Issues</option>
+                        <option value="users">Users</option>
+                    </select>
+                </div>
+                <button class="run-button" onclick="runSimulation()" style="margin-top: 1rem;">Search</button>
+            </div>
+            <div class="sim-output" id="output-logs">
+                <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                    Enter a query and click "Search" to see results.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>Library Discovery</h4>
+                    <p>Find open-source libraries and tools that match specific requirements.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Code Examples</h4>
+                    <p>Search for code snippets to understand how to implement specific features.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Issue Tracking</h4>
+                    <p>Find existing issues or solutions for bugs you encounter.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function runSimulation() {
+            const query = document.getElementById('query').value;
+            const type = document.getElementById('type').value;
+            const logsEl = document.getElementById('output-logs');
+            
+            logsEl.innerHTML = '';
+            const steps = [
+                `[INFO] Connecting to GitHub API...`,
+                `[INFO] Searching ${type} for: "${query}"...`,
+                `[INFO] Filtering results...`,
+                `[SUCCESS] Found 30 results.`
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < steps.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
+                    line.style.marginBottom = '4px';
+                    if (steps[i].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else line.style.color = '#a78bfa';
+                    logsEl.appendChild(line);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    const result = document.createElement('div');
+                    result.innerHTML = `
+                        <br><strong>Top Result:</strong><br>
+                        <h3>tensorflow/tensorflow</h3>
+                        <p>An Open Source Machine Learning Framework for Everyone.</p>
+                        <p>⭐ 180k | 🍴 89k | Python</p>
+                    `;
+                    result.style.color = '#e2e8f0';
+                    result.style.marginTop = '1rem';
+                    result.style.padding = '1rem';
+                    result.style.border = '1px solid rgba(255,255,255,0.1)';
+                    result.style.borderRadius = '8px';
+                    logsEl.appendChild(result);
+                }
+            }, 600);
+        }
+    </script>
+</body>
+</html>

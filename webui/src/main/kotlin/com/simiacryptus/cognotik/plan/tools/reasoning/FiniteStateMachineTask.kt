@@ -106,7 +106,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
         }
 
         val ui = task.ui
-        val api = orchestrationConfig.defaultChatter ?: run {
+        val api = defaultSmart ?: run {
             log.error("No default chatter available")
             writeToTranscript("## Error\n\nNo API available\n\n")
             closeTranscript()
@@ -849,6 +849,7 @@ Format as a clear table or structured list.
 
         val FiniteStateMachine = TaskType(
             "FiniteStateMachine",
+            "Reasoning",
             FiniteStateMachineTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Model concepts using finite state machine analysis",

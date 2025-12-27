@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Experiment - Cognotik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 2rem; }
+        
+        .experiment-hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 80vh; }
+        .hero-content { flex: 1; padding-right: 2rem; }
+        .experiment-hero h1 { font-size: 3.5rem; line-height: 1.1; margin-bottom: 1.5rem; background: linear-gradient(to right, #fff, var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .experiment-hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
+        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
+        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-secondary); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(6, 182, 212, 0.2); }
+        
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+
+        .features-section { padding: 4rem 0; background: rgba(255,255,255,0.02); }
+        .feature-card:hover { border-color: var(--accent-secondary); transform: translateY(-5px); transition: 0.3s; }
+        .feature-icon { width: 48px; height: 48px; background: rgba(6, 182, 212, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: var(--accent-secondary); }
+
+        /* Simulator overrides */
+        .simulator-container { min-height: 600px; }
+        .sim-controls { display: flex; flex-direction: column; }
+        .output-area { padding: 2rem; flex: 1; font-family: var(--font-family-mono); font-size: 0.9rem; color: #d1d5db; overflow-y: auto; white-space: pre-wrap; }
+        
+        /* Missing input type number in main.css */
+        input[type="number"] {
+            display: block; width: 100%; padding: var(--spacing-sm) var(--spacing-md);
+            font-family: inherit; font-size: 1rem; line-height: 1.5;
+            color: var(--text-color); background-color: var(--surface-color);
+            border: 1px solid var(--border-color); border-radius: var(--border-radius);
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        input[type="number"]:focus {
+            border-color: var(--accent-color); outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
+        }
+        textarea { resize: vertical; min-height: 100px; }
+        
+        .use-cases { padding: 4rem 0; }
+
+        @media (max-width: 768px) { .experiment-hero { flex-direction: column; text-align: center; padding-top: 6rem; } }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="experiment"></cognotik-header>
+    <header class="experiment-hero container">
+        <div class="hero-content">
+            <h1>LLM Experiment</h1>
+            <p>Conduct controlled experiments on LLM behavior with variable substitution and statistical analysis.</p>
+            <a href="#demo" class="cta-button">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+
+    <section id="features" class="features-section">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                    <h3>Controlled Variables</h3>
+                    <p>Test prompts systematically by substituting variables to isolate specific effects.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                    </div>
+                    <h3>Statistical Validity</h3>
+                    <p>Run multiple repetitions and perform t-tests to ensure results are statistically significant.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M12 2v20"/><path d="M4.93 4.93l14.14 14.14"/><path d="M19.07 4.93L4.93 19.07"/></svg>
+                    </div>
+                    <h3>Insight Generation</h3>
+                    <p>Automatically analyzes experimental data to generate human-readable insights and conclusions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                    <div class="control-group">
+                        <label>Prompt Template</label>
+                        <textarea id="template">Write a {tone} email to a client about a delay.</textarea>
+                    </div>
+                    <div class="control-group">
+                        <label>Variables (JSON)</label>
+                        <textarea id="variables">{"tone": ["polite", "apologetic", "direct"]}</textarea>
+                    </div>
+                    <div class="control-group">
+                        <label>Repetitions</label>
+                        <input type="number" id="repetitions" value="5">
+                    </div>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Run Experiment</button>
+                </div>
+                <div class="sim-output">
+                    <div id="output-logs" class="output-area">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the experiment and click "Run" to see results.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="mode-grid">
+                <div class="mode-card">
+                    <div class="mode-title">Bias Studies</div>
+                    <p>Test how changing names or pronouns affects LLM output.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Prompt Engineering</div>
+                    <p>Systematically compare different prompt structures to find the most effective one.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Consistency Testing</div>
+                    <p>Measure how consistent model outputs are across multiple runs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function runSimulation() {
+            const template = document.getElementById('template').value;
+            const repetitions = document.getElementById('repetitions').value;
+            const logsEl = document.getElementById('output-logs');
+            
+            logsEl.innerHTML = '';
+            const steps = [
+                `[INFO] Initializing experiment...`,
+                `[INFO] Generating conditions from variables...`,
+                `[INFO] Running ${repetitions} trials per condition...`,
+                `[INFO] Collecting metrics (length, sentiment)...`,
+                `[INFO] Performing statistical analysis...`,
+                `[SUCCESS] Experiment Complete.`
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < steps.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
+                    line.style.marginBottom = '4px';
+                    if (steps[i].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else line.style.color = '#22d3ee';
+                    logsEl.appendChild(line);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    const result = document.createElement('div');
+                    result.innerHTML = `
+                        <br><strong>Results:</strong><br>
+                        - <strong>Polite:</strong> Avg Length 150 chars, Sentiment 0.8<br>
+                        - <strong>Apologetic:</strong> Avg Length 200 chars, Sentiment 0.4<br>
+                        - <strong>Direct:</strong> Avg Length 80 chars, Sentiment 0.5<br><br>
+                        <em>Insight:</em> "Apologetic" tone significantly increases response length (p < 0.05).
+                    `;
+                    result.style.color = '#e2e8f0';
+                    result.style.marginTop = '1rem';
+                    result.style.padding = '1rem';
+                    result.style.border = '1px solid rgba(255,255,255,0.1)';
+                    result.style.borderRadius = '8px';
+                    logsEl.appendChild(result);
+                }
+            }, 600);
+        }
+    </script>
+</body>
+</html>

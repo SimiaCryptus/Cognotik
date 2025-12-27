@@ -95,7 +95,7 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
                 "Keep your response under ${maxFinalOutputSize / 1000}K characters."
             ).joinToString("\n\n"),
             model = (context.typeConfig.model?.let { context.orchestrationConfig.instance(it) }
-                ?: context.orchestrationConfig.parsingChatter).getChildClient(context.task),
+                ?: context.orchestrationConfig.defaultFast).getChildClient(context.task),
         ).answer(
             listOf("Here are summaries of each analyzed page:\n${analysisResults}"),
         )
@@ -138,7 +138,7 @@ open class DefaultSummarizerStrategy : PageProcessingStrategy {
     ): ParsedResponse<CrawlerAgentTask.ParsedPage> {
         return try {
             val model = (context.typeConfig.model?.let { context.orchestrationConfig.instance(it) }
-                ?: context.orchestrationConfig.parsingChatter).getChildClient(context.task)
+                ?: context.orchestrationConfig.defaultFast).getChildClient(context.task)
             ParsedAgent(
                 prompt = listOf(
                     "Below are analyses of different parts of a web page related to this goal: $analysisGoal",

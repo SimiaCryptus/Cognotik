@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Tool Task - Cognotik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        /* Layout Utilities */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        
+        /* Hero Overrides */
+        .hero { 
+            display: flex; 
+            align-items: center; 
+            text-align: left;
+            padding: 8rem 0 4rem; 
+            min-height: 80vh; 
+            background: transparent;
+        }
+        .hero-content { flex: 1; padding-right: 2rem; }
+        .hero h1 { 
+            text-align: left;
+            font-size: 3.5rem; 
+            line-height: 1.1; 
+            margin-bottom: 1.5rem; 
+            background: linear-gradient(to right, #fff, var(--accent-color)); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
+        
+        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
+        .visual-node { 
+            width: 200px; height: 200px; 
+            border: 2px solid var(--accent-color); 
+            border-radius: 50%; 
+            position: absolute; 
+            animation: pulse 4s infinite; 
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); 
+        }
+        
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+        /* Features Overrides */
+
+        .features { padding: 4rem 0; background: rgba(255,255,255,0.02); }
+        .feature-card svg { width: 48px; height: 48px; color: var(--accent-secondary); margin-bottom: 1rem; }
+
+        /* Simulator Overrides */
+        .sim-output { padding: 2rem; overflow-y: auto; font-family: var(--font-family-mono); color: var(--text-muted); }
+        .sim-controls { display: flex; flex-direction: column; }
+        .run-button { margin-top: auto; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+        textarea { resize: vertical; min-height: 100px; }
+        
+        /* Use Cases */
+        .use-cases { padding: 4rem 0; }
+        .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .use-case-item { background: var(--surface-color); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
+        .use-case-item h4 { color: var(--primary-color); margin-top: 0; }
+
+        @media (max-width: 768px) { 
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; } 
+            .hero h1 { text-align: center; }
+            .simulator-container { grid-template-columns: 1fr; } 
+            .sim-controls { border-right: none; border-bottom: 1px solid var(--border-color); } 
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="mcp"></cognotik-header>
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>MCP Tool Task</h1>
+            <p>Execute tools from Model Context Protocol (MCP) servers to extend capabilities and integrate external services.</p>
+            <a href="#demo" class="btn">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    <h3>Protocol Integration</h3>
+                    <p>Seamlessly connects to standard MCP servers to discover and utilize available tools.</p>
+                </div>
+                <div class="feature-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    <h3>Tool Execution</h3>
+                    <p>Executes tools with custom arguments, handling input validation and output formatting.</p>
+                </div>
+                <div class="feature-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <h3>Robust Handling</h3>
+                    <p>Includes configurable timeouts, automatic retries, and error handling for reliable execution.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
+                    <div class="form-group">
+                        <label>Server Name</label>
+                        <input type="text" id="server" value="weather-server">
+                    </div>
+                    <div class="form-group">
+                        <label>Tool Name</label>
+                        <input type="text" id="tool" value="get_forecast">
+                    </div>
+                    <div class="form-group">
+                        <label>Arguments (JSON)</label>
+                        <textarea id="args">{"city": "New York", "days": 3}</textarea>
+                    </div>
+                    <button class="run-button" onclick="runSimulation()">Execute Tool</button>
+                </div>
+                <div class="sim-output" id="output-logs">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the tool execution and click "Execute" to see results.
+                        </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>External Integrations</h4>
+                    <p>Connect agents to third-party APIs like weather, stock data, or CRM systems.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Capability Extension</h4>
+                    <p>Add specialized capabilities like image processing or complex calculations via tools.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Data Access</h4>
+                    <p>Allow agents to securely query internal databases or file systems.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function runSimulation() {
+            const server = document.getElementById('server').value;
+            const tool = document.getElementById('tool').value;
+            const logsEl = document.getElementById('output-logs');
+            
+            logsEl.innerHTML = '';
+            const steps = [
+                `[INFO] Connecting to MCP server: ${server}...`,
+                `[INFO] Connection established.`,
+                `[INFO] Locating tool: ${tool}...`,
+                `[INFO] Executing tool with arguments...`,
+                `[SUCCESS] Execution successful.`
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < steps.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
+                    line.style.marginBottom = '4px';
+                    if (steps[i].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else line.style.color = '#fb923c';
+                    logsEl.appendChild(line);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    const result = document.createElement('div');
+                    result.innerHTML = `
+                        <br><strong>Result:</strong><br>
+                        <pre style="background:rgba(0,0,0,0.2); padding:0.5rem; border-radius:4px;">{
+  "location": "New York, NY",
+  "forecast": [
+    {"day": "Today", "temp": "72°F", "condition": "Sunny"},
+    {"day": "Tomorrow", "temp": "68°F", "condition": "Cloudy"},
+    {"day": "Wednesday", "temp": "70°F", "condition": "Partly Cloudy"}
+  ]
+}</pre>
+                    `;
+                    result.style.color = '#e2e8f0';
+                    result.style.marginTop = '1rem';
+                    result.style.padding = '1rem';
+                    result.style.border = '1px solid rgba(255,255,255,0.1)';
+                    result.style.borderRadius = '8px';
+                    logsEl.appendChild(result);
+                }
+            }, 600);
+        }
+    </script>
+</body>
+</html>

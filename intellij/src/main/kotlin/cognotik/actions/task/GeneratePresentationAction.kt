@@ -304,11 +304,11 @@ class GeneratePresentationAction : BaseAction() {
       }
 
       return OrchestrationConfig(
-        defaultModel = model ?: AppSettingsState.instance.smartModel
+        defaultSmartModel = model ?: AppSettingsState.instance.smartModel
         ?: throw IllegalStateException("No model configured"),
-        parsingModel = AppSettingsState.instance.fastModel
+        defaultFastModel = AppSettingsState.instance.fastModel
           ?: throw IllegalStateException("Fast model not configured"),
-        imageChatModel = imageModel ?: AppSettingsState.instance.imageChatModel
+        defaultImageModel = imageModel ?: AppSettingsState.instance.imageChatModel
         ?: throw IllegalStateException("No image model configured"),
         temperature = temperatureSlider.value / 100.0,
         autoFix = autoFixCheckbox.isSelected,

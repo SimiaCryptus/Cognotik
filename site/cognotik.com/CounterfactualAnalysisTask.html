@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counterfactual Analysis - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header current-page="counterfactual-analysis"></cognotik-header>
+    <header class="hero">
+        <h1>Counterfactual Analysis</h1>
+        <p class="subtitle">Explore "what-if" scenarios to understand causal relationships, validate decisions, and assess risks.</p>
+        <a href="#demo" class="cta-button">Try the Simulator</a>
+    </header>
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>Scenario Generation</h3>
+                <p>Creates detailed alternative histories or future scenarios based on changing specific variables.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Outcome Comparison</h3>
+                <p>Compares the actual outcome with counterfactuals to isolate the impact of specific decisions.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Causal Insight</h3>
+                <p>Identifies true causal factors by observing what changes (or stays the same) across scenarios.</p>
+            </div>
+        </div>
+    </section>
+    <section id="demo" class="simulator">
+        <h2>Interactive Simulator</h2>
+        <div class="simulator-container">
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Actual Scenario</label>
+                    <textarea rows="3">We launched the product on Friday. The server crashed due to high load.</textarea>
+                </div>
+                <div class="control-group">
+                    <label>Counterfactuals (What if...)</label>
+                    <textarea rows="3">1. We launched on Tuesday instead.
+2. We had enabled auto-scaling.</textarea>
+                </div>
+                <button class="run-button">Analyze</button>
+            </div>
+            <div class="sim-output">
+                <div class="tab-content active" style="white-space: pre-wrap;">
+# Comparative Analysis
+
+## Actual: Friday Launch
+- **Outcome:** Crash. High weekend traffic + reduced staff availability.
+
+## Counterfactual 1: Tuesday Launch
+- **Analysis:** Traffic might have been lower or ramped up slower. Staff would be fully available to patch issues immediately.
+- **Likely Outcome:** Issues detected early, hotfix deployed, crash avoided.
+
+## Counterfactual 2: Auto-scaling Enabled
+- **Analysis:** Infrastructure would adapt to load spikes regardless of day.
+- **Likely Outcome:** No crash, but higher cloud costs.
+
+## Insight
+The root cause was lack of scalability, exacerbated by timing. Auto-scaling is the more robust preventive measure.
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

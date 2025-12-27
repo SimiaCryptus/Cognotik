@@ -131,7 +131,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
         // Create transcript file
         val (transcriptLink, transcript) = initializeTranscript(task)
         transcript?.let { stream ->
@@ -592,6 +592,7 @@ Begin your meta-cognitive reflection now:
         private val log: Logger = LoggerFactory.getLogger(MetaCognitiveReflectionTask::class.java)
         val MetaCognitiveReflection = TaskType(
             "MetaCognitiveReflection",
+            "Reasoning",
             MetaCognitiveReflectionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Reflect on and critique reasoning processes",

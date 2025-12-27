@@ -15,12 +15,13 @@ object FileSelectionUtils {
         rootFile: File,
         maxFilesPerDir: Int = 20,
         treatDocumentsAsText: Boolean = false,
-        fn: (File) -> Boolean = { !isLLMIgnored(it.toPath()) }
+        filter: (File) -> Boolean = { !isLLMIgnored(it.toPath()) },
+        render: (File) -> String = { it.name }
     ): String {
         val sb = StringBuilder()
         val filterFn = if (treatDocumentsAsText) {
-            { file: File -> fn(file) && file.isDocumentFile() }
-        } else fn
+            { file: File -> filter(file) && file.isDocumentFile() }
+        } else filter
         if (!filterFn(rootFile)) {
             log.debug("Skipping root file for tree: ${rootFile.absolutePath}")
             return "" // Root itself doesn't match, so empty tree
@@ -31,20 +32,25 @@ object FileSelectionUtils {
             entriesToConsider.forEachIndexed { index, child ->
                 buildAsciiSubTree(
                     child, "", // Initial parentContinuationPrefix for children of the root
-                    index == entriesToConsider.size - 1, maxFilesPerDir, filterFn, sb
+                    index == entriesToConsider.size - 1, maxFilesPerDir, filterFn, sb, render
                 )
             }
         } else {
             // If rootFile is not a directory, just show its name
-            sb.append(rootFile.name)
+            sb.append(render(rootFile))
             sb.appendLine()
         }
         return sb.toString()
     }
 
     private fun buildAsciiSubTree(
-        currentFile: File, parentContinuationPrefix: String, // Prefix like "│   " or "    "
-        isLastInSiblings: Boolean, maxFilesPerDir: Int, filterFn: (File) -> Boolean, sb: StringBuilder
+        currentFile: File,
+        parentContinuationPrefix: String, // Prefix like "│   " or "    "
+        isLastInSiblings: Boolean,
+        maxFilesPerDir: Int,
+        filterFn: (File) -> Boolean,
+        sb: StringBuilder,
+        render: (File) -> String = { it.name }
     ) {
         if (!filterFn(currentFile)) {
             // If the current file is filtered out, do not display it or its children.
@@ -53,7 +59,7 @@ object FileSelectionUtils {
         }
         sb.append(parentContinuationPrefix)
         sb.append(if (isLastInSiblings) "└── " else "├── ")
-        sb.append(currentFile.name)
+        sb.append(render(currentFile))
         if (currentFile.isDirectory) {
             sb.append("/")
         }

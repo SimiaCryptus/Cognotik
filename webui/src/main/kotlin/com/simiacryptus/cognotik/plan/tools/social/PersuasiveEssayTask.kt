@@ -234,7 +234,7 @@ class PersuasiveEssayTask(
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
         // Generate cover image if enabled
@@ -384,7 +384,7 @@ Ensure the outline:
           """.trimIndent(),
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             var outline = outlineAgent.answer(listOf("Generate outline")).obj
@@ -518,7 +518,7 @@ Speak directly to the ${executionConfig.target_audience}.
           """.trimIndent(),
                 model = api,
                 temperature = 0.8,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             var introduction = introAgent.answer(listOf("Write introduction")).obj
@@ -626,7 +626,7 @@ Aim for approximately ${argOutline.estimated_word_count} words.
           """.trimIndent(),
                     model = api,
                     temperature = 0.8,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 var argumentSection = argumentAgent.answer(listOf("Write argument")).obj
@@ -728,7 +728,7 @@ Aim for approximately $counterargumentWords words.
           """.trimIndent(),
                     model = api,
                     temperature = 0.7,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 var counterSection = counterAgent.answer(listOf("Write counterarguments")).obj
@@ -832,7 +832,7 @@ End on a strong note that reinforces your position.
           """.trimIndent(),
                 model = api,
                 temperature = 0.8,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             var conclusion = conclusionAgent.answer(listOf("Write conclusion")).obj
@@ -1131,7 +1131,7 @@ Provide the complete revised essay.
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a professional, compelling cover image for a persuasive essay",
-                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                model = orchestrationConfig.defaultImage.getChildClient(task),
                 temperature = 0.8,
             )
 
@@ -1200,7 +1200,7 @@ Provide the complete revised essay.
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create an infographic-style visualization of the essay outline and argument structure",
-                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                model = orchestrationConfig.defaultImage.getChildClient(task),
                 temperature = 0.7,
             )
 
@@ -1277,7 +1277,7 @@ Provide the complete revised essay.
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a visual representation that illustrates this persuasive argument",
-                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                model = orchestrationConfig.defaultImage.getChildClient(task),
                 temperature = 0.7,
             )
 
@@ -1348,7 +1348,7 @@ Provide the complete revised essay.
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a balanced visual representation showing counterarguments and rebuttals",
-                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                model = orchestrationConfig.defaultImage.getChildClient(task),
                 temperature = 0.7,
             )
 
@@ -1430,6 +1430,7 @@ Provide the complete revised essay.
         private val log: Logger = LoggerFactory.getLogger(PersuasiveEssayTask::class.java)
         val PersuasiveEssay = TaskType(
             "PersuasiveEssay",
+            "Writing",
             PersuasiveEssayTaskExecutionConfigData::class.java,
             PersuasiveEssayTaskTypeConfig::class.java,
             "Generate compelling persuasive essays with structured arguments",

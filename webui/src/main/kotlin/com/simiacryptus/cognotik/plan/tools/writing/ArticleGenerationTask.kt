@@ -184,7 +184,7 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
         ).joinToString("\n\n---\n\n")
 
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
         // Create transcript file
@@ -315,7 +315,7 @@ Ensure the structure:
           """.trimIndent(),
                 model = api,
                 temperature = 0.6,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             val structure = structureAgent.answer(listOf("Generate structure")).obj
@@ -440,7 +440,7 @@ After writing, provide:
                 prompt = writingPrompt,
                 model = api,
                 temperature = 0.7,
-                parsingChatter = orchestrationConfig.parsingChatter
+                parsingChatter = defaultFast
             )
 
             var article = articleAgent.answer(listOf("Write the article")).obj
@@ -573,7 +573,7 @@ Make each snippet:
           """.trimIndent(),
                     model = api,
                     temperature = 0.8,
-                    parsingChatter = orchestrationConfig.parsingChatter
+                    parsingChatter = defaultFast
                 )
 
                 val socialSnippets = socialAgent.answer(listOf("Generate snippets")).obj
@@ -783,6 +783,7 @@ Make each snippet:
 
         val ArticleGeneration = TaskType(
             "ArticleGeneration",
+            "Writing",
             ArticleGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete journalistic articles from investigation and analysis",

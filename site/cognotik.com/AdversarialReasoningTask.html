@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adversarial Reasoning Task - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        :root {
+            /* Override main.css variables */
+            --accent-color: #ef4444; /* Red for Adversarial/Red Team */
+            --accent-hover: #dc2626;
+            --font-family-mono: 'JetBrains Mono', monospace;
+
+            /* Custom variables */
+            --accent-secondary: #f59e0b; /* Amber for Warnings */
+            --accent-glow: rgba(239, 68, 68, 0.3);
+
+        }
+
+        /* Hero Section */
+        .hero {
+
+            padding: 6rem 2rem; /* Override main.css padding */
+            background: radial-gradient(circle at top center, #2a1015 0%, var(--background-color) 70%);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+
+        .btn-cta {
+            background: var(--accent-color);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px var(--accent-glow);
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        /* Features Grid */
+        /* .features and .features-grid handled by main.css */
+
+        .feature-card {
+            background: var(--surface-color);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        .feature-icon {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+        /* Simulator */
+        .simulator-section {
+            padding: 4rem 2rem;
+            background: #0b1120;
+        }
+
+        .simulator-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            height: 800px;
+        }
+
+        .sim-panel {
+            background: var(--surface-color);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 1rem 1.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-content {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: var(--font-family-mono);
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        /* Output Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+
+        .output-content {
+            font-family: var(--font-family-mono);
+            font-size: 0.9rem;
+        }
+
+        .vuln-item {
+            background: rgba(255, 0, 0, 0.05);
+            border-left: 3px solid var(--accent-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .vuln-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .severity-badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .severity-critical { background: #7f1d1d; color: #fecaca; }
+        .severity-high { background: #c2410c; color: #fed7aa; }
+        .severity-medium { background: #a16207; color: #fef08a; }
+
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .use-case-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .use-case-list li {
+            margin-bottom: 1.5rem;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .use-case-list li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            .simulator-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .hero h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<cognotik-header current-page="adversarial-reasoning"></cognotik-header>
+
+<main>
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Adversarial Reasoning</h1>
+        <p>Automated red team analysis to identify vulnerabilities, challenge assumptions, and stress-test systems against simulated adversaries.</p>
+        <button class="btn-cta" onclick="document.getElementById('simulator').scrollIntoView({behavior: 'smooth'})">
+            Try the Simulator
+        </button>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="features">
+        <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <h3>Multi-Vector Analysis</h3>
+            <p>Simultaneously analyze security, logic, privacy, and compliance vectors to find holistic weaknesses.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <h3>Assumption Challenging</h3>
+            <p>Aggressively questions system design assumptions to uncover hidden failure modes and edge cases.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            </div>
+            <h3>Adversary Simulation</h3>
+            <p>Simulate attackers ranging from basic script kiddies to nation-state actors with advanced capabilities.</p>
+        </div>
+        </div>
+    </section>
+
+    <!-- Simulator Section -->
+    <section id="simulator" class="simulator-section">
+        <div class="simulator-container">
+            <!-- Inputs -->
+            <div class="sim-panel">
+                <div class="panel-header">
+                    <span>Configuration</span>
+                    <span style="font-size: 0.8rem; color: var(--accent-color)">LIVE PREVIEW</span>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">Target System Description</label>
+                        <textarea class="form-control" id="targetSystem" rows="4">E-commerce Payment Gateway API. Handles credit card transactions, currency conversion, and fraud detection checks. Uses JWT for authentication.</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Adversary Capability</label>
+                        <select class="form-control" id="capability">
+                            <option value="basic">Basic (Script Kiddie)</option>
+                            <option value="intermediate" selected>Intermediate (Skilled Hacker)</option>
+                            <option value="advanced">Advanced (Security Researcher)</option>
+                            <option value="nation-state">Nation-State (APT)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Attack Vectors</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item"><input type="checkbox" checked value="security"> Security</label>
+                            <label class="checkbox-item"><input type="checkbox" checked value="logic"> Logic</label>
+                            <label class="checkbox-item"><input type="checkbox" value="privacy"> Privacy</label>
+                            <label class="checkbox-item"><input type="checkbox" value="performance"> Performance</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Options</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item"><input type="checkbox" id="genExploits"> Generate Exploit Scenarios</label>
+                            <label class="checkbox-item"><input type="checkbox" id="suggestMitigations" checked> Suggest Mitigations</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Outputs -->
+            <div class="sim-panel">
+                <div class="panel-header">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('summary')">Summary</button>
+                        <button class="tab" onclick="switchTab('vulns')">Vulnerabilities</button>
+                        <button class="tab" onclick="switchTab('mitigations')">Mitigations</button>
+                    </div>
+                </div>
+                <div class="panel-content output-content" id="outputArea">
+                    <!-- Content injected via JS -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="use-cases">
+        <h2>When to Use</h2>
+        <ul class="use-case-list">
+            <li><strong>Security Audits:</strong> Before deploying critical infrastructure or public-facing APIs.</li>
+            <li><strong>Design Reviews:</strong> Stress-testing architectural decisions against logical flaws.</li>
+            <li><strong>Compliance Checks:</strong> Ensuring systems meet privacy and regulatory standards under pressure.</li>
+            <li><strong>Legacy Code Analysis:</strong> Identifying vulnerabilities in older systems where documentation is scarce.</li>
+        </ul>
+    </section>
+</main>
+
+<script>
+    // Mock Data Generator
+    function generateOutput() {
+        const capability = document.getElementById('capability').value;
+        const showExploits = document.getElementById('genExploits').checked;
+        const showMitigations = document.getElementById('suggestMitigations').checked;
+        const vectors = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(cb => cb.value).filter(v => ['security', 'logic', 'privacy', 'performance'].includes(v));
+
+        // Dynamic content based on capability
+        let vulns = [];
+        
+        if (vectors.includes('security')) {
+            vulns.push({
+                title: "JWT Algorithm Confusion",
+                severity: capability === 'basic' ? "Medium" : "Critical",
+                desc: "The API accepts unsigned tokens if the algorithm header is set to 'None'.",
+                exploit: "Attacker modifies the JWT header to 'alg': 'none' and removes the signature."
+            });
+        }
+
+        if (vectors.includes('logic')) {
+            vulns.push({
+                title: "Negative Currency Conversion",
+                severity: "High",
+                desc: "Currency conversion logic does not validate positive integers, allowing credit generation.",
+                exploit: "Submit a transaction with amount: -100 USD."
+            });
+        }
+
+        if (capability === 'nation-state' || capability === 'advanced') {
+            vulns.push({
+                title: "Timing Attack on Signature Verification",
+                severity: "High",
+                desc: "Comparison of HMAC signatures is not constant-time, allowing brute-force via timing analysis.",
+                exploit: "Measure response times for invalid signatures to deduce the correct key byte-by-byte."
+            });
+        }
+
+        return {
+            summary: `
+                <h3>Executive Summary</h3>
+                <p><strong>Target:</strong> Payment Gateway API</p>
+                <p><strong>Adversary:</strong> ${capability.toUpperCase()}</p>
+                <p>Analysis identified <strong>${vulns.length} critical/high vulnerabilities</strong>. The system is susceptible to authentication bypass and logical manipulation.</p>
+                <br>
+                <div><strong>Risk Level:</strong> <span style="color: var(--accent-color)">HIGH</span></div>
+            `,
+            vulns: vulns.map(v => `
+                <div class="vuln-item">
+                    <div class="vuln-header">
+                        <strong>${v.title}</strong>
+                        <span class="severity-badge severity-${v.severity.toLowerCase() === 'critical' ? 'critical' : 'high'}">${v.severity}</span>
+                    </div>
+                    <p>${v.desc}</p>
+                    ${showExploits ? `<div style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-muted)"><strong>Exploit:</strong> ${v.exploit}</div>` : ''}
+                </div>
+            `).join(''),
+            mitigations: showMitigations ? `
+                <h3>Recommended Actions</h3>
+                <ul>
+                    <li>Enforce strict JWT algorithm verification (allowlist 'HS256').</li>
+                    <li>Implement input validation layer for all numeric fields (amount > 0).</li>
+                    <li>Use constant-time comparison functions for cryptographic operations.</li>
+                    <li>Implement rate limiting to prevent timing analysis.</li>
+                </ul>
+            ` : '<p><em>Mitigation suggestions disabled.</em></p>'
+        };
+    }
+
+    let currentTab = 'summary';
+
+    function render() {
+        const data = generateOutput();
+        const outputArea = document.getElementById('outputArea');
+        outputArea.innerHTML = data[currentTab];
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+        render();
+    }
+
+    // Event Listeners
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        el.addEventListener('change', render);
+        el.addEventListener('input', render);
+    });
+
+    // Initial Render
+    render();
+</script>
+</body>
+</html>

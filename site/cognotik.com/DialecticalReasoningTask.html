@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialectical Reasoning Task - Cognotik</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        
+        /* Page-specific overrides and animations */
+        .hero-split { display: flex; align-items: center; max-width: var(--container-max-width); margin: 0 auto; text-align: left; }
+        .hero-content { flex: 1; padding-right: 2rem; }
+        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
+        
+        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-color); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); }
+        .visual-node::before { content: ''; position: absolute; inset: -20px; border: 1px solid var(--accent-secondary); border-radius: 50%; animation: spin 10s linear infinite; }
+        
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+
+        
+
+        .sim-output-content { padding: 2rem; font-family: var(--font-family-mono); color: var(--text-muted); overflow-y: auto; height: 100%; }
+        
+        @media (max-width: 768px) { .hero-split { flex-direction: column; text-align: center; } .hero-content { padding-right: 0; margin-bottom: 3rem; } }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="dialectical"></cognotik-header>
+    <header class="hero">
+        <div class="hero-split">
+            <div class="hero-content">
+            <h1>Dialectical Reasoning</h1>
+                <p class="subtitle">Resolve contradictions and find higher truths through a structured thesis-antithesis-synthesis process.</p>
+                <a href="#demo" class="cta-button">Try the Simulator</a>
+            </div>
+            <div class="hero-visual">
+                <div class="visual-node"></div>
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </i>
+                    <h3>Deep Analysis</h3>
+                    <p>Thoroughly examines both thesis and antithesis positions to understand core claims and underlying logic.</p>
+                </div>
+                <div class="feature-card">
+                    <i>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+                    </i>
+                    <h3>Synthesis Generation</h3>
+                    <p>Creates a higher-level synthesis that transcends opposition while preserving valuable aspects of both sides.</p>
+                </div>
+                <div class="feature-card">
+                    <i>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </i>
+                    <h3>Iterative Process</h3>
+                    <p>Iterates through multiple levels of synthesis (1-5) to reach progressively deeper insights.</p>
+                </div>
+            </div>
+    </section>
+
+    <section id="demo" class="simulator">
+            <h2>Interactive Simulator</h2>
+            <div class="simulator-container">
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
+                    <div class="control-group">
+                        <label>Thesis</label>
+                        <textarea id="thesis" placeholder="Enter the initial position...">Remote work increases productivity and employee satisfaction.</textarea>
+                    </div>
+                    <div class="control-group">
+                        <label>Antithesis</label>
+                        <textarea id="antithesis" placeholder="Enter the opposing position...">In-office work fosters collaboration and company culture.</textarea>
+                    </div>
+                    <div class="control-group">
+                        <label>Context</label>
+                        <input type="text" id="context" value="Modern tech company post-pandemic">
+                    </div>
+                    <button class="run-button" onclick="runSimulation()">Run Analysis</button>
+                </div>
+                <div class="sim-output">
+                    <div id="output-logs" class="sim-output-content">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the dialectic and click "Run" to see the synthesis.
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </section>
+
+    <section id="use-cases" class="features">
+            <h2>When to Use</h2>
+            <div class="mode-grid">
+                <div class="mode-card">
+                    <div class="mode-title">Architectural Debates</div>
+                    <p>Resolve conflicts between different technical approaches (e.g., Monolith vs. Microservices).</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Requirement Conflicts</div>
+                    <p>Find solutions that satisfy competing stakeholder requirements.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Design Philosophy</div>
+                    <p>Explore tensions between design principles like flexibility vs. simplicity.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Strategic Planning</div>
+                    <p>Synthesize opposing strategic directions into a cohesive plan.</p>
+                </div>
+            </div>
+    </section>
+
+    <script>
+        function runSimulation() {
+            const thesis = document.getElementById('thesis').value;
+            const antithesis = document.getElementById('antithesis').value;
+            const logsEl = document.getElementById('output-logs');
+            
+            logsEl.innerHTML = '';
+            const steps = [
+                `[INFO] Analyzing Thesis: "${thesis.substring(0, 30)}..."`,
+                `[INFO] Analyzing Antithesis: "${antithesis.substring(0, 30)}..."`,
+                `[INFO] Exploring contradictions and tensions...`,
+                `[INFO] Generating Synthesis Level 1...`,
+                `[INFO] Generating Synthesis Level 2...`,
+                `[SUCCESS] Final Integration Complete.`
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < steps.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
+                    line.style.marginBottom = '4px';
+                    if (steps[i].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else line.style.color = '#a78bfa';
+                    logsEl.appendChild(line);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    const result = document.createElement('div');
+                    result.innerHTML = `
+                        <br><strong>Synthesis Result:</strong><br>
+                        A hybrid model that mandates specific "collaboration days" for in-office presence while allowing flexible remote work for deep focus tasks effectively bridges the gap. This approach preserves the autonomy and productivity of remote work while ensuring the social cohesion and spontaneous innovation of physical presence.
+                    `;
+                    result.style.color = '#e2e8f0';
+                    result.style.marginTop = '1rem';
+                    result.style.padding = '1rem';
+                    result.style.border = '1px solid rgba(255,255,255,0.1)';
+                    result.style.borderRadius = '8px';
+                    logsEl.appendChild(result);
+                }
+            }, 800);
+        }
+    </script>
+</body>
+</html>

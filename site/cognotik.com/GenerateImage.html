@@ -1,0 +1,305 @@
+<!-- Image Prompt: Abstract 3D illustration of a digital paintbrush creating a glowing, holographic landscape from floating binary code particles, deep blue background with neon purple and cyan accents. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Generate Image Task - Cognotik</title>
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+     <link rel="stylesheet" href="assets/styles/main.css">
+     <style>
+         /* Custom overrides for GenerateImage page */
+         .mono { font-family: var(--font-family-mono); }
+         textarea { min-height: 120px; resize: vertical; }
+         /* Layout */
+         .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 2rem; }
+         section { padding: 4rem 0; }
+         /* Hero */
+         .hero {
+             min-height: 90vh; 
+             display: flex; 
+             align-items: center;
+             text-align: left; /* Override main.css center */
+             background: radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+         }
+         .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+         .hero-content p { font-size: 1.25rem; color: var(--text-muted); margin: 1.5rem 0 2.5rem; max-width: 500px; }
+         /* .cta-button handled by main.css */
+         .hero-visual {
+             height: 400px; background: var(--surface-color); border-radius: 16px;
+             border: 1px solid var(--border-color);
+             display: flex; align-items: center; justify-content: center;
+             position: relative; overflow: hidden;
+         }
+         /* Abstract Visual Placeholder */
+         .visual-placeholder {
+             width: 200px; height: 200px;
+             background: linear-gradient(45deg, var(--accent-color), var(--accent-secondary));
+             border-radius: 50%; filter: blur(40px); opacity: 0.6;
+             animation: pulse 4s infinite alternate;
+         }
+         @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.2); } }
+         /* Features */
+         /* .features-grid and .feature-card handled by main.css */
+         .feature-card { text-align: left; }
+         .feature-card:hover { border-color: var(--accent-color); }
+         .feature-icon {
+             width: 48px; height: 48px; background: rgba(139, 92, 246, 0.1);
+             color: var(--accent-color); border-radius: 8px;
+             display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;
+         }
+         /* Simulator */
+         /* .simulator, .simulator-container, .sim-controls, .sim-output handled by main.css */
+         .simulator-container { min-height: 600px; background: var(--surface-color); }
+         .sim-controls { overflow-y: auto; }
+         .tab-content { padding: 0; flex-grow: 1; display: none; position: relative; height: auto; }
+         .tab-content.active { display: block; }
+         
+         /* Output Visuals */
+         #preview-canvas { width: 100%; height: 100%; object-fit: contain; background: #000; }
+         .code-block { padding: 1.5rem; font-family: var(--font-family-mono); font-size: 0.9rem; color: #a5b4fc; white-space: pre-wrap; }
+         .log-window { padding: 1.5rem; font-family: var(--font-family-mono); font-size: 0.85rem; color: #22c55e; height: 100%; overflow-y: auto; }
+         .log-entry { margin-bottom: 0.5rem; opacity: 0; animation: fadeIn 0.3s forwards; }
+         .log-entry.error { color: #ef4444; }
+         @keyframes fadeIn { to { opacity: 1; } }
+         /* Use Cases */
+         .use-cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+         .use-case-card {
+             background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px;
+             border-left: 3px solid var(--accent-secondary);
+         }
+         .use-case-card h4 { margin-bottom: 0.5rem; color: var(--text-color); }
+         .use-case-card p { font-size: 0.9rem; color: var(--text-muted); }
+         @media (max-width: 768px) {
+             .hero-grid, .simulator-container { grid-template-columns: 1fr; }
+             .sim-controls { border-right: none; border-bottom: 1px solid var(--border-color); }
+             h1 { font-size: 2.5rem; }
+         }
+     </style>
+</head>
+<body>
+     <!-- Header -->
+    <cognotik-header current-page="generate_image"></cognotik-header>
+     <!-- Hero -->
+     <section class="hero">
+         <div class="container hero-grid">
+             <div class="hero-content">
+                 <h1>Generate Image Task</h1>
+                 <p>Create stunning visuals from text descriptions using AI models. Transform detailed prompts into high-quality images with context-aware capabilities and seamless workflow integration.</p>
+                 <a href="#simulator" class="cta-button">Try the Simulator</a>
+             </div>
+             <div class="hero-visual">
+                 <!-- Abstract representation of image generation -->
+                 <div class="visual-placeholder"></div>
+                 <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1" style="position:absolute; z-index:2; opacity:0.8;">
+                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                     <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                     <polyline points="21 15 16 10 5 21"></polyline>
+                 </svg>
+             </div>
+         </div>
+     </section>
+     <!-- Features -->
+     <section id="features">
+         <div class="container">
+             <h2>Key Features</h2>
+             <div class="features-grid">
+                 <div class="feature-card">
+                     <div class="feature-icon">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+                     </div>
+                     <h3>High-Fidelity Generation</h3>
+                     <p>Generates high-quality images from detailed prompts, supporting various styles and compositions.</p>
+                 </div>
+                 <div class="feature-card">
+                     <div class="feature-icon">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                     </div>
+                     <h3>Context Awareness</h3>
+                     <p>Uses related files and reference images to maintain consistency and adhere to style guides.</p>
+                 </div>
+                 <div class="feature-card">
+                     <div class="feature-icon">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                     </div>
+                     <h3>Workflow Integration</h3>
+                     <p>Seamlessly integrates with previous task results, allowing iterative refinement and asset generation pipelines.</p>
+                 </div>
+             </div>
+         </div>
+     </section>
+     <!-- Simulator -->
+     <section id="simulator" class="simulator">
+         <div class="container">
+             <h2>Interactive Simulator</h2>
+             <p style="color: var(--text-muted); margin-bottom: 2rem;">Configure the task parameters to simulate the image generation process.</p>
+             <div class="simulator-container">
+                 <!-- Left: Inputs -->
+                 <div class="sim-controls">
+                     <form id="sim-form">
+                         <div class="control-group">
+                             <label for="task_description">Task Description</label>
+                             <textarea id="task_description" placeholder="Describe the image you want to generate (e.g., A futuristic city with flying cars, neon lights, cyberpunk style)...">A futuristic city with flying cars, neon lights, cyberpunk style</textarea>
+                         </div>
+                         <div class="control-group">
+                             <label for="files">Output Filename</label>
+                             <input type="text" id="files" value="assets/cyber_city.png">
+                             <small style="color: var(--text-muted); font-size: 0.8rem;">Must end in .png, .jpg, or .jpeg</small>
+                         </div>
+                         <div class="control-group">
+                             <label for="related_files">Related Files (Context)</label>
+                             <input type="text" id="related_files" placeholder="path/to/style_guide.md, path/to/reference.png">
+                         </div>
+                         <button type="submit" class="run-button">Run Generation Task</button>
+                     </form>
+                 </div>
+                 <!-- Right: Outputs -->
+                 <div class="sim-output">
+                     <div class="tabs">
+                         <div class="tab active" data-target="tab-preview">Preview</div>
+                         <div class="tab" data-target="tab-prompt">Optimized Prompt</div>
+                         <div class="tab" data-target="tab-logs">Logs</div>
+                     </div>
+                     <div id="tab-preview" class="tab-content active" style="height: 100%; display: flex; align-items: center; justify-content: center; background: #000;">
+                         <canvas id="preview-canvas" width="600" height="400"></canvas>
+                         <div id="preview-placeholder" style="position: absolute; color: var(--text-muted);">Run task to generate image</div>
+                     </div>
+                     <div id="tab-prompt" class="tab-content">
+                         <div class="code-block" id="prompt-output">// Optimized prompt will appear here...</div>
+                     </div>
+                     <div id="tab-logs" class="tab-content">
+                         <div class="log-window" id="log-output">
+                             <div class="log-entry">> System ready.</div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+     </section>
+     <!-- Use Cases -->
+     <section id="use-cases">
+         <div class="container">
+             <h2>When to Use</h2>
+             <div class="use-cases">
+                 <div class="use-case-card">
+                     <h4>UI/UX Assets</h4>
+                     <p>Generate placeholders, icons, or background assets for web and mobile interface designs.</p>
+                 </div>
+                 <div class="use-case-card">
+                     <h4>Concept Visualization</h4>
+                     <p>Quickly visualize abstract concepts or narrative descriptions during the brainstorming phase.</p>
+                 </div>
+                 <div class="use-case-card">
+                     <h4>Marketing Materials</h4>
+                     <p>Create unique, royalty-free imagery for blog posts, social media, and ad campaigns.</p>
+                 </div>
+             </div>
+         </div>
+     </section>
+     <script>
+         // Tab Switching
+         document.querySelectorAll('.tab').forEach(tab => {
+             tab.addEventListener('click', () => {
+                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                 document.querySelectorAll('.tab-content').forEach(c => {
+                     c.style.display = 'none';
+                     c.classList.remove('active');
+                 });
+                 tab.classList.add('active');
+                 const target = document.getElementById(tab.dataset.target);
+                 target.style.display = (tab.dataset.target === 'tab-preview') ? 'flex' : 'block';
+                 target.classList.add('active');
+             });
+         });
+         // Simulator Logic
+         const form = document.getElementById('sim-form');
+         const logOutput = document.getElementById('log-output');
+         const promptOutput = document.getElementById('prompt-output');
+         const canvas = document.getElementById('preview-canvas');
+         const ctx = canvas.getContext('2d');
+         const placeholder = document.getElementById('preview-placeholder');
+         function addLog(message, type = 'info') {
+             const div = document.createElement('div');
+             div.className = `log-entry ${type}`;
+             div.textContent = `> ${message}`;
+             logOutput.appendChild(div);
+             logOutput.scrollTop = logOutput.scrollHeight;
+         }
+         function drawGenerativeArt(seedText) {
+             // Simple generative art based on random rects to simulate "AI generation"
+             ctx.fillStyle = '#000';
+             ctx.fillRect(0, 0, canvas.width, canvas.height);
+             const colors = ['#d946ef', '#8b5cf6', '#06b6d4', '#3b82f6', '#10b981'];
+             for(let i=0; i<50; i++) {
+                 ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                 ctx.globalAlpha = Math.random() * 0.5;
+                 const x = Math.random() * canvas.width;
+                 const y = Math.random() * canvas.height;
+                 const w = Math.random() * 200;
+                 const h = Math.random() * 200;
+                 ctx.fillRect(x, y, w, h);
+             }
+             ctx.globalAlpha = 1.0;
+             // Add text overlay
+             ctx.fillStyle = '#fff';
+             ctx.font = '20px Inter';
+             ctx.fillText("AI Generated Preview", 20, 40);
+         }
+         form.addEventListener('submit', (e) => {
+             e.preventDefault();
+             const description = document.getElementById('task_description').value;
+             const filename = document.getElementById('files').value;
+             const related = document.getElementById('related_files').value;
+             const btn = form.querySelector('button');
+             if(!description || !filename) {
+                 alert("Please fill in Description and Filename");
+                 return;
+             }
+             // Reset
+             btn.disabled = true;
+             btn.textContent = "Generating...";
+             logOutput.innerHTML = '';
+             placeholder.style.display = 'none';
+             ctx.clearRect(0, 0, canvas.width, canvas.height);
+             // Switch to logs
+             document.querySelector('[data-target="tab-logs"]').click();
+             // Simulation Steps
+             const steps = [
+                 { msg: "Initializing ImageGenerator Agent...", delay: 500 },
+                 { msg: `Reading context files: ${related || "None"}`, delay: 1000 },
+                 { msg: "Analyzing task description...", delay: 1500 },
+                 { msg: "Optimizing prompt for DALL-E...", delay: 2500 },
+                 { msg: "Sending request to image model...", delay: 3500 },
+                 { msg: "Receiving image data...", delay: 5500 },
+                 { msg: `Saving image to ${filename}...`, delay: 6000 },
+                 { msg: "Task Completed Successfully.", delay: 6500 }
+             ];
+             let currentStep = 0;
+             function runStep() {
+                 if(currentStep >= steps.length) {
+                     btn.disabled = false;
+                     btn.textContent = "Run Generation Task";
+                     // Show result
+                     drawGenerativeArt(description);
+                     document.querySelector('[data-target="tab-preview"]').click();
+                     return;
+                 }
+                 const step = steps[currentStep];
+                 setTimeout(() => {
+                     addLog(step.msg);
+                     // Special handling for prompt optimization step
+                     if(step.msg.includes("Optimizing")) {
+                         promptOutput.textContent = `Detailed, high-quality render of ${description}, 8k resolution, unreal engine 5 render, cinematic lighting, volumetric fog, highly detailed textures.`;
+                     }
+                     currentStep++;
+                     runStep();
+                 }, step.delay - (currentStep > 0 ? steps[currentStep-1].delay : 0));
+             }
+             runStep();
+         });
+     </script>
+</body>
+</html>

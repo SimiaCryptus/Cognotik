@@ -363,7 +363,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             return
         }
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)
@@ -502,7 +502,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 model = api,
                 temperature = 0.7,
                 name = "MechanicsGenerator",
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = defaultFast,
             )
 
             val mechanics = mechanicsParser.answer(listOf(mechanicsPrompt.toString())).obj.mechanics
@@ -594,7 +594,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 model = api,
                 temperature = 0.6,
                 name = "InteractionAnalyzer",
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = defaultFast,
             )
 
             val interactions = interactionsParser.answer(listOf(interactionsPrompt.toString())).obj.interactions
@@ -732,7 +732,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     model = api,
                     temperature = 0.6,
                     name = "ProgressionDesigner",
-                    parsingChatter = orchestrationConfig.parsingChatter,
+                    parsingChatter = defaultFast,
                 )
 
                 val progression = progressionParser.answer(listOf(progressionPrompt.toString())).obj.levels
@@ -868,7 +868,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     model = api,
                     temperature = 0.6,
                     name = "EconomyDesigner",
-                    parsingChatter = orchestrationConfig.parsingChatter,
+                    parsingChatter = defaultFast,
                 )
 
                 val economy = economyParser.answer(listOf(economyPrompt.toString())).obj
@@ -985,7 +985,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 model = api,
                 temperature = 0.5,
                 name = "BalanceAnalyzer",
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = defaultFast,
             )
 
             val balance = balanceParser.answer(listOf(balancePrompt.toString())).obj
@@ -1129,7 +1129,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 model = api,
                 temperature = 0.7,
                 name = "PlaytestingPredictor",
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = defaultFast,
             )
 
             val playtesting = playtestingParser.answer(listOf(playtestingPrompt.toString())).obj.predictions
@@ -1240,7 +1240,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     model = api,
                     temperature = 0.6,
                     name = "TuningGuideGenerator",
-                    parsingChatter = orchestrationConfig.parsingChatter,
+                    parsingChatter = defaultFast,
                 )
 
                 val tuning = tuningParser.answer(listOf(tuningPrompt.toString())).obj
@@ -1480,6 +1480,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
         private val log: Logger = LoggerFactory.getLogger(GameMechanicsDesignTask::class.java)
         val GameMechanicsDesign = TaskType(
             "GameMechanicsDesign",
+            "Games",
             GameMechanicsDesignTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comprehensive game mechanics with balance analysis",

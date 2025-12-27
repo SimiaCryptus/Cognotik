@@ -226,7 +226,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
         }
         log.debug("Configuration validated - Acts: ${genConfig.number_of_acts}, Scenes/Act: ${genConfig.scenes_per_act}, Style: ${genConfig.writing_style}")
 
-        val api = orchestrationConfig.defaultChatter.getChildClient(task)
+        val api = defaultSmart.getChildClient(task)
 
         val tabs = TabbedDisplay(task)
         // Get input file context
@@ -312,7 +312,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
             val totalScenes = genConfig.number_of_acts * genConfig.scenes_per_act
             val wordsPerScene = genConfig.target_word_count / totalScenes
 
-            val parsingChatter = orchestrationConfig.parsingChatter.getChildClient(task)
+            val parsingChatter = defaultFast.getChildClient(task)
             // Generate cover image first if enabled (to use as seed for other images)
             var coverImagePath: String? = null
             if (genConfig.generate_cover_image || genConfig.generate_scene_images) {
@@ -1014,7 +1014,7 @@ Provide the revised scene content only.
             task.update()
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a compelling book cover image that captures the essence of this narrative",
-                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                model = orchestrationConfig.defaultImage.getChildClient(task),
                 temperature = 0.8,
             )
             val coverPrompt = "$title: $premise"
@@ -1082,7 +1082,7 @@ Provide the revised scene content only.
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a detailed, atmospheric image of this setting that captures its essence and mood. Use the cover image as visual inspiration for style and atmosphere.",
-                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                model = orchestrationConfig.defaultImage.getChildClient(task),
                 temperature = 0.7,
             )
 
@@ -1180,7 +1180,7 @@ Provide the revised scene content only.
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a detailed character portrait that captures their appearance, personality, and essence. Use the cover image as visual inspiration for style and atmosphere.",
-                model = orchestrationConfig.imageChatChatter.getChildClient(task),
+                model = orchestrationConfig.defaultImage.getChildClient(task),
                 temperature = 0.7,
             )
 
@@ -1284,7 +1284,7 @@ Provide the revised scene content only.
             task.update()
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a cinematic scene illustration that captures the key moment and atmosphere",
-                model = orchestrationConfig.imageChatChatter,
+                model = orchestrationConfig.defaultImage,
                 temperature = 0.7,
             )
             // Extract key visual elements from scene
@@ -1381,6 +1381,7 @@ Provide the revised scene content only.
         private val log: Logger = LoggerFactory.getLogger(NarrativeGenerationTask::class.java)
         val NarrativeGeneration = TaskType(
             "NarrativeGeneration",
+            "Writing",
             NarrativeGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete narratives from analysis and outlines",

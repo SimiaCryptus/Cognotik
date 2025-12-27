@@ -1,0 +1,353 @@
+<!-- Prompt: A high-quality, abstract 3D illustration representing pixel art characters emerging from a glowing digital grid, deep blue background with neon purple and cyan voxels. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>GenerateSpriteSheet - Cognotik</title>
+     <!-- Fonts -->
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+     <!-- Icons -->
+     <script src="https://unpkg.com/lucide@latest"></script>
+     <link rel="stylesheet" href="assets/styles/main.css">
+     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+     <style>
+         /* CSS Variables & Reset */
+         :root {
+             --accent-primary: #d946ef; /* Fuchsia for creative/sprites */
+         }
+         /* Utilities */
+         .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 2rem; }
+         .glass {
+             background: rgba(30, 41, 59, 0.7);
+             backdrop-filter: blur(12px);
+             border: 1px solid rgba(255, 255, 255, 0.1);
+             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+         }
+         .neon-text {
+             text-shadow: 0 0 10px rgba(217, 70, 239, 0.5);
+         }
+         .btn-primary {
+             background: linear-gradient(135deg, var(--accent-primary), var(--accent-color));
+             color: white;
+             box-shadow: 0 0 15px rgba(217, 70, 239, 0.4);
+             border: none;
+         }
+         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(217, 70, 239, 0.6); }
+         /* Hero */
+         .hero {
+             padding: 8rem 0 4rem;
+             display: flex;
+             align-items: center;
+             min-height: 90vh;
+             position: relative;
+             text-align: left;
+             background: transparent;
+         }
+         .hero-content { flex: 1; padding-right: 2rem; }
+         .hero-visual { flex: 1; display: flex; justify-content: center; }
+         .hero h1 { 
+             font-size: 3.5rem; 
+             line-height: 1.1; 
+             margin-bottom: 1.5rem; 
+             font-family: var(--font-family-serif);
+             background: none;
+             -webkit-text-fill-color: var(--primary-color);
+         }
+         .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
+         /* Abstract Visual Placeholder */
+         .visual-placeholder {
+             width: 400px;
+             height: 400px;
+             background: radial-gradient(circle at 30% 30%, var(--accent-primary), transparent 50%),
+                         radial-gradient(circle at 70% 70%, var(--accent-color), transparent 50%);
+             border-radius: 50%;
+             filter: blur(40px);
+             opacity: 0.6;
+             animation: pulse 5s infinite alternate;
+         }
+         @keyframes pulse { from { transform: scale(0.9); } to { transform: scale(1.1); } }
+         /* Features */
+         .features { padding: 4rem 0; }
+         .features-grid {
+             margin-top: 3rem;
+         }
+         .feature-card {
+             transition: 0.3s;
+             text-align: left;
+         }
+         .feature-card:hover { transform: translateY(-5px); border-color: var(--accent-primary); }
+         .icon-box {
+             width: 50px; height: 50px;
+             background: rgba(217, 70, 239, 0.1);
+             border-radius: 12px;
+             display: flex; align-items: center; justify-content: center;
+             color: var(--accent-primary);
+             margin-bottom: 1.5rem;
+         }
+         /* Simulator */
+         .simulator { padding: 4rem 0; }
+         .sim-container {
+             display: grid;
+             grid-template-columns: 1fr 1fr;
+             gap: 2rem;
+             margin-top: 2rem;
+             min-height: 600px;
+         }
+         @media (max-width: 768px) { .sim-container { grid-template-columns: 1fr; } }
+         .sim-panel {
+             border-radius: 16px;
+             padding: 2rem;
+             display: flex;
+             flex-direction: column;
+         }
+         /* Form Elements */
+         .form-group { margin-bottom: 1.5rem; }
+         .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+         .form-control {
+             background: rgba(0,0,0,0.3);
+             border: 1px solid rgba(255,255,255,0.1);
+             color: white;
+         }
+         .form-control:focus { border-color: var(--accent-primary); box-shadow: none; }
+         textarea.form-control { min-height: 120px; resize: vertical; }
+         /* Output Tabs */
+         .tabs { display: flex; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+         .tab-btn {
+             background: none; border: none; color: var(--text-muted);
+             padding: 0.5rem 1rem; cursor: pointer; font-weight: 600;
+             border-bottom: 2px solid transparent;
+             font-family: var(--font-family-sans);
+         }
+         .tab-btn.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+         .output-content {
+             flex: 1;
+             background: #000;
+             border-radius: 8px;
+             padding: 1rem;
+             overflow: auto;
+             font-family: var(--font-family-mono);
+             font-size: 0.9rem;
+             position: relative;
+         }
+         .output-pane { display: none; height: 100%; }
+         .output-pane.active { display: block; }
+         /* Visual Output Mock */
+         .sprite-grid {
+             display: grid;
+             grid-template-columns: repeat(4, 1fr);
+             gap: 10px;
+         }
+         .sprite-box {
+             aspect-ratio: 1;
+             background: #333;
+             border: 1px dashed #555;
+             display: flex; align-items: center; justify-content: center;
+             font-size: 0.8rem; color: #777;
+         }
+         .sprite-sheet-mock {
+             width: 100%; height: 100%;
+             background: repeating-linear-gradient(
+                 45deg,
+                 #222,
+                 #222 10px,
+                 #2a2a2a 10px,
+                 #2a2a2a 20px
+             );
+             display: flex; align-items: center; justify-content: center;
+             color: #555;
+         }
+         /* Use Cases */
+         .use-cases { padding: 4rem 0; }
+         .use-case-list { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; }
+         .use-case-item {
+             background: var(--surface-color);
+             padding: 1rem 2rem;
+             border-radius: 50px;
+             border: 1px solid rgba(255,255,255,0.05);
+             font-weight: 500;
+         }
+         /* Footer */
+         footer { padding: 2rem 0; text-align: center; color: var(--text-muted); font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.05); }
+     </style>
+</head>
+<body>
+     <cognotik-header current-page="spritesheet"></cognotik-header>
+     <!-- Hero Section -->
+     <section class="hero container">
+         <div class="hero-content">
+             <h1 class="neon-text">Generate Sprite Sheet</h1>
+             <p>Create game assets instantly. Generate cohesive sprite sheets and automatically extract coordinate metadata for seamless game engine integration.</p>
+             <a href="#simulator" class="btn btn-primary">Try the Simulator</a>
+         </div>
+         <div class="hero-visual">
+             <!-- Abstract 3D representation -->
+             <div class="visual-placeholder"></div>
+         </div>
+     </section>
+     <!-- Features Grid -->
+     <section id="features" class="features container">
+         <h2>Key Features</h2>
+         <div class="features-grid">
+             <div class="feature-card glass">
+                 <div class="icon-box"><i data-lucide="image"></i></div>
+                 <h3>AI Asset Generation</h3>
+                 <p>Generates visual sprite sheets using advanced AI image models based on text descriptions.</p>
+             </div>
+             <div class="feature-card glass">
+                 <div class="icon-box"><i data-lucide="scan"></i></div>
+                 <h3>Auto-Detection</h3>
+                 <p>Analyzes the generated image to automatically find and crop sprite bounding boxes.</p>
+             </div>
+             <div class="feature-card glass">
+                 <div class="icon-box"><i data-lucide="file-json"></i></div>
+                 <h3>Metadata Export</h3>
+                 <p>Exports standard JSON metadata containing coordinates (x, y, w, h) for immediate use.</p>
+             </div>
+         </div>
+     </section>
+     <!-- Interactive Simulator -->
+     <section id="simulator" class="simulator">
+         <div class="container">
+             <h2>Interactive Simulator</h2>
+             <p style="color: var(--text-muted)">Configure the generation parameters and visualize the output.</p>
+             <div class="sim-container">
+                 <!-- Inputs -->
+                 <div class="sim-panel glass">
+                     <form id="sim-form">
+                         <div class="form-group">
+                             <label>Sprite Description</label>
+                             <textarea class="form-control" id="descInput" placeholder="E.g., A pixel art warrior walking animation, 4 frames, side view..."></textarea>
+                         </div>
+                         <div class="form-group">
+                             <label>Output Image Path (.png)</label>
+                             <input type="text" class="form-control" id="fileInput" value="assets/sprites/warrior.png">
+                         </div>
+                         <div class="form-group">
+                             <label>Metadata Path (.json)</label>
+                             <input type="text" class="form-control" id="metaInput" value="assets/sprites/warrior.json">
+                         </div>
+                         <button type="submit" class="btn btn-primary" style="width: 100%">Generate Assets</button>
+                     </form>
+                 </div>
+                 <!-- Outputs -->
+                 <div class="sim-panel glass">
+                     <div class="tabs">
+                         <button class="tab-btn active" onclick="switchTab('visuals')">Visuals</button>
+                         <button class="tab-btn" onclick="switchTab('json')">Metadata</button>
+                         <button class="tab-btn" onclick="switchTab('logs')">Logs</button>
+                     </div>
+                     <div class="output-content">
+                         <!-- Visuals Tab -->
+                         <div id="visuals" class="output-pane active">
+                             <div id="visual-placeholder" class="sprite-sheet-mock">
+                                 <span>Generated Image Preview</span>
+                             </div>
+                             <div id="visual-result" style="display: none;">
+                                 <div style="margin-bottom: 10px; color: var(--accent-primary);">Sprite Sheet:</div>
+                                 <div style="width: 100%; height: 150px; background: #222; border: 1px solid #444; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                                     <div style="display: flex; gap: 10px;">
+                                         <div style="width: 32px; height: 32px; background: cyan;"></div>
+                                         <div style="width: 32px; height: 32px; background: magenta;"></div>
+                                         <div style="width: 32px; height: 32px; background: yellow;"></div>
+                                         <div style="width: 32px; height: 32px; background: lime;"></div>
+                                     </div>
+                                 </div>
+                                 <div style="margin-bottom: 10px; color: var(--accent-primary);">Detected Sprites:</div>
+                                 <div class="sprite-grid">
+                                     <div class="sprite-box" style="background: cyan;">frame_1</div>
+                                     <div class="sprite-box" style="background: magenta;">frame_2</div>
+                                     <div class="sprite-box" style="background: yellow;">frame_3</div>
+                                     <div class="sprite-box" style="background: lime;">frame_4</div>
+                                 </div>
+                             </div>
+                         </div>
+                         <!-- JSON Tab -->
+                         <div id="json" class="output-pane">
+                             <pre><code id="json-code" style="color: #a5b4fc;">// Metadata will appear here...</code></pre>
+                         </div>
+                         <!-- Logs Tab -->
+                         <div id="logs" class="output-pane">
+                             <div id="log-content" style="color: #4ade80; font-family: 'Courier New', monospace;">
+                                 > Ready...
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+     </section>
+     <!-- Use Cases -->
+     <section id="use-cases" class="use-cases container">
+         <h2>When to Use</h2>
+         <div class="use-case-list">
+             <div class="use-case-item">Game Development (2D)</div>
+             <div class="use-case-item">UI Icon Sets</div>
+             <div class="use-case-item">Animation Prototyping</div>
+             <div class="use-case-item">Asset Pipeline Automation</div>
+         </div>
+     </section>
+     <footer>
+         <div class="container">
+             &copy; 2024 Cognotik. All rights reserved.
+         </div>
+     </footer>
+     <script>
+         // Initialize Icons
+         lucide.createIcons();
+         // Tab Switching Logic
+         function switchTab(tabId) {
+             document.querySelectorAll('.output-pane').forEach(el => el.classList.remove('active'));
+             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+             document.getElementById(tabId).classList.add('active');
+             event.target.classList.add('active');
+         }
+         // Simulator Logic
+         document.getElementById('sim-form').addEventListener('submit', function(e) {
+             e.preventDefault();
+             const desc = document.getElementById('descInput').value || "Generic sprite";
+             const file = document.getElementById('fileInput').value;
+             const meta = document.getElementById('metaInput').value;
+             const logContent = document.getElementById('log-content');
+             const visualPlaceholder = document.getElementById('visual-placeholder');
+             const visualResult = document.getElementById('visual-result');
+             const jsonCode = document.getElementById('json-code');
+             // Reset
+             visualPlaceholder.style.display = 'flex';
+             visualResult.style.display = 'none';
+             logContent.innerHTML = '> Starting task...<br>';
+             switchTab('logs');
+             // Mock Process
+             setTimeout(() => {
+                 logContent.innerHTML += '> Generating image via ImageProcessingAgent...<br>';
+             }, 500);
+             setTimeout(() => {
+                 logContent.innerHTML += `> Image saved to ${file}<br>`;
+                 logContent.innerHTML += '> Analyzing sprite locations...<br>';
+             }, 1500);
+             setTimeout(() => {
+                 logContent.innerHTML += `> Metadata saved to ${meta}<br>`;
+                 logContent.innerHTML += '> Task Complete.<br>';
+                 // Update Visuals
+                 visualPlaceholder.style.display = 'none';
+                 visualResult.style.display = 'block';
+                 // Update JSON
+                 const mockJson = {
+                     "description": desc,
+                     "sprites": [
+                         { "name": "frame_1", "x": 0, "y": 0, "width": 32, "height": 32 },
+                         { "name": "frame_2", "x": 34, "y": 0, "width": 32, "height": 32 },
+                         { "name": "frame_3", "x": 68, "y": 0, "width": 32, "height": 32 },
+                         { "name": "frame_4", "x": 102, "y": 0, "width": 32, "height": 32 }
+                     ]
+                 };
+                 jsonCode.innerText = JSON.stringify(mockJson, null, 2);
+                 // Switch back to visuals
+                 switchTab('visuals');
+             }, 2500);
+         });
+     </script>
+</body>
+</html>

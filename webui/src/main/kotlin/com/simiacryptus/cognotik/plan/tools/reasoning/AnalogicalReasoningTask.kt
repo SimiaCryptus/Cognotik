@@ -173,7 +173,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
             log.info("Configuration validated successfully")
 
             val tabs = TabbedDisplay(task)
-            val api = orchestrationConfig.defaultChatter ?: return
+            val api = defaultSmart ?: return
             // Initialize transcript
             transcriptStream = task.transcript()
             transcriptStream?.let { stream ->
@@ -283,7 +283,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
                 model = api,
                 temperature = 0.7,
                 name = "AnalogicalReasoning",
-                parsingChatter = orchestrationConfig.parsingChatter,
+                parsingChatter = defaultFast,
             )
 
             var result: AnalogicalReasoningResult? = analogyParser.answer(listOf(analogiesPrompt)).obj
@@ -754,6 +754,7 @@ Provide a brief validation assessment.
         private val log: Logger = LoggerFactory.getLogger(AnalogicalReasoningTask::class.java)
         val AnalogicalReasoning = TaskType(
             "AnalogicalReasoning",
+            "Reasoning",
             AnalogicalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Solve problems by finding and applying analogies from different domains",

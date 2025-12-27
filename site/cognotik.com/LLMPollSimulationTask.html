@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Poll Simulation - Cognotik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        
+        /* Page-specific overrides and additions to main.css */
+        .container { max-width: var(--container-max-width); margin: 0 auto; padding: 0 var(--spacing-lg); }
+
+        /* Hero Layout Overrides */
+        .hero { padding: 8rem 0 4rem; display: flex; align-items: center; min-height: 80vh; text-align: left; }
+        .hero-content { flex: 1; padding-right: 2rem; }
+        .hero p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; margin-left: 0; margin-right: auto; }
+        .hero-visual { flex: 1; height: 400px; display: flex; justify-content: center; align-items: center; position: relative; }
+        .visual-node { width: 200px; height: 200px; border: 2px solid var(--accent-color); border-radius: 50%; position: absolute; animation: pulse 4s infinite; box-shadow: 0 0 30px rgba(139, 92, 246, 0.2); }
+        
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
+
+        /* Feature Enhancements */
+        .feature-card:hover { border-color: var(--accent-color); transform: translateY(-5px); transition: 0.3s; }
+        .feature-icon { width: 48px; height: 48px; background: rgba(139, 92, 246, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; color: var(--accent-color); }
+
+        /* Simulator Adjustments */
+        .sim-output { padding: 2rem; }
+        .output-area { flex: 1; font-family: var(--font-family-mono); font-size: 0.9rem; color: var(--text-color); overflow-y: auto; white-space: pre-wrap; height: 100%; }
+        
+        /* Missing Input Style in main.css */
+        input[type="number"] {
+            display: block;
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-color);
+            background-color: var(--surface-color);
+            background-clip: padding-box;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        input[type="number"]:focus {
+            border-color: var(--accent-color);
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
+        }
+        
+        .use-cases { padding: 4rem 0; }
+        .use-case-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .use-case-item { background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent-secondary); }
+
+        @media (max-width: 768px) { .hero { flex-direction: column; text-align: center; padding-top: 6rem; } .simulator-container { grid-template-columns: 1fr; } .sim-controls { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); } }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="poll"></cognotik-header>
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>LLM Poll Simulation</h1>
+            <p>Simulate polls and surveys with diverse AI personas to predict responses and detect biases.</p>
+            <a href="#demo" class="btn">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <h3>Diverse Personas</h3>
+                    <p>Simulates respondents with varied demographics, backgrounds, and characteristics for realistic data.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                    </div>
+                    <h3>Statistical Analysis</h3>
+                    <p>Automatically generates descriptive statistics, frequency distributions, and cross-tabulations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </div>
+                    <h3>Bias Detection</h3>
+                    <p>Identifies potential response patterns, central tendency biases, and demographic skews.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
+                    <div class="control-group">
+                        <label>Survey Question</label>
+                        <input type="text" id="question" value="How likely are you to purchase an electric vehicle in the next 5 years?">
+                    </div>
+                    <div class="control-group">
+                        <label>Respondent Profiles (JSON)</label>
+                        <textarea id="profiles" style="height: 150px;">[
+  {"description": "Urban millennial, environmentally conscious"},
+  {"description": "Rural conservative, values reliability"},
+  {"description": "Suburban parent, budget-focused"}
+]</textarea>
+                    </div>
+                    <div class="control-group">
+                        <label>Respondents per Profile</label>
+                        <input type="number" id="count" value="5">
+                    </div>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Run Simulation</button>
+                </div>
+                <div class="sim-output">
+                    <div id="output-logs" class="output-area">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the poll and click "Run" to see results.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>Survey Testing</h4>
+                    <p>Test survey instruments for clarity and bias before deploying to real people.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Market Research</h4>
+                    <p>Get preliminary feedback on product concepts from specific demographic personas.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Demographic Analysis</h4>
+                    <p>Understand how different groups might perceive a topic or question.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function runSimulation() {
+            const question = document.getElementById('question').value;
+            const count = document.getElementById('count').value;
+            const logsEl = document.getElementById('output-logs');
+            
+            logsEl.innerHTML = '';
+            const steps = [
+                `[INFO] Initializing simulation...`,
+                `[INFO] Generating ${count * 3} respondent personas...`,
+                `[INFO] Conducting survey: "${question}"`,
+                `[INFO] Collecting responses...`,
+                `[INFO] Analyzing demographics and sentiment...`,
+                `[SUCCESS] Simulation Complete.`
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < steps.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
+                    line.style.marginBottom = '4px';
+                    if (steps[i].includes('SUCCESS')) line.style.color = 'var(--success-color)';
+                    else line.style.color = 'var(--accent-secondary)';
+                    logsEl.appendChild(line);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    const result = document.createElement('div');
+                    result.innerHTML = `
+                        <br><strong>Results Summary:</strong><br>
+                        - <strong>Urban Millennials:</strong> 80% Likely (High interest)<br>
+                        - <strong>Rural Conservatives:</strong> 20% Likely (Concerns about range/charging)<br>
+                        - <strong>Suburban Parents:</strong> 40% Likely (Price sensitivity)<br><br>
+                        <em>Bias Detected:</em> Responses correlate strongly with location and political leaning.
+                    `;
+                    result.style.color = '#e2e8f0';
+                    result.style.marginTop = '1rem';
+                    result.style.padding = '1rem';
+                    result.style.border = '1px solid rgba(255,255,255,0.1)';
+                    result.style.borderRadius = '8px';
+                    logsEl.appendChild(result);
+                }
+            }, 600);
+        }
+    </script>
+</body>
+</html>

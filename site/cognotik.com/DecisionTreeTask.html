@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognotik | Decision Tree Agent</title>
+    <meta name="description" content="Build interpretable, LLM-driven symbolic decision trees for complex data analysis.">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+
+
+
+
+
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 var(--spacing-md);
+        }
+
+        section {
+            padding: var(--spacing-xl) 0;
+        }
+
+
+
+
+
+
+        /* Page Specific Overrides */
+        .simulator-container {
+            grid-template-columns: 300px 1fr;
+        }
+
+        .viz-area {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            height: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .terminal {
+            font-family: var(--font-family-mono);
+            padding: var(--spacing-md);
+            height: 100%;
+            overflow-y: auto;
+            color: var(--text-color);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        .log-entry { margin-bottom: 0.5rem; word-break: break-word; }
+        .log-success { color: var(--success-color); }
+        .log-info { color: var(--accent-secondary); }
+        .log-error { color: var(--error-color); }
+
+        /* Tree Visualization Styles */
+        svg { width: 100%; height: 100%; }
+
+
+        .node circle { fill: var(--surface-color); stroke: var(--accent-color); stroke-width: 2px; }
+        .node text { font-size: 12px; text-anchor: middle; dominant-baseline: middle; fill: var(--text-color); }
+        .link { stroke: var(--border-color); stroke-width: 2px; }
+        .node-label { font-size: 10px; fill: var(--text-muted); background: var(--surface-color); }
+
+        @media (max-width: 768px) {
+            .simulator-container { grid-template-columns: 1fr; }
+        }
+    </style>
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+<!-- Generated Images:
+     - decision-tree-hero.png: A high-tech, bright, and clean 3D illustration of a decision tree structure growing upwards. The nodes are polished glass spheres glowing with soft blue light (#2563eb), connected by sleek metallic branches. The base of the tree emerges from a digital grid representing unstructured data. The background is a very light, airy gradient of white and pale slate, suitable for a modern SaaS hero section. The style conveys precision, logic, and artificial intelligence.
+     - semantic-splitting-diagram.png: A modern, flat-style vector illustration depicting "Semantic Splitting". On the left, a document icon contains abstract text lines with specific keywords like "Error" and "Urgent" highlighted in bright cyan. These keywords flow into a central diamond-shaped decision node. Two arrows emerge from the node: one path leads to a checkmark icon (green), the other to a cross icon (red), visualizing how text meaning drives logic. The color palette uses the site's primary blue, slate grey, and white.
+     - tree-to-code-compiler.png: A split-screen conceptual illustration. The left half shows a simplified, colorful decision tree graph. The right half shows a code editor window with syntax-highlighted Kotlin code. A glowing, semi-transparent arrow flows from the tree structure into the code lines, symbolizing the automatic generation of code from logic. The aesthetic is clean, professional, and technical, utilizing a white background with deep blue and code-syntax colors.
+-->
+</head>
+<body>
+
+    <cognotik-header current-page="decision_tree"></cognotik-header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Symbolic Logic meets LLM Intuition</h1>
+                <p class="subtitle">The <strong>DecisionTreeTask</strong> combines the semantic understanding of Large Language Models with the mathematical rigor of Information Gain algorithms to build interpretable, executable decision trees.</p>
+                <a href="#demo" class="cta-button">Try the Simulation</a>
+                <div style="margin-top: 3rem;">
+                    <img src="assets/images/decision-tree-hero.png" alt="High-tech 3D illustration of a decision tree structure growing upwards with glowing nodes" style="max-width: 100%; height: auto; border-radius: 1rem; box-shadow: var(--shadow);">
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="features">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <img src="assets/images/semantic-splitting-diagram.png" alt="Vector illustration of semantic text splitting logic" style="width: 100%; height: auto; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <h3>Semantic Splitting</h3>
+                        <p>Unlike traditional trees that only handle numbers, our agent understands text. It generates rules like <code>description contains "error"</code> or <code>sku matches "^[A-Z]-123"</code>.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div style="margin-bottom: 1.5rem; color: var(--accent-secondary);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        </div>
+                        <h3>Math-Verified Accuracy</h3>
+                        <p>The LLM proposes the rules, but the data decides. We calculate Entropy and Information Gain for every proposal to ensure the tree is statistically sound.</p>
+                    </div>
+                    <div class="feature-card">
+                        <img src="assets/images/tree-to-code-compiler.png" alt="Illustration of decision tree logic converting to Kotlin code" style="width: 100%; height: auto; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <h3>Code Generation</h3>
+                        <p>The final output isn't just a report—it's a compiled Kotlin function ready to be dropped into your production codebase.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="demo" class="simulator">
+            <div class="container">
+                <h2>Interactive Simulation</h2>
+                <p>See how the agent builds a tree to predict <strong>Customer Churn</strong> based on mixed data types.</p>
+                
+                <div class="simulator-container">
+                    <div class="sim-controls">
+                        <div class="control-group">
+                            <label>Target Column</label>
+                            <select id="targetSelect" disabled>
+                                <option>Churn (Yes/No)</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label>Max Depth</label>
+                            <input type="number" id="maxDepth" value="3" min="1" max="5">
+                        </div>
+                        <div class="control-group">
+                            <label>Candidate Rules per Node</label>
+                            <input type="number" id="candidateRules" value="3" min="1" max="10">
+                        </div>
+                        <button class="run-button" onclick="runSimulation()">Run Task</button>
+                        
+                        <div style="margin-top: 2rem; font-size: 0.8rem; color: var(--text-light);">
+                            <strong>Dataset Preview:</strong><br>
+                            - Age (Int)<br>
+                            - Contract (String)<br>
+                            - LastCall (Text)<br>
+                            - Usage (Float)
+                        </div>
+                    </div>
+                    
+                    <div class="sim-output">
+                        <div class="tabs">
+                            <div class="tab active" onclick="switchTab('viz')">Tree Visualization</div>
+                            <div class="tab" onclick="switchTab('log')">Agent Logs</div>
+                            <div class="tab" onclick="switchTab('code')">Generated Code</div>
+                        </div>
+                        
+                        <div id="viz-panel" class="viz-area">
+                            <svg id="treeSvg"></svg>
+                        </div>
+                        
+                        <div id="log-panel" class="viz-area" style="display: none;">
+                            <div class="terminal" id="terminalOutput">
+                                <div class="log-entry">Waiting to start...</div>
+                            </div>
+                        </div>
+
+                        <div id="code-panel" class="viz-area" style="display: none; background: var(--code-bg);">
+                            <pre id="codeOutput" style="margin: 0; height: 100%; border-radius: 0;"><code class="language-kotlin">// Code will appear here after simulation</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="docs" class="features">
+            <div class="container">
+                <h2>Configuration & Usage</h2>
+                <p>The <code>DecisionTreeTask</code> is configured via the <code>DecisionTreeTaskExecutionConfigData</code> class.</p>
+                
+                <div style="background: white; padding: 2rem; border-radius: 1rem; border: 1px solid var(--border); margin-top: 2rem;">
+                    <h3>Parameters</h3>
+                    <ul style="list-style: none; margin-top: 1rem;">
+                        <li style="margin-bottom: 1rem;">
+                            <code>data_file</code> <span style="background: var(--surface-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">String</span><br>
+                            Path to the CSV or JSONL file containing the training data.
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <code>target_column</code> <span style="background: var(--surface-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">String</span><br>
+                            The name of the column you want to predict.
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <code>max_depth</code> <span style="background: var(--surface-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Int</span><br>
+                            Limits the height of the tree to prevent overfitting. Default: 3.
+                        </li>
+                        <li style="margin-bottom: 1rem;">
+                            <code>candidate_rules</code> <span style="background: var(--surface-color); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">Int</span><br>
+                            How many splitting rules the LLM should propose for each node. Higher numbers increase accuracy but cost more tokens.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Simiacryptus Cognotik. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Simulation Data and Logic
+        const mockData = {
+            root: {
+                name: "Root",
+                rule: "Start",
+                children: [
+                    {
+                        name: "Contract",
+                        rule: "Contract == 'Month-to-Month'",
+                        children: [
+                            {
+                                name: "Usage",
+                                rule: "Usage < 10.5",
+                                children: [
+                                    { name: "Churn", rule: "Yes", leaf: true },
+                                    { name: "No Churn", rule: "No", leaf: true }
+                                ]
+                            },
+                            {
+                                name: "Support",
+                                rule: "LastCall contains 'angry'",
+                                children: [
+                                    { name: "Churn", rule: "Yes", leaf: true },
+                                    { name: "No Churn", rule: "No", leaf: true }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        name: "Age",
+                        rule: "Contract != 'Month-to-Month'",
+                        children: [
+                            { name: "No Churn", rule: "No", leaf: true } // Simplified for demo
+                        ]
+                    }
+                ]
+            }
+        };
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.viz-area').forEach(p => p.style.display = 'none');
+            
+            // Find the clicked tab element based on text content or index is tricky, 
+            // so we rely on the onclick context or just index mapping.
+            // Simple mapping:
+            const tabs = document.querySelectorAll('.tab');
+            if(tabName === 'viz') { tabs[0].classList.add('active'); document.getElementById('viz-panel').style.display = 'block'; }
+            if(tabName === 'log') { tabs[1].classList.add('active'); document.getElementById('log-panel').style.display = 'block'; }
+            if(tabName === 'code') { tabs[2].classList.add('active'); document.getElementById('code-panel').style.display = 'block'; }
+        }
+
+        function log(msg, type = 'info') {
+            const term = document.getElementById('terminalOutput');
+            const div = document.createElement('div');
+            div.className = `log-entry log-${type}`;
+            div.textContent = `> ${msg}`;
+            term.appendChild(div);
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('terminalOutput').innerHTML = '';
+        }
+
+        async function runSimulation() {
+            const depth = document.getElementById('maxDepth').value;
+            const candidates = document.getElementById('candidateRules').value;
+            
+            clearLog();
+            switchTab('log');
+            
+            log(`Initializing DecisionTreeTask...`);
+            log(`Config: Target='Churn', Depth=${depth}, Candidates=${candidates}`);
+            await wait(800);
+            
+            log(`Loading data... 1000 records found.`);
+            await wait(800);
+            
+            log(`Calculating initial Entropy... 0.98`);
+            await wait(500);
+            
+            // Simulate Level 0
+            log(`Depth 0: Sampling data for LLM...`);
+            await wait(1000);
+            log(`LLM Proposed rules:`, 'info');
+            log(`  1. Contract == 'Month-to-Month'`);
+            log(`  2. Age > 60`);
+            log(`  3. Usage < 50.0`);
+            await wait(800);
+            log(`Validating rules via Information Gain...`);
+            log(`Best Split: Contract == 'Month-to-Month' (Gain: 0.45)`, 'success');
+            
+            // Draw Root Split
+            switchTab('viz');
+            drawTreeStep(1);
+            await wait(1500);
+            
+            switchTab('log');
+            // Simulate Level 1 Left
+            log(`Depth 1 (Left): Subset size 450. Entropy 0.85.`);
+            log(`LLM Proposed rules: 'LastCall contains "angry"', 'Usage < 10.5'`);
+            await wait(1000);
+            log(`Best Split: Usage < 10.5 (Gain: 0.22)`, 'success');
+            
+            switchTab('viz');
+            drawTreeStep(2);
+            await wait(1500);
+
+            switchTab('log');
+            log(`Depth 1 (Right): Subset size 550. Purity > 0.95.`);
+            log(`Leaf Node Created: Prediction 'No'`, 'success');
+            
+            switchTab('viz');
+            drawTreeStep(3);
+            await wait(1000);
+            
+            log(`Tree construction complete.`);
+            log(`Generating Kotlin code...`);
+            
+            const code = `fun predict(record: Map<String, String>): String {
+    if (record["Contract"] == "Month-to-Month") {
+        if ((record["Usage"]?.toDoubleOrNull() ?: 0.0) < 10.5) {
+            // Probability: 0.85 (n=120)
+            return "Yes"
+        } else {
+            // Probability: 0.60 (n=330)
+            return "No"
+        }
+    } else {
+        // Probability: 0.96 (n=550)
+        return "No"
+    }
+}`;
+            document.getElementById('codeOutput').querySelector('code').textContent = code;
+            switchTab('code');
+        }
+
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Simple SVG Tree Drawing Logic
+        function drawTreeStep(step) {
+            const svg = document.getElementById('treeSvg');
+            svg.innerHTML = ''; // Clear
+            
+            const width = svg.clientWidth;
+            const height = svg.clientHeight;
+            const startX = width / 2;
+            const startY = 40;
+            const levelH = 80;
+            
+            // Helper to draw node
+            const drawNode = (x, y, label, color = '#fff') => {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.setAttribute("class", "node");
+                
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", x);
+                circle.setAttribute("cy", y);
+                circle.setAttribute("r", 20);
+                circle.style.fill = color;
+                
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", x);
+                text.setAttribute("y", y);
+                text.textContent = label;
+                
+                g.appendChild(circle);
+                g.appendChild(text);
+                svg.appendChild(g);
+            };
+
+            // Helper to draw link
+            const drawLink = (x1, y1, x2, y2, label) => {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", x1);
+                line.setAttribute("y1", y1);
+                line.setAttribute("x2", x2);
+                line.setAttribute("y2", y2);
+                line.setAttribute("class", "link");
+                svg.appendChild(line);
+
+                if(label) {
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", (x1+x2)/2);
+                    text.setAttribute("y", (y1+y2)/2 - 5);
+                    text.setAttribute("class", "node-label");
+                    text.setAttribute("text-anchor", "middle");
+                    text.textContent = label;
+                    svg.appendChild(text);
+                }
+            };
+
+            // Step 1: Root Split
+            drawNode(startX, startY, "Root");
+            
+            if (step >= 1) {
+                // Left Child
+                drawLink(startX, startY, startX - 100, startY + levelH, "Contract=M2M");
+                drawNode(startX - 100, startY + levelH, "?");
+                
+                // Right Child
+                drawLink(startX, startY, startX + 100, startY + levelH, "Else");
+                drawNode(startX + 100, startY + levelH, "?");
+            }
+
+            if (step >= 2) {
+                // Expand Left
+                drawLink(startX - 100, startY + levelH, startX - 150, startY + levelH*2, "Usage<10");
+                drawNode(startX - 150, startY + levelH*2, "Yes", "#fee2e2"); // Churn
+
+                drawLink(startX - 100, startY + levelH, startX - 50, startY + levelH*2, "Else");
+                drawNode(startX - 50, startY + levelH*2, "No", "#dcfce7"); // No Churn
+                
+                // Update parent node text
+                // (In a real app we'd use data binding, here just redrawing/overwriting visually)
+            }
+
+            if (step >= 3) {
+                // Expand Right (Leaf)
+                // Just color the right node green
+                const nodes = svg.querySelectorAll('circle');
+                nodes[2].style.fill = "#dcfce7"; // The right child from step 1
+                const texts = svg.querySelectorAll('text');
+                // Update text content manually for demo simplicity
+                texts[texts.length-1].textContent = "No"; // Last text added was the node label? No, order varies.
+                // Re-drawing specifically for step 3 to ensure correctness
+                svg.innerHTML = '';
+                
+                // Re-draw full tree
+                drawNode(startX, startY, "Root");
+                
+                // Left Branch
+                drawLink(startX, startY, startX - 100, startY + levelH, "Contract=M2M");
+                drawNode(startX - 100, startY + levelH, "Split");
+                
+                drawLink(startX - 100, startY + levelH, startX - 160, startY + levelH*2, "Usage<10");
+                drawNode(startX - 160, startY + levelH*2, "Yes", "#fee2e2");
+
+                drawLink(startX - 100, startY + levelH, startX - 40, startY + levelH*2, "Else");
+                drawNode(startX - 40, startY + levelH*2, "No", "#dcfce7");
+
+                // Right Branch
+                drawLink(startX, startY, startX + 100, startY + levelH, "Else");
+                drawNode(startX + 100, startY + levelH, "No", "#dcfce7");
+            }
+        }
+        
+        // Initial Draw
+        drawTreeStep(0);
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Configuration and State
+            const state = {
+                isRunning: false,
+                currentStep: 0,
+                simulationSpeed: 1 // Multiplier for wait times
+            };
+        
+            const colors = {
+                primary: '#8b5cf6',
+                success: '#4ade80',
+                danger: '#f87171',
+                surface: '#1e293b',
+                text: '#e2e8f0',
+                churn: '#f87171',
+                noChurn: '#4ade80'
+            };
+        
+            // DOM Elements
+            const ui = {
+                runBtn: document.querySelector('.run-button[onclick="runSimulation()"]'),
+                tabs: document.querySelectorAll('.tab'),
+                panels: {
+                    viz: document.getElementById('viz-panel'),
+                    log: document.getElementById('log-panel'),
+                    code: document.getElementById('code-panel')
+                },
+                inputs: {
+                    depth: document.getElementById('maxDepth'),
+                    candidates: document.getElementById('candidateRules')
+                },
+                terminal: document.getElementById('terminalOutput'),
+                svg: document.getElementById('treeSvg'),
+                codeBlock: document.querySelector('#codeOutput code')
+            };
+        
+            // --- Utility Functions ---
+        
+            /**
+             * Creates a promise that resolves after ms milliseconds
+             * @param {number} ms 
+             */
+            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms * state.simulationSpeed));
+        
+            /**
+             * Helper to create SVG elements with proper namespace
+             */
+            const createSvgElement = (type, attributes = {}) => {
+                const el = document.createElementNS("http://www.w3.org/2000/svg", type);
+                Object.entries(attributes).forEach(([key, value]) => el.setAttribute(key, value));
+                return el;
+            };
+        
+            // --- UI Logic ---
+        
+            /**
+             * Handles tab switching logic
+             * @param {string} tabName - 'viz', 'log', or 'code'
+             */
+            const switchTab = (tabName) => {
+                // Update Tab Styles
+                ui.tabs.forEach((tab, index) => {
+                    const target = ['viz', 'log', 'code'][index];
+                    if (target === tabName) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+        
+                // Update Panel Visibility
+                Object.entries(ui.panels).forEach(([key, panel]) => {
+                    panel.style.display = key === tabName ? 'block' : 'none';
+                });
+            };
+        
+            /**
+             * Terminal Logger
+             */
+            const logger = {
+                clear: () => {
+                    ui.terminal.innerHTML = '';
+                },
+                log: (msg, type = 'info') => {
+                    const div = document.createElement('div');
+                    div.className = `log-entry log-${type}`;
+            
+                    // Add timestamp
+                    const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+                    div.innerHTML = `<span style="opacity:0.5">[${time}]</span> > ${msg}`;
+            
+                    ui.terminal.appendChild(div);
+                    ui.terminal.scrollTop = ui.terminal.scrollHeight;
+                }
+            };
+        
+            /**
+             * Tree Visualization Logic
+             */
+            const visualizer = {
+                clear: () => {
+                    ui.svg.innerHTML = '';
+                },
+        
+                drawNode: (x, y, label, bgColor = colors.surface) => {
+                    const g = createSvgElement('g', { class: 'node' });
+            
+                    const circle = createSvgElement('circle', {
+                        cx: x, cy: y, r: 20,
+                        style: `fill: ${bgColor};`
+                    });
+            
+                    const text = createSvgElement('text', {
+                        x: x, y: y,
+                        'text-anchor': 'middle',
+                        'dominant-baseline': 'middle',
+                        style: `font-size: 12px;`
+                    });
+                    text.textContent = label;
+        
+                    g.appendChild(circle);
+                    g.appendChild(text);
+                    ui.svg.appendChild(g);
+                },
+        
+                drawLink: (x1, y1, x2, y2, label) => {
+                    // Draw Line
+                    const line = createSvgElement('line', {
+                        x1, y1, x2, y2,
+                        class: 'link'
+                    });
+                    ui.svg.prepend(line); // Prepend so lines are behind nodes
+        
+                    // Draw Label Background (for readability)
+                    if (label) {
+                        const midX = (x1 + x2) / 2;
+                        const midY = (y1 + y2) / 2;
+                
+                        const text = createSvgElement('text', {
+                            x: midX, y: midY - 5,
+                            class: 'node-label',
+                            'text-anchor': 'middle',
+                            style: 'font-size: 10px;'
+                        });
+                        text.textContent = label;
+                        ui.svg.appendChild(text);
+                    }
+                },
+        
+                renderStep: (step) => {
+                    visualizer.clear();
+                    const width = ui.svg.clientWidth || 600;
+                    const startX = width / 2;
+                    const startY = 40;
+                    const levelH = 80;
+                    const spread = 120;
+        
+                    // Always draw Root
+                    visualizer.drawNode(startX, startY, "Root");
+        
+                    if (step >= 1) {
+                        // Level 1 Split
+                        visualizer.drawLink(startX, startY, startX - spread, startY + levelH, "Contract=M2M");
+                        visualizer.drawLink(startX, startY, startX + spread, startY + levelH, "Else");
+                
+                        visualizer.drawNode(startX - spread, startY + levelH, step === 1 ? "?" : "Split");
+                        visualizer.drawNode(startX + spread, startY + levelH, step === 1 ? "?" : "No", step >= 3 ? colors.noChurn : colors.surface);
+                    }
+        
+                    if (step >= 2) {
+                        // Level 2 Split (Left Branch)
+                        const leftX = startX - spread;
+                        const leftY = startY + levelH;
+                
+                        visualizer.drawLink(leftX, leftY, leftX - 60, leftY + levelH, "Usage<10");
+                        visualizer.drawLink(leftX, leftY, leftX + 60, leftY + levelH, "Else");
+        
+                        visualizer.drawNode(leftX - 60, leftY + levelH, "Yes", colors.churn);
+                        visualizer.drawNode(leftX + 60, leftY + levelH, "No", colors.noChurn);
+                    }
+                }
+            };
+        
+            // --- Main Simulation Logic ---
+        
+            const runSimulation = async () => {
+                if (state.isRunning) return;
+                state.isRunning = true;
+        
+                // Disable button
+                ui.runBtn.textContent = "Running...";
+                ui.runBtn.style.opacity = "0.7";
+                ui.runBtn.style.cursor = "not-allowed";
+        
+                try {
+                    const depth = ui.inputs.depth.value;
+                    const candidates = ui.inputs.candidates.value;
+        
+                    // 1. Initialization
+                    switchTab('log');
+                    logger.clear();
+                    logger.log(`Initializing DecisionTreeTask...`);
+                    logger.log(`Configuration: Target='Churn', MaxDepth=${depth}, Candidates=${candidates}`);
+                    await wait(800);
+        
+                    logger.log(`Loading dataset... 1,000 records loaded.`);
+                    logger.log(`Calculating global entropy... 0.98`);
+                    await wait(800);
+        
+                    // 2. Root Node Analysis
+                    logger.log(`Depth 0: Analyzing root node...`);
+                    await wait(600);
+                    logger.log(`LLM generating candidate rules...`, 'info');
+                    await wait(800);
+                    logger.log(`  > Contract == 'Month-to-Month'`);
+                    logger.log(`  > Age > 60`);
+                    logger.log(`  > Usage < 50.0`);
+                    await wait(600);
+                    logger.log(`Calculating Information Gain for candidates...`);
+                    logger.log(`Best Split Selected: Contract == 'Month-to-Month' (Gain: 0.45)`, 'success');
+        
+                    // 3. Visualize Step 1
+                    switchTab('viz');
+                    visualizer.renderStep(1);
+                    await wait(1500);
+        
+                    // 4. Level 1 Analysis
+                    switchTab('log');
+                    logger.log(`Depth 1 (Left Branch): Subset size 450. Entropy 0.85.`);
+                    logger.log(`LLM generating candidate rules...`, 'info');
+                    await wait(1000);
+                    logger.log(`  > LastCall contains "angry"`);
+                    logger.log(`  > Usage < 10.5`);
+                    logger.log(`Best Split Selected: Usage < 10.5 (Gain: 0.22)`, 'success');
+        
+                    // 5. Visualize Step 2
+                    switchTab('viz');
+                    visualizer.renderStep(2);
+                    await wait(1500);
+        
+                    // 6. Finalize
+                    switchTab('log');
+                    logger.log(`Depth 1 (Right Branch): Subset size 550. Purity > 0.95.`);
+                    logger.log(`Leaf Node Created: Prediction 'No'`, 'success');
+                    await wait(800);
+            
+                    // 7. Visualize Final
+                    switchTab('viz');
+                    visualizer.renderStep(3); // Final state
+                    await wait(1000);
+        
+                    logger.log(`Tree construction complete.`);
+                    logger.log(`Compiling to Kotlin...`);
+                    await wait(800);
+        
+                    // 8. Show Code
+                    const finalCode = `/**
+         * Generated Decision Tree for Churn Prediction
+         * Accuracy on Train Set: 94.2%
+         */
+        fun predict(record: Map<String, String>): String {
+            // Root Split
+            if (record["Contract"] == "Month-to-Month") {
+        
+                // Depth 1: Usage Check
+                val usage = record["Usage"]?.toDoubleOrNull() ?: 0.0
+                if (usage < 10.5) {
+                    // High probability of churn for low usage M2M customers
+                    return "Yes" 
+                } else {
+                    return "No"
+                }
+        
+            } else {
+                // Long term contracts rarely churn
+                return "No"
+            }
+        }`;
+                    ui.codeBlock.textContent = finalCode;
+                    switchTab('code');
+        
+                } catch (error) {
+                    console.error(error);
+                    logger.log(`Error: ${error.message}`, 'danger');
+                } finally {
+                    state.isRunning = false;
+                    ui.runBtn.textContent = "Run Task";
+                    ui.runBtn.style.opacity = "1";
+                    ui.runBtn.style.cursor = "pointer";
+                }
+            };
+        
+            // --- Event Listeners ---
+        
+            // Replace inline onclick for Run button
+            if (ui.runBtn) {
+                ui.runBtn.removeAttribute('onclick'); // Clean up HTML attribute
+                ui.runBtn.addEventListener('click', runSimulation);
+            }
+        
+            // Replace inline onclick for Tabs
+            ui.tabs.forEach((tab, index) => {
+                tab.removeAttribute('onclick'); // Clean up HTML attribute
+                const tabNames = ['viz', 'log', 'code'];
+                tab.addEventListener('click', () => switchTab(tabNames[index]));
+            });
+        
+            // Initial Render
+            visualizer.renderStep(0);
+        });
+    </script>
+</body>
+</html>

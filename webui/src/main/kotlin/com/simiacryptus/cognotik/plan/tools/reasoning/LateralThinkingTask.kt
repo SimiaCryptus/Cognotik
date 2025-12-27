@@ -35,6 +35,7 @@ class LateralThinkingTask(
 
         val LateralThinking = TaskType(
             "LateralThinking",
+            "Reasoning",
             LateralThinkingTaskExecutionConfigData::class.java,
             LateralThinkingTaskTypeConfig::class.java,
             "Break conventional thinking patterns to find innovative solutions",
@@ -283,7 +284,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
 
             log.info("Configuration: techniques=${techniques.size}, numAlternatives=$numAlternatives, evaluateFeasibility=$evaluateFeasibility")
 
-            val api = orchestrationConfig.defaultChatter ?: return
+            val api = defaultSmart ?: return
 
             val tabs = TabbedDisplay(task)
 
@@ -378,7 +379,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                     model = api.getChildClient(task),
                     temperature = 0.8,
                     name = "LateralThinking_${technique}",
-                    parsingChatter = orchestrationConfig.parsingChatter,
+                    parsingChatter = defaultFast,
                 )
 
                 val application = techniqueParser.answer(listOf(techniquePrompt)).obj
@@ -615,7 +616,7 @@ Provide a structured evaluation.
                     model = api.getChildClient(task),
                     temperature = 0.4,
                     name = "FeasibilityEvaluation",
-                    parsingChatter = orchestrationConfig.parsingChatter,
+                    parsingChatter = defaultFast,
                 )
 
                 feasibilityEvaluation = feasibilityParser.answer(listOf(feasibilityPrompt)).obj

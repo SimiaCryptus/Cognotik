@@ -109,7 +109,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
 
         log.info("Configuration: thesis='$thesis', antithesis='$antithesis', context='$context', levels=$synthesisLevels, preserveStrengths=$preserveStrengths")
 
-        val api = orchestrationConfig.defaultChatter ?: return
+        val api = defaultSmart ?: return
         val ui = task.ui
         val tabs = TabbedDisplay(task)
         transcriptStream = initializeTranscript(task)
@@ -845,6 +845,7 @@ Be comprehensive yet concise in your final integration.
         private val log: Logger = LoggerFactory.getLogger(DialecticalReasoningTask::class.java)
         val DialecticalReasoning = TaskType(
             "DialecticalReasoning",
+            "Reasoning",
             DialecticalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Resolve contradictions through thesis-antithesis-synthesis",

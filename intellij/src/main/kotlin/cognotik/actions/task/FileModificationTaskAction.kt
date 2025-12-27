@@ -261,8 +261,8 @@ class FileModificationTaskAction : BaseAction() {
       }
 
       return OrchestrationConfig(
-        defaultModel = model ?: AppSettingsState.instance.smartModel ?: throw IllegalStateException("No model configured"),
-        parsingModel = AppSettingsState.instance.fastModel ?: throw IllegalStateException("Fast model not configured"),
+        defaultSmartModel = model ?: AppSettingsState.instance.smartModel ?: throw IllegalStateException("No model configured"),
+        defaultFastModel = AppSettingsState.instance.fastModel ?: throw IllegalStateException("Fast model not configured"),
         temperature = temperatureSlider.value / 100.0,
         autoFix = autoFixCheckbox.isSelected,
         workingDir = root.absolutePath,

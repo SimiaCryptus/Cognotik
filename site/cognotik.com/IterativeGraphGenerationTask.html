@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iterative Graph Generation Task - Cognotik</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        /* Utilities */
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Hero */
+        .hero {
+            padding-top: 8rem;
+            padding-bottom: 4rem;
+            display: flex;
+            align-items: center;
+            text-align: left;
+            min-height: 80vh;
+            position: relative;
+            background: transparent;
+        }
+        .hero-content {
+            flex: 1;
+            padding-right: 2rem;
+        }
+        
+        .hero-visual {
+            flex: 1;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        /* Abstract Visual Placeholder */
+        .visual-node {
+            width: 200px;
+            height: 200px;
+            border: 2px solid var(--accent-secondary);
+            border-radius: 50%;
+            position: absolute;
+            animation: pulse 4s infinite;
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .visual-node::before {
+            content: '🕸️';
+            font-size: 4rem;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        
+        /* Features */
+        .feature-icon {
+            color: var(--accent-secondary);
+            margin-bottom: 1.5rem;
+        }
+        .feature-icon svg {
+            width: 48px;
+            height: 48px;
+        }
+        
+        /* Simulator */
+        
+        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
+        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
+        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
+        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
+        
+        /* Use Cases */
+        .use-case-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .use-case-item {
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+        }
+        @media (max-width: 768px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
+            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="iterative-graph-generation"></cognotik-header>
+    <!-- Hero -->
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>Iterative Graph Generation Task</h1>
+            <p class="subtitle">Build comprehensive knowledge graphs by iteratively analyzing context and extracting relationships.</p>
+            <a href="#demo" class="cta-button">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+    <!-- Features -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10h-10V2z"/><path d="M12 12L2.1 12.5"/></svg>
+                    </div>
+                    <h3>Incremental Building</h3>
+                    <p>Adds nodes and edges iteratively to build complex, interconnected graphs.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    </div>
+                    <h3>Context Analysis</h3>
+                    <p>Extracts entities and relationships from unstructured text and documents.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                    </div>
+                    <h3>Schema Enforcement</h3>
+                    <p>Adheres to defined node and edge types for consistent data structure.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Simulator -->
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <!-- Inputs -->
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                    <div class="control-group">
+                        <label>Goal Prompt</label>
+                        <input type="text" id="goal_prompt" value="Map the relationships in the Harry Potter universe">
+                    </div>
+                    <div class="control-group">
+                        <label>Node Types</label>
+                        <input type="text" id="node_types" value="Character, Location, Organization">
+                    </div>
+                    <div class="control-group">
+                        <label>Edge Types</label>
+                        <input type="text" id="edge_types" value="FRIEND_OF, MEMBER_OF, LOCATED_IN">
+                    </div>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Generate Graph</button>
+                </div>
+                <!-- Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('graph')">Graph</div>
+                        <div class="tab" onclick="switchTab('logs')">Logs</div>
+                    </div>
+                    <div id="output-graph" class="tab-content active markdown-preview">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the graph and click "Generate" to see the output.
+                        </div>
+                    </div>
+                    <div id="output-logs" class="tab-content" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Use Cases -->
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>Knowledge Management</h4>
+                    <p>Organize complex information into structured, queryable graphs.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Relationship Mapping</h4>
+                    <p>Visualize connections between people, organizations, and concepts.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Data Modeling</h4>
+                    <p>Prototype graph database schemas and data structures.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Content Analysis</h4>
+                    <p>Extract structured data from large volumes of unstructured text.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            if (tabName === 'graph') {
+                document.getElementById('output-graph').classList.add('active');
+            } else {
+                document.getElementById('output-logs').classList.add('active');
+            }
+        }
+        function runSimulation() {
+            const goal = document.getElementById('goal_prompt').value;
+            const reportEl = document.getElementById('output-graph');
+            const logsEl = document.getElementById('output-logs');
+            
+            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
+            logsEl.innerHTML = '';
+            
+            const logs = [
+                `[INFO] Initializing IterativeGraphGenerationTask...`,
+                `[INFO] Goal: ${goal}`,
+                `[INFO] Iteration 1: Extracting entities...`,
+                `[INFO] Iteration 2: Identifying relationships...`,
+                `[INFO] Iteration 3: Refining graph structure...`,
+                `[SUCCESS] Graph generation complete.`
+            ];
+            
+            let logIndex = 0;
+            const logInterval = setInterval(() => {
+                if (logIndex < logs.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
+                    line.style.marginBottom = '4px';
+                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
+                    logsEl.appendChild(line);
+                    logsEl.scrollTop = logsEl.scrollHeight;
+                    logIndex++;
+                } else {
+                    clearInterval(logInterval);
+                    renderGraph();
+                }
+            }, 400);
+        }
+        function renderGraph() {
+            const reportEl = document.getElementById('output-graph');
+            const markdown = `
+<h1>Generated Graph</h1>
+
+<h2>Nodes</h2>
+<ul>
+    <li><strong>[Character]</strong> Harry Potter</li>
+    <li><strong>[Character]</strong> Hermione Granger</li>
+    <li><strong>[Character]</strong> Ron Weasley</li>
+    <li><strong>[Location]</strong> Hogwarts</li>
+    <li><strong>[Organization]</strong> Gryffindor</li>
+</ul>
+
+<h2>Edges</h2>
+<ul>
+    <li>Harry Potter --[FRIEND_OF]--> Hermione Granger</li>
+    <li>Harry Potter --[FRIEND_OF]--> Ron Weasley</li>
+    <li>Harry Potter --[MEMBER_OF]--> Gryffindor</li>
+    <li>Gryffindor --[LOCATED_IN]--> Hogwarts</li>
+</ul>
+
+<h2>Summary</h2>
+<p>Graph contains 5 nodes and 4 edges. Relationships successfully mapped based on context.</p>
+            `;
+            reportEl.innerHTML = markdown;
+        }
+    </script>
+</body>
+</html>
