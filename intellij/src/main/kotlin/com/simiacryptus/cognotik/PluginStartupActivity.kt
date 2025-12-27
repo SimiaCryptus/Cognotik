@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.embedding.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
+import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -33,7 +34,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
-      require(TaskType.values().isNotEmpty())
+        require(TaskType.values().isNotEmpty())
+        require(ToolProvider.values().isNotEmpty())
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")

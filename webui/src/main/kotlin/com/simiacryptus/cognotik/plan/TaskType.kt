@@ -24,6 +24,7 @@ import com.simiacryptus.cognotik.plan.tools.reasoning.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
 import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.run.RunShellCommandTask
+import com.simiacryptus.cognotik.plan.tools.run.RunToolTask
 import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask.Companion.SubPlanning
@@ -133,6 +134,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             }
             registerConstructor(RunCodeTask.RunCode) { settings, task ->
                 RunCodeTask(settings, task)
+            }
+            registerConstructor(RunToolTask.RunTool) { settings, task ->
+                RunToolTask(settings, task)
             }
             registerConstructor(SeleniumSessionTask.SeleniumSession) { settings, task ->
                 SeleniumSessionTask(settings, task)

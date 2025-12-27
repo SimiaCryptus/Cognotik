@@ -14,10 +14,10 @@ private val log: Logger = LoggerFactory.getLogger(ToolProvider::class.java)
 
 @JsonDeserialize(using = ToolProviderDeserializer::class)
 @JsonSerialize(using = ToolProviderSerializer::class)
-abstract class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
+open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
 
-    abstract fun getExecutables(): List<String>
-    abstract fun getVersion(path: String): String?
+    open fun getExecutables(): List<String> = emptyList()
+    open fun getVersion(path: String): String? = null
 
     open fun validate(path: String): Boolean {
         return try {
@@ -30,24 +30,28 @@ abstract class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
         }
     }
 
-    open fun resolve(root: String? = null): String? {
+    open fun resolve(root: String? = null, tool: String? = null): List<String> {
+        val foundPaths = mutableListOf<String>()
         val executables = getExecutables()
         if (root != null) {
-            val rootFile = File(root)
+            var rootFile = File(root)
             if (rootFile.exists()) {
+                if (!rootFile.isDirectory) {
+                    rootFile = rootFile.parentFile
+                }
                 for (exe in executables) {
+                    if (tool != null && !exe.equals(tool, ignoreCase = true)) continue
                     val candidates = listOf(
                         File(rootFile, exe),
                         File(rootFile, "$exe.exe"),
                         File(File(rootFile, "bin"), exe),
                         File(File(rootFile, "bin"), "$exe.exe")
                     )
-                    candidates.firstOrNull { canExecute(it) }?.let { return it.absolutePath }
+                    candidates.firstOrNull { canExecute(it) }?.let { foundPaths += it.absolutePath }
                 }
             }
         }
-
-        return null;
+        return foundPaths;
     }
 
     private fun canExecute(file: File) = file.exists() && file.canExecute()
@@ -123,8 +127,7 @@ abstract class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
                 val dir = File(p)
                 if (!dir.exists()) continue
                 if (!dir.isDirectory) continue
-                val resolve = provider.resolve(dir.absolutePath)
-                if (resolve != null) found.add(resolve)
+                found += provider.resolve(dir.absolutePath)
             }
             return found
         }
@@ -146,8 +149,7 @@ abstract class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             val results = mutableListOf<ToolData>()
             if (!root.exists() || !root.isDirectory) return results
             for (provider in values()) {
-                val path = provider.resolve(root.absolutePath)
-                if (path != null) {
+                provider.resolve(root.absolutePath).forEach { path ->
                     results.add(ToolData(provider, path))
                 }
             }
@@ -187,8 +189,7 @@ abstract class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
  *
  * Get via e.g.
  * ```
- *   val executables : List<String>? = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
- *        .tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
+ *   val executables : List<String>? = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
  * ```
  *
  * @property name The display name of the tool
@@ -201,16 +202,14 @@ data class ToolData(
 ) {
     fun absoluteExecutablePaths(): List<String> {
         val result = mutableListOf<String>()
-        if (path != null) {
-            result.add(path)
-        }
         provider?.let {
-            val resolvedPath = it.resolve()
-            if (resolvedPath != null) {
-                result.add(resolvedPath)
-            }
+            result += it.resolve(path)
         }
         return result
+    }
+
+    fun resolve(tool: String?): String? {
+        return provider?.resolve(path, tool)?.firstOrNull();
     }
 }
 

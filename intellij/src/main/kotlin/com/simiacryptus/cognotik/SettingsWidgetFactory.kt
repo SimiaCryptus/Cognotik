@@ -14,6 +14,8 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.diff.PatchProcessors
+import com.simiacryptus.cognotik.models.ToolProvider
+import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -370,6 +372,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         init {
+            require(TaskType.values().isNotEmpty())
+            require(ToolProvider.values().isNotEmpty())
             AppSettingsState.onSettingsLoadedListeners.add {
                 Thread {
                     statusBar?.updateWidget(ID())
