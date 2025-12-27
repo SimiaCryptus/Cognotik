@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
 import com.simiacryptus.cognotik.kotlin.KotlinCodeRuntime
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -98,6 +99,9 @@ class CodeRuntimesDeserializer : DynamicEnumDeserializer<CodeRuntimes>(CodeRunti
 }
 
 
+private fun String.resolveTool() = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+    .find { it.provider?.getExecutables()?.contains(this) == true }?.resolve(this) ?: this
+
 class BashCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
     defs + mapOf(
         "command" to listOf("bash"), "language" to "bash"
@@ -126,13 +130,13 @@ class PythonCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntim
             when {
                 isWindows -> "python"
                 else -> "python3"
-            }
+            }.resolveTool()
         ), "language" to "python"
     )
 )
 
 class NodeJsCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
     defs + mapOf(
-        "command" to listOf("node"), "language" to "javascript"
+        "command" to listOf("node".resolveTool()), "language" to "javascript"
     )
 )
