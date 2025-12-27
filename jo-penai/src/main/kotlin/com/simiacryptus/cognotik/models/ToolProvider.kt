@@ -165,6 +165,22 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             override fun getExecutables() = listOf("aws")
             override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
         }
+        val LanguageServer = object : ToolProvider("LanguageServer") {
+            override fun getExecutables() = listOf(
+                "pylsp",
+                "typescript-language-server",
+                "kotlin-language-server",
+                "jdtls",
+                "clangd",
+                "gopls",
+                "rust-analyzer",
+                "bash-language-server",
+                "docker-langserver",
+                "texlab",
+                "yaml-language-server"
+            )
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
 
         init {
             register(ToolProvider::class.java, Git)
@@ -190,6 +206,7 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             register(ToolProvider::class.java, Kubectl)
             register(ToolProvider::class.java, Gcloud)
             register(ToolProvider::class.java, Aws)
+            register(ToolProvider::class.java, LanguageServer)
         }
 
         @JvmStatic
@@ -199,7 +216,7 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
         fun values(): Collection<ToolProvider> = values(ToolProvider::class.java)
 
         @JvmStatic
-        fun discoverFromPath(provider: ToolProvider): Collection<String> {
+        private fun discoverFromPath(provider: ToolProvider): Collection<String> {
             val pathEnv = System.getenv("PATH") ?: ""
             val pathSeparator = System.getProperty("path.separator")
             val paths = pathEnv.split(pathSeparator)

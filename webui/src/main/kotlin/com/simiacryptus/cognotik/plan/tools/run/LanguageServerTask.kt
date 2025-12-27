@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -18,13 +20,6 @@ class LanguageServerTask(
     orchestrationConfig,
     planTask
 ) {
-    val serverCommands: Map<String, List<String>> = mapOf(
-        "py" to listOf("pylsp"),
-        "js" to listOf("typescript-language-server", "--stdio"),
-        "ts" to listOf("typescript-language-server", "--stdio"),
-        "kt" to listOf("kotlin-language-server"),
-        "java" to listOf("jdtls") // Requires complex setup usually, but placeholder provided
-    )
 
     class LanguageServerTaskTypeConfig(
         task_type: String = LanguageServer.name,
@@ -294,7 +289,7 @@ class LanguageServerTask(
         }
 
         private fun readLine(): String? {
-            val bytes = java.io.ByteArrayOutputStream()
+            val bytes = ByteArrayOutputStream()
             while (true) {
                 val b = input.read()
                 if (b == -1) return if (bytes.size() > 0) bytes.toString() else null
@@ -305,6 +300,26 @@ class LanguageServerTask(
                 bytes.write(b)
             }
         }
+    }
+
+    val serverCommands: Map<String, List<String>> get() {
+        val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+        val executables: List<String>? = tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
+        return mapOf(
+            "py" to listOf("pylsp"),
+            "js" to listOf("typescript-language-server", "--stdio"),
+            "ts" to listOf("typescript-language-server", "--stdio"),
+            "kt" to listOf("kotlin-language-server"),
+            "java" to listOf("jdtls"),
+            "c" to listOf("clangd"),
+            "cpp" to listOf("clangd"),
+            "go" to listOf("gopls"),
+            "rs" to listOf("rust-analyzer"),
+            "sh" to listOf("bash-language-server", "start"),
+            "tex" to listOf("texlab"),
+            "yaml" to listOf("yaml-language-server", "--stdio"),
+            "dockerfile" to listOf("docker-langserver", "--stdio")
+        ).filter { (_, cmd) -> executables?.contains(cmd[0]) ?: false }
     }
 
     companion object {

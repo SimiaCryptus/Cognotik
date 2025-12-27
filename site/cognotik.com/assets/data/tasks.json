@@ -17,7 +17,7 @@
       "items": [
         {
           "id": "runcode",
-          "label": "Run Code Task",
+          "label": "Run Code",
           "url": "RunCodeTask.html",
           "description": "Execute code snippets with oversight",
           "image": "assets/images/runcode-hero-terminal.png",
@@ -25,7 +25,7 @@
         },
         {
           "id": "runtool",
-          "label": "Run Tool Task",
+          "label": "Run Tool",
           "url": "RunToolTask.html",
           "description": "Execute external tools",
           "image": "assets/images/execution-pipeline-flow.png",
@@ -33,7 +33,7 @@
         },
         {
           "id": "autofix",
-          "label": "Auto-Fix Task",
+          "label": "Auto-Fix",
           "url": "SelfHealingTask.html",
           "description": "Run a command and automatically fix any issues that arise",
           "image": "assets/images/self-healing-hero-visual.png",
@@ -41,7 +41,7 @@
         },
         {
           "id": "crawleragent",
-          "label": "Crawler Agent Task",
+          "label": "Crawler Agent",
           "url": "CrawlerAgentTask.html",
           "description": "Search Google, fetch top results, and analyze content",
           "image": "assets/images/crawler-agent-hero.png",
@@ -57,7 +57,7 @@
         },
         {
           "id": "subplanning",
-          "label": "Sub-Planning Task",
+          "label": "Sub-Planning",
           "url": "SubPlanningTask.html",
           "description": "Create and execute sub-plans using recursive planning",
           "image": "assets/images/subplanning-hero-recursive-nodes.png",
@@ -73,7 +73,7 @@
         },
         {
           "id": "languageserver",
-          "label": "Language Server Task",
+          "label": "Language Server",
           "url": "LanguageServerTask.html",
           "description": "Query code intelligence (LSP) for definitions, references, and diagnostics",
           "image": "assets/images/workflow-pipeline-schematic.png",
@@ -103,7 +103,7 @@
       "items": [
         {
           "id": "chainofthought",
-          "label": "Chain of Thought Task",
+          "label": "Chain of Thought",
           "url": "ChainOfThoughtTask.html",
           "description": "Break down complex problems into explicit reasoning steps",
           "image": "assets/images/logic-pipeline-flow.png",
@@ -111,7 +111,7 @@
         },
         {
           "id": "brainstorming",
-          "label": "Brainstorming Task",
+          "label": "Brainstorming",
           "url": "BrainstormingTask.html",
           "description": "Generate and analyze multiple solution options",
           "image": "assets/images/brainstorming-hero.png",
@@ -119,7 +119,7 @@
         },
         {
           "id": "decompositionsynthesis",
-          "label": "Decomposition Synthesis Task",
+          "label": "Decomposition Synthesis",
           "url": "DecompositionSynthesisTask.html",
           "description": "Decompose complex problems and synthesize solutions",
           "image": "assets/images/synthesis-crystal-abstract.png",
@@ -127,7 +127,7 @@
         },
         {
           "id": "systemsthinking",
-          "label": "Systems Thinking Task",
+          "label": "Systems Thinking",
           "url": "SystemsThinkingTask.html",
           "description": "Analyze complex systems through feedback loops and dynamics",
           "image": "assets/images/recursive-network-graph.png",
@@ -135,7 +135,7 @@
         },
         {
           "id": "socraticdialogue",
-          "label": "Socratic Dialogue Task",
+          "label": "Socratic Dialogue",
           "url": "SocraticDialogueTask.html",
           "description": "Explore ideas through Socratic questioning",
           "image": "assets/images/socratic-dialogue-hero.png",
@@ -143,7 +143,7 @@
         },
         {
           "id": "causalinference",
-          "label": "Causal Inference Task",
+          "label": "Causal Inference",
           "url": "CausalInferenceTask.html",
           "description": "Identify causal relationships and root causes",
           "image": "assets/images/search-path-visualization.png",
@@ -151,7 +151,7 @@
         },
         {
           "id": "mathematicalreasoning",
-          "label": "Mathematical Reasoning Task",
+          "label": "Mathematical Reasoning",
           "url": "MathematicalReasoningTask.html",
           "description": "Solve mathematical problems through step-by-step logical reasoning with verifiable steps",
           "image": "assets/images/math-reasoning-hero.png",
@@ -159,7 +159,7 @@
         },
         {
           "id": "decisiontree",
-          "label": "Decision Tree Task",
+          "label": "Decision Tree",
           "url": "DecisionTreeTask.html",
           "description": "Build an LLM-driven symbolic decision tree",
           "image": "assets/images/decision-tree-hero.png",
@@ -167,7 +167,7 @@
         },
         {
           "id": "finitestatemachine",
-          "label": "Finite State Machine Task",
+          "label": "Finite State Machine",
           "url": "FiniteStateMachineTask.html",
           "description": "Model concepts using finite state machine analysis",
           "image": "assets/images/fsm-hero-illustration.png",
@@ -175,7 +175,7 @@
         },
         {
           "id": "gametheory",
-          "label": "Game Theory Task",
+          "label": "Game Theory",
           "url": "GameTheoryTask.html",
           "description": "Analyze strategic interactions using game theory",
           "image": "assets/images/game-theory-hero.png",
@@ -183,7 +183,7 @@
         },
         {
           "id": "geneticoptimization",
-          "label": "Genetic Optimization Task",
+          "label": "Genetic Optimization",
           "url": "GeneticOptimizationTask.html",
           "description": "Iteratively evolve and perfect text through genetic algorithms",
           "image": "assets/images/genetic-text-dna-hero.png",
@@ -191,7 +191,7 @@
         },
         {
           "id": "abstractionladder",
-          "label": "Abstraction Ladder Task",
+          "label": "Abstraction Ladder",
           "url": "AbstractionLadderTask.html",
           "description": "Traverse abstraction levels to identify patterns and design insights",
           "image": "assets/images/architecture-layers-visual.png",
@@ -199,7 +199,7 @@
         },
         {
           "id": "adversarialreasoning",
-          "label": "Adversarial Reasoning Task",
+          "label": "Adversarial Reasoning",
           "url": "AdversarialReasoningTask.html",
           "description": "Red team analysis to identify vulnerabilities and weaknesses",
           "image": "assets/images/system-validation-isometric.png",
@@ -207,7 +207,7 @@
         },
         {
           "id": "constraintsatisfaction",
-          "label": "Constraint Satisfaction Task",
+          "label": "Constraint Satisfaction",
           "url": "ConstraintSatisfactionTask.html",
           "description": "Solve problems with multiple competing constraints",
           "image": "assets/images/fitness-landscape-visualization.png",
@@ -215,15 +215,15 @@
         },
         {
           "id": "isomorphismdiscovery",
-          "label": "Isomorphism Discovery Task",
+          "label": "Isomorphism Discovery",
           "url": "IsomorphismDiscoveryTask.html",
           "description": "Search for and validate structural mappings between two distinct domains",
-          "image": "assets/images/structural-invariant-analysis.png",
+          "image": "assets/images/stability-viz.png",
           "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/IsomorphismDiscoveryTask.kt"
         },
         {
           "id": "probabilisticreasoning",
-          "label": "Probabilistic Reasoning Task",
+          "label": "Probabilistic Reasoning",
           "url": "ProbabilisticReasoningTask.html",
           "description": "Reason under uncertainty using Bayesian analysis",
           "image": "assets/images/stability-viz.png",
@@ -231,7 +231,7 @@
         },
         {
           "id": "structuralinvariantanalysis",
-          "label": "Structural Invariant Analysis Task",
+          "label": "Structural Invariant Analysis",
           "url": "StructuralInvariantAnalysisTask.html",
           "description": "Distill an object down to its immutable properties and symmetries",
           "image": "assets/images/atomic-verification-abstract.png",
@@ -239,7 +239,7 @@
         },
         {
           "id": "temporalreasoning",
-          "label": "Temporal Reasoning Task",
+          "label": "Temporal Reasoning",
           "url": "TemporalReasoningTask.html",
           "description": "Analyze how systems evolve over time and predict future states",
           "image": "assets/images/evolutionary-cycle-diagram.png",
@@ -349,7 +349,7 @@
       "items": [
         {
           "id": "analysis",
-          "label": "Analysis Task",
+          "label": "Analysis",
           "url": "AnalysisTask.html",
           "description": "Directly answer questions or provide insights using the LLM, referencing files including documents",
           "image": "assets/images/holographic-data-projection.png",
@@ -373,7 +373,7 @@
         },
         {
           "id": "imagegeneration",
-          "label": "Image Generation Task",
+          "label": "Image",
           "url": "GenerateImage.html",
           "description": "Generate images using AI image generation models",
           "image": "assets/images/scene-neon-rain-render.png",
@@ -389,7 +389,7 @@
         },
         {
           "id": "dataingest",
-          "label": "Data Ingest Task",
+          "label": "Data Ingest",
           "url": "DataIngest.html",
           "description": "Iteratively parse unstructured logs into structured data",
           "image": "assets/images/structured-data-extraction.png",
@@ -419,7 +419,7 @@
         },
         {
           "id": "tutorialgen",
-          "label": "Tutorial Generation",
+          "label": "Tutorial",
           "url": "TutorialGenerationTask.html",
           "description": "Create step-by-step technical tutorials",
           "image": "assets/images/math-code-flow.png",
@@ -427,7 +427,7 @@
         },
         {
           "id": "writehtml",
-          "label": "HTML Writing Task",
+          "label": "HTML Writing",
           "url": "WriteHtml.html",
           "description": "Create complete HTML files with embedded CSS and JavaScript",
           "image": "assets/images/tech-grid-background.png",
@@ -435,7 +435,7 @@
         },
         {
           "id": "articlegen",
-          "label": "Article Generation",
+          "label": "Article",
           "url": "ArticleGenerationTask.html",
           "description": "Generate publication-ready journalistic articles",
           "image": "assets/images/narrative-generation-hero.png",
@@ -443,7 +443,7 @@
         },
         {
           "id": "reportgen",
-          "label": "Report Generation",
+          "label": "Report",
           "url": "ReportGenerationTask.html",
           "description": "Generate comprehensive business reports",
           "image": "assets/images/holographic-data-projection.png",
@@ -459,7 +459,7 @@
         },
         {
           "id": "narrative",
-          "label": "Narrative Generation",
+          "label": "Narrative",
           "url": "NarrativeGenerationTask.html",
           "description": "Generate complete narratives from analysis and outlines",
           "image": "assets/images/narrative-generation-hero.png",
@@ -515,7 +515,7 @@
         },
         {
           "id": "comicbookgeneration",
-          "label": "Comic Book Generation",
+          "label": "Comic Book",
           "url": "ComicBookGenerationTask.html",
           "description": "Generate comic book scripts and visuals",
           "image": "assets/images/comic-generator-hero.png",
@@ -595,7 +595,7 @@
         },
         {
           "id": "neurallayer",
-          "label": "Neural Network Layer Task",
+          "label": "Neural Network Layer",
           "url": "NeuralNetworkLayerTask.html",
           "description": "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations",
           "image": "assets/images/neural-layer-hero.png",
