@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.graph
+package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent

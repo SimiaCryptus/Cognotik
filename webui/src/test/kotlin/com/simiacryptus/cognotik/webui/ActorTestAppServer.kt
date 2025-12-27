@@ -5,10 +5,6 @@ import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.agents.ImageGenerationAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.StressTestApp
-import com.simiacryptus.cognotik.apps.parse.DocumentParserApp
-import com.simiacryptus.cognotik.apps.parse.DocumentParsingModel
-import com.simiacryptus.cognotik.apps.parse.ParsingModel
-import com.simiacryptus.cognotik.apps.parse.ParsingModel.DocumentData
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
 import com.simiacryptus.cognotik.image.GeminiImageModels
@@ -107,13 +103,6 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                 )
             ),
             ChildWebApp("/stressTest", StressTestApp()),
-            ChildWebApp(
-                "/pdfExtractor", DocumentParserApp(
-                    parsingModel = DocumentParsingModel(
-                        model, 0.1,
-                    ) as ParsingModel<DocumentData>
-                )
-            ),
         )
     }
 

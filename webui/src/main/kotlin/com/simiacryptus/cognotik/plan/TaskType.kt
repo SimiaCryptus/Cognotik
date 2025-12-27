@@ -12,11 +12,7 @@ import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
 import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameNarrativeDesignTask
-import com.simiacryptus.cognotik.plan.tools.graph.IterativeGraphGenerationTask
-import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask
-import com.simiacryptus.cognotik.plan.tools.knowledge.KnowledgeIndexingTask.Companion.KnowledgeIndexing
-import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask
-import com.simiacryptus.cognotik.plan.tools.knowledge.VectorSearchTask.Companion.VectorSearch
+import com.simiacryptus.cognotik.plan.tools.writing.IterativeGraphGenerationTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
 import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
@@ -27,7 +23,6 @@ import com.simiacryptus.cognotik.plan.tools.run.RunToolTask
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.Companion.SubPlan
-import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
 import com.simiacryptus.cognotik.plan.tools.social.*
 import com.simiacryptus.cognotik.plan.tools.writing.*
 import com.simiacryptus.cognotik.plan.tools.writing.ResearchPaperGenerationTask.Companion.ResearchPaperGeneration
@@ -122,9 +117,6 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(FileSearch) { settings, task ->
                 FileSearchTask(settings, task)
             }
-            registerConstructor(KnowledgeIndexing) { settings, task ->
-                KnowledgeIndexingTask(settings, task)
-            }
             registerConstructor(GitHubSearchTask.GitHubSearch) { settings, task ->
                 GitHubSearchTask(settings, task)
             }
@@ -142,9 +134,6 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 //            }
             registerConstructor(AutoFixTask.AutoFix) { settings, task ->
                 AutoFixTask(settings, task)
-            }
-            registerConstructor(VectorSearch) { settings, task ->
-                VectorSearchTask(settings, task)
             }
             registerConstructor(MCPToolTask.MCPTool) { settings, task ->
                 MCPToolTask(settings, task)

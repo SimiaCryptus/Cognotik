@@ -1,20 +1,23 @@
-package com.simiacryptus.cognotik.apps.code
+package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
-import com.simiacryptus.cognotik.agents.CodeAgent.CodeResult
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface.OperationType
+import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FailedToImplementException
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
@@ -45,7 +48,7 @@ open class CodingTask<T : CodeRuntime>(
 
     open val canPlay by lazy {
         ApplicationServices.authorizationManager.isAuthorized(
-            this::class.java, user, OperationType.Execute
+            this::class.java, user, AuthorizationInterface.OperationType.Execute
         )
     }
 
@@ -95,7 +98,7 @@ open class CodingTask<T : CodeRuntime>(
     ) {
         try {
             val lastUserMessage = codeRequest.messages.last { it.second == ModelSchema.Role.user }.first.trim()
-            val codeResponse: CodeResult = if (lastUserMessage.startsWith("```")) {
+            val codeResponse: CodeAgent.CodeResult = if (lastUserMessage.startsWith("```")) {
                 codeAgent.CodeResultImpl(
                     messages = codeAgent.chatMessages(codeRequest),
                     input = codeRequest,
@@ -113,7 +116,7 @@ open class CodingTask<T : CodeRuntime>(
     protected fun displayCodeAndFeedback(
         task: SessionTask,
         codeRequest: CodeAgent.CodeRequest,
-        response: CodeResult,
+        response: CodeAgent.CodeResult,
     ) {
         try {
             displayCode(task, response)
@@ -125,14 +128,14 @@ open class CodingTask<T : CodeRuntime>(
     }
 
     fun append(
-        codeRequest: CodeAgent.CodeRequest, response: CodeResult
+        codeRequest: CodeAgent.CodeRequest, response: CodeAgent.CodeResult
     ) = codeRequest(
         messages = codeRequest.messages + listOf(
             response.code to ModelSchema.Role.assistant,
         ).filter { it.first.isNotBlank() })
 
     fun displayCode(
-        task: SessionTask, response: CodeResult
+        task: SessionTask, response: CodeAgent.CodeResult
     ) {
         val string = response.renderedResponse
             ?: "\n```${codeAgent.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```\n"
@@ -140,7 +143,7 @@ open class CodingTask<T : CodeRuntime>(
     }
 
     open fun displayFeedback(
-        task: SessionTask, request: CodeAgent.CodeRequest, response: CodeResult
+        task: SessionTask, request: CodeAgent.CodeRequest, response: CodeAgent.CodeResult
     ) {
         val formText = StringBuilder()
         var formHandle: StringBuilder? = null
@@ -166,7 +169,7 @@ open class CodingTask<T : CodeRuntime>(
     protected fun playButton(
         task: SessionTask,
         request: CodeAgent.CodeRequest,
-        response: CodeResult,
+        response: CodeAgent.CodeResult,
         formText: StringBuilder,
         formHandle: () -> StringBuilder
     ) = if (!canPlay) "" else ui.hrefLink("▶ Run", "href-link play-button") {
@@ -194,7 +197,7 @@ open class CodingTask<T : CodeRuntime>(
     }
 
     protected open fun feedback(
-        task: SessionTask, feedback: String, request: CodeAgent.CodeRequest, response: CodeResult
+        task: SessionTask, feedback: String, request: CodeAgent.CodeRequest, response: CodeAgent.CodeResult
     ) {
         try {
             task.echo(feedback.renderMarkdown)
@@ -213,7 +216,7 @@ open class CodingTask<T : CodeRuntime>(
 
     protected fun execute(
         task: SessionTask,
-        response: CodeResult,
+        response: CodeAgent.CodeResult,
         request: CodeAgent.CodeRequest,
     ) {
         try {
@@ -230,7 +233,7 @@ open class CodingTask<T : CodeRuntime>(
     }
 
     protected open fun handleExecutionError(
-        e: Throwable, task: SessionTask, request: CodeAgent.CodeRequest, response: CodeResult
+        e: Throwable, task: SessionTask, request: CodeAgent.CodeRequest, response: CodeAgent.CodeResult
     ) {
         val message = when {
             e is ValidatedObject.ValidationError -> e.message ?: "".renderMarkdown
@@ -248,7 +251,7 @@ open class CodingTask<T : CodeRuntime>(
     }
 
     protected open fun execute(
-        task: SessionTask, response: CodeResult
+        task: SessionTask, response: CodeAgent.CodeResult
     ): String {
         val resultValue = response.result.resultValue
         val resultOutput = response.result.resultOutput

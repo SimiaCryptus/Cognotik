@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.plan.tools.graph
+package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
