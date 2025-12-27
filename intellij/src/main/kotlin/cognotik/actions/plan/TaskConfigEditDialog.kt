@@ -17,8 +17,8 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.plan.newSettings
 import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
-import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask
+import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.fetch.FetchMethod
@@ -100,10 +100,10 @@ class TaskConfigEditDialog(
     private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
         when (config) {
             is RunCodeTask.RunCodeTaskTypeConfig -> createRunCodeFields(config)
-            is SelfHealingTask.SelfHealingTaskTypeConfig -> createSelfHealingFields(config)
+            is AutoFixTask.AutoFixTaskTypeConfig -> createSelfHealingFields(config)
             is CrawlerAgentTask.CrawlerTaskTypeConfig -> createCrawlerFields(config)
             is MCPToolTask.MCPToolTaskTypeConfig -> createMCPToolFields(config)
-            is SubPlanningTask.SubPlanningTaskTypeConfig -> createSubPlanningFields(config)
+            is SubPlanTask.SubPlanTaskTypeConfig -> createSubPlanningFields(config)
             is PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig -> createPersuasiveEssayFields(config)
             // Add more task types as needed
         }
@@ -130,18 +130,8 @@ class TaskConfigEditDialog(
         }
     }
 
-    private fun com.intellij.ui.dsl.builder.Panel.createSelfHealingFields(config: SelfHealingTask.SelfHealingTaskTypeConfig) {
+    private fun com.intellij.ui.dsl.builder.Panel.createSelfHealingFields(config: AutoFixTask.AutoFixTaskTypeConfig) {
         group("Self-Healing Settings") {
-            row("Auto-fix Commands:") {
-                val textArea = JBTextArea(5, 40)
-                textArea.text = config.commandAutoFixCommands?.joinToString("\n") ?: ""
-                textArea.toolTipText = "Enter one command per line"
-                val scrollPane = JScrollPane(textArea)
-                cell(scrollPane)
-                    .align(Align.FILL)
-                    .comment("List of commands that can be used for auto-fixing (one per line)")
-                configFields["commandAutoFixCommands"] = textArea
-            }
         }
     }
 
@@ -179,7 +169,7 @@ class TaskConfigEditDialog(
         }
     }
 
-    private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: SubPlanningTask.SubPlanningTaskTypeConfig) {
+    private fun com.intellij.ui.dsl.builder.Panel.createSubPlanningFields(config: SubPlanTask.SubPlanTaskTypeConfig) {
         group("Sub-Planning Settings") {
             row("Purpose:") {
                 val textArea = JBTextArea(3, 40)
@@ -287,7 +277,7 @@ class TaskConfigEditDialog(
         }
     }
 
-    private fun addSubTaskConfig(parentConfig: SubPlanningTask.SubPlanningTaskTypeConfig) {
+    private fun addSubTaskConfig(parentConfig: SubPlanTask.SubPlanTaskTypeConfig) {
         val dialog = TaskTypeSelectionDialog(null)
         if (dialog.showAndGet()) {
             val taskType = dialog.getSelectedTaskType() ?: return
@@ -312,7 +302,7 @@ class TaskConfigEditDialog(
         }
     }
 
-    private fun editSubTaskConfig(entry: SubTaskConfigEntry, parentConfig: SubPlanningTask.SubPlanningTaskTypeConfig) {
+    private fun editSubTaskConfig(entry: SubTaskConfigEntry, parentConfig: SubPlanTask.SubPlanTaskTypeConfig) {
         val dialog = TaskConfigEditDialog(null, entry.taskType, entry.config, availableModels)
         if (dialog.showAndGet()) {
             val updatedConfig = dialog.getConfig()
@@ -332,7 +322,7 @@ class TaskConfigEditDialog(
 
     private fun deleteSubTaskConfig(
         entry: SubTaskConfigEntry,
-        parentConfig: SubPlanningTask.SubPlanningTaskTypeConfig
+        parentConfig: SubPlanTask.SubPlanTaskTypeConfig
     ) {
         val confirmResult = JOptionPane.showConfirmDialog(
             null,
@@ -472,7 +462,7 @@ class TaskConfigEditDialog(
 
     private fun validateTaskSpecificFields(): Boolean {
         // Validate SubPlanning numeric fields
-        if (config is SubPlanningTask.SubPlanningTaskTypeConfig) {
+        if (config is SubPlanTask.SubPlanTaskTypeConfig) {
             val maxDepth = (configFields["max_recursion_depth"] as? JBTextField)?.text?.trim()
             if (!maxDepth.isNullOrEmpty()) {
                 val value = maxDepth.toIntOrNull()
@@ -695,16 +685,11 @@ class TaskConfigEditDialog(
                 )
             }
 
-            is SelfHealingTask.SelfHealingTaskTypeConfig -> {
-                SelfHealingTask.SelfHealingTaskTypeConfig(
+            is AutoFixTask.AutoFixTaskTypeConfig -> {
+                AutoFixTask.AutoFixTaskTypeConfig(
                     task_type = baseConfig.task_type,
                     name = baseConfig.name,
-                    model = baseConfig.model,
-                    commandAutoFixCommands = ((configFields["commandAutoFixCommands"] as? JBTextArea)?.text
-                        ?.lines()
-                        ?.map { it.trim() }
-                        ?.filter { it.isNotEmpty() }
-                        ?: emptyList()).toMutableList()
+                    model = baseConfig.model
                 )
             }
 
@@ -751,8 +736,8 @@ class TaskConfigEditDialog(
                 )
             }
 
-            is SubPlanningTask.SubPlanningTaskTypeConfig -> {
-                SubPlanningTask.SubPlanningTaskTypeConfig(
+            is SubPlanTask.SubPlanTaskTypeConfig -> {
+                SubPlanTask.SubPlanTaskTypeConfig(
                     task_type = baseConfig.task_type!!,
                     name = baseConfig.name,
                     model = baseConfig.model,

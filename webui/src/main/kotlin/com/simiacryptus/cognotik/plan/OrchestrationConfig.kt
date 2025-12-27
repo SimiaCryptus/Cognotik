@@ -11,8 +11,8 @@ import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
-import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask.SelfHealingTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
+import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.AutoFixTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -150,9 +150,9 @@ class OrchestrationConfig(
     companion object {
         var exampleInstance = TaskBreakdownResult(
             tasksByID = mapOf(
-                "1" to SelfHealingTaskExecutionConfigData(
+                "1" to AutoFixTaskExecutionConfigData(
                     task_description = "Task 1", task_dependencies = listOf(), commands = listOf(
-                        SelfHealingTask.CommandWithWorkingDir(
+                        AutoFixTask.CommandWithWorkingDir(
                             command = listOf("echo", "Hello, World!"), workingDir = "."
                         )
                     )

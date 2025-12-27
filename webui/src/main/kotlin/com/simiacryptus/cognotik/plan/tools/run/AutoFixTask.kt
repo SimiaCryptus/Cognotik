@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.apps.general.CmdPatchApp
 import com.simiacryptus.cognotik.apps.general.PatchApp
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.Retryable
@@ -17,17 +18,17 @@ import java.util.*
 import java.util.concurrent.Semaphore
 import kotlin.io.path.exists
 
-class SelfHealingTask(
-    orchestrationConfig: OrchestrationConfig, planTask: SelfHealingTaskExecutionConfigData?
-) : AbstractTask<SelfHealingTask.SelfHealingTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
+class AutoFixTask(
+    orchestrationConfig: OrchestrationConfig, planTask: AutoFixTaskExecutionConfigData?
+) : AbstractTask<AutoFixTask.AutoFixTaskExecutionConfigData, TaskTypeConfig>(orchestrationConfig, planTask) {
 
     companion object {
-        private val log = LoggerFactory.getLogger(SelfHealingTask::class.java)
-        val SelfHealing = TaskType(
-            "SelfHealing",
+        private val log = LoggerFactory.getLogger(AutoFixTask::class.java)
+        val AutoFix = TaskType(
+            "AutoFix",
             "Execution & Automation",
-            SelfHealingTaskExecutionConfigData::class.java,
-            SelfHealingTaskTypeConfig::class.java,
+            AutoFixTaskExecutionConfigData::class.java,
+            AutoFixTaskTypeConfig::class.java,
             "Run a command and automatically fix any issues that arise",
             """
           Executes a command and automatically fixes any issues that arise.
@@ -41,27 +42,19 @@ class SelfHealingTask(
         )
     }
 
-    class SelfHealingTaskTypeConfig(
+    class AutoFixTaskTypeConfig(
         task_type: String? = null,
         model: ApiChatModel? = null,
-        @Description("List of command executables that can be used for auto-fixing") var commandAutoFixCommands: MutableList<String>? = mutableListOf(),
         name: String? = task_type,
-    ) : TaskTypeConfig(task_type, name, model), ValidatedObject {
-        override fun validate(): String? {
-            if (commandAutoFixCommands.isNullOrEmpty()) {
-                return "commandAutoFixCommands must not be null or empty"
-            }
-            return ValidatedObject.validateFields(this)
-        }
-    }
+    ) : TaskTypeConfig(task_type, name, model)
 
-    class SelfHealingTaskExecutionConfigData(
+    class AutoFixTaskExecutionConfigData(
         @Description("The commands to be executed with their respective working directories") val commands: List<CommandWithWorkingDir>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
     ) : ValidatedObject, TaskExecutionConfig(
-        task_type = SelfHealing.name,
+        task_type = AutoFix.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -93,10 +86,12 @@ class SelfHealingTask(
   * Provide the commands and their arguments in the 'commands' field
   * Each command should be a list of strings
   * Available commands:
-  """.trimIndent() + typeConfig.commandAutoFixCommands?.joinToString("\n") { "    * ${File(it).name}" }).trim()
+  """.trimIndent() + (ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+        .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
+        .joinToString("\n") { "    * $it" })).trim()
 
-    override val typeConfig: SelfHealingTaskTypeConfig
-        get() = super.typeConfig as SelfHealingTaskTypeConfig
+    override val typeConfig: AutoFixTaskTypeConfig
+        get() = super.typeConfig as AutoFixTaskTypeConfig
 
     override fun run(
         agent: TaskOrchestrator,
@@ -117,13 +112,18 @@ class SelfHealingTask(
                     settings = PatchApp.Settings(
                         commands = this.executionConfig?.commands?.map { commandWithDir ->
                             val alias = commandWithDir.command.firstOrNull()
-                            val cmds = executionConfig.commands.map {
-                                val cmd = it.command.firstOrNull()
-                                typeConfig.commandAutoFixCommands?.firstOrNull { it.endsWith(cmd ?: "") } ?: cmd
-                            }.map { File(it!!) }.associateBy { it.name }.filterKeys { it.startsWith(alias ?: "") }
+                            val toolExecutable = if (alias != null) {
+                                val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+                                tools.find { it.provider?.getExecutables()?.contains(alias) == true }?.let { toolData ->
+                                    if (toolData.path != null) {
+                                        toolData.provider!!.resolve(toolData.path).firstOrNull()?.let { File(it) }
+                                    } else {
+                                        toolData.resolve(alias)?.let { File(it) }
+                                    }
+                                }
+                            } else null
                             PatchApp.CommandSettings(
-                                executable = when {
-                                    cmds.isNotEmpty() -> cmds.entries.firstOrNull()?.value
+                                executable = toolExecutable ?: when {
                                     alias.isNullOrBlank() -> null
                                     root.resolve(alias).exists() -> root.resolve(alias).toFile().absoluteFile
                                     File(alias).exists() -> File(alias).absoluteFile

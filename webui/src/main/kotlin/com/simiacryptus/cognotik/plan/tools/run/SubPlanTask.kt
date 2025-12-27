@@ -15,13 +15,13 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-class SubPlanningTask(
-    orchestrationConfig: OrchestrationConfig, planTask: SubPlanningTaskExecutionConfigData?
-) : AbstractTask<SubPlanningTask.SubPlanningTaskExecutionConfigData, SubPlanningTask.SubPlanningTaskTypeConfig>(
+class SubPlanTask(
+    orchestrationConfig: OrchestrationConfig, planTask: SubPlanTaskExecutionConfigData?
+) : AbstractTask<SubPlanTask.SubPlanTaskExecutionConfigData, SubPlanTask.SubPlanTaskTypeConfig>(
     orchestrationConfig, planTask
 ) {
 
-    class SubPlanningTaskTypeConfig(
+    class SubPlanTaskTypeConfig(
         @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveMode: CognitiveModeStrategies? = null,
         @Description("Task-specific configurations available within sub-plans") val taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
         @Description("Supplemental description of the purpose of this configuration") val purpose: String = "",
@@ -40,14 +40,14 @@ class SubPlanningTask(
         }
     }
 
-    class SubPlanningTaskExecutionConfigData(
+    class SubPlanTaskExecutionConfigData(
         @Description("The goal or objective for the sub-planning task") val planning_goal: String? = null,
         @Description("Context information to provide to the sub-planner") val context: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = SubPlanning.name,
+        task_type = SubPlan.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -310,13 +310,13 @@ class SubPlanningTask(
 
 
     companion object {
-        private val log = LoggerFactory.getLogger(SubPlanningTask::class.java)
+        private val log = LoggerFactory.getLogger(SubPlanTask::class.java)
 
-        val SubPlanning = TaskType(
-            "SubPlanning",
+        val SubPlan = TaskType(
+            "SubPlan",
             "Execution & Automation",
-            SubPlanningTaskExecutionConfigData::class.java,
-            SubPlanningTaskTypeConfig::class.java,
+            SubPlanTaskExecutionConfigData::class.java,
+            SubPlanTaskTypeConfig::class.java,
             "Create and execute sub-plans using recursive planning",
             """
              Enables recursive planning and execution with configurable cognitive modes.

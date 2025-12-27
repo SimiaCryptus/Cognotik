@@ -33,7 +33,7 @@ class SeleniumSessionTask(
 
         val SeleniumSession = TaskType(
             "SeleniumSession",
-            "Execution & Automation",
+            "Session",
             SeleniumSessionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Automate browser interactions with Selenium",

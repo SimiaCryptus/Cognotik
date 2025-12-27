@@ -23,11 +23,10 @@ import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.*
 import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
 import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
-import com.simiacryptus.cognotik.plan.tools.run.RunShellCommandTask
 import com.simiacryptus.cognotik.plan.tools.run.RunToolTask
-import com.simiacryptus.cognotik.plan.tools.run.SelfHealingTask
-import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask
-import com.simiacryptus.cognotik.plan.tools.run.SubPlanningTask.Companion.SubPlanning
+import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.Companion.SubPlan
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask
 import com.simiacryptus.cognotik.plan.tools.social.*
 import com.simiacryptus.cognotik.plan.tools.writing.*
@@ -129,20 +128,20 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(GitHubSearchTask.GitHubSearch) { settings, task ->
                 GitHubSearchTask(settings, task)
             }
-            registerConstructor(RunShellCommandTask.RunShellCommand) { settings, task ->
-                RunShellCommandTask(settings, task)
-            }
             registerConstructor(RunCodeTask.RunCode) { settings, task ->
                 RunCodeTask(settings, task)
             }
             registerConstructor(RunToolTask.RunTool) { settings, task ->
                 RunToolTask(settings, task)
             }
-            registerConstructor(SeleniumSessionTask.SeleniumSession) { settings, task ->
-                SeleniumSessionTask(settings, task)
-            }
-            registerConstructor(SelfHealingTask.SelfHealing) { settings, task ->
-                SelfHealingTask(settings, task)
+//            registerConstructor(SeleniumSessionTask.SeleniumSession) { settings, task ->
+//                SeleniumSessionTask(settings, task)
+//            }
+//            registerConstructor(CommandSessionTask.CommandSession) { settings, task ->
+//                CommandSessionTask(settings, task)
+//            }
+            registerConstructor(AutoFixTask.AutoFix) { settings, task ->
+                AutoFixTask(settings, task)
             }
             registerConstructor(VectorSearch) { settings, task ->
                 VectorSearchTask(settings, task)
@@ -231,8 +230,8 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(NeuralNetworkLayerTask.NeuralNetworkLayer) { settings, task ->
                 NeuralNetworkLayerTask(settings, task)
             }
-            registerConstructor(SubPlanning) { settings, task ->
-                SubPlanningTask(settings, task)
+            registerConstructor(SubPlan) { settings, task ->
+                SubPlanTask(settings, task)
             }
             registerConstructor(EthicalReasoningTask.EthicalReasoning) { settings, task ->
                 EthicalReasoningTask(settings, task)
