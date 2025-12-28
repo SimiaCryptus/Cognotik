@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Read Documents Task - Cognotik</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        ul { list-style: none; padding: 0; margin: 0; }
+        
+        /* Utilities */
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 var(--spacing-lg);
+        }
+        /* Hero */
+        .hero {
+            padding: 8rem 0 4rem;
+            display: flex;
+            align-items: center;
+            min-height: 80vh;
+            position: relative;
+            text-align: left;
+            background: none;
+        }
+        .hero-content {
+            flex: 1;
+            padding-right: 2rem;
+        }
+        .hero h1 {
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        .hero-visual {
+            flex: 1;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        /* Abstract Visual Placeholder */
+        .visual-node {
+            width: 200px;
+            height: 200px;
+            border: 2px solid var(--accent-secondary);
+            border-radius: 50%;
+            position: absolute;
+            animation: pulse 4s infinite;
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+        }
+        .visual-node::before {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border: 1px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 10s linear infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-secondary);
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .form-control {
+            width: 100%;
+            background: var(--background-color);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-color);
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .output-area {
+            flex: 1;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #d1d5db;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
+        .markdown-preview h2 { font-size: 1.2em; margin: 0.5em 0; color: var(--accent-color); }
+        .markdown-preview ul { padding-left: 1.5em; list-style: disc; }
+        .markdown-preview code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 0;
+        }
+        .use-case-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .use-case-item {
+            background: rgba(255,255,255,0.03);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+        }
+        @media (max-width: 768px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
+            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="readdocuments"></cognotik-header>
+    <!-- Hero -->
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>Read Documents Task</h1>
+            <p>Directly answer questions or provide insights using the LLM, referencing files including documents.</p>
+            <a href="#demo" class="btn">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+    <!-- Features -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </div>
+                    <h3>Document Ingestion</h3>
+                    <p>Natively understands PDF, Office docs, and code files, extracting text for analysis.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </div>
+                    <h3>Context Aware</h3>
+                    <p>Reads project files via glob patterns to provide answers grounded in your actual codebase.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    </div>
+                    <h3>Comprehensive Reports</h3>
+                    <p>Generates detailed markdown reports, explanations, and recommendations based on your queries.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Supported Formats -->
+    <section id="supported-formats" style="padding: 4rem 0; background: var(--background-color);">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Supported Document Formats</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 3rem; max-width: 700px; margin-left: auto; margin-right: auto;">
+                Cognotik natively understands a wide range of document types, allowing you to analyze code, documentation, and data files seamlessly.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem;">
+                <div style="background: var(--surface-color); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-weight: 600; color: var(--accent-secondary); margin-bottom: 0.5rem;">PDF</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">.pdf</div>
+                </div>
+                <div style="background: var(--surface-color); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-weight: 600; color: var(--accent-secondary); margin-bottom: 0.5rem;">Word</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">.docx, .doc</div>
+                </div>
+                <div style="background: var(--surface-color); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-weight: 600; color: var(--accent-secondary); margin-bottom: 0.5rem;">Excel</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">.xlsx, .xls</div>
+                </div>
+                <div style="background: var(--surface-color); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-weight: 600; color: var(--accent-secondary); margin-bottom: 0.5rem;">PowerPoint</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">.pptx, .ppt</div>
+                </div>
+                <div style="background: var(--surface-color); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-weight: 600; color: var(--accent-secondary); margin-bottom: 0.5rem;">Text</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">.txt, code</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Simulator -->
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <!-- Inputs -->
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                    <div class="form-group">
+                        <label>Inquiry Goal</label>
+                        <input type="text" id="inquiry_goal" class="form-control" placeholder="e.g., Summarize the requirements" value="Analyze the security of the login module">
+                    </div>
+                    <div class="form-group">
+                        <label>Inquiry Questions (One per line)</label>
+                        <textarea id="inquiry_questions" class="form-control" placeholder="Specific questions...">Are there any hardcoded credentials?
+Is the password hashing algorithm secure?
+How are sessions managed?</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Input Files (Glob Patterns)</label>
+                        <input type="text" id="input_files" class="form-control" value="src/auth/**/*.kt, config/*.yaml">
+                    </div>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Run Analysis</button>
+                </div>
+                <!-- Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('report')">Report</div>
+                        <div class="tab" onclick="switchTab('logs')">Logs</div>
+                    </div>
+                    <div id="output-report" class="output-area markdown-preview">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure the analysis and click "Run" to see the output.
+                        </div>
+                    </div>
+                    <div id="output-logs" class="output-area" style="display: none; font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Use Cases -->
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>Documentation Review</h4>
+                    <p>Analyze large sets of documentation to extract key requirements or contradictions.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Legacy Code Analysis</h4>
+                    <p>Understand high-level dependencies and data flows in complex legacy systems.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Compliance Auditing</h4>
+                    <p>Scan codebases for specific patterns or compliance violations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('output-report').style.display = tabName === 'report' ? 'block' : 'none';
+            document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
+        }
+        function runSimulation() {
+            const goal = document.getElementById('inquiry_goal').value;
+            const questions = document.getElementById('inquiry_questions').value.split('\n').filter(q => q.trim());
+            const files = document.getElementById('input_files').value;
+            const reportEl = document.getElementById('output-report');
+            const logsEl = document.getElementById('output-logs');
+            // Reset
+            reportEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%;"><div class="visual-node" style="width:50px; height:50px; position:relative;"></div></div>';
+            logsEl.innerHTML = '';
+            // Mock Logs
+            const logs = [
+                `[INFO] Initializing ReadDocumentsTask...`,
+                `[INFO] Scanning files matching: ${files}`,
+                `[INFO] Found 12 files. Reading content...`,
+                `[INFO] Constructing prompt with ${questions.length} questions...`,
+                `[INFO] Sending request to Insight Agent...`,
+                `[INFO] Receiving stream...`,
+                `[SUCCESS] Analysis complete.`
+            ];
+            let logIndex = 0;
+            const logInterval = setInterval(() => {
+                if (logIndex < logs.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
+                    line.style.marginBottom = '4px';
+                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
+                    logsEl.appendChild(line);
+                    logsEl.scrollTop = logsEl.scrollHeight;
+                    logIndex++;
+                } else {
+                    clearInterval(logInterval);
+                    renderReport(goal, questions, files);
+                }
+            }, 300);
+        }
+        function renderReport(goal, questions, files) {
+            const reportEl = document.getElementById('output-report');
+            const markdown = `
+<h1>Analysis Report</h1>
+<h2>Goal</h2>
+<p>${goal}</p>
+<h2>Scope</h2>
+<p>Files analyzed: <code>${files}</code></p>
+<h2>Findings</h2>
+${questions.map((q, i) => `
+<h3>${i + 1}. ${q}</h3>
+<p>Based on the analysis of the provided files, here are the insights regarding this question:</p>
+<ul>
+    <li>The implementation appears to follow standard practices, though specific configuration files in <code>config/</code> should be reviewed.</li>
+    <li>No critical vulnerabilities were immediately detected in the scanned paths.</li>
+    <li><strong>Recommendation:</strong> Consider adding unit tests for the edge cases identified in <code>AuthService.kt</code>.</li>
+</ul>
+`).join('')}
+<h2>Summary</h2>
+<p>The system architecture seems robust for the analyzed modules. The code is well-structured, but documentation could be improved in the authentication handlers.</p>
+            `;
+            reportEl.innerHTML = markdown;
+        }
+    </script>
+</body>
+</html>

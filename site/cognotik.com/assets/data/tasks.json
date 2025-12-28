@@ -96,6 +96,14 @@
           "description": "Simulate polls with diverse AI personas",
           "image": "assets/images/partitioned-processing-grid.png",
           "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/LLMPollSimulationTask.kt"
+        },
+        {
+          "id": "discussion",
+          "label": "Discussion",
+          "url": "DiscussionTask.html",
+          "description": "Provide insights using the LLM that are discussed with and approved by the user.",
+          "image": "assets/images/holographic-data-projection.png",
+          "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/DiscussionTask.kt"
         }
       ]
     },
@@ -350,12 +358,12 @@
       "type": "dropdown",
       "items": [
         {
-          "id": "analysis",
-          "label": "Analysis",
-          "url": "AnalysisTask.html",
-          "description": "Directly answer questions or provide insights using the LLM, referencing files including documents",
+          "id": "readdocuments",
+          "label": "Read Documents",
+          "url": "ReadDocumentsTask.html",
+          "description": "Read and analyze project documents. Supports PDFs, Word docs, code files, and more.",
           "image": "assets/images/holographic-data-projection.png",
-          "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/AnalysisTask.kt"
+          "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/ReadDocumentsTask.kt"
         },
         {
           "id": "filemodification",
@@ -396,6 +404,14 @@
           "description": "Iteratively parse unstructured logs into structured data",
           "image": "assets/images/structured-data-extraction.png",
           "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/DataIngestTask.kt"
+        },
+        {
+          "id": "pdfform",
+          "label": "PDF Form",
+          "url": "PdfFormTask.html",
+          "description": "Fill out PDF form templates with data",
+          "image": "assets/images/holographic-data-projection.png",
+          "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/PdfFormTask.kt"
         }
       ]
     },
