@@ -132,8 +132,13 @@ class CognotikHeader extends HTMLElement {
                 }
                 .nav-item:hover .dropdown-menu {
                     display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                    grid-template-columns: 1fr;
                     gap: 0.5rem;
+                }
+                @media (min-width: 769px) {
+                    .nav-item:hover .dropdown-menu {
+                        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                    }
                 }
                 .dropdown-item {
                     display: flex;
@@ -275,6 +280,11 @@ class CognotikHeader extends HTMLElement {
                     .search-input {
                         width: 100%;
                     }
+                }
+                .dropdown-menu {
+                    right: auto;
+                    left: 50%;
+                    transform: translateX(-50%);
                 }
             </style>
         `;

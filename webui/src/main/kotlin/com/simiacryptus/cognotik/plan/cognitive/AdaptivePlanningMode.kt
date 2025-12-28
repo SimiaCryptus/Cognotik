@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.getAvailableFiles
+import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
@@ -313,7 +313,7 @@ ${JsonUtil.toJson(taskConfig)}
                                     TaskType.getImpl(orchestrationConfig, taskType).promptSegment().trim()
                                         .trimIndent()
                                         .indent("  ")
-                                }" + (orchestrationConfig.workingDir?.let {root ->
+                                }" + (orchestrationConfig.workingDir?.let { root ->
                                     "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
                                 } ?: "")
                             }

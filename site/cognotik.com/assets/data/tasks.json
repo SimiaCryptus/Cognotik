@@ -4,12 +4,14 @@
     {
       "label": "IDE",
       "url": "intellij-plugin.html",
-      "type": "link"
+      "type": "link",
+      "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/intellij"
     },
     {
       "label": "Planning",
       "url": "TaskPlanning.html",
-      "type": "link"
+      "type": "link",
+      "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan"
     },
     {
       "label": "Tools",
