@@ -9,6 +9,10 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.apache.pdfbox.Loader
+import org.apache.pdfbox.pdmodel.interactive.form.PDCheckBox
+import org.apache.pdfbox.pdmodel.interactive.form.PDChoice
+import org.apache.pdfbox.pdmodel.interactive.form.PDField
+import org.apache.pdfbox.pdmodel.interactive.form.PDRadioButton
 import kotlin.io.path.exists
 
 class PdfFormTask(
@@ -69,7 +73,7 @@ class PdfFormTask(
             Loader.loadPDF(templateFile.toFile()).use { doc ->
                 val acroForm = doc.documentCatalog.acroForm
                 val fieldList = acroForm?.fields?.joinToString("\n") { field ->
-                    "  - \"${field.fullyQualifiedName}\" (${field.javaClass.simpleName.replace("PD", "")})"
+                    "  - ${getFieldDescription(field)}"
                 } ?: "  (No fields found)"
 
                 """
@@ -107,7 +111,7 @@ $fieldList
             val outputFile = root.resolve(outputPath).toFile()
 
             val availableFields = Loader.loadPDF(templateFile).use { doc ->
-                doc.documentCatalog.acroForm?.fields?.map { it.fullyQualifiedName } ?: emptyList()
+                doc.documentCatalog.acroForm?.fields?.map { getFieldDescription(it) } ?: emptyList()
             }
 
             val api = defaultSmart
@@ -152,52 +156,61 @@ Only include fields where a value can be confidently determined from the context
 
             task.add("Preparing to fill ${fieldData.size} fields into $outputPath...")
 
-            acceptButtonFooter(task.ui) {
-                try {
-                    Loader.loadPDF(templateFile).use { doc ->
-                        val acroForm = doc.documentCatalog.acroForm
-                        if (acroForm == null) {
-                            throw IllegalStateException("No AcroForm found in template PDF")
-                        }
-
-                        val missingFields = mutableListOf<String>()
-                        fieldData.forEach { (key, value) ->
-                            val field = acroForm.getField(key)
-                            if (field != null) {
-                                field.setValue(value)
-                            } else {
-                                missingFields.add(key)
-                            }
-                        }
-
-                        if (missingFields.isNotEmpty()) {
-                            val msg = "Warning: The following fields were not found in the PDF: $missingFields"
-                            log.warn(msg)
-                            transcript?.write("\n$msg\n".toByteArray())
-                        }
-
-                        if (executionConfig?.flatten == true) {
-                            acroForm.flatten()
-                        }
-
-                        doc.save(outputFile)
+            try {
+                Loader.loadPDF(templateFile).use { doc ->
+                    val acroForm = doc.documentCatalog.acroForm
+                    if (acroForm == null) {
+                        throw IllegalStateException("No AcroForm found in template PDF")
                     }
 
-                    val successMsg = "Successfully created $outputPath with ${fieldData.size} fields filled."
-                    transcript?.write("\n## Success\n$successMsg\n".toByteArray())
-                    resultFn(successMsg)
+                    val missingFields = mutableListOf<String>()
+                    fieldData.forEach { (key, value) ->
+                        val field = acroForm.getField(key)
+                        if (field != null) {
+                            field.setValue(value)
+                        } else {
+                            missingFields.add(key)
+                        }
+                    }
 
-                } catch (e: Exception) {
-                    log.error("Failed to fill PDF", e)
-                    transcript?.write("\n## Error\n${e.message}\n".toByteArray())
-                    throw e
+                    if (missingFields.isNotEmpty()) {
+                        val msg = "Warning: The following fields were not found in the PDF: $missingFields"
+                        log.warn(msg)
+                        transcript?.write("\n$msg\n".toByteArray())
+                    }
+
+                    if (executionConfig?.flatten == true) {
+                        acroForm.flatten()
+                    }
+
+                    doc.save(outputFile)
                 }
+
+                val successMsg = "Successfully created $outputPath with ${fieldData.size} fields filled."
+                transcript?.write("\n## Success\n$successMsg\n".toByteArray())
+                resultFn(successMsg)
+
+            } catch (e: Exception) {
+                log.error("Failed to fill PDF", e)
+                transcript?.write("\n## Error\n${e.message}\n".toByteArray())
+                throw e
             }
+
         } catch (e: Exception) {
             resultFn("Error executing PDF task: ${e.message}")
         } finally {
             transcript?.close()
         }
+    }
+    private fun getFieldDescription(field: PDField): String {
+        val type = field.javaClass.simpleName.replace("PD", "").replace("Field", "")
+        val options = when (field) {
+            is PDChoice -> " [Options: ${field.options.joinToString(", ")}]"
+            is PDCheckBox -> " [Checked: ${field.onValue}, Unchecked: Off]"
+            is PDRadioButton -> " [Options: ${field.exportValues.joinToString(", ")}]"
+            else -> ""
+        }
+        return "\"${field.fullyQualifiedName}\" ($type)$options"
     }
 
     companion object {
