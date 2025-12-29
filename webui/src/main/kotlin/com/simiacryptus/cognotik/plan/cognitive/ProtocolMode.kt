@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -115,7 +116,7 @@ open class ProtocolMode(
                     if (statePassed) {
                         currentStateName = currentState.nextState
                     } else {
-                        stateTask.error(renderMarkdown("State ${currentState.name} failed after $maxRetries retries."))
+                        stateTask.add(renderMarkdown("State ${currentState.name} failed after $maxRetries retries."))
                         writeToTranscript("State ${currentState.name} failed after max retries.\n")
                         break
                     }

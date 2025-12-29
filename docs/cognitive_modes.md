@@ -196,6 +196,7 @@ of smaller, manageable sub-goals and tasks, and then orchestrates their executio
 * The success of the entire plan is highly dependent on the quality of the AI's decomposition logic.
 
 ### 5. Parallel Mode
+
 The `ParallelMode` is a batch-processing engine designed to execute a specific task across multiple inputs simultaneously.
 * **High-Level Concept:** Analyze the user's request to identify a template task and a set of variables (e.g., a list of files). Generate all combinations of these variables, render the template for each, and execute the resulting tasks in parallel.
 * **How It Works (Internal Logic):**
@@ -224,7 +225,9 @@ The `ParallelMode` is a batch-processing engine designed to execute a specific t
 * **Weaknesses:**
 * Not suitable for tasks with dependencies between steps.
 * Can consume significant API resources quickly due to parallelism.
+
 ### 6. Protocol Mode (Experimental)
+
 The `ProtocolMode` is a rigorous, state-machine-driven strategy designed to enforce specific methodologies and ensure high-quality output through validation.
 * **High-Level Concept:** Define a strict protocol (a set of states with instructions and validation criteria) to achieve the user's request. The system moves through these states, executing actions and validating them with a "Referee" agent before proceeding.
 * **How It Works (Internal Logic):**
@@ -249,7 +252,9 @@ The `ProtocolMode` is a rigorous, state-machine-driven strategy designed to enfo
 * **Weaknesses:**
 * Can be slow due to the overhead of validation and potential retries.
 * Rigid compared to conversational modes.
+
 ### 7. Session Mode (Experimental)
+
 The `SessionMode` focuses on deep interaction with a single tool. It assigns an AI "Operator" to drive a specific tool continuously until a goal is achieved.
 * **High-Level Concept:** Select the most appropriate tool for the user's request, then enter a loop where an AI operator issues commands to that tool, interprets the output, and issues new commands until the task is done.
 * **How It Works (Internal Logic):**
@@ -272,7 +277,9 @@ The `SessionMode` focuses on deep interaction with a single tool. It assigns an 
 * **Weaknesses:**
 * Limited to the capabilities of the selected tool.
 * Can get stuck in loops if the tool provides confusing feedback.
+
 ### 8. Council Mode
+
 The `CouncilMode` implements a democratic, multi-agent decision-making process. Instead of a single agent driving the process, a "council" of distinct personas collaborates to nominate and vote on tasks.
 * **High-Level Concept:** A group of specialized agents (e.g., CEO, CTO, QA) independently analyze the situation and nominate tasks. They then vote on the best course of action. The winning tasks are executed, and all agents update their internal states based on the results.
 * **How It Works (Internal Logic):**
@@ -289,3 +296,5 @@ The `CouncilMode` implements a democratic, multi-agent decision-making process. 
 * High-stakes projects requiring balanced decision-making.
 * Complex architectural design where trade-offs need to be weighed.
 * Situations where a single agent might be prone to bias or tunnel vision.
+
+

@@ -139,5 +139,17 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             return CouncilMode(task, orchestrationConfig, session, user)
         }
     },
+    PrePlanned {
+        override val inputCnt: Int get() = PrePlannedMode.inputCnt
+
+        override fun getCognitiveMode(
+            task: SessionTask,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User
+        ): CognitiveMode {
+            return PrePlannedMode(task, orchestrationConfig, session, user)
+        }
+    }
     ;
 }
