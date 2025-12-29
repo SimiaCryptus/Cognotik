@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.Companion.DataIngest
 import com.simiacryptus.cognotik.plan.tools.file.*
-import com.simiacryptus.cognotik.plan.tools.file.AnalysisTask.Companion.Analysis
+import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.ReadDocuments
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
 import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
@@ -105,8 +105,11 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(ChainOfThought) { settings, task ->
                 ChainOfThoughtTask(settings, task)
             }
-            registerConstructor(Analysis) { settings, task ->
-                AnalysisTask(settings, task)
+            registerConstructor(ReadDocuments) { settings, task ->
+                ReadDocumentsTask(settings, task)
+            }
+            registerConstructor(DiscussionTask.Discussion) { settings, task ->
+                DiscussionTask(settings, task)
             }
             registerConstructor(CrawlerAgentTask.CrawlerAgent) { settings, task ->
                 CrawlerAgentTask(settings, task)
@@ -245,6 +248,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             }
             registerConstructor(LanguageServerTask.LanguageServer) { settings, task ->
                 LanguageServerTask(settings, task)
+            }
+            registerConstructor(PdfFormTask.PdfForm) { settings, task ->
+                PdfFormTask(settings, task)
             }
             registerConstructor(TechnicalExplanationTask.TechnicalExplanation) { settings, task ->
                 TechnicalExplanationTask(settings, task)

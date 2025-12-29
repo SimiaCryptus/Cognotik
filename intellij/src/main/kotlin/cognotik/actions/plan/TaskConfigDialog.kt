@@ -25,11 +25,13 @@ import com.simiacryptus.cognotik.plan.tools.online.fetch.FetchMethod
 import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType
 import com.simiacryptus.cognotik.plan.tools.online.seed.SeedMethod
 import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
+import com.simiacryptus.cognotik.plan.tools.file.PdfFormTask
+import com.simiacryptus.cognotik.plan.tools.toApiChatModel
 import java.awt.Component
 import java.awt.Dimension
 import javax.swing.*
 
-class TaskConfigEditDialog(
+class TaskConfigDialog(
     project: Project?,
     private val taskType: TaskType<*, *>,
     private val config: TaskTypeConfig,
@@ -105,6 +107,7 @@ class TaskConfigEditDialog(
             is MCPToolTask.MCPToolTaskTypeConfig -> createMCPToolFields(config)
             is SubPlanTask.SubPlanTaskTypeConfig -> createSubPlanningFields(config)
             is PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig -> createPersuasiveEssayFields(config)
+            is PdfFormTask.PdfFormTypeConfig -> createPdfFormFields(config)
             // Add more task types as needed
         }
     }
@@ -126,6 +129,19 @@ class TaskConfigEditDialog(
         group("Self-Healing Settings") {
         }
     }
+    private fun com.intellij.ui.dsl.builder.Panel.createPdfFormFields(config: PdfFormTask.PdfFormTypeConfig) {
+        group("PDF Form Settings") {
+            row("Template File:") {
+                val field = JBTextField(config.template_file ?: "")
+                field.toolTipText = "Path to the PDF template file relative to project root"
+                cell(field)
+                    .align(Align.FILL)
+                    .comment("Path to the PDF template file (e.g., templates/form.pdf)")
+                configFields["template_file"] = field
+            }
+        }
+    }
+
 
     private fun com.intellij.ui.dsl.builder.Panel.createMCPToolFields(config: MCPToolTask.MCPToolTaskTypeConfig) {
         group("MCP Tool Settings") {
@@ -284,7 +300,7 @@ class TaskConfigEditDialog(
             val config = if (dialog.isQuickSelect) {
                 newConfig
             } else {
-                val configDialog = TaskConfigEditDialog(null, taskType, newConfig, availableModels)
+                val configDialog = TaskConfigDialog(null, taskType, newConfig, availableModels)
                 if (configDialog.showAndGet()) configDialog.getConfig() else return
             }
 
@@ -295,7 +311,7 @@ class TaskConfigEditDialog(
     }
 
     private fun editSubTaskConfig(entry: SubTaskConfigEntry, parentConfig: SubPlanTask.SubPlanTaskTypeConfig) {
-        val dialog = TaskConfigEditDialog(null, entry.taskType, entry.config, availableModels)
+        val dialog = TaskConfigDialog(null, entry.taskType, entry.config, availableModels)
         if (dialog.showAndGet()) {
             val updatedConfig = dialog.getConfig()
             val newKey =
@@ -613,6 +629,18 @@ class TaskConfigEditDialog(
                 }
             }
         }
+        // Validate PdfFormTask fields
+        if (config is PdfFormTask.PdfFormTypeConfig) {
+            val templateFile = (configFields["template_file"] as? JBTextField)?.text?.trim()
+            if (templateFile.isNullOrEmpty()) {
+                Messages.showWarningDialog(
+                    "Template file path cannot be empty",
+                    "Invalid Value"
+                )
+                configFields["template_file"]?.requestFocusInWindow()
+                return false
+            }
+        }
 
 
         // Validate numeric fields
@@ -747,6 +775,15 @@ class TaskConfigEditDialog(
                     generate_cover_image = (configFields["generate_cover_image"] as? JCheckBox)?.isSelected ?: true,
                 )
             }
+            is PdfFormTask.PdfFormTypeConfig -> {
+                PdfFormTask.PdfFormTypeConfig(
+                    template_file = (configFields["template_file"] as? JBTextField)?.text?.trim()
+                        ?.takeIf { it.isNotEmpty() },
+                    task_type = baseConfig.task_type,
+                    name = baseConfig.name
+                )
+            }
+
 
             else -> baseConfig
         }

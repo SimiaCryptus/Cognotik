@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Form Task - Cognotik</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <style>
+        ul { list-style: none; padding: 0; margin: 0; }
+        
+        /* Utilities */
+        .container {
+            max-width: var(--container-max-width);
+            margin: 0 auto;
+            padding: 0 var(--spacing-lg);
+        }
+        /* Hero */
+        .hero {
+            padding: 8rem 0 4rem;
+            display: flex;
+            align-items: center;
+            min-height: 80vh;
+            position: relative;
+            text-align: left;
+            background: none;
+        }
+        .hero-content {
+            flex: 1;
+            padding-right: 2rem;
+        }
+        .hero h1 {
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        .hero-visual {
+            flex: 1;
+            height: 400px;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        /* Abstract Visual Placeholder */
+        .visual-node {
+            width: 200px;
+            height: 200px;
+            border: 2px solid var(--accent-secondary);
+            border-radius: 4px; /* Square for document */
+            position: absolute;
+            animation: pulse 4s infinite;
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+        }
+        .visual-node::before {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: var(--accent-secondary);
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .form-control {
+            width: 100%;
+            background: var(--background-color);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-color);
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .output-area {
+            flex: 1;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #d1d5db;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        /* Use Cases */
+        .use-cases {
+            padding: 4rem 0;
+        }
+        .use-case-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .use-case-item {
+            background: rgba(255,255,255,0.03);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+        }
+        @media (max-width: 768px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 6rem; }
+            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <cognotik-header current-page="pdfform"></cognotik-header>
+    <!-- Hero -->
+    <!-- Prompt: A glowing digital pen filling out a holographic document floating in a secure data stream. High-tech, abstract 3D render. -->
+    <header class="hero container">
+        <div class="hero-content">
+            <h1>PDF Form Task</h1>
+            <p>Automate the completion of PDF forms using structured data or intelligent context extraction.</p>
+            <a href="#demo" class="btn">Try the Simulator</a>
+        </div>
+        <div class="hero-visual">
+            <div class="visual-node"></div>
+        </div>
+    </header>
+    <!-- Features -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </div>
+                    <h3>Template Based</h3>
+                    <p>Uses standard PDF templates with defined AcroForm fields for precise data placement.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </div>
+                    <h3>Context Aware</h3>
+                    <p>Intelligently extracts field values from the conversation context if not explicitly provided.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <h3>Secure Output</h3>
+                    <p>Optionally flattens the resulting PDF, making fields read-only and preserving document integrity.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Simulator -->
+    <section id="demo" class="simulator">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem; text-align: center;">Interactive Simulator</h2>
+            <div class="simulator-container">
+                <!-- Inputs -->
+                <div class="sim-controls">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
+                    <div class="form-group">
+                        <label>Template File (Type Config)</label>
+                        <input type="text" id="template_file" class="form-control" value="forms/invoice_template.pdf">
+                    </div>
+                    <div class="form-group">
+                        <label>Output File</label>
+                        <input type="text" id="output_file" class="form-control" value="output/invoice_1024.pdf">
+                    </div>
+                    <div class="form-group">
+                        <label>Field Data (JSON)</label>
+                        <textarea id="field_data" class="form-control" placeholder='{"key": "value"}'>
+{
+  "customer_name": "Jane Doe",
+  "invoice_date": "2023-10-27",
+  "total_amount": "$1,250.00",
+  "service_desc": "Consulting Services"
+}</textarea>
+                    </div>
+                    <div class="form-group toggle-group">
+                        <input type="checkbox" id="flatten_pdf" checked>
+                        <label for="flatten_pdf" style="margin:0; cursor:pointer;">Flatten Output</label>
+                    </div>
+                    <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Generate PDF</button>
+                </div>
+                <!-- Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('logs')">Logs</div>
+                        <div class="tab" onclick="switchTab('preview')">Preview</div>
+                    </div>
+                    <div id="output-logs" class="output-area" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                            Configure and click "Generate PDF" to see the process.
+                        </div>
+                    </div>
+                    <div id="output-preview" class="output-area" style="display: none; text-align: center;">
+                         <div style="color: var(--text-muted); margin-top: 4rem;">
+                            (PDF Preview Placeholder)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Use Cases -->
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 style="margin-bottom: 2rem;">When to Use</h2>
+            <div class="use-case-list">
+                <div class="use-case-item">
+                    <h4>Invoice Generation</h4>
+                    <p>Automatically generate invoices from transaction data using a standard company template.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Application Forms</h4>
+                    <p>Pre-fill government or institutional application forms based on user profile data.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Contract Preparation</h4>
+                    <p>Draft standard contracts by filling in variable details like names, dates, and amounts.</p>
+                </div>
+                <div class="use-case-item">
+                    <h4>Report Standardization</h4>
+                    <p>Ensure consistent formatting for periodic reports by injecting data into a fixed layout.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
+            document.getElementById('output-preview').style.display = tabName === 'preview' ? 'block' : 'none';
+        }
+        function runSimulation() {
+            const template = document.getElementById('template_file').value;
+            const output = document.getElementById('output_file').value;
+            const flatten = document.getElementById('flatten_pdf').checked;
+            const logsEl = document.getElementById('output-logs');
+            const previewEl = document.getElementById('output-preview');
+            
+            let fieldData = {};
+            try {
+                fieldData = JSON.parse(document.getElementById('field_data').value);
+            } catch(e) {
+                logsEl.innerHTML = '<span style="color: #ef4444;">Error: Invalid JSON in Field Data</span>';
+                return;
+            }
+
+            logsEl.innerHTML = '';
+            previewEl.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%; color: var(--text-muted);">Generating Preview...</div>';
+            
+            const logs = [
+                `[INFO] Initializing PdfFormTask...`,
+                `[INFO] Loading template: ${template}`,
+                `[INFO] Template loaded. Found ${Object.keys(fieldData).length + 2} AcroForm fields.`,
+                `[INFO] Mapping provided data to fields...`,
+            ];
+            
+            Object.keys(fieldData).forEach(key => {
+                logs.push(`[DEBUG] Setting field '${key}' = '${fieldData[key]}'`);
+            });
+
+            if (flatten) {
+                logs.push(`[INFO] Flattening form fields (read-only mode)...`);
+            }
+            
+            logs.push(`[INFO] Saving output to: ${output}`);
+            logs.push(`[SUCCESS] PDF generated successfully.`);
+
+            let logIndex = 0;
+            const logInterval = setInterval(() => {
+                if (logIndex < logs.length) {
+                    const line = document.createElement('div');
+                    line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
+                    line.style.marginBottom = '4px';
+                    if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
+                    else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
+                    else if (logs[logIndex].includes('DEBUG')) line.style.color = '#94a3b8';
+                    logsEl.appendChild(line);
+                    logsEl.scrollTop = logsEl.scrollHeight;
+                    logIndex++;
+                } else {
+                    clearInterval(logInterval);
+                    renderPreview(output, fieldData);
+                }
+            }, 300);
+        }
+
+        function renderPreview(filename, data) {
+            const previewEl = document.getElementById('output-preview');
+            previewEl.innerHTML = `
+                <div style="border: 1px solid rgba(255,255,255,0.1); padding: 2rem; background: white; color: black; border-radius: 4px; max-width: 300px; margin: 0 auto; position: relative; min-height: 300px; text-align: left;">
+                    <div style="position: absolute; top: 10px; right: 10px; font-size: 0.6rem; color: #666;">${filename}</div>
+                    <h3 style="border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">INVOICE</h3>
+                    <div style="font-family: monospace; font-size: 0.8rem;">
+                        <p><strong>Customer:</strong> <span style="color: #0000aa;">${data.customer_name || '...'}</span></p>
+                        <p><strong>Date:</strong> <span style="color: #0000aa;">${data.invoice_date || '...'}</span></p>
+                        <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+                        <p><strong>Service:</strong> <span style="color: #0000aa;">${data.service_desc || '...'}</span></p>
+                        <p style="text-align: right; font-size: 1.1rem; margin-top: 20px;"><strong>Total:</strong> <span style="color: #0000aa;">${data.total_amount || '...'}</span></p>
+                    </div>
+                    <div style="position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; font-size: 0.6rem; color: #999;">Generated by Cognotik</div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

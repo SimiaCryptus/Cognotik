@@ -68,7 +68,7 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             session: Session,
             user: User
         ): CognitiveMode {
-            return AdaptivePlanningMode(task, orchestrationConfig, session, user)
+            return AdaptivePlanningMode(task, orchestrationConfig, session, user, cognitiveStrategy = ProjectManagerStrategy())
         }
     },
     Waterfall {
@@ -106,5 +106,50 @@ enum class CognitiveModeStrategies : CognitiveModeStrategy {
             return ParallelMode(task, orchestrationConfig, session, user)
         }
     },
+    Session {
+        override val inputCnt: Int get() = SessionMode.inputCnt
+        override fun getCognitiveMode(
+            task: SessionTask,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User
+        ): CognitiveMode {
+            return SessionMode(task, orchestrationConfig, session, user)
+        }
+    },
+    Protocol {
+        override val inputCnt: Int get() = ProtocolMode.inputCnt
+        override fun getCognitiveMode(
+            task: SessionTask,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User
+        ): CognitiveMode {
+            return ProtocolMode(task, orchestrationConfig, session, user)
+        }
+    },
+    Council {
+        override val inputCnt: Int get() = CouncilMode.inputCnt
+        override fun getCognitiveMode(
+            task: SessionTask,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User
+        ): CognitiveMode {
+            return CouncilMode(task, orchestrationConfig, session, user)
+        }
+    },
+    PrePlanned {
+        override val inputCnt: Int get() = PrePlannedMode.inputCnt
+
+        override fun getCognitiveMode(
+            task: SessionTask,
+            orchestrationConfig: OrchestrationConfig,
+            session: Session,
+            user: User
+        ): CognitiveMode {
+            return PrePlannedMode(task, orchestrationConfig, session, user)
+        }
+    }
     ;
 }

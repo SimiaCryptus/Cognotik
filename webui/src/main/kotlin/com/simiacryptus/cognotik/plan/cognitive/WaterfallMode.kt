@@ -80,6 +80,17 @@ open class WaterfallMode(
                 stream.write("\n## Generated Plan\n\n${plan.planText}\n\n".toByteArray())
                 stream.flush()
             }
+            // Save plan to file for PrePlanned mode
+            try {
+                val planFile = coordinator.root.resolve("plan.json").toFile()
+                JsonUtil.toJson(plan).let { json ->
+                    planFile.writeText(json)
+                    task.add("Plan saved to [${planFile.name}](${task.linkTo("plan.json")})")
+                }
+            } catch (e: Exception) {
+                log.warn("Failed to save plan json", e)
+            }
+
 
             coordinator.executePlan(
                 plan = plan.plan,

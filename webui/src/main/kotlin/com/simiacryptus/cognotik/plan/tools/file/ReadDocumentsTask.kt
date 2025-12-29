@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
-import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIPLE_TILDE
@@ -16,30 +15,26 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.util.concurrent.Semaphore
-import java.util.concurrent.atomic.AtomicReference
 
-class AnalysisTask(
+class ReadDocumentsTask(
     orchestrationConfig: OrchestrationConfig,
-    planTask: AnalysisTaskExecutionConfigData?
-) : AbstractTask<AnalysisTask.AnalysisTaskExecutionConfigData, AnalysisTask.AnalysisTaskTypeConfig>(
+    planTask: ReadDocumentsTaskExecutionConfigData?
+) : AbstractTask<ReadDocumentsTask.ReadDocumentsTaskExecutionConfigData, ReadDocumentsTask.ReadDocumentsTaskTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
 
     protected val codeFiles = mutableMapOf<Path, String>()
 
-    class AnalysisTaskTypeConfig(
-        @Description("Enable non-interactive mode to skip user feedback and iteration")
-        val non_interactive: Boolean = true,
-        task_type: String? = Analysis.name,
+    class ReadDocumentsTaskTypeConfig(
+        task_type: String? = ReadDocuments.name,
         name: String? = null
     ) : TaskTypeConfig(
         task_type = task_type,
         name = name
     ), ValidatedObject
 
-    class AnalysisTaskExecutionConfigData(
+    class ReadDocumentsTaskExecutionConfigData(
         @Description("The specific questions or topics to be addressed in the inquiry")
         val inquiry_questions: List<String>? = null,
         @Description("The goal or purpose of the inquiry")
@@ -50,23 +45,20 @@ class AnalysisTask(
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
     ) : TaskExecutionConfig(
-        task_type = Analysis.name,
+        task_type = ReadDocuments.name,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     ), ValidatedObject
 
     override fun promptSegment() = (if (!orchestrationConfig.autoFix) """
-  Analysis - Directly answer questions or provide insights using the LLM. Reading files is optional and can be included if relevant to the inquiry.
+  ReadDocuments - Directly answer questions or provide insights using the LLM.
     * Specify the questions and the goal of the inquiry.
-    * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
-    * User response/feedback and iteration are supported.
-    * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
+    * List input files (supports glob patterns) to be examined when answering the questions.
   """ else """
-  Analysis - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
+  ReadDocuments - Directly answer questions or provide a report using the LLM. Reading files is optional and can be included if relevant to the inquiry.
     * Specify the questions and the goal of the inquiry.
-    * Optionally, list input files (supports glob patterns) to be examined when answering the questions.
-    * The primary characteristic of this task is that it does not produce side effects; the LLM is used to directly process the inquiry and respond.
+    * List input files (supports glob patterns) to be examined when answering the questions.
   """)
 
     override fun run(
@@ -85,7 +77,7 @@ class AnalysisTask(
             ).filter { it.isNotBlank() }
         }
 
-        val taskConfig: AnalysisTaskExecutionConfigData? = this.executionConfig
+        val taskConfig: ReadDocumentsTaskExecutionConfigData? = this.executionConfig
         val typeConfig = typeConfig ?: throw RuntimeException()
         val insightActor = ChatAgent(
             name = "Insight",
@@ -100,7 +92,7 @@ class AnalysisTask(
                 ?: defaultSmart).getChildClient(task),
             temperature = this.orchestrationConfig.temperature,
         )
-        val inquiryResult = if (orchestrationConfig.autoFix || typeConfig.non_interactive) {
+        val inquiryResult = run {
             val input = toInput(
                 "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
                     taskConfig?.inquiry_questions?.joinToString(
@@ -110,45 +102,9 @@ class AnalysisTask(
             )
             transcript?.write("# Analysis Request\n\n${input.joinToString("\n\n")}\n\n".toByteArray())
             insightActor.answer(input)
-        } else
-            Discussable(
-                task = task,
-                userMessage = {
-                    "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
-                        taskConfig?.inquiry_questions?.joinToString(
-                            "\n"
-                        )
-                    }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
-                },
-                heading = "",
-                initialResponse = { it: String ->
-                    transcript?.write("# Initial Request\n\n$it\n\n".toByteArray())
-                    insightActor.answer(toInput(it)).also { response ->
-                        transcript?.write("# Initial Response\n\n$response\n\n".toByteArray())
-                    }
-                },
-                outputFn = { design: String ->
-                    MarkdownUtil.renderMarkdown(design)
-                },
-                reviseResponse = { usermessages: List<Pair<String, Role>> ->
-                    val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
-                        taskConfig?.inquiry_questions?.joinToString("\n")
-                    }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
-                    val messages = usermessages.map { ModelSchema.ChatMessage(it.second, it.first.toContentList()) }
-                        .toTypedArray<ModelSchema.ChatMessage>()
-                    transcript?.write("# Revision Request\n\n${usermessages.joinToString("\n") { "${it.second}: ${it.first}" }}\n\n".toByteArray())
-                    insightActor.respond(
-                        messages = messages,
-                        input = toInput(inStr),
-                    ).also { response ->
-                        transcript?.write("# Revision Response\n\n$response\n\n".toByteArray())
-                    }
-                },
-                atomicRef = AtomicReference(),
-                semaphore = Semaphore(0),
-            ).call()
+        }
         transcript?.close()
-        resultFn(inquiryResult ?: "(no response)")
+        resultFn(inquiryResult)
     }
 
 
@@ -185,13 +141,13 @@ class AnalysisTask(
         }
 
     companion object {
-        private val log = LoggerFactory.getLogger(AnalysisTask::class.java)
-        val Analysis = TaskType(
-            "Analysis",
+        private val log = LoggerFactory.getLogger(ReadDocumentsTask::class.java)
+        val ReadDocuments = TaskType(
+            "ReadDocuments",
             "File",
-            AnalysisTaskExecutionConfigData::class.java,
-            AnalysisTaskTypeConfig::class.java,
-            "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
+            ReadDocumentsTaskExecutionConfigData::class.java,
+            ReadDocumentsTaskTypeConfig::class.java,
+            "Directly answer questions or provide insights using the LLM, optionally referencing files.",
             """
             Provides direct answers and insights using the LLM, optionally referencing project files.
             <ul>

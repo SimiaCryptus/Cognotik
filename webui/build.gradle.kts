@@ -32,6 +32,9 @@ dependencies {
     }
 
     implementation(libs.webdrivermanager)
+    implementation(libs.pdfbox)
+    implementation(libs.poi)
+    implementation(libs.poi.ooxml)
     implementation(libs.jsoup)
     implementation(libs.zxing.core)
     implementation(libs.zxing.javase)

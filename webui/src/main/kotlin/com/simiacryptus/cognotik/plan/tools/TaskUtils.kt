@@ -1,5 +1,9 @@
 package com.simiacryptus.cognotik.plan.tools
 
+import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 
@@ -23,4 +27,17 @@ fun SessionTask.safeComplete(message: String, log: Logger) {
     } catch (e: Exception) {
         log.warn("Error completing task: ${e.message}")
     }
+}
+
+
+fun ChatModel.toApiChatModel(): ApiChatModel {
+    val apis = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
+    return ApiChatModel(
+        model = this, provider = ApiData(
+            key = apis.find { it.provider == this.provider }?.key
+                ?: throw IllegalArgumentException("No API Key for ${this.provider?.name}"),
+            baseUrl = apis.find { it.provider == this.provider }?.baseUrl ?: this.provider?.base ?: "",
+            provider = this.provider,
+        ).validate()
+    )
 }

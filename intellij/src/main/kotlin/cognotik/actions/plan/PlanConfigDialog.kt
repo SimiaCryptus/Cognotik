@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.plan.newSettings
+import com.simiacryptus.cognotik.plan.tools.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
@@ -202,7 +203,7 @@ class PlanConfigDialog(
     }
 
     private fun editTaskConfig(entry: TaskConfigEntry) {
-        val dialog = TaskConfigEditDialog(null, entry.taskType, entry.config, visibleModelsCache)
+        val dialog = TaskConfigDialog(null, entry.taskType, entry.config, visibleModelsCache)
         if (dialog.showAndGet()) {
             val updatedConfig = dialog.getConfig()
             val oldKey =
@@ -249,7 +250,7 @@ class PlanConfigDialog(
                     )
                     return
                 }
-                val editDialog = TaskConfigEditDialog(null, taskType, newConfig, visibleModelsCache)
+                val editDialog = TaskConfigDialog(null, taskType, newConfig, visibleModelsCache)
                 if (editDialog.showAndGet()) {
                     val config = editDialog.getConfig()
                     val key = if (config.name != null) "${taskType.name}_${config.name}" else taskType.name
@@ -721,15 +722,3 @@ class PlanConfigDialog(
     }
 }
 
-
-fun ChatModel.toApiChatModel(): ApiChatModel {
-    val apis = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
-    return ApiChatModel(
-        model = this, provider = ApiData(
-            key = apis.find { it.provider == this.provider }?.key
-                ?: throw IllegalArgumentException("No API Key for ${this.provider?.name}"),
-            baseUrl = apis.find { it.provider == this.provider }?.baseUrl ?: this.provider?.base ?: "",
-            provider = this.provider,
-        ).validate()
-    )
-}

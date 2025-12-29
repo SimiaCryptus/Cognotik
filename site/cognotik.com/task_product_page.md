@@ -185,12 +185,13 @@ To integrate the new design into a page, follow these steps to load assets and c
 
 #### Step 1: Load Assets
 
-Include the shared CSS and the Web Component script in the `<head>` of your HTML file. Adjust the paths based on your
+Include the shared CSS and the Web Component script in the
+`<head><link href="logo.svg" rel="icon" type="image/svg+xml">` of your HTML file. Adjust the paths based on your
 file's location relative to the `assets` folder.
 
 ```html
 
-<head>
+<head><link href="logo.svg" rel="icon" type="image/svg+xml">
     <!-- ... meta tags ... -->
 
     <!-- Load Shared Styles -->
@@ -368,7 +369,9 @@ ai.init();</code></pre>
 ```
 
 ### **4. External Dependencies**
-To make the fonts work as intended, ensure you include these in your `<head>`:
+
+To make the fonts work as intended, ensure you include these in your
+`<head><link href="logo.svg" rel="icon" type="image/svg+xml">`:
 1.  **Inter** (Sans-serif)
 2.  **Cinzel** (Serif - *Critical for Headings*)
 3.  **Icon Library** (The CSS references `<i>` tags in feature cards, likely FontAwesome or similar).

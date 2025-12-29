@@ -5,16 +5,16 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pdfbox.text.PDFTextStripper
 import java.awt.image.BufferedImage
- import java.io.File
- import javax.imageio.ImageIO
+import java.io.File
+import java.util.*
 import javax.imageio.spi.IIORegistry
 import javax.imageio.spi.ImageReaderSpi
 import javax.imageio.spi.ImageWriterSpi
-import java.util.ServiceLoader
 
- class PDFReader(pdfFile: File) : PaginatedDocumentReader, RenderableDocumentReader {
+class PDFReader(pdfFile: File) : PaginatedDocumentReader, RenderableDocumentReader {
     private val document: PDDocument = Loader.loadPDF(pdfFile)
     private val renderer: PDFRenderer = PDFRenderer(document)
+
     companion object {
         init {
             val registry = IIORegistry.getDefaultInstance()
