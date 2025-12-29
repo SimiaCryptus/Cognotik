@@ -110,9 +110,9 @@ complex internal "state of mind" to solve problems iteratively.
 
 * **How It Works (Internal Logic):**
 
-1. **Initialization:** Upon receiving a user message, it calls `initThinking` to create an initial `ReasoningState`.
-   This data structure contains the agent's goals (short and long-term), knowledge (facts, hypotheses, open questions),
-   and execution context (next steps).
+1. **Initialization:** Upon receiving a user message, it initializes its internal state using a specific **Cognitive Strategy**.
+   The default strategy (`ProjectManagerStrategy`) creates a `ReasoningState` containing goals, knowledge, and execution context.
+   However, other strategies can be used to define different mental models (e.g., Scientific Method, Agile Development).
 2. **The Main Loop (Think-Act-Reflect):**
    *   **Think (`getNextTask`):** At the start of each iteration, the agent analyzes its current `ReasoningState` and
    the history of past actions to decide on a small batch of tasks to execute next.
@@ -128,6 +128,12 @@ complex internal "state of mind" to solve problems iteratively.
 * **Iterative:** Refines its understanding and plan over time.
 * **Stateful & Reflective:** The `ReasoningState` acts as its memory and consciousness, allowing it to learn from its
   actions.
+* **Cognitive Strategies:** The mode's behavior is defined by its strategy. Available strategies include:
+  *   **Project Manager:** Standard goal-oriented planning.
+  *   **Scientific Researcher:** Hypothesis-driven investigation.
+  *   **Agile Developer:** Iterative Test-Driven Development.
+  *   **Critical Auditor:** Security and logic validation.
+  *   **Creative Writer:** Narrative and content generation.
 
 * **When to Use It:**
 * Complex, ambiguous, or poorly defined problems that require research, experimentation, and adaptation.
@@ -188,3 +194,98 @@ of smaller, manageable sub-goals and tasks, and then orchestrates their executio
 * **Weaknesses:**
 * Incurs significant overhead from the constant planning, decomposition, and status updates.
 * The success of the entire plan is highly dependent on the quality of the AI's decomposition logic.
+
+### 5. Parallel Mode
+The `ParallelMode` is a batch-processing engine designed to execute a specific task across multiple inputs simultaneously.
+* **High-Level Concept:** Analyze the user's request to identify a template task and a set of variables (e.g., a list of files). Generate all combinations of these variables, render the template for each, and execute the resulting tasks in parallel.
+* **How It Works (Internal Logic):**
+1. **Configuration Parsing:** The user's message is analyzed by a `ParsedAgent` to extract a `Config` object. This includes:
+   *   **Variables:** Lists of items to process (e.g., file paths, input strings). Supports glob patterns (e.g., `src/**/*.kt`).
+   *   **Template:** A string with placeholders (e.g., "Review the code in {{file}}").
+   *   **Concurrency:** How many tasks to run at once.
+   *   **Mode:** How to combine variables (`CrossJoin` for all combinations, `Zip` for pairing).
+2. **Expansion & Combination:** Variable values are expanded (e.g., resolving file globs). The system then generates a list of task configurations based on the selected mode.
+3. **Parallel Execution:** A `FixedConcurrencyProcessor` manages the execution. For each combination:
+   *   The template is rendered with the specific values.
+   *   The system determines the appropriate task implementation (using logic similar to Conversational Mode).
+   *   The task is executed, and results are displayed in a tabbed interface.
+* **Key Characteristics:**
+* **High Throughput:** Optimized for running many independent tasks at once.
+* **Template-Driven:** Uses a single instruction template applied to many contexts.
+* **Flexible Inputs:** Supports file globs and variable lists.
+* **When to Use It:**
+* Batch operations on files (e.g., "Refactor all Java files in src/").
+* Running the same analysis on multiple datasets.
+* Testing a prompt against a variety of inputs.
+* **Strengths:**
+* Drastically reduces time for repetitive tasks.
+* Automates the creation of many similar tasks.
+* Visualizes progress across multiple streams via tabs.
+* **Weaknesses:**
+* Not suitable for tasks with dependencies between steps.
+* Can consume significant API resources quickly due to parallelism.
+### 6. Protocol Mode (Experimental)
+The `ProtocolMode` is a rigorous, state-machine-driven strategy designed to enforce specific methodologies and ensure high-quality output through validation.
+* **High-Level Concept:** Define a strict protocol (a set of states with instructions and validation criteria) to achieve the user's request. The system moves through these states, executing actions and validating them with a "Referee" agent before proceeding.
+* **How It Works (Internal Logic):**
+1. **Protocol Definition:** The agent analyzes the request and defines a `ProtocolDefinition`. This is a state machine containing a list of states (e.g., "Red", "Green", "Refactor" for TDD), an initial state, and transitions. Each state has specific instructions and validation criteria.
+2. **State Execution Loop:**
+   *   **Action:** The system enters the current state and uses a "StateExecutor" agent to perform the required task based on the state's instructions.
+   *   **Validation:** A "Referee" agent reviews the result of the action against the state's `validationCriteria`.
+   *   **Retry/Transition:** If the validation passes, the system transitions to the defined `nextState`. If it fails, the system retries the action (up to a limit) with feedback from the Referee.
+3. **Termination:** The process continues until a terminal state (no next state) is reached or a safety limit is hit.
+* **Key Characteristics:**
+* **Methodical:** Enforces structured workflows like TDD or Read-Draft-Verify.
+* **Self-Correcting:** The Referee loop ensures that each step meets quality standards before moving on.
+* **Transparent:** The protocol and state transitions are clearly visible.
+* **When to Use It:**
+* Tasks requiring strict adherence to a process (e.g., Test-Driven Development).
+* Generating high-stakes documentation or code where verification is crucial.
+* Complex workflows that can be modeled as a state machine.
+* **Strengths:**
+* High reliability due to the validation step.
+* Enforces best practices (like writing tests before code).
+* Clear separation of concerns between execution and validation.
+* **Weaknesses:**
+* Can be slow due to the overhead of validation and potential retries.
+* Rigid compared to conversational modes.
+### 7. Session Mode (Experimental)
+The `SessionMode` focuses on deep interaction with a single tool. It assigns an AI "Operator" to drive a specific tool continuously until a goal is achieved.
+* **High-Level Concept:** Select the most appropriate tool for the user's request, then enter a loop where an AI operator issues commands to that tool, interprets the output, and issues new commands until the task is done.
+* **How It Works (Internal Logic):**
+1. **Tool Selection:** The system analyzes the user's message to select a single, persistent tool (e.g., a specific CLI wrapper or coding agent).
+2. **Session Loop:**
+   *   **Plan:** A "SessionOperator" agent reviews the conversation history and the current goal. It decides whether the goal is complete or what the next command should be.
+   *   **Execute:** The command is executed by the selected tool.
+   *   **Update:** The command and its result are added to the session history.
+3. **Termination:** The loop ends when the Operator deems the goal complete or a limit is reached.
+* **Key Characteristics:**
+* **Tool-Centric:** Locks onto one tool and uses it extensively.
+* **Autonomous Operator:** The AI acts as a user of the tool, navigating its interface or command set.
+* **Stateful:** Maintains the context of the tool's session.
+* **When to Use It:**
+* Tasks that require multiple interactions with the same utility (e.g., "Debug this issue using the terminal").
+* Exploratory tasks where the AI needs to "poke around" using a specific instrument.
+* **Strengths:**
+* Allows for complex, multi-step operations within a specific domain.
+* Reduces context switching by focusing on one tool.
+* **Weaknesses:**
+* Limited to the capabilities of the selected tool.
+* Can get stuck in loops if the tool provides confusing feedback.
+### 8. Council Mode
+The `CouncilMode` implements a democratic, multi-agent decision-making process. Instead of a single agent driving the process, a "council" of distinct personas collaborates to nominate and vote on tasks.
+* **High-Level Concept:** A group of specialized agents (e.g., CEO, CTO, QA) independently analyze the situation and nominate tasks. They then vote on the best course of action. The winning tasks are executed, and all agents update their internal states based on the results.
+* **How It Works (Internal Logic):**
+1.  **Council Initialization:** The mode initializes a list of `CognitiveSchemaStrategy` instances, representing the council members (default: CEO, CTO, QA). Each member maintains its own private state.
+2.  **The Main Loop:**
+    *   **Nomination:** Each council member analyzes the current situation and nominates tasks.
+    *   **Voting:** If there are conflicting nominations, the council members vote on the proposed tasks.
+    *   **Execution:** The tasks with the most votes are executed.
+    *   **State Update:** Every council member observes the results of the executed tasks and updates their own internal state/perspective accordingly.
+* **Key Characteristics:**
+* **Multi-Perspective:** Balances different viewpoints (e.g., business value vs. technical feasibility vs. quality).
+* **Democratic:** Decisions are made via voting, preventing one narrow perspective from dominating.
+* **When to Use It:**
+* High-stakes projects requiring balanced decision-making.
+* Complex architectural design where trade-offs need to be weighed.
+* Situations where a single agent might be prone to bias or tunnel vision.

@@ -83,6 +83,18 @@
                     <div class="mode-title">Parallel Mode</div>
                     <p><strong>The Factory.</strong> Designed for high-throughput batch operations. It takes a template and a set of variables (like file patterns), generates all combinations, and executes them simultaneously. Ideal for applying changes across a codebase or running parameter sweeps.</p>
                 </div>
+                <div class="mode-card">
+                    <div class="mode-title">Protocol Mode</div>
+                    <p><strong>The Auditor.</strong> Enforces strict methodologies (like TDD) using a state machine with validation steps. It ensures high-quality output by having a 'Referee' agent verify each step before proceeding.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Session Mode</div>
+                    <p><strong>The Operator.</strong> Assigns a dedicated AI operator to drive a specific tool continuously. It maintains a deep session context with that tool to achieve a goal through repeated interaction.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Council Mode</div>
+                    <p><strong>The Board.</strong> A multi-agent system where a "Council" of personas (e.g., CEO, CTO, QA) collaborates. They nominate tasks, vote on the best course of action, and maintain separate perspectives to ensure balanced decision-making.</p>
+                </div>
             </div>
         </section>
 
@@ -100,6 +112,9 @@
                             <option value="adaptive">Adaptive Planning Mode</option>
                             <option value="hierarchical">Hierarchical Planning Mode</option>
                             <option value="parallel">Parallel Mode</option>
+                            <option value="protocol">Protocol Mode</option>
+                            <option value="session">Session Mode</option>
+                            <option value="council">Council Mode</option>
                         </select>
                     </div>
                     <div class="control-group">
@@ -231,6 +246,52 @@
                             variables: { file: ["User.kt", "Session.kt", "Task.kt", "Utils.kt"] }
                         },
                         status: "RUNNING"
+                    };
+                } else if (mode === 'protocol') {
+                    planHtml = `
+                        <div class="plan-step"><strong>State: Red (Write Test)</strong><br>Writing failing test for feature...</div>
+                        <div class="plan-step" style="border-left-color: var(--accent-secondary)"><strong>Validation: PASSED</strong><br>Referee confirmed test fails as expected.</div>
+                        <div class="plan-step"><strong>State: Green (Implement)</strong><br>Writing implementation code...</div>
+                        <div class="plan-step" style="border-left-color: var(--accent-secondary)"><strong>Validation: PASSED</strong><br>Referee confirmed tests pass.</div>
+                    `;
+                    planJson = {
+                        mode: "Protocol",
+                        protocol: {
+                            states: ["Red", "Green", "Refactor"],
+                            currentState: "Green"
+                        },
+                        lastValidation: { passed: true, feedback: "Tests passed." }
+                    };
+                } else if (mode === 'session') {
+                    planHtml = `
+                        <div class="chat-log"><strong>User:</strong> Debug the server logs.</div>
+                        <div class="plan-step"><strong>Tool Selected: SSH Terminal</strong></div>
+                        <div class="chat-log ai"><strong>Operator:</strong> tail -f /var/log/syslog</div>
+                        <div class="chat-log"><strong>Tool Output:</strong> ... [Error] Connection refused ...</div>
+                        <div class="chat-log ai"><strong>Operator:</strong> systemctl status nginx</div>
+                    `;
+                    planJson = {
+                        mode: "Session",
+                        tool: "SSH Terminal",
+                        history: [
+                            "User: Debug logs",
+                            "Operator: tail -f ...",
+                            "Tool: [Error]..."
+                        ],
+                        status: "ACTIVE"
+                    };
+                } else if (mode === 'council') {
+                    planHtml = `
+                        <div class="plan-step"><strong>Council Session</strong><br>Members: CEO, CTO, QA</div>
+                        <div class="chat-log"><strong>Nominations:</strong><br>CEO: Market Research<br>CTO: Tech Stack Eval<br>QA: Setup CI/CD</div>
+                        <div class="plan-step" style="border-left-color: var(--accent-secondary)"><strong>Vote Result</strong><br>Selected: Tech Stack Eval (2 votes)</div>
+                        <div class="plan-step"><strong>Execution</strong><br>Evaluating Kotlin vs Java...</div>
+                    `;
+                    planJson = {
+                        mode: "Council",
+                        council: ["CEO", "CTO", "QA"],
+                        iteration: 1,
+                        vote: { winner: "Tech Stack Eval", count: 2 }
                     };
                 }
 
