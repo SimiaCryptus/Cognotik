@@ -72,6 +72,9 @@ abstract class ApplicationDirectory(
     open val taskConfigServlet: HttpServlet = TaskConfigServlet()
         .also { log.debug("Initialized TaskConfigServlet") }
 
+    open val cognitiveConfigServlet: HttpServlet = CognitiveConfigServlet()
+        .also { log.debug("Initialized CognitiveConfigServlet") }
+
     open fun authenticatedWebsite(): OAuthBase? = OAuthGoogle(
         redirectUri = "$domainName/oauth2callback",
         applicationName = "Demo",
@@ -151,6 +154,10 @@ abstract class ApplicationDirectory(
         },
         newWebAppContext("/taskConfig", taskConfigServlet).let {
             log.debug("Configuring taskConfig context with authentication")
+            authenticatedWebsite()?.configure(it, true) ?: it
+        },
+        newWebAppContext("/cognitiveConfig", cognitiveConfigServlet).let {
+            log.debug("Configuring cognitiveConfig context with authentication")
             authenticatedWebsite()?.configure(it, true) ?: it
         },
         newWebAppContext("/", welcomeResources, "welcome", welcomeServlet).let {

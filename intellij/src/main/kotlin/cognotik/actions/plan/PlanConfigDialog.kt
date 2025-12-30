@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.newSettings
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
@@ -31,7 +32,7 @@ import java.awt.datatransfer.StringSelection
 import javax.swing.*
 
 class PlanConfigDialog(
-    project: Project?,
+    val project: Project?,
     val settings: OrchestrationConfig,
 ) : DialogWrapper(project) {
 
@@ -89,6 +90,7 @@ class PlanConfigDialog(
 
     private val modelCache = mutableMapOf<String, ChatModel?>()
     private val visibleModelsCache by lazy { getVisibleModels() }
+    private val cognitiveConfigCache = mutableMapOf<CognitiveModeType<*>, CognitiveModeConfig>()
 
     private val globalModelCombo =
         ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
@@ -471,6 +473,11 @@ class PlanConfigDialog(
             settings.defaultFastModel = config.defaultFastModel
             settings.defaultImageModel = config.defaultImageModel
             settings.cognitiveSettings = config.cognitiveSettings
+            cognitiveConfigCache.clear()
+            config.cognitiveSettings?.let {
+                if (it.type != null) cognitiveConfigCache[it.type!!] = it
+            }
+
 
             // Update UI components
             temperatureSlider.value = (settings.temperature * TEMPERATURE_SCALE).toInt()
@@ -566,8 +573,19 @@ class PlanConfigDialog(
             }
             group("Planning Settings") {
                 row("Cognitive Mode:") {
-                    cell(cognitiveModeCombo).align(Align.FILL).comment("Select the cognitive strategy for planning")
-                }
+                    cell(cognitiveModeCombo).align(Align.FILL)
+                    button("Configure") {
+                        val selected = cognitiveModeCombo.selectedItem as? String
+                        if (selected != null) {
+                            val modeType = CognitiveModeType.valueOf(selected)
+                            val config = cognitiveConfigCache.getOrPut(modeType) { modeType.newSettings() }
+                            val dialog = CognitiveConfigDialog(project, modeType, config)
+                            if (dialog.showAndGet()) {
+                                cognitiveConfigCache[modeType] = dialog.getConfig()
+                            }
+                        }
+                    }
+                }.comment("Select the cognitive strategy for planning")
                 row {
                     cell(autoPlanPanel).align(Align.FILL)
                 }
@@ -684,7 +702,8 @@ class PlanConfigDialog(
             settings.defaultImageModel = model?.toApiChatModel()
         }
         val selectedCognitiveMode = cognitiveModeCombo.selectedItem as String
-        settings.cognitiveSettings = CognitiveModeType.valueOf(selectedCognitiveMode).newSettings()
+        val modeType = CognitiveModeType.valueOf(selectedCognitiveMode)
+        settings.cognitiveSettings = cognitiveConfigCache.getOrPut(modeType) { modeType.newSettings() }
         return settings
     }
 
@@ -720,4 +739,3 @@ class PlanConfigDialog(
                 .any { it.provider == chatModel.provider }
     }
 }
-

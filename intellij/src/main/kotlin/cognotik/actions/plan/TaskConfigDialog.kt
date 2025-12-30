@@ -11,25 +11,27 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.interpreter.CodeRuntimes
+import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.newSettings
-import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
-import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
-import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
-import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
-import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
-import com.simiacryptus.cognotik.plan.tools.online.fetch.FetchMethod
-import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType
-import com.simiacryptus.cognotik.plan.tools.online.seed.SeedMethod
-import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
 import com.simiacryptus.cognotik.plan.tools.file.PdfFormTask
+import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
+import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
+import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
+import com.simiacryptus.cognotik.util.DynamicEnum
 import java.awt.Component
 import java.awt.Dimension
 import javax.swing.*
+import kotlin.reflect.KClass
+import kotlin.reflect.KParameter
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.jvm.isAccessible
 
 class TaskConfigDialog(
     project: Project?,
@@ -100,79 +102,97 @@ class TaskConfigDialog(
     }
 
     private fun com.intellij.ui.dsl.builder.Panel.createTaskSpecificFields() {
-        when (config) {
-            is RunCodeTask.RunCodeTaskTypeConfig -> createRunCodeFields(config)
-            is AutoFixTask.AutoFixTaskTypeConfig -> createSelfHealingFields(config)
-            is CrawlerAgentTask.CrawlerTaskTypeConfig -> createCrawlerFields(config)
-            is MCPToolTask.MCPToolTaskTypeConfig -> createMCPToolFields(config)
-            is SubPlanTask.SubPlanTaskTypeConfig -> createSubPlanningFields(config)
-            is PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig -> createPersuasiveEssayFields(config)
-            is PdfFormTask.PdfFormTypeConfig -> createPdfFormFields(config)
-            // Add more task types as needed
-        }
-    }
-
-    private fun com.intellij.ui.dsl.builder.Panel.createRunCodeFields(config: RunCodeTask.RunCodeTaskTypeConfig) {
-        group("Code Execution Settings") {
-            row("Code Runtime:") {
-                val runtimes = CodeRuntimes.values().map { it.name }.toTypedArray()
-                val combo = ComboBox(runtimes)
-                combo.selectedItem = config.codeRuntime?.name ?: runtimes.firstOrNull()
-                cell(combo)
-                    .comment("Select the runtime environment for code execution")
-                configFields["codeRuntime"] = combo
-            }
-        }
-    }
-
-    private fun com.intellij.ui.dsl.builder.Panel.createSelfHealingFields(config: AutoFixTask.AutoFixTaskTypeConfig) {
-        group("Self-Healing Settings") {
-        }
-    }
-    private fun com.intellij.ui.dsl.builder.Panel.createPdfFormFields(config: PdfFormTask.PdfFormTypeConfig) {
-        group("PDF Form Settings") {
-            row("Template File:") {
-                val field = JBTextField(config.template_file ?: "")
-                field.toolTipText = "Path to the PDF template file relative to project root"
-                cell(field)
-                    .align(Align.FILL)
-                    .comment("Path to the PDF template file (e.g., templates/form.pdf)")
-                configFields["template_file"] = field
-            }
+        if (config is SubPlanTask.SubPlanTaskTypeConfig) {
+            createSubPlanningFields(config)
+        } else {
+            createReflectionFields()
         }
     }
 
 
-    private fun com.intellij.ui.dsl.builder.Panel.createMCPToolFields(config: MCPToolTask.MCPToolTaskTypeConfig) {
-        group("MCP Tool Settings") {
-            row("Default Server:") {
-                val field = JBTextField(config.default_server ?: "")
-                field.toolTipText = "Default MCP server name to use if not specified in execution"
-                cell(field)
-                    .align(Align.FILL)
-                    .comment("Name of the default MCP server to connect to")
-                configFields["default_server"] = field
-            }
-            row("Default Timeout (seconds):") {
-                val field = JBTextField(config.default_timeout.toString())
-                field.toolTipText = "Default timeout in seconds for tool execution (1-300)"
-                cell(field)
-                    .comment("Maximum time to wait for tool execution")
-                configFields["default_timeout"] = field
-            }
-            row {
-                val autoRetryCheckbox = JCheckBox("Auto Retry on Failure", config.auto_retry)
-                autoRetryCheckbox.toolTipText = "Automatically retry failed tool executions"
-                cell(autoRetryCheckbox)
-                    .comment("Enable automatic retry for transient failures")
-                configFields["auto_retry"] = autoRetryCheckbox
-            }
-            row("Max Retries:") {
-                val field = JBTextField(config.max_retries.toString())
-                field.toolTipText = "Maximum number of retry attempts (1-10)"
-                cell(field)
-                    .comment("Number of times to retry failed executions")
-                configFields["max_retries"] = field
+    private fun com.intellij.ui.dsl.builder.Panel.createReflectionFields() {
+        val kClass = config::class
+        val properties = kClass.memberProperties
+            .filter { it.name !in setOf("task_type", "name", "model") }
+            .sortedBy { it.name }
+
+        group("Task Settings") {
+            for (prop in properties) {
+                val name = prop.name
+                val label = name
+                    .replace(Regex("([^_ ])_([^_ ])"), "$1 $2")
+                    .replace(Regex("([a-z])([A-Z])"), "$1 $2")
+                    .replace(Regex("([A-Z])([A-Z][a-z])"), "$1 $2")
+                    .split(' ').joinToString(" ") { it.replaceFirstChar(Char::titlecase) }
+
+                val description = prop.findAnnotation<Description>()?.value
+                val returnType = prop.returnType
+                val classifier = returnType.classifier as? KClass<*>
+
+                prop.isAccessible = true
+                val currentValue = try {
+                    prop.getter.call(config)
+                } catch (e: Exception) {
+                    null
+                }
+
+                if (classifier == Boolean::class) {
+                    row {
+                        val checkBox = JCheckBox(label, currentValue as? Boolean ?: false)
+                        if (description != null) checkBox.toolTipText = description
+                        cell(checkBox).comment(description)
+                        configFields[name] = checkBox
+                    }
+                } else if (classifier == String::class) {
+                    row(label + ":") {
+                        val isTextArea = name.contains("prompt", ignoreCase = true) ||
+                                name.contains("code", ignoreCase = true) ||
+                                name.contains("thesis", ignoreCase = true) ||
+                                name.contains("purpose", ignoreCase = true)
+                        if (isTextArea) {
+                            val textArea = JBTextArea(currentValue as? String ?: "", 5, 40)
+                            textArea.lineWrap = true
+                            textArea.wrapStyleWord = true
+                            if (description != null) textArea.toolTipText = description
+                            cell(JScrollPane(textArea)).align(Align.FILL).comment(description)
+                            configFields[name] = textArea
+                        } else {
+                            val textField = JBTextField(currentValue as? String ?: "")
+                            if (description != null) textField.toolTipText = description
+                            cell(textField).align(Align.FILL).comment(description)
+                            configFields[name] = textField
+                        }
+                    }
+                } else if (classifier == Int::class || classifier == Long::class || classifier == Double::class) {
+                    row(label + ":") {
+                        val textField = JBTextField(currentValue?.toString() ?: "")
+                        if (description != null) textField.toolTipText = description
+                        cell(textField).comment(description)
+                        configFields[name] = textField
+                    }
+                } else if (classifier?.java?.isEnum == true) {
+                    row(label + ":") {
+                        val enumConstants = classifier.java.enumConstants
+                        val items = enumConstants.map { it.toString() }.toTypedArray()
+                        val comboBox = ComboBox(items)
+                        comboBox.selectedItem = currentValue?.toString()
+                        if (description != null) comboBox.toolTipText = description
+                        cell(comboBox).comment(description)
+                        configFields[name] = comboBox
+                    }
+                } else if (classifier != null && DynamicEnum::class.java.isAssignableFrom(classifier.java)) {
+                    row(label + ":") {
+                        val companion = classifier.java.getDeclaredField("Companion").get(null)
+                        val valuesMethod = companion.javaClass.getMethod("values")
+                        val values = valuesMethod.invoke(companion) as List<DynamicEnum<*>>
+                        val items = values.map { it.name }.toTypedArray()
+                        val comboBox = ComboBox(items)
+                        comboBox.selectedItem = (currentValue as? DynamicEnum<*>)?.name
+                        if (description != null) comboBox.toolTipText = description
+                        cell(comboBox).comment(description)
+                        configFields[name] = comboBox
+                    }
+                }
             }
         }
     }
@@ -345,100 +365,6 @@ class TaskConfigDialog(
     }
 
 
-    private fun com.intellij.ui.dsl.builder.Panel.createCrawlerFields(config: CrawlerAgentTask.CrawlerTaskTypeConfig) {
-        group("Web Crawler Settings") {
-            row("Processing Strategy:") {
-                val strategies = ProcessingStrategyType.entries.map { it.name }.toTypedArray()
-                val combo = ComboBox(strategies)
-                combo.selectedItem = config.processing_strategy?.name ?: "DefaultSummarizer"
-                combo.toolTipText = "Strategy for processing and analyzing page content"
-                cell(combo)
-                    .comment("Select how pages should be processed and analyzed")
-                configFields["processing_strategy"] = combo
-            }
-            row("Seed Method:") {
-                val methods = SeedMethod.entries.map { it.name }.toTypedArray()
-                val combo = ComboBox(methods)
-                combo.selectedItem = config.seed_method?.name ?: "GoogleProxy"
-                cell(combo)
-                    .comment("Method to seed the crawler (e.g., GoogleSearch, DirectUrls)")
-                configFields["seed_method"] = combo
-            }
-            row("Fetch Method:") {
-                val methods = FetchMethod.entries.map { it.name }.toTypedArray()
-                val combo = ComboBox(methods)
-                combo.selectedItem = config.fetch_method?.name ?: "HttpClient"
-                cell(combo)
-                    .comment("Method used to fetch content from URLs")
-                configFields["fetch_method"] = combo
-            }
-            row {
-                val respectRobotsCheckbox = JCheckBox("Respect robots.txt", config.respect_robots_txt ?: true)
-                respectRobotsCheckbox.toolTipText = "Follow robots.txt rules when crawling websites"
-                cell(respectRobotsCheckbox)
-                    .comment("Enable to respect robots.txt crawl rules and delays")
-                configFields["respect_robots_txt"] = respectRobotsCheckbox
-            }
-            row("Max Pages Per Task:") {
-                val field = JBTextField(config.max_pages_per_task?.toString() ?: "30")
-                field.toolTipText = "Maximum number of pages to process (1-500)"
-                cell(field)
-                    .comment("Limit the number of pages crawled per task")
-                configFields["max_pages_per_task"] = field
-            }
-            row("Concurrent Processing:") {
-                val field = JBTextField(config.concurrent_page_processing?.toString() ?: "3")
-                field.toolTipText = "Number of pages to process concurrently (1-10)"
-                cell(field)
-                    .comment("Number of pages to fetch and process in parallel")
-                configFields["concurrent_page_processing"] = field
-            }
-            row("Max Final Output Size:") {
-                val field = JBTextField(config.max_final_output_size?.toString() ?: "10000")
-                field.toolTipText = "Maximum characters in final summary (1000-100000)"
-                cell(field)
-                    .comment("Maximum size of the final output summary")
-                configFields["max_final_output_size"] = field
-            }
-            row("Min Content Length:") {
-                val field = JBTextField(config.min_content_length?.toString() ?: "100")
-                field.toolTipText = "Minimum content length to process (10-10000)"
-                cell(field)
-                    .comment("Skip pages with less content than this threshold")
-                configFields["min_content_length"] = field
-            }
-            row("Allowed Domains:") {
-                val field = JBTextField(config.allowed_domains ?: "")
-                field.toolTipText =
-                    "Whitespace-separated list of allowed domains/URL prefixes (leave empty to allow all)"
-                cell(field)
-                    .align(Align.FILL)
-                    .comment("Restrict crawling to specific domains or URL prefixes (e.g., 'example.com https://docs.example.com')")
-                configFields["allowed_domains"] = field
-            }
-            row {
-                val followLinksCheckbox = JCheckBox("Follow Links", config.follow_links ?: true)
-                followLinksCheckbox.toolTipText = "Automatically follow links found in analyzed pages"
-                cell(followLinksCheckbox)
-                    .comment("Enable to crawl linked pages automatically")
-                configFields["follow_links"] = followLinksCheckbox
-            }
-            row {
-                val allowRevisitCheckbox = JCheckBox("Allow Revisit Pages", config.allow_revisit_pages ?: false)
-                allowRevisitCheckbox.toolTipText = "Allow crawling the same page multiple times"
-                cell(allowRevisitCheckbox)
-                    .comment("Enable to allow processing the same URL multiple times")
-                configFields["allow_revisit_pages"] = allowRevisitCheckbox
-            }
-            row {
-                val createSummaryCheckbox = JCheckBox("Create Final Summary", config.create_final_summary ?: true)
-                createSummaryCheckbox.toolTipText = "Generate a comprehensive summary of all results"
-                cell(createSummaryCheckbox)
-                    .comment("Enable to create a final summary when output is large")
-                configFields["create_final_summary"] = createSummaryCheckbox
-            }
-        }
-    }
 
     override fun doOKAction() {
         val name = configNameField.text.trim()
@@ -679,133 +605,102 @@ class TaskConfigDialog(
     }
 
     fun getConfig(): TaskTypeConfig {
+        if (config is SubPlanTask.SubPlanTaskTypeConfig) {
+            return getSubPlanConfig()
+        }
+        return getReflectionConfig()
+    }
+
+
+    private fun getReflectionConfig(): TaskTypeConfig {
+        val kClass = config::class
+        val constructor = kClass.primaryConstructor ?: throw IllegalStateException("No primary constructor")
+        val args = mutableMapOf<KParameter, Any?>()
+
+        for (param in constructor.parameters) {
+            val name = param.name
+            if (name == "task_type") {
+                args[param] = config.task_type
+                continue
+            }
+            if (name == "name") {
+                args[param] = configNameField.text.trim()
+                continue
+            }
+            if (name == "model") {
+                val selectedModelName = modelCombo.selectedItem as? String
+                val selectedModel = availableModels.find { it.modelName == selectedModelName }
+                args[param] = selectedModel?.toApiChatModel()
+                continue
+            }
+
+            val component = configFields[name]
+            if (component == null) continue
+
+            val value: Any? = when (component) {
+                is JCheckBox -> component.isSelected
+                is JBTextField -> {
+                    val text = component.text.trim()
+                    when (param.type.classifier) {
+                        Int::class -> text.toIntOrNull()
+                        Long::class -> text.toLongOrNull()
+                        Double::class -> text.toDoubleOrNull()
+                        else -> text.ifEmpty { null }
+                    }
+                }
+
+                is JBTextArea -> component.text.trim()
+                is ComboBox<*> -> {
+                    val selected = component.selectedItem as? String
+                    val paramClass = param.type.classifier as? KClass<*>
+                    if (selected != null && paramClass?.java?.isEnum == true) {
+                        paramClass.java.enumConstants.find { it.toString() == selected }
+                    } else if (selected != null && paramClass != null && DynamicEnum::class.java.isAssignableFrom(
+                            paramClass.java
+                        )
+                    ) {
+                        val companion = paramClass.java.getDeclaredField("Companion").get(null)
+                        val valueOfMethod = companion.javaClass.getMethod("valueOf", String::class.java)
+                        try {
+                            valueOfMethod.invoke(companion, selected)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    } else {
+                        null
+                    }
+                }
+
+                else -> null
+            }
+
+            if (value != null) {
+                args[param] = value
+            } else {
+                if (param.type.isMarkedNullable) {
+                    args[param] = null
+                } else if (param.type.classifier == String::class) {
+                    args[param] = ""
+                }
+            }
+        }
+        return constructor.callBy(args)
+    }
+
+    private fun getSubPlanConfig(): TaskTypeConfig {
         val selectedModelName = modelCombo.selectedItem as? String
         val selectedModel = availableModels.find { it.modelName == selectedModelName }
-        val baseConfig = taskType.newSettings().let {
-            it?.task_type = taskType.name
-            it?.name = configNameField.text.trim()
-            it?.model = selectedModel?.toApiChatModel()
-            it
-        } ?: throw IllegalStateException("Failed to create base config for task type ${taskType.name}")
-        // Apply task-specific configuration
-        return applyTaskSpecificConfig(baseConfig)
-    }
-
-    private fun applyTaskSpecificConfig(baseConfig: TaskTypeConfig): TaskTypeConfig {
-        return when (config) {
-            is RunCodeTask.RunCodeTaskTypeConfig -> {
-                RunCodeTask.RunCodeTaskTypeConfig(
-                    task_type = baseConfig.task_type!!,
-                    name = baseConfig.name,
-                    model = baseConfig.model,
-                    codeRuntime = CodeRuntimes.valueOf(
-                        (configFields["codeRuntime"] as? ComboBox<*>)?.selectedItem as? String
-                            ?: "KotlinRuntime"
-                    )
-                )
-            }
-
-            is AutoFixTask.AutoFixTaskTypeConfig -> {
-                AutoFixTask.AutoFixTaskTypeConfig(
-                    task_type = baseConfig.task_type,
-                    name = baseConfig.name,
-                    model = baseConfig.model
-                )
-            }
-
-            is MCPToolTask.MCPToolTaskTypeConfig -> {
-                MCPToolTask.MCPToolTaskTypeConfig(
-                    task_type = baseConfig.task_type!!,
-                    name = baseConfig.name,
-                    default_server = (configFields["default_server"] as? JBTextField)?.text?.trim()
-                        ?.takeIf { it.isNotEmpty() },
-                    default_timeout = (configFields["default_timeout"] as? JBTextField)?.text?.toIntOrNull() ?: 30,
-                    auto_retry = (configFields["auto_retry"] as? JCheckBox)?.isSelected ?: false,
-                    max_retries = (configFields["max_retries"] as? JBTextField)?.text?.toIntOrNull() ?: 3
-                )
-            }
-
-
-            is CrawlerAgentTask.CrawlerTaskTypeConfig -> {
-                CrawlerAgentTask.CrawlerTaskTypeConfig(
-                    task_type = baseConfig.task_type!!,
-                    name = baseConfig.name,
-                    model = baseConfig.model,
-                    processing_strategy = ProcessingStrategyType.valueOf(
-                        (configFields["processing_strategy"] as? ComboBox<*>)?.selectedItem as? String
-                            ?: "DefaultSummarizer"
-                    ),
-                    seed_method = SeedMethod.valueOf(
-                        (configFields["seed_method"] as? ComboBox<*>)?.selectedItem as? String
-                            ?: "GoogleProxy"
-                    ),
-                    fetch_method = FetchMethod.valueOf(
-                        (configFields["fetch_method"] as? ComboBox<*>)?.selectedItem as? String
-                            ?: "HttpClient"
-                    ),
-                    respect_robots_txt = (configFields["respect_robots_txt"] as? JCheckBox)?.isSelected,
-                    max_pages_per_task = (configFields["max_pages_per_task"] as? JBTextField)?.text?.toIntOrNull(),
-                    concurrent_page_processing = (configFields["concurrent_page_processing"] as? JBTextField)?.text?.toIntOrNull(),
-                    max_final_output_size = (configFields["max_final_output_size"] as? JBTextField)?.text?.toIntOrNull(),
-                    min_content_length = (configFields["min_content_length"] as? JBTextField)?.text?.toIntOrNull(),
-                    allowed_domains = (configFields["allowed_domains"] as? JBTextField)?.text?.trim()
-                        ?.takeIf { it.isNotEmpty() },
-                    follow_links = (configFields["follow_links"] as? JCheckBox)?.isSelected,
-                    allow_revisit_pages = (configFields["allow_revisit_pages"] as? JCheckBox)?.isSelected,
-                    create_final_summary = (configFields["create_final_summary"] as? JCheckBox)?.isSelected
-                )
-            }
-
-            is SubPlanTask.SubPlanTaskTypeConfig -> {
-                SubPlanTask.SubPlanTaskTypeConfig(
-                    task_type = baseConfig.task_type!!,
-                    name = baseConfig.name,
-                    model = baseConfig.model,
-                    purpose = (configFields["purpose"] as? JBTextArea)?.text?.trim() ?: "",
-                    cognitiveSettings = CognitiveModeType.valueOf(
-                        (configFields["cognitiveMode"] as? ComboBox<*>)?.selectedItem as? String ?: "Waterfall"
-                    ).newSettings(),
-                    taskSettings = config.taskSettings.toMutableMap()
-                )
-            }
-
-            is PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig -> {
-                PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig(
-                    generate_images = (configFields["generate_images"] as? JCheckBox)?.isSelected ?: true,
-                    generate_cover_image = (configFields["generate_cover_image"] as? JCheckBox)?.isSelected ?: true,
-                )
-            }
-            is PdfFormTask.PdfFormTypeConfig -> {
-                PdfFormTask.PdfFormTypeConfig(
-                    template_file = (configFields["template_file"] as? JBTextField)?.text?.trim()
-                        ?.takeIf { it.isNotEmpty() },
-                    task_type = baseConfig.task_type,
-                    name = baseConfig.name
-                )
-            }
-
-
-            else -> baseConfig
-        }
-    }
-
-    private fun com.intellij.ui.dsl.builder.Panel.createPersuasiveEssayFields(config: PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig) {
-        group("Image Generation") {
-            row {
-                val generateImagesCheckbox = JCheckBox("Generate Images", config.generate_images)
-                generateImagesCheckbox.toolTipText = "Generate visualization images for arguments"
-                cell(generateImagesCheckbox)
-                    .comment("Enable to generate images for essay visualization")
-                configFields["generate_images"] = generateImagesCheckbox
-            }
-            row {
-                val coverImageCheckbox = JCheckBox("Generate Cover Image", config.generate_cover_image)
-                coverImageCheckbox.toolTipText = "Generate a professional cover image"
-                cell(coverImageCheckbox)
-                    .comment("Enable to generate a cover image for the essay")
-                configFields["generate_cover_image"] = coverImageCheckbox
-            }
-        }
+        val subPlanConfig = config as SubPlanTask.SubPlanTaskTypeConfig
+        return SubPlanTask.SubPlanTaskTypeConfig(
+            task_type = config.task_type!!,
+            name = configNameField.text.trim(),
+            model = selectedModel?.toApiChatModel(),
+            purpose = (configFields["purpose"] as? JBTextArea)?.text?.trim() ?: "",
+            cognitiveSettings = CognitiveModeType.valueOf(
+                (configFields["cognitiveMode"] as? ComboBox<*>)?.selectedItem as? String ?: "Waterfall"
+            ).newSettings(),
+            taskSettings = subPlanConfig.taskSettings.toMutableMap()
+        )
     }
 
     private data class SubTaskConfigEntry(
