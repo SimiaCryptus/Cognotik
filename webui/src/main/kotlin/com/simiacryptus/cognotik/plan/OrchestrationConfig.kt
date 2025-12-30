@@ -26,7 +26,6 @@ class OrchestrationConfig(
     var defaultSmartModel: ApiChatModel? = null,
     var defaultFastModel: ApiChatModel? = null,
     var defaultImageModel: ApiChatModel? = null,
-    var cognitiveMode: CognitiveModeType<*>? = null,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
     var temperature: Double = 0.2,
     val budget: Double = 2.0,
@@ -38,7 +37,7 @@ class OrchestrationConfig(
             it
         } ?: throw IllegalStateException("No default config for task type ${taskType.name}")
     }.mapKeys { it.key.name }.toMutableMap(),
-    val cognitiveSettings: CognitiveModeConfig? = cognitiveMode?.newSettings(),
+    var cognitiveSettings: CognitiveModeConfig? = null,
     var autoFix: Boolean = false,
     val env: Map<String, String>? = mapOf(),
     val workingDir: String? = ".",
@@ -47,6 +46,7 @@ class OrchestrationConfig(
     var maxTasksPerIteration: Int = 1,
     var maxIterations: Int = 10,
 ) {
+    val cognitiveMode: CognitiveModeType<*>? get() = cognitiveSettings?.type
 
     @get:JsonIgnore
     var processor: PatchProcessor = PatchProcessors.Fuzzy
@@ -115,7 +115,6 @@ class OrchestrationConfig(
         env: Map<String, String>? = this.env,
         workingDir: String? = this.workingDir,
         language: String? = this.language,
-        cognitiveMode: CognitiveModeType<*>? = this.cognitiveMode,
         maxTaskHistoryChars: Int = this.maxTaskHistoryChars,
         maxTasksPerIteration: Int = this.maxTasksPerIteration,
         maxIterations: Int = this.maxIterations,
@@ -136,7 +135,6 @@ class OrchestrationConfig(
         maxTaskHistoryChars = maxTaskHistoryChars,
         maxTasksPerIteration = maxTasksPerIteration,
         maxIterations = maxIterations,
-        cognitiveMode = cognitiveMode,
         sessionId = sessionId
     )
 

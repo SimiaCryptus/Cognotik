@@ -470,7 +470,7 @@ class PlanConfigDialog(
             settings.defaultSmartModel = config.defaultSmartModel
             settings.defaultFastModel = config.defaultFastModel
             settings.defaultImageModel = config.defaultImageModel
-            settings.cognitiveMode = config.cognitiveMode
+            settings.cognitiveSettings = config.cognitiveSettings
 
             // Update UI components
             temperatureSlider.value = (settings.temperature * TEMPERATURE_SCALE).toInt()
@@ -684,7 +684,7 @@ class PlanConfigDialog(
             settings.defaultImageModel = model?.toApiChatModel()
         }
         val selectedCognitiveMode = cognitiveModeCombo.selectedItem as String
-        settings.cognitiveMode = CognitiveModeType.valueOf(selectedCognitiveMode)
+        settings.cognitiveSettings = CognitiveModeType.valueOf(selectedCognitiveMode).newSettings()
         return settings
     }
 

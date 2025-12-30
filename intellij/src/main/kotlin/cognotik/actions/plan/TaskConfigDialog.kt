@@ -762,9 +762,9 @@ class TaskConfigDialog(
                     name = baseConfig.name,
                     model = baseConfig.model,
                     purpose = (configFields["purpose"] as? JBTextArea)?.text?.trim() ?: "",
-                    cognitiveMode = CognitiveModeType.valueOf(
+                    cognitiveSettings = CognitiveModeType.valueOf(
                         (configFields["cognitiveMode"] as? ComboBox<*>)?.selectedItem as? String ?: "Waterfall"
-                    ),
+                    ).newSettings(),
                     taskSettings = config.taskSettings.toMutableMap()
                 )
             }

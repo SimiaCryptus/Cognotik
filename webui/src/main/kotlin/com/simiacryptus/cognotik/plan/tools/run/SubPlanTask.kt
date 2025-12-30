@@ -24,13 +24,14 @@ class SubPlanTask(
 ) {
 
     class SubPlanTaskTypeConfig(
-        @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveMode: CognitiveModeType<*>? = null,
+        @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveSettings: CognitiveModeConfig? = null,
         @Description("Task-specific configurations available within sub-plans") val taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
         @Description("Supplemental description of the purpose of this configuration") val purpose: String = "",
         task_type: String = "RecursiveToolDefinition",
         model: ApiChatModel? = null,
         name: String? = task_type,
     ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
+        val cognitiveMode: CognitiveModeType<*>? get() = cognitiveSettings?.type
         override fun validate(): String? {
             // Validate that taskSettings don't contain invalid configurations
             taskSettings.forEach { (key, config) ->
@@ -103,11 +104,11 @@ class SubPlanTask(
             val typeConfig = this.typeConfig ?: throw RuntimeException()
             // Get the cognitive mode for sub-planning
             val cognitiveMode =
-                (typeConfig.cognitiveMode ?: orchestrationConfig.cognitiveMode ?: CognitiveModeType.Adaptive)
+                (typeConfig.cognitiveMode?.newSettings() ?: orchestrationConfig.cognitiveSettings ?: CognitiveModeType.Adaptive.newSettings())
 
             val subConfig = orchestrationConfig.copy(
                 taskSettings = typeConfig.taskSettings,
-                cognitiveMode = cognitiveMode,
+                cognitiveSettings = typeConfig.cognitiveSettings ?: orchestrationConfig.cognitiveSettings,
             )
             log.debug("Created sub-orchestration config with maxIterations=${subConfig.maxIterations}, maxTasksPerIteration=${subConfig.maxTasksPerIteration}")
 
@@ -141,7 +142,7 @@ class SubPlanTask(
             log.debug("Planning goal: $planningGoal")
 
             // Initialize the cognitive mode
-            val cognitiveInstance = cognitiveMode.getImpl(
+            val cognitiveInstance = cognitiveMode.type!!.getImpl(
                 task = planningTask, orchestrationConfig = subConfig, session = agent.session, user = agent.user
             ).apply { initialize() }
 
