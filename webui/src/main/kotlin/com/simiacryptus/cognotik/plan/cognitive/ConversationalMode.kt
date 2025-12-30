@@ -27,12 +27,17 @@ import kotlin.io.path.Path
  * A cognitive mode that executes tasks based on user input while maintaining conversation history.
  */
 open class ConversationalMode(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User = defaultUser,
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser,
     var useExpansionSyntax: Boolean = true
-) : CognitiveMode {
+) : CognitiveMode(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
 
     init {
         require(orchestrationConfig.defaultSmartModel != null) { "Default model must be specified in orchestration config" }

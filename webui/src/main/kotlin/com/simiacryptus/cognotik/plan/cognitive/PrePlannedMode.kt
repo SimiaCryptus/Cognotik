@@ -17,11 +17,16 @@ import java.io.File
 import kotlin.io.path.Path
 
 open class PrePlannedMode(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User = defaultUser
-) : CognitiveMode {
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser
+) : CognitiveMode(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
 
     private val log = LoggerFactory.getLogger(PrePlannedMode::class.java)
 

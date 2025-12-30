@@ -24,14 +24,19 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 open class HierarchicalPlanningMode(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User = defaultUser,
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser,
     maxConcurrency: Int = 4,
     private val maxIterations: Int = 200,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
-) : CognitiveMode {
+) : CognitiveMode(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
     private val goalIdCounter = AtomicInteger(1)
     private val taskIdCounter = AtomicInteger(1)
     private val isRunning = AtomicBoolean(false)

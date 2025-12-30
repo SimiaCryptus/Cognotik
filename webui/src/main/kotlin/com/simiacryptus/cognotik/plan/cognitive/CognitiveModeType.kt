@@ -51,25 +51,14 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
         }
 
         fun values(): List<CognitiveModeType<*>> {
-            require(constructors != null) // Trigger lazy init
+            @Suppress("SENSELESS_COMPARISON") require(constructors != null) // Trigger lazy init
             return values(CognitiveModeType::class.java)
         }
 
         fun valueOf(name: String): CognitiveModeType<*> {
-            require(constructors != null) // Trigger lazy init
+            @Suppress("SENSELESS_COMPARISON") require(constructors != null) // Trigger lazy init
             return valueOf(CognitiveModeType::class.java, name)
         }
-
-        fun getImpl(
-            orchestrationConfig: OrchestrationConfig,
-            task: SessionTask,
-            session: Session,
-            user: User
-        ): CognitiveMode {
-            val type: CognitiveModeType<*> = orchestrationConfig.cognitiveMode ?: throw IllegalStateException("Cognitive mode not set")
-            return type.getImpl(task, orchestrationConfig, session, user)
-        }
-
     }
     fun getImpl(
         task: SessionTask,
@@ -78,5 +67,4 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
         user: User
     ): CognitiveMode = (constructors[this]?.invoke(task, orchestrationConfig, session, user)
         ?: throw IllegalStateException("No constructor for cognitive mode ${name}"))
-
 }

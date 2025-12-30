@@ -22,11 +22,16 @@ import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
 
 open class ParallelMode(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User = defaultUser
-) : CognitiveMode {
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser
+) : CognitiveMode(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
 
     private val log = LoggerFactory.getLogger(ParallelMode::class.java)
 

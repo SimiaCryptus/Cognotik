@@ -18,12 +18,17 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 open class ProtocolMode(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User = defaultUser,
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
-) : CognitiveMode {
+) : CognitiveMode(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
 
     private val log = LoggerFactory.getLogger(ProtocolMode::class.java)
     private var isRunning = false

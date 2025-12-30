@@ -20,16 +20,21 @@ import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
 
 open class CouncilMode(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User = defaultUser,
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser,
     val council: List<CognitiveSchemaStrategy<out Any>> = listOf(
         ProjectManagerStrategy(name = "CEO", description = "Focus on high-level goals and business value."),
         ProjectManagerStrategy(name = "CTO", description = "Focus on technical feasibility and architecture."),
         ProjectManagerStrategy(name = "QA", description = "Focus on testing and quality assurance.")
     )
-) : CognitiveMode {
+) : CognitiveMode(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
 
     private val log = LoggerFactory.getLogger(CouncilMode::class.java)
     private val currentUserMessage = AtomicReference<String?>(null)

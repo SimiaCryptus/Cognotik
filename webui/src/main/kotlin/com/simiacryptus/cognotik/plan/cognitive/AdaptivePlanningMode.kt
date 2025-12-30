@@ -26,16 +26,21 @@ import kotlin.io.path.Path
  * A cognitive mode that implements the auto-planning strategy with iterative thinking.
  */
 open class AdaptivePlanningMode<T>(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User = defaultUser,
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser,
     private val maxTaskHistoryChars: Int = orchestrationConfig.maxTaskHistoryChars,
     private val maxTasksPerIteration: Int = orchestrationConfig.maxTasksPerIteration,
     private val maxIterations: Int = orchestrationConfig.maxIterations,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig),
     val cognitiveStrategy: CognitiveSchemaStrategy<T>
-) : CognitiveMode {
+) : CognitiveMode(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
 
     private val log = LoggerFactory.getLogger(AdaptivePlanningMode::class.java)
     private val currentUserMessage = AtomicReference<String?>(null)
