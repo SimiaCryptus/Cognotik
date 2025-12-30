@@ -21,12 +21,22 @@ import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
 
+class ParallelModeConfig(
+    var defaultConcurrency: Int = 4,
+    var defaultMode: CombinationMode = CombinationMode.CrossJoin
+) : CognitiveModeConfig(type = CognitiveModeType.Parallel) {
+    enum class CombinationMode {
+        CrossJoin,
+        Zip
+    }
+}
+
 open class ParallelMode(
     task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser
-) : CognitiveMode<CognitiveModeConfig>(
+) : CognitiveMode<ParallelModeConfig>(
     task,
     orchestrationConfig,
     session,
@@ -40,34 +50,30 @@ open class ParallelMode(
     }
 
     override fun contextData(): List<String> = emptyList()
-    enum class CombinationMode {
-        CrossJoin,
-        Zip
-    }
 
-    data class Config(
+    data class ParallelPlan(
         val variables: Map<String, Any> = emptyMap(),
         val template: String = "",
         val concurrency: Int = 4,
-        val mode: CombinationMode = CombinationMode.CrossJoin
+        val mode: ParallelModeConfig.CombinationMode = ParallelModeConfig.CombinationMode.CrossJoin
     )
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         try {
             task.echo(userMessage.renderMarkdown)
 
-            val config = parseConfig(userMessage)
+            val plan = parseConfig(userMessage)
             val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
                 ?: task.ui.dataStorage?.getSessionDir(user, session)?.toPath()
                 ?: File(".").toPath()
 
-            val expandedVariables = config.variables.mapValues { (_, value) -> expandVariable(value, root) }
-            val combinations = generateCombinations(expandedVariables, config.mode)
+            val expandedVariables = plan.variables.mapValues { (_, value) -> expandVariable(value, root) }
+            val combinations = generateCombinations(expandedVariables, plan.mode)
 
-            task.add("Running ${combinations.size} tasks with concurrency ${config.concurrency}...")
+            task.add("Running ${combinations.size} tasks with concurrency ${plan.concurrency}...")
 
             val tabs = TabbedDisplay(task)
-            val processor = FixedConcurrencyProcessor(task.ui.pool, config.concurrency)
+            val processor = FixedConcurrencyProcessor(task.ui.pool, plan.concurrency)
 
             val futures = combinations.map { combination ->
                 processor.submit {
@@ -78,7 +84,7 @@ open class ParallelMode(
                     }
 
                     try {
-                        val renderedMessage = renderTemplate(config.template, combination)
+                        val renderedMessage = renderTemplate(plan.template, combination)
                         task.add("Parameters: \n```json\n${JsonUtil.toJson(combination)}\n```".renderMarkdown())
                         task.add("Rendered Message: \n```text\n${renderedMessage}\n```".renderMarkdown())
                         val (_, chosenTask) = requestToTask(
@@ -127,7 +133,7 @@ open class ParallelMode(
         }
     }
 
-    private fun parseConfig(message: String): Config {
+    private fun parseConfig(message: String): ParallelPlan {
         val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
         val taskDescriptions = availableTaskTypes.joinToString("\n") { taskType ->
             val impl = TaskType.getImpl(orchestrationConfig, taskType)
@@ -138,12 +144,12 @@ open class ParallelMode(
         Tasks.initDescriber(orchestrationConfig, describer)
         val agent = ParsedAgent(
             name = "ParallelConfigParser",
-            resultClass = Config::class.java,
-            exampleInstance = Config(
+            resultClass = ParallelPlan::class.java,
+            exampleInstance = ParallelPlan(
                 variables = mapOf("file" to listOf("src/main.kt", "src/utils.kt")),
                 template = """{"task_type": "CodingTask", "prompt": "Review the code in {{file}}"}""",
-                concurrency = 2,
-                mode = CombinationMode.CrossJoin
+                concurrency = config.defaultConcurrency,
+                mode = config.defaultMode
             ),
             prompt = """
 Analyze the user request to identify parallel execution parameters.
@@ -154,8 +160,8 @@ Available task types that the downstream agent can perform:
 $taskDescriptions
 
 If the user mentions specific files or globs, include them in the variables map.
-If the user specifies concurrency, set it; otherwise default to 4.
-If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mode to Zip. Default is CrossJoin.
+If the user specifies concurrency, set it; otherwise default to ${config.defaultConcurrency}.
+If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mode to Zip. Default is ${config.defaultMode}.
             """ + (orchestrationConfig.workingDir?.let {root ->
                 "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
             } ?: ""),
@@ -199,13 +205,13 @@ If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mod
         }
     }
 
-    private fun generateCombinations(variables: Map<String, List<Any>>, mode: CombinationMode): List<Map<String, Any>> {
+    private fun generateCombinations(variables: Map<String, List<Any>>, mode: ParallelModeConfig.CombinationMode): List<Map<String, Any>> {
         if (variables.isEmpty()) return listOf(emptyMap())
 
         val keys = variables.keys.toList()
 
         return when (mode) {
-            CombinationMode.CrossJoin -> {
+            ParallelModeConfig.CombinationMode.CrossJoin -> {
                 var combinations = variables[keys[0]]!!.map { mapOf(keys[0] to it) }
                 for (i in 1 until keys.size) {
                     val key = keys[i]
@@ -219,7 +225,7 @@ If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mod
                 combinations
             }
 
-            CombinationMode.Zip -> {
+            ParallelModeConfig.CombinationMode.Zip -> {
                 val size = variables.values.minOf { it.size }
                 (0 until size).map { i ->
                     keys.associateWith { key -> variables[key]!![i] }

@@ -18,18 +18,24 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
+class CouncilModeConfig(
+    var council: List<CognitiveSchemaStrategy<out Any>> = listOf(
+        ProjectManagerStrategy(name = "CEO", description = "Focus on high-level goals and business value."),
+        ProjectManagerStrategy(name = "CTO", description = "Focus on technical feasibility and architecture."),
+        ProjectManagerStrategy(name = "QA", description = "Focus on testing and quality assurance.")
+    ),
+    var maxTaskHistoryChars: Int = 20000,
+    var maxTasksPerIteration: Int = 3,
+    var maxIterations: Int = 10
+) : CognitiveModeConfig(type = CognitiveModeType.Council)
+
 
 open class CouncilMode(
     task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
-    user: User = defaultUser,
-    val council: List<CognitiveSchemaStrategy<out Any>> = listOf(
-        ProjectManagerStrategy(name = "CEO", description = "Focus on high-level goals and business value."),
-        ProjectManagerStrategy(name = "CTO", description = "Focus on technical feasibility and architecture."),
-        ProjectManagerStrategy(name = "QA", description = "Focus on testing and quality assurance.")
-    )
-) : CognitiveMode<CognitiveModeConfig>(
+    user: User = defaultUser
+) : CognitiveMode<CouncilModeConfig>(
     task,
     orchestrationConfig,
     session,
@@ -43,9 +49,9 @@ open class CouncilMode(
     private var isRunning = false
     private var transcriptStream: FileOutputStream? = null
     private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+))}""")
-    private val maxTaskHistoryChars: Int = orchestrationConfig.maxTaskHistoryChars
-    private val maxTasksPerIteration: Int = orchestrationConfig.maxTasksPerIteration
-    private val maxIterations: Int = orchestrationConfig.maxIterations
+    private val maxTaskHistoryChars: Int get() = config.maxTaskHistoryChars
+    private val maxTasksPerIteration: Int get() = config.maxTasksPerIteration
+    private val maxIterations: Int get() = config.maxIterations
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 
     override fun initialize() {
@@ -84,7 +90,7 @@ open class CouncilMode(
                 }
 
                 // Initialize all council members
-                council.forEach { strategy ->
+            config.council.forEach { strategy ->
                     val state = strategy.initialize(
                         userMessage,
                         contextData(),
@@ -121,7 +127,7 @@ open class CouncilMode(
                             complete(renderMarkdown(it))
                         }
                         // Display Council States
-                        council.forEach { strategy ->
+                    config.council.forEach { strategy ->
                             ui.newTask(false).apply {
                                 inputTabs["${strategy.name} State"] = placeholder
                                 val state = reasoningStates[strategy.name]!!
@@ -132,7 +138,7 @@ open class CouncilMode(
 
                     // Nominations
                     val nominations = mutableListOf<Pair<String, AdaptivePlanningMode.TaskData>>()
-                    val nominationFutures = council.map { strategy ->
+                val nominationFutures = config.council.map { strategy ->
                         ui.pool.submit<List<Pair<String, AdaptivePlanningMode.TaskData>>> {
                             try {
                                 val state = reasoningStates[strategy.name]!!
@@ -221,7 +227,7 @@ ${JsonUtil.toJson(taskConfig)}
                     executionRecords.addAll(completedTasks)
 
                     // Update States
-                    council.forEach { strategy ->
+                config.council.forEach { strategy ->
                         val oldState = reasoningStates[strategy.name]!!
                         val newState = updateState(strategy, oldState, completedTasks, currentUserMessage.get(), contextData(), orchestrationConfig, task, describer)
                         reasoningStates[strategy.name] = newState
@@ -335,7 +341,7 @@ ${JsonUtil.toJson(taskConfig)}
             "${index + 1}. [$nominator] $taskDesc"
         }.joinToString("\n\n")
 
-        council.forEach { strategy ->
+    config.council.forEach { strategy ->
             val state = reasoningStates[strategy.name]!!
             val voter = ParsedAgent(
                 name = "Voter",
@@ -363,7 +369,7 @@ ${JsonUtil.toJson(taskConfig)}
         }
         
         return votes.entries.sortedByDescending { it.value }
-            .take(orchestrationConfig.maxTasksPerIteration)
+        .take(maxTasksPerIteration)
             .map { nominations[it.key - 1].second }
     }
 

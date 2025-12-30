@@ -29,12 +29,15 @@ open class WaterfallMode(
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser
-) : CognitiveMode<CognitiveModeConfig>(
+) : CognitiveMode<WaterfallMode.WaterfallModeConfig>(
     task,
     orchestrationConfig,
     session,
     user
 ) {
+    class WaterfallModeConfig(
+    ) : CognitiveModeConfig(type = CognitiveModeType.Waterfall, name = "Waterfall")
+
 
     private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
     private var transcriptStream: FileOutputStream? = null

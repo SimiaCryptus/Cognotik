@@ -23,7 +23,7 @@ open class ProtocolMode(
     session: Session,
     user: User = defaultUser,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
-) : CognitiveMode<CognitiveModeConfig>(
+) : CognitiveMode<ProtocolModeConfig>(
     task,
     orchestrationConfig,
     session,
@@ -76,7 +76,7 @@ open class ProtocolMode(
 
                 var currentStateName: String? = protocol.initialState
                 var iteration = 0
-                val maxIterations = 20 // Safety break
+                val maxIterations = config.maxIterations
 
                 while (currentStateName != null && iteration++ < maxIterations) {
                     val currentState = protocol.states.find { it.name == currentStateName }
@@ -89,7 +89,7 @@ open class ProtocolMode(
 
                     var statePassed = false
                     var retryCount = 0
-                    val maxRetries = 3
+                    val maxRetries = config.maxRetries
 
                     while (!statePassed && retryCount++ < maxRetries) {
                         if (retryCount > 1) {
@@ -288,3 +288,7 @@ open class ProtocolMode(
         val inputCnt = 1
     }
 }
+class ProtocolModeConfig(
+    var maxIterations: Int = 20,
+    var maxRetries: Int = 3
+) : CognitiveModeConfig()

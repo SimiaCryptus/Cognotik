@@ -18,15 +18,15 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
 ) : DynamicEnum<CognitiveModeType<*>>(name) {
     companion object {
         val entries: List<CognitiveModeType<*>> get() = values()
-        val Chat = CognitiveModeType("Chat", CognitiveModeConfig::class.java, inputCnt = ConversationalMode.inputCnt)
-        val Adaptive = CognitiveModeType("Adaptive", CognitiveModeConfig::class.java, inputCnt = AdaptivePlanningMode.inputCnt)
-        val Waterfall = CognitiveModeType("Waterfall", CognitiveModeConfig::class.java, inputCnt = WaterfallMode.inputCnt)
+        val Chat = CognitiveModeType("Chat", ConversationalModeConfig::class.java, inputCnt = ConversationalMode.inputCnt)
+        val Adaptive = CognitiveModeType("Adaptive", AdaptivePlanningConfig::class.java, inputCnt = AdaptivePlanningMode.inputCnt)
+        val Waterfall = CognitiveModeType("Waterfall", WaterfallMode.WaterfallModeConfig::class.java, inputCnt = WaterfallMode.inputCnt)
         val Hierarchical = CognitiveModeType("Hierarchical", CognitiveModeConfig::class.java, inputCnt = HierarchicalPlanningMode.inputCnt)
-        val Parallel = CognitiveModeType("Parallel", CognitiveModeConfig::class.java, inputCnt = ParallelMode.inputCnt)
-        val Session = CognitiveModeType("Session", CognitiveModeConfig::class.java, inputCnt = SessionMode.inputCnt)
-        val Protocol = CognitiveModeType("Protocol", CognitiveModeConfig::class.java, inputCnt = ProtocolMode.inputCnt)
-        val Council = CognitiveModeType("Council", CognitiveModeConfig::class.java, inputCnt = CouncilMode.inputCnt)
-        val PrePlanned = CognitiveModeType("PrePlanned", CognitiveModeConfig::class.java, inputCnt = PrePlannedMode.inputCnt)
+        val Parallel = CognitiveModeType("Parallel", ParallelModeConfig::class.java, inputCnt = ParallelMode.inputCnt)
+        val Session = CognitiveModeType("Session", SessionModeConfig::class.java, inputCnt = SessionMode.inputCnt)
+        val Protocol = CognitiveModeType("Protocol", ProtocolModeConfig::class.java, inputCnt = ProtocolMode.inputCnt)
+        val Council = CognitiveModeType("Council", CouncilModeConfig::class.java, inputCnt = CouncilMode.inputCnt)
+        val PrePlanned = CognitiveModeType("PrePlanned", PrePlannedModeConfig::class.java, inputCnt = PrePlannedMode.inputCnt)
 
         private val constructors by lazy {
             val map = mutableMapOf<CognitiveModeType<*>, (SessionTask, OrchestrationConfig, Session, User) -> CognitiveMode<*>>()

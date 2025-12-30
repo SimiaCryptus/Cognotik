@@ -19,7 +19,7 @@ open class SessionMode(
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser
-) : CognitiveMode<CognitiveModeConfig>(
+) : CognitiveMode<SessionModeConfig>(
     task,
     orchestrationConfig,
     session,
@@ -55,7 +55,7 @@ open class SessionMode(
                 orchestrationConfig.defaultFast.getChildClient(task),
                 userMessage,
                 orchestrationConfig,
-                prompt = "Select a tool to open a session with. This tool will be used continuously.",
+                prompt = config.toolSelectionPrompt,
                 singleStage = true
             )
             activeToolConfig = chosenTask
@@ -76,7 +76,7 @@ open class SessionMode(
             try {
                 var currentGoal = goal
                 var iteration = 0
-                val maxIterations = 50
+                val maxIterations = config.maxIterations
                 
                 if (history.isEmpty() || history.last() != "User: $goal") {
                     history.add("User: $goal")
@@ -149,15 +149,8 @@ open class SessionMode(
         val agent = ParsedAgent(
             name = "SessionOperator",
             resultClass = SessionStep::class.java,
-            prompt = """
-                You are an operator for a stateful tool.
-                Your goal is: $goal
                 
-                Review the history of interactions.
-                If the goal is achieved, set isComplete to true.
-                Otherwise, provide the next command to execute in the 'command' field.
-                Do not create new tasks, just provide the input for the tool.
-            """.trimIndent(),
+            prompt = config.sessionOperatorPrompt.format(goal),
             model = orchestrationConfig.defaultSmart.getChildClient(task),
             parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
             temperature = orchestrationConfig.temperature,
@@ -174,3 +167,15 @@ open class SessionMode(
         val inputCnt = 1
     }
 }
+open class SessionModeConfig(
+    var maxIterations: Int = 50,
+    var toolSelectionPrompt: String = "Select a tool to open a session with. This tool will be used continuously.",
+    var sessionOperatorPrompt: String = """
+        You are an operator for a stateful tool.
+        Your goal is: %s
+        Review the history of interactions.
+        If the goal is achieved, set isComplete to true.
+        Otherwise, provide the next command to execute in the 'command' field.
+        Do not create new tasks, just provide the input for the tool.
+    """.trimIndent()
+) : CognitiveModeConfig(CognitiveModeType.Session, "Session")

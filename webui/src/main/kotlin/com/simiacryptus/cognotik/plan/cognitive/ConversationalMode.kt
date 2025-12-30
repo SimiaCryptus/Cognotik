@@ -22,6 +22,10 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.Path
+open class ConversationalModeConfig(
+    var useExpansionSyntax: Boolean = true
+) : CognitiveModeConfig(type = CognitiveModeType.Chat)
+
 
 /**
  * A cognitive mode that executes tasks based on user input while maintaining conversation history.
@@ -30,9 +34,8 @@ open class ConversationalMode(
     task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
-    user: User = defaultUser,
-    var useExpansionSyntax: Boolean = true
-) : CognitiveMode<CognitiveModeConfig>(
+    user: User = defaultUser
+) : CognitiveMode<ConversationalModeConfig>(
     task,
     orchestrationConfig,
     session,
@@ -137,7 +140,7 @@ open class ConversationalMode(
             }
 
             // Extract topics from the aggregated response
-            if (useExpansionSyntax && aggregateResponse.isNotEmpty()) {
+        if (config.useExpansionSyntax && aggregateResponse.isNotEmpty()) {
                 try {
                     writeToTranscript("## Assistant\n\n${aggregateResponse}\n\n")
                     val model = defaultChat
@@ -168,7 +171,7 @@ open class ConversationalMode(
     private fun processMsgRecursive(
         currentMessage: String, task: SessionTask, parsingChatter: ChatInterface, defaultChatter: ChatInterface
     ): List<(StringBuilder) -> Unit> {
-        if (useExpansionSyntax) {
+        if (config.useExpansionSyntax) {
             val rangeMatch = rangeExpansionPattern.find(currentMessage)
             if (rangeMatch != null) {
                 return expandRange(
@@ -316,7 +319,7 @@ open class ConversationalMode(
         match: MatchResult,
         recursiveFn: (String, SessionTask) -> List<(StringBuilder) -> Unit>
     ): List<(StringBuilder) -> Unit> {
-        val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
+        val tabs = TabbedDisplay(task, closable = config.useExpansionSyntax)
         return match.groupValues[1].split('|', ',').flatMap { option ->
             recursiveFn(
                 currentMessage.replaceFirst(match.value, option),
@@ -335,7 +338,7 @@ open class ConversationalMode(
         parsingChatter: ChatInterface
     ) {
         val aggregatedResponse = StringBuilder()
-        val tabs = TabbedDisplay(task, closable = useExpansionSyntax)
+        val tabs = TabbedDisplay(task, closable = config.useExpansionSyntax)
         for (item in items) {
             val newMessage = currentMessage.replaceFirst(expression, item)
             val subTaskFunctions = processMsgRecursive(
@@ -352,7 +355,7 @@ open class ConversationalMode(
     }
 
     protected open fun expandTopics(userMessage: String): String {
-        if (!useExpansionSyntax) return userMessage
+        if (!config.useExpansionSyntax) return userMessage
         // Matches both @TopicType and @{Topic Type With Spaces}
         val topicReferencePattern = Regex("""@\{([A-Z][a-zA-Z0-9_ ]+)\}|@([A-Z][a-zA-Z0-9_]*)""")
         return topicReferencePattern.replace(userMessage) { matchResult ->

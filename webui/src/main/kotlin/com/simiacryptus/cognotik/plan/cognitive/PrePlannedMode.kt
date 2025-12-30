@@ -16,12 +16,17 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import kotlin.io.path.Path
 
+class PrePlannedModeConfig(
+    var planFile: String = "plan.json",
+    var variables: Map<String, String> = emptyMap()
+) : CognitiveModeConfig()
+
 open class PrePlannedMode(
     task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser
-) : CognitiveMode<CognitiveModeConfig>(
+) : CognitiveMode<PrePlannedModeConfig>(
     task,
     orchestrationConfig,
     session,
@@ -36,10 +41,6 @@ open class PrePlannedMode(
 
     override fun contextData(): List<String> = emptyList()
 
-    data class Config(
-        val planFile: String = "plan.json",
-        val variables: Map<String, String> = emptyMap()
-    )
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         try {
@@ -49,17 +50,17 @@ open class PrePlannedMode(
                 ?: task.ui.dataStorage?.getSessionDir(user, session)?.toPath()
                 ?: File(".").toPath()
 
-            val config = parseConfig(userMessage, root.toString())
-            task.add("Loading plan from `${config.planFile}` with variables: ${config.variables}")
+            val parsedConfig = parseConfig(userMessage, root.toString())
+            task.add("Loading plan from `${parsedConfig.planFile}` with variables: ${parsedConfig.variables}")
 
-            val planFile = root.resolve(config.planFile).toFile()
+            val planFile = root.resolve(parsedConfig.planFile).toFile()
             if (!planFile.exists()) {
                 throw IllegalArgumentException("Plan file not found: ${planFile.absolutePath}")
             }
 
             // Load and substitute variables
             val rawJson = planFile.readText()
-            val substitutedJson = renderTemplate(rawJson, config.variables)
+            val substitutedJson = renderTemplate(rawJson, parsedConfig.variables)
             
             // Deserialize
             val planWrapper: WaterfallMode.TaskBreakdownWithPrompt = JsonUtil.fromJson(substitutedJson,
@@ -87,7 +88,7 @@ open class PrePlannedMode(
         }
     }
 
-    private fun parseConfig(message: String, root: String): Config {
+    private fun parseConfig(message: String, root: String): PrePlannedModeConfig {
         val describer = TaskContextYamlDescriber(orchestrationConfig)
         Tasks.initDescriber(orchestrationConfig, describer)
         
@@ -97,10 +98,10 @@ open class PrePlannedMode(
 
         val agent = ParsedAgent(
             name = "PrePlannedConfigParser",
-            resultClass = Config::class.java,
-            exampleInstance = Config(
-                planFile = "plan.json",
-                variables = mapOf("topic" to "AI Safety", "language" to "Kotlin")
+            resultClass = PrePlannedModeConfig::class.java,
+            exampleInstance = PrePlannedModeConfig(
+                planFile = config.planFile,
+                variables = config.variables
             ),
             prompt = """
 Analyze the user request to identify the plan file to use and the variables to substitute.
