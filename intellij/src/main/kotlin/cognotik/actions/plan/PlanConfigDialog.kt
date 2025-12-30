@@ -18,8 +18,6 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
 import com.simiacryptus.cognotik.plan.newSettings
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
@@ -281,8 +279,8 @@ class PlanConfigDialog(
             // Export entire orchestration configuration
             val json = toJson(
                 updateSettings()?.copy(
-                    workingDir = null,
                     shellCmd = listOf(),
+                    workingDir = null,
                     language = null,
                 )
             )

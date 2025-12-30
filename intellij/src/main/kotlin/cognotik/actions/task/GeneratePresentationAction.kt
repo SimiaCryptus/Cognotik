@@ -304,6 +304,7 @@ class GeneratePresentationAction : BaseAction() {
       }
 
       return OrchestrationConfig(
+        "Config",
         defaultSmartModel = model ?: AppSettingsState.instance.smartModel
         ?: throw IllegalStateException("No model configured"),
         defaultFastModel = AppSettingsState.instance.fastModel

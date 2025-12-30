@@ -350,6 +350,7 @@ override fun handle(e: AnActionEvent) {
       }
 
       return OrchestrationConfig(
+        "Config",
         defaultSmartModel = textModel ?: AppSettingsState.instance.smartModel
         ?: throw IllegalStateException("No model configured"),
         defaultFastModel = AppSettingsState.instance.fastModel

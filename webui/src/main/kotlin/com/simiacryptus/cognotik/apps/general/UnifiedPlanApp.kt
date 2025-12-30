@@ -67,7 +67,7 @@ abstract class UnifiedPlanApp(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> initSettings(session: Session): T = OrchestrationConfig() as T
+    override fun <T : Any> initSettings(session: Session): T = OrchestrationConfig(sessionId = session.sessionId, null) as T
 
     abstract fun instance(model: ApiChatModel): ChatInterface
 

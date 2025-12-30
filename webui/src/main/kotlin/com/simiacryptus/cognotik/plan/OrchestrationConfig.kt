@@ -23,14 +23,9 @@ import kotlin.io.path.Path
 
 
 class OrchestrationConfig(
-    @JsonSerialize(using = ApiChatModelSerializer::class)
-    @JsonDeserialize(using = ApiChatModelDeserializer::class)
-    var defaultSmartModel: ApiChatModel? = null,
-    @JsonSerialize(using = ApiChatModelSerializer::class)
-    @JsonDeserialize(using = ApiChatModelDeserializer::class)
+    var sessionId: String,
+    var defaultSmartModel: ApiChatModel?,
     var defaultFastModel: ApiChatModel? = null,
-    @JsonSerialize(using = ApiChatModelSerializer::class)
-    @JsonDeserialize(using = ApiChatModelDeserializer::class)
     var defaultImageModel: ApiChatModel? = null,
     var cognitiveMode: CognitiveModeStrategies? = null,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
@@ -123,6 +118,7 @@ class OrchestrationConfig(
         maxTaskHistoryChars: Int = this.maxTaskHistoryChars,
         maxTasksPerIteration: Int = this.maxTasksPerIteration,
         maxIterations: Int = this.maxIterations,
+        sessionId: String = this.sessionId,
     ): OrchestrationConfig = OrchestrationConfig(
         defaultSmartModel = model,
         defaultFastModel = parsingModel,
@@ -139,6 +135,7 @@ class OrchestrationConfig(
         maxTasksPerIteration = maxTasksPerIteration,
         maxIterations = maxIterations,
         cognitiveMode = cognitiveMode,
+        sessionId = sessionId
     )
 
 

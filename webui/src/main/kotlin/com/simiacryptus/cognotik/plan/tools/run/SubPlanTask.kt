@@ -104,8 +104,8 @@ class SubPlanTask(
                 (typeConfig.cognitiveMode ?: orchestrationConfig.cognitiveMode ?: CognitiveModeStrategies.Adaptive)
 
             val subConfig = orchestrationConfig.copy(
-                cognitiveMode = cognitiveMode,
                 taskSettings = typeConfig.taskSettings,
+                cognitiveMode = cognitiveMode,
             )
             log.debug("Created sub-orchestration config with maxIterations=${subConfig.maxIterations}, maxTasksPerIteration=${subConfig.maxTasksPerIteration}")
 

@@ -40,6 +40,7 @@ open class UnifiedPlanAction(
         val dialog = PlanConfigDialog(
             e.project,
             OrchestrationConfig(
+                "Init",
                 defaultSmartModel = AppSettingsState.instance.smartModel
                     ?: throw IllegalStateException("Smart model not configured"),
                 defaultFastModel = AppSettingsState.instance.fastModel
@@ -78,7 +79,9 @@ open class UnifiedPlanAction(
         setupChatSession(
             session,
             root,
-            orchestrationConfig
+            orchestrationConfig.copy(
+                sessionId = session.sessionId
+            )
         )
         progress.text = "Starting server..."
         Thread {
