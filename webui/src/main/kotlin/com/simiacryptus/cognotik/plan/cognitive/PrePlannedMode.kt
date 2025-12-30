@@ -60,10 +60,12 @@ open class PrePlannedMode(
 
             // Load and substitute variables
             val rawJson = planFile.readText()
-            val substitutedJson = renderTemplate(rawJson, parsedConfig.variables)
+            val genericPlan: MutableMap<String, Any> = JsonUtil.fromJson(rawJson, MutableMap::class.java)
+            val processedPlan = replaceVariables(genericPlan, parsedConfig.variables)
             
             // Deserialize
-            val planWrapper: WaterfallMode.TaskBreakdownWithPrompt = JsonUtil.fromJson(substitutedJson,
+            val planWrapper: WaterfallMode.TaskBreakdownWithPrompt = JsonUtil.fromJson(
+                JsonUtil.toJson(processedPlan),
                 WaterfallMode.TaskBreakdownWithPrompt::class.java)
             
             task.add("Plan loaded with ${planWrapper.plan.size} steps.")
@@ -121,12 +123,20 @@ $availableFiles
         return agent.answer(listOf(message)).obj
     }
 
-    private fun renderTemplate(template: String, variables: Map<String, String>): String {
-        var result = template
-        variables.forEach { (k, v) ->
-            result = result.replace("{{$k}}", v)
+    private fun replaceVariables(node: Any?, variables: Map<String, String>): Any? {
+        return when (node) {
+            is String -> {
+                var result: String = node
+                variables.forEach { (k, v) ->
+                    result = result.replace("{{$k}}", v)
+                }
+                result
+            }
+
+            is Map<*, *> -> node.entries.associate { (k, v) -> k to replaceVariables(v, variables) }
+            is List<*> -> node.map { replaceVariables(it, variables) }
+            else -> node
         }
-        return result
     }
 
     companion object {

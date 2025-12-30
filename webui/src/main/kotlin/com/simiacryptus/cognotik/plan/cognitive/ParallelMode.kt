@@ -102,30 +102,37 @@ open class ParallelMode(
                             root = root
                         )
                         val impl = TaskType.getImpl(orchestrationConfig, chosenTask)
+                        var resultString = ""
                         impl.run(
                             agent = coordinator,
                             messages = listOf(userMessage),
                             task = task,
                             resultFn = { result ->
+                                resultString = result
                                 task.complete(result.renderMarkdown())
                             },
                             orchestrationConfig = orchestrationConfig
                         )
+                        Result.success(resultString)
                     } catch (e: Throwable) {
                         task.error(e)
                         log.error("Error in parallel task $label", e)
+                        Result.failure(e)
                     }
                 }
             }
 
-            futures.forEach {
+            val results = futures.map {
                 try {
-                    it.get()
+                    it.get() as Result<String>
                 } catch (e: Exception) {
                     log.warn("Task failed", e)
+                    Result.failure(e)
                 }
             }
-            task.complete("All parallel tasks completed.")
+            val succeeded = results.count { it.isSuccess }
+            val failed = results.count { it.isFailure }
+            task.complete("All parallel tasks completed. $succeeded Succeeded, $failed Failed.")
 
         } catch (e: Throwable) {
             task.error(e)

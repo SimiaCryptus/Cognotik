@@ -23,7 +23,6 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
         val Waterfall = CognitiveModeType("Waterfall", WaterfallMode.WaterfallModeConfig::class.java, inputCnt = WaterfallMode.inputCnt)
         val Hierarchical = CognitiveModeType("Hierarchical", CognitiveModeConfig::class.java, inputCnt = HierarchicalPlanningMode.inputCnt)
         val Parallel = CognitiveModeType("Parallel", ParallelModeConfig::class.java, inputCnt = ParallelMode.inputCnt)
-        val Session = CognitiveModeType("Session", SessionModeConfig::class.java, inputCnt = SessionMode.inputCnt)
         val Protocol = CognitiveModeType("Protocol", ProtocolModeConfig::class.java, inputCnt = ProtocolMode.inputCnt)
         val Council = CognitiveModeType("Council", CouncilModeConfig::class.java, inputCnt = CouncilMode.inputCnt)
         val PrePlanned = CognitiveModeType("PrePlanned", PrePlannedModeConfig::class.java, inputCnt = PrePlannedMode.inputCnt)
@@ -45,7 +44,6 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
             register(Waterfall) { task, config, session, user -> WaterfallMode(task, config, session, user) }
             register(Hierarchical) { task, config, session, user -> HierarchicalPlanningMode(task, config, session, user) }
             register(Parallel) { task, config, session, user -> ParallelMode(task, config, session, user) }
-            register(Session) { task, config, session, user -> SessionMode(task, config, session, user) }
             register(Protocol) { task, config, session, user -> ProtocolMode(task, config, session, user) }
             register(Council) { task, config, session, user -> CouncilMode(task, config, session, user) }
             register(PrePlanned) { task, config, session, user -> PrePlannedMode(task, config, session, user) }
