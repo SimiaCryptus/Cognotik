@@ -1213,11 +1213,8 @@ open class HierarchicalPlanningMode(
         val subgoals: List<Goal>? = null, val tasks: List<Task>? = null
     )
 
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask, orchestrationConfig: OrchestrationConfig, session: Session, user: User
-        ) = HierarchicalPlanningMode(task, orchestrationConfig, session, user)
+    companion object {
+        val inputCnt = 1
 
         private val log = LoggerFactory.getLogger(HierarchicalPlanningMode::class.java)
 

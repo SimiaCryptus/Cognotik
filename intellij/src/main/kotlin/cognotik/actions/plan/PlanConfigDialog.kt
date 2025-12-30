@@ -14,7 +14,8 @@ import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.newSettings
 import com.simiacryptus.cognotik.plan.tools.toApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServices
@@ -79,7 +80,7 @@ class PlanConfigDialog(
     }
 
     val cognitiveModeCombo = ComboBox(
-        CognitiveModeStrategies.entries.map { it.name }.toTypedArray()
+        CognitiveModeType.entries.map { it.name }.toTypedArray()
     ).apply {
         preferredSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
         selectedIndex = 0
@@ -683,7 +684,7 @@ class PlanConfigDialog(
             settings.defaultImageModel = model?.toApiChatModel()
         }
         val selectedCognitiveMode = cognitiveModeCombo.selectedItem as String
-        settings.cognitiveMode = CognitiveModeStrategies.valueOf(selectedCognitiveMode)
+        settings.cognitiveMode = CognitiveModeType.valueOf(selectedCognitiveMode)
         return settings
     }
 

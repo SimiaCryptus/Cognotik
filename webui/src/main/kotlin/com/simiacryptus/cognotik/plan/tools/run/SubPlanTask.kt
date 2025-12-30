@@ -4,7 +4,9 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -22,7 +24,7 @@ class SubPlanTask(
 ) {
 
     class SubPlanTaskTypeConfig(
-        @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveMode: CognitiveModeStrategies? = null,
+        @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveMode: CognitiveModeType<*>? = null,
         @Description("Task-specific configurations available within sub-plans") val taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
         @Description("Supplemental description of the purpose of this configuration") val purpose: String = "",
         task_type: String = "RecursiveToolDefinition",
@@ -101,7 +103,7 @@ class SubPlanTask(
             val typeConfig = this.typeConfig ?: throw RuntimeException()
             // Get the cognitive mode for sub-planning
             val cognitiveMode =
-                (typeConfig.cognitiveMode ?: orchestrationConfig.cognitiveMode ?: CognitiveModeStrategies.Adaptive)
+                (typeConfig.cognitiveMode ?: orchestrationConfig.cognitiveMode ?: CognitiveModeType.Adaptive)
 
             val subConfig = orchestrationConfig.copy(
                 taskSettings = typeConfig.taskSettings,
@@ -139,7 +141,7 @@ class SubPlanTask(
             log.debug("Planning goal: $planningGoal")
 
             // Initialize the cognitive mode
-            val cognitiveInstance = cognitiveMode.getCognitiveMode(
+            val cognitiveInstance = cognitiveMode.getImpl(
                 task = planningTask, orchestrationConfig = subConfig, session = agent.session, user = agent.user
             ).apply { initialize() }
 

@@ -231,13 +231,7 @@ If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mod
         return result
     }
 
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask,
-            orchestrationConfig: OrchestrationConfig,
-            session: Session,
-            user: User
-        ) = ParallelMode(task, orchestrationConfig, session, user)
+    companion object {
+        val inputCnt = 1
     }
 }

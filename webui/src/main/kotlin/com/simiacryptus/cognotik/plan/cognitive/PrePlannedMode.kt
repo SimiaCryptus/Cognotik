@@ -123,13 +123,7 @@ $availableFiles
         return result
     }
 
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask,
-            orchestrationConfig: OrchestrationConfig,
-            session: Session,
-            user: User
-        ) = PrePlannedMode(task, orchestrationConfig, session, user)
+    companion object {
+        val inputCnt = 1
     }
 }

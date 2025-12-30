@@ -164,13 +164,7 @@ open class SessionMode(
 
     override fun contextData(): List<String> = history
     
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask,
-            orchestrationConfig: OrchestrationConfig,
-            session: Session,
-            user: User
-        ) = SessionMode(task, orchestrationConfig, session, user)
+    companion object {
+        val inputCnt = 1
     }
 }

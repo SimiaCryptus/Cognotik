@@ -113,12 +113,10 @@ class CommandSessionTask(
             "  ** Session $id ($pendingBytes bytes pending output, alive=$alive)"
         }
         return """
-           CommandSession - Create and manage a stateful interactive command session
-           ** Specify the command to start an interactive session
+           CommandSession - Create and manage a stateful interactive terminal session
+           ** Specify the command to start an interactive session, or sessionId to reuse an existing one
            ** Provide inputs to send to the session
            ** Session persists between commands for stateful interactions
-           ** Optionally specify sessionId to reuse an existing session
-           ** Set closeSession=true to close the session after execution
            
            System Information:
            - OS: ${System.getProperty("os.name")} ${System.getProperty("os.version")} (${System.getProperty("os.arch")})
@@ -237,7 +235,7 @@ class CommandSessionTask(
                 Creates and manages a persistent command-line session (e.g., bash, python).
                 This allows for stateful interactions where commands can build on the results of previous ones.
                 <ul>
-                    <li><b>Start any interactive process:</b> Specify the command to run (e.g., `listOf("bash", "-i")`).</li>
+                    <li><b>Start any interactive process:</b> Specify the command to run</li>
                     <li><b>Send inputs:</b> Provide a list of commands to be executed sequentially in the session.</li>
                     <li><b>Stateful Sessions:</b> Reuse sessions by providing a `sessionId`. The environment (variables, current directory) persists between tasks using the same ID.</li>
                     <li><b>Manage Session Lifecycle:</b> Sessions can be explicitly closed or will be cleaned up automatically.</li>

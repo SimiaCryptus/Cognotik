@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.newSettings
 import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
@@ -192,7 +192,7 @@ class TaskConfigDialog(
                 configFields["purpose"] = textArea
             }
             row("Cognitive Mode:") {
-                val modes = CognitiveModeStrategies.entries.map { it.name }.toTypedArray()
+                val modes = CognitiveModeType.entries.map { it.name }.toTypedArray()
                 val combo = ComboBox(modes)
                 combo.selectedItem = config.cognitiveMode?.name ?: "Adaptive"
                 combo.toolTipText = "Cognitive strategy to use for sub-planning"
@@ -762,7 +762,7 @@ class TaskConfigDialog(
                     name = baseConfig.name,
                     model = baseConfig.model,
                     purpose = (configFields["purpose"] as? JBTextArea)?.text?.trim() ?: "",
-                    cognitiveMode = CognitiveModeStrategies.valueOf(
+                    cognitiveMode = CognitiveModeType.valueOf(
                         (configFields["cognitiveMode"] as? ComboBox<*>)?.selectedItem as? String ?: "Waterfall"
                     ),
                     taskSettings = config.taskSettings.toMutableMap()

@@ -279,13 +279,7 @@ open class ProtocolMode(
         val feedback: String
     )
 
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask,
-            orchestrationConfig: OrchestrationConfig,
-            session: Session,
-            user: User
-        ) = ProtocolMode(task, orchestrationConfig, session, user)
+    companion object {
+        val inputCnt = 1
     }
 }

@@ -599,17 +599,8 @@ ${JsonUtil.toJson(taskConfig)}
     }
 
 
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask,
-            orchestrationConfig: OrchestrationConfig,
-            session: Session,
-            user: User
-        ) = AdaptivePlanningMode(
-            task, orchestrationConfig, session, user,
-            cognitiveStrategy = ProjectManagerStrategy()
-        )
+    companion object {
+        val inputCnt = 1
 
     }
 }

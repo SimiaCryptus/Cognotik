@@ -410,12 +410,9 @@ open class ConversationalMode(
         return getConversationContext()
     }
 
-    companion object : CognitiveModeStrategy {
+    companion object {
 
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask, orchestrationConfig: OrchestrationConfig, session: Session, user: User
-        ) = ConversationalMode(task, orchestrationConfig, session, user, useExpansionSyntax = true)
+        val inputCnt = 1
 
         private val messageMaps = ConcurrentHashMap<Session, ConcurrentLinkedQueue<ModelSchema.ChatMessage>>()
         private val log = LoggerFactory.getLogger(ConversationalMode::class.java)

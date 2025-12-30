@@ -1,8 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
@@ -10,7 +8,8 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.AutoFixTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
@@ -27,7 +26,7 @@ class OrchestrationConfig(
     var defaultSmartModel: ApiChatModel? = null,
     var defaultFastModel: ApiChatModel? = null,
     var defaultImageModel: ApiChatModel? = null,
-    var cognitiveMode: CognitiveModeStrategies? = null,
+    var cognitiveMode: CognitiveModeType<*>? = null,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
     var temperature: Double = 0.2,
     val budget: Double = 2.0,
@@ -114,7 +113,7 @@ class OrchestrationConfig(
         env: Map<String, String>? = this.env,
         workingDir: String? = this.workingDir,
         language: String? = this.language,
-        cognitiveMode: CognitiveModeStrategies? = this.cognitiveMode,
+        cognitiveMode: CognitiveModeType<*>? = this.cognitiveMode,
         maxTaskHistoryChars: Int = this.maxTaskHistoryChars,
         maxTasksPerIteration: Int = this.maxTasksPerIteration,
         maxIterations: Int = this.maxIterations,
@@ -248,4 +247,3 @@ class OrchestrationConfig(
         }
     }
 }
-
