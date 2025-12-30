@@ -80,7 +80,7 @@ class BusinessProposalAction : BaseAction() {
     DataStorage.sessionPaths[session] = root
 
     progress.text = "Starting server..."
-    setupTaskSession(session, orchestrationConfig, taskConfig, root)
+    setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig, root)
 
     Thread {
       Thread.sleep(500)
