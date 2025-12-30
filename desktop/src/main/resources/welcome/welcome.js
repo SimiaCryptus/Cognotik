@@ -18,20 +18,20 @@ document.addEventListener('DOMContentLoaded', function () {
         // Populate model selectors with available models (same as main pipeline)
         populateBasicChatModelSelections();
         // Prefill using main pipeline's preferences (shared keys), fallback to legacy basicChat* keys, then default
-        const model = localStorage.getItem('defaultModel') || localStorage.getItem('basicChatModel') || 'GPT4o';
-        console.log(`[DOMContentLoaded] Basic Chat Modal: model determined as ${model} (defaultModel: ${localStorage.getItem('defaultModel')}, basicChatModel: ${localStorage.getItem('basicChatModel')})`);
-        const parsingModel = localStorage.getItem('parsingModel') || localStorage.getItem('basicChatParsingModel') || 'GPT4oMini';
+        const defaultSmartModel = localStorage.getItem('defaultSmartModel') || localStorage.getItem('basicChatModel') || 'GPT4o';
+        console.log(`[DOMContentLoaded] Basic Chat Modal: model determined as ${defaultSmartModel} (defaultSmartModel: ${localStorage.getItem('defaultSmartModel')}, basicChatModel: ${localStorage.getItem('basicChatModel')})`);
+        const defaultFastModel = localStorage.getItem('defaultFastModel') || localStorage.getItem('basicChatParsingModel') || 'GPT4oMini';
         const temperature = localStorage.getItem('temperature') || localStorage.getItem('basicChatTemperature') || '0.3';
         const budget = localStorage.getItem('budget') || localStorage.getItem('basicChatBudget') || '2.0';
         // Ensure model selections are populated before setting values
         populateBasicChatModelSelections();
 
-        document.getElementById('basic-chat-model').value = model;
-        document.getElementById('basic-chat-parsing-model').value = parsingModel;
+        document.getElementById('basic-chat-model').value = defaultSmartModel;
+        document.getElementById('basic-chat-parsing-model').value = defaultFastModel;
         document.getElementById('basic-chat-temperature').value = temperature;
         document.getElementById('basic-chat-temperature-value').textContent = temperature;
         document.getElementById('basic-chat-budget').value = budget;
-        console.log('[DOMContentLoaded] Basic Chat Modal prefilled with: model:', model, 'parsingModel:', parsingModel, 'temperature:', temperature, 'budget:', budget);
+        console.log('[DOMContentLoaded] Basic Chat Modal prefilled with: model:', defaultSmartModel, 'defaultFastModel:', defaultFastModel, 'temperature:', temperature, 'budget:', budget);
         basicChatModal.style.display = "block";
     });
 
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Save current values to try to preserve selection
         const prevModel = modelSelect.value;
         const prevParsingModel = parsingModelSelect.value;
-        console.log('[populateBasicChatModelSelections] Previous selections - model:', prevModel, 'parsingModel:', prevParsingModel);
+        console.log('[populateBasicChatModelSelections] Previous selections - model:', prevModel, 'defaultFastModel:', prevParsingModel);
 
         modelSelect.innerHTML = '';
         parsingModelSelect.innerHTML = '';
@@ -127,11 +127,11 @@ document.addEventListener('DOMContentLoaded', function () {
         e.preventDefault();
         // Validate form data
         const model = document.getElementById('basic-chat-model').value;
-        const parsingModel = document.getElementById('basic-chat-parsing-model').value;
+        const defaultFastModel = document.getElementById('basic-chat-parsing-model').value;
         const imageChatModel = document.getElementById('imageChatModel').value;
         const temperatureInput = document.getElementById('basic-chat-temperature').value;
         const budgetInput = document.getElementById('basic-chat-budget').value;
-        if (!model || !parsingModel || !temperatureInput || !budgetInput) {
+        if (!model || !defaultFastModel || !temperatureInput || !budgetInput) {
             notificationService.showNotification('Please fill in all required fields', 'error');
             return;
         }
@@ -145,17 +145,17 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        console.log('[DOMContentLoaded] Basic Chat Form Save - model:', model, 'parsingModel:', parsingModel, 'temperature:', temperature, 'budget:', budget);
+        console.log('[DOMContentLoaded] Basic Chat Form Save - model:', model, 'defaultFastModel:', defaultFastModel, 'temperature:', temperature, 'budget:', budget);
 
         // Save to localStorage for convenience AND sync with main pipeline preferences
         // Always use main pipeline keys for shared params
-        localStorage.setItem('defaultModel', model);
-        localStorage.setItem('parsingModel', parsingModel);
+        localStorage.setItem('defaultSmartModel', model);
+        localStorage.setItem('defaultFastModel', defaultFastModel);
         localStorage.setItem('temperature', temperature);
         localStorage.setItem('budget', budget);
         // Also keep legacy basicChat* keys for backward compatibility if needed
         localStorage.setItem('basicChatModel', model);
-        localStorage.setItem('basicChatParsingModel', parsingModel);
+        localStorage.setItem('basicChatParsingModel', defaultFastModel);
         localStorage.setItem('basicChatTemperature', temperature);
         localStorage.setItem('basicChatBudget', budget);
         console.log('[DOMContentLoaded] Saved basic chat settings to localStorage.');
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Post settings to chat app endpoint
         httpService.saveChatSettings(chatSessionId, {
             model: model,
-            parsingModel: parsingModel,
+            defaultFastModel: defaultFastModel,
             imageChatModel: imageChatModel,
             temperature: temperature,
             budget: budget
@@ -445,8 +445,8 @@ function setupWizardNavigation() {
     });
     document.getElementById('next-to-task-selection')?.addEventListener('click', () => {
         // Save task settings
-        appState.updateTaskSetting('defaultModel', document.getElementById('model-selection')?.value);
-        appState.updateTaskSetting('parsingModel', document.getElementById('parsing-model')?.value);
+        appState.updateTaskSetting('defaultSmartModel', document.getElementById('model-selection')?.value);
+        appState.updateTaskSetting('defaultFastModel', document.getElementById('parsing-model')?.value);
         appState.updateTaskSetting('imageChatModel', document.getElementById('image-model')?.value);
         appState.updateTaskSetting('workingDir', document.getElementById('working-dir')?.value);
         appState.updateTaskSetting('temperature', parseFloat(document.getElementById('temperature')?.value));

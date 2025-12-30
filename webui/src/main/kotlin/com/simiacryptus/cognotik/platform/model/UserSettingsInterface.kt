@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.platform.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.JsonSerializer
@@ -13,9 +14,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ToolData
-import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.models.ToolProvider.Companion.discoverAllToolsFromPath
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import kotlin.collections.flatMap
 
 /**
  * Interface for managing user-specific settings and configurations.
@@ -68,6 +70,14 @@ data class UserSettings(
         get() = apis.associate {
             it.provider!! to (it.baseUrl ?: "")
         }
+
+
+    @get:JsonIgnore
+    val chatModels: Map<String, ChatModel>
+        get() = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
+            val provider = APIProvider.values().find { apiData.provider == it } ?: return@flatMap emptyList<Pair<String, ChatModel>>()
+            provider.getChatModels(apiData.key ?: "", apiData.baseUrl).map { model -> model.modelName to model }
+        }.toMap()
 
 }
 
@@ -143,12 +153,13 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
 
 class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ApiChatModel? {
+        val chatModels = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().chatModels
         return when (p.currentToken) {
-            com.fasterxml.jackson.core.JsonToken.VALUE_STRING -> {
+            JsonToken.VALUE_STRING -> {
                 try {
                     val modelName = p.readValueAs(String::class.java)
                     // Handle string format - find model by name/key
-                    val model = ChatModel.values().entries.find {
+                    val model = chatModels.entries.find {
                         it.key == modelName || it.value.name == modelName || it.value.modelName == modelName
                     }?.value ?: throw IllegalArgumentException("Unknown model: $modelName")
                     ApiChatModel(model, null)
@@ -157,7 +168,7 @@ class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
                 }
             }
 
-            com.fasterxml.jackson.core.JsonToken.START_OBJECT -> {
+            JsonToken.START_OBJECT -> {
                 // Handle object format
                 val node = p.readValueAsTree<ObjectNode>()
                 try {
@@ -167,7 +178,7 @@ class ApiChatModelDeserializer : JsonDeserializer<ApiChatModel>() {
                         ApiChatModel(model, provider)
                     } else if (node.has("modelName")) {
                         val modelName = node.get("modelName").asText()
-                        val model = ChatModel.values().values.firstOrNull { it.modelName == modelName }
+                        val model = chatModels.values.firstOrNull { it.modelName == modelName }
                             ?: throw IllegalArgumentException("Unknown model: $modelName")
                         ApiChatModel(model, null)
                     } else {

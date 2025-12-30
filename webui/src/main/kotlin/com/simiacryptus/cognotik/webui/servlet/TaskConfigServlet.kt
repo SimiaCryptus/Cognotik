@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -42,7 +43,15 @@ class TaskConfigServlet : HttpServlet() {
                     Boolean::class -> "checkbox"
                     Int::class, Long::class, Double::class -> "number"
                     String::class -> if (prop.name.contains("code", true) || prop.name.contains("prompt", true)) "textarea" else "text"
-                    else -> if ((prop.returnType.classifier as? KClass<*>)?.java?.isEnum == true) "select" else null
+                    else -> {
+                        if ((prop.returnType.classifier as? KClass<*>)?.java?.isEnum == true) {
+                            "select"
+                        } else if (DynamicEnum::class.java.isAssignableFrom((prop.returnType.classifier as? KClass<*>)?.java)) {
+                            "select"
+                        } else {
+                            null
+                        }
+                    }
                 }
 
                 if (type != null) {
@@ -59,8 +68,19 @@ class TaskConfigServlet : HttpServlet() {
 
                     if (type == "select") {
                         val enumClass = (prop.returnType.classifier as KClass<*>).java
-                        field["options"] = enumClass.enumConstants.map { it.toString() }
-                        field["default"] = enumClass.enumConstants.firstOrNull()?.toString() ?: ""
+                        val enumConstants = enumClass.enumConstants
+                        if (null != enumConstants && enumConstants.isNotEmpty()) {
+                            // Handle standard enums
+                            field["options"] = enumConstants.map { it.toString() }
+                            field["default"] = enumConstants.firstOrNull()?.toString() ?: ""
+                        } else if (DynamicEnum::class.java.isAssignableFrom(enumClass)) {
+                            // Handle DynamicEnum types
+                            val dynamicEnumCompanion = enumClass.getDeclaredField("Companion").get(null)
+                            val valuesMethod = dynamicEnumCompanion.javaClass.getMethod("values")
+                            val dynamicEnumValues = valuesMethod.invoke(dynamicEnumCompanion) as List<DynamicEnum<*>>
+                            field["options"] = dynamicEnumValues.map { it.name }
+                            field["default"] = dynamicEnumValues.firstOrNull()?.name ?: ""
+                        }
                     }
                     if (instance != null) {
                         try {

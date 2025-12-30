@@ -23,8 +23,8 @@ import kotlin.io.path.Path
 
 
 class OrchestrationConfig(
-    var sessionId: String,
-    var defaultSmartModel: ApiChatModel?,
+    var sessionId: String = "default",
+    var defaultSmartModel: ApiChatModel? = null,
     var defaultFastModel: ApiChatModel? = null,
     var defaultImageModel: ApiChatModel? = null,
     var cognitiveMode: CognitiveModeStrategies? = null,

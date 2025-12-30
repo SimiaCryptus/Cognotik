@@ -10,8 +10,8 @@ class AppState {
 
     initializeTaskSettings() {
         return {
-            defaultModel: this.localStorage.getItem('defaultModel') || 'GPT4o',
-            parsingModel: this.localStorage.getItem('parsingModel') || 'GPT4oMini',
+            defaultSmartModel: this.localStorage.getItem('defaultSmartModel') || 'GPT4o',
+            defaultFastModel: this.localStorage.getItem('defaultFastModel') || 'GPT4oMini',
             imageChatModel: this.localStorage.getItem('imageChatModel') || '',
             workingDir: this.localStorage.getItem('workingDir') || '.',
             autoFix: this.localStorage.getItem('autoFix') === 'true',

@@ -24,8 +24,8 @@ This specification details the configuration and launch protocol for Cognotik AI
 ### 3.1 Task Settings Object
 ```javascript
 {
-  defaultModel: String,         // Model ID (e.g., 'GPT4o')
-  parsingModel: String,         // Model ID for parsing (e.g., 'GPT4oMini')
+  defaultSmartModel: String,         // Model ID (e.g., 'GPT4o')
+  defaultFastModel: String,         // Model ID for parsing (e.g., 'GPT4oMini')
   workingDir: String,           // Directory path (e.g., 'sessions/202503151230')
   autoFix: Boolean,             // Whether to auto-fix errors
   temperature: Number,          // Value between 0-1 (e.g., 0.3)
@@ -68,8 +68,8 @@ This specification details the configuration and launch protocol for Cognotik AI
 - Primary storage: `localStorage`
 - Keys:
   - `cognitiveMode`: Selected cognitive mode
-  - `defaultModel`: Selected default model
-  - `parsingModel`: Selected parsing model
+  - `defaultSmartModel`: Selected default model
+  - `defaultFastModel`: Selected parsing model
   - `workingDir`: Working directory path
   - `temperature`: Temperature setting
   - `autoFix`: Auto-fix setting
@@ -252,8 +252,8 @@ interface TaskTypeTest {
 interface TestSessionConfig {
   sessionId: string;             // Generated session ID
   cognitiveMode: 'single-task';  // Always single-task for this tester
-  defaultModel: string;          // Model to use for testing
-  parsingModel: string;          // Parsing model to use
+  defaultSmartModel: string;          // Model to use for testing
+  defaultFastModel: string;          // Parsing model to use
   workingDir: string;            // Test-specific working directory
   temperature: number;           // Temperature setting (typically 0.2 for tests)
   autoFix: boolean;              // Whether to enable auto-fix
