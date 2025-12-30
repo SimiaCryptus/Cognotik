@@ -62,11 +62,6 @@
     updateLaunchSummaries() {
         const mode = this.appState.cognitiveMode;
         const modeMap = {
-            'Chat': 'Chat',
-            'Adaptive': 'Adaptive',
-            'Hierarchical': 'Hierarchical',
-            'Waterfall': 'Waterfall',
-            'Parallel': 'Parallel',
         };
 
         const cognitiveModeSummary = this.document.getElementById('cognitive-mode-summary');
@@ -75,8 +70,8 @@
         }
 
         let summary = '';
-        summary += 'Default Model: ' + (this.appState.taskSettings.defaultModel || '-') + '\n';
-        summary += 'Parsing Model: ' + (this.appState.taskSettings.parsingModel || '-') + '\n';
+        summary += 'Default Model: ' + (this.appState.taskSettings.defaultSmartModel || '-') + '\n';
+        summary += 'Parsing Model: ' + (this.appState.taskSettings.defaultFastModel || '-') + '\n';
         summary += 'Working Directory: ' + (this.appState.taskSettings.workingDir || '-') + '\n';
         summary += 'Temperature: ' + (this.appState.taskSettings.temperature ?? '-') + '\n';
         summary += 'Auto Fix: ' + (this.appState.taskSettings.autoFix ? 'Enabled' : 'Disabled') + '\n';

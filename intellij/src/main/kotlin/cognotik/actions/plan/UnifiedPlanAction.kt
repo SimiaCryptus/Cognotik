@@ -11,7 +11,7 @@ package cognotik.actions.plan
  import com.simiacryptus.cognotik.config.AppSettingsState
  import com.simiacryptus.cognotik.config.instance
  import com.simiacryptus.cognotik.plan.OrchestrationConfig
- import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
+ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
  import com.simiacryptus.cognotik.platform.Session
  import com.simiacryptus.cognotik.platform.file.DataStorage
  import com.simiacryptus.cognotik.platform.file.UserSettingsManager
@@ -40,6 +40,7 @@ open class UnifiedPlanAction(
         val dialog = PlanConfigDialog(
             e.project,
             OrchestrationConfig(
+                "Init",
                 defaultSmartModel = AppSettingsState.instance.smartModel
                     ?: throw IllegalStateException("Smart model not configured"),
                 defaultFastModel = AppSettingsState.instance.fastModel
@@ -78,7 +79,9 @@ open class UnifiedPlanAction(
         setupChatSession(
             session,
             root,
-            orchestrationConfig
+            orchestrationConfig.copy(
+                sessionId = session.sessionId
+            )
         )
         progress.text = "Starting server..."
         Thread {
@@ -142,7 +145,7 @@ open class UnifiedPlanAction(
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Cognotik",
             inputCnt = when(orchestrationConfig.cognitiveMode) {
-              CognitiveModeStrategies.Chat -> 0
+                CognitiveModeType.Chat -> 0
               else -> 4
             },
             stickyInput = app.stickyInput,

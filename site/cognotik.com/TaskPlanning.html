@@ -95,6 +95,10 @@
                     <div class="mode-title">Council Mode</div>
                     <p><strong>The Board.</strong> A multi-agent system where a "Council" of personas (e.g., CEO, CTO, QA) collaborates. They nominate tasks, vote on the best course of action, and maintain separate perspectives to ensure balanced decision-making.</p>
                 </div>
+                <div class="mode-card">
+                    <div class="mode-title">Pre-Planned Mode</div>
+                    <p><strong>The Executor.</strong> Loads a predefined plan template from a file, substitutes variables based on user input, and executes the workflow. Ideal for repeatable, standardized processes or sharing successful strategies.</p>
+                </div>
             </div>
         </section>
 
@@ -115,6 +119,7 @@
                             <option value="protocol">Protocol Mode</option>
                             <option value="session">Session Mode</option>
                             <option value="council">Council Mode</option>
+                            <option value="preplanned">Pre-Planned Mode</option>
                         </select>
                     </div>
                     <div class="control-group">
@@ -292,6 +297,21 @@
                         council: ["CEO", "CTO", "QA"],
                         iteration: 1,
                         vote: { winner: "Tech Stack Eval", count: 2 }
+                    };
+                } else if (mode === 'preplanned') {
+                    planHtml = `
+                        <div class="plan-step"><strong>Configuration</strong><br>Plan File: "standard_audit.json"<br>Variables: { target: "src/main" }</div>
+                        <div class="plan-step"><strong>Loading Plan</strong><br>Loaded 5 steps from template.</div>
+                        <div class="plan-step" style="border-left-color: var(--accent-secondary)"><strong>Execution</strong><br>Step 1: Scan Directory (RUNNING)</div>
+                    `;
+                    planJson = {
+                        mode: "PrePlanned",
+                        config: {
+                            planFile: "standard_audit.json",
+                            variables: { target: "src/main" }
+                        },
+                        status: "EXECUTING",
+                        currentStep: 1
                     };
                 }
 

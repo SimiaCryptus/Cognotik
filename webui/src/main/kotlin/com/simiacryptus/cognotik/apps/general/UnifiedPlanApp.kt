@@ -2,7 +2,8 @@ package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
@@ -57,7 +58,7 @@ abstract class UnifiedPlanApp(
         return AppInfoData(
             applicationName = applicationName,
             inputCnt = when {
-                settings?.cognitiveMode == CognitiveModeStrategies.Chat -> 0
+                settings?.cognitiveMode == CognitiveModeType.Chat -> 0
                 else -> 4
             },
             stickyInput = stickyInput,
@@ -67,7 +68,7 @@ abstract class UnifiedPlanApp(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> initSettings(session: Session): T = OrchestrationConfig() as T
+    override fun <T : Any> initSettings(session: Session): T = OrchestrationConfig(sessionId = session.sessionId, null) as T
 
     abstract fun instance(model: ApiChatModel): ChatInterface
 
@@ -78,7 +79,7 @@ abstract class UnifiedPlanApp(
         val socketManager = super.newSession(user, session)
         val settings = getSettings(session, user, OrchestrationConfig::class.java)
         useExpansionSyntax = when (settings?.cognitiveMode) {
-            CognitiveModeStrategies.Chat -> true
+            CognitiveModeType.Chat -> true
             else -> false
         }
         if (useExpansionSyntax) {
@@ -142,7 +143,7 @@ ${settings?.toJson()}
                 absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
-            val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeStrategies.Chat).getCognitiveMode(
+            val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeType.Chat).getImpl(
                 task = ui.newTask(true),
                 orchestrationConfig = settings,
                 session = session,
@@ -257,7 +258,7 @@ ${settings?.toJson()}
             expandParallel(session, user, currentMessage, ui, task, processor, parallelMatch, orchestrationConfig)
             return
         }
-        val cognitiveMode = orchestrationConfig.cognitiveMode?.getCognitiveMode(
+        val cognitiveMode = orchestrationConfig.cognitiveMode?.getImpl(
             task = task,
             orchestrationConfig = orchestrationConfig,
             session = session,

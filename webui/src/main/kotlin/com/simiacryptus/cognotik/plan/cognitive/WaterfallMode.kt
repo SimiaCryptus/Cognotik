@@ -25,11 +25,19 @@ import java.util.*
  * A cognitive mode that implements the traditional plan-ahead strategy.
  */
 open class WaterfallMode(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User = defaultUser
-) : CognitiveMode {
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser
+) : CognitiveMode<WaterfallMode.WaterfallModeConfig>(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
+    class WaterfallModeConfig(
+    ) : CognitiveModeConfig(type = CognitiveModeType.Waterfall)
+
 
     private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
     private var transcriptStream: FileOutputStream? = null
@@ -259,13 +267,7 @@ open class WaterfallMode(
         return markdownTranscript
     }
 
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask,
-            orchestrationConfig: OrchestrationConfig,
-            session: Session,
-            user: User
-        ) = WaterfallMode(task, orchestrationConfig, session, user)
+    companion object {
+        val inputCnt = 1
     }
 }

@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
@@ -12,31 +12,30 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.memberProperties
 
-class TaskConfigServlet : HttpServlet() {
+class CognitiveConfigServlet : HttpServlet() {
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val taskTypes = TaskType.values().map { taskType ->
+        val cognitiveModes = CognitiveModeType.values().map { modeType ->
             mapOf(
-                "id" to taskType.name,
-                "name" to (taskType.name.replace(Regex("([a-z])([A-Z]+)"), "$1 $2") + " Task"),
-                "description" to (taskType.description ?: ""),
-                "category" to taskType.category,
-                "configFields" to getConfigFields(taskType.taskSettingsClass.kotlin)
+                "id" to modeType.name,
+                "name" to (modeType.name.replace(Regex("([a-z])([A-Z]+)"), "$1 $2") + " Mode"),
+                "description" to (modeType.description ?: ""),
+                "configFields" to getConfigFields(modeType.configClass.kotlin)
             )
         }
 
         resp.contentType = "application/json"
         resp.status = HttpServletResponse.SC_OK
-        resp.writer.write(JsonUtil.toJson(taskTypes))
+        resp.writer.write(JsonUtil.toJson(cognitiveModes))
     }
 
-    private fun getConfigFields(kClass: KClass<out TaskTypeConfig>): List<Map<String, Any>> {
+    private fun getConfigFields(kClass: KClass<out CognitiveModeConfig>): List<Map<String, Any>> {
         val instance = try {
             kClass.createInstance()
         } catch (e: Throwable) {
             null
         }
         return kClass.memberProperties
-            .filter { it.name !in setOf("task_type", "name", "model") }
+            .filter { it.name !in setOf("type") }
             .mapNotNull { prop ->
                 val description = prop.annotations.filterIsInstance<Description>().firstOrNull()?.value
                 val type = when (prop.returnType.classifier) {
@@ -70,11 +69,9 @@ class TaskConfigServlet : HttpServlet() {
                         val enumClass = (prop.returnType.classifier as KClass<*>).java
                         val enumConstants = enumClass.enumConstants
                         if (null != enumConstants && enumConstants.isNotEmpty()) {
-                            // Handle standard enums
                             field["options"] = enumConstants.map { it.toString() }
                             field["default"] = enumConstants.firstOrNull()?.toString() ?: ""
                         } else if (DynamicEnum::class.java.isAssignableFrom(enumClass)) {
-                            // Handle DynamicEnum types
                             val dynamicEnumCompanion = enumClass.getDeclaredField("Companion").get(null)
                             val valuesMethod = dynamicEnumCompanion.javaClass.getMethod("values")
                             val dynamicEnumValues = valuesMethod.invoke(dynamicEnumCompanion) as List<DynamicEnum<*>>
@@ -92,7 +89,6 @@ class TaskConfigServlet : HttpServlet() {
                             // Ignore
                         }
                     }
-
 
                     field
                 } else null

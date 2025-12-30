@@ -181,6 +181,26 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             )
             override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
         }
+        val Dot = object : ToolProvider("Dot") {
+            override fun getExecutables() = listOf("dot")
+            override fun getVersion(path: String) = runCommand(listOf(path, "-V"))
+        }
+        val Octave = object : ToolProvider("Octave") {
+            override fun getExecutables() = listOf("octave", "octave-cli")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Gnuplot = object : ToolProvider("Gnuplot") {
+            override fun getExecutables() = listOf("gnuplot")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Pandoc = object : ToolProvider("Pandoc") {
+            override fun getExecutables() = listOf("pandoc")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Ffmpeg = object : ToolProvider("Ffmpeg") {
+            override fun getExecutables() = listOf("ffmpeg")
+            override fun getVersion(path: String) = runCommand(listOf(path, "-version"))
+        }
 
         init {
             register(ToolProvider::class.java, Git)
@@ -207,6 +227,11 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             register(ToolProvider::class.java, Gcloud)
             register(ToolProvider::class.java, Aws)
             register(ToolProvider::class.java, LanguageServer)
+            register(ToolProvider::class.java, Dot)
+            register(ToolProvider::class.java, Octave)
+            register(ToolProvider::class.java, Gnuplot)
+            register(ToolProvider::class.java, Pandoc)
+            register(ToolProvider::class.java, Ffmpeg)
         }
 
         @JvmStatic

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waterfall Mode - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+<!-- Header Component -->
+<cognotik-header current-page="waterfall-mode"></cognotik-header>
+
+<main>
+    <!-- Hero -->
+    <section class="hero">
+        <h1>Waterfall Mode</h1>
+        <p class="subtitle">
+            The Architect. A deliberate, plan-first approach that analyzes requirements,
+            designs a comprehensive strategy, and executes with precision.
+        </p>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <h2>Core Capabilities</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i data-lucide="map"></i>
+                <h3>Strategic Planning</h3>
+                <p>Generates a full dependency graph of tasks before execution begins, ensuring all prerequisites are identified.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="eye"></i>
+                <h3>Human-in-the-Loop</h3>
+                <p>Presents the plan for review. You can modify the strategy or approve it, preventing wasted effort on wrong paths.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="file-text"></i>
+                <h3>Transparent Reporting</h3>
+                <p>Produces detailed transcripts and saves the execution plan as JSON for reproducibility or future reference.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Detail Section -->
+    <section class="modes-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+        <h2>How It Works</h2>
+        <div class="mode-grid" style="grid-template-columns: 1fr;">
+            <div class="mode-card">
+                <div class="mode-title">1. Analysis & Design</div>
+                <p>
+                    When you provide a goal, Waterfall Mode first scans the available context (files, tools).
+                    It then uses a planning agent to decompose the goal into a set of discrete tasks (e.g., <code>WriteFileTask</code>, <code>RunCodeTask</code>).
+                </p>
+            </div>
+            <div class="mode-card">
+                <div class="mode-title">2. Visualization & Review</div>
+                <p>
+                    The proposed plan is rendered in multiple formats:
+                <ul>
+                    <li><strong>Text:</strong> A readable summary of steps.</li>
+                    <li><strong>JSON:</strong> The raw data structure.</li>
+                    <li><strong>Diagram:</strong> A Mermaid graph showing dependencies.</li>
+                </ul>
+                The system pauses here (unless <code>autoFix</code> is enabled) to allow you to discuss and refine the plan.
+                </p>
+            </div>
+            <div class="mode-card">
+                <div class="mode-title">3. Orchestration</div>
+                <p>
+                    Once approved, the <code>TaskOrchestrator</code> takes over. It executes tasks in the correct order based on dependencies.
+                    Outputs from one task can be fed into subsequent tasks.
+                </p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    lucide.createIcons();
+</script>
+</body>
+</html>

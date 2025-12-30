@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parallel Mode - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <!-- Header Component -->
+    <cognotik-header current-page="taskplanning"></cognotik-header>
+
+    <main>
+        <!-- Hero -->
+        <section class="hero">
+            <h1>Parallel Mode</h1>
+            <p class="subtitle">
+                <strong>The Factory.</strong> Scale your cognitive workflows by executing tasks concurrently across multiple inputs.
+                Ideal for batch processing, codebase refactoring, and parameter sweeps.
+            </p>
+        </section>
+
+        <!-- Features -->
+        <section class="features">
+            <h2>Key Capabilities</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i data-lucide="layers"></i>
+                    <h3>Batch Processing</h3>
+                    <p>Define a task template and apply it to a list of variables, such as files or data points.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="cpu"></i>
+                    <h3>Concurrency Control</h3>
+                    <p>Manage resource usage with configurable thread pools to maximize throughput without overloading the system.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="regex"></i>
+                    <h3>Dynamic Expansion</h3>
+                    <p>Automatically expand file patterns (globs) into lists of target files for processing.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="modes-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <h2>How It Works</h2>
+            <div class="mode-grid" style="grid-template-columns: 1fr;">
+                <div class="mode-card">
+                    <div class="mode-title">1. Configuration</div>
+                    <p>The user provides a natural language request that implies batch processing. The system parses this into a <strong>ParallelPlan</strong> containing:</p>
+                    <ul style="margin-top: 1rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                        <li><strong>Variables:</strong> Lists of items (e.g., files matching <code>src/*.kt</code>).</li>
+                        <li><strong>Template:</strong> A prompt string with placeholders (e.g., <code>"Analyze {{file}}"</code>).</li>
+                        <li><strong>Mode:</strong> Combination strategy (CrossJoin or Zip).</li>
+                    </ul>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">2. Expansion & Combination</div>
+                    <p>Variables are expanded (e.g., globs resolved to file paths). The system then generates task combinations:</p>
+                    <ul style="margin-top: 1rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                        <li><strong>CrossJoin:</strong> Executes the template for every possible combination of variables.</li>
+                        <li><strong>Zip:</strong> Pairs variables by index (1st item with 1st item, etc.).</li>
+                    </ul>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">3. Execution</div>
+                    <p>A <code>FixedConcurrencyProcessor</code> executes the generated tasks in parallel. Each task is treated as an independent session, allowing for isolated context and error handling.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Example -->
+        <section class="code-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <h2>Example Configuration</h2>
+            <pre><code class="language-json">
+{
+  "variables": {
+    "file": ["User.kt", "Session.kt", "Auth.kt"],
+    "check": ["Security", "Performance"]
+  },
+  "template": "Review {{file}} focusing on {{check}} issues.",
+  "mode": "CrossJoin",
+  "concurrency": 4
+}
+            </code></pre>
+            <p style="margin-top: 1rem; color: var(--text-secondary);">
+                This configuration would generate 6 tasks (3 files × 2 checks) running in parallel.
+            </p>
+        </section>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

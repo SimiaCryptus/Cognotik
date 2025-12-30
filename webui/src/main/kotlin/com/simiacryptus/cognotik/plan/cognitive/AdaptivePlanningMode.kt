@@ -23,19 +23,30 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.Path
 
 /**
+* Configuration for AdaptivePlanningMode.
+*/
+open class AdaptivePlanningConfig(
+    type: CognitiveModeType<*> = CognitiveModeType.Adaptive,
+    var maxTaskHistoryChars: Int = 10000,
+    var maxTasksPerIteration: Int = 5,
+    var maxIterations: Int = 10
+) : CognitiveModeConfig(type)
+/**
  * A cognitive mode that implements the auto-planning strategy with iterative thinking.
  */
 open class AdaptivePlanningMode<T>(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User = defaultUser,
-    private val maxTaskHistoryChars: Int = orchestrationConfig.maxTaskHistoryChars,
-    private val maxTasksPerIteration: Int = orchestrationConfig.maxTasksPerIteration,
-    private val maxIterations: Int = orchestrationConfig.maxIterations,
-    val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig),
-    val cognitiveStrategy: CognitiveSchemaStrategy<T>
-) : CognitiveMode {
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser,
+    val cognitiveStrategy: CognitiveSchemaStrategy<T>,
+    val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
+) : CognitiveMode<AdaptivePlanningConfig>(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
 
     private val log = LoggerFactory.getLogger(AdaptivePlanningMode::class.java)
     private val currentUserMessage = AtomicReference<String?>(null)
@@ -97,7 +108,7 @@ open class AdaptivePlanningMode<T>(
                 writeToTranscript("# Auto Plan Chat Session\n\n## Initial Prompt\n\n$userMessage\n\n")
 
                 var iteration = 0
-                while (iteration++ < maxIterations && continueLoop) {
+                while (iteration++ < config.maxIterations && continueLoop) {
                     log.debug("Starting iteration $iteration")
                     task.complete()
                     val currentThinkingStatus = reasoningState.get()
@@ -312,7 +323,7 @@ ${JsonUtil.toJson(taskConfig)}
             ),
             prompt = buildString {
                 append("Given the following input, choose up to ")
-                append(maxTasksPerIteration)
+                append(config.maxTasksPerIteration)
                 append(" tasks to execute. Do not create a full plan, just select the most appropriate task types for the given input and note any required/important details.\n")
                 append("Note: These tasks will be run in parallel without knowledge of each other; this is not a sequential plan.\n")
                 append("Available task types:\n")
@@ -395,7 +406,7 @@ ${JsonUtil.toJson(taskConfig)}
             log.warn("No valid tasks selected from: ${tasks.map { it.first }}")
             return null
         } else {
-            return tasks.take(maxTasksPerIteration).map {
+            return tasks.take(config.maxTasksPerIteration).map {
                 TaskData(
                     task = Tasks(tasks.toList().flatMap { it.first.task.tasks ?: listOf() }.toMutableList()),
                     actorResponse = it.first.actorResponse
@@ -446,7 +457,7 @@ ${JsonUtil.toJson(taskConfig)}
 
 
 
-    private fun formatEvalRecords(maxTotalLength: Int = maxTaskHistoryChars): List<String> {
+    private fun formatEvalRecords(maxTotalLength: Int = config.maxTaskHistoryChars): List<String> {
         var currentLength = 0
         val formattedRecords = mutableListOf<String>()
 
@@ -599,17 +610,8 @@ ${JsonUtil.toJson(taskConfig)}
     }
 
 
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask,
-            orchestrationConfig: OrchestrationConfig,
-            session: Session,
-            user: User
-        ) = AdaptivePlanningMode(
-            task, orchestrationConfig, session, user,
-            cognitiveStrategy = ProjectManagerStrategy()
-        )
+    companion object {
+        val inputCnt = 1
 
     }
 }

@@ -1,0 +1,51 @@
+[
+  {
+    "id": "conversational-mode",
+    "label": "Conversational",
+    "url": "ConversationalMode.html",
+    "description": "The Partner. Operates interactively, executing one step at a time based on the immediate conversation context. It maintains a full history of the session. Perfect for exploratory work, debugging, or when you need to guide the AI closely.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/ConversationalMode.kt"
+  },
+  {
+    "id": "waterfall-mode",
+    "label": "Waterfall",
+    "url": "WaterfallMode.html",
+    "description": "The Architect. Analyzes the entire request upfront and generates a comprehensive, sequential plan. It allows for user review and modification before any code runs. Ideal for well-defined tasks where the path to the solution is clear.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/WaterfallMode.kt"
+  },
+  {
+    "id": "adaptive-mode",
+    "label": "Adaptive Planning",
+    "url": "AdaptivePlanningMode.html",
+    "description": "The Strategist. Uses an iterative 'Think, Act, Reflect' loop. It maintains a dynamic internal state of goals, facts, and hypotheses, allowing it to adjust its strategy based on task results. Best for ambiguous or evolving problems.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/AdaptivePlanningMode.kt"
+  },
+  {
+    "id": "preplanned-mode",
+    "label": "Pre-Planned",
+    "url": "PrePlannedMode.html",
+    "description": "The Executor. Loads a predefined plan template from a file, substitutes variables based on user input, and executes the workflow. Ideal for repeatable, standardized processes or sharing successful strategies.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/PrePlannedMode.kt"
+  },
+  {
+    "id": "session-mode",
+    "label": "Session",
+    "url": "SessionMode.html",
+    "description": "The Operator. Assigns a dedicated AI operator to drive a specific tool continuously. It maintains a deep session context with that tool to achieve a goal through repeated interaction.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/SessionMode.kt"
+  },
+  {
+    "id": "protocol-mode",
+    "label": "Protocol",
+    "url": "ProtocolMode.html",
+    "description": "The Auditor. Enforces strict methodologies (like TDD) using a state machine with validation steps. It ensures high-quality output by having a 'Referee' agent verify each step before proceeding.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/ProtocolMode.kt"
+  },
+  {
+    "id": "council-mode",
+    "label": "Council",
+    "url": "CouncilMode.html",
+    "description": "The Board. A multi-agent system where a 'Council' of personas (e.g., CEO, CTO, QA) collaborates. They nominate tasks, vote on the best course of action, and maintain separate perspectives to ensure balanced decision-making.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/CouncilMode.kt"
+  }
+]

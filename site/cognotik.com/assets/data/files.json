@@ -1,0 +1,58 @@
+[
+  {
+    "id": "readdocuments",
+    "label": "Read Documents",
+    "url": "ReadDocumentsTask.html",
+    "description": "Read and analyze project documents. Supports PDFs, Word docs, code files, and more.",
+    "image": "assets/images/holographic-data-projection.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/ReadDocumentsTask.kt"
+  },
+  {
+    "id": "filemodification",
+    "label": "File Modification",
+    "url": "FileModification.html",
+    "description": "Create new files or modify existing code with AI-powered assistance",
+    "image": "assets/images/auto-fix-process-icon.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/FileModificationTask.kt"
+  },
+  {
+    "id": "filesearch",
+    "label": "File Search",
+    "url": "FileSearch.html",
+    "description": "Search project files using patterns with contextual results",
+    "image": "assets/images/search-path-visualization.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/FileSearchTask.kt"
+  },
+  {
+    "id": "imagegeneration",
+    "label": "Image",
+    "url": "GenerateImage.html",
+    "description": "Generate images using AI image generation models",
+    "image": "assets/images/scene-neon-rain-render.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/GenerateImageTask.kt"
+  },
+  {
+    "id": "illustratedocument",
+    "label": "Illustrate Document",
+    "url": "IllustrateDocument.html",
+    "description": "Analyze a document and generate images to enhance its content",
+    "image": "assets/images/comic-strip-row-noir.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/IllustrateDocumentTask.kt"
+  },
+  {
+    "id": "dataingest",
+    "label": "Data Ingest",
+    "url": "DataIngest.html",
+    "description": "Iteratively parse unstructured logs into structured data",
+    "image": "assets/images/structured-data-extraction.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/DataIngestTask.kt"
+  },
+  {
+    "id": "pdfform",
+    "label": "PDF Form",
+    "url": "PdfFormTask.html",
+    "description": "Fill out PDF form templates with data",
+    "image": "assets/images/holographic-data-projection.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/PdfFormTask.kt"
+  }
+]

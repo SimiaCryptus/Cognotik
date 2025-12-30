@@ -4,7 +4,9 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -22,13 +24,14 @@ class SubPlanTask(
 ) {
 
     class SubPlanTaskTypeConfig(
-        @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveMode: CognitiveModeStrategies? = null,
+        @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveSettings: CognitiveModeConfig? = null,
         @Description("Task-specific configurations available within sub-plans") val taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
         @Description("Supplemental description of the purpose of this configuration") val purpose: String = "",
         task_type: String = "RecursiveToolDefinition",
         model: ApiChatModel? = null,
         name: String? = task_type,
     ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
+        val cognitiveMode: CognitiveModeType<*>? get() = cognitiveSettings?.type
         override fun validate(): String? {
             // Validate that taskSettings don't contain invalid configurations
             taskSettings.forEach { (key, config) ->
@@ -101,15 +104,15 @@ class SubPlanTask(
             val typeConfig = this.typeConfig ?: throw RuntimeException()
             // Get the cognitive mode for sub-planning
             val cognitiveMode =
-                (typeConfig.cognitiveMode ?: orchestrationConfig.cognitiveMode ?: CognitiveModeStrategies.Adaptive)
+                (typeConfig.cognitiveMode?.newSettings() ?: orchestrationConfig.cognitiveSettings ?: CognitiveModeType.Adaptive.newSettings())
 
             val subConfig = orchestrationConfig.copy(
-                cognitiveMode = cognitiveMode,
                 taskSettings = typeConfig.taskSettings,
+                cognitiveSettings = typeConfig.cognitiveSettings ?: orchestrationConfig.cognitiveSettings,
             )
             log.debug("Created sub-orchestration config with maxIterations=${subConfig.maxIterations}, maxTasksPerIteration=${subConfig.maxTasksPerIteration}")
 
-            log.info("Using cognitive mode: ${cognitiveMode.name} for sub-planning")
+            log.info("Using cognitive mode: ${cognitiveMode.type?.name} for sub-planning")
 
             // Create tabs for displaying sub-plan execution
             val tabs = TabbedDisplay(task)
@@ -139,7 +142,7 @@ class SubPlanTask(
             log.debug("Planning goal: $planningGoal")
 
             // Initialize the cognitive mode
-            val cognitiveInstance = cognitiveMode.getCognitiveMode(
+            val cognitiveInstance = cognitiveMode.type!!.getImpl(
                 task = planningTask, orchestrationConfig = subConfig, session = agent.session, user = agent.user
             ).apply { initialize() }
 
@@ -149,7 +152,7 @@ class SubPlanTask(
                 appendLine()
                 appendLine("**Goal:** $planningGoal")
                 appendLine()
-                appendLine("**Cognitive Mode:** ${cognitiveMode.name}")
+                appendLine("**Cognitive Mode:** ${cognitiveMode.type?.name}")
                 appendLine()
                 if (typeConfig.purpose.isNotEmpty()) {
                     appendLine("**Purpose:** ${typeConfig.purpose}")

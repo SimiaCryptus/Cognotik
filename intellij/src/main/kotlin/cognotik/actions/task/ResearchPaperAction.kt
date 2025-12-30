@@ -83,7 +83,7 @@ class ResearchPaperAction : BaseAction() {
     DataStorage.sessionPaths[session] = root
 
     progress.text = "Starting server..."
-    setupTaskSession(session, orchestrationConfig, taskConfig, root)
+    setupTaskSession(session, orchestrationConfig.copy(sessionId = session.sessionId), taskConfig, root)
 
     Thread {
       Thread.sleep(500)
@@ -388,6 +388,7 @@ class ResearchPaperAction : BaseAction() {
       }
 
       return OrchestrationConfig(
+        "Config",
         defaultSmartModel = model ?: AppSettingsState.instance.smartModel
         ?: throw IllegalStateException("No model configured"),
         defaultFastModel = AppSettingsState.instance.fastModel

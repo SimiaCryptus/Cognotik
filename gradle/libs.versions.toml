@@ -120,6 +120,7 @@ monte-media-screenrecorder = { group = "ch.randelshofer", name = "org.monte.medi
 monte-media = { group = "ch.randelshofer", name = "org.monte.media", version.ref = "monteMedia" }
 monte-media-swing = { group = "ch.randelshofer", name = "org.monte.media.swing", version.ref = "monteMedia" }
 selenium-java = { group = "org.seleniumhq.selenium", name = "selenium-java", version.ref = "selenium" }
+pty4j = { group = "org.jetbrains.pty4j", name = "pty4j", version = "0.13.11" }
 webdrivermanager = { group = "io.github.bonigarcia", name = "webdrivermanager", version.ref = "webdrivermanager" }
 remoterobot-fixtures = { group = "com.intellij.remoterobot", name = "remote-fixtures", version.ref = "remoterobot" }
 remoterobot-robot = { group = "com.intellij.remoterobot", name = "remote-robot", version.ref = "remoterobot" }

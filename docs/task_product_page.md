@@ -191,14 +191,15 @@ file's location relative to the `assets` folder.
 
 ```html
 
-<head><link href="logo.svg" rel="icon" type="image/svg+xml">
+<head>
+    <link href="../site/cognotik.com/logo.svg" rel="icon" type="image/svg+xml">
     <!-- ... meta tags ... -->
 
     <!-- Load Shared Styles -->
-    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="stylesheet" href="../site/cognotik.com/assets/styles/main.css">
 
     <!-- Load Component Script -->
-    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+    <script type="module" src="../site/cognotik.com/assets/scripts/components/CognotikHeader.js"></script>
 </head>
 ```
 

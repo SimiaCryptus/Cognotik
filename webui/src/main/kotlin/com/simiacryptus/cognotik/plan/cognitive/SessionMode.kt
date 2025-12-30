@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -14,11 +15,16 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 open class SessionMode(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User,
-) : CognitiveMode {
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser
+) : CognitiveMode<SessionModeConfig>(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
     private val log = LoggerFactory.getLogger(SessionMode::class.java)
     private var activeToolConfig: TaskExecutionConfig? = null
     private var activeToolRunner: Any? = null
@@ -49,7 +55,7 @@ open class SessionMode(
                 orchestrationConfig.defaultFast.getChildClient(task),
                 userMessage,
                 orchestrationConfig,
-                prompt = "Select a tool to open a session with. This tool will be used continuously.",
+                prompt = config.toolSelectionPrompt,
                 singleStage = true
             )
             activeToolConfig = chosenTask
@@ -70,7 +76,7 @@ open class SessionMode(
             try {
                 var currentGoal = goal
                 var iteration = 0
-                val maxIterations = 50
+                val maxIterations = config.maxIterations
                 
                 if (history.isEmpty() || history.last() != "User: $goal") {
                     history.add("User: $goal")
@@ -143,15 +149,8 @@ open class SessionMode(
         val agent = ParsedAgent(
             name = "SessionOperator",
             resultClass = SessionStep::class.java,
-            prompt = """
-                You are an operator for a stateful tool.
-                Your goal is: $goal
                 
-                Review the history of interactions.
-                If the goal is achieved, set isComplete to true.
-                Otherwise, provide the next command to execute in the 'command' field.
-                Do not create new tasks, just provide the input for the tool.
-            """.trimIndent(),
+            prompt = config.sessionOperatorPrompt.format(goal),
             model = orchestrationConfig.defaultSmart.getChildClient(task),
             parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
             temperature = orchestrationConfig.temperature,
@@ -164,13 +163,19 @@ open class SessionMode(
 
     override fun contextData(): List<String> = history
     
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask,
-            orchestrationConfig: OrchestrationConfig,
-            session: Session,
-            user: User
-        ) = SessionMode(task, orchestrationConfig, session, user)
+    companion object {
+        val inputCnt = 1
     }
 }
+open class SessionModeConfig(
+    var maxIterations: Int = 50,
+    var toolSelectionPrompt: String = "Select a tool to open a session with. This tool will be used continuously.",
+    var sessionOperatorPrompt: String = """
+        You are an operator for a stateful tool.
+        Your goal is: %s
+        Review the history of interactions.
+        If the goal is achieved, set isComplete to true.
+        Otherwise, provide the next command to execute in the 'command' field.
+        Do not create new tasks, just provide the input for the tool.
+    """.trimIndent()
+) : CognitiveModeConfig(CognitiveModeType.Session)

@@ -6,9 +6,9 @@ import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.Companion.DataIngest
 import com.simiacryptus.cognotik.plan.tools.file.*
-import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.ReadDocuments
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.ReadDocuments
 import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
 import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
@@ -23,6 +23,7 @@ import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.run.RunToolTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.Companion.SubPlan
+import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
 import com.simiacryptus.cognotik.plan.tools.social.*
 import com.simiacryptus.cognotik.plan.tools.writing.*
 import com.simiacryptus.cognotik.plan.tools.writing.ResearchPaperGenerationTask.Companion.ResearchPaperGeneration
@@ -132,9 +133,9 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 //            registerConstructor(SeleniumSessionTask.SeleniumSession) { settings, task ->
 //                SeleniumSessionTask(settings, task)
 //            }
-//            registerConstructor(CommandSessionTask.CommandSession) { settings, task ->
-//                CommandSessionTask(settings, task)
-//            }
+            registerConstructor(CommandSessionTask.CommandSession) { settings, task ->
+                CommandSessionTask(settings, task)
+            }
             registerConstructor(AutoFixTask.AutoFix) { settings, task ->
                 AutoFixTask(settings, task)
             }

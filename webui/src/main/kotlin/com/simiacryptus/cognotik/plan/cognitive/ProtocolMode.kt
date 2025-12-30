@@ -18,12 +18,17 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 open class ProtocolMode(
-    override val task: SessionTask,
-    override val orchestrationConfig: OrchestrationConfig,
-    override val session: Session,
-    override val user: User = defaultUser,
+    task: SessionTask,
+    orchestrationConfig: OrchestrationConfig,
+    session: Session,
+    user: User = defaultUser,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
-) : CognitiveMode {
+) : CognitiveMode<ProtocolModeConfig>(
+    task,
+    orchestrationConfig,
+    session,
+    user
+) {
 
     private val log = LoggerFactory.getLogger(ProtocolMode::class.java)
     private var isRunning = false
@@ -71,7 +76,7 @@ open class ProtocolMode(
 
                 var currentStateName: String? = protocol.initialState
                 var iteration = 0
-                val maxIterations = 20 // Safety break
+                val maxIterations = config.maxIterations
 
                 while (currentStateName != null && iteration++ < maxIterations) {
                     val currentState = protocol.states.find { it.name == currentStateName }
@@ -84,7 +89,7 @@ open class ProtocolMode(
 
                     var statePassed = false
                     var retryCount = 0
-                    val maxRetries = 3
+                    val maxRetries = config.maxRetries
 
                     while (!statePassed && retryCount++ < maxRetries) {
                         if (retryCount > 1) {
@@ -279,13 +284,11 @@ open class ProtocolMode(
         val feedback: String
     )
 
-    companion object : CognitiveModeStrategy {
-        override val inputCnt = 1
-        override fun getCognitiveMode(
-            task: SessionTask,
-            orchestrationConfig: OrchestrationConfig,
-            session: Session,
-            user: User
-        ) = ProtocolMode(task, orchestrationConfig, session, user)
+    companion object {
+        val inputCnt = 1
     }
 }
+class ProtocolModeConfig(
+    var maxIterations: Int = 20,
+    var maxRetries: Int = 3
+) : CognitiveModeConfig()

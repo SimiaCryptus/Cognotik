@@ -1,0 +1,160 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <link href="logo.svg" rel="icon" type="image/svg+xml">
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Conversational Mode - Cognotik</title>
+     <link rel="stylesheet" href="assets/styles/main.css">
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+     <script src="https://unpkg.com/lucide@latest"></script>
+     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+ </head>
+ <body>
+     <cognotik-header current-page="conversational-mode"></cognotik-header>
+ 
+     <main>
+         <!-- Hero -->
+         <section class="hero">
+             <h1>Conversational Mode</h1>
+             <p class="subtitle">
+                 The Partner. An interactive, context-aware agent that collaborates with you step-by-step, 
+                 maintaining history and executing tools on demand.
+             </p>
+         </section>
+ 
+         <!-- Features -->
+         <section class="features">
+             <h2>Core Capabilities</h2>
+             <div class="features-grid">
+                 <div class="feature-card">
+                     <i data-lucide="message-square"></i>
+                     <h3>Interactive Dialogue</h3>
+                     <p>Operates in a continuous loop, allowing for real-time feedback, clarification, and iterative problem solving.</p>
+                 </div>
+                 <div class="feature-card">
+                     <i data-lucide="brain-circuit"></i>
+                     <h3>Dynamic Tool Selection</h3>
+                     <p>Intelligently selects the best tool for the job from the available task library based on your natural language request.</p>
+                 </div>
+                 <div class="feature-card">
+                     <i data-lucide="layers"></i>
+                     <h3>Expansion Syntax</h3>
+                     <p>Power-user syntax to spawn parallel agents or define execution sequences directly from the chat prompt.</p>
+                 </div>
+             </div>
+         </section>
+ 
+         <!-- Deep Dive -->
+         <section class="content-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start;">
+                 <div>
+                     <h2>How It Works</h2>
+                     <p style="margin-bottom: 1.5rem; line-height: 1.6;">
+                         Conversational Mode is designed to feel like a natural extension of your thought process. Unlike batch processing modes, it maintains a persistent <strong>Session</strong> object that stores conversation history and state.
+                     </p>
+                     <p style="margin-bottom: 1.5rem; line-height: 1.6;">
+                         When you send a message:
+                     </p>
+                     <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem; line-height: 1.6;">
+                         <li>The system analyzes your request against the available <strong>Task Library</strong>.</li>
+                         <li>It selects the most appropriate task (e.g., <code>FileSearchTask</code>, <code>RunCodeTask</code>).</li>
+                         <li>It executes the task, often using a "Think, Act" loop for complex tools.</li>
+                         <li>The output is returned to the chat, and the context is updated.</li>
+                     </ol>
+                 </div>
+                 <div style="background: rgba(255,255,255,0.03); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                     <h3 style="margin-bottom: 1rem;">Advanced: Expansion Syntax</h3>
+                     <p style="margin-bottom: 1rem; font-size: 0.9rem; color: #94a3b8;">
+                         Automate repetitive workflows without writing scripts using special syntax in your prompt.
+                     </p>
+                     
+                     <div style="margin-bottom: 1.5rem;">
+                         <div style="color: var(--accent-primary); font-weight: 600; margin-bottom: 0.5rem;">Parallel Execution</div>
+                         <code style="display: block; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin-bottom: 0.5rem;">@[option1|option2]</code>
+                         <div style="font-size: 0.85rem;">Spawns separate agents for each option simultaneously.</div>
+                     </div>
+ 
+                     <div style="margin-bottom: 1.5rem;">
+                         <div style="color: var(--accent-primary); font-weight: 600; margin-bottom: 0.5rem;">Sequential Execution</div>
+                         <code style="display: block; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin-bottom: 0.5rem;">@{step1 -> step2}</code>
+                         <div style="font-size: 0.85rem;">Executes step 1, then passes the context to step 2.</div>
+                     </div>
+ 
+                     <div>
+                         <div style="color: var(--accent-primary); font-weight: 600; margin-bottom: 0.5rem;">Range Expansion</div>
+                         <code style="display: block; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; margin-bottom: 0.5rem;">@(1..5)</code>
+                         <div style="font-size: 0.85rem;">Iterates through a numerical range.</div>
+                     </div>
+                 </div>
+             </div>
+         </section>
+ 
+         <!-- Topic Extraction -->
+         <section style="background: rgba(255,255,255,0.02); padding: 4rem 2rem;">
+             <div style="max-width: 1200px; margin: 0 auto;">
+                 <h2>Topic Memory</h2>
+                 <p style="max-width: 800px; margin-bottom: 2rem; line-height: 1.6;">
+                     Conversational Mode doesn't just remember text; it understands entities. After each interaction, it scans the response for key topics (like file names, class names, or concepts) and indexes them.
+                 </p>
+                 <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                     <div style="flex: 1; min-width: 300px;">
+                         <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Automatic Indexing</h3>
+                         <p style="font-size: 0.95rem; color: #94a3b8;">
+                             If the AI lists several files in a response, it groups them under a topic like <code>{Files}</code>.
+                         </p>
+                     </div>
+                     <div style="flex: 1; min-width: 300px;">
+                         <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Recall Syntax</h3>
+                         <p style="font-size: 0.95rem; color: #94a3b8;">
+                             You can reference these groups later using <code>@{Files}</code> to automatically expand your next command to apply to all those items.
+                         </p>
+                     </div>
+                 </div>
+             </div>
+         </section>
+ 
+         <!-- Code Reference -->
+         <section style="padding: 4rem 2rem; max-width: 1200px; margin: 0 auto;">
+             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                 <h2>Source Code</h2>
+                 <a href="https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/ConversationalMode.kt" target="_blank" class="cta-button" style="font-size: 0.9rem; padding: 0.5rem 1rem;">View on GitHub</a>
+             </div>
+             <div style="background: #1e1e1e; padding: 1.5rem; border-radius: 8px; overflow-x: auto; border: 1px solid #333;">
+ <pre><code style="font-family: 'Fira Code', monospace; color: #d4d4d4;">
+ <span style="color: #569cd6;">class</span> <span style="color: #4ec9b0;">ConversationalMode</span>(
+     task: <span style="color: #4ec9b0;">SessionTask</span>,
+     orchestrationConfig: <span style="color: #4ec9b0;">OrchestrationConfig</span>,
+     session: <span style="color: #4ec9b0;">Session</span>
+ ) : <span style="color: #4ec9b0;">CognitiveMode</span>&lt;<span style="color: #4ec9b0;">ConversationalModeConfig</span>&gt;(task, orchestrationConfig, session) {
+ 
+     <span style="color: #6a9955;">// The main loop handling user input</span>
+     <span style="color: #569cd6;">override fun</span> <span style="color: #dcdcaa;">handleUserMessage</span>(userMessage: <span style="color: #4ec9b0;">String</span>, task: <span style="color: #4ec9b0;">SessionTask</span>) {
+         <span style="color: #c586c0;">if</span> (isProcessing) {
+             messageBuffer.add(userMessage)
+             <span style="color: #c586c0;">return</span>
+         }
+         <span style="color: #6a9955;">// ... execution logic ...</span>
+     }
+     
+     <span style="color: #6a9955;">// Recursive expansion for @[...] syntax</span>
+     <span style="color: #569cd6;">private fun</span> <span style="color: #dcdcaa;">processMsgRecursive</span>(...) {
+         <span style="color: #c586c0;">val</span> match = expansionExpressionPattern.find(currentMessage)
+         <span style="color: #c586c0;">if</span> (match != <span style="color: #569cd6;">null</span>) {
+             <span style="color: #6a9955;">// Spawns parallel tasks for each option</span>
+             <span style="color: #c586c0;">return</span> expandAlternatives(...)
+         }
+     }
+ }
+ </code></pre>
+             </div>
+         </section>
+     </main>
+ 
+     <script>
+         lucide.createIcons();
+     </script>
+ </body>
+ </html>

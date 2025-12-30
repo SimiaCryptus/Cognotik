@@ -1,8 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
@@ -10,7 +8,8 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeStrategies
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.AutoFixTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
@@ -23,16 +22,10 @@ import kotlin.io.path.Path
 
 
 class OrchestrationConfig(
-    @JsonSerialize(using = ApiChatModelSerializer::class)
-    @JsonDeserialize(using = ApiChatModelDeserializer::class)
+    var sessionId: String = "default",
     var defaultSmartModel: ApiChatModel? = null,
-    @JsonSerialize(using = ApiChatModelSerializer::class)
-    @JsonDeserialize(using = ApiChatModelDeserializer::class)
     var defaultFastModel: ApiChatModel? = null,
-    @JsonSerialize(using = ApiChatModelSerializer::class)
-    @JsonDeserialize(using = ApiChatModelDeserializer::class)
     var defaultImageModel: ApiChatModel? = null,
-    var cognitiveMode: CognitiveModeStrategies? = null,
     val shellCmd: List<String> = listOf(if (isWindows) "powershell" else "bash"),
     var temperature: Double = 0.2,
     val budget: Double = 2.0,
@@ -44,6 +37,7 @@ class OrchestrationConfig(
             it
         } ?: throw IllegalStateException("No default config for task type ${taskType.name}")
     }.mapKeys { it.key.name }.toMutableMap(),
+    var cognitiveSettings: CognitiveModeConfig? = null,
     var autoFix: Boolean = false,
     val env: Map<String, String>? = mapOf(),
     val workingDir: String? = ".",
@@ -52,6 +46,7 @@ class OrchestrationConfig(
     var maxTasksPerIteration: Int = 1,
     var maxIterations: Int = 10,
 ) {
+    val cognitiveMode: CognitiveModeType<*>? get() = cognitiveSettings?.type
 
     @get:JsonIgnore
     var processor: PatchProcessor = PatchProcessors.Fuzzy
@@ -115,14 +110,15 @@ class OrchestrationConfig(
         temperature: Double = this.temperature,
         budget: Double = this.budget,
         taskSettings: MutableMap<String, TaskTypeConfig> = this.taskSettings,
+        cognitiveSettings: CognitiveModeConfig? = this.cognitiveSettings,
         autoFix: Boolean = this.autoFix,
         env: Map<String, String>? = this.env,
         workingDir: String? = this.workingDir,
         language: String? = this.language,
-        cognitiveMode: CognitiveModeStrategies? = this.cognitiveMode,
         maxTaskHistoryChars: Int = this.maxTaskHistoryChars,
         maxTasksPerIteration: Int = this.maxTasksPerIteration,
         maxIterations: Int = this.maxIterations,
+        sessionId: String = this.sessionId,
     ): OrchestrationConfig = OrchestrationConfig(
         defaultSmartModel = model,
         defaultFastModel = parsingModel,
@@ -131,6 +127,7 @@ class OrchestrationConfig(
         temperature = temperature,
         budget = budget,
         taskSettings = taskSettings,
+        cognitiveSettings = cognitiveSettings,
         autoFix = autoFix,
         env = env,
         workingDir = workingDir,
@@ -138,7 +135,7 @@ class OrchestrationConfig(
         maxTaskHistoryChars = maxTaskHistoryChars,
         maxTasksPerIteration = maxTasksPerIteration,
         maxIterations = maxIterations,
-        cognitiveMode = cognitiveMode,
+        sessionId = sessionId
     )
 
 
@@ -251,4 +248,3 @@ class OrchestrationConfig(
         }
     }
 }
-
