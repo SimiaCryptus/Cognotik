@@ -2,322 +2,358 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://cognotik.com/AbductiveReasoningTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/AbstractionLadderTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cognotik.com/AdaptivePlanningMode.html</loc>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/AdversarialReasoningTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/AnalogicalReasoningTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ArticleGenerationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/BrainstormingTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/BusinessProposalTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/CausalInferenceTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ChainOfThoughtTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ComicBookGenerationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cognotik.com/CommandSessionTask.html</loc>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ConstraintRelaxationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ConstraintSatisfactionTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cognotik.com/ConversationalMode.html</loc>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cognotik.com/CouncilMode.html</loc>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/CounterfactualAnalysisTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/CrawlerAgentTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/DataIngest.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/DecisionTreeTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/DecompositionSynthesisTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/DialecticalReasoningTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/DiscussionTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/EmailCampaignTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/EthicalReasoningTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/FileModification.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/FileSearch.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/FiniteStateMachineTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/FunctorialMappingTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GameEconomyTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GameLevelDesignTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GameMechanicsDesignTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GameNarrativeDesignTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GameTheoryTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GenerateImage.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GeneratePresentation.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GenerateQRImage.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GenerateSpriteSheet.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GeneticOptimizationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/GitHubSearchTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/IllustrateDocument.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ImageTable.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/InteractiveStoryTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/IsomorphismDiscoveryTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/IterativeGraphGenerationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/JournalismReasoningTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/LLMExperimentTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/LLMPollSimulationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/LanguageServerTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/LateralThinkingTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/MCPToolTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/MathematicalReasoningTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/MetaCognitiveReflectionTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/MultiPerspectiveAnalysisTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/NarrativeGenerationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/NeuralNetworkLayerTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cognotik.com/ParallelMode.html</loc>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/PdfFormTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/PersuasiveEssayTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/PoliticalOptimizationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cognotik.com/PrePlannedMode.html</loc>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ProbabilisticReasoningTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cognotik.com/ProtocolMode.html</loc>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ReadDocumentsTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ReportGenerationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ResearchPaperGenerationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/RunCodeTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/RunToolTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/ScriptwritingTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/SelfHealingTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cognotik.com/SessionMode.html</loc>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/SocraticDialogueTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/SoftwareDesignDocumentTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/StructuralInvariantAnalysisTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/SubPlanningTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/SystemsThinkingTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/TableCompilationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/TaskPlanning.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/TechnicalExplanationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/TemporalReasoningTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/TutorialGenerationTask.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
+  </url>
+  <url>
+    <loc>https://cognotik.com/WaterfallMode.html</loc>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/WriteHtml.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/contribute.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/intellij-plugin.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/monetization.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/privacy.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
   <url>
     <loc>https://cognotik.com/reasoning_task_chooser/reasoning_task_chooser.html</loc>
-    <lastmod>2025-12-28T21:06:32.420Z</lastmod>
+    <lastmod>2025-12-30T21:31:24.042Z</lastmod>
   </url>
 </urlset>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cognotik Command Session Task - Manage persistent, stateful interactive terminal sessions.">
+    <title>Cognotik | Command Session Task</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+
+    <style>
+        /* Terminal specific overrides */
+        .terminal-window { background: #0d1117; padding: 20px; font-family: var(--font-family-mono); overflow-y: auto; height: 100%; min-height: 300px; border-radius: 8px; border: 1px solid #30363d; }
+        .term-line { display: block; font-size: 0.9rem; margin-bottom: 4px; color: #c9d1d9; white-space: pre-wrap; }
+        .term-prompt { color: #58a6ff; font-weight: bold; }
+        .term-prompt::before { content: '➜ '; color: #238636; }
+        .term-output { color: #8b949e; }
+        .term-error { color: #f85149; }
+        
+        footer { background: #0b1120; padding: 60px 24px; border-top: 1px solid var(--border-color); }
+        .footer-content { max-width: var(--container-max-width); margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+        .footer-brand { font-size: 1.5rem; font-weight: 700; color: var(--text-muted); }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { color: var(--text-muted); font-size: 0.9rem; }
+        .footer-links a:hover { color: var(--accent-color); }
+    </style>
+</head>
+<body>
+
+    <cognotik-header current-page="commandsession"></cognotik-header>
+
+    <main>
+        <!-- Hero Section -->
+        <!-- Prompt: Abstract 3D visualization of a glowing data stream entering a persistent container node, representing a stateful session. -->
+        <section class="hero">
+            <h1>Command Session Task</h1>
+            <p class="subtitle">
+                Maintain persistent, stateful terminal sessions for complex workflows. Interact with REPLs, manage environment variables, and execute multi-step command sequences with full context retention.
+            </p>
+            <button class="cta-button" onclick="location.href='#simulator'">Try the Simulator</button>
+        </section>
+
+        <!-- Features Grid -->
+        <section id="features" class="features">
+            <h2>Core Capabilities</h2>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fa-solid fa-memory"></i>
+                    <h3>State Persistence</h3>
+                    <p>Variables, working directories, and process states persist between inputs, enabling complex multi-step logic.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-brands fa-python"></i>
+                    <h3>Interactive REPLs</h3>
+                    <p>Native support for interactive interpreters like Python, Node.js, or custom shells that require state retention.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-id-badge"></i>
+                    <h3>Session Reuse</h3>
+                    <p>Connect to existing sessions via <code>sessionId</code> to continue workflows, debug, or share context across tasks.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-terminal"></i>
+                    <h3>TTY Emulation</h3>
+                    <p>Full pseudo-terminal (PTY) support allows execution of tools that demand a TTY, such as interactive CLIs.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-recycle"></i>
+                    <h3>Lifecycle Management</h3>
+                    <p>Automatic cleanup of idle sessions and zombie processes ensures efficient resource usage.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-stream"></i>
+                    <h3>Stream Monitoring</h3>
+                    <p>Real-time asynchronous capture of stdout and stderr allows the agent to react to output immediately.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Simulator -->
+        <section id="simulator" class="simulator">
+            <h2>Task Simulator</h2>
+            
+            <div class="simulator-container">
+                <!-- Left Column: Inputs -->
+                <div class="sim-controls">
+                    <form id="session-form">
+                        
+                        <div class="control-group">
+                            <label for="input-session-id">Session ID</label>
+                            <input type="text" id="input-session-id" value="dev-session-01" placeholder="Unique ID for reuse">
+                            <small class="text-muted">Using the same ID preserves state.</small>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="input-command">Start Command</label>
+                            <select id="input-command">
+                                <option value="bash">Bash (bash -i)</option>
+                                <option value="python">Python REPL (python)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="input-inputs">Input Commands (One per line)</label>
+                            <textarea id="input-inputs" rows="5" placeholder="Enter commands...">export PROJECT_DIR=/var/www
+cd $PROJECT_DIR
+echo "Current dir: $(pwd)"</textarea>
+                        </div>
+
+                        <div class="control-group checkbox-group">
+                            <input type="checkbox" id="input-tty">
+                            <label for="input-tty">Enable TTY (Pseudo-terminal)</label>
+                        </div>
+
+                        <button type="submit" id="btn-execute" class="run-button">
+                            Send to Session
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right Column: Outputs -->
+                <div class="sim-output">
+                    <div class="tabs">
+                        <button class="tab active" data-tab="tab-terminal">Terminal Output</button>
+                        <button class="tab" data-tab="tab-config">Config JSON</button>
+                    </div>
+
+                    <!-- Tab: Terminal -->
+                    <div id="tab-terminal" class="tab-content active">
+                        <div class="terminal-window" id="terminal-output">
+                            <span class="term-line term-output">Session initialized. Waiting for input...</span>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Config -->
+                    <div id="tab-config" class="tab-content">
+                        <div class="terminal-window">
+                            <pre><code id="config-preview"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="modes-section" style="padding: 4rem 2rem; max-width: 1200px; margin: 0 auto;">
+            <h2>When to Use</h2>
+            <div class="mode-grid">
+                <div class="mode-card">
+                    <div class="mode-title">Interactive Scripting</div>
+                    <p>Execute Python or Ruby scripts line-by-line to analyze data, debug code, or interact with libraries dynamically.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Environment Setup</div>
+                    <p>Set environment variables, change directories, or activate virtual environments that must persist for subsequent commands.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Stateful Workflows</div>
+                    <p>Perform complex build or deployment processes where the output of step A (e.g., a generated token) is needed in step B.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand"><i class="fa-solid fa-brain"></i> Cognotik</div>
+            <div class="footer-links">
+                <a href="#">Documentation</a>
+                <a href="#">API Reference</a>
+                <a href="#">Support</a>
+            </div>
+            <div class="footer-copyright">&copy; 2023 Simiacryptus. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tab Logic
+            const tabButtons = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById(btn.dataset.tab).classList.add('active');
+                });
+            });
+
+            // Simulator Logic
+            const form = document.getElementById('session-form');
+            const terminalOutput = document.getElementById('terminal-output');
+            const configPreview = document.getElementById('config-preview');
+            const executeBtn = document.getElementById('btn-execute');
+            const inputCommandSelect = document.getElementById('input-command');
+            const inputInputs = document.getElementById('input-inputs');
+
+            // Mock State Storage
+            const sessions = {};
+
+            // Pre-fill inputs based on mode
+            inputCommandSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'python') {
+                    inputInputs.value = "x = 10\ny = 5\nprint(f'Result: {x * y}')";
+                } else {
+                    inputInputs.value = "export PROJECT_DIR=/var/www\ncd $PROJECT_DIR\necho \"Current dir: $(pwd)\"";
+                }
+            });
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const sessionId = document.getElementById('input-session-id').value || 'default';
+                const startCommand = document.getElementById('input-command').value;
+                const rawInputs = document.getElementById('input-inputs').value;
+                const useTty = document.getElementById('input-tty').checked;
+                const inputs = rawInputs.split('\n').filter(line => line.trim() !== '');
+
+                // Update Config Preview
+                configPreview.innerText = JSON.stringify({
+                    task_type: "CommandSession",
+                    sessionId: sessionId,
+                    command: startCommand === 'bash' ? ["bash", "-i"] : ["python"],
+                    inputs: inputs,
+                    tty: useTty
+                }, null, 2);
+
+                // UI Loading
+                const originalText = executeBtn.innerHTML;
+                executeBtn.disabled = true;
+                executeBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+
+                // Initialize Session State if new
+                if (!sessions[sessionId]) {
+                    sessions[sessionId] = {
+                        type: startCommand,
+                        env: { 'HOME': '/home/user' },
+                        cwd: '/home/user',
+                        vars: {} // for python mock
+                    };
+                    
+                    const initMsg = document.createElement('div');
+                    initMsg.className = 'term-line term-output';
+                    initMsg.style.color = '#8b949e';
+                    initMsg.innerText = `[System] Started new ${startCommand} session (${sessionId})...`;
+                    terminalOutput.appendChild(initMsg);
+                } else {
+                    // Check if switching types (simple warning mock)
+                    if (sessions[sessionId].type !== startCommand) {
+                        const warnMsg = document.createElement('div');
+                        warnMsg.className = 'term-line term-error';
+                        warnMsg.innerText = `[Warning] Session ${sessionId} is running ${sessions[sessionId].type}, but requested ${startCommand}. Continuing with existing session...`;
+                        terminalOutput.appendChild(warnMsg);
+                    }
+                }
+
+                const session = sessions[sessionId];
+
+                // Process Inputs
+                for (const input of inputs) {
+                    // Echo Input
+                    const promptSpan = document.createElement('span');
+                    promptSpan.className = 'term-line term-prompt';
+                    promptSpan.innerText = input;
+                    terminalOutput.appendChild(promptSpan);
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+
+                    await new Promise(r => setTimeout(r, 400)); // Simulate latency
+
+                    // Generate Output (Mock Logic)
+                    let output = "";
+                    
+                    if (session.type === 'bash') {
+                        if (input.startsWith('export ')) {
+                            const parts = input.substring(7).split('=');
+                            if (parts.length === 2) session.env[parts[0].trim()] = parts[1].trim();
+                            output = ""; // No output for export
+                        } else if (input.startsWith('cd ')) {
+                            const dir = input.substring(3).trim().replace('$PROJECT_DIR', session.env['PROJECT_DIR'] || '');
+                            session.cwd = dir;
+                            output = "";
+                        } else if (input === 'pwd') {
+                            output = session.cwd;
+                        } else if (input.startsWith('echo ')) {
+                            let text = input.substring(5).replace(/"/g, '');
+                            // Simple var replacement
+                            text = text.replace(/\$\((.*?)\)/g, (match, cmd) => {
+                                return cmd === 'pwd' ? session.cwd : '';
+                            });
+                            output = text;
+                        } else {
+                            output = `bash: ${input.split(' ')[0]}: command not found`;
+                        }
+                    } else if (session.type === 'python') {
+                        if (input.includes('=') && !input.startsWith('print')) {
+                            const parts = input.split('=');
+                            session.vars[parts[0].trim()] = parts[1].trim();
+                            output = "";
+                        } else if (input.startsWith('print')) {
+                            // Very basic mock extraction
+                            const content = input.match(/print\((.*)\)/)[1];
+                            if (content.startsWith("f'")) {
+                                // Mock f-string math
+                                output = "50"; // Hardcoded for the demo example x*y
+                            } else if (session.vars[content]) {
+                                output = session.vars[content];
+                            } else {
+                                output = content.replace(/['"]/g, '');
+                            }
+                        } else {
+                            output = `Traceback (most recent call last):\n  File "<stdin>", line 1, in <module>\nNameError: name '${input}' is not defined`;
+                        }
+                    }
+
+                    if (output) {
+                        const outSpan = document.createElement('span');
+                        outSpan.className = 'term-line term-output';
+                        outSpan.innerText = output;
+                        terminalOutput.appendChild(outSpan);
+                    }
+                    
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                }
+
+                executeBtn.disabled = false;
+                executeBtn.innerHTML = originalText;
+            });
+        });
+    </script>
+</body>
+</html>

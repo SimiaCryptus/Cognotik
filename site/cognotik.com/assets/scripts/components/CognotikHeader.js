@@ -15,18 +15,42 @@ class CognotikHeader extends HTMLElement {
             // Resolve path relative to this script file to ensure correct loading
             // regardless of where the HTML page is located.
             // ../../data/tasks.json assumes: assets/scripts/components/ -> assets/data/
-            const dataUrl = new URL('../../data/tasks.json', import.meta.url).href;
+            const baseUrl = new URL('../../data/', import.meta.url);
+            const dataUrl = new URL('tasks.json', baseUrl).href;
             
             const response = await fetch(dataUrl);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             this.data = await response.json();
+            if (this.data.navigation) {
+                await this.expandNavigation(this.data.navigation, baseUrl);
+            }
         } catch (error) {
             console.error('CognotikHeader: Failed to load navigation data.', error);
             this.shadowRoot.innerHTML = `<div style="padding:1rem; color:red;">Error loading menu.</div>`;
         }
     }
+    async expandNavigation(items, baseUrl) {
+        for (const item of items) {
+            if (item.src && !item.items) {
+                try {
+                    const url = new URL(item.src, baseUrl).href;
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const json = await response.json();
+                        item.items = Array.isArray(json) ? json : (json.items || []);
+                    }
+                } catch (e) {
+                    console.error(`Failed to load submenu ${item.src}`, e);
+                }
+            }
+            if (item.items) {
+                await this.expandNavigation(item.items, baseUrl);
+            }
+        }
+    }
+
 
     render() {
         if (!this.data) return;
@@ -35,17 +59,29 @@ class CognotikHeader extends HTMLElement {
         const currentPage = window.location.pathname.split('/').pop() || 'index.html';
         const { siteName, navigation } = this.data;
         // Find current item to check for code link
-        const findItem = (items, id) => {
+        const findPath = (items, id) => {
             for (const item of items) {
-                if (item.url === id) return item;
+                if (item.url === id) return [item];
                 if (item.items) {
-                    const found = findItem(item.items, id);
-                    if (found) return found;
+                    const subPath = findPath(item.items, id);
+                    if (subPath) return [item, ...subPath];
                 }
             }
             return null;
         };
-        const currentItem = findItem(navigation, currentPage);
+        const getFirstUrl = (item) => {
+            if (item.url) return item.url;
+            if (item.items) {
+                for (const sub of item.items) {
+                    const url = getFirstUrl(sub);
+                    if (url) return url;
+                }
+            }
+            return '#';
+        };
+        const currentPath = findPath(navigation, currentPage) || [];
+        const currentItem = currentPath[currentPath.length - 1];
+        const activeTopLevel = currentPath[0];
 
 
         // Styles scoped to the Shadow DOM
@@ -66,7 +102,7 @@ class CognotikHeader extends HTMLElement {
                     padding: 0 1.5rem;
                     height: var(--header-height, 60px);
                     display: flex;
-                    align-items: center;
+                    align-items: stretch;
                     justify-content: space-between;
                 }
                 .brand {
@@ -76,11 +112,14 @@ class CognotikHeader extends HTMLElement {
                     text-decoration: none;
                     white-space: nowrap;
                     margin-right: 1rem;
+                    display: flex;
+                    align-items: center;
                 }
                 .nav-section {
                     display: flex;
-                    align-items: center;
+                    align-items: stretch;
                     gap: 1rem;
+                    height: 100%;
                 }
                 .nav-menu {
                     display: flex;
@@ -88,10 +127,13 @@ class CognotikHeader extends HTMLElement {
                     list-style: none;
                     margin: 0;
                     padding: 0;
-                    align-items: center;
+                    align-items: stretch;
+                    height: 100%;
                 }
                 .nav-item {
                     position: relative;
+                    display: flex;
+                    align-items: center;
                 }
                 .nav-link {
                     color: var(--text-color, #e2e8f0);
@@ -108,6 +150,26 @@ class CognotikHeader extends HTMLElement {
                     color: var(--accent-color, #8b5cf6);
                     background-color: rgba(255, 255, 255, 0.05);
                 }
+                /* Secondary Nav */
+                .secondary-nav {
+                    background-color: var(--surface-color, #1e293b);
+                    border-bottom: 1px solid var(--border-color, #334155);
+                }
+                .secondary-nav .nav-menu {
+                    max-width: var(--max-width, 1200px);
+                    margin: 0 auto;
+                    padding: 0 1.5rem;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    gap: 1.5rem;
+                    list-style: none;
+                }
+                .secondary-nav .nav-link {
+                    font-size: 0.9rem;
+                    padding: 0.25rem 0.5rem;
+                }
+                
                 
                 /* Dropdown Styles */
                 .dropdown-menu {
@@ -130,13 +192,13 @@ class CognotikHeader extends HTMLElement {
                     padding: 0.5rem;
                     z-index: 1001;
                 }
-                .nav-item:hover .dropdown-menu {
+                .nav-item:hover > .dropdown-menu {
                     display: grid;
                     grid-template-columns: 1fr;
                     gap: 0.5rem;
                 }
                 @media (min-width: 769px) {
-                    .nav-item:hover .dropdown-menu {
+                    .nav-item:hover > .dropdown-menu {
                         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
                     }
                 }
@@ -286,6 +348,34 @@ class CognotikHeader extends HTMLElement {
                     left: 50%;
                     transform: translateX(-50%);
                 }
+                /* Submenu Styles */
+                .submenu-parent {
+                    position: static;
+                }
+                .submenu-bar {
+                    display: none;
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    width: 100%;
+                    background-color: var(--surface-color, #1e293b);
+                    border-bottom: 1px solid var(--border-color, #334155);
+                    z-index: 999;
+                }
+                .submenu-parent:hover .submenu-bar {
+                    display: block;
+                }
+                .submenu-bar .nav-menu {
+                    max-width: var(--max-width, 1200px);
+                    margin: 0 auto;
+                    padding: 0.5rem 1.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 1.5rem;
+                    list-style: none;
+                    height: auto;
+                }
             </style>
         `;
 
@@ -293,18 +383,32 @@ class CognotikHeader extends HTMLElement {
         const buildNavItems = (items) => {
             return items.map(item => {
                 if (item.type === 'link') {
-                    const isActive = item.id === currentPage;
+                    const isActive = currentPath.includes(item);
                     return `
                         <li class="nav-item">
                             <a href="${item.url}" class="nav-link ${isActive ? 'active' : ''}">${item.label}</a>
                         </li>
                     `;
+                } else if (item.type === 'submenu') {
+                    const hasActiveChild = item.items && item.items.some(sub => currentPath.includes(sub));
+                    return `
+                        <li class="nav-item submenu-parent">
+                            <span class="nav-link ${hasActiveChild ? 'active' : ''}">
+                                ${item.label} <span style="font-size:0.7em; margin-left:4px;">▼</span>
+                            </span>
+                            <div class="submenu-bar">
+                                <ul class="nav-menu">
+                                    ${buildNavItems(item.items || [])}
+                                </ul>
+                            </div>
+                        </li>
+                    `;
                 } else if (item.type === 'dropdown') {
                     // Check if any child is active to highlight the parent dropdown
-                    const hasActiveChild = item.items && item.items.some(sub => sub.url === currentPage);
+                    const hasActiveChild = item.items && item.items.some(sub => currentPath.includes(sub));
                     
                     const dropdownItems = item.items.map(sub => {
-                        const isSubActive = sub.url === currentPage;
+                        const isSubActive = currentPath.includes(sub);
                         const iconHtml = sub.image ? `<img src="${sub.image}" class="dropdown-icon" alt="" loading="lazy" />` : '';
                         return `
                             <a href="${sub.url}" class="dropdown-item ${isSubActive ? 'active' : ''}">

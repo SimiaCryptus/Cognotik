@@ -1,0 +1,98 @@
+[
+  {
+    "id": "runcode",
+    "label": "Run Code",
+    "url": "RunCodeTask.html",
+    "description": "Execute code snippets with oversight",
+    "image": "assets/images/runcode-hero-terminal.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/RunCodeTask.kt"
+  },
+  {
+    "id": "runtool",
+    "label": "Run Tool",
+    "url": "RunToolTask.html",
+    "description": "Execute external tools",
+    "image": "assets/images/execution-pipeline-flow.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/RunToolTask.kt"
+  },
+  {
+    "id": "autofix",
+    "label": "Auto-Fix",
+    "url": "SelfHealingTask.html",
+    "description": "Run a command and automatically fix any issues that arise",
+    "image": "assets/images/self-healing-hero-visual.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/AutoFixTask.kt"
+  },
+  {
+    "id": "crawleragent",
+    "label": "Crawler Agent",
+    "url": "CrawlerAgentTask.html",
+    "description": "Search Google, fetch top results, and analyze content",
+    "image": "assets/images/crawler-agent-hero.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/CrawlerAgentTask.kt"
+  },
+  {
+    "id": "githubsearch",
+    "label": "GitHub Search",
+    "url": "GitHubSearchTask.html",
+    "description": "Perform advanced searches across GitHub",
+    "image": "assets/images/search-path-visualization.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/GitHubSearchTask.kt"
+  },
+  {
+    "id": "subplanning",
+    "label": "Sub-Planning",
+    "url": "SubPlanningTask.html",
+    "description": "Create and execute sub-plans using recursive planning",
+    "image": "assets/images/subplanning-hero-recursive-nodes.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/SubPlanTask.kt"
+  },
+  {
+    "id": "mcptool",
+    "label": "MCP Tool",
+    "url": "MCPToolTask.html",
+    "description": "Execute tools from Model Context Protocol servers",
+    "image": "assets/images/workflow-pipeline-schematic.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/online/MCPToolTask.kt"
+  },
+  {
+    "id": "languageserver",
+    "label": "Language Server",
+    "url": "LanguageServerTask.html",
+    "description": "Query code intelligence (LSP) for definitions, references, and diagnostics",
+    "image": "assets/images/workflow-pipeline-schematic.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/run/LanguageServerTask.kt"
+  },
+  {
+    "id": "llmexperiment",
+    "label": "LLM Experiment",
+    "url": "LLMExperimentTask.html",
+    "description": "Conduct controlled experiments on LLM behavior",
+    "image": "assets/images/stability-viz.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/LLMExperimentTask.kt"
+  },
+  {
+    "id": "llmpoll",
+    "label": "LLM Poll Simulation",
+    "url": "LLMPollSimulationTask.html",
+    "description": "Simulate polls with diverse AI personas",
+    "image": "assets/images/partitioned-processing-grid.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/LLMPollSimulationTask.kt"
+  },
+  {
+    "id": "discussion",
+    "label": "Discussion",
+    "url": "DiscussionTask.html",
+    "description": "Provide insights using the LLM that are discussed with and approved by the user.",
+    "image": "assets/images/holographic-data-projection.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/file/DiscussionTask.kt"
+  },
+  {
+    "id": "commandsession",
+    "label": "Command Session",
+    "url": "CommandSessionTask.html",
+    "description": "Execute commands in a stateful, interactive session",
+    "image": "assets/images/holographic-data-projection.png",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/session/CommandSessionTask.kt"
+  }
+]

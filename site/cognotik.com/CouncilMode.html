@@ -1,0 +1,112 @@
+--- /dev/null
++++ /home/andrew/code/Cognotik/site/cognotik.com/CouncilMode.html
+@@ -0,0 +1,108 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <link href="logo.svg" rel="icon" type="image/svg+xml">
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Council Mode - Cognotik</title>
++    <link rel="stylesheet" href="assets/styles/main.css">
++    <link rel="preconnect" href="https://fonts.googleapis.com">
++    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
++    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
++    <script src="https://unpkg.com/lucide@latest"></script>
++    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
++</head>
++<body>
++    <cognotik-header current-page="council-mode"></cognotik-header>
++
++    <main>
++        <section class="hero">
++            <h1>Council Mode</h1>
++            <p class="subtitle">
++                The Boardroom of AI. A multi-agent consensus engine where distinct personas collaborate, debate, and vote to drive complex decision-making.
++            </p>
++        </section>
++
++        <section class="features">
++            <h2>Core Mechanics</h2>
++            <div class="features-grid">
++                <div class="feature-card">
++                    <i data-lucide="users"></i>
++                    <h3>Diverse Personas</h3>
++                    <p>Simulate a team of experts (e.g., CEO, CTO, QA) who maintain separate goals and reasoning states throughout the session.</p>
++                </div>
++                <div class="feature-card">
++                    <i data-lucide="vote"></i>
++                    <h3>Democratic Process</h3>
++                    <p>Agents nominate tasks based on their domain expertise, then vote to prioritize the most critical actions for the current iteration.</p>
++                </div>
++                <div class="feature-card">
++                    <i data-lucide="git-merge"></i>
++                    <h3>Iterative Refinement</h3>
++                    <p>Execution results are fed back to all council members, allowing them to update their strategies and adapt to new information.</p>
++                </div>
++            </div>
++        </section>
++
++        <section style="padding: 4rem 2rem; max-width: 1200px; margin: 0 auto;">
++            <h2>Workflow</h2>
++            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 2rem; margin-top: 2rem;">
++                <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">1. Assembly</h3>
++                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
++                    The system initializes the configured council members. By default, this includes:
++                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; color: var(--text-secondary);">
++                        <li><strong>CEO:</strong> Focuses on high-level goals and business value.</li>
++                        <li><strong>CTO:</strong> Focuses on technical feasibility and architecture.</li>
++                        <li><strong>QA:</strong> Focuses on testing and quality assurance.</li>
++                    </ul>
++                </p>
++
++                <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">2. Nomination</h3>
++                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
++                    Given the user's goal and current project context, each member independently proposes a set of tasks they believe should be done next.
++                </p>
++
++                <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">3. Voting</h3>
++                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
++                    The council reviews all nominations. Members cast votes for tasks that align with their specific objectives. This filtering process ensures that only the most robust and agreed-upon tasks proceed to execution.
++                </p>
++
++                <h3 style="color: var(--accent-primary); margin-bottom: 1rem;">4. Execution & Reporting</h3>
++                <p style="color: var(--text-secondary);">
++                    Winning tasks are executed by the system. The results are shared with the council to update their internal states. A detailed transcript of the session, including nominations and voting logic, is generated for review.
++                </p>
++            </div>
++        </section>
++
++        <section style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
++            <h2>Configuration</h2>
++            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
++                Council Mode is highly configurable. You can define custom personas to suit your specific project needs.
++            </p>
++            <pre style="background: #1e293b; padding: 1.5rem; border-radius: 8px; overflow-x: auto;"><code class="language-kotlin" style="color: #e2e8f0;">
++val councilConfig = CouncilModeConfig(
++    council = listOf(
++        ProjectManagerStrategy(
++            name = "Product Owner", 
++            description = "Prioritizes user features and roadmap alignment."
++        ),
++        ProjectManagerStrategy(
++            name = "Security Architect", 
++            description = "Ensures all code meets security standards."
++        ),
++        ProjectManagerStrategy(
++            name = "DevOps", 
++            description = "Focuses on deployment and infrastructure."
++        )
++    ),
++    maxIterations = 10,
++    maxTasksPerIteration = 3
++)
++            </code></pre>
++        </section>
++    </main>
++
++    <script>
++        lucide.createIcons();
++    </script>
++</body>
++</html>
