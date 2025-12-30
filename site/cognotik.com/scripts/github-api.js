@@ -6,6 +6,27 @@
 // Cache constants
 const CACHE_KEY = 'cognotik_release_data';
 const CACHE_EXPIRY = 3600000; // 1 hour in milliseconds (Consider localStorage for longer persistence)
+/**
+* Compares two semantic version strings
+* @param {string} v1
+* @param {string} v2
+* @returns {number} 1 if v1 > v2, -1 if v1 < v2, 0 if equal
+*/
+function compareVersions(v1, v2) {
+    const cleanV1 = v1.replace(/^v/, '');
+    const cleanV2 = v2.replace(/^v/, '');
+    const parts1 = cleanV1.split('.').map(Number);
+    const parts2 = cleanV2.split('.').map(Number);
+    const len = Math.max(parts1.length, parts2.length);
+    for (let i = 0; i < len; i++) {
+        const p1 = parts1[i] || 0;
+        const p2 = parts2[i] || 0;
+        if (p1 > p2) return 1;
+        if (p1 < p2) return -1;
+    }
+    return 0;
+}
+
 
 /**
  * Fetches the latest release information from GitHub
@@ -24,30 +45,29 @@ async function fetchLatestRelease() {
         // If no cache, fetch from GitHub API
         console.log('Fetching latest release from GitHub API');
 
-        // Try the /latest endpoint first
-        let response = await fetch('https://api.github.com/repos/SimiaCryptus/Cognotik/releases/latest');
 
-        // If that fails, try the /releases endpoint and take the first item
+
+
+
+
+
+        // Fetch releases list to sort by semantic version
+        // This avoids issues where /latest points to an older stable release or date sorting is incorrect
+        const response = await fetch('https://api.github.com/repos/SimiaCryptus/Cognotik/releases');
+
         if (!response.ok) {
-            console.log('Latest endpoint failed, trying releases list');
-            response = await fetch('https://api.github.com/repos/SimiaCryptus/Cognotik/releases');
-
-
-            if (!response.ok) {
-                throw new Error(`GitHub API error: ${response.status}`);
-            }
-
-            const releases = await response.json();
-            if (!releases || releases.length === 0) {
-                throw new Error('No releases found');
-            }
-
-            // Cache the first release from the list
-            cacheData(CACHE_KEY, releases[0]);
-            return releases[0];
+            throw new Error(`GitHub API error: ${response.status}`);
         }
 
-        const latestRelease = await response.json();
+        const releases = await response.json();
+        if (!releases || releases.length === 0) {
+            throw new Error('No releases found');
+        }
+
+        // Sort by semantic version descending
+        releases.sort((a, b) => compareVersions(b.tag_name, a.tag_name));
+
+        const latestRelease = releases[0];
 
         // Cache the data
         cacheData(CACHE_KEY, latestRelease);

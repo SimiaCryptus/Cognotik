@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.session
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.BufferedReader
@@ -104,6 +105,8 @@ class CommandSessionTask(
     )
 
     override fun promptSegment(): String {
+        val executables : List<String>? = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+            .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
         val activeSessionsInfo = activeSessions.entries.joinToString("\n") { (id, state) ->
             val pendingBytes = state.outputBuffer.length
             val alive = state.process.isAlive
@@ -120,6 +123,7 @@ class CommandSessionTask(
            System Information:
            - OS: ${System.getProperty("os.name")} ${System.getProperty("os.version")} (${System.getProperty("os.arch")})
            - Working Directory: ${System.getProperty("user.dir")}
+           - Available Tools: ${executables?.joinToString(", ") ?: "None"}
 
            Active Sessions:
            """.trimIndent() + "\n" + activeSessionsInfo
@@ -152,8 +156,22 @@ class CommandSessionTask(
                 }
 
                 sessionState = executionConfig.sessionId?.let { id -> activeSessions[id] } ?: run {
-                    val process = ProcessBuilder(executionConfig!!.command).redirectErrorStream(true).start()
-                    log.info("Started new process for command: ${executionConfig.command.joinToString(" ")}")
+                    val command = executionConfig!!.command
+                    val executable = command.firstOrNull()
+                    val resolvedCommand = if (executable != null) {
+                        val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+                        val resolvedExecutable = tools.find { it.provider?.getExecutables()?.contains(executable) == true }
+                            ?.resolve(executable)
+                        if (resolvedExecutable != null) {
+                            listOf(resolvedExecutable) + command.drop(1)
+                        } else {
+                            command
+                        }
+                    } else {
+                        command
+                    }
+                    val process = ProcessBuilder(resolvedCommand).redirectErrorStream(true).start()
+                    log.info("Started new process for command: ${resolvedCommand.joinToString(" ")}")
                     val state = SessionState(process, transcript)
                     executionConfig.sessionId?.let { id -> activeSessions[id] = state }
                     state
