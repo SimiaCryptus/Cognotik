@@ -167,21 +167,22 @@ class TaskConfigManager {
     }
 
     // Create HTML for a configuration field
-    createFieldHtml(field, existingConfig) {
+    createFieldHtml(field, existingConfig, idPrefix = 'task-field-') {
         const value = existingConfig?.[field.id] ?? field.default ?? '';
         let inputHtml = '';
+        const elementId = `${idPrefix}${field.id}`;
 
         switch (field.type) {
             case 'text':
-                inputHtml = `<input type="text" id="task-field-${field.id}" class="form-control" 
+                inputHtml = `<input type="text" id="${elementId}" class="form-control" 
                                    value="${value}" placeholder="${field.placeholder || ''}">`;
                 break;
             case 'number':
-                inputHtml = `<input type="number" id="task-field-${field.id}" class="form-control" 
+                inputHtml = `<input type="number" id="${elementId}" class="form-control" 
                                    value="${value}" min="${field.min || ''}" max="${field.max || ''}">`;
                 break;
             case 'select':
-                inputHtml = `<select id="task-field-${field.id}" class="form-control">`;
+                inputHtml = `<select id="${elementId}" class="form-control">`;
                 field.options.forEach(opt => {
                     const selected = opt === value ? 'selected' : '';
                     inputHtml += `<option value="${opt}" ${selected}>${opt}</option>`;
@@ -190,22 +191,22 @@ class TaskConfigManager {
                 break;
             case 'checkbox':
                 const checked = value === true || value === 'true' ? 'checked' : '';
-                inputHtml = `<input type="checkbox" id="task-field-${field.id}" ${checked}>`;
+                inputHtml = `<input type="checkbox" id="${elementId}" ${checked}>`;
                 break;
             case 'textarea':
                 const textValue = Array.isArray(value) ? value.join('\n') : (value || '');
                 const rows = field.rows || 5;
-                inputHtml = `<textarea id="task-field-${field.id}" class="form-control" rows="${rows}" 
+                inputHtml = `<textarea id="${elementId}" class="form-control" rows="${rows}" 
                                       placeholder="${field.placeholder || ''}">${textValue}</textarea>`;
                 break;
             case 'subtasks':
-                inputHtml = this.createSubTasksField(field, value);
+                inputHtml = this.createSubTasksField(field, value, idPrefix);
                 break;
         }
 
         return `
             <div class="form-group">
-                <label for="task-field-${field.id}">
+                <label for="${elementId}">
                     ${field.label}
                     ${field.tooltip ? `<span class="tooltip">?<span class="tooltiptext">${field.tooltip}</span></span>` : ''}
                 </label>
@@ -215,10 +216,11 @@ class TaskConfigManager {
     }
 
     // Create sub-tasks configuration field
-    createSubTasksField(field, existingSubTasks) {
+    createSubTasksField(field, existingSubTasks, idPrefix = 'task-field-') {
         const subTasks = existingSubTasks || {};
+        const elementId = `${idPrefix}${field.id}`;
         let html = `
-            <div class="subtasks-container" id="task-field-${field.id}">
+            <div class="subtasks-container" id="${elementId}">
                 <div class="subtasks-info">
                     <p>Configure which task types are available within sub-plans. 
                     Each task type can have its own configuration that will be used 

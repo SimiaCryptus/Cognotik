@@ -36,7 +36,6 @@ class PlanConfigDialog(
     val settings: OrchestrationConfig,
 ) : DialogWrapper(project) {
 
-
     private val maxTaskHistoryCharsField = JBTextField(settings.maxTaskHistoryChars.toString()).apply {
         toolTipText = "Maximum characters to retain in task history ($MIN_TASK_HISTORY-$MAX_TASK_HISTORY)"
         inputVerifier = object : InputVerifier() {

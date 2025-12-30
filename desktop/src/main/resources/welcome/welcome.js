@@ -1,6 +1,7 @@
 // These will be populated from the API
 let apiProviders = [];
 let availableModels = {};
+let cognitiveTypes = [];
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -249,6 +250,8 @@ loadApiProviders().then(() => {
     setupWizardNavigation();
     // Setup user settings modal
     setupUserSettingsModal();
+    // Load cognitive types
+    return loadCognitiveTypes();
 }).catch(error => {
     console.error('[DOMContentLoaded] Error loading API providers:', error);
     // Continue with initialization even if API providers fail to load
@@ -313,6 +316,19 @@ async function loadApiProviders() {
         throw error;
     }
 }
+async function loadCognitiveTypes() {
+    console.log('[loadCognitiveTypes] Loading cognitive types...');
+    try {
+        const response = await fetch('/cognitiveConfig/');
+        if (response.ok) {
+            cognitiveTypes = await response.json();
+            renderCognitiveModeSelection();
+        }
+    } catch (e) {
+        console.error('Error loading cognitive types:', e);
+    }
+}
+
 
 function showNotification(message, type = 'info') {
     return uiManager.showNotification(message, type);
@@ -384,16 +400,8 @@ function loadUserSettings() {
 function setupWizardNavigation() {
     console.log('[setupWizardNavigation] Setting up wizard navigation...');
     // Setup cognitive mode change handlers
-    document.querySelectorAll('input[name="cognitive-mode"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            const autoplanSettings = document.getElementById('auto-plan-settings');
-            if (this.value === 'auto-plan') {
-                autoplanSettings.style.display = 'block';
-            } else {
-                autoplanSettings.style.display = 'none';
-            }
-        });
-    });
+    // Handled dynamically by renderCognitiveModeSelection
+
     // Setup temperature slider
     const tempSlider = document.getElementById('temperature');
     const tempValue = document.getElementById('temperature-value');
@@ -431,15 +439,11 @@ function setupWizardNavigation() {
 
     // Next buttons
     document.getElementById('next-to-task-settings')?.addEventListener('click', () => {
-        const mode = document.querySelector('input[name="cognitive-mode"]:checked')?.value;
-        if (mode) {
+        const modeInput = document.querySelector('input[name="cognitive-mode"]:checked');
+        if (modeInput) {
+            const mode = modeInput.value;
+            appState.cognitiveSettings = collectCognitiveSettings(mode);
             appState.updateCognitiveMode(mode);
-            // Save auto-plan specific settings
-            if (mode === 'auto-plan') {
-                appState.updateTaskSetting('maxTaskHistoryChars', parseInt(document.getElementById('max-task-history')?.value) || 20000);
-                appState.updateTaskSetting('maxTasksPerIteration', parseInt(document.getElementById('max-tasks-per-iteration')?.value) || 3);
-                appState.updateTaskSetting('maxIterations', parseInt(document.getElementById('max-iterations')?.value) || 100);
-            }
             uiManager.navigateToStep('task-settings');
         }
     });
@@ -1015,7 +1019,7 @@ function launchSession() {
     const settings = {
         ...appState.taskSettings,
         sessionId: appState.sessionId,
-        cognitiveMode: cognitiveMode
+        cognitiveSettings: appState.cognitiveSettings || { type: cognitiveMode }
     };
     httpService.saveSessionSettings(appState.sessionId, settings)
         .then(() => {
@@ -1026,4 +1030,83 @@ function launchSession() {
             console.error('[launchSession] Error launching session:', error);
             notificationService.showNotification('Error launching session: ' + error.message, 'error');
         });
+}
+function renderCognitiveModeSelection() {
+    let container = document.getElementById('cognitive-mode-options');
+    if (!container) {
+        const existing = document.querySelector('input[name="cognitive-mode"]');
+        if (existing) {
+            container = existing.parentElement;
+            container.id = 'cognitive-mode-options';
+        }
+    }
+    if (!container) return;
+    container.innerHTML = '';
+    cognitiveTypes.forEach((type, index) => {
+        const div = document.createElement('div');
+        div.className = 'cognitive-mode-option';
+        div.style.marginBottom = '10px';
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'cognitive-mode';
+        input.id = `mode-${type.id}`;
+        input.value = type.id;
+        if (index === 0) input.checked = true;
+        const label = document.createElement('label');
+        label.htmlFor = `mode-${type.id}`;
+        label.innerHTML = type.description.trim().length === 0 ? `<strong>${type.name}</strong>` : `<strong>${type.name}</strong> - ${type.description}`;
+        label.style.marginLeft = '8px';
+        div.appendChild(input);
+        div.appendChild(label);
+        container.appendChild(div);
+        input.addEventListener('change', () => {
+            updateCognitiveSettingsUI(type);
+        });
+    });
+    if (cognitiveTypes.length > 0) {
+        updateCognitiveSettingsUI(cognitiveTypes[0]);
+    }
+}
+function updateCognitiveSettingsUI(type) {
+    let container = document.getElementById('cognitive-settings-container');
+    if (!container) {
+        container = document.getElementById('auto-plan-settings');
+        if (container) container.id = 'cognitive-settings-container';
+    }
+    if (!container) return;
+    container.innerHTML = '';
+    container.style.display = (type.configFields && type.configFields.length > 0) ? 'block' : 'none';
+    if (type.configFields && type.configFields.length > 0) {
+        const header = document.createElement('h4');
+        header.textContent = `${type.name} Settings`;
+        container.appendChild(header);
+        type.configFields.forEach(field => {
+            const html = taskConfigManager.createFieldHtml(field, {}, 'cognitive-field-');
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = html;
+            container.appendChild(wrapper);
+        });
+    }
+}
+function collectCognitiveSettings(typeId) {
+    const type = cognitiveTypes.find(t => t.id === typeId);
+    if (!type) return { type: typeId };
+    const settings = { type: typeId };
+    if (type.configFields) {
+        type.configFields.forEach(field => {
+            const elementId = `cognitive-field-${field.id}`;
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (field.type === 'checkbox') {
+                    settings[field.id] = element.checked;
+                } else if (field.type === 'number') {
+                    const val = parseFloat(element.value);
+                    settings[field.id] = isNaN(val) ? field.default : val;
+                } else {
+                    settings[field.id] = element.value;
+                }
+            }
+        });
+    }
+    return settings;
 }

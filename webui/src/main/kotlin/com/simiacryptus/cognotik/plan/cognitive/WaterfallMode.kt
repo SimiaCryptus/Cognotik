@@ -36,7 +36,7 @@ open class WaterfallMode(
     user
 ) {
     class WaterfallModeConfig(
-    ) : CognitiveModeConfig(type = CognitiveModeType.Waterfall, name = "Waterfall")
+    ) : CognitiveModeConfig(type = CognitiveModeType.Waterfall)
 
 
     private val log = LoggerFactory.getLogger(WaterfallMode::class.java)

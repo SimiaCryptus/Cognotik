@@ -178,4 +178,4 @@ open class SessionModeConfig(
         Otherwise, provide the next command to execute in the 'command' field.
         Do not create new tasks, just provide the input for the tool.
     """.trimIndent()
-) : CognitiveModeConfig(CognitiveModeType.Session, "Session")
+) : CognitiveModeConfig(CognitiveModeType.Session)

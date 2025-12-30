@@ -112,7 +112,7 @@ class SubPlanTask(
             )
             log.debug("Created sub-orchestration config with maxIterations=${subConfig.maxIterations}, maxTasksPerIteration=${subConfig.maxTasksPerIteration}")
 
-            log.info("Using cognitive mode: ${cognitiveMode.name} for sub-planning")
+            log.info("Using cognitive mode: ${cognitiveMode.type?.name} for sub-planning")
 
             // Create tabs for displaying sub-plan execution
             val tabs = TabbedDisplay(task)
@@ -152,7 +152,7 @@ class SubPlanTask(
                 appendLine()
                 appendLine("**Goal:** $planningGoal")
                 appendLine()
-                appendLine("**Cognitive Mode:** ${cognitiveMode.name}")
+                appendLine("**Cognitive Mode:** ${cognitiveMode.type?.name}")
                 appendLine()
                 if (typeConfig.purpose.isNotEmpty()) {
                     appendLine("**Purpose:** ${typeConfig.purpose}")

@@ -14,8 +14,7 @@ import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase
     visible = true
 )
 open class CognitiveModeConfig(
-    var type: CognitiveModeType<*>? = null,
-    var name: String? = null
+    var type: CognitiveModeType<*>? = null
 ) {
     class TypeIdResolver : TypeIdResolverBase() {
         override fun idFromValue(value: Any): String? {
