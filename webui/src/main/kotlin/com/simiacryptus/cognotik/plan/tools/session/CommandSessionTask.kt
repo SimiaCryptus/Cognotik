@@ -170,7 +170,9 @@ class CommandSessionTask(
                     } else {
                         command
                     }
-                    val process = ProcessBuilder(resolvedCommand).redirectErrorStream(true).start()
+                    val process = ProcessBuilder(resolvedCommand)
+                        .directory(task.resolveUserFile("."))
+                        .redirectErrorStream(true).start()
                     log.info("Started new process for command: ${resolvedCommand.joinToString(" ")}")
                     val state = SessionState(process, transcript)
                     executionConfig.sessionId?.let { id -> activeSessions[id] = state }
