@@ -29,7 +29,7 @@ open class CouncilMode(
         ProjectManagerStrategy(name = "CTO", description = "Focus on technical feasibility and architecture."),
         ProjectManagerStrategy(name = "QA", description = "Focus on testing and quality assurance.")
     )
-) : CognitiveMode(
+) : CognitiveMode<CognitiveModeConfig>(
     task,
     orchestrationConfig,
     session,

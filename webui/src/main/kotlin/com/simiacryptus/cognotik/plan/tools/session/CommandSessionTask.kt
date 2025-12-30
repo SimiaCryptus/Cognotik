@@ -94,6 +94,7 @@ class CommandSessionTask(
         @Description("Session ID for reusing existing sessions") val sessionId: String? = null,
         @Description("Timeout in milliseconds for commands to finish") val timeout: Long = TIMEOUT_MS,
         @Description("Timeout in milliseconds for output to finish") val idle_timeout: Long = TIMEOUT_MS,
+        @Description("Whether to use a pseudo-terminal (requires pty4j)") val tty: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -168,9 +169,21 @@ class CommandSessionTask(
                     } else {
                         command
                     }
-                    val process = ProcessBuilder(resolvedCommand)
-                        .directory(task.resolveUserFile("."))
-                        .redirectErrorStream(true).start()
+                    val process = if (executionConfig.tty) {
+                        try {
+                            com.pty4j.PtyProcessBuilder()
+                                .setCommand(resolvedCommand.toTypedArray())
+                                .setEnvironment(System.getenv())
+                                .setDirectory(task.resolveUserFile(".")?.absolutePath)
+                                .start()
+                        } catch (e: Throwable) {
+                            log.warn("Failed to start PTY process, falling back to ProcessBuilder", e)
+                            ProcessBuilder(resolvedCommand).directory(task.resolveUserFile(".")).redirectErrorStream(true).start()
+                        }
+                    } else {
+                        ProcessBuilder(resolvedCommand).directory(task.resolveUserFile(".")).redirectErrorStream(true).start()
+                    }
+
                     log.info("Started new process for command: ${resolvedCommand.joinToString(" ")}")
                     val state = SessionState(process, transcript)
                     executionConfig.sessionId?.let { id -> activeSessions[id] = state }
@@ -239,6 +252,7 @@ class CommandSessionTask(
                     <li><b>Send inputs:</b> Provide a list of commands to be executed sequentially in the session.</li>
                     <li><b>Stateful Sessions:</b> Reuse sessions by providing a `sessionId`. The environment (variables, current directory) persists between tasks using the same ID.</li>
                     <li><b>Manage Session Lifecycle:</b> Sessions can be explicitly closed or will be cleaned up automatically.</li>
+                    <li><b>TTY Support:</b> Set `tty` to true to allocate a pseudo-terminal (requires pty4j), enabling UI applications and TTY-dependent tools.</li>
                 </ul>
             """
         )

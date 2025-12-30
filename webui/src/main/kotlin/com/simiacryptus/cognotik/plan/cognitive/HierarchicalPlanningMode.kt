@@ -31,7 +31,7 @@ open class HierarchicalPlanningMode(
     maxConcurrency: Int = 4,
     private val maxIterations: Int = 200,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
-) : CognitiveMode(
+) : CognitiveMode<CognitiveModeConfig>(
     task,
     orchestrationConfig,
     session,

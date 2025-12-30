@@ -12,12 +12,14 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
  * which handles user input, initial planning, execution and iterative
  * thought updates.
  */
-abstract class CognitiveMode(
+abstract class CognitiveMode<U : CognitiveModeConfig>(
     val task: SessionTask,
     val orchestrationConfig: OrchestrationConfig,
     val session: Session,
-    val user: User
+    val user: User,
 ) {
+    val config : U get() = orchestrationConfig.cognitiveSettings as? U
+        ?: throw IllegalStateException("Cognitive settings not defined")
 
     /**
      * Initialize the internal cognitive state.
@@ -38,4 +40,3 @@ abstract class CognitiveMode(
 
 class CognitiveModeTypeSerializer : DynamicEnumSerializer<CognitiveModeType<*>>(CognitiveModeType::class.java)
 class CognitiveModeTypeDeserializer : DynamicEnumDeserializer<CognitiveModeType<*>>(CognitiveModeType::class.java)
-

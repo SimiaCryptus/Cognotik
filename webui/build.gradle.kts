@@ -30,7 +30,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlin")
         exclude(group = "org.slf4j")
     }
-
+    implementation(libs.pty4j)
     implementation(libs.webdrivermanager)
     implementation(libs.pdfbox)
     implementation(libs.poi)

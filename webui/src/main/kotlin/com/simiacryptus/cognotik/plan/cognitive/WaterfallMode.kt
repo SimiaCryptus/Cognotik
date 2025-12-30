@@ -29,7 +29,7 @@ open class WaterfallMode(
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser
-) : CognitiveMode(
+) : CognitiveMode<CognitiveModeConfig>(
     task,
     orchestrationConfig,
     session,

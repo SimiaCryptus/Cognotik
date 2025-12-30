@@ -23,7 +23,7 @@ open class ProtocolMode(
     session: Session,
     user: User = defaultUser,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
-) : CognitiveMode(
+) : CognitiveMode<CognitiveModeConfig>(
     task,
     orchestrationConfig,
     session,

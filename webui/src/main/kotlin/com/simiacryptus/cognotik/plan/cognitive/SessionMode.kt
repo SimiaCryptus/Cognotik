@@ -19,7 +19,7 @@ open class SessionMode(
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser
-) : CognitiveMode(
+) : CognitiveMode<CognitiveModeConfig>(
     task,
     orchestrationConfig,
     session,

@@ -35,7 +35,7 @@ open class AdaptivePlanningMode<T>(
     private val maxIterations: Int = orchestrationConfig.maxIterations,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig),
     val cognitiveStrategy: CognitiveSchemaStrategy<T>
-) : CognitiveMode(
+) : CognitiveMode<CognitiveModeConfig>(
     task,
     orchestrationConfig,
     session,

@@ -38,6 +38,7 @@ class OrchestrationConfig(
             it
         } ?: throw IllegalStateException("No default config for task type ${taskType.name}")
     }.mapKeys { it.key.name }.toMutableMap(),
+    val cognitiveSettings: CognitiveModeConfig? = cognitiveMode?.newSettings(),
     var autoFix: Boolean = false,
     val env: Map<String, String>? = mapOf(),
     val workingDir: String? = ".",
@@ -109,6 +110,7 @@ class OrchestrationConfig(
         temperature: Double = this.temperature,
         budget: Double = this.budget,
         taskSettings: MutableMap<String, TaskTypeConfig> = this.taskSettings,
+        cognitiveSettings: CognitiveModeConfig? = this.cognitiveSettings,
         autoFix: Boolean = this.autoFix,
         env: Map<String, String>? = this.env,
         workingDir: String? = this.workingDir,
@@ -126,6 +128,7 @@ class OrchestrationConfig(
         temperature = temperature,
         budget = budget,
         taskSettings = taskSettings,
+        cognitiveSettings = cognitiveSettings,
         autoFix = autoFix,
         env = env,
         workingDir = workingDir,

@@ -29,12 +29,14 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
         val PrePlanned = CognitiveModeType("PrePlanned", CognitiveModeConfig::class.java, inputCnt = PrePlannedMode.inputCnt)
 
         private val constructors by lazy {
-            val map = mutableMapOf<CognitiveModeType<*>, (SessionTask, OrchestrationConfig, Session, User) -> CognitiveMode>()
+            val map = mutableMapOf<CognitiveModeType<*>, (SessionTask, OrchestrationConfig, Session, User) -> CognitiveMode<*>>()
             fun <U : CognitiveModeConfig> register(
                 type: CognitiveModeType<U>,
-                constructor: (SessionTask, OrchestrationConfig, Session, User) -> CognitiveMode
+                constructor: (SessionTask, OrchestrationConfig, Session, User) -> CognitiveMode<U>
             ) {
-                map[type] = constructor
+                map[type] = { task, config, session, user ->
+                    constructor(task, config, session, user)
+                }
                 register(CognitiveModeType::class.java, type)
             }
 
@@ -60,11 +62,18 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
             return valueOf(CognitiveModeType::class.java, name)
         }
     }
+
     fun getImpl(
         task: SessionTask,
         orchestrationConfig: OrchestrationConfig,
         session: Session,
         user: User
-    ): CognitiveMode = (constructors[this]?.invoke(task, orchestrationConfig, session, user)
-        ?: throw IllegalStateException("No constructor for cognitive mode ${name}"))
+    ) = (constructors[this]?.invoke(task, orchestrationConfig, session, user)
+     ?: throw IllegalStateException("No constructor for cognitive mode ${name}"))
+
+    fun newSettings(): CognitiveModeConfig {
+        val instance = configClass.getDeclaredConstructor().newInstance()
+        instance.type = this
+        return instance
+    }
 }

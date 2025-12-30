@@ -32,7 +32,7 @@ open class ConversationalMode(
     session: Session,
     user: User = defaultUser,
     var useExpansionSyntax: Boolean = true
-) : CognitiveMode(
+) : CognitiveMode<CognitiveModeConfig>(
     task,
     orchestrationConfig,
     session,
