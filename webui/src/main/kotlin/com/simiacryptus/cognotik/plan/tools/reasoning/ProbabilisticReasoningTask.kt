@@ -1,13 +1,13 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -169,7 +169,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
         }
 
         // Overview tab
-        val overviewTask = ui.newTask(false)
+        val overviewTask = ui.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         val overviewContent = buildString {
@@ -191,41 +191,41 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
             appendLine()
             appendLine("*Initializing Bayesian analysis...*")
         }
-        overviewTask.add(overviewContent.renderMarkdown)
-        task.update()
+        overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent, ui = ui))
+
         val inputFileContent = getInputFileCode(agent)
         if (inputFileContent.isNotBlank()) {
             log.debug("Found input files: ${inputFileContent.length} characters")
-            val filesTask = ui.newTask(false)
+            val filesTask = ui.newTask()
             tabs["Input Files"] = filesTask.placeholder
             filesTask.add(
-                "# Input Files\n\n$inputFileContent".renderMarkdown
+                MarkdownUtil.renderMarkdown("# Input Files\n\n$inputFileContent", ui = ui)
             )
-            task.update()
+            filesTask.complete()
         }
 
         val priorContext = getPriorCode(agent.executionState)
         if (priorContext.isNotBlank()) {
             log.debug("Found prior context: ${priorContext.length} characters")
-            val contextTask = ui.newTask(false)
+            val contextTask = ui.newTask()
             tabs["Context"] = contextTask.placeholder
             contextTask.add(
-                """
+                MarkdownUtil.renderMarkdown("""
         # Prior Context
         The following context was inherited from previous tasks:
         ```
         ${priorContext.truncateForDisplay()}
         ```
-        """.trimIndent().renderMarkdown
+        """.trimIndent(), ui = ui)
             )
-            task.update()
+            contextTask.complete()
         }
         val resultBuilder = StringBuilder()
         transcript
 
         try {
             // Prior Probabilities tab
-            val priorTask = ui.newTask(false)
+            val priorTask = ui.newTask()
             tabs["Prior Probabilities"] = priorTask.placeholder
 
             val priorContent = buildString {
@@ -241,18 +241,17 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
                 appendLine()
                 appendLine("**Total:** ${String.format("%.3f", hypotheses.values.sum())}")
             }
-            priorTask.add(priorContent.renderMarkdown)
-            task.update()
+            priorTask.add(MarkdownUtil.renderMarkdown(priorContent, ui = ui))
+            priorTask.complete()
 
             overviewTask.add(
-                buildString {
+                MarkdownUtil.renderMarkdown(buildString {
                     appendLine()
                     appendLine("✅ Prior probabilities loaded")
                     appendLine()
                     appendLine("*Analyzing evidence...*")
-                }.renderMarkdown
+                }, ui = ui)
             )
-            task.update()
 
             // Create Bayesian reasoning agent
             log.info("Creating Bayesian reasoning agent")
@@ -274,18 +273,17 @@ Consider both the strength of evidence and its reliability.
             )
 
             // Bayesian Update tab
-            val updateTask = ui.newTask(false)
+            val updateTask = ui.newTask()
             tabs["Bayesian Update"] = updateTask.placeholder
 
             updateTask.add(
-                buildString {
+                MarkdownUtil.renderMarkdown(buildString {
                     appendLine("# Bayesian Update")
                     appendLine()
                     appendLine("**Status:** Calculating posterior probabilities...")
                     appendLine()
-                }.renderMarkdown
+                }, ui = ui)
             )
-            task.update()
 
             val updatePrompt = buildBayesianUpdatePrompt(
                 hypotheses,
@@ -308,7 +306,7 @@ Consider both the strength of evidence and its reliability.
 
 
             updateTask.add(
-                buildString {
+                MarkdownUtil.renderMarkdown(buildString {
                     appendLine("## Analysis Results")
                     appendLine()
                     appendLine(updateResult)
@@ -316,19 +314,18 @@ Consider both the strength of evidence and its reliability.
                     appendLine("---")
                     appendLine()
                     appendLine("**Status:** ✅ Complete")
-                }.renderMarkdown
+                }, ui = ui)
             )
-            task.update()
+            updateTask.complete()
 
             overviewTask.add(
-                buildString {
+                MarkdownUtil.renderMarkdown(buildString {
                     appendLine()
                     appendLine("✅ Bayesian update complete (${stepTime / 1000.0}s)")
                     appendLine()
                     appendLine("*Generating additional analyses...*")
-                }.renderMarkdown
+                }, ui = ui)
             )
-            task.update()
 
             resultBuilder.append("# Probabilistic Reasoning Analysis\n\n")
             resultBuilder.append("**Context:** $decisionContext\n\n")
@@ -340,18 +337,17 @@ Consider both the strength of evidence and its reliability.
             // Expected Value Analysis (if requested)
             if (executionConfig.calculate_expected_value) {
                 log.debug("Calculating expected values")
-                val evTask = ui.newTask(false)
+                val evTask = ui.newTask()
                 tabs["Expected Value"] = evTask.placeholder
 
                 evTask.add(
-                    buildString {
+                    MarkdownUtil.renderMarkdown(buildString {
                         appendLine("# Expected Value Analysis")
                         appendLine()
                         appendLine("**Status:** Calculating expected values and risks...")
                         appendLine()
-                    }.renderMarkdown
+                    }, ui = ui)
                 )
-                task.update()
 
                 val evPrompt = buildExpectedValuePrompt(
                     hypotheses,
@@ -372,7 +368,7 @@ Consider both the strength of evidence and its reliability.
 
 
                 evTask.add(
-                    buildString {
+                    MarkdownUtil.renderMarkdown(buildString {
                         appendLine("## Expected Value & Risk Analysis")
                         appendLine()
                         appendLine(evResult)
@@ -380,9 +376,9 @@ Consider both the strength of evidence and its reliability.
                         appendLine("---")
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
+                    }, ui = ui)
                 )
-                task.update()
+                evTask.complete()
 
                 resultBuilder.append("## Expected Value Analysis\n\n")
                 resultBuilder.append(evResult.take(maxDescriptionLength))
@@ -390,29 +386,27 @@ Consider both the strength of evidence and its reliability.
                 resultBuilder.append("\n\n")
 
                 overviewTask.add(
-                    buildString {
+                    MarkdownUtil.renderMarkdown(buildString {
                         appendLine()
                         appendLine("✅ Expected value analysis complete (${stepTime / 1000.0}s)")
-                    }.renderMarkdown
+                    }, ui = ui)
                 )
-                task.update()
             }
 
             // Key Uncertainties (if requested)
             if (executionConfig.identify_key_uncertainties) {
                 log.debug("Identifying key uncertainties")
-                val uncertaintyTask = ui.newTask(false)
+                val uncertaintyTask = ui.newTask()
                 tabs["Key Uncertainties"] = uncertaintyTask.placeholder
 
                 uncertaintyTask.add(
-                    buildString {
+                    MarkdownUtil.renderMarkdown(buildString {
                         appendLine("# Key Uncertainties")
                         appendLine()
                         appendLine("**Status:** Identifying critical uncertainties...")
                         appendLine()
-                    }.renderMarkdown
+                    }, ui = ui)
                 )
-                task.update()
 
                 val uncertaintyPrompt = buildUncertaintyPrompt(
                     hypotheses,
@@ -433,7 +427,7 @@ Consider both the strength of evidence and its reliability.
 
 
                 uncertaintyTask.add(
-                    buildString {
+                    MarkdownUtil.renderMarkdown(buildString {
                         appendLine("## Critical Uncertainties")
                         appendLine()
                         appendLine(uncertaintyResult)
@@ -441,9 +435,9 @@ Consider both the strength of evidence and its reliability.
                         appendLine("---")
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
+                    }, ui = ui)
                 )
-                task.update()
+                uncertaintyTask.complete()
 
                 resultBuilder.append("## Key Uncertainties\n\n")
                 resultBuilder.append(uncertaintyResult.take(maxDescriptionLength))
@@ -451,29 +445,27 @@ Consider both the strength of evidence and its reliability.
                 resultBuilder.append("\n\n")
 
                 overviewTask.add(
-                    buildString {
+                    MarkdownUtil.renderMarkdown(buildString {
                         appendLine()
                         appendLine("✅ Key uncertainties identified (${stepTime / 1000.0}s)")
-                    }.renderMarkdown
+                    }, ui = ui)
                 )
-                task.update()
             }
 
             // Experiment Suggestions (if requested)
             if (executionConfig.suggest_experiments) {
                 log.debug("Suggesting experiments")
-                val experimentTask = ui.newTask(false)
+                val experimentTask = ui.newTask()
                 tabs["Suggested Experiments"] = experimentTask.placeholder
 
                 experimentTask.add(
-                    buildString {
+                    MarkdownUtil.renderMarkdown(buildString {
                         appendLine("# Suggested Experiments")
                         appendLine()
                         appendLine("**Status:** Generating experiment recommendations...")
                         appendLine()
-                    }.renderMarkdown
+                    }, ui = ui)
                 )
-                task.update()
 
                 val experimentPrompt = buildExperimentPrompt(
                     hypotheses,
@@ -494,7 +486,7 @@ Consider both the strength of evidence and its reliability.
 
 
                 experimentTask.add(
-                    buildString {
+                    MarkdownUtil.renderMarkdown(buildString {
                         appendLine("## Recommended Experiments")
                         appendLine()
                         appendLine(experimentResult)
@@ -502,9 +494,9 @@ Consider both the strength of evidence and its reliability.
                         appendLine("---")
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
+                    }, ui = ui)
                 )
-                task.update()
+                experimentTask.complete()
 
                 resultBuilder.append("## Suggested Experiments\n\n")
                 resultBuilder.append(experimentResult.take(maxDescriptionLength))
@@ -512,12 +504,11 @@ Consider both the strength of evidence and its reliability.
                 resultBuilder.append("\n\n")
 
                 overviewTask.add(
-                    buildString {
+                    MarkdownUtil.renderMarkdown(buildString {
                         appendLine()
                         appendLine("✅ Experiment suggestions generated (${stepTime / 1000.0}s)")
-                    }.renderMarkdown
+                    }, ui = ui)
                 )
-                task.update()
             }
 
             val totalTime = System.currentTimeMillis() - startTime
@@ -536,7 +527,7 @@ Consider both the strength of evidence and its reliability.
 
             // Final overview update
             overviewTask.add(
-                buildString {
+                MarkdownUtil.renderMarkdown(buildString {
                     appendLine()
                     appendLine("---")
                     appendLine()
@@ -553,9 +544,9 @@ Consider both the strength of evidence and its reliability.
                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         }"
                     )
-                }.renderMarkdown
+                }, ui = ui)
             )
-            task.update()
+            overviewTask.complete()
 
             val finalResult = resultBuilder.toString()
             task.safeComplete(
@@ -576,7 +567,7 @@ Consider both the strength of evidence and its reliability.
             transcript?.close()
 
             overviewTask.add(
-                buildString {
+                MarkdownUtil.renderMarkdown(buildString {
                     appendLine()
                     appendLine("---")
                     appendLine()
@@ -585,9 +576,9 @@ Consider both the strength of evidence and its reliability.
                     appendLine("**Error:** ${e.message}")
                     appendLine()
                     appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
+                }, ui = ui)
             )
-            task.update()
+            overviewTask.complete()
 
             val errorOutput = buildString {
                 appendLine("# Error in Probabilistic Reasoning")

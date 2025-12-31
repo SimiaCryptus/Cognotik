@@ -69,12 +69,17 @@ class DecisionTreeTask(
             task.safeComplete("Configuration Error: $error", log)
             return
         }
+        task.header("Building Decision Tree")
+        val statusBuffer = task.add("Initializing...")
+
 
         val dataFile = root.resolve(config.data_file!!).toFile()
         if (!dataFile.exists()) {
             task.safeComplete("Data file not found: ${config.data_file}", log)
             return
         }
+        statusBuffer?.setLength(0)
+        task.update()
 
         val records = try {
             if (dataFile.extension.equals("jsonl", ignoreCase = true)) {
@@ -86,6 +91,7 @@ class DecisionTreeTask(
             task.safeComplete("Error loading data: ${e.message}", log)
             return
         }
+        statusBuffer?.append("Loaded ${records.size} records. Analyzing...")
 
         if (records.isEmpty()) {
             task.safeComplete("Data file is empty", log)
@@ -96,6 +102,7 @@ class DecisionTreeTask(
             task.safeComplete("Target column '${config.target_column}' not found. Available: $headers", log)
             return
         }
+
 
         val chatAgent = ChatAgent(
             model = defaultSmart.getChildClient(task),
@@ -126,13 +133,30 @@ class DecisionTreeTask(
             """.trimIndent()
         )
 
-        task.add(renderMarkdown("# Building Decision Tree\n\nTarget: `${config.target_column}`\nData: ${records.size} records\nMax Depth: ${config.max_depth}", ui = task.ui))
+        task.expandable("Configuration", """
+            <ul>
+              <li><b>Target:</b> ${config.target_column}</li>
+              <li><b>Data File:</b> ${config.data_file}</li>
+              <li><b>Records:</b> ${records.size}</li>
+              <li><b>Max Depth:</b> ${config.max_depth}</li>
+            </ul>
+        """.trimIndent())
 
         val tree = buildTree(records, config.target_column!!, 0, config.max_depth, config.candidate_rules, chatAgent, task)
 
         val code = generateCode(tree)
         
-        task.complete(renderMarkdown("## Generated Decision Tree Code\n\n```kotlin\n$code\n```", ui = task.ui))
+        statusBuffer?.setLength(0)
+        statusBuffer?.append("Tree construction complete.")
+        task.update()
+
+        task.header("Generated Decision Tree Code", level = 2)
+        task.add(renderMarkdown("```kotlin\n$code\n```", ui = task.ui))
+        
+        val fileUrl = task.saveFile("DecisionTree.kt", code.toByteArray())
+        task.add("Download: <a href='$fileUrl'>DecisionTree.kt</a>")
+
+        task.complete()
         resultFn(code)
     }
 
@@ -233,7 +257,7 @@ class DecisionTreeTask(
              return Leaf(dominantClass, purity, total)
         }
 
-        task.add(renderMarkdown("Depth $depth: Split on `${bestSplit.rule}` (Gain: ${"%.4f".format(bestGain)})", ui = task.ui))
+        task.add("Depth $depth: Split on <b>${bestSplit.rule}</b> (Gain: ${"%.4f".format(bestGain)})")
 
         val leftNode = buildTree(bestLeftData, target, depth + 1, maxDepth, candidateRules, agent, task)
         val rightNode = buildTree(bestRightData, target, depth + 1, maxDepth, candidateRules, agent, task)

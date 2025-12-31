@@ -97,23 +97,29 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
             
             task.ui.newTask(false).apply {
                 tabbedDisplay["Overview"] = placeholder
-                add(MarkdownUtil.renderMarkdown("""
-                    ## Structural Invariant Analysis
                     
-                    **Subject:** $subject
-                    **Transformations:** ${transformations.joinToString(", ")}
-                    **Output Format:** $format
-                """.trimIndent(), ui = task.ui))
+                header("Structural Invariant Analysis")
+                add("<b>Subject:</b> $subject")
+                add("<b>Transformations:</b> ${transformations.joinToString(", ")}")
+                add("<b>Output Format:</b> $format")
+                if (!executionConfig?.input_files.isNullOrEmpty()) {
+                    add("<b>Input Files:</b> ${executionConfig?.input_files?.joinToString(", ")}")
+                }
             }
 
             val inputFileContent = super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
             val priorCode = getPriorCode(agent.executionState)
             
             val prompt = buildPrompt(subject, transformations, format, inputFileContent, priorCode)
+            task.ui.newTask(false).apply {
+                tabbedDisplay["Prompt"] = placeholder
+                expandable("Full Prompt", "<pre>${prompt.replace("<", "&lt;")}</pre>")
+            }
+
 
             task.ui.newTask(false).apply {
                 tabbedDisplay["Analysis"] = placeholder
-                add(MarkdownUtil.renderMarkdown("Performing structural analysis... This may take a moment.", ui = task.ui))
+                add("Performing structural analysis... This may take a moment.", additionalClasses = "text-info")
             }
 
             val chatAgent = ChatAgent(
@@ -137,11 +143,13 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
                 task.safeComplete("Analysis complete. <a href='$link' target='_blank'>View Transcript</a>", log)
                 resultFn(response)
             } else {
-                task.add(MarkdownUtil.renderMarkdown(acceptButtonFooter(task.ui) {
+                val acceptLink = task.ui.hrefLink("Accept Result", "btn btn-success") {
                     val (link, _) = task.createFile("invariant_analysis_transcript.md")
                     task.complete("Analysis accepted. <a href='$link' target='_blank'>View Transcript</a>")
                     resultFn(response)
-                }, ui = task.ui))
+                }
+                task.add("<div class='p-3'>$acceptLink</div>")
+                task.complete()
             }
 
         } catch (e: Exception) {

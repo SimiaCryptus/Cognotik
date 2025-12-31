@@ -80,7 +80,7 @@ class DataTableCompilationTask(
             out.write("- Output File: ${executionConfig?.output_file}\n\n".toByteArray())
         }
 
-        task.add(MarkdownUtil.renderMarkdown("## Step 1: Collecting files from patterns"))
+        task.header("Step 1: Collecting files from patterns", level = 2)
         val result = mutableListOf<Path>()
         val basePath = Paths.get(orchestrationConfig.absoluteWorkingDir ?: ".")
         executionConfig?.file_patterns?.forEach { pattern ->
@@ -104,7 +104,7 @@ class DataTableCompilationTask(
             resultFn(errorMsg)
             return
         }
-        task.add(MarkdownUtil.renderMarkdown("Found ${matchedFiles.size} files matching the patterns"))
+        task.add("Found ${matchedFiles.size} files matching the patterns")
         transcript?.let { out ->
             out.write("## Step 1: File Collection\n\n".toByteArray())
             out.write("Found ${matchedFiles.size} files:\n\n".toByteArray())
@@ -216,8 +216,8 @@ class DataTableCompilationTask(
             ),
         )
 
-        task.add(MarkdownUtil.renderMarkdown("Identified ${rowsList.obj.rows.size} rows"))
-        task.add(MarkdownUtil.renderMarkdown("Identified ${columnsList.size} columns"))
+        task.add("Identified ${rowsList.obj.rows.size} rows")
+        task.add("Identified ${columnsList.size} columns")
         transcript?.let { out ->
             out.write("## Step 3: Row Identification\n\n".toByteArray())
             out.write("Identified ${rowsList.obj.rows.size} rows:\n\n".toByteArray())
@@ -227,19 +227,17 @@ class DataTableCompilationTask(
             out.write("\n".toByteArray())
         }
 
-        task.add(MarkdownUtil.renderMarkdown("## Step 4: Extracting cell data for each row"))
+        task.header("Step 4: Extracting cell data for each row", level = 2)
         val tableData = mutableListOf<Map<String, Any>>()
         val progressTotal = rowsList.obj.rows.size
         var progressCurrent = 0
+        val statusBuffer = task.add("Initializing extraction...")
 
         rowsList.obj.rows.forEach { row ->
             progressCurrent++
-            task.add(
-                MarkdownUtil.renderMarkdown(
-                    "Processing row ${progressCurrent}/${progressTotal}: ${row.id}",
-                    ui = task.ui
-                )
-            )
+            statusBuffer?.setLength(0)
+            statusBuffer?.append("Processing row ${progressCurrent}/${progressTotal}: ${row.id}")
+            task.update()
             val rowDataResponse = ParsedAgent(
                 name = "CellExtractor",
                 resultClass = RowData::class.java,
@@ -284,7 +282,7 @@ class DataTableCompilationTask(
             }
         }
 
-        task.add(MarkdownUtil.renderMarkdown("## Step 5: Compiling and saving data table"))
+        task.header("Step 5: Compiling and saving data table", level = 2)
 
         val outputPath = executionConfig?.output_file ?: "compiled_data.json"
         val outputFile = if (orchestrationConfig.absoluteWorkingDir != null) {
@@ -370,6 +368,7 @@ class DataTableCompilationTask(
         }
 
         resultFn(resultMessage)
+        task.complete()
     }
 
     private fun writeMarkdown(
@@ -409,7 +408,7 @@ class DataTableCompilationTask(
         val transcriptFile = "datatable_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
+        task.add(
             "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(
                     ".md"

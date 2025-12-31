@@ -300,25 +300,22 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
                 val contextTask = task.ui.newTask(false)
                 tabs["Sources"] = contextTask.placeholder
+                contextTask.header("Research Sources & Context")
+                if (fullContext.isNotBlank()) {
+                    contextTask.expandable("Input Context", fullContext.truncateForDisplay(3000).renderMarkdown)
+                }
+                if (priorContext.isNotBlank()) {
+                    contextTask.expandable("Prior Context", priorContext.truncateForDisplay(2000).renderMarkdown)
+                }
+                if (contextFiles.isNotBlank()) {
+                    contextTask.expandable("Related Files", contextFiles.truncateForDisplay(2000).renderMarkdown)
+                }
                 val contextContent = buildString {
                     appendLine("# Research Sources & Context")
-                    appendLine()
-                    if (fullContext.isNotBlank()) {
-                        appendLine("## Input Context")
-                        appendLine(fullContext.truncateForDisplay(3000))
-                        appendLine()
-                    }
-                    if (priorContext.isNotBlank()) {
-                        appendLine("## Prior Context")
-                        appendLine(priorContext.truncateForDisplay(2000))
-                        appendLine()
-                    }
-                    if (contextFiles.isNotBlank()) {
-                        appendLine("## Related Files")
-                        appendLine(contextFiles.truncateForDisplay(2000))
-                    }
+                    if (fullContext.isNotBlank()) appendLine("\n## Input Context\n${fullContext.truncateForDisplay(3000)}")
+                    if (priorContext.isNotBlank()) appendLine("\n## Prior Context\n${priorContext.truncateForDisplay(2000)}")
+                    if (contextFiles.isNotBlank()) appendLine("\n## Related Files\n${contextFiles.truncateForDisplay(2000)}")
                 }
-                contextTask.add(contextContent.renderMarkdown)
                 markdownTranscript?.write(contextContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
                 task.update()
             }
@@ -328,7 +325,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
             val analysisTask = task.ui.newTask(false)
             tabs["Analysis"] = analysisTask.placeholder
 
-            analysisTask.add(
+            val analysisBuffer = analysisTask.add(
                 buildString {
                     appendLine("# Research Analysis")
                     appendLine()
@@ -366,14 +363,15 @@ Be thorough and academic in tone.
             log.info("Research analysis complete")
 
             val analysisContent = buildString {
-                appendLine("## Research Analysis")
+                appendLine("# Research Analysis")
                 appendLine()
                 appendLine(analysisResult)
                 appendLine()
                 appendLine("**Status:** ✅ Complete")
             }
             markdownTranscript?.write(analysisContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
-            analysisTask.add(analysisContent.renderMarkdown)
+            analysisBuffer?.setLength(0)
+            analysisBuffer?.append(analysisContent.renderMarkdown)
             task.update()
 
             overviewTask.add("✅ Phase 1 Complete: Research analyzed\n".renderMarkdown)
@@ -385,7 +383,7 @@ Be thorough and academic in tone.
             val outlineTask = task.ui.newTask(false)
             tabs["Outline"] = outlineTask.placeholder
 
-            outlineTask.add(
+            val outlineBuffer = outlineTask.add(
                 buildString {
                     appendLine("# Paper Outline")
                     appendLine()
@@ -441,7 +439,7 @@ Ensure academic rigor appropriate for ${executionConfig.academic_level} level.
             log.info("Created outline with ${outline.sections.size} sections")
 
             val outlineContent = buildString {
-                appendLine("## ${outline.title}")
+                appendLine("# ${outline.title}")
                 appendLine()
                 appendLine("**Thesis:** ${outline.thesis_statement}")
                 appendLine()
@@ -473,7 +471,8 @@ Ensure academic rigor appropriate for ${executionConfig.academic_level} level.
                 appendLine("**Status:** ✅ Complete")
             }
             markdownTranscript?.write(outlineContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
-            outlineTask.add(outlineContent.renderMarkdown)
+            outlineBuffer?.setLength(0)
+            outlineBuffer?.append(outlineContent.renderMarkdown)
             task.update()
 
             resultBuilder.append("## ${outline.title}\n\n")
@@ -498,7 +497,7 @@ Ensure academic rigor appropriate for ${executionConfig.academic_level} level.
                 val sectionTask = task.ui.newTask(false)
                 tabs["Section ${sectionOutline.section_number}"] = sectionTask.placeholder
 
-                sectionTask.add(
+                val sectionBuffer = sectionTask.add(
                     buildString {
                         appendLine("# Section ${sectionOutline.section_number}: ${sectionOutline.title}")
                         appendLine()
@@ -570,9 +569,9 @@ Write in a ${executionConfig.academic_level} level academic style.
                 generatedSections.add(generatedSection)
                 cumulativeWordCount += generatedSection.word_count
 
-                sectionTask.add(
+                val sectionContent =
                     buildString {
-                        appendLine("## ${sectionOutline.title}")
+                        appendLine("# ${sectionOutline.title}")
                         appendLine()
                         appendLine(generatedSection.content)
                         appendLine()
@@ -590,9 +589,10 @@ Write in a ${executionConfig.academic_level} level academic style.
                         }
                         appendLine()
                         appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
-                )
-                markdownTranscript?.write(sectionTask.toString().toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                    }
+                sectionBuffer?.setLength(0)
+                sectionBuffer?.append(sectionContent.renderMarkdown)
+                markdownTranscript?.write(sectionContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
                 task.update()
 
                 resultBuilder.append("## ${sectionOutline.title}\n\n")
@@ -613,7 +613,7 @@ Write in a ${executionConfig.academic_level} level academic style.
             val bibliographyTask = task.ui.newTask(false)
             tabs["Bibliography"] = bibliographyTask.placeholder
 
-            bibliographyTask.add(
+            val bibBuffer = bibliographyTask.add(
                 buildString {
                     appendLine("# Bibliography")
                     appendLine()
@@ -661,7 +661,7 @@ Ensure all citations are properly formatted and complete.
             log.info("Generated ${bibliography.size} citations")
 
             val bibliographyContent = buildString {
-                appendLine("## Bibliography")
+                appendLine("# Bibliography")
                 appendLine()
                 appendLine("**Citation Style:** ${executionConfig.citation_style.uppercase()}")
                 appendLine()
@@ -685,7 +685,8 @@ Ensure all citations are properly formatted and complete.
                 }
                 appendLine("**Status:** ✅ Complete")
             }
-            bibliographyTask.add(bibliographyContent.renderMarkdown)
+            bibBuffer?.setLength(0)
+            bibBuffer?.append(bibliographyContent.renderMarkdown)
             markdownTranscript?.write(bibliographyContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             task.update()
 
@@ -706,7 +707,7 @@ Ensure all citations are properly formatted and complete.
                 val reviewTask = task.ui.newTask(false)
                 tabs["Peer Review"] = reviewTask.placeholder
 
-                reviewTask.add(
+                val reviewBuffer = reviewTask.add(
                     buildString {
                         appendLine("# Peer Review")
                         appendLine()
@@ -755,7 +756,7 @@ Format as a professional peer review.
                 log.info("Peer review generated")
 
                 val reviewContent = buildString {
-                    appendLine("## Peer Review Report")
+                    appendLine("# Peer Review Report")
                     appendLine()
                     appendLine("### Overall Assessment")
                     appendLine(review.overall_assessment)
@@ -780,7 +781,8 @@ Format as a professional peer review.
                     appendLine()
                     appendLine("**Status:** ✅ Complete")
                 }
-                reviewTask.add(reviewContent.renderMarkdown)
+                reviewBuffer?.setLength(0)
+                reviewBuffer?.append(reviewContent.renderMarkdown)
                 markdownTranscript?.write(reviewContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
                 task.update()
 
@@ -907,6 +909,10 @@ Provide the complete revised paper.
             }
 
             finalTask.add(finalPaper.renderMarkdown)
+            val filename = "Research_Paper_${System.currentTimeMillis()}.md"
+            val fileUrl = task.saveFile(filename, finalPaper.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            finalTask.add("<div class='mt-3'><a href='$fileUrl' class='btn btn-primary' target='_blank'>Download Markdown</a></div>")
+            
             markdownTranscript?.write(finalPaper.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             task.update()
 

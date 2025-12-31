@@ -1388,12 +1388,10 @@ Ensure variants maintain the core level design while adjusting challenge.
     ): String {
         return try {
             // Save complete design to file
-            val (designLink, designFile) = task.createFile("level_design.md")
-            designFile?.writeText(completeDesign)
+            val designLink = task.saveFile("level_design.md", completeDesign.toByteArray())
 
             // Save summary to file
-            val (summaryLink, summaryFile) = task.createFile("level_summary.md")
-            summaryFile?.writeText(summary)
+            val summaryLink = task.saveFile("level_summary.md", summary.toByteArray())
 
             buildString {
                 appendLine("# Level Design Generation Complete")

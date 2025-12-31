@@ -111,18 +111,21 @@ class RunToolTask(
                 }
             }
             if (orchestrationConfig.autoFix) {
-                task.add("Executing tool: <b>$tool</b>")
+                task.header("Executing tool: $tool", level = 3)
                 resultFn(execute())
                 task.complete()
             } else {
-                task.add("Proposed command to run:")
+                task.header("Proposed command to run", level = 3)
                 task.add("<pre>$commandStr</pre>")
                 val semaphore = Semaphore(0)
                 var result = "Skipped"
                 task.add(task.ui.hrefLink("Run Tool") {
                     try {
-                        task.add("Running...")
+                        val statusBuffer = task.add("Running...")
                         result = execute()
+                        statusBuffer?.setLength(0)
+                        statusBuffer?.append("<b>Execution Complete</b>")
+                        task.update()
                         task.expandable("Output", "<pre>${result.replace("<", "&lt;")}</pre>")
                         task.add(acceptButtonFooter(task.ui) {
                             semaphore.release()

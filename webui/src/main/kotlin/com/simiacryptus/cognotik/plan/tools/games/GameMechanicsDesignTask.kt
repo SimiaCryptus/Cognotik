@@ -417,7 +417,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 }\n\n---\n\n".toByteArray()
             )
-            task.update()
 
             // Gather context
             log.debug("Gathering context from prior tasks and input files")
@@ -445,7 +444,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                         }
                     }.renderMarkdown
                 )
-                task.update()
+                contextTask.complete()
             }
 
             overviewTask.add(
@@ -456,7 +455,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("**Status:** 🔄 Designing core mechanics...")
                 }.renderMarkdown
             )
-            task.update()
 
             // Step 1: Generate Core Mechanics
             log.info("Generating $numMechanics core mechanics")
@@ -464,7 +462,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             tabs["Core Mechanics"] = mechanicsTask.placeholder
 
             mechanicsTask.add("## Core Mechanics\n\n🔄 Generating mechanics...".renderMarkdown)
-            task.update()
 
             val mechanicsPrompt = buildString {
                 appendLine("Design $numMechanics core gameplay mechanics for this game:")
@@ -563,7 +560,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine()
                 }
             }.toByteArray())
-            task.update()
+            mechanicsTask.complete()
 
             // Step 2: Analyze Mechanic Interactions
             log.debug("Analyzing mechanic interactions")
@@ -571,7 +568,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             tabs["Interaction Matrix"] = interactionsTask.placeholder
 
             interactionsTask.add("## Mechanic Interactions\n\n🔄 Analyzing interactions...".renderMarkdown)
-            task.update()
 
             val interactionsPrompt = buildString {
                 appendLine("Analyze how these mechanics interact with each other:")
@@ -691,7 +687,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 appendLine("---")
                 appendLine()
             }.toByteArray())
-            task.update()
+            interactionsTask.complete()
 
             // Step 3: Progression System (if enabled)
             if (executionConfig.include_progression_system) {
@@ -700,7 +696,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 tabs["Progression System"] = progressionTask.placeholder
 
                 progressionTask.add("## Progression System\n\n🔄 Designing progression curve...".renderMarkdown)
-                task.update()
 
                 val progressionPrompt = buildString {
                     appendLine("Design a progression system for this game:")
@@ -823,7 +818,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("---")
                     appendLine()
                 }.toByteArray())
-                task.update()
+                progressionTask.complete()
             }
 
             // Step 4: Economy System (if enabled)
@@ -833,7 +828,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 tabs["Economy System"] = economyTask.placeholder
 
                 economyTask.add("## Economy System\n\n🔄 Designing resource economy...".renderMarkdown)
-                task.update()
 
                 val economyPrompt = buildString {
                     appendLine("Design an economy system for this game:")
@@ -940,7 +934,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("---")
                     appendLine()
                 }.toByteArray())
-                task.update()
+                economyTask.complete()
             }
 
             // Step 5: Balance Analysis
@@ -949,7 +943,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             tabs["Balance Analysis"] = balanceTask.placeholder
 
             balanceTask.add("## Balance Analysis\n\n🔄 Analyzing game balance...".renderMarkdown)
-            task.update()
 
             val balancePrompt = buildString {
                 appendLine("Perform a comprehensive balance analysis:")
@@ -1090,7 +1083,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 appendLine("---")
                 appendLine()
             }.toByteArray())
-            task.update()
+            balanceTask.complete()
 
             // Step 6: Playtesting Predictions
             log.debug("Generating playtesting predictions")
@@ -1098,7 +1091,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             tabs["Playtesting"] = playtestingTask.placeholder
 
             playtestingTask.add("## Playtesting Predictions\n\n🔄 Simulating player scenarios...".renderMarkdown)
-            task.update()
 
             val playtestingPrompt = buildString {
                 appendLine("Predict player behavior and engagement for $playtestingScenarios different scenarios:")
@@ -1202,7 +1194,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine()
                 }
             }.toByteArray())
-            task.update()
+            playtestingTask.complete()
 
             // Step 7: Tuning Guide (if enabled)
             if (executionConfig.generate_tuning_guide) {
@@ -1211,7 +1203,6 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 tabs["Tuning Guide"] = tuningTask.placeholder
 
                 tuningTask.add("## Tuning Guide\n\n🔄 Generating tuning parameters...".renderMarkdown)
-                task.update()
 
                 val tuningPrompt = buildString {
                     appendLine("Generate a comprehensive tuning guide:")
@@ -1314,7 +1305,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("---")
                     appendLine()
                 }.toByteArray())
-                task.update()
+                tuningTask.complete()
             }
 
             // Build final result
@@ -1384,7 +1375,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                 }\n".toByteArray()
             )
-            task.update()
+            overviewTask.complete()
 
             val relativePath = "game_mechanics_design_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
@@ -1415,7 +1406,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.complete()
 
             val errorOutput = buildString {
                 appendLine("# Error in Game Mechanics Design")

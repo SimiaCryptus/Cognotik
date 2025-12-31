@@ -101,6 +101,7 @@ open class ConversationalMode(
                     sleep(100) // Brief pause to allow batching of messages
                     val userMessage = messageBuffer.poll() ?: continue
                     val task = this.task.ui.newTask()
+                    this.task.add(task.placeholder)
                     execute(task, userMessage, parserChatter, defaultChat)
                 }
             } finally {
@@ -162,6 +163,7 @@ open class ConversationalMode(
                     log.error("Error in topic extraction", e)
                 }
             }
+            task.complete()
         } catch (e: Exception) {
             log.error("Error executing task", e)
             task.error(e)

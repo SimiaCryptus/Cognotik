@@ -117,7 +117,7 @@ class SubPlanTask(
             val tabs = TabbedDisplay(task)
 
             // Create planning context
-            val planningTask = task.ui.newTask(false)
+            val planningTask = task.ui.newTask()
             tabs["Planning"] = planningTask.placeholder
 
             // Get the planning goal
@@ -169,6 +169,7 @@ class SubPlanTask(
             }
             transcript?.write(planningInfo.toByteArray())
             planningTask.add(planningInfo.renderMarkdown)
+            planningTask.complete()
 
 
 
@@ -179,7 +180,7 @@ class SubPlanTask(
 
             fun runExecution(): String {
                 // Execute the sub-plan using the cognitive mode
-                val executionTask = task.ui.newTask(false)
+                val executionTask = task.ui.newTask()
                 tabs["Execution"] = executionTask.placeholder
 
                 log.debug("Executing sub-plan with ${contextMessages.size} context messages")
@@ -198,7 +199,7 @@ class SubPlanTask(
                 log.info("Sub-plan execution completed with ${results.size} results")
 
                 // Create summary if configured
-                val summaryTask = task.ui.newTask(false)
+                val summaryTask = task.ui.newTask()
                 tabs["Summary"] = summaryTask.placeholder
 
                 val summary = createSummary(results, planningGoal, summaryTask, orchestrationConfig)
@@ -206,6 +207,7 @@ class SubPlanTask(
                 transcript?.write(summary.toByteArray())
                 transcript?.write("\n\n".toByteArray())
                 summaryTask.add(summary.renderMarkdown)
+                summaryTask.complete()
                 tabs.update()
                 return summary
             }
@@ -213,6 +215,7 @@ class SubPlanTask(
             if (orchestrationConfig.autoFix) {
                 val summary = runExecution()
                 resultFn(summary)
+                task.complete()
             } else {
                 val semaphore = java.util.concurrent.Semaphore(0)
                 task.add(task.ui.hrefLink("▶ Run Sub-Plan", "btn btn-primary") {
@@ -230,6 +233,7 @@ class SubPlanTask(
                         }
                     }
                 })
+                task.complete()
                 semaphore.acquire()
             }
 
@@ -332,7 +336,7 @@ class SubPlanTask(
         val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
+        task.add(
             "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(
                     ".md"

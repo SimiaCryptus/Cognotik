@@ -137,6 +137,10 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             override fun getExecutables() = listOf("ruby")
             override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
         }
+        val PHP = object : ToolProvider("PHP") {
+            override fun getExecutables() = listOf("php")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
         val Gcc = object : ToolProvider("Gcc") {
             override fun getExecutables() = listOf("gcc", "g++")
             override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
@@ -278,6 +282,7 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             register(ToolProvider::class.java, Bash)
             register(ToolProvider::class.java, Zsh)
             register(ToolProvider::class.java, Powershell)
+            register(ToolProvider::class.java, PHP)
             register(ToolProvider::class.java, Ruby)
             register(ToolProvider::class.java, Gcc)
             register(ToolProvider::class.java, Make)

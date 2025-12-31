@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -213,7 +213,7 @@ class DecompositionSynthesisTask(
 
 
         // Overview tab
-        val overviewTask = ui.newTask(false)
+        val overviewTask = ui.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         val overviewContent = buildString {
@@ -232,9 +232,8 @@ class DecompositionSynthesisTask(
             appendLine()
             appendLine("⏳ Starting decomposition analysis...")
         }
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent, ui = task.ui))
         transcriptStream?.let { writeToTranscript(it, overviewContent) }
-        task.update()
 
         try {
             // Step 3: Build context from related files and dependencies
@@ -242,7 +241,7 @@ class DecompositionSynthesisTask(
             // Get context from related files and dependencies
             val context = buildContext(agent, root)
             // Context tab
-            val contextTask = ui.newTask(false)
+            val contextTask = ui.newTask()
             tabs["Context"] = contextTask.placeholder
             contextTask.add(buildString {
                 appendLine("# Task Context")
@@ -252,7 +251,7 @@ class DecompositionSynthesisTask(
                 appendLine("---")
                 appendLine()
                 appendLine(context)
-            }.renderMarkdown)
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
             transcriptStream?.let {
                 writeToTranscript(it, buildString {
                     appendLine("# Task Context")
@@ -260,19 +259,17 @@ class DecompositionSynthesisTask(
                     appendLine(context)
                 })
             }
-            task.update()
 
             // Update overview with context info
             overviewTask.add(buildString {
                 appendLine()
                 appendLine("✅ Context built successfully")
                 appendLine()
-            }.renderMarkdown)
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
             transcriptStream?.let { writeToTranscript(it, "\n✅ Context built successfully\n\n") }
-            task.update()
             // Step 4: Decompose the problem
             // Decomposition tab
-            val decompositionTask = ui.newTask(false)
+            val decompositionTask = ui.newTask()
             tabs["Decomposition"] = decompositionTask.placeholder
             decompositionTask.add(buildString {
                 appendLine("# Problem Decomposition")
@@ -281,8 +278,7 @@ class DecompositionSynthesisTask(
                 appendLine()
                 appendLine("**Strategy:** ${executionConfig.decomposition_strategy}")
                 appendLine("**Max Depth:** ${executionConfig.max_depth}")
-            }.renderMarkdown)
-            task.update()
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
             transcriptStream?.let {
                 writeToTranscript(it, buildString {
                     appendLine("# Problem Decomposition")
@@ -331,8 +327,7 @@ class DecompositionSynthesisTask(
                     }
                 }
                 appendLine()
-            }.renderMarkdown)
-            task.update()
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
             transcriptStream?.let {
                 writeToTranscript(it, buildString {
                     appendLine()
@@ -368,25 +363,23 @@ class DecompositionSynthesisTask(
             overviewTask.add(buildString {
                 appendLine("✅ Decomposition complete: ${decomposition.subproblems.size} subproblems identified")
                 appendLine()
-            }.renderMarkdown)
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
             transcriptStream?.let {
                 writeToTranscript(
                     it,
                     "\n✅ Decomposition complete: ${decomposition.subproblems.size} subproblems\n\n"
                 )
             }
-            task.update()
 
             // Subproblem Solutions tab
-            val solutionsTask = ui.newTask(false)
+            val solutionsTask = ui.newTask()
             tabs["Subproblem Solutions"] = solutionsTask.placeholder
             solutionsTask.add(buildString {
                 appendLine("# Subproblem Solutions")
                 appendLine()
                 appendLine("⏳ Solving ${decomposition.subproblems.size} subproblems...")
                 appendLine()
-            }.renderMarkdown)
-            task.update()
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
             transcriptStream?.let {
                 writeToTranscript(it, buildString {
                     appendLine("# Subproblem Solutions")
@@ -417,8 +410,7 @@ class DecompositionSynthesisTask(
                         appendLine()
                         appendLine("**Progress:** ${count}/${decomposition.subproblems.size} subproblems solved")
                         appendLine()
-                    }.renderMarkdown)
-                    task.update()
+                    }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
                     transcriptStream?.let {
                         writeToTranscript(it, buildString {
                             appendLine()
@@ -434,8 +426,7 @@ class DecompositionSynthesisTask(
                     overviewTask.add(buildString {
                         appendLine("⏳ Solving subproblems: ${count}/${decomposition.subproblems.size}")
                         appendLine()
-                    }.renderMarkdown)
-                    task.update()
+                    }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
                 }
             )
 
@@ -445,8 +436,7 @@ class DecompositionSynthesisTask(
                 appendLine()
                 appendLine("**Average Confidence:** ${(solutions.map { it.confidence }.average() * 100).toInt()}%")
                 appendLine()
-            }.renderMarkdown)
-            task.update()
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
             transcriptStream?.let {
                 writeToTranscript(it, buildString {
                     appendLine()
@@ -463,21 +453,19 @@ class DecompositionSynthesisTask(
             overviewTask.add(buildString {
                 appendLine("✅ All ${solutions.size} subproblems solved")
                 appendLine()
-            }.renderMarkdown)
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
             transcriptStream?.let { writeToTranscript(it, "\n✅ All ${solutions.size} subproblems solved\n\n") }
-            task.update()
 
             val finalResult = if (executionConfig.synthesize_solution) {
                 // Synthesis tab
-                val synthesisTask = ui.newTask(false)
+                val synthesisTask = ui.newTask()
                 tabs["Synthesis"] = synthesisTask.placeholder
                 synthesisTask.add(buildString {
                     appendLine("# Solution Synthesis")
                     appendLine()
                     appendLine("⏳ Integrating ${solutions.size} subproblem solutions...")
                     appendLine()
-                }.renderMarkdown)
-                task.update()
+                }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
                 transcriptStream?.let {
                     writeToTranscript(it, buildString {
                         appendLine("# Solution Synthesis")
@@ -511,8 +499,7 @@ class DecompositionSynthesisTask(
                     appendLine()
                     appendLine(synthesized.solution)
                     appendLine()
-                }.renderMarkdown)
-                task.update()
+                }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
                 transcriptStream?.let {
                     writeToTranscript(it, buildString {
                         appendLine()
@@ -529,8 +516,7 @@ class DecompositionSynthesisTask(
                 overviewTask.add(buildString {
                     appendLine("✅ Solution synthesized (confidence: ${(synthesized.confidence * 100).toInt()}%)")
                     appendLine()
-                }.renderMarkdown)
-                task.update()
+                }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
                 transcriptStream?.let {
                     writeToTranscript(
                         it,
@@ -542,15 +528,14 @@ class DecompositionSynthesisTask(
                 // Validate coherence if requested
                 if (executionConfig.validate_coherence) {
                     // Validation tab
-                    val validationTask = ui.newTask(false)
+                    val validationTask = ui.newTask()
                     tabs["Validation"] = validationTask.placeholder
                     validationTask.add(buildString {
                         appendLine("# Coherence Validation")
                         appendLine()
                         appendLine("⏳ Validating solution coherence...")
                         appendLine()
-                    }.renderMarkdown)
-                    task.update()
+                    }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
                     transcriptStream?.let {
                         writeToTranscript(it, buildString {
                             appendLine("# Coherence Validation")
@@ -596,8 +581,7 @@ class DecompositionSynthesisTask(
                             appendLine("*No issues or suggestions - solution is coherent and complete*")
                             appendLine()
                         }
-                    }.renderMarkdown)
-                    task.update()
+                    }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
                     transcriptStream?.let {
                         writeToTranscript(it, buildString {
                             appendLine()
@@ -621,15 +605,14 @@ class DecompositionSynthesisTask(
                     overviewTask.add(buildString {
                         appendLine("✅ Validation complete: ${if (validation.is_coherent) "coherent" else "issues found"}")
                         appendLine()
-                    }.renderMarkdown)
-                    task.update()
+                    }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
                     transcriptStream?.let { writeToTranscript(it, "\n✅ Validation complete\n\n") }
                 }
 
                 synthesized.solution
             } else {
                 log.info("Skipping synthesis, returning individual subproblem solutions")
-                overviewTask.add("ℹ️ Synthesis skipped - returning individual solutions\n\n".renderMarkdown)
+                overviewTask.add(MarkdownUtil.renderMarkdown("ℹ️ Synthesis skipped - returning individual solutions\n\n", ui = task.ui))
                 // Just return the subproblem solutions
                 solutions.joinToString("\n\n") { "${it.subproblem_id}:\n${it.solution}" }
             }
@@ -655,8 +638,7 @@ class DecompositionSynthesisTask(
                     appendLine("**Validation:** ✅ Complete")
                 }
                 appendLine()
-            }.renderMarkdown)
-            task.update()
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
             transcriptStream?.let {
                 writeToTranscript(it, buildString {
                     appendLine()
@@ -691,8 +673,7 @@ class DecompositionSynthesisTask(
                 appendLine("**Error Type:** ${e.javaClass.simpleName}")
                 appendLine("**Message:** ${e.message ?: "Unknown error"}")
                 appendLine()
-            }.renderMarkdown)
-            task.update()
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
 
             resultFn("ERROR: ${e.message}")
         } finally {
@@ -841,8 +822,7 @@ class DecompositionSynthesisTask(
                 appendLine()
                 appendLine("Dependencies have been adjusted to allow execution to proceed.")
                 appendLine()
-            }.renderMarkdown)
-            task.update()
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
         }
 
         log.info("Solving ${sortedSubproblems.size} subproblems in dependency order")

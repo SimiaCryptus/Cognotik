@@ -109,7 +109,6 @@ class EthicalReasoningTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         val startTime = System.currentTimeMillis()
-        messages + super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
         log.info("Starting EthicalReasoning task for dilemma: ${executionConfig?.ethical_dilemma?.truncateForDisplay(200)}")
         // Validate configuration first
         executionConfig?.validate()?.let { validationError ->
@@ -142,9 +141,10 @@ class EthicalReasoningTask(
 
         val ui = task.ui
         val api = defaultSmart ?: return
+        val (transcript, transcriptLinks) = createTranscript(task)
+        task.add("Report: $transcriptLinks")
         val tabs = TabbedDisplay(task)
-        val transcript = transcript(task)
-        val overviewTask = task.ui.newTask(false)
+        val overviewTask = task.ui.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         try {
@@ -174,7 +174,6 @@ class EthicalReasoningTask(
         """.trimMargin(), ui = ui
                 )
             )
-            task.update()
 
             val priorContext = getPriorCode(agent.executionState)
             val fullContext = buildString {
@@ -191,20 +190,19 @@ class EthicalReasoningTask(
             }
 
             if (fullContext.isNotBlank()) {
-                val contextTask = task.ui.newTask(false)
+                val contextTask = task.ui.newTask()
                 tabs["Context"] = contextTask.placeholder
                 contextTask.add(MarkdownUtil.renderMarkdown("## Analysis Context\n\n$fullContext", ui = ui))
-                task.update()
+                contextTask.complete()
             }
 
             // Step 1: Dilemma & Stakeholder Analysis
             log.debug("Analyzing dilemma and stakeholders")
-            val analysisTask = task.ui.newTask(false)
+            val analysisTask = task.ui.newTask()
             tabs["Dilemma Analysis"] = analysisTask.placeholder
             val analysisLoading = analysisTask.add(
                 MarkdownUtil.renderMarkdown("## Dilemma & Stakeholder Analysis\n\n🔄 Analyzing...", ui = ui)
             )
-            task.update()
 
             val analysisPrompt = """
 You are an expert in ethical analysis. Your first task is to deconstruct the provided ethical dilemma and analyze the stakeholders.
@@ -242,7 +240,7 @@ Provide a detailed analysis.
                     ui = ui
                 )
             )
-            task.update()
+            analysisTask.complete()
 
             overviewTaskStatus?.clear()
             overviewTaskStatus = overviewTask.add(
@@ -256,19 +254,17 @@ Provide a detailed analysis.
         """.trimMargin(), ui = ui
                 )
             )
-            task.update()
 
             // Step 2: Framework Application
             val frameworkAnalyses = mutableMapOf<String, String>()
             for (framework in frameworks) {
                 val capitalizedFramework = framework.replaceFirstChar { it.titlecase() }
                 log.debug("Applying framework: $framework")
-                val frameworkTask = task.ui.newTask(false)
+                val frameworkTask = task.ui.newTask()
                 tabs["Framework: $capitalizedFramework"] = frameworkTask.placeholder
                 val frameworkLoading = frameworkTask.add(
                     MarkdownUtil.renderMarkdown("## $capitalizedFramework Analysis\n\n🔄 Applying framework...", ui = ui)
                 )
-                task.update()
 
                 val frameworkPrompt = """
 You are an expert specializing in the **$capitalizedFramework** ethical framework.
@@ -308,17 +304,16 @@ Provide a clear and structured analysis.
                         ui = ui
                     )
                 )
-                task.update()
+                frameworkTask.complete()
             }
 
             // Step 3: Synthesis and Recommendation
             log.debug("Synthesizing framework analyses")
-            val synthesisTask = task.ui.newTask(false)
+            val synthesisTask = task.ui.newTask()
             tabs["Synthesis"] = synthesisTask.placeholder
             val synthesisLoading = synthesisTask.add(
                 MarkdownUtil.renderMarkdown("## Synthesis & Recommendation\n\n🔄 Synthesizing results...", ui = ui)
             )
-            task.update()
 
             val synthesisPrompt = """
 You are a master ethicist. Your task is to synthesize the analyses from multiple ethical frameworks to provide a final, balanced recommendation.
@@ -346,7 +341,7 @@ Provide a detailed synthesis and a clear final recommendation.
 
             synthesisLoading?.clear()
             synthesisTask.add(MarkdownUtil.renderMarkdown("## Synthesis & Recommendation\n\n$synthesis", ui = ui))
-            task.update()
+            synthesisTask.complete()
 
             // Final result and overview update
             val finalRecommendationSummary = chatAgent.answer(
@@ -390,7 +385,7 @@ Provide a detailed synthesis and a clear final recommendation.
         """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            overviewTask.complete()
 
             val finalResult = buildString {
                 appendLine("# Ethical Reasoning Summary")
@@ -435,7 +430,6 @@ Provide a detailed synthesis and a clear final recommendation.
             """.trimMargin(), ui = ui
                 )
             )
-            task.update()
             task.error(e)
             task.safeComplete("Analysis failed: ${e.message}", log)
             resultFn("ERROR: Ethical reasoning analysis failed - ${e.message}")
@@ -478,18 +472,12 @@ Provide a detailed synthesis and a clear final recommendation.
         file.readText()
     }
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
+    private fun createTranscript(task: SessionTask): Pair<FileOutputStream?, String> {
         val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
+        val links = "<a href='$link' target='_blank'>Markdown</a> | <a href='${link.removeSuffix(".md")}.html' target='_blank'>HTML</a> | <a href='${link.removeSuffix(".md")}.pdf' target='_blank'>PDF</a>"
+        return Pair(markdownTranscript, links)
     }
 
 }

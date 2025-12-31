@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -121,6 +122,22 @@ class RunCodeTask(
                 transcript?.write("## Execution Result\n".toByteArray())
                 transcript?.write("**Result Value:**\n```\n${response.result.resultValue}\n```\n\n".toByteArray())
                 transcript?.write("**Output:**\n```\n${response.result.resultOutput}\n```\n\n".toByteArray())
+                val markdown = """
+                    ### Code
+                    $TRIPLE_TILDE${runtime.name.lowercase().replace("runtime", "")}
+                    ${request.messages}
+                    $TRIPLE_TILDE
+                    ### Result
+                    $TRIPLE_TILDE
+                    ${response.result.resultValue}
+                    $TRIPLE_TILDE
+                    ### Output
+                    $TRIPLE_TILDE
+                    ${response.result.resultOutput}
+                    $TRIPLE_TILDE
+                """.trimIndent()
+                task.expandable("Execution Details", MarkdownUtil.renderMarkdown(markdown, ui = task.ui))
+
 
                 if (orchestrationConfig.autoFix) {
                     if (autoRunCounter.incrementAndGet() <= 1) {
@@ -188,11 +205,13 @@ class RunCodeTask(
         try {
             semaphore.acquire()
         } catch (e: Throwable) {
+            task.error(e)
             transcript?.write("## Error\n```\n${e.message}\n${e.stackTraceToString()}\n```\n\n".toByteArray())
             log.warn("Error", e)
         } finally {
             transcript?.write("\n## Task Completed\n".toByteArray())
             transcript?.close()
+            task.complete()
         }
     }
 

@@ -118,25 +118,24 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
         val overviewTask = ui.newTask(false)
         tabs["Overview"] = overviewTask.placeholder
 
-        val overviewContent = buildString {
-            appendLine("# Dialectical Reasoning Analysis")
-            appendLine()
-            appendLine("**Context:** $context")
-            appendLine()
-            appendLine("**Synthesis Levels:** $synthesisLevels")
-            appendLine()
-            appendLine("**Preserve Strengths:** ${if (preserveStrengths) "Yes" else "No"}")
-            appendLine()
-            appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
-            appendLine()
-            appendLine("---")
-            appendLine()
-            appendLine("## Progress")
-            appendLine()
-            appendLine("*Initializing dialectical analysis...*")
-        }
-        overviewTask.add(overviewContent.renderMarkdown)
-        task.update()
+        overviewTask.header("Dialectical Reasoning Analysis", level = 1)
+        overviewTask.add(
+            buildString {
+                appendLine("**Context:** $context")
+                appendLine()
+                appendLine("**Synthesis Levels:** $synthesisLevels")
+                appendLine()
+                appendLine("**Preserve Strengths:** ${if (preserveStrengths) "Yes" else "No"}")
+                appendLine()
+                appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+                appendLine()
+                appendLine("---")
+                appendLine()
+                appendLine("## Progress")
+                appendLine()
+                appendLine("*Initializing dialectical analysis...*")
+            }.renderMarkdown
+        )
         transcriptStream?.write(
             """
       |# Dialectical Reasoning Analysis
@@ -158,24 +157,13 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
         if (priorContext.isNotBlank() || relatedFilesContent.isNotBlank()) {
             val contextTask = ui.newTask(false)
             tabs["Context"] = contextTask.placeholder
-            contextTask.add(
-                buildString {
-                    appendLine("# Context Information")
-                    appendLine()
-                    if (priorContext.isNotBlank()) {
-                        appendLine("## Prior Task Results")
-                        appendLine()
-                        appendLine(priorContext.truncateForDisplay())
-                        appendLine()
-                    }
-                    if (relatedFilesContent.isNotBlank()) {
-                        appendLine("## Related Files")
-                        appendLine()
-                        appendLine(relatedFilesContent.truncateForDisplay())
-                    }
-                }.renderMarkdown
-            )
-            task.update()
+            contextTask.header("Context Information", level = 1)
+            if (priorContext.isNotBlank()) {
+                contextTask.expandable("Prior Task Results", priorContext.truncateForDisplay().renderMarkdown)
+            }
+            if (relatedFilesContent.isNotBlank()) {
+                contextTask.expandable("Related Files", relatedFilesContent.truncateForDisplay().renderMarkdown)
+            }
             transcriptStream?.write(
                 """
         |## Context Information
@@ -207,16 +195,8 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
             val thesisTask = ui.newTask(false)
             tabs["Thesis"] = thesisTask.placeholder
 
-            thesisTask.add(
-                buildString {
-                    appendLine("# Thesis Analysis")
-                    appendLine()
-                    appendLine("**Statement:** $thesis")
-                    appendLine()
-                    appendLine("*Analyzing...*")
-                }.renderMarkdown
-            )
-            task.update()
+            thesisTask.header("Thesis Analysis", level = 1)
+            thesisTask.add("**Statement:** $thesis\n\n*Analyzing...*".renderMarkdown)
 
             val thesisAgent = ChatAgent(
                 prompt = """
@@ -263,19 +243,9 @@ Be thorough and objective in your analysis.
       """.trimMargin().toByteArray()
             )
 
-            thesisTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("## Analysis")
-                    appendLine()
-                    appendLine(thesisAnalysis)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete (${thesisTime / 1000.0}s)")
-                }.renderMarkdown
-            )
-            task.update()
+            thesisTask.header("Analysis", level = 2)
+            thesisTask.add(thesisAnalysis.renderMarkdown)
+            thesisTask.add("<hr/>\n**Status:** ✅ Complete (${thesisTime / 1000.0}s)".renderMarkdown)
 
             overviewTask.add(
                 buildString {
@@ -285,23 +255,14 @@ Be thorough and objective in your analysis.
                     appendLine("*Analyzing antithesis...*")
                 }.renderMarkdown
             )
-            task.update()
 
             // Step 2: Analyze Antithesis
             log.info("Analyzing antithesis")
             val antithesisTask = ui.newTask(false)
             tabs["Antithesis"] = antithesisTask.placeholder
 
-            antithesisTask.add(
-                buildString {
-                    appendLine("# Antithesis Analysis")
-                    appendLine()
-                    appendLine("**Statement:** $antithesis")
-                    appendLine()
-                    appendLine("*Analyzing...*")
-                }.renderMarkdown
-            )
-            task.update()
+            antithesisTask.header("Antithesis Analysis", level = 1)
+            antithesisTask.add("**Statement:** $antithesis\n\n*Analyzing...*".renderMarkdown)
 
             val antithesisAgent = ChatAgent(
                 prompt = """
@@ -352,19 +313,9 @@ Be thorough and objective in your analysis.
       """.trimMargin().toByteArray()
             )
 
-            antithesisTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("## Analysis")
-                    appendLine()
-                    appendLine(antithesisAnalysis)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete (${antithesisTime / 1000.0}s)")
-                }.renderMarkdown
-            )
-            task.update()
+            antithesisTask.header("Analysis", level = 2)
+            antithesisTask.add(antithesisAnalysis.renderMarkdown)
+            antithesisTask.add("<hr/>\n**Status:** ✅ Complete (${antithesisTime / 1000.0}s)".renderMarkdown)
 
             overviewTask.add(
                 buildString {
@@ -374,21 +325,14 @@ Be thorough and objective in your analysis.
                     appendLine("*Exploring contradictions...*")
                 }.renderMarkdown
             )
-            task.update()
 
             // Step 3: Explore Contradictions
             log.info("Exploring contradictions and tensions")
             val contradictionsTask = ui.newTask(false)
             tabs["Contradictions"] = contradictionsTask.placeholder
 
-            contradictionsTask.add(
-                buildString {
-                    appendLine("# Contradictions & Tensions")
-                    appendLine()
-                    appendLine("*Analyzing...*")
-                }.renderMarkdown
-            )
-            task.update()
+            contradictionsTask.header("Contradictions & Tensions", level = 1)
+            contradictionsTask.add("*Analyzing...*".renderMarkdown)
 
             val contradictionsAgent = ChatAgent(
                 prompt = """
@@ -436,19 +380,9 @@ Be thorough in exploring the dialectical tension.
       """.trimMargin().toByteArray()
             )
 
-            contradictionsTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("## Analysis")
-                    appendLine()
-                    appendLine(contradictionsAnalysis)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete (${contradictionsTime / 1000.0}s)")
-                }.renderMarkdown
-            )
-            task.update()
+            contradictionsTask.header("Analysis", level = 2)
+            contradictionsTask.add(contradictionsAnalysis.renderMarkdown)
+            contradictionsTask.add("<hr/>\n**Status:** ✅ Complete (${contradictionsTime / 1000.0}s)".renderMarkdown)
 
             overviewTask.add(
                 buildString {
@@ -458,7 +392,6 @@ Be thorough in exploring the dialectical tension.
                     appendLine("*Generating synthesis (Level 1)...*")
                 }.renderMarkdown
             )
-            task.update()
 
             // Step 4: Iterative Synthesis
             var currentThesis = thesis
@@ -473,14 +406,8 @@ Be thorough in exploring the dialectical tension.
                 val synthesisTask = ui.newTask(false)
                 tabs["Synthesis L$level"] = synthesisTask.placeholder
 
-                synthesisTask.add(
-                    buildString {
-                        appendLine("# Synthesis - Level $level")
-                        appendLine()
-                        appendLine("*Generating higher-level synthesis...*")
-                    }.renderMarkdown
-                )
-                task.update()
+                synthesisTask.header("Synthesis - Level $level", level = 1)
+                synthesisTask.add("*Generating higher-level synthesis...*".renderMarkdown)
 
                 val synthesisPrompt = if (level == 1) {
                     """
@@ -578,19 +505,9 @@ Aim for progressively deeper insight and integration.
                     resultBuilder.append("${synthesis.truncateForDisplay(maxDescriptionLength)}\n\n")
                 }
 
-                synthesisTask.add(
-                    buildString {
-                        appendLine()
-                        appendLine("## Result")
-                        appendLine()
-                        appendLine(synthesis)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete (${synthesisTime / 1000.0}s)")
-                    }.renderMarkdown
-                )
-                task.update()
+                synthesisTask.header("Result", level = 2)
+                synthesisTask.add(synthesis.renderMarkdown)
+                synthesisTask.add("<hr/>\n**Status:** ✅ Complete (${synthesisTime / 1000.0}s)".renderMarkdown)
 
                 overviewTask.add(
                     buildString {
@@ -602,7 +519,6 @@ Aim for progressively deeper insight and integration.
                         }
                     }.renderMarkdown
                 )
-                task.update()
             }
 
             // Step 5: Final Integration
@@ -610,14 +526,8 @@ Aim for progressively deeper insight and integration.
             val integrationTask = ui.newTask(false)
             tabs["Final Integration"] = integrationTask.placeholder
 
-            integrationTask.add(
-                buildString {
-                    appendLine("# Final Integration")
-                    appendLine()
-                    appendLine("*Synthesizing all levels...*")
-                }.renderMarkdown
-            )
-            task.update()
+            integrationTask.header("Final Integration", level = 1)
+            integrationTask.add("*Synthesizing all levels...*".renderMarkdown)
 
             val integrationAgent = ChatAgent(
                 prompt = """
@@ -666,19 +576,9 @@ Be comprehensive yet concise in your final integration.
             resultBuilder.append("## Final Integration\n\n")
             resultBuilder.append(finalIntegration)
 
-            integrationTask.add(
-                buildString {
-                    appendLine()
-                    appendLine("## Result")
-                    appendLine()
-                    appendLine(finalIntegration)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete (${integrationTime / 1000.0}s)")
-                }.renderMarkdown
-            )
-            task.update()
+            integrationTask.header("Result", level = 2)
+            integrationTask.add(finalIntegration.renderMarkdown)
+            integrationTask.add("<hr/>\n**Status:** ✅ Complete (${integrationTime / 1000.0}s)".renderMarkdown)
 
             val totalTime = System.currentTimeMillis() - startTime
             log.info("DialecticalReasoningTask completed: total_time=${totalTime}ms, synthesis_levels=$synthesisLevels, output_size=${resultBuilder.length} chars")
@@ -704,7 +604,6 @@ Be comprehensive yet concise in your final integration.
                     )
                 }.renderMarkdown
             )
-            task.update()
             transcriptStream?.write(
                 """
         |
@@ -742,7 +641,6 @@ Be comprehensive yet concise in your final integration.
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            task.update()
             transcriptStream?.write(
                 """
         |
@@ -807,7 +705,7 @@ Be comprehensive yet concise in your final integration.
             val transcriptFile = "dialectical_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
             val transcriptStream = file?.outputStream()
-            task.complete(
+            task.add(
                 "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
                         "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
                         "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"

@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -98,6 +99,8 @@ TableCompilation - Generate structured tables with AI-computed cell values
     orchestrationConfig: OrchestrationConfig
   ) {
     executionConfig?.validate()?.let { errorMessage ->
+      task.error(RuntimeException(errorMessage))
+      task.complete()
       resultFn("VALIDATION ERROR: $errorMessage")
       return
     }
@@ -110,13 +113,8 @@ TableCompilation - Generate structured tables with AI-computed cell values
     val ui = task.ui
     val api = defaultSmart.getChildClient(task)
 
-    task.add(MarkdownUtil.renderMarkdown("## Table Compilation", ui = ui))
-    task.add(
-      MarkdownUtil.renderMarkdown(
-        "Generating ${rows.size}x${columns.size} table with partition size $partitionSize",
-        ui = ui
-      )
-    )
+    task.header("Table Compilation")
+    task.add("Generating ${rows.size}x${columns.size} table with partition size $partitionSize")
 
     // Initialize the results table
     val cellResults = Array(rows.size) { Array(columns.size) { "" } }
@@ -127,17 +125,16 @@ TableCompilation - Generate structured tables with AI-computed cell values
 
     val totalPartitions = rowPartitions.size * colPartitions.size
     var completedPartitions = 0
+    val statusBuffer = task.add("Starting processing...")
+
 
     // Process each partition
     for (rowPartition in rowPartitions) {
       for (colPartition in colPartitions) {
         completedPartitions++
-        task.add(
-          MarkdownUtil.renderMarkdown(
-            "Processing partition $completedPartitions/$totalPartitions...",
-            ui = ui
-          )
-        )
+        statusBuffer?.setLength(0)
+        statusBuffer?.append("Processing partition $completedPartitions/$totalPartitions...")
+        task.update()
 
         val partitionCells = mutableListOf<Triple<Int, Int, String>>() // rowIdx, colIdx, query
         for (rowIdx in rowPartition) {
@@ -182,14 +179,20 @@ Keep responses concise (typically 1-3 sentences or a few words/numbers as approp
         }
       }
     }
+    statusBuffer?.setLength(0)
+    statusBuffer?.append("Processing complete.")
+    task.update()
+    val formattedTable = formatAsHtml(rows, columns, cellResults)
+    val csvResult = formatAsCsv(rows, columns, cellResults)
 
     val jsonResult = formatAsJson(rows, columns, cellResults)
-    task.hideable("```json\n$jsonResult\n```")
-    // Format output
-    val formattedTable = formatAsHtml(rows, columns, cellResults)
 
-    task.add(MarkdownUtil.renderMarkdown("### Generated Table\n\n$formattedTable", ui = ui))
-    task.complete("Table compilation complete")
+    val tabs = TabbedDisplay(task)
+    tabs["Table"] = formattedTable
+    tabs["CSV"] = "<pre>$csvResult</pre>"
+    tabs["JSON"] = "<pre>$jsonResult</pre>"
+
+    task.complete()
     resultFn(formattedTable)
   }
 

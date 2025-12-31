@@ -120,10 +120,10 @@ open class AdaptivePlanningMode(
                     val ui = task.ui
                     val iterationTabbedDisplay = TabbedDisplay(task, additionalClasses = "iteration")
 
-                    ui.newTask(false).apply {
+                    ui.newTask().apply {
                         iterationTabbedDisplay["Inputs"] = placeholder
                         val inputTabs = TabbedDisplay(this)
-                        ui.newTask(false).apply {
+                        ui.newTask().apply {
                             inputTabs["Project Info"] = placeholder
                             contextData().forEach {
                                 complete(renderMarkdown(it, tabs = false))
@@ -131,13 +131,13 @@ open class AdaptivePlanningMode(
                             complete()
                         }
                         formatEvalRecords().forEachIndexed { index, it ->
-                            ui.newTask(false).apply {
+                            ui.newTask().apply {
                                 inputTabs["Task ${index + 1}"] = placeholder
                                 complete(renderMarkdown(it))
                             }
                             complete(renderMarkdown(it))
                         }
-                        ui.newTask(false).apply {
+                        ui.newTask().apply {
                             inputTabs["Thinking Status"] = placeholder
                             complete(renderMarkdown(config.cognitiveStrategy.formatState(currentThinkingStatus)))
                         }
@@ -169,13 +169,14 @@ open class AdaptivePlanningMode(
                         val currentTaskId = "task_${index + 1}"
                         writeToTranscript("### Task $currentTaskId\n\n")
                         log.debug("Executing task $currentTaskId")
-                        val taskExecutionTask = ui.newTask(false)
+                        val taskExecutionTask = ui.newTask()
                         val taskConfig = currentTask.task.tasks?.get(index)
                         val taskDescription =
                             taskConfig?.task_description ?: "No description provided for this task item."
                         taskExecutionTask.add("\n```json\n${taskConfig?.toJson()}\n```\n".renderMarkdown)
                         writeToTranscript("**Description:** $taskDescription\n\n```json\n${JsonUtil.toJson(taskConfig)}\n```\n\n")
-                        taskExecutionTask.verbose(
+                        taskExecutionTask.expandable(
+                            "Task Configuration",
 
                             """
  Executing task: `$currentTaskId` - $taskDescription
@@ -223,7 +224,7 @@ ${JsonUtil.toJson(taskConfig)}
                     executionRecords.addAll(completedTasks)
 
                     val thinkingStatusTask =
-                        ui.newTask(false).apply { iterationTabbedDisplay["Thinking Status"] = placeholder }
+                        ui.newTask().apply { iterationTabbedDisplay["Thinking Status"] = placeholder }
                     try {
                         log.debug("Updating thinking status")
                         writeToTranscript("### Updated Thinking Status\n\n")
@@ -262,7 +263,7 @@ ${JsonUtil.toJson(taskConfig)}
             } finally {
                 log.debug("Finalizing auto plan chat")
                 isRunning = false
-                val summaryTask = this.task.ui.newTask(false).apply { tabbedDisplay["Summary"] = placeholder }
+                val summaryTask = this.task.ui.newTask().apply { tabbedDisplay["Summary"] = placeholder }
                 summaryTask.add(
                     renderMarkdown(
                         "Auto Plan Chat completed. Final thinking status:\n${
@@ -457,7 +458,7 @@ ${JsonUtil.toJson(taskConfig)}
             val tabs = TabbedDisplay(task)
             val futures = options.map { option ->
                 processor.submit {
-                    val subTask = this.task.ui.newTask(false).apply { tabs[option] = placeholder }
+                    val subTask = this.task.ui.newTask().apply { tabs[option] = placeholder }
                     val nextText = currentText.replaceFirst(match.value, option)
                     processTaskExpansionRecursive(nextText, subTask, parsedActor, processor)
                 }

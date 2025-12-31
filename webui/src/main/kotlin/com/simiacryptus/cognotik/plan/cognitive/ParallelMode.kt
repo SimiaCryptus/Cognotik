@@ -105,35 +105,35 @@ open class ParallelMode(
             val expandedVariables = plan.variables.mapValues { (_, value) -> expandVariable(value, root) }
             val combinations = generateCombinations(expandedVariables, plan.mode)
 
-            task.add("Running ${combinations.size} tasks with concurrency ${plan.concurrency}...")
+            task.header("Running ${combinations.size} tasks (Concurrency: ${plan.concurrency})", level = 3)
 
             val tabs = TabbedDisplay(task)
             val processor = FixedConcurrencyProcessor(task.ui.pool, plan.concurrency)
 
             val futures = combinations.map { combination ->
                 processor.submit {
-                    val task = task.ui.newTask(cancelable = false, root = false)
+                    val subTask = task.ui.newTask(cancelable = false, root = false)
                     val label = combination.values.joinToString(",") { it.toString() }.take(30)
                     synchronized(tabs) {
-                        tabs[label] = task.placeholder
+                        tabs[label] = subTask.placeholder
                     }
 
                     try {
                         val renderedMessage = renderTemplate(plan.template, combination)
-                        task.add("Parameters: \n```json\n${JsonUtil.toJson(combination)}\n```".renderMarkdown())
-                        task.add("Rendered Message: \n```text\n${renderedMessage}\n```".renderMarkdown())
+                        subTask.expandable("Parameters", "```json\n${JsonUtil.toJson(combination)}\n```".renderMarkdown())
+                        subTask.expandable("Rendered Message", "```text\n${renderedMessage}\n```".renderMarkdown())
                         val (_, chosenTask) = requestToTask(
-                            defaultModel = orchestrationConfig.defaultSmart.getChildClient(task),
-                            fastModel = orchestrationConfig.defaultFast.getChildClient(task),
+                            defaultModel = orchestrationConfig.defaultSmart.getChildClient(subTask),
+                            fastModel = orchestrationConfig.defaultFast.getChildClient(subTask),
                             userMessage = renderedMessage,
                             orchestrationConfig = orchestrationConfig,
                             singleStage = true
                         )
-                        task.add("Config: \n```json\n${JsonUtil.toJson(chosenTask)}\n```".renderMarkdown())
+                        subTask.expandable("Config", "```json\n${JsonUtil.toJson(chosenTask)}\n```".renderMarkdown())
                         val coordinator = TaskOrchestrator(
                             user = user,
                             session = session,
-                            dataStorage = task.ui.dataStorage!!,
+                            dataStorage = subTask.ui.dataStorage!!,
                             root = root
                         )
                         val impl = TaskType.getImpl(orchestrationConfig, chosenTask)
@@ -141,16 +141,16 @@ open class ParallelMode(
                         impl.run(
                             agent = coordinator,
                             messages = listOf(userMessage),
-                            task = task,
+                            task = subTask,
                             resultFn = { result ->
                                 resultString = result
-                                task.complete(result.renderMarkdown())
+                                subTask.complete(result.renderMarkdown())
                             },
                             orchestrationConfig = orchestrationConfig
                         )
                         Result.success(resultString)
                     } catch (e: Throwable) {
-                        task.error(e)
+                        subTask.error(e)
                         log.error("Error in parallel task $label", e)
                         Result.failure(e)
                     }

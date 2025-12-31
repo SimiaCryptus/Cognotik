@@ -130,13 +130,8 @@ ImageTable - Generate a table/grid of AI-generated images
 
     val ui = task.ui
 
-    task.add(MarkdownUtil.renderMarkdown("## Image Table Generation", ui = ui))
-    task.add(
-      MarkdownUtil.renderMarkdown(
-        "Generating ${rows.size}x${columns.size} image grid (${rows.size * columns.size} total images)",
-        ui = ui
-      )
-    )
+    task.header("Image Table Generation", level = 2)
+    task.add("Generating ${rows.size}x${columns.size} image grid (${rows.size * columns.size} total images)")
 
     // Create output directory
     val outputPath = agent.root.resolve(outputDir)
@@ -162,12 +157,7 @@ ImageTable - Generate a table/grid of AI-generated images
         val rowLabel = rows[rowIdx]
         val colLabel = columns[colIdx]
 
-        task.add(
-          MarkdownUtil.renderMarkdown(
-            "### Generating image $completedImages/$totalImages: Row='$rowLabel', Column='$colLabel'",
-            ui = ui
-          )
-        )
+        task.header("Generating image $completedImages/$totalImages: Row='$rowLabel', Column='$colLabel'", level = 3)
 
         // Build the prompt for this cell
         var prompt = promptTemplate.replace("{row}", rowLabel).replace("{column}", colLabel)
@@ -199,7 +189,7 @@ ImageTable - Generate a table/grid of AI-generated images
         }
 
 
-        task.add(MarkdownUtil.renderMarkdown("Prompt: `$prompt`", ui = ui))
+        task.verbose("Prompt: $prompt")
 
         try {
           // Generate the image
@@ -220,23 +210,18 @@ ImageTable - Generate a table/grid of AI-generated images
           imageResults[rowIdx][colIdx] = relativePath
 
           // Show preview
-          val previewFilename = "preview_${UUID.randomUUID()}.$imageFormat"
-          ImageIO.write(generatedImage, imageFormat, task.resolveUserFile(previewFilename)!!)
-          val previewLink = task.linkTo(previewFilename)
-          task.add(
-            """<div style="margin: 10px 0;"><img src="$previewLink" style="max-width: 200px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);" /></div>"""
-          )
+          task.image(generatedImage!!)
 
         } catch (e: Exception) {
           log.error("Error generating image for row='$rowLabel', column='$colLabel'", e)
           imageResults[rowIdx][colIdx] = "ERROR"
-          task.add(MarkdownUtil.renderMarkdown("⚠️ Error: ${e.message}", ui = ui))
+          task.error(e)
         }
       }
     }
 
     // Generate the HTML table output
-    task.add(MarkdownUtil.renderMarkdown("## Generated Image Table", ui = ui))
+    task.header("Generated Image Table", level = 2)
     val htmlTable = formatAsHtmlTable(rows, columns, imageResults, task)
     task.add(htmlTable)
 
@@ -417,4 +402,3 @@ ImageTable - Generate a table/grid of AI-generated images
     )
   }
 }
-

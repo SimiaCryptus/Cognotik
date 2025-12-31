@@ -120,36 +120,30 @@ class MultiPerspectiveAnalysisTask(
             return
         }
 
-        try {
-            val tabs = TabbedDisplay(task)
-            val overviewTask = task.ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
 
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
-                    |## Multi-Perspective Analysis
-                    |**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}
-                    |
-                    |**Perspectives:** ${perspectives.joinToString(", ")}
-                    |
-                    |**Status:** 🔄 Starting analysis...
-                    """.trimMargin(),
-                    ui = task.ui
-                )
+        val tabs = TabbedDisplay(task)
+        val overviewTask = task.ui.newTask()
+        tabs["Overview"] = overviewTask.placeholder
+
+        overviewTask.add(
+            MarkdownUtil.renderMarkdown(
+                """
+                |## Multi-Perspective Analysis
+                |**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}
+                |
+                |**Perspectives:** ${perspectives.joinToString(", ")}
+                |
+                |**Status:** 🔄 Starting analysis...
+                """.trimMargin(),
+                ui = task.ui
             )
-            task.update()
-        } catch (e: Exception) {
-            log.warn("Failed to create tabbed display", e)
-        }
+        )
         var transcriptStream: FileOutputStream? = null
 
 
         val contextFiles = getContextFiles()
         val priorCode = getPriorCode(agent.executionState)
 
-        // Create tabs for each perspective
-        val tabs = TabbedDisplay(task)
         val perspectiveResults = mutableMapOf<String, String>()
 
         try {
@@ -168,7 +162,7 @@ class MultiPerspectiveAnalysisTask(
 
         // Analyze from each perspective
         perspectives.forEach { perspective ->
-            val perspectiveTask = task.ui.newTask(false).apply {
+            val perspectiveTask = task.ui.newTask().apply {
                 tabs[perspective] = placeholder
             }
 
@@ -224,7 +218,7 @@ Provide a thorough analysis from the $perspective viewpoint.
 
         // Synthesize if requested
         val finalResult = if (executionConfig.synthesize) {
-            val synthesisTask = task.ui.newTask(false).apply {
+            val synthesisTask = task.ui.newTask().apply {
                 tabs["Synthesis"] = placeholder
             }
             synthesisTask.add(

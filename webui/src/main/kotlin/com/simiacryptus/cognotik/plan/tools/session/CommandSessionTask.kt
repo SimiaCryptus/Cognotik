@@ -143,15 +143,14 @@ class CommandSessionTask(
         val resultBuffer = StringBuffer()
         val execute: (Boolean) -> Unit = { shouldComplete ->
             task.ui.pool.submit {
+                task.header("Command Session Results")
                 val initialText = buildString {
-                    appendLine("## Command Session Results")
                     appendLine("Command: `${executionConfig.command.joinToString(" ")}`")
                     appendLine("Session ID: `${executionConfig.sessionId ?: "new"}`")
                     appendLine("Timeout per command: ${executionConfig.timeout}ms")
                 }
-                val uiOutput = task.add(initialText.renderMarkdown())!!
-                resultBuffer.append(initialText)
-                task.update()
+                task.add(initialText.renderMarkdown())
+                resultBuffer.append("## Command Session Results\n$initialText")
                 val transcript = task.transcript()
                 var sessionState: SessionState? = null
                 try {
@@ -200,16 +199,12 @@ class CommandSessionTask(
                     val writer = PrintWriter(sessionState.process.outputStream, true)
 
                     executionConfig.inputs.forEachIndexed { index, input ->
-                        val text = buildString {
-                            appendLine("\n### Input ${index + 1}")
-                            appendLine("```")
-                            appendLine(input)
-                            appendLine("```")
-                        }
+                        val inputHeader = "\n### Input ${index + 1}"
+                        val inputBlock = "```\n$input\n```"
+                        val text = "$inputHeader\n$inputBlock"
                         transcript?.write(text.toByteArray())
-                        uiOutput.appendLine(text.renderMarkdown())
+                        task.add(text.renderMarkdown())
                         resultBuffer.appendLine(text)
-                        task.update()
                         val output = try {
                             writer.println(input)
                             writer.flush()
@@ -220,23 +215,19 @@ class CommandSessionTask(
                         } finally {
                             log.info("Completed input: $input")
                         }
-                        val value = buildString {
-                            appendLine("Output:")
-                            appendLine("```")
-                            appendLine(output.take(10000))
-                            appendLine("```")
-                        }
+                        val outputHeader = "Output:"
+                        val outputContent = output.take(10000)
+                        val outputBlock = "```\n$outputContent\n```"
+                        val value = "$outputHeader\n$outputBlock"
                         transcript?.write(value.toByteArray())
-                        uiOutput.appendLine(value.renderMarkdown())
+                        task.add(value.renderMarkdown())
                         resultBuffer.appendLine(value)
-                        task.update()
                     }
                     if (shouldComplete) {
                         task.complete("Command session finished successfully.")
                         resultFn(resultBuffer.toString())
                     } else {
                         task.add("Execution Complete.")
-                        task.update()
                     }
                 } catch (e: Exception) {
                     val errorResult = "Error in CommandSessionTask: ${e.message}"
@@ -253,8 +244,8 @@ class CommandSessionTask(
         if (orchestrationConfig.autoFix) {
             execute(true)
         } else {
+            task.header("Command Session Plan")
             val plan = buildString {
-                appendLine("## Command Session Plan")
                 appendLine("Command: `${executionConfig.command.joinToString(" ")}`")
                 if (executionConfig.sessionId != null) appendLine("Session ID: `${executionConfig.sessionId}`")
                 appendLine("Inputs:")

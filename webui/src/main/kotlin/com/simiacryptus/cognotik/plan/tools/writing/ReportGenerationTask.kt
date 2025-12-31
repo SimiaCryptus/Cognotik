@@ -340,26 +340,25 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
                 val contextTask = task.ui.newTask(false)
                 tabs["Data Sources"] = contextTask.placeholder
+                
+                contextTask.add("# Data Sources & Context".renderMarkdown)
+                if (fullContext.isNotBlank()) {
+                    contextTask.expandable("Input Context", fullContext.truncateForDisplay(3000).renderMarkdown)
+                }
+                if (priorContext.isNotBlank()) {
+                    contextTask.expandable("Prior Context", priorContext.truncateForDisplay(2000).renderMarkdown)
+                }
+                if (contextFiles.isNotBlank()) {
+                    contextTask.expandable("Related Files", contextFiles.truncateForDisplay(2000).renderMarkdown)
+                }
+                contextTask.complete()
+
                 val contextContent = buildString {
                     appendLine("# Data Sources & Context")
-                    appendLine()
-                    if (fullContext.isNotBlank()) {
-                        appendLine("## Input Context")
-                        appendLine(fullContext.truncateForDisplay(3000))
-                        appendLine()
-                    }
-                    if (priorContext.isNotBlank()) {
-                        appendLine("## Prior Context")
-                        appendLine(priorContext.truncateForDisplay(2000))
-                        appendLine()
-                    }
-                    if (contextFiles.isNotBlank()) {
-                        appendLine("## Related Files")
-                        appendLine(contextFiles.truncateForDisplay(2000))
-                    }
+                    if (fullContext.isNotBlank()) appendLine("## Input Context\n${fullContext.truncateForDisplay(3000)}\n")
+                    if (priorContext.isNotBlank()) appendLine("## Prior Context\n${priorContext.truncateForDisplay(2000)}\n")
+                    if (contextFiles.isNotBlank()) appendLine("## Related Files\n${contextFiles.truncateForDisplay(2000)}")
                 }
-                contextTask.add(contextContent.renderMarkdown)
-
                 markdownTranscript?.write(contextContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
 
                 task.update()
@@ -464,6 +463,7 @@ Be specific with numbers and percentages where available.
             }
             markdownTranscript?.write(dataAnalysisContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             dataAnalysisTask.add(dataAnalysisContent.renderMarkdown)
+            dataAnalysisTask.complete()
             task.update()
 
             overviewTask.add("✅ Phase 1 Complete: ${dataAnalyses.size} metrics analyzed\n".renderMarkdown)
@@ -582,6 +582,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
             }
             markdownTranscript?.write(outlineContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             outlineTask.add(outlineContent.renderMarkdown)
+            outlineTask.complete()
             task.update()
 
             overviewTask.add("✅ Phase 2 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown)
@@ -710,6 +711,7 @@ Be specific, data-driven, and actionable.
                     }.renderMarkdown
                 )
                 markdownTranscript?.write(sectionTask.toString().toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                sectionTask.complete()
                 task.update()
 
                 resultBuilder.append("## ${sectionOutline.title}\n\n")
@@ -824,6 +826,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
                 }
                 recommendationsTask.add(recommendationsContent.renderMarkdown)
                 markdownTranscript?.write(recommendationsContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                recommendationsTask.complete()
                 task.update()
 
                 resultBuilder.append("## Recommendations\n\n")
@@ -932,6 +935,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
                 }
                 riskTask.add(riskContent.renderMarkdown)
                 markdownTranscript?.write(riskContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                riskTask.complete()
                 task.update()
 
                 resultBuilder.append("## Risk Assessment\n\n")
@@ -1011,6 +1015,7 @@ Provide the complete revised report.
                     markdownTranscript?.write("## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
                     task.update()
                 }
+                revisionTask.complete()
 
                 overviewTask.add("✅ Phase 6 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
             }
@@ -1063,6 +1068,11 @@ Provide the complete revised report.
             }
 
             finalTask.add(finalReport.renderMarkdown)
+            // Save report to file and provide download link
+            val reportFileName = "report_${System.currentTimeMillis()}.md"
+            val reportUrl = task.saveFile("reports/$reportFileName", finalReport.toByteArray())
+            finalTask.add("<div class='mt-3'><a href='$reportUrl' class='btn btn-primary' target='_blank'>Download Report (Markdown)</a></div>")
+            finalTask.complete()
             markdownTranscript?.write(finalReport.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             task.update()
 
@@ -1096,6 +1106,7 @@ Provide the complete revised report.
                 }.renderMarkdown
             )
             markdownTranscript?.write(overviewTask.toString().toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            overviewTask.complete()
             task.update()
 
             // Concise summary for resultFn

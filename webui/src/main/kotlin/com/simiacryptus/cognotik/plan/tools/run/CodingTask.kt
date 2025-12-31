@@ -58,36 +58,35 @@ open class CodingTask<T : CodeRuntime>(
         codeRequest: CodeAgent.CodeRequest,
         task: SessionTask = mainTask,
     ) {
-        val task = ui.newTask(root = false).apply { task.complete(placeholder) }
+        val subTask = ui.newTask(root = false)
+        task.complete(subTask.placeholder)
         if (retryable) {
-            Retryable(task) {
-                val task = ui.newTask(root = false)
-                ui.scheduledThreadPoolExecutor.schedule({
-                    ui.pool.submit {
-                        try {
-                            val statusSB = task.add("Running...")
-                            displayCode(task, codeRequest)
-                            statusSB?.clear()
-                        } catch (e: Throwable) {
-                            log.warn("Error", e)
-                            task.error(e)
-                        } finally {
-                            task.complete()
-                        }
-                    }
-                }, 100, TimeUnit.MILLISECONDS)
-                task.placeholder
+            Retryable.retryable(ui) { innerTask ->
+                try {
+                    val statusSB = innerTask.add("Running...")
+                    displayCode(innerTask, codeRequest)
+                    statusSB?.clear()
+                    innerTask.update()
+                } catch (e: Throwable) {
+                    log.warn("Error", e)
+                    innerTask.error(e)
+                } finally {
+                    innerTask.complete()
+                }
             }
         } else {
-            try {
-                val statusSB = task.add("Running...")
-                displayCode(task, codeRequest)
-                statusSB?.clear()
-            } catch (e: Throwable) {
-                log.warn("Error", e)
-                task.error(e)
-            } finally {
-                task.complete()
+            ui.pool.submit {
+                try {
+                    val statusSB = subTask.add("Running...")
+                    displayCode(subTask, codeRequest)
+                    statusSB?.clear()
+                    subTask.update()
+                } catch (e: Throwable) {
+                    log.warn("Error", e)
+                    subTask.error(e)
+                } finally {
+                    subTask.complete()
+                }
             }
         }
     }
@@ -152,24 +151,20 @@ open class CodingTask<T : CodeRuntime>(
     open fun displayFeedback(
         task: SessionTask, request: CodeAgent.CodeRequest, response: CodeAgent.CodeResult
     ) {
+        val formHandle = task.add("", additionalClasses = "reply-message")
         val formText = StringBuilder()
-        var formHandle: StringBuilder? = null
-        formHandle = task.add(
-            "<div>\n${
-                if (!canPlay) "" else playButton(
-                    task, request, response, formText
-                ) { formHandle!! }
-            }\n</div>\n${
-                ui.textInput { feedback ->
-                    responseAction(task, "Revising...", formHandle!!, formText) {
-                        feedback(task, feedback, request, response)
-                    }
-                }
-            }",
-            additionalClasses = "reply-message"
-        )
-        formText.append(formHandle.toString())
-        formHandle.toString()
+        formText.append("<div>\n")
+        if (canPlay) {
+            formText.append(playButton(task, request, response, formText) { formHandle!! })
+        }
+        formText.append("\n</div>\n")
+        formText.append(ui.textInput { feedback ->
+            responseAction(task, "Revising...", formHandle, formText) {
+                feedback(task, feedback, request, response)
+            }
+        })
+        formHandle?.append(formText)
+        task.update()
         task.complete()
     }
 
@@ -189,17 +184,20 @@ open class CodingTask<T : CodeRuntime>(
         task: SessionTask, message: String, formHandle: StringBuilder?, formText: StringBuilder, fn: () -> Unit = {}
     ) {
         formHandle?.clear()
+        task.update()
         val header = task.header(message, 2)
         try {
             fn()
         } finally {
             header?.clear()
-            val revertButton: StringBuilder? = null
-            task.complete(ui.hrefLink("↩", "href-link regen-button") {
+            var revertButton: StringBuilder? = null
+            val link = ui.hrefLink("↩", "href-link regen-button") {
                 revertButton?.clear()
                 formHandle?.append(formText)
-                task.complete()
-            })
+                task.update()
+            }
+            revertButton = task.add(link)
+            task.complete()
         }
     }
 
@@ -279,7 +277,6 @@ open class CodingTask<T : CodeRuntime>(
         val tabs = TabbedDisplay(task)
         tabs["Result"] = "```text\n$resultValue\n```".renderMarkdown()
         tabs["Output"] = "```text\n$resultOutput\n```".renderMarkdown()
-        task.update()
         return when {
             resultValue.isBlank() || resultValue.trim().lowercase() == "null" -> "# Output\n```text\n$resultOutput\n```"
             else -> "# Result\n```\n$resultValue\n```\n\n# Output\n```text\n$resultOutput\n```"

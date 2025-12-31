@@ -98,7 +98,7 @@ GenerateImage - Create images using AI image generation models
             return
         }
 
-        task.add(MarkdownUtil.renderMarkdown("## Generating Image: `$imageOutputFile`", ui = task.ui))
+        task.header("Generating Image: $imageOutputFile", level = 2)
 
         val contextFiles = getInputFileCode()
         val priorCode = getPriorCode(agent.executionState)
@@ -118,12 +118,11 @@ GenerateImage - Create images using AI image generation models
             }
         }
 
-        task.add(MarkdownUtil.renderMarkdown("### Image Generation Prompt", ui = task.ui))
-        task.add(MarkdownUtil.renderMarkdown("```\n$imagePrompt\n```", ui = task.ui))
+        task.expandable("Image Generation Prompt", MarkdownUtil.renderMarkdown("```\n$imagePrompt\n```", ui = task.ui))
 
         try {
             // Generate the image
-            task.add(MarkdownUtil.renderMarkdown("### Generating image...", ui = task.ui))
+            task.add("Generating image...", additionalClasses = "text-info")
 
             // Use the image generation agent
             val imageAgent = ImageProcessingAgent(
@@ -136,15 +135,11 @@ GenerateImage - Create images using AI image generation models
             val generatedImage = result.image
             val optimizedPrompt = result.text
 
-            task.add(MarkdownUtil.renderMarkdown("### Optimized Prompt Used", ui = task.ui))
-            task.add(MarkdownUtil.renderMarkdown("```\n$optimizedPrompt\n```", ui = task.ui))
+            task.expandable("Optimized Prompt Used", MarkdownUtil.renderMarkdown("```\n$optimizedPrompt\n```", ui = task.ui))
 
             // Display the generated image
-            task.add(MarkdownUtil.renderMarkdown("### Generated Image Preview", ui = task.ui))
-            val filename = "preview_" + UUID.randomUUID() + ".png"
-            ImageIO.write(generatedImage, "png", task.resolveUserFile(filename)!!)
-            val previewLink = task.linkTo(filename)
-            task.add("""<a href="$previewLink" target="_blank"><img src="$previewLink" style="max-width: 600px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" /></a>""")
+            task.header("Generated Image Preview", level = 3)
+            task.image(generatedImage!!)
 
             // Save the image
             val outputPath = root.resolve(imageOutputFile)
@@ -161,8 +156,8 @@ GenerateImage - Create images using AI image generation models
 
             val summary =
                 "Successfully generated and saved image to <a href=\"${task.linkTo(imageOutputFile)}\">$imageOutputFile</a>."
-            task.complete(summary)
-            task.add("""<a href="${task.linkTo(imageOutputFile)}"><img src="${task.linkTo(imageOutputFile)}" /></a> created""")
+            task.add(summary)
+            task.complete()
             resultFn(summary)
 
         } catch (e: Exception) {

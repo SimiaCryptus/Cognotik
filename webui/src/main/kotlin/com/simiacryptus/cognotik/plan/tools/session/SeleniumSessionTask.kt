@@ -177,6 +177,8 @@ class SeleniumSessionTask(
         requireNotNull(executionConfig) { "SeleniumSessionTaskData is required" }
         var selenium: Selenium? = null
         var transcriptStream: FileOutputStream? = null
+        task.header("Selenium Session Execution")
+        val statusBuffer = task.add("Initializing session...")
         try {
 
             cleanupInactiveSessions()
@@ -188,6 +190,10 @@ class SeleniumSessionTask(
                 ?: seleniumFactory(agent.pool, null).also { newSession ->
                     executionConfig.sessionId?.let { id -> activeSessions[id] = newSession }
                 }
+            statusBuffer?.setLength(0)
+            statusBuffer?.append("Session active. ID: ${executionConfig.sessionId ?: "temporary"}")
+            task.update()
+
             if (executionConfig.createTranscript) {
                 transcriptStream = task.transcript("Selenium Session")
                 transcriptStream?.write("# Selenium Session Transcript\n\n".toByteArray())
@@ -197,18 +203,28 @@ class SeleniumSessionTask(
 
 
             if (executionConfig.url.isNotBlank()) {
+                statusBuffer?.setLength(0)
+                statusBuffer?.append("Navigating to: ${executionConfig.url}")
+                task.update()
                 selenium.navigate(executionConfig.url)
                 transcriptStream?.write("## Navigation\nNavigated to: ${executionConfig.url}\n\n".toByteArray())
             }
 
-            val results = executionConfig.commands.map { command ->
+            val results = executionConfig.commands.mapIndexed { index, command ->
                 try {
                     log.debug("Executing command: $command")
+                    task.add("<b>Command ${index + 1}:</b> <code>$command</code>")
                     transcriptStream?.write("### Executing Command\n```javascript\n$command\n```\n\n".toByteArray())
                     val startTime = System.currentTimeMillis()
                     val result = selenium.executeScript(command)?.toString() ?: "null"
                     val duration = System.currentTimeMillis() - startTime
                     log.debug("Command completed in ${duration}ms")
+                    if (result.length > 200) {
+                        task.expandable("Result (${duration}ms)", "<pre>${result.take(5000)}</pre>")
+                    } else {
+                        task.add("Result (${duration}ms): <pre>$result</pre>")
+                    }
+
                     transcriptStream?.write("**Duration:** ${duration}ms\n\n".toByteArray())
                     transcriptStream?.write("**Result:**\n```\n${result.take(1000)}\n```\n\n".toByteArray())
                     result
@@ -221,9 +237,33 @@ class SeleniumSessionTask(
             }
             transcriptStream?.write("## Final State\n".toByteArray())
             transcriptStream?.write("**Final URL:** ${selenium.getCurrentUrl()}\n\n".toByteArray())
+            statusBuffer?.setLength(0)
+            statusBuffer?.append("Execution complete.")
+            task.update()
+            val tabs = TabbedDisplay(task)
+            tabs["Summary"] = """
+                <ul>
+                    <li><b>Final URL:</b> ${selenium.getCurrentUrl()}</li>
+                    <li><b>Session ID:</b> ${executionConfig.sessionId ?: "temporary"}</li>
+                    <li><b>Browser:</b> ${selenium.getBrowserInfo()}</li>
+                </ul>
+            """.trimIndent()
+            val pageSource = try {
+                HtmlSimplifier.scrubHtml(
+                    str = selenium.getPageSource(),
+                    baseUrl = selenium.getCurrentUrl(),
+                    includeCssData = executionConfig.includeCssData ?: false,
+                    simplifyStructure = executionConfig.simplifyStructure,
+                    keepObjectIds = executionConfig.keepObjectIds,
+                    preserveWhitespace = executionConfig.preserveWhitespace
+                )
+            } catch (e: Exception) {
+                "Error: ${e.message}"
+            }
+            tabs["Page Source"] = "<pre><code class=\"language-html\">${pageSource.replace("<", "&lt;").take(50000)}</code></pre>"
+
 
             val result = formatResults(executionConfig, selenium, results)
-            task.add(MarkdownUtil.renderMarkdown(result))
             resultFn(result)
             transcriptStream?.flush()
             transcriptStream?.close()

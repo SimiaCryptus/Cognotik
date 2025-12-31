@@ -104,9 +104,7 @@ open class ProtocolMode(
                 writeToTranscript("# Protocol Definition\n\n```json\n${JsonUtil.toJson(protocol)}\n```\n\n")
                 
                 val protocolDisplay = TabbedDisplay(task)
-                protocolDisplay["Protocol"] = task.ui.newTask(false).apply {
-                    complete(renderMarkdown("```json\n${JsonUtil.toJson(protocol)}\n```"))
-                }.placeholder
+                protocolDisplay["Protocol"] = renderMarkdown("```json\n${JsonUtil.toJson(protocol)}\n```")
 
                 var currentStateName: String? = protocol.initialState
                 var iteration = 0
@@ -119,7 +117,8 @@ open class ProtocolMode(
                     writeToTranscript("## State: ${currentState.name}\n\n")
                     val stateTask = task.ui.newTask(false)
                     protocolDisplay["${iteration}. ${currentState.name}"] = stateTask.placeholder
-                    stateTask.add(renderMarkdown("### State: ${currentState.name}\n\n**Instructions:** ${currentState.instructions}"))
+                    stateTask.header("State: ${currentState.name}", level = 3)
+                    stateTask.add(renderMarkdown("**Instructions:** ${currentState.instructions}"))
 
                     var statePassed = false
                     var retryCount = 0
@@ -128,7 +127,7 @@ open class ProtocolMode(
 
                     while (!statePassed && retryCount++ < maxRetries) {
                         if (retryCount > 1) {
-                            stateTask.add(renderMarkdown("#### Retry $retryCount"))
+                            stateTask.header("Retry $retryCount", level = 4)
                             writeToTranscript("### Retry $retryCount\n\n")
                         }
 
@@ -183,7 +182,9 @@ open class ProtocolMode(
                          }!!
                         writeToTranscript("### Validation\n\n**Passed:** ${validation.passed}\n\n**Feedback:** ${validation.feedback}\n\n")
                         
-                        stateTask.add(renderMarkdown("**Validation:** ${if (validation.passed) "PASSED" else "FAILED"}\n\n${validation.feedback}"))
+                        val statusClass = if (validation.passed) "text-success" else "text-danger"
+                        stateTask.add("<b>Validation:</b> ${if (validation.passed) "PASSED" else "FAILED"}", additionalClasses = statusClass)
+                        stateTask.add(renderMarkdown(validation.feedback))
 
                         if (validation.passed) {
                             statePassed = true
@@ -197,13 +198,14 @@ open class ProtocolMode(
                     if (statePassed) {
                         currentStateName = nextState
                     } else {
-                        stateTask.add(renderMarkdown("State ${currentState.name} failed after $maxRetries retries."))
+                        stateTask.add("State ${currentState.name} failed after $maxRetries retries.", additionalClasses = "text-danger")
                         writeToTranscript("State ${currentState.name} failed after max retries.\n")
                         break
                     }
                 }
                 
-                task.complete("Protocol session completed.")
+                task.add("Protocol session completed.")
+                task.complete()
             } catch (e: Throwable) {
                 log.error("Error in ProtocolMode", e)
                 task.error(e)

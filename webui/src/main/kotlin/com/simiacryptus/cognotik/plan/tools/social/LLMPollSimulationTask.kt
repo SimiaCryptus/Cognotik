@@ -227,7 +227,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
+        val overviewTask = task.ui.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         overviewTask.add(
@@ -247,7 +247,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                 appendLine("*Generating respondent personas...*")
             }.renderMarkdown()
         )
-        task.update()
 
         try {
             // Generate respondents
@@ -262,7 +261,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("*Conducting survey...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             transcriptWriter?.apply {
                 write("## Respondent Profiles\n\n")
@@ -279,7 +277,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
             }
 
             // Progress tab
-            val progressTask = task.ui.newTask(false)
+            val progressTask = task.ui.newTask()
             tabs["Progress"] = progressTask.placeholder
 
             // Conduct survey
@@ -297,7 +295,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("*Collecting responses...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             // Submit all surveys to thread pool
             val futures = respondents.map { respondent ->
@@ -314,7 +311,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                                     appendLine("**Progress:** $completed / $totalRespondents (${(completed * 100 / totalRespondents)}%)")
                                 }.renderMarkdown()
                             )
-                            task.update()
                         }
 
                         log.debug("Survey completed for respondent ${respondent.id}")
@@ -342,7 +338,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("**Failed Responses:** ${failedCount.get()}")
                 }.renderMarkdown()
             )
-            task.update()
 
             overviewTask.add(
                 buildString {
@@ -352,7 +347,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("*Analyzing results...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             // Write responses to transcript
             transcriptWriter?.apply {
@@ -373,7 +367,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
             }
 
             // Generate descriptive statistics
-            val statsTask = task.ui.newTask(false)
+            val statsTask = task.ui.newTask()
             tabs["Statistics"] = statsTask.placeholder
 
             statsTask.add(
@@ -383,7 +377,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("*Computing statistics...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             val statistics = generateDescriptiveStatistics(successfulResponses, questions)
 
@@ -400,11 +393,10 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine(statistics)
                 }.renderMarkdown()
             )
-            task.update()
 
             // Cross-tabulation analysis
             if (executionConfig?.cross_tabulation == true && executionConfig.include_demographics) {
-                val crossTabTask = task.ui.newTask(false)
+                val crossTabTask = task.ui.newTask()
                 tabs["Cross-Tabulation"] = crossTabTask.placeholder
 
                 crossTabTask.add(
@@ -414,7 +406,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine("*Generating cross-tabs...*")
                     }.renderMarkdown()
                 )
-                task.update()
 
                 val crossTabs = generateCrossTabs(
                     successfulResponses,
@@ -435,12 +426,11 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine(crossTabs)
                     }.renderMarkdown()
                 )
-                task.update()
             }
 
             // Sentiment analysis
             if (executionConfig?.sentiment_analysis == true) {
-                val sentimentTask = task.ui.newTask(false)
+                val sentimentTask = task.ui.newTask()
                 tabs["Sentiment"] = sentimentTask.placeholder
 
                 sentimentTask.add(
@@ -450,7 +440,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine("*Analyzing sentiment...*")
                     }.renderMarkdown()
                 )
-                task.update()
 
                 val sentiment = performSentimentAnalysis(successfulResponses, questions, api)
 
@@ -467,12 +456,11 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine(sentiment)
                     }.renderMarkdown()
                 )
-                task.update()
             }
 
             // Bias detection
             if (executionConfig?.bias_detection == true) {
-                val biasTask = task.ui.newTask(false)
+                val biasTask = task.ui.newTask()
                 tabs["Bias Detection"] = biasTask.placeholder
 
                 biasTask.add(
@@ -482,7 +470,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine("*Detecting biases...*")
                     }.renderMarkdown()
                 )
-                task.update()
 
                 val biases = detectBiases(successfulResponses, questions, api)
 
@@ -499,12 +486,11 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine(biases)
                     }.renderMarkdown()
                 )
-                task.update()
             }
 
             // Generate insights
             log.info("Generating insights from poll results")
-            val insightsTask = task.ui.newTask(false)
+            val insightsTask = task.ui.newTask()
             tabs["Insights"] = insightsTask.placeholder
 
             insightsTask.add(
@@ -514,7 +500,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("*Generating insights...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             val insightsAgent = ChatAgent(
                 prompt = """
@@ -564,7 +549,6 @@ Be specific and reference the data provided.
                     appendLine(insights)
                 }.renderMarkdown()
             )
-            task.update()
 
             // Final summary
             val totalTime = System.currentTimeMillis() - startTime
@@ -613,7 +597,6 @@ Be specific and reference the data provided.
                     appendLine("**Response Rate:** ${String.format("%.1f", successfulResponses.size * 100.0 / totalRespondents)}%")
                 }.renderMarkdown()
             )
-            task.update()
 
             log.info("LLMPollSimulationTask completed: responses=${successfulResponses.size}/$totalRespondents, time=${totalTime}ms")
 
@@ -649,7 +632,6 @@ Be specific and reference the data provided.
                     appendLine("**Error:** ${e.message}")
                 }.renderMarkdown()
             )
-            task.update()
 
             resultFn("Error in poll simulation: ${e.message}")
         }
@@ -1213,7 +1195,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
         val transcriptFile = "poll_simulation_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
+        task.add(
             "Writing poll report to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a>"
         )
         return Pair(link, markdownTranscript)

@@ -15,14 +15,14 @@
   },
   {
     "id": "adaptive-mode",
-    "label": "Adaptive Planning",
+    "label": "Adaptive",
     "url": "AdaptivePlanningMode.html",
     "description": "The Strategist. Best for complex, 'fuzzy' problems. Uses an iterative 'Think-Act-Reflect' loop to dynamically adjust its strategy based on task results.",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/AdaptivePlanningMode.kt"
   },
   {
     "id": "persona-chat-mode",
-    "label": "Persona Chat",
+    "label": "Persona",
     "url": "PersonaChatMode.html",
     "description": "The Roleplayer. Best for specialized consulting. Adopts specific cognitive strategies and maintains an evolving internal persona state throughout the conversation.",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/PersonaChatMode.kt"
@@ -42,17 +42,17 @@
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/CouncilMode.kt"
   },
   {
-    "id": "hierarchical-planning-mode",
-    "label": "Hierarchical Planning",
-    "url": "HierarchicalPlanningMode.html",
-    "description": "The Manager. Best for massive projects with many dependencies. Decomposes requests into a goal tree with real-time visual progress tracking.",
-    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/HierarchicalPlanningMode.kt"
-  },
-  {
     "id": "parallel-mode",
     "label": "Parallel",
     "url": "ParallelMode.html",
     "description": "The Multitasker. Best for batch processing. Runs multiple tasks simultaneously using templates and variables, ideal for automating actions across many files.",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/ParallelMode.kt"
+  },
+  {
+    "id": "hierarchical-planning-mode",
+    "label": "Hierarchical",
+    "url": "HierarchicalPlanningMode.html",
+    "description": "The Manager. Best for massive projects with many dependencies. Decomposes requests into a goal tree with real-time visual progress tracking.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/HierarchicalPlanningMode.kt"
   }
 ]

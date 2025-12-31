@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import java.io.ByteArrayOutputStream
 import java.io.OutputStreamWriter
 import javax.imageio.ImageIO
 
@@ -122,8 +123,9 @@ ComicBookGeneration - Generate comic book scripts and visuals
         val api = defaultSmart.getChildClient(task)
         val tabs = TabbedDisplay(task)
 
-        val overviewTask = task.ui.newTask(false).apply { tabs["Overview"] = placeholder }
-        overviewTask.add("# Comic Book Generation: ${genConfig.subject}\n\nGenerating script...".renderMarkdown)
+        val overviewTask = task.ui.newTask().apply { tabs["Overview"] = placeholder }
+        overviewTask.header("Comic Book Generation: ${genConfig.subject}", 1)
+        val statusBuffer = overviewTask.add("Generating script...")
         task.update()
 
         try {
@@ -176,20 +178,23 @@ ComicBookGeneration - Generate comic book scripts and visuals
                 }
             }
 
-            val scriptTask = task.ui.newTask(false).apply { tabs["Script"] = placeholder }
+            val scriptTask = task.ui.newTask().apply { tabs["Script"] = placeholder }
             scriptTask.add(scriptContent.renderMarkdown)
             transcript?.write(scriptContent)
             transcript?.flush()
             task.update()
 
-            overviewTask.add("\n✅ Script Generated\n".renderMarkdown)
+            statusBuffer?.setLength(0)
+            statusBuffer?.append("✅ Script Generated")
+            overviewTask.update()
+
             val characterImages = mutableMapOf<String, String>()
             val rowImages = mutableMapOf<String, String>()
 
             if (genConfig.generate_images) {
                 var lastImage: java.awt.image.BufferedImage? = null
-                val charRefTask = task.ui.newTask(false).apply { tabs["Characters"] = placeholder }
-                charRefTask.add("# Character References\n\n".renderMarkdown)
+                val charRefTask = task.ui.newTask().apply { tabs["Characters"] = placeholder }
+                charRefTask.header("Character References", 1)
 
                 val charAgent = ImageProcessingAgent(
                     prompt = "Create a character sheet for a comic book. Style: ${genConfig.art_style}",
@@ -210,12 +215,15 @@ ComicBookGeneration - Generate comic book scripts and visuals
                         val image = result.image
                         lastImage = image
                         val relativePath = "char_${char.name.replace(Regex("[^a-zA-Z0-9]"), "_")}.png"
-                        val imageFile = task.resolveUserFile(relativePath)!!
-                        ImageIO.write(image, "png", imageFile)
+                        val baos = ByteArrayOutputStream()
+                        ImageIO.write(image, "png", baos)
+                        val link = task.saveFile(relativePath, baos.toByteArray())
                         characterImages[char.name] = relativePath
 
-                        val link = task.linkTo(relativePath)
-                        charRefTask.add("## ${char.name}\n\n![${char.name}]($link)\n\n*${char.description}*\n\n".renderMarkdown)
+                        charRefTask.header(char.name, 2)
+                        charRefTask.append("<img src='$link' alt='${char.name}' style='max-width: 100%'/>")
+                        charRefTask.add("*${char.description}*")
+
                         transcript?.write("## ${char.name}\n\n" + "![${char.name}]($link)".transcriptFilter() + "\n\n*${char.description}*\n\n")
                         transcript?.flush()
                         task.update()
@@ -224,7 +232,9 @@ ComicBookGeneration - Generate comic book scripts and visuals
                     }
                 }
 
-                overviewTask.add("\nGenerating pages...\n".renderMarkdown)
+                statusBuffer?.setLength(0)
+                statusBuffer?.append("✅ Script Generated<br/>Generating pages...")
+                overviewTask.update()
                 task.update()
 
                 val imageAgent = ImageProcessingAgent(
@@ -237,8 +247,8 @@ ComicBookGeneration - Generate comic book scripts and visuals
                 finalOutput.append("# ${script.title}\n\n")
 
                 script.pages.forEach { page ->
-                    val pageTask = task.ui.newTask(false).apply { tabs["Page ${page.page_number}"] = placeholder }
-                    pageTask.add("# Page ${page.page_number}\n\n".renderMarkdown)
+                    val pageTask = task.ui.newTask().apply { tabs["Page ${page.page_number}"] = placeholder }
+                    pageTask.header("Page ${page.page_number}", 1)
                     finalOutput.append("## Page ${page.page_number}\n\n")
 
                     page.rows.forEach { row ->
@@ -292,10 +302,10 @@ ComicBookGeneration - Generate comic book scripts and visuals
                             val image = result.image
                             lastImage = image
                             val relativePath = "page_${page.page_number}_row_${row.row_number}.png"
-                            val imageFile = task.resolveUserFile(relativePath)!!
-                            ImageIO.write(image, "png", imageFile)
+                            val baos = ByteArrayOutputStream()
+                            ImageIO.write(image, "png", baos)
+                            val link = task.saveFile(relativePath, baos.toByteArray())
                             rowImages["${page.page_number}_${row.row_number}"] = relativePath
-                            val link = task.linkTo(relativePath)
 
                             val rowHtml = """
                                 <div class='comic-row'>
@@ -325,12 +335,15 @@ ComicBookGeneration - Generate comic book scripts and visuals
                     }
                 }
 
-                overviewTask.add("\n✅ Images Generated\n".renderMarkdown)
+                statusBuffer?.setLength(0)
+                statusBuffer?.append("✅ Images Generated")
+                overviewTask.update()
                 resultFn(finalOutput.toString())
             } else {
                 resultFn(scriptContent)
             }
-            task.resolveUserFile("comic_book.json")?.writeText(
+            task.saveFile(
+                "comic_book.json",
                 JsonUtil.toJson(
                     mapOf(
                         "config" to genConfig,
@@ -338,7 +351,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
                         "characterImages" to characterImages,
                         "rowImages" to rowImages
                     )
-                )
+                ).toByteArray()
             )
 
 

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
@@ -253,7 +253,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             transcript?.write("# Political Optimization Task Transcript\n\n".toByteArray())
 
             // Create overview tab
-            val overviewTask = task.ui.newTask(false)
+            val overviewTask = task.ui.newTask()
             tabs["Overview"] = overviewTask.placeholder
             val overviewContent = buildString {
                 appendLine("# Political Optimization Task")
@@ -284,10 +284,9 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("## Progress")
                 appendLine()
-                appendLine("- â³ Evaluating initial text from ${perspectives.size} perspectives...")
+               appendLine("- â ³ Evaluating initial text from ${perspectives.size} perspectives...")
             }
-            overviewTask.add(overviewContent.renderMarkdown)
-            task.update()
+            overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent))
             transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
 
             // Initialize population
@@ -323,11 +322,10 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine("  - Consensus Score: **${String.format("%.2f", initialEvaluation.consensus_score)}** (${if (initialEvaluation.consensus_score > 0) "unifying" else "divisive"})")
                 appendLine("  - Average Score: **${String.format("%.1f", initialEvaluation.average_score)}/100**")
                 appendLine("  - Variance: **${String.format("%.2f", initialEvaluation.score_variance)}**")
-                appendLine("  - Wedge Issue: ${if (initialEvaluation.is_wedge_issue) "âš ï¸ Yes" else "âœ“ No"}")
+               appendLine("  - Wedge Issue: ${if (initialEvaluation.is_wedge_issue) "âš ï¸  Yes" else "âœ“ No"}")
                 appendLine()
-                appendLine("- â³ Starting evolution...")
-            }.renderMarkdown)
-            task.update()
+               appendLine("- â ³ Starting evolution...")
+            }.let { MarkdownUtil.renderMarkdown(it) })
 
             // Track best variants
             var bestConsensusVariant = currentPopulation[0]
@@ -339,7 +337,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             for (generation in 1..numGenerations) {
                 log.info("Starting generation $generation/$numGenerations")
 
-                val generationTask = task.ui.newTask(false)
+                val generationTask = task.ui.newTask()
                 tabs["Generation $generation"] = generationTask.placeholder
                 transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
                 transcript?.write("# Generation $generation\n\n".toByteArray(StandardCharsets.UTF_8))
@@ -350,8 +348,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     appendLine("**Status:** In Progress")
                     appendLine()
                     appendLine("Generating $populationSize variants...")
-                }.renderMarkdown)
-                task.update()
+                }.let { MarkdownUtil.renderMarkdown(it) })
 
                 // Generate new variants
                 val newVariants = mutableListOf<EvaluatedVariant>()
@@ -518,23 +515,22 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                         appendLine("- **$perspective:** Avg ${String.format("%.1f", scores.average())}/100, Range ${String.format("%.1f", scores.minOrNull() ?: 0.0)}-${String.format("%.1f", scores.maxOrNull() ?: 0.0)}")
                     }
                 }
-                generationTask.add(generationResults.renderMarkdown)
-                task.update()
+                generationTask.add(MarkdownUtil.renderMarkdown(generationResults))
+                generationTask.complete()
                 transcript?.write(generationResults.toByteArray(StandardCharsets.UTF_8))
 
                 // Update overview
                 overviewTask.add(buildString {
                     appendLine()
                     appendLine("- âœ“ Generation $generation: Consensus=${String.format("%.2f", consensusScores.average())}, Quality=${String.format("%.1f", avgScores.average())}")
-                }.renderMarkdown)
-                task.update()
+                }.let { MarkdownUtil.renderMarkdown(it) })
             }
 
             // Create analysis tabs
             log.info("Creating detailed analysis")
 
             // Consensus Analysis tab
-            val consensusAnalysisTask = task.ui.newTask(false)
+            val consensusAnalysisTask = task.ui.newTask()
             tabs["Consensus Analysis"] = consensusAnalysisTask.placeholder
             val consensusAnalysis = buildString {
                 appendLine("# Consensus Analysis")
@@ -594,13 +590,13 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     appendLine()
                 }
             }
-            consensusAnalysisTask.add(consensusAnalysis.renderMarkdown)
-            task.update()
+            consensusAnalysisTask.add(MarkdownUtil.renderMarkdown(consensusAnalysis))
+            consensusAnalysisTask.complete()
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(consensusAnalysis.toByteArray(StandardCharsets.UTF_8))
 
             // Divisiveness Analysis tab
-            val divisiveAnalysisTask = task.ui.newTask(false)
+            val divisiveAnalysisTask = task.ui.newTask()
             tabs["Divisiveness Analysis"] = divisiveAnalysisTask.placeholder
             val divisiveAnalysis = buildString {
                 appendLine("# Divisiveness Analysis")
@@ -670,13 +666,13 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     lowScorers.forEach { appendLine("- **${it.perspective}** (${String.format("%.1f", it.overall_score)}/100): ${it.concerns.firstOrNull() ?: it.weaknesses.firstOrNull() ?: ""}") }
                 }
             }
-            divisiveAnalysisTask.add(divisiveAnalysis.renderMarkdown)
-            task.update()
+            divisiveAnalysisTask.add(MarkdownUtil.renderMarkdown(divisiveAnalysis))
+            divisiveAnalysisTask.complete()
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(divisiveAnalysis.toByteArray(StandardCharsets.UTF_8))
 
             // Evolution Visualization tab
-            val evolutionTask = task.ui.newTask(false)
+            val evolutionTask = task.ui.newTask()
             tabs["Evolution"] = evolutionTask.placeholder
             val evolutionAnalysis = buildString {
                 appendLine("# Evolution Analysis")
@@ -726,8 +722,8 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     appendLine()
                 }
             }
-            evolutionTask.add(evolutionAnalysis.renderMarkdown)
-            task.update()
+            evolutionTask.add(MarkdownUtil.renderMarkdown(evolutionAnalysis))
+            evolutionTask.complete()
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(evolutionAnalysis.toByteArray(StandardCharsets.UTF_8))
 
@@ -751,8 +747,8 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("**Status:** âœ“ Complete")
             }
-            overviewTask.add(finalOverview.renderMarkdown)
-            task.update()
+            overviewTask.add(MarkdownUtil.renderMarkdown(finalOverview))
+            overviewTask.complete()
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
             transcript?.close()

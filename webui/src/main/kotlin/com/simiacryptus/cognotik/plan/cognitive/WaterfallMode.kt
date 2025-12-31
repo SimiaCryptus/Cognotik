@@ -102,13 +102,14 @@ open class WaterfallMode(
                     val planFile = coordinator.root.resolve("plan.json").toFile()
                     JsonUtil.toJson(p).let { json ->
                         planFile.writeText(json)
-                        task.add("Plan saved to [${planFile.name}](${task.linkTo("plan.json")})")
+                        task.add("Plan saved to [${planFile.name}](${task.linkTo("plan.json")})".renderMarkdown())
                     }
                 } catch (e: Exception) {
                     log.warn("Failed to save plan json", e)
                 }
                 p
             }
+            task.header("Executing Plan")
 
 
             coordinator.executePlan(
@@ -257,7 +258,7 @@ open class WaterfallMode(
     }
     private fun loadPrePlanned(userMessage: String, root: Path, task: SessionTask): TaskBreakdownWithPrompt {
         val parsedConfig = parseConfig(userMessage, root.toString(), task)
-        task.add("Loading plan from `${parsedConfig.planFile}` with variables: ${parsedConfig.variables}")
+        task.add("Loading plan from `${parsedConfig.planFile}` with variables: ${parsedConfig.variables}".renderMarkdown())
         val planFile = root.resolve(parsedConfig.planFile!!).toFile()
         if (!planFile.exists()) {
             throw IllegalArgumentException("Plan file not found: ${planFile.absolutePath}")
@@ -329,13 +330,12 @@ $availableFiles
         val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.add(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
+        task.add("""
+            Writing transcript to:
+            * [Markdown]($link)
+            * [HTML](${link.removeSuffix(".md")}.html)
+            * [PDF](${link.removeSuffix(".md")}.pdf)
+        """.trimIndent().renderMarkdown())
         return markdownTranscript
     }
 

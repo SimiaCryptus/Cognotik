@@ -88,6 +88,7 @@ open class PersonaChatMode(
                     sleep(100)
                     val msg = messageBuffer.poll() ?: continue
                     val t = this.task.ui.newTask()
+                    this.task.add(t.placeholder)
                     execute(t, msg, parserChatter, defaultChat)
                 }
             } finally {
@@ -183,6 +184,7 @@ open class PersonaChatMode(
                     describer
                 )
                 val stateTask = this.task.ui.newTask(false)
+                this.task.add(stateTask.placeholder)
                 stateTask.complete(renderMarkdown("### Initial Persona State\n" + config.cognitiveStrategy.formatState(s)))
                 s
             } else {
@@ -255,7 +257,7 @@ open class PersonaChatMode(
         }
         val resultSemaphore = Semaphore(0)
         val resultRef = AtomicReference<String>()
-        
+
         this.task.ui.newTask(false).apply {
             tabs["Run"] = placeholder
             TaskType.getImpl(orchestrationConfig, chosenTask?.component2()).run(
@@ -298,7 +300,7 @@ open class PersonaChatMode(
             describer
         )
         reasoningState.set(newState)
-        
+
         this.task.ui.newTask(false).apply {
             tabs["State"] = placeholder
             complete(renderMarkdown("### Updated Persona State\n" + config.cognitiveStrategy.formatState(newState)))

@@ -155,7 +155,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             // Overview tab
             val overviewTask = ui.newTask(false)
             tabs["Overview"] = overviewTask.placeholder
-            var overviewStatus = overviewTask.add(
+            val overviewStatus = overviewTask.add(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Temporal Reasoning Analysis
@@ -225,18 +225,16 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             |**Time Range:** $timeRange
             |
             |**Granularity:** ${executionConfig.granularity}
-            |
-            |<details>
-            |<summary>Temporal Data Context:</summary>
-            |
-            |```
-            |${temporalData.truncateForDisplay(maxOutputLength)}
-            |```
-            |
-            |</details>
         """.trimMargin(), ui = ui
                 )
             )
+            dataTask.expandable("Temporal Data Context", MarkdownUtil.renderMarkdown(
+                """
+                |```
+                |${temporalData.truncateForDisplay(maxOutputLength)}
+                |```
+                """.trimMargin(), ui = ui
+            ))
             task.update()
 
             // Get prior context
@@ -244,8 +242,8 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             val priorContext = getPriorCode(agent.executionState)
 
             // Update overview
-            overviewStatus?.clear()
-            overviewStatus = overviewTask.add(
+            overviewStatus?.setLength(0)
+            overviewStatus?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Temporal Reasoning Analysis
@@ -504,8 +502,8 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             )
 
             // Update overview with completion
-            overviewStatus?.clear()
-            overviewTask.add(
+            overviewStatus?.setLength(0)
+            overviewStatus?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Temporal Reasoning Analysis

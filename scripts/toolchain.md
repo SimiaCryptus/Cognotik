@@ -8,14 +8,14 @@
 ## 2. Core Build Tools & Utilities
 These are the fundamental tools required to build software and manage the system.
 
-| Tool | Description | Verification Command |
-| :--- | :--- | :--- |
-| **Git** | The standard for version control. | `git --version` |
-| **OpenSSH** | Client for connecting to remote servers securely. | `ssh -V` |
-| **Build Essential** | A meta-package that installs `gcc`, `g++`, and `make`. Required for compiling C/C++ software. | `gcc --version` |
-| **CMake** | A cross-platform tool used to control the software compilation process (generates Makefiles). | `cmake --version` |
-| **Zsh** | An extended shell (alternative to Bash) often used for its theming and plugin capabilities. | `zsh --version` |
-| **Curl / Wget** | Command-line tools for downloading files from the internet. | `curl --version` |
+| Tool                | Description                                                                                   | Verification Command |
+|:--------------------|:----------------------------------------------------------------------------------------------|:---------------------|
+| **Git**             | The standard for version control.                                                             | `git --version`      |
+| **OpenSSH**         | Client for connecting to remote servers securely.                                             | `ssh -V`             |
+| **Build Essential** | A meta-package that installs `gcc`, `g++`, and `make`. Required for compiling C/C++ software. | `gcc --version`      |
+| **CMake**           | A cross-platform tool used to control the software compilation process (generates Makefiles). | `cmake --version`    |
+| **Zsh**             | An extended shell (alternative to Bash) often used for its theming and plugin capabilities.   | `zsh --version`      |
+| **Curl / Wget**     | Command-line tools for downloading files from the internet.                                   | `curl --version`     |
 
 ---
 

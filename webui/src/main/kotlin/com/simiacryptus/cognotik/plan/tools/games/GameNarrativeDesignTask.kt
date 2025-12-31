@@ -419,7 +419,7 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
         }
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
+        val overviewTask = task.ui.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         val overviewContent = buildString {
@@ -475,7 +475,7 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
 
             // Phase 2: Generate game-specific structure
             log.info("Phase 2: Generating game structure")
-            val gameStructureTask = task.ui.newTask(false)
+            val gameStructureTask = task.ui.newTask()
             tabs["Game Structure"] = gameStructureTask.placeholder
 
             gameStructureTask.add(
@@ -631,7 +631,7 @@ Ensure the structure supports ${gameConfig.player_agency_level} player agency wi
             overviewTask.add("\n### Phase 3: Branching Narrative Map\n*Creating decision tree...*\n".renderMarkdown)
             task.update()
 
-            val branchingMapTask = task.ui.newTask(false)
+            val branchingMapTask = task.ui.newTask()
             tabs["Branching Map"] = branchingMapTask.placeholder
 
             branchingMapTask.add(
@@ -710,7 +710,7 @@ Ensure the structure supports ${gameConfig.player_agency_level} player agency wi
                 overviewTask.add("\n### Phase 4: Dialogue Trees\n*Creating interactive conversations...*\n".renderMarkdown)
                 task.update()
 
-                val dialogueTask = task.ui.newTask(false)
+                val dialogueTask = task.ui.newTask()
                 tabs["Dialogue Trees"] = dialogueTask.placeholder
 
                 dialogueTask.add(
@@ -828,7 +828,7 @@ Ensure each character's dialogue matches their established style.
             overviewTask.add("\n### Phase 5: Multiple Endings\n*Creating ending variations...*\n".renderMarkdown)
             task.update()
 
-            val endingsTask = task.ui.newTask(false)
+            val endingsTask = task.ui.newTask()
             tabs["Endings"] = endingsTask.placeholder
 
             endingsTask.add(
@@ -894,7 +894,7 @@ Ensure each character's dialogue matches their established style.
                 overviewTask.add("\n### Phase 6: Side Quests\n*Creating optional content...*\n".renderMarkdown)
                 task.update()
 
-                val sideQuestsTask = task.ui.newTask(false)
+                val sideQuestsTask = task.ui.newTask()
                 tabs["Side Quests"] = sideQuestsTask.placeholder
 
                 sideQuestsTask.add(
@@ -995,7 +995,7 @@ Make quests feel meaningful, not just filler content.
             overviewTask.add("\n### Phase 7: Player Agency Analysis\n*Evaluating meaningful choices...*\n".renderMarkdown)
             task.update()
 
-            val agencyTask = task.ui.newTask(false)
+            val agencyTask = task.ui.newTask()
             tabs["Player Agency"] = agencyTask.placeholder
 
             agencyTask.add(
@@ -1065,7 +1065,7 @@ Provide specific examples and recommendations for improvement.
             overviewTask.add("\n### Phase 8: Final Design Document\n*Compiling complete documentation...*\n".renderMarkdown)
             task.update()
 
-            val designDocTask = task.ui.newTask(false)
+            val designDocTask = task.ui.newTask()
             tabs["Design Document"] = designDocTask.placeholder
 
             val designDocument = buildString {
@@ -1249,7 +1249,7 @@ Provide specific examples and recommendations for improvement.
         val transcriptFile = "game_narrative_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val file = task.resolveUserFile(transcriptFile)
         val link = task.linkTo(transcriptFile)
-        task.complete(
+        task.add(
             "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(
                     ".md"
@@ -1280,7 +1280,7 @@ Provide specific examples and recommendations for improvement.
     ) {
         try {
             log.info("Generating portrait for character: ${character.name}")
-            val portraitTask = task.ui.newTask(false)
+            val portraitTask = task.ui.newTask()
             tabs["Portrait: ${character.name}"] = portraitTask.placeholder
 
             portraitTask.add(

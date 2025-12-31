@@ -34,6 +34,7 @@ sudo apt install -y \
     rustc cargo \
     default-jdk \
     golang-go \
+    php-cli \
     ruby-full \
     octave \
     swi-prolog \
@@ -43,9 +44,9 @@ sudo apt install -y \
     ghc \
     ocaml opam
 
-curl -fsSL https://install.julialang.org | sh
+#curl -fsSL https://install.julialang.org | sh
 
-curl https://elan.lean-lang.org/elan-init.sh -sSf | sh
+#curl https://elan.lean-lang.org/elan-init.sh -sSf | sh
 
 # 4. Build Systems & Package Managers
 # Covers: Gradle, Maven, Ant
@@ -74,8 +75,8 @@ sudo apt install -y \
     pari-gp \
     z3 \
     maxima \
-    singular \
-#    sagemath
+    singular
+#    sudo apt install -y sagemath
 
 # 7. Cloud & Modern CLI Tools (via Snap)
 # Covers: Powershell, Terraform, Kubectl, Gcloud, Aws, Docker
@@ -97,7 +98,7 @@ fi
 echo "--- Installing Language Servers ---"
 
 # Python LSP
-#pip3 install --upgrade python-lsp-server
+#pip3 install --user "python-lsp-server[all]"
 
 # Node/Typescript/Bash/Docker/Yaml LSPs (via NPM)
 # Note: Using sudo for global npm install is common in scripts but check permissions in production

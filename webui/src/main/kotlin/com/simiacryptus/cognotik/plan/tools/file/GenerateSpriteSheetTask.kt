@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -95,11 +96,11 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
         val metadataFile = executionConfig?.metadata_file ?: return resultFn("No metadata file specified")
         val description = executionConfig?.task_description ?: "Generate a sprite sheet"
 
-        task.add(MarkdownUtil.renderMarkdown("## Generating Sprite Sheet: `$imageFile`", ui = task.ui))
+        task.header("Generating Sprite Sheet: $imageFile", level = 2)
 
         try {
             // Step 1: Generate the Image
-            task.add(MarkdownUtil.renderMarkdown("### Step 1: Drawing Sprites...", ui = task.ui))
+            task.header("Step 1: Drawing Sprites...", level = 3)
             
             val imageGenPrompt = """
                 Create a sprite sheet based on this description: $description.
@@ -129,7 +130,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             task.add("""<a href="$imageLink" target="_blank"><img src="$imageLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>""")
 
             // Step 2: Parse Metadata
-            task.add(MarkdownUtil.renderMarkdown("### Step 2: Analyzing Sprite Locations...", ui = task.ui))
+            task.header("Step 2: Analyzing Sprite Locations...", level = 3)
 
             val parserAgent = ParsedImageAgent(
                 resultClass = SpriteSheetMetadata::class.java,
@@ -206,29 +207,40 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
 
             // Display Results
             val metadataLink = task.linkTo(metadataFile)
-            val summary = """
-                ### Complete
-                - Image saved to: <a href="$imageLink">$imageFile</a>
-                - Metadata saved to: <a href="$metadataLink">$metadataFile</a>
-                - Identified ${metadata.sprites.size} sprites.
-                - Individual sprites saved to: `$spriteDirRelative/`
-                ### Bounding Boxes
-                <a href="$debugLink" target="_blank"><img src="$debugLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
-                ### Sprites
-                $spriteHtml
+
+            
+            val tabs = TabbedDisplay(task)
+
+            // Tab 1: Overview
+            tabs["Overview"] = """
+                <ul>
+                    <li><b>Image:</b> <a href="$imageLink">$imageFile</a></li>
+                    <li><b>Metadata:</b> <a href="$metadataLink">$metadataFile</a></li>
+                    <li><b>Sprite Count:</b> ${metadata.sprites.size}</li>
+                    <li><b>Sprites Directory:</b> $spriteDirRelative/</li>
+                </ul>
+                <div style="margin-top: 10px;">
+                    <a href="$imageLink" target="_blank"><img src="$imageLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
+                </div>
             """.trimIndent()
 
-            task.add(MarkdownUtil.renderMarkdown(summary, ui = task.ui))
-            
-            // Visualize boxes on the UI (Optional visualization)
+            // Tab 2: Bounding Boxes
+            tabs["Bounding Boxes"] = """
+                <a href="$debugLink" target="_blank"><img src="$debugLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
+            """.trimIndent()
+
+            // Tab 3: Sprites
+            tabs["Sprites"] = spriteHtml.toString()
+
+            // Tab 4: Data Table
             val tableRows = metadata.sprites.joinToString("\n") { 
                 "| ${it.name} | ${it.x}, ${it.y} | ${it.width}x${it.height} |" 
             }
-            task.add(MarkdownUtil.renderMarkdown("""
+            tabs["Data"] = MarkdownUtil.renderMarkdown("""
 | Name | Position | Size |
 |------|----------|------|
 $tableRows
-            """.trimIndent(), ui = task.ui))
+            """.trimIndent(), ui = task.ui)
 
             task.complete("Generated sprite sheet with ${metadata.sprites.size} sprites")
             resultFn("Generated sprite sheet: $imageFile and $metadataFile")

@@ -116,7 +116,7 @@ class DiscussionTask(
                         )
                     }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
                 },
-                heading = "",
+                heading = taskConfig?.task_description ?: "Discussion",
                 initialResponse = { it: String ->
                     transcript?.write("# Initial Request\n\n$it\n\n".toByteArray())
                     insightActor.answer(toInput(it)).also { response ->
@@ -124,7 +124,7 @@ class DiscussionTask(
                     }
                 },
                 outputFn = { design: String ->
-                    MarkdownUtil.renderMarkdown(design)
+                    MarkdownUtil.renderMarkdown(design, ui = task.ui)
                 },
                 reviseResponse = { usermessages: List<Pair<String, Role>> ->
                     val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
@@ -144,6 +144,7 @@ class DiscussionTask(
                 semaphore = Semaphore(0),
             ).call()
         transcript?.close()
+        task.complete()
         resultFn(inquiryResult ?: "(no response)")
     }
 

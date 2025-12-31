@@ -88,10 +88,8 @@ FileModification - Modify existing files or create new files
 
         try {
             transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
-            Retryable(task = task) {
-                val task = task.ui.newTask(false)
+            Retryable.retryable(task.ui) { task ->
                 val typeConfig = typeConfig ?: throw RuntimeException()
-                task.ui.pool.submit {
                     completionNotes.clear()
                     val chatInterface =
                         (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
@@ -212,8 +210,6 @@ FileModification - Modify existing files or create new files
                         task.complete(markdown)
                     }
                     transcript?.flush()
-                }
-                task.placeholder
             }
 
             semaphore.acquire()

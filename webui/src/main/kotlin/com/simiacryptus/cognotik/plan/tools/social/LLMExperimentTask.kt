@@ -138,7 +138,7 @@ class LLMExperimentTask(
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
+        val overviewTask = task.ui.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         val overviewContent = buildString {
@@ -164,7 +164,6 @@ class LLMExperimentTask(
             appendLine("*Initializing experiment...*")
         }
         overviewTask.add(overviewContent.renderMarkdown())
-        task.update()
 
 // Generate experimental conditions
         val conditions = generateExperimentalConditions(
@@ -188,7 +187,6 @@ class LLMExperimentTask(
                 appendLine("*Running experiments...*")
             }.renderMarkdown()
         )
-        task.update()
 
         // Data collection
         val results = ConcurrentHashMap<Int, MutableList<ExperimentalResult>>()
@@ -197,7 +195,7 @@ class LLMExperimentTask(
 
         try {
             // Create progress tab
-            val progressTask = task.ui.newTask(false)
+            val progressTask = task.ui.newTask()
             tabs["Progress"] = progressTask.placeholder
 
             conditions.forEachIndexed { conditionIndex, condition ->
@@ -220,7 +218,6 @@ class LLMExperimentTask(
                         appendLine()
                     }.renderMarkdown()
                 )
-                task.update()
 
                 transcriptWriter?.apply {
                     write("## Condition ${conditionIndex + 1}: Temperature ${condition.temperature}\n\n")
@@ -315,7 +312,6 @@ class LLMExperimentTask(
                         appendLine()
                     }.renderMarkdown()
                 )
-                task.update()
 
                 overviewTask.add(
                     buildString {
@@ -323,7 +319,6 @@ class LLMExperimentTask(
                         appendLine("✅ Condition ${conditionIndex + 1}/${conditions.size} complete")
                     }.renderMarkdown()
                 )
-                task.update()
 
 
             }
@@ -335,7 +330,7 @@ class LLMExperimentTask(
 
             // Generate detailed statistical tables
             log.info("Generating detailed statistical tables")
-            val statisticalTablesTask = task.ui.newTask(false)
+            val statisticalTablesTask = task.ui.newTask()
             tabs["Statistical Tables"] = statisticalTablesTask.placeholder
             statisticalTablesTask.add(
                 buildString {
@@ -344,7 +339,6 @@ class LLMExperimentTask(
                     appendLine("*Computing comprehensive statistics...*")
                 }.renderMarkdown()
             )
-            task.update()
             val statisticalTables = generateStatisticalTables(
                 allResults,
                 conditions,
@@ -362,7 +356,6 @@ class LLMExperimentTask(
                     appendLine(statisticalTables)
                 }.renderMarkdown()
             )
-            task.update()
 
 
             // Analysis
@@ -374,8 +367,7 @@ class LLMExperimentTask(
                     appendLine("*Analyzing results...*")
                 }.renderMarkdown()
             )
-            task.update()
-            val analysisTask = task.ui.newTask(false)
+            val analysisTask = task.ui.newTask()
             tabs["Analysis"] = analysisTask.placeholder
             analysisTask.add(
                 buildString {
@@ -384,7 +376,6 @@ class LLMExperimentTask(
                     appendLine("*Computing statistics...*")
                 }.renderMarkdown()
             )
-            task.update()
             val analysis = analyzeResults(allResults, conditions, metrics, statisticalAnalysis, statisticalTables)
             transcriptWriter?.apply {
                 write("\n---\n\n## Statistical Analysis\n\n")
@@ -398,11 +389,10 @@ class LLMExperimentTask(
                     appendLine(analysis)
                 }.renderMarkdown()
             )
-            task.update()
 
             // Generate insights using LLM
             log.info("Generating insights from experimental results")
-            val insightsTask = task.ui.newTask(false)
+            val insightsTask = task.ui.newTask()
             tabs["Insights"] = insightsTask.placeholder
 
             insightsTask.add(
@@ -412,7 +402,6 @@ class LLMExperimentTask(
                     appendLine("*Generating insights...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             val insightsAgent = ChatAgent(
                 prompt = """
@@ -460,7 +449,6 @@ Be specific and reference the data provided.
                     appendLine(insights)
                 }.renderMarkdown()
             )
-            task.update()
 
             // Create summary
             val totalTime = System.currentTimeMillis() - startTime
@@ -538,7 +526,6 @@ Be specific and reference the data provided.
                     )
                 }.renderMarkdown()
             )
-            task.update()
 
             log.info("LLMExperimentTask completed: trials=${allResults.size}/${totalTrials}, time=${totalTime}ms")
 
@@ -582,7 +569,6 @@ Be specific and reference the data provided.
                     appendLine("**Completed Trials:** ${results.size}/${totalTrials}")
                 }.renderMarkdown()
             )
-            task.update()
 
             val errorOutput = buildString {
                 appendLine("# Error in LLM Experiment")
@@ -1306,7 +1292,7 @@ Be specific and reference the data provided.
         val transcriptFile = "llm_experiment_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
+        task.add(
             "Writing experiment report to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(
                     ".md"

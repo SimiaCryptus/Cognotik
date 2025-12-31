@@ -13,6 +13,7 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDCheckBox
 import org.apache.pdfbox.pdmodel.interactive.form.PDChoice
 import org.apache.pdfbox.pdmodel.interactive.form.PDField
 import org.apache.pdfbox.pdmodel.interactive.form.PDRadioButton
+import java.io.ByteArrayOutputStream
 import kotlin.io.path.exists
 
 class PdfFormTask(
@@ -100,6 +101,8 @@ $fieldList
         orchestrationConfig: OrchestrationConfig
     ) {
         val transcript = task.transcript("pdf_fill_log")
+        task.header("PDF Form Filler")
+        val statusBuffer = task.add("Initializing PDF task...")
         try {
             val templatePath = typeConfig?.template_file
                 ?: throw IllegalStateException("Template file not configured in TaskTypeConfig")
@@ -116,7 +119,9 @@ $fieldList
 
             val api = defaultSmart
             val extractedFields = if (api != null && messages.isNotEmpty()) {
-                task.add("Analyzing context to extract form data...")
+                statusBuffer?.setLength(0)
+                statusBuffer?.append("Analyzing context to extract form data...")
+                task.update()
                 val parsingChatter = defaultFast.getChildClient(task)
                 val defaultChatter = api.getChildClient(task)
 
@@ -148,46 +153,68 @@ Only include fields where a value can be confidently determined from the context
 
             val configFields = executionConfig?.fields ?: emptyMap()
             val fieldData = extractedFields + configFields
+            task.expandable("Extracted Fields", "<pre>${fieldData.entries.joinToString("\n") { "${it.key}: ${it.value}" }}</pre>")
+
 
             transcript?.write("# PDF Form Fill Execution\n".toByteArray())
             transcript?.write("Template: $templatePath\n".toByteArray())
             transcript?.write("Output: $outputPath\n".toByteArray())
             transcript?.write("## Field Data\n```json\n${fieldData}\n```\n".toByteArray())
 
-            task.add("Preparing to fill ${fieldData.size} fields into $outputPath...")
+            statusBuffer?.setLength(0)
+            statusBuffer?.append("Filling ${fieldData.size} fields into $outputPath...")
+            task.update()
 
             try {
-                Loader.loadPDF(templateFile).use { doc ->
-                    val acroForm = doc.documentCatalog.acroForm
-                    if (acroForm == null) {
-                        throw IllegalStateException("No AcroForm found in template PDF")
-                    }
 
-                    val missingFields = mutableListOf<String>()
-                    fieldData.forEach { (key, value) ->
-                        val field = acroForm.getField(key)
-                        if (field != null) {
-                            field.setValue(value)
-                        } else {
-                            missingFields.add(key)
+                val bytes = ByteArrayOutputStream().use { baos ->
+                    Loader.loadPDF(templateFile).use { doc ->
+                        val acroForm = doc.documentCatalog.acroForm
+                        if (acroForm == null) {
+                            throw IllegalStateException("No AcroForm found in template PDF")
                         }
+
+                        val missingFields = mutableListOf<String>()
+                        fieldData.forEach { (key, value) ->
+                            val field = acroForm.getField(key)
+                            if (field != null) {
+                                field.setValue(value)
+                            } else {
+                                missingFields.add(key)
+                            }
+                        }
+
+                        if (missingFields.isNotEmpty()) {
+                            val msg = "Warning: The following fields were not found in the PDF: $missingFields"
+                            log.warn(msg)
+                            transcript?.write("\n$msg\n".toByteArray())
+                            task.verbose(msg)
+                        }
+
+                        if (executionConfig?.flatten == true) {
+                            acroForm.flatten()
+                        }
+
+                        doc.save(baos)
                     }
 
-                    if (missingFields.isNotEmpty()) {
-                        val msg = "Warning: The following fields were not found in the PDF: $missingFields"
-                        log.warn(msg)
-                        transcript?.write("\n$msg\n".toByteArray())
-                    }
-
-                    if (executionConfig?.flatten == true) {
-                        acroForm.flatten()
-                    }
-
-                    doc.save(outputFile)
+                    baos.toByteArray()
                 }
+                outputFile.writeBytes(bytes)
+                val fileUrl = task.saveFile(outputPath, bytes)
 
                 val successMsg = "Successfully created $outputPath with ${fieldData.size} fields filled."
                 transcript?.write("\n## Success\n$successMsg\n".toByteArray())
+                statusBuffer?.setLength(0)
+                statusBuffer?.append("<strong>Complete!</strong>")
+                task.update()
+                task.add("""
+                    <div class="alert alert-success">
+                        $successMsg<br/>
+                        <a href='$fileUrl' class='btn btn-primary mt-2' target='_blank'>Download PDF</a>
+                    </div>
+                """.trimIndent())
+                
                 resultFn(successMsg)
 
             } catch (e: Exception) {
@@ -197,9 +224,11 @@ Only include fields where a value can be confidently determined from the context
             }
 
         } catch (e: Exception) {
+            task.error(e)
             resultFn("Error executing PDF task: ${e.message}")
         } finally {
             transcript?.close()
+            task.complete()
         }
     }
     private fun getFieldDescription(field: PDField): String {

@@ -94,12 +94,13 @@ class MCPToolTask(
         val arguments = config.tool_arguments ?: emptyMap()
         val timeout = config.timeout_seconds ?: typeConfig.default_timeout
 
-        task.add("Executing MCP tool: $toolName on server: $serverName")
+        task.header("Executing MCP tool: $toolName", level = 2)
+        task.add("Server: <strong>$serverName</strong>")
         val transcriptStream = if (typeConfig.generate_transcript) {
             task.transcript()
         } else null
 
-        task.add("Arguments: ${JsonUtil.toJson(arguments)}")
+        task.expandable("Arguments", "<pre><code class=\"language-json\">${JsonUtil.toJson(arguments)}</code></pre>")
 
         try {
             val result = executeMCPTool(
@@ -111,8 +112,8 @@ class MCPToolTask(
                 transcriptStream = transcriptStream
             )
 
-            task.add("Tool execution completed successfully")
-            task.add("Result:\n```json\n${JsonUtil.toJson(result)}\n```")
+            task.add("Tool execution completed successfully", additionalClasses = "text-success")
+            task.expandable("Result", "<pre><code class=\"language-json\">${JsonUtil.toJson(result)}</code></pre>")
             transcriptStream?.let {
                 it.write("\n\n## Execution Completed Successfully\n".toByteArray())
                 it.close()
@@ -120,6 +121,7 @@ class MCPToolTask(
 
             resultFn(JsonUtil.toJson(result))
             state = TaskState.Completed
+            task.complete()
         } catch (e: Exception) {
             log.error("Error executing MCP tool", e)
 
@@ -127,6 +129,7 @@ class MCPToolTask(
                 transcriptStream?.let {
                     it.write("\n\n## Retrying after error: ${e.message}\n".toByteArray())
                 }
+                task.add("Error: ${e.message}. Retrying...", additionalClasses = "text-warning")
                 handleRetry(agent, messages, task, resultFn, orchestrationConfig, e)
             } else {
                 transcriptStream?.close()
@@ -146,7 +149,6 @@ class MCPToolTask(
         transcriptStream: FileOutputStream?
     ): Map<String, Any> {
         log.info("Connecting to MCP server: $serverName")
-        task.add("Connecting to MCP server: $serverName")
         transcriptStream?.write("# MCP Tool Execution Transcript\n\n".toByteArray())
         transcriptStream?.write("## Server: $serverName\n".toByteArray())
         transcriptStream?.write("## Tool: $toolName\n\n".toByteArray())
@@ -158,10 +160,13 @@ class MCPToolTask(
         try {
             // Ensure client is connected
             if (!client.isConnected()) {
-                task.add("Establishing connection to MCP server...")
+                val buffer = task.add("Establishing connection to MCP server...")
                 transcriptStream?.write("### Establishing connection to MCP server...\n".toByteArray())
                 client.connect()
                 transcriptStream?.write("### Connection established\n\n".toByteArray())
+                buffer?.setLength(0)
+                buffer?.append("Connection established to <strong>$serverName</strong>")
+                task.update()
             }
 
             // List available tools to verify the tool exists
@@ -169,8 +174,7 @@ class MCPToolTask(
             val tool = availableTools.find { it.name == toolName }
                 ?: throw IllegalArgumentException("Tool '$toolName' not found on server '$serverName'. Available tools: ${availableTools.map { it.name }}")
 
-            task.add("Tool found: ${tool.name}")
-            task.add("Tool description: ${tool.description}")
+            task.verbose("Tool found: ${tool.name}\nDescription: ${tool.description}")
             transcriptStream?.write("### Tool Information\n".toByteArray())
             transcriptStream?.write("- **Name**: ${tool.name}\n".toByteArray())
             transcriptStream?.write("- **Description**: ${tool.description}\n\n".toByteArray())
@@ -238,9 +242,8 @@ class MCPToolTask(
         val typeConfig = typeConfig ?: throw RuntimeException()
         while (retryCount < typeConfig.max_retries) {
             retryCount++
-            task.add("Retry attempt $retryCount of ${typeConfig.max_retries}")
+            task.add("Retry attempt $retryCount of ${typeConfig.max_retries}", additionalClasses = "text-warning")
 
-            val typeConfig = typeConfig ?: throw RuntimeException()
             try {
                 val delay = if (typeConfig.exponential_backoff) {
                     typeConfig.retry_delay_ms * (1 shl (retryCount - 1)) // 2^(n-1) exponential backoff
@@ -255,10 +258,10 @@ class MCPToolTask(
             } catch (e: Exception) {
                 lastException = e
                 log.warn("Retry attempt $retryCount failed", e)
-                task.add("Retry attempt $retryCount failed: ${e.message}")
+                task.add("Retry attempt $retryCount failed: ${e.message}", additionalClasses = "text-danger")
             }
         }
-        task.add("All retry attempts exhausted")
+        task.add("All retry attempts exhausted", additionalClasses = "text-danger")
         state = TaskState.Completed
 
         task.error(lastException)

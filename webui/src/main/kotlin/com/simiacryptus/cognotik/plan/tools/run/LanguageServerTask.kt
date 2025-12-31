@@ -95,7 +95,8 @@ class LanguageServerTask(
 
 
             val executeLsp = {
-                task.add("Starting LSP for .$extension...")
+                task.header("LSP Execution: $action", level = 3)
+                val statusBuffer = task.add("Starting LSP for .$extension...")
                 transcript?.write("# LSP Session\nCommand: ${command.joinToString(" ")}\nTarget: $filePath\nAction: $action\n\n".toByteArray())
                 val process = ProcessBuilder(command)
                     .directory(root.toFile())
@@ -103,13 +104,18 @@ class LanguageServerTask(
                 val lsp = LspClient(process.inputStream, process.outputStream, mapper, transcript)
                 try {
                     // 1. Initialize
-                    task.add("Initializing Server...")
+                    statusBuffer?.setLength(0)
+                    statusBuffer?.append("Initializing Server...")
+                    task.update()
                     lsp.sendRequest("initialize", mapper.createObjectNode().apply {
                         put("processId", ProcessHandle.current().pid())
                         put("rootUri", root.toUri().toString())
                         putObject("capabilities").putObject("textDocument")
                     })
                     // 2. Open Document
+                    statusBuffer?.setLength(0)
+                    statusBuffer?.append("Opening Document...")
+                    task.update()
                     val fileUri = file.toURI().toString()
                     lsp.sendNotification("textDocument/didOpen", mapper.createObjectNode().apply {
                         putObject("textDocument").apply {
@@ -120,7 +126,9 @@ class LanguageServerTask(
                         }
                     })
                     // 3. Perform Action
-                    task.add("Executing $action...")
+                    statusBuffer?.setLength(0)
+                    statusBuffer?.append("Executing $action...")
+                    task.update()
                     val result = when (action.lowercase()) {
                         "diagnostics" -> {
                             // Diagnostics are usually pushed as notifications after opening.
@@ -154,14 +162,21 @@ class LanguageServerTask(
                         else -> throw IllegalArgumentException("Unknown action: $action")
                     }
                     // 4. Shutdown
+                    statusBuffer?.setLength(0)
+                    statusBuffer?.append("Shutting down...")
+                    task.update()
                     lsp.sendRequest("shutdown", null)
                     lsp.sendNotification("exit", null)
                     val finalOutput = "LSP Action '$action' completed.\nResult:\n$result"
                     transcript?.write("\n## Final Result\n$finalOutput\n".toByteArray())
+                    statusBuffer?.setLength(0)
+                    statusBuffer?.append("<b>LSP Action Completed</b>")
+                    task.update()
                     finalOutput
                 } catch (e: Exception) {
                     log.error("LSP Error", e)
                     transcript?.write("\n## Error\n${e.message}\n".toByteArray())
+                    task.error(e)
                     throw e
                 } finally {
                     if (process.isAlive) {
@@ -178,6 +193,7 @@ class LanguageServerTask(
                     try {
                         resultFn(executeLsp())
                     } catch (e: Exception) {
+                        task.error(e)
                         resultFn("Error: ${e.message}")
                     } finally {
                         semaphore.release()
@@ -188,6 +204,7 @@ class LanguageServerTask(
 
         } catch (e: Exception) {
             log.warn("Task Failed", e)
+            task.error(e)
             resultFn("Error: ${e.message}")
         } finally {
             transcript?.close()

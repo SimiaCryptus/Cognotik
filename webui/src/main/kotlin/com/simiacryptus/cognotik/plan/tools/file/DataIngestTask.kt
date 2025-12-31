@@ -96,7 +96,7 @@ DataIngest - Parse unstructured logs/text into structured data
 
         fun log(msg: String) {
             logTask.add(MarkdownUtil.renderMarkdown(msg, ui = ui))
-            task.update()
+            logTask.update()
         }
 
         try {
@@ -108,7 +108,8 @@ DataIngest - Parse unstructured logs/text into structured data
             log("Found ${files.size} files to process.")
 
             // 2. Sampling Phase
-            log("## Phase 1: Sampling")
+            logTask.header("Phase 1: Sampling", level = 2)
+            logTask.update()
             val sampleLines = mutableListOf<String>()
 
             for (file in files) {
@@ -125,7 +126,8 @@ DataIngest - Parse unstructured logs/text into structured data
             log("Loaded ${sampleLines.size} sample lines.")
 
             // 3. Discovery Loop
-            log("## Phase 2: Pattern Discovery")
+            logTask.header("Phase 2: Pattern Discovery", level = 2)
+            logTask.update()
             val registry = mutableListOf<PatternRegistryItem>()
             val unparsedSample = sampleLines.toMutableList()
             val parsingChatter = defaultFast.getChildClient(task)
@@ -133,17 +135,19 @@ DataIngest - Parse unstructured logs/text into structured data
 
             val discoveryTask = task.ui.newTask(false)
             tabs["Discovery"] = discoveryTask.placeholder
+            val statusBuffer = discoveryTask.add("Initializing discovery...")
+            discoveryTask.update()
+
 
             var iteration = 0
             while (iteration < (executionConfig?.max_iterations ?: 10)) {
                 val coverage = 1.0 - (unparsedSample.size.toDouble() / sampleLines.size.toDouble())
-                discoveryTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        "**Iteration ${iteration + 1}** | Coverage: ${(coverage * 100).toInt()}% | Residuals: ${unparsedSample.size}",
-                        ui = ui
-                    )
-                )
-                task.update()
+                statusBuffer?.setLength(0)
+                statusBuffer?.append(MarkdownUtil.renderMarkdown(
+                    "**Iteration ${iteration + 1}** | Coverage: ${(coverage * 100).toInt()}% | Residuals: ${unparsedSample.size}",
+                    ui = ui
+                ))
+                discoveryTask.update()
 
                 if (coverage >= (executionConfig?.coverage_threshold ?: 0.95) || unparsedSample.isEmpty()) {
                     log("Coverage threshold reached.")
@@ -209,9 +213,13 @@ DataIngest - Parse unstructured logs/text into structured data
                 }
                 iteration++
             }
+            statusBuffer?.setLength(0)
+            statusBuffer?.append("<strong>Discovery Complete</strong>")
+            discoveryTask.update()
 
             // 4. Bulk Extraction
-            log("## Phase 3: Bulk Extraction")
+            logTask.header("Phase 3: Bulk Extraction", level = 2)
+            logTask.update()
             val (dataFileLink, dataFile) = task.createFile("data.jsonl")
             val (dataCsvLink, dataCsvFile) = task.createFile("data.csv")
             val (indexFileLink, indexFile) = task.createFile("index.csv")

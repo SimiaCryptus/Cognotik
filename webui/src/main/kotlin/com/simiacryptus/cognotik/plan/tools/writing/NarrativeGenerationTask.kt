@@ -244,6 +244,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
             log.debug("Loaded input file context: ${inputFileContext.length} characters")
             transcript?.write("## Input Files Context\n\n$inputFileContext\n\n")
             transcript?.flush()
+            task.expandable("Input File Context", "<pre>${inputFileContext.truncateForDisplay(5000)}</pre>")
         }
         // Combine messages with input files
         val combinedMessages = messages + listOf(inputFileContext).filter { it.isNotBlank() }
@@ -280,7 +281,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
         overviewTask.add(overviewContent.renderMarkdown)
         transcript?.write("\n## Overview\n\n$overviewContent\n\n")
         transcript?.flush()
-        task.update()
+        overviewTask.update()
 
         val resultBuilder = StringBuilder()
         resultBuilder.append("# Generated Narrative: $subject\n\n")
@@ -292,7 +293,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
 
             overviewTask.add("\n✅ Phase 1 Complete: Narrative analysis finished\n".renderMarkdown)
             overviewTask.add("\n### Phase 2: Outline Generation\n*Creating detailed scene-by-scene outline...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
 
 // Phase 2: Generate detailed outline
             log.info("Phase 2: Generating narrative outline")
@@ -307,7 +308,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
+            outlineTask.update()
 
             val totalScenes = genConfig.number_of_acts * genConfig.scenes_per_act
             val wordsPerScene = genConfig.target_word_count / totalScenes
@@ -318,7 +319,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
             if (genConfig.generate_cover_image || genConfig.generate_scene_images) {
                 log.info("Phase 2.0: Generating cover image to use as visual seed")
                 overviewTask.add("\n### Phase 2.0: Generating Cover Image\n*Creating visual foundation for the narrative...*\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
                 coverImagePath = generateCoverImage(
                     task = task,
                     tabs = tabs,
@@ -332,7 +333,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
                 } else {
                     overviewTask.add("⚠️ Phase 2.0: Cover image generation failed, proceeding without visual seed\n".renderMarkdown)
                 }
-                task.update()
+                overviewTask.update()
             }
 
             // Pass 1: High-level outline with characters and settings
@@ -472,11 +473,11 @@ Ensure the structure:
             outlineTask.add(highLevelContent.renderMarkdown)
             transcript?.write("\n## High-Level Outline\n\n$highLevelContent\n\n")
             transcript?.flush()
-            task.update()
+            outlineTask.update()
 // Pass 2: Expand acts into detailed scenes
             log.info("Phase 2.2: Expanding acts into scenes")
             outlineTask.add("\n**Status:** Pass 2 - Expanding acts into detailed scenes...\n".renderMarkdown)
-            task.update()
+            outlineTask.update()
 
             val detailedActs = mutableListOf<ActOutline>()
             highLevelOutline.acts.forEach { actSummary ->
@@ -579,7 +580,8 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
             outlineTask.add(outlineContent.renderMarkdown)
             transcript?.write("\n## Outline\n\n$outlineContent\n\n")
             transcript?.flush()
-            task.update()
+            outlineTask.update()
+            outlineTask.complete()
 
             resultBuilder.append("## ${outline.title}\n\n")
             resultBuilder.append("${outline.premise}\n\n")
@@ -587,7 +589,7 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
 
             overviewTask.add("✅ Phase 2 Complete: Outline created (${outline.acts.sumOf { it.scenes?.size ?: 0 }} scenes)\n".renderMarkdown)
             overviewTask.add("\n### Phase 3: Scene Generation\n*Writing scenes iteratively with context...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
 
             // Phase 2.5: Generate setting and character images if enabled
             val allScenes = outline.acts.flatMap { it.scenes ?: emptyList() } ?: emptyList()
@@ -597,7 +599,7 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
             if (genConfig.generate_scene_images) {
                 log.info("Phase 2.5: Generating setting and character reference images")
                 overviewTask.add("\n### Phase 2.5: Generating Reference Images\n*Creating setting and character visualizations...*\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
 
                 // Generate images for defined settings
                 log.info("Generating images for ${outline.settings.size} settings")
@@ -631,7 +633,7 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
                     }
                 }
                 overviewTask.add("✅ Phase 2.5 Complete: Generated ${settingImages.size} setting images and ${characterImages.size} character images\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
             }
 
 
@@ -644,7 +646,7 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
                 log.info("Generating Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}/${allScenes.size}: ${sceneOutline?.title}")
 
                 overviewTask.add("- Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}: ${sceneOutline?.title} ".renderMarkdown)
-                task.update()
+                overviewTask.update()
 
                 val sceneTask = task.ui.newTask(false)
                 tabs["Act ${sceneOutline.act_number} Scene ${sceneOutline.scene_number}"] = sceneTask.placeholder
@@ -657,7 +659,7 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
+                sceneTask.update()
 
                 // Build context from previous scenes
                 val recentContext = if (generatedScenes.size > 0) {
@@ -811,7 +813,8 @@ Provide the revised scene content only.
                 sceneTask.add(sceneContent.renderMarkdown)
                 transcript?.write("\n## $sceneContent\n\n")
                 transcript?.flush()
-                task.update()
+                sceneTask.update()
+                sceneTask.complete()
 
                 // Add to result
                 resultBuilder.append("## Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}: ${sceneOutline.title}\n\n")
@@ -819,7 +822,7 @@ Provide the revised scene content only.
                 resultBuilder.append("\n\n---\n\n")
 
                 overviewTask.add("✅ (${generatedScene.word_count} words)\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
 // Generate scene image if enabled
                 if (genConfig.generate_scene_images) {
                     generateSceneImage(
@@ -844,7 +847,7 @@ Provide the revised scene content only.
 
             overviewTask.add("\n✅ Phase 3 Complete: All scenes generated\n".renderMarkdown)
             overviewTask.add("\n### Phase 4: Final Assembly\n*Compiling complete narrative...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
 
             // Phase 4: Create final compiled version
             log.info("Phase 4: Assembling final narrative")
@@ -886,7 +889,8 @@ Provide the revised scene content only.
             }
 
             finalTask.add(finalNarrative.renderMarkdown)
-            task.update()
+            finalTask.update()
+            finalTask.complete()
 
             // Final statistics
             val totalTime = System.currentTimeMillis() - startTime
@@ -914,7 +918,8 @@ Provide the revised scene content only.
                     )
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.update()
+            overviewTask.complete()
             transcript?.write("\n## Final Statistics\n\n- Total Scenes: ${generatedScenes.size}\n- Total Word Count: $cumulativeWordCount\n- Time: ${totalTime / 1000.0}s\n\n")
             transcript?.close()
 
@@ -947,7 +952,7 @@ Provide the revised scene content only.
                 jsonFile.writeText(narrativeData.toJson())
                 log.info("Saved narrative data to ${jsonFile.absolutePath}")
                 overviewTask.add("\n**Data:** Saved full narrative data to `narrative_data.json`\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
             }
 
             task.safeComplete(
@@ -972,7 +977,7 @@ Provide the revised scene content only.
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.update()
 
             val errorOutput = buildString {
                 appendLine("# Error in Narrative Generation")
@@ -1049,6 +1054,7 @@ Provide the revised scene content only.
             transcriptWriter?.flush()
             task.add("\n**Status:** ✅ Complete\n".renderMarkdown)
             task.update()
+            task.complete()
             return relativePath
         } catch (e: Exception) {
             log.error("Failed to generate cover image", e)
@@ -1147,6 +1153,7 @@ Provide the revised scene content only.
             transcriptWriter?.flush()
             task.add("\n**Status:** ✅ Complete\n".renderMarkdown)
             task.update()
+            task.complete()
             relativePath
         } catch (e: Exception) {
             log.error("Failed to generate setting reference image for: ${settingProfile.setting_id}", e)
@@ -1247,6 +1254,7 @@ Provide the revised scene content only.
             transcriptWriter?.flush()
             task.add("\n**Status:** ✅ Complete\n".renderMarkdown)
             task.update()
+            task.complete()
             relativePath
         } catch (e: Exception) {
             log.error("Failed to generate character reference image for: ${characterProfile.name}", e)
@@ -1281,7 +1289,7 @@ Provide the revised scene content only.
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
+            sceneImageTask.update()
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a cinematic scene illustration that captures the key moment and atmosphere",
                 model = orchestrationConfig.defaultImage,
@@ -1358,7 +1366,7 @@ Provide the revised scene content only.
         </div>
       """.trimIndent()
             sceneImageTask.add(imageHtml.renderMarkdown)
-            task.update()
+            sceneImageTask.update()
             // Write to transcript
             transcriptWriter?.appendLine("#### Act $actNumber, Scene $sceneNumber Image")
             transcriptWriter?.appendLine()
@@ -1368,7 +1376,8 @@ Provide the revised scene content only.
             transcriptWriter?.appendLine()
             transcriptWriter?.flush()
             sceneImageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
-            task.update()
+            sceneImageTask.update()
+            sceneImageTask.complete()
         } catch (e: Exception) {
             log.error("Failed to generate scene image for Act $actNumber, Scene $sceneNumber", e)
             transcriptWriter?.appendLine("**Scene Image Generation Failed:** ${e.message}")

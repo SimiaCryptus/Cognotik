@@ -1,17 +1,18 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.newLogStream
 import org.slf4j.Logger
-import java.io.FileOutputStream
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -119,7 +120,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        var transcriptStream: FileOutputStream? = null
+        var transcriptStream: OutputStream? = null
         try {
             val startTime = System.currentTimeMillis()
             log.info("Starting IsomorphismDiscoveryTask with source='${executionConfig?.source_domain}', target='${executionConfig?.target_domain}'")
@@ -139,7 +140,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
 
             val tabs = TabbedDisplay(task)
             val api = defaultSmart ?: return
-            transcriptStream = task.transcript()
+            transcriptStream = task.newLogStream("Transcript")
             
             writeTranscriptHeader(transcriptStream, sourceDomain, targetDomain, strictness)
 
@@ -155,7 +156,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
                 appendLine("**Verify Operations:** $verify")
                 appendLine()
                 appendLine("- ⏳ Gathering context...")
-            }.renderMarkdown)
+            }.let { MarkdownUtil.renderMarkdown(it) })
             task.update()
 
             // Context
@@ -165,11 +166,9 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             
             writeToTranscript(transcriptStream, "## Context\n\n$inputFileContent\n\n$relatedFileContent\n\n")
             
-            overviewTask.add(buildString {
-                appendLine()
-                appendLine("- ✓ Context gathered")
-                appendLine("- ⏳ Analyzing structures and mappings...")
-            }.renderMarkdown)
+            val contextHtml = MarkdownUtil.renderMarkdown("## Context\n\n$inputFileContent\n\n$relatedFileContent")
+            overviewTask.expandable("Context Data", contextHtml)
+            overviewTask.add(MarkdownUtil.renderMarkdown("- ✓ Context gathered\n- ⏳ Analyzing structures and mappings..."))
             task.update()
 
             // Analysis
@@ -179,7 +178,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
                 appendLine("# Structural Analysis")
                 appendLine()
                 appendLine("Identifying primitives and searching for mappings...")
-            }.renderMarkdown)
+            }.let { MarkdownUtil.renderMarkdown(it) })
             task.update()
 
             val prompt = """
@@ -228,7 +227,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             }
 
             // Display Results
-            analysisTask.add(formatAnalysisResult(result).renderMarkdown)
+            analysisTask.add(MarkdownUtil.renderMarkdown(formatAnalysisResult(result)))
             task.update()
             
             writeToTranscript(transcriptStream, "## Analysis Result\n\n$result\n\n")
@@ -237,7 +236,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             val synthesisTask = task.ui.newTask(false)
             tabs["Synthesis"] = synthesisTask.placeholder
             val synthesisText = formatSynthesis(result, sourceDomain, targetDomain)
-            synthesisTask.add(synthesisText.renderMarkdown)
+            synthesisTask.add(MarkdownUtil.renderMarkdown(synthesisText))
             task.update()
 
             // Final Overview
@@ -247,7 +246,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
                 appendLine("- **Confidence:** ${String.format("%.1f%%", result.confidence * 100)}")
                 appendLine("- **Mappings:** ${result.mappings.size}")
                 appendLine("- **Verifications:** ${result.verification_cases.count { it.holds }} / ${result.verification_cases.size} passed")
-            }.renderMarkdown)
+            }.let { MarkdownUtil.renderMarkdown(it) })
             task.update()
             
             writeTranscriptFooter(transcriptStream, System.currentTimeMillis() - startTime)
@@ -333,7 +332,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
         }
     }
 
-    private fun writeTranscriptHeader(stream: FileOutputStream?, source: String, target: String, strictness: String) {
+    private fun writeTranscriptHeader(stream: OutputStream?, source: String, target: String, strictness: String) {
         stream?.write(buildString {
             appendLine("# Isomorphism Discovery Transcript")
             appendLine("**Source:** $source")
@@ -345,11 +344,11 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
         }.toByteArray(StandardCharsets.UTF_8))
     }
 
-    private fun writeToTranscript(stream: FileOutputStream?, content: String) {
+    private fun writeToTranscript(stream: OutputStream?, content: String) {
         stream?.write(content.toByteArray(StandardCharsets.UTF_8))
     }
 
-    private fun writeTranscriptFooter(stream: FileOutputStream?, duration: Long) {
+    private fun writeTranscriptFooter(stream: OutputStream?, duration: Long) {
         stream?.write(buildString {
             appendLine("---")
             appendLine("**Duration:** ${duration / 1000}s")

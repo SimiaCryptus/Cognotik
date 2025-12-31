@@ -202,7 +202,7 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
 
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
+        val overviewTask = task.ui.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         val overviewContent = buildString {
@@ -234,7 +234,6 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
             appendLine("*Running comprehensive journalism analysis...*")
         }
         overviewTask.add(overviewContent.renderMarkdown)
-        task.update()
         transcript?.write(overviewContent.toByteArray())
 
 
@@ -246,7 +245,10 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
             log.info("Phase 1: Running journalism investigation")
             val investigationResult = StringBuilder()
 
-            super.run(agent, messages, task, { result ->
+            val investigationTask = task.ui.newTask()
+            tabs["Investigation"] = investigationTask.placeholder
+
+            super.run(agent, messages, investigationTask, { result ->
                 investigationResult.append(result)
                 transcript?.write("\n## Investigation Results\n\n".toByteArray())
                 transcript?.write(result.toByteArray())
@@ -255,11 +257,10 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
 
             overviewTask.add("\n✅ Phase 1 Complete: Investigation finished\n".renderMarkdown)
             overviewTask.add("\n### Phase 2: Article Structure\n*Creating article outline and structure...*\n".renderMarkdown)
-            task.update()
 
             // Phase 2: Generate article structure
             log.info("Phase 2: Generating article structure")
-            val structureTask = task.ui.newTask(false)
+            val structureTask = task.ui.newTask()
             tabs["Article Structure"] = structureTask.placeholder
 
             structureTask.add(
@@ -270,7 +271,6 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
 
             val structureAgent = ParsedAgent(
                 resultClass = ArticleStructure::class.java,
@@ -363,7 +363,7 @@ Ensure the structure:
                 appendLine("**Status:** ✅ Complete")
             }
             structureTask.add(structureContent.renderMarkdown)
-            task.update()
+            structureTask.complete()
             transcript?.write("\n## Article Structure\n\n".toByteArray())
             transcript?.write(structureContent.toByteArray())
             transcript?.write("\n\n".toByteArray())
@@ -371,11 +371,10 @@ Ensure the structure:
 
             overviewTask.add("✅ Phase 2 Complete: Structure created (${structure.sections.size} sections)\n".renderMarkdown)
             overviewTask.add("\n### Phase 3: Article Writing\n*Writing full article...*\n".renderMarkdown)
-            task.update()
 
             // Phase 3: Write the article
             log.info("Phase 3: Writing article")
-            val writingTask = task.ui.newTask(false)
+            val writingTask = task.ui.newTask()
             tabs["Article Draft"] = writingTask.placeholder
 
             writingTask.add(
@@ -386,7 +385,6 @@ Ensure the structure:
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
 
             val writingPrompt = """
 You are a professional journalist writing for ${genConfig.target_publication}. Write the complete article.
@@ -516,7 +514,7 @@ Provide the revised article content only.
                 appendLine("**Status:** ✅ Complete")
             }
             writingTask.add(articleContent.renderMarkdown)
-            task.update()
+            writingTask.complete()
             transcript?.write("\n## Generated Article\n\n".toByteArray())
             transcript?.write(articleContent.toByteArray())
             transcript?.write("\n\n".toByteArray())
@@ -531,15 +529,14 @@ Provide the revised article content only.
             resultBuilder.append("\n\n")
 
             overviewTask.add("✅ Phase 3 Complete: Article written (${article.word_count} words)\n".renderMarkdown)
-            task.update()
 
             // Phase 4: Generate social snippets if requested
             if (genConfig.generate_social_snippets) {
                 log.info("Phase 4: Generating social media snippets")
                 overviewTask.add("\n### Phase 4: Social Media\n*Creating social snippets...*\n".renderMarkdown)
-                task.update()
 
-                val socialTask = task.ui.newTask(false)
+
+                val socialTask = task.ui.newTask()
                 tabs["Social Media"] = socialTask.placeholder
 
                 socialTask.add(
@@ -550,7 +547,6 @@ Provide the revised article content only.
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
 
                 val socialAgent = ParsedAgent(
                     resultClass = SocialSnippets::class.java,
@@ -599,14 +595,13 @@ Make each snippet:
                     appendLine("**Status:** ✅ Complete")
                 }
                 socialTask.add(socialContent.renderMarkdown)
-                task.update()
+                socialTask.complete()
                 transcript?.write("\n## Social Media Snippets\n\n".toByteArray())
                 transcript?.write(socialContent.toByteArray())
                 transcript?.write("\n\n".toByteArray())
 
 
                 overviewTask.add("✅ Phase 4 Complete: Social snippets created\n".renderMarkdown)
-                task.update()
             }
 
             // Final statistics
@@ -636,7 +631,7 @@ Make each snippet:
                     )
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.complete()
             transcript?.write("\n## Final Statistics\n\n".toByteArray())
             transcript?.write("- Article Format: ${genConfig.article_format}\n".toByteArray())
             transcript?.write("- Word Count: ${article.word_count}\n".toByteArray())
@@ -692,7 +687,7 @@ Make each snippet:
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.complete()
             transcript?.write("\n## Error\n\n".toByteArray())
             transcript?.write("**Error:** ${e.message}\n".toByteArray())
             transcript?.write("**Type:** ${e.javaClass.simpleName}\n".toByteArray())

@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -192,7 +192,8 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = transcript(task)
+        val (transcript, transcriptLink) = transcript(task)
+        task.add(transcriptLink)
         try {
             val startTime = System.currentTimeMillis()
             log.info("Starting MathematicalReasoningTask with problem: ${executionConfig?.problem_statement?.take(100)}")
@@ -220,7 +221,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
             val api = defaultSmart
 
             // Create overview tab
-            val overviewTask = task.ui.newTask(false)
+            val overviewTask = task.ui.newTask()
             tabs["Overview"] = overviewTask.placeholder
             val overviewContent = buildString {
                 appendLine("# Mathematical Reasoning Task")
@@ -260,8 +261,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
                 appendLine()
                 appendLine("- ⏳ Analyzing problem...")
             }
-            overviewTask.add(overviewContent.renderMarkdown)
-            task.update()
+            overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent, ui = task.ui))
             transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
 
             // Gather context
@@ -272,7 +272,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
             var successfulPath: ReasoningPath? = null
 
             // Create solution tab
-            val solutionTask = task.ui.newTask(false)
+            val solutionTask = task.ui.newTask()
             tabs["Solution"] = solutionTask.placeholder
 
             // Path search loop
@@ -289,8 +289,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
 
                 log.info("Exploring path $pathsExplored with ${currentPath.size} steps, priority=$priority")
 
-                overviewTask.add("\n- 🔍 Exploring path $pathsExplored (${currentPath.size} steps)...".renderMarkdown)
-                task.update()
+                overviewTask.add(MarkdownUtil.renderMarkdown("\n- 🔍 Exploring path $pathsExplored (${currentPath.size} steps)...", ui = task.ui))
 
                 // Explore this path
                 val result = explorePath(
@@ -332,18 +331,18 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
 
             // Create proof tab if successful
             if (successfulPath != null) {
-                val proofTask = task.ui.newTask(false)
+                val proofTask = task.ui.newTask()
                 tabs["Formal Proof"] = proofTask.placeholder
                 val proofContent = generateFormalProof(successfulPath, problemStatement, goal, detailLevel)
-                proofTask.add(proofContent.renderMarkdown)
-                task.update()
+                proofTask.add(MarkdownUtil.renderMarkdown(proofContent, ui = task.ui))
+                proofTask.complete()
                 transcript?.write("\n\n---\n\n# Formal Proof\n\n".toByteArray(StandardCharsets.UTF_8))
                 transcript?.write(proofContent.toByteArray(StandardCharsets.UTF_8))
             }
 
             // Show all paths if requested
             if (showAllPaths && exploredPaths.size > 1) {
-                val pathsTask = task.ui.newTask(false)
+                val pathsTask = task.ui.newTask()
                 tabs["All Paths"] = pathsTask.placeholder
                 val pathsContent = buildString {
                     appendLine("# All Explored Paths")
@@ -368,8 +367,8 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
                         appendLine()
                     }
                 }
-                pathsTask.add(pathsContent.renderMarkdown)
-                task.update()
+                pathsTask.add(MarkdownUtil.renderMarkdown(pathsContent, ui = task.ui))
+                pathsTask.complete()
             }
 
             // Final summary
@@ -399,8 +398,9 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
                         }")
                 }
             }
-            overviewTask.add(finalOverview.renderMarkdown)
-            task.update()
+            overviewTask.add(MarkdownUtil.renderMarkdown(finalOverview, ui = task.ui))
+            overviewTask.complete()
+            solutionTask.complete()
             transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
             transcript?.close()
 
@@ -533,15 +533,13 @@ Create the initial reasoning step that captures the starting state of the proble
             }
             appendLine("---")
             appendLine()
-        }.renderMarkdown)
-        task.update()
+        }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
 
         while (depth < maxDepth) {
             // Check if we've reached the goal
             val goalCheck = checkGoal(steps, goal, api)
             if (goalCheck.goal_reached) {
-                solutionTask.add("\n✅ **Goal Reached!**\n\n${goalCheck.explanation}\n".renderMarkdown)
-                task.update()
+                solutionTask.add(MarkdownUtil.renderMarkdown("\n✅ **Goal Reached!**\n\n${goalCheck.explanation}\n", ui = task.ui))
                 return ReasoningPath(
                     steps = steps,
                     reached_goal = true,
@@ -554,8 +552,7 @@ Create the initial reasoning step that captures the starting state of the proble
             val nextStep = generateNextStep(steps, problemStatement, goal, givenInfo, domain, detailLevel, api)
 
             if (nextStep == null || nextStep.statement.isBlank()) {
-                solutionTask.add("\n⚠️ **No valid next step found**\n".renderMarkdown)
-                task.update()
+                solutionTask.add(MarkdownUtil.renderMarkdown("\n⚠️ **No valid next step found**\n", ui = task.ui))
                 return ReasoningPath(
                     steps = steps,
                     reached_goal = false,
@@ -575,8 +572,7 @@ Create the initial reasoning step that captures the starting state of the proble
                     appendLine()
                     verification.errors.forEach { appendLine("- ❌ $it") }
                     appendLine()
-                }.renderMarkdown)
-                task.update()
+                }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
 
                 // Try to recover with suggestions
                 if (verification.suggestions.isNotEmpty()) {
@@ -617,8 +613,7 @@ Create the initial reasoning step that captures the starting state of the proble
                     appendLine("*Note:* ${verifiedStep.notes}")
                 }
                 appendLine()
-            }.renderMarkdown)
-            task.update()
+            }.let { MarkdownUtil.renderMarkdown(it, ui = task.ui) })
         }
 
         return ReasoningPath(
@@ -905,15 +900,13 @@ Rank them by likelihood of success.
         }
     }
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
+    private fun transcript(task: SessionTask): Pair<FileOutputStream?, String> {
         val transcriptFile = "math_proof_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+        val html = "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(".md")
             }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
+        return markdownTranscript to html
     }
 }

@@ -145,21 +145,15 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         val overviewTask = task.ui.newTask()
         tabbedDisplay["Overview"] = overviewTask.placeholder
 
-        overviewTask.add(
-            MarkdownUtil.renderMarkdown(
-                "## Meta-Cognitive Reflection on Task: `$subjectTaskId`",
-                ui = overviewTask.ui
-            )
-        )
+        overviewTask.header("Meta-Cognitive Reflection on Task: $subjectTaskId", level = 2)
         val priorContext = getPriorCode(agent.executionState)
         if (priorContext.isNotBlank()) {
             val contextTask = task.ui.newTask()
             tabbedDisplay["Context"] = contextTask.placeholder
+            contextTask.header("Prior Context", level = 3)
             contextTask.safeComplete(
                 MarkdownUtil.renderMarkdown(
                     """
-          |### Prior Context
-          |
           |```
           |${priorContext.truncateForDisplay()}
           |```
@@ -206,11 +200,10 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             evaluateConfidence = executionConfig?.evaluate_confidence ?: true
         )
 
+        overviewTask.header("Reflection Parameters", level = 3)
         overviewTask.add(
             MarkdownUtil.renderMarkdown(
                 """
-                |### Reflection Parameters
-                |
                 |**Subject Task**: `$subjectTaskId`
                 |
                 |**Reflection Aspects**: $aspectsText
@@ -246,9 +239,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
         // Step 4: Create agent and perform reflection
         val reflectionTask = task.ui.newTask()
         tabbedDisplay["Reflection Analysis"] = reflectionTask.placeholder
-        reflectionTask.add(
-            MarkdownUtil.renderMarkdown("### Analyzing reasoning process...", ui = reflectionTask.ui)
-        )
+        reflectionTask.header("Analyzing reasoning process...", level = 3)
 
 
         val chatAgent = ChatAgent(
@@ -265,13 +256,10 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             }
 
 
+            reflectionTask.header("Reflection Analysis", level = 3)
             reflectionTask.add(
                 MarkdownUtil.renderMarkdown(
-                    """
-                    |### Reflection Analysis
-                    |
-                    |${reflectionResult.truncateForDisplay()}
-                    """.trimMargin(),
+                    reflectionResult.truncateForDisplay(),
                     ui = reflectionTask.ui
                 )
             )
@@ -291,13 +279,11 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             }
 
 
+            summaryTask.header("Summary", level = 3)
+            summaryTask.add(MarkdownUtil.renderMarkdown(summary, ui = summaryTask.ui))
             summaryTask.safeComplete(
                 MarkdownUtil.renderMarkdown(
                     """
-                    |### Summary
-                    |
-                    |$summary
-                    |
                     |---
                     |
                     |**Meta-cognitive reflection completed successfully.**

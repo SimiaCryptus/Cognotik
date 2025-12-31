@@ -244,7 +244,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
       transcript?.write("# Genetic Optimization Task Transcript\n\n".toByteArray())
 
       // Create overview tab
-      val overviewTask = task.ui.newTask(false)
+      val overviewTask = task.ui.newTask()
       tabs["Overview"] = overviewTask.placeholder
       val overviewContent = buildString {
         appendLine("# Genetic Optimization Task")
@@ -290,7 +290,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         appendLine("- ⏳ Initializing population...")
       }
       overviewTask.add(overviewContent.renderMarkdown)
-      task.update()
       transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
 
       // Gather context
@@ -355,7 +354,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         }
         appendLine("- ⏳ Starting evolution...")
       }.renderMarkdown)
-      task.update()
 
       // Track best variant across all generations
       var bestVariant = currentPopulation[0]
@@ -366,7 +364,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
       for (generation in 1..numGenerations) {
         log.info("Starting generation $generation/$numGenerations")
 
-        val generationTask = task.ui.newTask(false)
+        val generationTask = task.ui.newTask()
         tabs["Generation $generation"] = generationTask.placeholder
         transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
         transcript?.write("# Generation $generation\n\n".toByteArray(StandardCharsets.UTF_8))
@@ -377,7 +375,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
           appendLine()
           appendLine("Generating $populationSize variants...")
         }.renderMarkdown)
-        task.update()
 
 // Step 1: Generate new variants
         val newVariants = mutableListOf<EvaluatedVariant>()
@@ -583,7 +580,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             }
         }
         generationTask.add(generationResults.renderMarkdown)
-        task.update()
         transcript?.write(generationResults.toByteArray(StandardCharsets.UTF_8))
 
         // Update overview
@@ -598,12 +594,11 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             }, Avg=${String.format("%.1f", currentPopulation.map { it.score.overall_score }.average())}"
           )
         }.renderMarkdown)
-        task.update()
       }
 
       // Create evolution visualization tab
       log.info("Creating evolution visualization")
-      val evolutionTask = task.ui.newTask(false)
+      val evolutionTask = task.ui.newTask()
       tabs["Evolution Analysis"] = evolutionTask.placeholder
       val evolutionAnalysis = buildString {
         appendLine("# Evolution Analysis")
@@ -728,7 +723,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         appendLine(bestVariant.score.justification)
       }
       evolutionTask.add(evolutionAnalysis.renderMarkdown)
-      task.update()
       transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
       transcript?.write(evolutionAnalysis.toByteArray(StandardCharsets.UTF_8))
 
@@ -796,7 +790,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         appendLine("**Status:** ✓ Complete")
       }
       overviewTask.add(finalOverview.renderMarkdown)
-      task.update()
       transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
       transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
       transcript?.close()
@@ -875,7 +868,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
     val transcriptFile = "full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
     val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
     val markdownTranscript = file?.outputStream()
-    task.complete(
+    task.add(
       "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
         link.removeSuffix(
           ".md"
