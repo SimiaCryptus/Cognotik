@@ -14,7 +14,6 @@ class EventPanel : JPanel() {
         border = BorderFactory.createEmptyBorder(15, 15, 15, 15)
 
 
-
         val listModel = DefaultListModel<TranscriptionProcessor.TranscriptionResult>()
         val transcriptionList = JList(listModel)
         transcriptionList.setCellRenderer(object : DefaultListCellRenderer() {

@@ -269,7 +269,9 @@ ComicBookGeneration - Generate comic book scripts and visuals
                                 it.description + " " + it.dialog.joinToString(" ") { d -> d.character + " " + d.text }
                             }
                             script.characters.forEach { char ->
-                                if (rowContent.contains(char.name, ignoreCase = true) || char.name.split(" ").any { it.length > 3 && rowContent.contains(it, ignoreCase = true) }) {
+                                if (rowContent.contains(char.name, ignoreCase = true) || char.name.split(" ")
+                                        .any { it.length > 3 && rowContent.contains(it, ignoreCase = true) }
+                                ) {
                                     val path = characterImages[char.name]
                                     if (path != null) {
                                         try {

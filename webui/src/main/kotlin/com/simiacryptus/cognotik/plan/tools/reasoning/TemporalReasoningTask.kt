@@ -228,13 +228,15 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
         """.trimMargin(), ui = ui
                 )
             )
-            dataTask.expandable("Temporal Data Context", MarkdownUtil.renderMarkdown(
-                """
+            dataTask.expandable(
+                "Temporal Data Context", MarkdownUtil.renderMarkdown(
+                    """
                 |```
                 |${temporalData.truncateForDisplay(maxOutputLength)}
                 |```
                 """.trimMargin(), ui = ui
-            ))
+                )
+            )
             task.update()
 
             // Get prior context

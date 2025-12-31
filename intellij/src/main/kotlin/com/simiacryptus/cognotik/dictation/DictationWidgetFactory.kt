@@ -132,8 +132,14 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
                     apiBase = apiData.baseUrl,
                     logLevel = Level.INFO,
                     logStreams = mutableListOf(),
-                    workPool = ApplicationServices.threadPoolManager.getPool(currentSession, UserSettingsManager.defaultUser),
-                    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(currentSession, UserSettingsManager.defaultUser),
+                    workPool = ApplicationServices.threadPoolManager.getPool(
+                        currentSession,
+                        UserSettingsManager.defaultUser
+                    ),
+                    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+                        currentSession,
+                        UserSettingsManager.defaultUser
+                    ),
                     provider = model.provider
                 )
             }

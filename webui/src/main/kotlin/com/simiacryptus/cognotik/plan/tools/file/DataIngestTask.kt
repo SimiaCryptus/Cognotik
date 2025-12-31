@@ -143,10 +143,12 @@ DataIngest - Parse unstructured logs/text into structured data
             while (iteration < (executionConfig?.max_iterations ?: 10)) {
                 val coverage = 1.0 - (unparsedSample.size.toDouble() / sampleLines.size.toDouble())
                 statusBuffer?.setLength(0)
-                statusBuffer?.append(MarkdownUtil.renderMarkdown(
-                    "**Iteration ${iteration + 1}** | Coverage: ${(coverage * 100).toInt()}% | Residuals: ${unparsedSample.size}",
-                    ui = ui
-                ))
+                statusBuffer?.append(
+                    MarkdownUtil.renderMarkdown(
+                        "**Iteration ${iteration + 1}** | Coverage: ${(coverage * 100).toInt()}% | Residuals: ${unparsedSample.size}",
+                        ui = ui
+                    )
+                )
                 discoveryTask.update()
 
                 if (coverage >= (executionConfig?.coverage_threshold ?: 0.95) || unparsedSample.isEmpty()) {

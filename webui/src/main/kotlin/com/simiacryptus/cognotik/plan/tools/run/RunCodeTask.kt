@@ -157,7 +157,8 @@ class RunCodeTask(
                 }
                 buttonsHtml.append(ui.hrefLink("Continue", "href-link play-button") {
                     transcript?.write("## User Action: Continue\n\n".toByteArray())
-                    val finalOutput = "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
+                    val finalOutput =
+                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
                     resultFn(finalOutput)
                     semaphore.release()
                 })

@@ -127,7 +127,11 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
                 appendLine()
                 appendLine("**Preserve Strengths:** ${if (preserveStrengths) "Yes" else "No"}")
                 appendLine()
-                appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+                appendLine(
+                    "**Started:** ${
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    }"
+                )
                 appendLine()
                 appendLine("---")
                 appendLine()

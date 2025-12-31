@@ -487,8 +487,8 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
                 )
 
                 val stakeholderAgent = ParsedAgent(
-                resultClass = StakeholderAnalysis::class.java,
-                prompt = """
+                    resultClass = StakeholderAnalysis::class.java,
+                    prompt = """
 You are a strategic business analyst. Analyze the stakeholders for this business proposal.
 
 Proposal: $proposalTitle
@@ -515,10 +515,10 @@ Consider:
 
 Identify 3-5 key stakeholders who will influence the decision.
           """.trimIndent(),
-                model = api,
-                temperature = 0.6,
-                parsingChatter = defaultFast
-            )
+                    model = api,
+                    temperature = 0.6,
+                    parsingChatter = defaultFast
+                )
 
 
                 val stakeholderAnalysis = stakeholderAgent.answer(listOf("Analyze stakeholders")).obj
@@ -527,37 +527,37 @@ Identify 3-5 key stakeholders who will influence the decision.
                 writeToProposal("## Key Stakeholders\n\n")
 
                 val stakeholderContent = buildString {
-                appendLine("## Key Stakeholders")
-                appendLine()
-                stakeholderAnalysis.stakeholders.forEach { stakeholder ->
-                    val influenceIcon = when (stakeholder.influence_level.lowercase()) {
-                        "high" -> "🔴"
-                        "medium" -> "🟡"
-                        else -> "🟢"
-                    }
-                    appendLine("### $influenceIcon ${stakeholder.name}")
+                    appendLine("## Key Stakeholders")
                     appendLine()
-                    appendLine("**Influence Level:** ${stakeholder.influence_level}")
-                    appendLine()
-                    appendLine("**Interests:**")
-                    stakeholder.interests.forEach { interest ->
-                        appendLine("- $interest")
-                    }
-                    appendLine()
-                    if (stakeholder.concerns.isNotEmpty()) {
-                        appendLine("**Concerns:**")
-                        stakeholder.concerns.forEach { concern ->
-                            appendLine("- $concern")
+                    stakeholderAnalysis.stakeholders.forEach { stakeholder ->
+                        val influenceIcon = when (stakeholder.influence_level.lowercase()) {
+                            "high" -> "🔴"
+                            "medium" -> "🟡"
+                            else -> "🟢"
+                        }
+                        appendLine("### $influenceIcon ${stakeholder.name}")
+                        appendLine()
+                        appendLine("**Influence Level:** ${stakeholder.influence_level}")
+                        appendLine()
+                        appendLine("**Interests:**")
+                        stakeholder.interests.forEach { interest ->
+                            appendLine("- $interest")
                         }
                         appendLine()
+                        if (stakeholder.concerns.isNotEmpty()) {
+                            appendLine("**Concerns:**")
+                            stakeholder.concerns.forEach { concern ->
+                                appendLine("- $concern")
+                            }
+                            appendLine()
+                        }
+                        appendLine("**Addressing Strategy:** ${stakeholder.addressing_strategy}")
+                        appendLine()
+                        appendLine("---")
+                        appendLine()
                     }
-                    appendLine("**Addressing Strategy:** ${stakeholder.addressing_strategy}")
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
                 }
-                appendLine("**Status:** ✅ Complete")
-            }
                 stakeholderTask.add(stakeholderContent.renderMarkdown)
                 writeToProposal(stakeholderContent)
                 stakeholderAnalysis
@@ -584,8 +584,8 @@ Identify 3-5 key stakeholders who will influence the decision.
                     )
 
                     val roiAgent = ParsedAgent(
-                    resultClass = ROIAnalysis::class.java,
-                    prompt = """
+                        resultClass = ROIAnalysis::class.java,
+                        prompt = """
 You are a financial analyst. Create a comprehensive ROI analysis for this business proposal.
 
 Proposal: $proposalTitle
@@ -620,10 +620,10 @@ Provide:
 Be realistic and conservative in projections. Include assumptions.
 If specific numbers aren't provided, use reasonable estimates based on the proposal type and industry standards.
           """.trimIndent(),
-                    model = api,
-                    temperature = 0.5,
-                    parsingChatter = defaultFast
-                )
+                        model = api,
+                        temperature = 0.5,
+                        parsingChatter = defaultFast
+                    )
 
 
                     val roiAnalysis = roiAgent.answer(listOf("Perform ROI analysis")).obj
@@ -631,40 +631,40 @@ If specific numbers aren't provided, use reasonable estimates based on the propo
                     logToTranscript("ROI Analysis complete: ${roiAnalysis.roi_summary.take(200)}\n\n")
 
                     val roiContent = buildString {
-                    appendLine("## Financial Projections")
-                    appendLine()
-                    appendLine("| Metric | Value |")
-                    appendLine("|--------|-------|")
-                    appendLine("| Total Investment | ${roiAnalysis.financial_projections.total_investment} |")
-                    appendLine("| Year 1 Return | ${roiAnalysis.financial_projections.year_1_return} |")
-                    appendLine("| Year 2 Return | ${roiAnalysis.financial_projections.year_2_return} |")
-                    appendLine("| Year 3 Return | ${roiAnalysis.financial_projections.year_3_return} |")
-                    appendLine("| Break-Even Point | ${roiAnalysis.financial_projections.break_even_point} |")
-                    appendLine()
-                    appendLine("### Cost Breakdown")
-                    appendLine()
-                    roiAnalysis.cost_breakdown.forEach { cost ->
-                        appendLine("**${cost.category}:** ${cost.amount}")
-                        appendLine("- ${cost.justification}")
+                        appendLine("## Financial Projections")
                         appendLine()
-                    }
-                    appendLine("### Expected Benefits")
-                    appendLine()
-                    roiAnalysis.expected_benefits.forEach { benefit ->
-                        appendLine("**${benefit.type}**")
-                        appendLine("- Description: ${benefit.description}")
-                        appendLine("- Value: ${benefit.quantifiable_value}")
-                        appendLine("- Timeline: ${benefit.timeline}")
+                        appendLine("| Metric | Value |")
+                        appendLine("|--------|-------|")
+                        appendLine("| Total Investment | ${roiAnalysis.financial_projections.total_investment} |")
+                        appendLine("| Year 1 Return | ${roiAnalysis.financial_projections.year_1_return} |")
+                        appendLine("| Year 2 Return | ${roiAnalysis.financial_projections.year_2_return} |")
+                        appendLine("| Year 3 Return | ${roiAnalysis.financial_projections.year_3_return} |")
+                        appendLine("| Break-Even Point | ${roiAnalysis.financial_projections.break_even_point} |")
                         appendLine()
+                        appendLine("### Cost Breakdown")
+                        appendLine()
+                        roiAnalysis.cost_breakdown.forEach { cost ->
+                            appendLine("**${cost.category}:** ${cost.amount}")
+                            appendLine("- ${cost.justification}")
+                            appendLine()
+                        }
+                        appendLine("### Expected Benefits")
+                        appendLine()
+                        roiAnalysis.expected_benefits.forEach { benefit ->
+                            appendLine("**${benefit.type}**")
+                            appendLine("- Description: ${benefit.description}")
+                            appendLine("- Value: ${benefit.quantifiable_value}")
+                            appendLine("- Timeline: ${benefit.timeline}")
+                            appendLine()
+                        }
+                        appendLine("### ROI Summary")
+                        appendLine()
+                        appendLine(roiAnalysis.roi_summary)
+                        appendLine()
+                        appendLine("**Payback Period:** ${roiAnalysis.payback_period}")
+                        appendLine()
+                        appendLine("**Status:** ✅ Complete")
                     }
-                    appendLine("### ROI Summary")
-                    appendLine()
-                    appendLine(roiAnalysis.roi_summary)
-                    appendLine()
-                    appendLine("**Payback Period:** ${roiAnalysis.payback_period}")
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete")
-                }
                     roiTask.add(roiContent.renderMarkdown)
                     writeToProposal(roiContent)
 
@@ -692,8 +692,8 @@ If specific numbers aren't provided, use reasonable estimates based on the propo
                     )
 
                     val riskAgent = ParsedAgent(
-                    resultClass = RiskAssessment::class.java,
-                    prompt = """
+                        resultClass = RiskAssessment::class.java,
+                        prompt = """
 You are a risk management expert. Identify and assess risks for this business proposal.
 
 Proposal: $proposalTitle
@@ -722,10 +722,10 @@ Also provide an overall risk level assessment (Low/Moderate/High/Critical).
 
 Be realistic but not alarmist. Focus on actionable mitigation strategies.
           """.trimIndent(),
-                    model = api,
-                    temperature = 0.6,
-                    parsingChatter = defaultFast
-                )
+                        model = api,
+                        temperature = 0.6,
+                        parsingChatter = defaultFast
+                    )
 
 
                     val riskAssessment = riskAgent.answer(listOf("Assess risks")).obj
@@ -733,30 +733,30 @@ Be realistic but not alarmist. Focus on actionable mitigation strategies.
                     logToTranscript("Identified ${riskAssessment.risks.size} risks. Overall risk level: ${riskAssessment.overall_risk_level}\n\n")
 
                     val riskContent = buildString {
-                    appendLine("## Overall Risk Level: ${riskAssessment.overall_risk_level}")
-                    appendLine()
-                    appendLine("## Identified Risks")
-                    appendLine()
-                    riskAssessment.risks.forEach { risk ->
-                        val riskIcon = when {
-                            risk.probability.lowercase() == "high" && risk.impact.lowercase() == "high" -> "🔴"
-                            risk.probability.lowercase() == "high" || risk.impact.lowercase() == "high" -> "🟡"
-                            else -> "🟢"
+                        appendLine("## Overall Risk Level: ${riskAssessment.overall_risk_level}")
+                        appendLine()
+                        appendLine("## Identified Risks")
+                        appendLine()
+                        riskAssessment.risks.forEach { risk ->
+                            val riskIcon = when {
+                                risk.probability.lowercase() == "high" && risk.impact.lowercase() == "high" -> "🔴"
+                                risk.probability.lowercase() == "high" || risk.impact.lowercase() == "high" -> "🟡"
+                                else -> "🟢"
+                            }
+                            appendLine("### $riskIcon ${risk.category}")
+                            appendLine()
+                            appendLine("**Description:** ${risk.description}")
+                            appendLine()
+                            appendLine("**Probability:** ${risk.probability} | **Impact:** ${risk.impact}")
+                            appendLine()
+                            appendLine("**Mitigation Strategy:**")
+                            appendLine(risk.mitigation_strategy)
+                            appendLine()
+                            appendLine("---")
+                            appendLine()
                         }
-                        appendLine("### $riskIcon ${risk.category}")
-                        appendLine()
-                        appendLine("**Description:** ${risk.description}")
-                        appendLine()
-                        appendLine("**Probability:** ${risk.probability} | **Impact:** ${risk.impact}")
-                        appendLine()
-                        appendLine("**Mitigation Strategy:**")
-                        appendLine(risk.mitigation_strategy)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
+                        appendLine("**Status:** ✅ Complete")
                     }
-                    appendLine("**Status:** ✅ Complete")
-                }
                     riskTask.add(riskContent.renderMarkdown)
                     writeToProposal(riskContent)
 
@@ -784,8 +784,8 @@ Be realistic but not alarmist. Focus on actionable mitigation strategies.
                     )
 
                     val competitiveAgent = ParsedAgent(
-                    resultClass = CompetitiveAnalysis::class.java,
-                    prompt = """
+                        resultClass = CompetitiveAnalysis::class.java,
+                        prompt = """
 You are a competitive strategy analyst. Analyze alternatives and competitive positioning for this proposal.
 
 Proposal: $proposalTitle
@@ -812,10 +812,10 @@ Also provide:
 
 Be fair to alternatives but make a compelling case for this proposal.
           """.trimIndent(),
-                    model = api,
-                    temperature = 0.6,
-                    parsingChatter = defaultFast
-                )
+                        model = api,
+                        temperature = 0.6,
+                        parsingChatter = defaultFast
+                    )
 
 
                     val competitiveAnalysis = competitiveAgent.answer(listOf("Analyze competition")).obj
@@ -823,41 +823,41 @@ Be fair to alternatives but make a compelling case for this proposal.
                     logToTranscript("Analyzed ${competitiveAnalysis.alternatives.size} alternative approaches\n\n")
 
                     val competitiveContent = buildString {
-                    appendLine("## Competitive Advantages")
-                    appendLine()
-                    competitiveAnalysis.competitive_advantages.forEach { advantage ->
-                        appendLine("- $advantage")
-                    }
-                    appendLine()
-                    appendLine("## Alternative Approaches")
-                    appendLine()
-                    competitiveAnalysis.alternatives.forEach { alt ->
-                        appendLine("### ${alt.name}")
+                        appendLine("## Competitive Advantages")
                         appendLine()
-                        appendLine(alt.description)
-                        appendLine()
-                        appendLine("**Pros:**")
-                        alt.pros.forEach { pro ->
-                            appendLine("- $pro")
+                        competitiveAnalysis.competitive_advantages.forEach { advantage ->
+                            appendLine("- $advantage")
                         }
                         appendLine()
-                        appendLine("**Cons:**")
-                        alt.cons.forEach { con ->
-                            appendLine("- $con")
+                        appendLine("## Alternative Approaches")
+                        appendLine()
+                        competitiveAnalysis.alternatives.forEach { alt ->
+                            appendLine("### ${alt.name}")
+                            appendLine()
+                            appendLine(alt.description)
+                            appendLine()
+                            appendLine("**Pros:**")
+                            alt.pros.forEach { pro ->
+                                appendLine("- $pro")
+                            }
+                            appendLine()
+                            appendLine("**Cons:**")
+                            alt.cons.forEach { con ->
+                                appendLine("- $con")
+                            }
+                            appendLine()
+                            appendLine("**Why Our Proposal is Better:**")
+                            appendLine(alt.comparison)
+                            appendLine()
+                            appendLine("---")
+                            appendLine()
                         }
+                        appendLine("## Why This Proposal is Superior")
                         appendLine()
-                        appendLine("**Why Our Proposal is Better:**")
-                        appendLine(alt.comparison)
+                        appendLine(competitiveAnalysis.superiority_statement)
                         appendLine()
-                        appendLine("---")
-                        appendLine()
+                        appendLine("**Status:** ✅ Complete")
                     }
-                    appendLine("## Why This Proposal is Superior")
-                    appendLine()
-                    appendLine(competitiveAnalysis.superiority_statement)
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete")
-                }
                     competitiveTask.add(competitiveContent.renderMarkdown)
                     writeToProposal(competitiveContent)
 
@@ -885,8 +885,8 @@ Be fair to alternatives but make a compelling case for this proposal.
                     )
 
                     val timelineAgent = ParsedAgent(
-                    resultClass = TimelineMilestones::class.java,
-                    prompt = """
+                        resultClass = TimelineMilestones::class.java,
+                        prompt = """
 You are a project management expert. Create a detailed timeline with milestones for this proposal.
 
 Proposal: $proposalTitle
@@ -909,10 +909,10 @@ Create a project timeline with:
 Be realistic about timelines. Include buffer time for unexpected issues.
 Ensure phases flow logically and dependencies are clear.
           """.trimIndent(),
-                    model = api,
-                    temperature = 0.5,
-                    parsingChatter = defaultFast
-                )
+                        model = api,
+                        temperature = 0.5,
+                        parsingChatter = defaultFast
+                    )
 
 
                     val timelineMilestones = timelineAgent.answer(listOf("Create timeline")).obj
@@ -920,36 +920,36 @@ Ensure phases flow logically and dependencies are clear.
                     logToTranscript("Created project timeline with ${timelineMilestones.phases.size} phases\n\n")
 
                     val timelineContent = buildString {
-                    appendLine("## Project Phases")
-                    appendLine()
-                    timelineMilestones.phases.forEachIndexed { index, phase ->
-                        appendLine("### Phase ${index + 1}: ${phase.name}")
+                        appendLine("## Project Phases")
                         appendLine()
-                        appendLine("**Duration:** ${phase.duration}")
-                        appendLine()
-                        appendLine("**Key Deliverables:**")
-                        phase.deliverables.forEach { deliverable ->
-                            appendLine("- $deliverable")
-                        }
-                        appendLine()
-                        if (phase.dependencies.isNotEmpty()) {
-                            appendLine("**Dependencies:**")
-                            phase.dependencies.forEach { dep ->
-                                appendLine("- $dep")
+                        timelineMilestones.phases.forEachIndexed { index, phase ->
+                            appendLine("### Phase ${index + 1}: ${phase.name}")
+                            appendLine()
+                            appendLine("**Duration:** ${phase.duration}")
+                            appendLine()
+                            appendLine("**Key Deliverables:**")
+                            phase.deliverables.forEach { deliverable ->
+                                appendLine("- $deliverable")
                             }
                             appendLine()
+                            if (phase.dependencies.isNotEmpty()) {
+                                appendLine("**Dependencies:**")
+                                phase.dependencies.forEach { dep ->
+                                    appendLine("- $dep")
+                                }
+                                appendLine()
+                            }
+                            appendLine("---")
+                            appendLine()
                         }
-                        appendLine("---")
+                        appendLine("## Critical Path")
                         appendLine()
+                        timelineMilestones.critical_path.forEach { item ->
+                            appendLine("- $item")
+                        }
+                        appendLine()
+                        appendLine("**Status:** ✅ Complete")
                     }
-                    appendLine("## Critical Path")
-                    appendLine()
-                    timelineMilestones.critical_path.forEach { item ->
-                        appendLine("- $item")
-                    }
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete")
-                }
                     timelineTask.add(timelineContent.renderMarkdown)
                     writeToProposal(timelineContent)
 
@@ -974,11 +974,11 @@ Ensure phases flow logically and dependencies are clear.
                     }.renderMarkdown
                 )
 
-            val wordsPerSection = executionConfig.target_word_count / 8 // Rough estimate for 8 main sections
+                val wordsPerSection = executionConfig.target_word_count / 8 // Rough estimate for 8 main sections
 
                 val outlineAgent = ParsedAgent(
-                resultClass = ProposalOutline::class.java,
-                prompt = """
+                    resultClass = ProposalOutline::class.java,
+                    prompt = """
 You are a business proposal expert. Create a detailed outline for this proposal.
 
 Proposal: $proposalTitle
@@ -1018,10 +1018,10 @@ For each section:
 
 Tailor the outline to the ${executionConfig.proposal_type} proposal type and ${executionConfig.tone} tone.
         """.trimIndent(),
-                model = api,
-                temperature = 0.6,
-                parsingChatter = defaultFast
-            )
+                    model = api,
+                    temperature = 0.6,
+                    parsingChatter = defaultFast
+                )
 
 
                 val outline = outlineAgent.answer(listOf("Create outline")).obj
@@ -1029,44 +1029,44 @@ Tailor the outline to the ${executionConfig.proposal_type} proposal type and ${e
                 logToTranscript("Created outline with ${outline.sections.size} main sections\n\n")
 
                 val outlineContent = buildString {
-                appendLine("## ${outline.title}")
-                appendLine()
-                appendLine("### Executive Summary")
-                appendLine(outline.executive_summary)
-                appendLine()
-                appendLine("### Problem Statement")
-                appendLine(outline.problem_statement)
-                appendLine()
-                appendLine("### Solution Overview")
-                appendLine(outline.solution_overview)
-                appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine("### Main Sections")
-                appendLine()
-                outline.sections.forEach { section ->
-                    appendLine("#### ${section.title}")
+                    appendLine("## ${outline.title}")
                     appendLine()
-                    appendLine("**Purpose:** ${section.purpose}")
+                    appendLine("### Executive Summary")
+                    appendLine(outline.executive_summary)
                     appendLine()
-                    appendLine("**Key Points:**")
-                    section.key_points.forEach { point ->
-                        appendLine("- $point")
-                    }
+                    appendLine("### Problem Statement")
+                    appendLine(outline.problem_statement)
                     appendLine()
-                    appendLine("**Est. Words:** ${section.estimated_word_count}")
+                    appendLine("### Solution Overview")
+                    appendLine(outline.solution_overview)
                     appendLine()
                     appendLine("---")
                     appendLine()
+                    appendLine("### Main Sections")
+                    appendLine()
+                    outline.sections.forEach { section ->
+                        appendLine("#### ${section.title}")
+                        appendLine()
+                        appendLine("**Purpose:** ${section.purpose}")
+                        appendLine()
+                        appendLine("**Key Points:**")
+                        section.key_points.forEach { point ->
+                            appendLine("- $point")
+                        }
+                        appendLine()
+                        appendLine("**Est. Words:** ${section.estimated_word_count}")
+                        appendLine()
+                        appendLine("---")
+                        appendLine()
+                    }
+                    appendLine("### Success Metrics")
+                    appendLine()
+                    outline.success_metrics.forEach { metric ->
+                        appendLine("- $metric")
+                    }
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
                 }
-                appendLine("### Success Metrics")
-                appendLine()
-                outline.success_metrics.forEach { metric ->
-                    appendLine("- $metric")
-                }
-                appendLine()
-                appendLine("**Status:** ✅ Complete")
-            }
                 outlineTask.add(outlineContent.renderMarkdown)
                 writeToProposal(outlineContent)
                 outline
@@ -1096,8 +1096,8 @@ Tailor the outline to the ${executionConfig.proposal_type} proposal type and ${e
                 )
 
                 val execSummaryAgent = ParsedAgent(
-                resultClass = ProposalContent::class.java,
-                prompt = """
+                    resultClass = ProposalContent::class.java,
+                    prompt = """
 You are a business proposal writer. Write a compelling executive summary.
 
 Proposal: $proposalTitle
@@ -1118,10 +1118,10 @@ Write an executive summary (300-400 words) that:
 Make it compelling and persuasive. Decision-makers should understand the value immediately.
 Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senior executives"}
         """.trimIndent(),
-                model = api,
-                temperature = 0.7,
-                parsingChatter = defaultFast
-            )
+                    model = api,
+                    temperature = 0.7,
+                    parsingChatter = defaultFast
+                )
 
 
                 var execSummary = execSummaryAgent.answer(listOf("Write executive summary")).obj
@@ -1130,16 +1130,16 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
                 logToTranscript("Executive Summary written: ${execSummary.word_count} words\n")
 
                 val execSummaryContent = buildString {
-                appendLine("## Executive Summary")
-                appendLine()
-                appendLine(execSummary.content)
-                appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine("**Word Count:** ${execSummary.word_count}")
-                appendLine()
-                appendLine("**Status:** ✅ Complete")
-            }
+                    appendLine("## Executive Summary")
+                    appendLine()
+                    appendLine(execSummary.content)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Word Count:** ${execSummary.word_count}")
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
+                }
 
                 execSummaryTask.add(
                     execSummaryContent.renderMarkdown
@@ -1151,7 +1151,7 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
                 resultBuilder.append("\n\n")
             }
 
-           overviewTask.add("- Executive Summary ✅ (${proposalSections.last().word_count} words)\n".renderMarkdown)
+            overviewTask.add("- Executive Summary ✅ (${proposalSections.last().word_count} words)\n".renderMarkdown)
 
             // Write each main section
             outline.sections.forEachIndexed { index, sectionOutline ->
@@ -1172,60 +1172,63 @@ Target audience: ${executionConfig.decision_makers?.joinToString(", ") ?: "Senio
                         }.renderMarkdown
                     )
 
-                // Build context from previous sections
-                val previousContext = if (proposalSections.isNotEmpty()) {
-                    buildString {
-                        appendLine("## Previous Sections Summary")
-                        proposalSections.takeLast(2).forEach { prevSection ->
-                            appendLine("**${prevSection.section_title}:** ${prevSection.key_messages.firstOrNull() ?: ""}")
-                            appendLine()
+                    // Build context from previous sections
+                    val previousContext = if (proposalSections.isNotEmpty()) {
+                        buildString {
+                            appendLine("## Previous Sections Summary")
+                            proposalSections.takeLast(2).forEach { prevSection ->
+                                appendLine("**${prevSection.section_title}:** ${prevSection.key_messages.firstOrNull() ?: ""}")
+                                appendLine()
+                            }
+                        }
+                    } else {
+                        "This is the first main section after the executive summary."
+                    }
+
+                    // Determine if this section should incorporate analysis results
+                    val analysisContext = buildString {
+                        when {
+                            sectionOutline.title.contains("Financial", ignoreCase = true) && roiAnalysis != null -> {
+                                appendLine("## ROI Analysis to Incorporate")
+                                appendLine("ROI Summary: ${roiAnalysis.roi_summary}")
+                                appendLine("Payback Period: ${roiAnalysis.payback_period}")
+                                appendLine()
+                            }
+
+                            sectionOutline.title.contains("Risk", ignoreCase = true) && riskAssessment != null -> {
+                                appendLine("## Risk Assessment to Incorporate")
+                                appendLine("Overall Risk Level: ${riskAssessment.overall_risk_level}")
+                                riskAssessment.risks.take(3).forEach { risk ->
+                                    appendLine("- ${risk.category}: ${risk.description.take(100)}")
+                                }
+                                appendLine()
+                            }
+
+                            sectionOutline.title.contains(
+                                "Competitive",
+                                ignoreCase = true
+                            ) && competitiveAnalysis != null -> {
+                                appendLine("## Competitive Analysis to Incorporate")
+                                appendLine(competitiveAnalysis.superiority_statement.take(200))
+                                appendLine()
+                            }
+
+                            sectionOutline.title.contains(
+                                "Timeline",
+                                ignoreCase = true
+                            ) && timelineMilestones != null -> {
+                                appendLine("## Timeline to Incorporate")
+                                timelineMilestones.phases.take(3).forEach { phase ->
+                                    appendLine("- ${phase.name}: ${phase.duration}")
+                                }
+                                appendLine()
+                            }
                         }
                     }
-                } else {
-                    "This is the first main section after the executive summary."
-                }
 
-                // Determine if this section should incorporate analysis results
-                val analysisContext = buildString {
-                    when {
-                        sectionOutline.title.contains("Financial", ignoreCase = true) && roiAnalysis != null -> {
-                            appendLine("## ROI Analysis to Incorporate")
-                            appendLine("ROI Summary: ${roiAnalysis.roi_summary}")
-                            appendLine("Payback Period: ${roiAnalysis.payback_period}")
-                            appendLine()
-                        }
-
-                        sectionOutline.title.contains("Risk", ignoreCase = true) && riskAssessment != null -> {
-                            appendLine("## Risk Assessment to Incorporate")
-                            appendLine("Overall Risk Level: ${riskAssessment.overall_risk_level}")
-                            riskAssessment.risks.take(3).forEach { risk ->
-                                appendLine("- ${risk.category}: ${risk.description.take(100)}")
-                            }
-                            appendLine()
-                        }
-
-                        sectionOutline.title.contains(
-                            "Competitive",
-                            ignoreCase = true
-                        ) && competitiveAnalysis != null -> {
-                            appendLine("## Competitive Analysis to Incorporate")
-                            appendLine(competitiveAnalysis.superiority_statement.take(200))
-                            appendLine()
-                        }
-
-                        sectionOutline.title.contains("Timeline", ignoreCase = true) && timelineMilestones != null -> {
-                            appendLine("## Timeline to Incorporate")
-                            timelineMilestones.phases.take(3).forEach { phase ->
-                                appendLine("- ${phase.name}: ${phase.duration}")
-                            }
-                            appendLine()
-                        }
-                    }
-                }
-
-                val sectionAgent = ParsedAgent(
-                    resultClass = ProposalContent::class.java,
-                    prompt = """
+                    val sectionAgent = ParsedAgent(
+                        resultClass = ProposalContent::class.java,
+                        prompt = """
 You are a business proposal writer. Write the "${sectionOutline.title}" section.
 
 Proposal: $proposalTitle
@@ -1256,36 +1259,36 @@ Write a well-structured section that:
 Make it persuasive and professional. Use clear, concise language.
 Aim for approximately ${sectionOutline.estimated_word_count} words.
           """.trimIndent(),
-                    model = api,
-                    temperature = 0.7,
-                    parsingChatter = defaultFast
-                )
+                        model = api,
+                        temperature = 0.7,
+                        parsingChatter = defaultFast
+                    )
 
                     var sectionContent = sectionAgent.answer(listOf("Write section")).obj
-                proposalSections.add(sectionContent)
-                cumulativeWordCount += sectionContent.word_count
-                logToTranscript("Section '${sectionOutline.title}' completed: ${sectionContent.word_count} words\n")
+                    proposalSections.add(sectionContent)
+                    cumulativeWordCount += sectionContent.word_count
+                    logToTranscript("Section '${sectionOutline.title}' completed: ${sectionContent.word_count} words\n")
 
                     sectionTask.add(
-                    buildString {
-                        appendLine("## ${sectionOutline.title}")
-                        appendLine()
-                        appendLine(sectionContent.content)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Word Count:** ${sectionContent.word_count}")
-                        if (sectionContent.key_messages.isNotEmpty()) {
+                        buildString {
+                            appendLine("## ${sectionOutline.title}")
                             appendLine()
-                            appendLine("**Key Messages:**")
-                            sectionContent.key_messages.forEach { msg ->
-                                appendLine("- $msg")
+                            appendLine(sectionContent.content)
+                            appendLine()
+                            appendLine("---")
+                            appendLine()
+                            appendLine("**Word Count:** ${sectionContent.word_count}")
+                            if (sectionContent.key_messages.isNotEmpty()) {
+                                appendLine()
+                                appendLine("**Key Messages:**")
+                                sectionContent.key_messages.forEach { msg ->
+                                    appendLine("- $msg")
+                                }
                             }
-                        }
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
-                )
+                            appendLine()
+                            appendLine("**Status:** ✅ Complete")
+                        }.renderMarkdown
+                    )
 
                     writeToProposal(sectionContent.content)
 
@@ -1294,7 +1297,7 @@ Aim for approximately ${sectionOutline.estimated_word_count} words.
                     resultBuilder.append("\n\n")
                 }
 
-               overviewTask.add("✅ (${proposalSections.last().word_count} words)\n".renderMarkdown)
+                overviewTask.add("✅ (${proposalSections.last().word_count} words)\n".renderMarkdown)
             }
 
             overviewTask.add("✅ Phase 7 Complete: All sections written\n".renderMarkdown)
@@ -1315,9 +1318,9 @@ Aim for approximately ${sectionOutline.estimated_word_count} words.
                     }.renderMarkdown
                 )
 
-            val conclusionAgent = ParsedAgent(
-                resultClass = ProposalContent::class.java,
-                prompt = """
+                val conclusionAgent = ParsedAgent(
+                    resultClass = ProposalContent::class.java,
+                    prompt = """
 You are a business proposal writer. Write a compelling conclusion and next steps section.
 
 Proposal: $proposalTitle
@@ -1338,10 +1341,10 @@ Write a conclusion (200-300 words) that:
 
 Make it action-oriented and compelling. The reader should feel motivated to move forward.
         """.trimIndent(),
-                model = api,
-                temperature = 0.7,
-                parsingChatter = defaultFast
-            )
+                    model = api,
+                    temperature = 0.7,
+                    parsingChatter = defaultFast
+                )
 
 
                 var conclusion = conclusionAgent.answer(listOf("Write conclusion")).obj
@@ -1349,16 +1352,16 @@ Make it action-oriented and compelling. The reader should feel motivated to move
                 logToTranscript("Conclusion written: ${conclusion.word_count} words\n\n")
 
                 val conclusionContent = buildString {
-                appendLine("## Conclusion & Next Steps")
-                appendLine()
-                appendLine(conclusion.content)
-                appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine("**Word Count:** ${conclusion.word_count}")
-                appendLine()
-                appendLine("**Status:** ✅ Complete")
-            }
+                    appendLine("## Conclusion & Next Steps")
+                    appendLine()
+                    appendLine(conclusion.content)
+                    appendLine()
+                    appendLine("---")
+                    appendLine()
+                    appendLine("**Word Count:** ${conclusion.word_count}")
+                    appendLine()
+                    appendLine("**Status:** ✅ Complete")
+                }
 
                 conclusionTask.add(
                     conclusionContent.renderMarkdown
@@ -1390,14 +1393,14 @@ Make it action-oriented and compelling. The reader should feel motivated to move
                         }.renderMarkdown
                     )
 
-                val fullProposal = resultBuilder.toString()
+                    val fullProposal = resultBuilder.toString()
 
-                repeat(executionConfig.revision_passes) { passNum ->
-                    log.debug("Revision pass ${passNum + 1}/${executionConfig.revision_passes}")
-                    logToTranscript("Performing revision pass ${passNum + 1}/${executionConfig.revision_passes}\n")
+                    repeat(executionConfig.revision_passes) { passNum ->
+                        log.debug("Revision pass ${passNum + 1}/${executionConfig.revision_passes}")
+                        logToTranscript("Performing revision pass ${passNum + 1}/${executionConfig.revision_passes}\n")
 
-                    val revisionAgent = ChatAgent(
-                        prompt = """
+                        val revisionAgent = ChatAgent(
+                            prompt = """
 You are an expert business proposal editor. Review and improve this proposal.
 
 Current Proposal:
@@ -1420,23 +1423,23 @@ Maintain:
 
 Provide the complete revised proposal.
             """.trimIndent(),
-                        model = api,
-                        temperature = 0.6
-                    )
+                            model = api,
+                            temperature = 0.6
+                        )
 
-                    val revisedProposal = revisionAgent.answer(listOf("Revise the proposal"))
-                    resultBuilder.clear()
-                    resultBuilder.append(revisedProposal)
+                        val revisedProposal = revisionAgent.answer(listOf("Revise the proposal"))
+                        resultBuilder.clear()
+                        resultBuilder.append(revisedProposal)
 
-                    revisionTask.add(
-                        buildString {
-                            appendLine("## Revision Pass ${passNum + 1}")
-                            appendLine()
-                            appendLine("✅ Complete")
-                            appendLine()
-                        }.renderMarkdown
-                    )
-                }
+                        revisionTask.add(
+                            buildString {
+                                appendLine("## Revision Pass ${passNum + 1}")
+                                appendLine()
+                                appendLine("✅ Complete")
+                                appendLine()
+                            }.renderMarkdown
+                        )
+                    }
                 }
 
                 overviewTask.add("✅ Phase 9 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
@@ -1450,42 +1453,42 @@ Provide the complete revised proposal.
 
             val finalProposal = runPhase("Complete Proposal") { finalTask ->
                 val proposal = buildString {
-                appendLine("# ${outline.title}")
-                appendLine()
-                appendLine("**Prepared by:** ${executionConfig.proposing_organization ?: "Your Organization"}")
-                appendLine()
-                appendLine("**Date:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))}")
-                appendLine()
-                appendLine("---")
-                appendLine()
-                appendLine(resultBuilder.toString())
-                appendLine()
-                if (executionConfig.include_appendices) {
+                    appendLine("# ${outline.title}")
+                    appendLine()
+                    appendLine("**Prepared by:** ${executionConfig.proposing_organization ?: "Your Organization"}")
+                    appendLine()
+                    appendLine("**Date:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))}")
+                    appendLine()
                     appendLine("---")
                     appendLine()
-                    appendLine("## Appendices")
+                    appendLine(resultBuilder.toString())
                     appendLine()
-                    appendLine("### Appendix A: Detailed Financial Projections")
-                    appendLine("*[Include detailed spreadsheets and financial models]*")
+                    if (executionConfig.include_appendices) {
+                        appendLine("---")
+                        appendLine()
+                        appendLine("## Appendices")
+                        appendLine()
+                        appendLine("### Appendix A: Detailed Financial Projections")
+                        appendLine("*[Include detailed spreadsheets and financial models]*")
+                        appendLine()
+                        appendLine("### Appendix B: Technical Specifications")
+                        appendLine("*[Include technical documentation and specifications]*")
+                        appendLine()
+                        appendLine("### Appendix C: Team Biographies")
+                        appendLine("*[Include key team member profiles and qualifications]*")
+                        appendLine()
+                        appendLine("### Appendix D: References and Case Studies")
+                        appendLine("*[Include relevant case studies and client references]*")
+                        appendLine()
+                    }
+                    appendLine("---")
                     appendLine()
-                    appendLine("### Appendix B: Technical Specifications")
-                    appendLine("*[Include technical documentation and specifications]*")
+                    appendLine("**Total Word Count:** $cumulativeWordCount")
                     appendLine()
-                    appendLine("### Appendix C: Team Biographies")
-                    appendLine("*[Include key team member profiles and qualifications]*")
+                    appendLine("**Target Word Count:** ${executionConfig.target_word_count}")
                     appendLine()
-                    appendLine("### Appendix D: References and Case Studies")
-                    appendLine("*[Include relevant case studies and client references]*")
-                    appendLine()
+                    appendLine("**Completion:** ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
                 }
-                appendLine("---")
-                appendLine()
-                appendLine("**Total Word Count:** $cumulativeWordCount")
-                appendLine()
-                appendLine("**Target Word Count:** ${executionConfig.target_word_count}")
-                appendLine()
-                appendLine("**Completion:** ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
-            }
 
                 finalTask.add(proposal.renderMarkdown)
                 writeToProposal(proposal)

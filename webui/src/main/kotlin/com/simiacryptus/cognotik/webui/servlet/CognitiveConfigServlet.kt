@@ -41,7 +41,12 @@ class CognitiveConfigServlet : HttpServlet() {
                 val type = when (prop.returnType.classifier) {
                     Boolean::class -> "checkbox"
                     Int::class, Long::class, Double::class -> "number"
-                    String::class -> if (prop.name.contains("code", true) || prop.name.contains("prompt", true)) "textarea" else "text"
+                    String::class -> if (prop.name.contains("code", true) || prop.name.contains(
+                            "prompt",
+                            true
+                        )
+                    ) "textarea" else "text"
+
                     else -> {
                         if ((prop.returnType.classifier as? KClass<*>)?.java?.isEnum == true) {
                             "select"

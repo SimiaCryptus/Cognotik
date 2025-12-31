@@ -251,7 +251,12 @@ Brainstorming - Generate and analyze multiple solution options
             log.info("Generating $targetCount options")
             val optionsTask = task.ui.newTask(false)
             tabs["Generated Options"] = optionsTask.placeholder
-            val optionsStatus = optionsTask.add(MarkdownUtil.renderMarkdown("## Generated Options\n\n🔄 Brainstorming options...", ui = ui))
+            val optionsStatus = optionsTask.add(
+                MarkdownUtil.renderMarkdown(
+                    "## Generated Options\n\n🔄 Brainstorming options...",
+                    ui = ui
+                )
+            )
             task.update()
 
             val brainstormPrompt = buildBrainstormPrompt(

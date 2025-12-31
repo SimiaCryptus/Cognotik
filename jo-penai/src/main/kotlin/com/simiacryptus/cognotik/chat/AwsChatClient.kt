@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
@@ -56,13 +56,13 @@ class AwsChatClient(
         // Check cache first
         val cacheKey = "${awsAuth.region}:${awsAuth.profile}"
         modelsCache[cacheKey]?.let { return it }
-        
+
         return try {
             log.info("Fetching available models from AWS Bedrock in region: ${awsAuth.region}")
-            
+
             val request = ListFoundationModelsRequest.builder().build()
             val response = bedrockManagementClient.listFoundationModels(request)
-            
+
             val models = response.modelSummaries()?.mapNotNull { modelSummary ->
                 try {
                     mapAwsModelToChatModel(modelSummary)
@@ -71,14 +71,14 @@ class AwsChatClient(
                     null
                 }
             } ?: emptyList()
-            
+
             log.info("Found ${models.size} available models in AWS Bedrock")
-            
+
             // Cache the result
-            models.takeIf { it.isNotEmpty() }?.let { 
-                modelsCache[cacheKey] = it 
+            models.takeIf { it.isNotEmpty() }?.let {
+                modelsCache[cacheKey] = it
             }
-            
+
             models
         } catch (e: Exception) {
             log.error("Failed to fetch models from AWS Bedrock: ${e.message}", e)
@@ -86,7 +86,7 @@ class AwsChatClient(
             getDefaultAwsModels()
         }
     }
-    
+
     private fun mapAwsModelToChatModel(modelSummary: FoundationModelSummary): ChatModel? {
         val modelId = modelSummary.modelId() ?: return null
         val (maxTokens, maxOutTokens, inputPrice, outputPrice) = getModelSpecifications(modelId)
@@ -100,7 +100,7 @@ class AwsChatClient(
             outputTokenPricePerK = outputPrice
         )
     }
-    
+
     private fun getModelSpecifications(modelId: String): ModelSpecs {
         return when {
             // Anthropic Claude models
@@ -110,38 +110,38 @@ class AwsChatClient(
             modelId.contains("claude-2.1") -> ModelSpecs(200000, 4096, 0.008, 0.024)
             modelId.contains("claude-2") -> ModelSpecs(100000, 4096, 0.008, 0.024)
             modelId.contains("claude-instant") -> ModelSpecs(100000, 4096, 0.0008, 0.0024)
-            
+
             // Meta Llama models
             modelId.contains("llama3-70b") -> ModelSpecs(8192, 2048, 0.00265, 0.0035)
             modelId.contains("llama3-8b") -> ModelSpecs(8192, 2048, 0.0003, 0.0006)
             modelId.contains("llama2-70b") -> ModelSpecs(4096, 2048, 0.00195, 0.00256)
             modelId.contains("llama2-13b") -> ModelSpecs(4096, 2048, 0.00075, 0.001)
-            
+
             // Mistral models
             modelId.contains("mistral-large") -> ModelSpecs(32000, 8192, 0.008, 0.024)
             modelId.contains("mixtral-8x7b") -> ModelSpecs(32000, 4096, 0.00045, 0.0007)
             modelId.contains("mistral-7b") -> ModelSpecs(32000, 4096, 0.00015, 0.0002)
-            
+
             // Amazon Titan models
             modelId.contains("titan-text-express") -> ModelSpecs(8192, 8192, 0.0002, 0.0006)
             modelId.contains("titan-text-lite") -> ModelSpecs(4096, 4096, 0.00015, 0.0002)
             modelId.contains("titan-text-premier") -> ModelSpecs(32000, 3072, 0.0005, 0.0015)
-            
+
             // Cohere models
             modelId.contains("command-r-plus") -> ModelSpecs(128000, 4096, 0.003, 0.015)
             modelId.contains("command-r") -> ModelSpecs(128000, 4096, 0.0005, 0.0015)
             modelId.contains("command-text") -> ModelSpecs(4096, 4096, 0.0015, 0.002)
             modelId.contains("command-light") -> ModelSpecs(4096, 4096, 0.0003, 0.0006)
-            
+
             // AI21 models
             modelId.contains("j2-ultra") -> ModelSpecs(8192, 8192, 0.0125, 0.0125)
             modelId.contains("j2-mid") -> ModelSpecs(8192, 8192, 0.0125, 0.0125)
-            
+
             // Default values for unknown models
             else -> ModelSpecs(4096, 2048, 0.001, 0.002)
         }
     }
-    
+
     private fun getDefaultAwsModels(): List<ChatModel> {
         // Return a list of commonly available AWS Bedrock models as fallback
         return listOf(
@@ -253,6 +253,7 @@ class AwsChatClient(
             }
         }
     }
+
     private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
         require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
@@ -263,6 +264,7 @@ class AwsChatClient(
     companion object {
         private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(AwsChatClient::class.java)
         private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
+
         private data class ModelSpecs(
             val maxTotalTokens: Int,
             val maxOutTokens: Int,
@@ -442,7 +444,7 @@ class AwsChatClient(
                             choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                      content = fromJson.generation ?: "",
+                                        content = fromJson.generation ?: "",
                                     ), index = 0
                                 )
                             ), usage = ModelSchema.Usage(
@@ -462,7 +464,7 @@ class AwsChatClient(
                             choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                      content = fromJson.outputs?.firstOrNull()?.text ?: "",
+                                        content = fromJson.outputs?.firstOrNull()?.text ?: "",
                                     ), index = 0
                                 )
                             )
@@ -477,7 +479,7 @@ class AwsChatClient(
                             choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                      content = fromJson.results?.firstOrNull()?.outputText ?: "",
+                                        content = fromJson.results?.firstOrNull()?.outputText ?: "",
                                     ), index = 0
                                 )
                             )
@@ -492,7 +494,7 @@ class AwsChatClient(
                             choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                      content = fromJson.generations?.firstOrNull()?.text ?: "",
+                                        content = fromJson.generations?.firstOrNull()?.text ?: "",
                                     ), index = 0
                                 )
                             )
@@ -507,7 +509,7 @@ class AwsChatClient(
                             choices = fromJson.completions?.mapIndexed { index, completion ->
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                      content = completion.data?.text ?: "",
+                                        content = completion.data?.text ?: "",
                                     ), index = index
                                 )
                             } ?: emptyList(),
@@ -525,7 +527,7 @@ class AwsChatClient(
                             choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                      content = fromJson.content?.firstOrNull()?.text ?: "",
+                                        content = fromJson.content?.firstOrNull()?.text ?: "",
                                     ), index = 0
                                 )
                             ), usage = ModelSchema.Usage(

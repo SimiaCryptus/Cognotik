@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.FailedToImplementException
 import com.simiacryptus.cognotik.util.toContentList
-import java.util.*
 import javax.script.ScriptException
 import kotlin.reflect.KClass
 
@@ -226,7 +225,7 @@ ${details ?: ""}
                 else -> throw e
             }
         }
-        log.debug("Result: {}",result)
+        log.debug("Result: {}", result)
 
         val executionResult = ExecutionResult(result.toString(), OutputInterceptor.getThreadOutput())
         OutputInterceptor.clearThreadOutput()

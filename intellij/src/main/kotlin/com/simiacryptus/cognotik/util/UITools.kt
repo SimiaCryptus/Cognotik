@@ -670,7 +670,7 @@ fun Caret?.getIndent(): CharSequence {
 fun AnActionEvent.redoableTask(
     request: Supplier<Runnable>,
 ) {
-    UITools.log.debug("Starting redoableTask with event: {}, request: {}",this,request)
+    UITools.log.debug("Starting redoableTask with event: {}, request: {}", this, request)
     Futures.addCallback(UITools.pool.submit<Runnable> {
         request.get()
     }, futureCallback(request), UITools.pool)

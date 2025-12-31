@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.Path
+
 open class ConversationalModeConfig(
     var useExpansionSyntax: Boolean = true
 ) : CognitiveModeConfig(type = CognitiveModeType.Chat)
@@ -141,7 +142,7 @@ open class ConversationalMode(
             }
 
             // Extract topics from the aggregated response
-        if (config.useExpansionSyntax && aggregateResponse.isNotEmpty()) {
+            if (config.useExpansionSyntax && aggregateResponse.isNotEmpty()) {
                 try {
                     writeToTranscript("## Assistant\n\n${aggregateResponse}\n\n")
                     val model = defaultChat

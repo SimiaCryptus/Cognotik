@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 import java.io.File
-import java.util.*
 import javax.imageio.ImageIO
 
 class GenerateImageTask(
@@ -61,7 +60,7 @@ GenerateImage - Create images using AI image generation models
     }
 
     override fun toString(relativePath: File): CharSequence? {
-        return when(relativePath.name.split('.').last()) {
+        return when (relativePath.name.split('.').last()) {
             "png", "jpg", "jpeg" -> null
             else -> super.toString(relativePath)
         }
@@ -135,7 +134,10 @@ GenerateImage - Create images using AI image generation models
             val generatedImage = result.image
             val optimizedPrompt = result.text
 
-            task.expandable("Optimized Prompt Used", MarkdownUtil.renderMarkdown("```\n$optimizedPrompt\n```", ui = task.ui))
+            task.expandable(
+                "Optimized Prompt Used",
+                MarkdownUtil.renderMarkdown("```\n$optimizedPrompt\n```", ui = task.ui)
+            )
 
             // Display the generated image
             task.header("Generated Image Preview", level = 3)
@@ -167,7 +169,7 @@ GenerateImage - Create images using AI image generation models
         }
     }
 
-    override fun isIgnored(file: File) = when(file.extension) {
+    override fun isIgnored(file: File) = when (file.extension) {
         "png", "jpg", "jpeg" -> true
         else -> super.isIgnored(file)
     }

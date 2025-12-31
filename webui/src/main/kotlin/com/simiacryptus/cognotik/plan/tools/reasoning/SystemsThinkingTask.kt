@@ -17,10 +17,10 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
- class SystemsThinkingTask(
+class SystemsThinkingTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: SystemsThinkingTaskExecutionConfigData?
- ) : AbstractTask<SystemsThinkingTask.SystemsThinkingTaskExecutionConfigData, TaskTypeConfig>(
+) : AbstractTask<SystemsThinkingTask.SystemsThinkingTaskExecutionConfigData, TaskTypeConfig>(
     orchestrationConfig,
     planTask
 ) {
@@ -116,7 +116,7 @@ import java.util.*
             // Overview tab
             tabs["Overview"] = overviewTask.placeholder
 
-val timeHorizon = executionConfig.time_horizon ?: "6 months"
+            val timeHorizon = executionConfig.time_horizon ?: "6 months"
             val interventions = executionConfig.simulate_interventions ?: emptyList()
             val focusAreas = executionConfig.focus_areas ?: emptyList()
             val analysisQuestions = executionConfig.analysis_questions ?: emptyList()
@@ -177,13 +177,22 @@ val timeHorizon = executionConfig.time_horizon ?: "6 months"
                 contextTask.header("Context", level = 1)
 
                 if (priorContext.isNotBlank()) {
-                    contextTask.expandable("Prior Task Results", MarkdownUtil.renderMarkdown(priorContext.truncateForDisplay(), ui = task.ui))
+                    contextTask.expandable(
+                        "Prior Task Results",
+                        MarkdownUtil.renderMarkdown(priorContext.truncateForDisplay(), ui = task.ui)
+                    )
                 }
                 if (inputFileContext.isNotBlank()) {
-                    contextTask.expandable("Input Files", MarkdownUtil.renderMarkdown(inputFileContext.truncateForDisplay(), ui = task.ui))
+                    contextTask.expandable(
+                        "Input Files",
+                        MarkdownUtil.renderMarkdown(inputFileContext.truncateForDisplay(), ui = task.ui)
+                    )
                 }
                 if (relatedContext.isNotBlank()) {
-                    contextTask.expandable("Related Files", MarkdownUtil.renderMarkdown(relatedContext.truncateForDisplay(), ui = task.ui))
+                    contextTask.expandable(
+                        "Related Files",
+                        MarkdownUtil.renderMarkdown(relatedContext.truncateForDisplay(), ui = task.ui)
+                    )
                 }
                 task.update()
             }
@@ -191,7 +200,14 @@ val timeHorizon = executionConfig.time_horizon ?: "6 months"
 // Initialize analysis agent
             log.info("Initializing systems thinking analysis agent")
             val analysisAgent = ChatAgent(
-                prompt = buildSystemsThinkingPrompt(systemDescription, timeHorizon, priorContext, relatedContext, focusAreas, analysisQuestions),
+                prompt = buildSystemsThinkingPrompt(
+                    systemDescription,
+                    timeHorizon,
+                    priorContext,
+                    relatedContext,
+                    focusAreas,
+                    analysisQuestions
+                ),
                 model = api,
                 temperature = 0.6
             )
@@ -246,7 +262,12 @@ Provide a clear, structured analysis.
                 tabs["Feedback Loops"] = loopsTask.placeholder
 
                 loopsTask.header("Feedback Loops", level = 2)
-                loopsTask.add(MarkdownUtil.renderMarkdown("🔄 Identifying reinforcing and balancing loops...", ui = task.ui))
+                loopsTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        "🔄 Identifying reinforcing and balancing loops...",
+                        ui = task.ui
+                    )
+                )
                 task.update()
 
                 val loopsAnalysis = analysisAgent.answer(
@@ -412,7 +433,12 @@ Consider both positive and negative emergent behaviors.
                 tabs["Leverage Points"] = leverageTask.placeholder
 
                 leverageTask.header("Leverage Points", level = 2)
-                leverageTask.add(MarkdownUtil.renderMarkdown("🔄 Identifying high-impact intervention points...", ui = task.ui))
+                leverageTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        "🔄 Identifying high-impact intervention points...",
+                        ui = task.ui
+                    )
+                )
                 task.update()
 
                 val leverageAnalysis = analysisAgent.answer(
@@ -505,7 +531,7 @@ $simulationAnalysis
                     // Stream result to UI
                     simulationTask.add(MarkdownUtil.renderMarkdown(resultMarkdown, ui = task.ui))
                     task.update()
-                    
+
                     transcriptStream?.write(resultMarkdown.toByteArray())
                 }
 
@@ -673,7 +699,7 @@ $simulationAnalysis
         }
     }
 
-private fun buildSystemsThinkingPrompt(
+    private fun buildSystemsThinkingPrompt(
         systemDescription: String,
         timeHorizon: String,
         priorContext: String,
@@ -777,7 +803,6 @@ Provide clear, actionable insights grounded in systems thinking principles.
                 ""
             }
         }
-
 
 
     private fun initializeTranscript(task: SessionTask): FileOutputStream? {

@@ -66,6 +66,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
             return imageChatModelTree!!
         }
+
         private fun getPatchProcessorList(): JBList<PatchProcessors> {
             if (patchProcessorList == null) {
                 val listModel = DefaultListModel<PatchProcessors>()
@@ -79,7 +80,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                             isSelected: Boolean,
                             cellHasFocus: Boolean
                         ): Component {
-                            val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+                            val component =
+                                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
                             if (value is PatchProcessors) {
                                 text = value.label
                             }
@@ -103,7 +105,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
         private fun recreateModelTrees() {
             smartModelTree = null
-                        patchProcessorList?.setSelectedValue(AppSettingsState.instance.processor, true)
+            patchProcessorList?.setSelectedValue(AppSettingsState.instance.processor, true)
             fastModelTree = null
             imageChatModelTree = null
         }
@@ -336,7 +338,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
                         val threadFactory = ApplicationServices.threadPoolManager.getPool(value).threadFactory
                         val activeThreads = threadFactory.threads.filter {
-                            when(it.state) {
+                            when (it.state) {
                                 Thread.State.RUNNABLE -> true
                                 Thread.State.BLOCKED, Thread.State.WAITING, Thread.State.TIMED_WAITING -> true
                                 else -> false

@@ -6,12 +6,8 @@ import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -192,13 +188,15 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
 // Display suggestions
             task.header("📋 Planned Images", level = 3)
             suggestions.forEachIndexed { index, suggestion ->
-                task.add("""
+                task.add(
+                    """
                     <b>${index + 1}. ${suggestion.imageName}</b>
                     <ul>
                     <li>Location: ${suggestion.insertionPoint}</li>
                     <li>Caption: ${suggestion.caption}</li>
                     </ul>
-                """.trimIndent())
+                """.trimIndent()
+                )
             }
             if (!orchestrationConfig.autoFix) {
                 val semaphore = Semaphore(0)
@@ -263,7 +261,10 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
 
                 } catch (e: Exception) {
                     log.error("Failed to generate image: ${suggestion.imageName}", e)
-                    task.add("❌ Failed to generate: ${suggestion.imageName} - ${e.message}", additionalClasses = "text-danger")
+                    task.add(
+                        "❌ Failed to generate: ${suggestion.imageName} - ${e.message}",
+                        additionalClasses = "text-danger"
+                    )
                 }
             }
             task.header("📝 Generating Document Patches", level = 3)

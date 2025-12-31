@@ -1,9 +1,6 @@
 package com.simiacryptus.cognotik.util
 
 import com.intellij.psi.PsiElement
-import java.util.Arrays
-import java.util.HashSet
-import java.util.stream.Collectors
 
 object PsiUtil {
 

@@ -504,7 +504,8 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             // Final summary
             val totalTime = System.currentTimeMillis() - startTime
 
-            val transcriptFile = "abductive_reasoning_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+            val transcriptFile =
+                "abductive_reasoning_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
 
             val (summaryLink, summaryFile) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
             val finalSummary = buildString {

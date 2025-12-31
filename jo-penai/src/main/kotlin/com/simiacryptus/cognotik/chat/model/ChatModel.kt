@@ -1,26 +1,26 @@
 package com.simiacryptus.cognotik.chat.model
 
- import com.fasterxml.jackson.core.JsonGenerator
- import com.fasterxml.jackson.core.JsonParser
- import com.fasterxml.jackson.core.JsonToken
- import com.fasterxml.jackson.databind.DeserializationContext
- import com.fasterxml.jackson.databind.JsonDeserializer
- import com.fasterxml.jackson.databind.JsonNode
- import com.fasterxml.jackson.databind.SerializerProvider
- import com.fasterxml.jackson.databind.annotation.JsonDeserialize
- import com.fasterxml.jackson.databind.annotation.JsonSerialize
- import com.fasterxml.jackson.databind.ser.std.StdSerializer
- import com.google.common.util.concurrent.ListeningScheduledExecutorService
- import com.simiacryptus.cognotik.models.APIProvider
- import com.simiacryptus.cognotik.models.ModelSchema.Usage
- import com.simiacryptus.cognotik.models.LLMModel
- import org.slf4j.event.Level
- import java.io.BufferedOutputStream
- import java.util.concurrent.ExecutorService
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.JsonToken
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema.Usage
+import org.slf4j.event.Level
+import java.io.BufferedOutputStream
+import java.util.concurrent.ExecutorService
 
- @JsonDeserialize(using = ChatModelsDeserializer::class)
- @JsonSerialize(using = ChatModelsSerializer::class)
- open class ChatModel(
+@JsonDeserialize(using = ChatModelsDeserializer::class)
+@JsonSerialize(using = ChatModelsSerializer::class)
+open class ChatModel(
     val name: String = "",
     modelName: String = name,
     maxTotalTokens: Int = -1,
@@ -28,7 +28,7 @@ package com.simiacryptus.cognotik.chat.model
     provider: APIProvider? = null,
     val inputTokenPricePerK: Double = 0.0,
     val outputTokenPricePerK: Double = inputTokenPricePerK,
- ) : LLMModel(
+) : LLMModel(
     modelName = modelName,
     maxTotalTokens = maxTotalTokens,
     maxOutTokens = maxOutTokens,
@@ -48,7 +48,7 @@ package com.simiacryptus.cognotik.chat.model
         temperature: Double = 0.1,
         scheduledPool: ListeningScheduledExecutorService,
         onUsage: (LLMModel, Usage) -> Unit,
-    ) : ChatInterface = ChatInterface(
+    ): ChatInterface = ChatInterface(
         logStreams = logStreams,
         key = key,
         base = base,
@@ -73,12 +73,13 @@ package com.simiacryptus.cognotik.chat.model
                     AWSModels.values +
                     AnthropicModels.values +
                     DeepSeekModels.values +
-                    GeminiModels.values).toMutableMap() }
+                    GeminiModels.values).toMutableMap()
+        }
 
     }
 }
 
- class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
+class ChatModelsSerializer : StdSerializer<ChatModel>(ChatModel::class.java) {
     override fun serialize(value: ChatModel, gen: JsonGenerator, provider: SerializerProvider) {
         gen.writeStartObject()
         gen.writeStringField("name", value.name)
@@ -92,7 +93,7 @@ package com.simiacryptus.cognotik.chat.model
     }
 }
 
- class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
+class ChatModelsDeserializer : JsonDeserializer<ChatModel>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatModel {
         return when (p.currentToken) {
             JsonToken.START_OBJECT -> {
@@ -106,7 +107,7 @@ package com.simiacryptus.cognotik.chat.model
                 val provider = providerName?.let { APIProvider.valueOf(it) }
                 val inputTokenPricePerK = node.get("inputTokenPricePerK")?.asDouble() ?: 0.0
                 val outputTokenPricePerK = node.get("outputTokenPricePerK")?.asDouble() ?: inputTokenPricePerK
-                
+
                 return ChatModel(
                     name = name,
                     modelName = modelName,
@@ -117,6 +118,7 @@ package com.simiacryptus.cognotik.chat.model
                     outputTokenPricePerK = outputTokenPricePerK
                 )
             }
+
             else -> throw IllegalArgumentException("ChatModel must be deserialized from an object")
         }
     }

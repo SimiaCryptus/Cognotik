@@ -13,7 +13,7 @@ object GeminiModels {
         inputTokenPricePerK = 0.00125,
         outputTokenPricePerK = 0.005
     )
-    
+
     val GeminiPro_10 = ChatModel(
         name = "GeminiPro_10",
         modelName = "gemini-1.0-pro",
@@ -23,7 +23,7 @@ object GeminiModels {
         inputTokenPricePerK = 0.00025,
         outputTokenPricePerK = 0.0005
     )
-    
+
     val GeminiFlash_15 = ChatModel(
         name = "GeminiFlash_15",
         modelName = "gemini-1.5-flash",
@@ -33,6 +33,7 @@ object GeminiModels {
         inputTokenPricePerK = 0.000075,
         outputTokenPricePerK = 0.0003
     )
+
     // Deprecated
     val GeminiFlash_15_8B = ChatModel(
         name = "GeminiFlash_15_8B",
@@ -43,7 +44,7 @@ object GeminiModels {
         inputTokenPricePerK = 0.0000375,
         outputTokenPricePerK = 0.00015
     )
-    
+
     val GeminiFlash_20 = ChatModel(
         name = "GeminiFlash_20",
         modelName = "gemini-2.0-flash",
@@ -53,7 +54,7 @@ object GeminiModels {
         inputTokenPricePerK = 0.0001,
         outputTokenPricePerK = 0.0004
     )
-    
+
     val GeminiFlash_20_Lite = ChatModel(
         name = "GeminiFlash_20_Lite",
         modelName = "gemini-2.0-flash-lite",
@@ -63,7 +64,7 @@ object GeminiModels {
         inputTokenPricePerK = 0.00005,
         outputTokenPricePerK = 0.0002
     )
-    
+
     val GeminiFlash_20_Live = ChatModel(
         name = "GeminiFlash_20_Live",
         modelName = "gemini-2.0-flash-live-001",
@@ -92,7 +93,7 @@ object GeminiModels {
         inputTokenPricePerK = 0.0015,
         outputTokenPricePerK = 0.006
     )
-    
+
     val GeminiFlash_25 = ChatModel(
         name = "GeminiFlash_25",
         modelName = "gemini-2.5-flash",

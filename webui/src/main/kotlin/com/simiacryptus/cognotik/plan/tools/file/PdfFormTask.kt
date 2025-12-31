@@ -153,7 +153,10 @@ Only include fields where a value can be confidently determined from the context
 
             val configFields = executionConfig?.fields ?: emptyMap()
             val fieldData = extractedFields + configFields
-            task.expandable("Extracted Fields", "<pre>${fieldData.entries.joinToString("\n") { "${it.key}: ${it.value}" }}</pre>")
+            task.expandable(
+                "Extracted Fields",
+                "<pre>${fieldData.entries.joinToString("\n") { "${it.key}: ${it.value}" }}</pre>"
+            )
 
 
             transcript?.write("# PDF Form Fill Execution\n".toByteArray())
@@ -208,13 +211,15 @@ Only include fields where a value can be confidently determined from the context
                 statusBuffer?.setLength(0)
                 statusBuffer?.append("<strong>Complete!</strong>")
                 task.update()
-                task.add("""
+                task.add(
+                    """
                     <div class="alert alert-success">
                         $successMsg<br/>
                         <a href='$fileUrl' class='btn btn-primary mt-2' target='_blank'>Download PDF</a>
                     </div>
-                """.trimIndent())
-                
+                """.trimIndent()
+                )
+
                 resultFn(successMsg)
 
             } catch (e: Exception) {
@@ -231,6 +236,7 @@ Only include fields where a value can be confidently determined from the context
             task.complete()
         }
     }
+
     private fun getFieldDescription(field: PDField): String {
         val type = field.javaClass.simpleName.replace("PD", "").replace("Field", "")
         val options = when (field) {

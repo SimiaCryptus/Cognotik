@@ -37,357 +37,376 @@ import java.util.concurrent.TimeoutException
 import javax.swing.*
 
 class GenerateDocumentationAction : FileContextAction<GenerateDocumentationAction.Settings>() {
-  override fun getActionUpdateThread() = ActionUpdateThread.BGT
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
-  class SettingsUI {
-    @Name("Single Output File")
-    val singleOutputFile = JCheckBox("Produce a single output file", true)
+    class SettingsUI {
+        @Name("Single Output File")
+        val singleOutputFile = JCheckBox("Produce a single output file", true)
 
-    @Name("Files to Process")
-    val filesToProcess = CheckBoxList<Path>()
+        @Name("Files to Process")
+        val filesToProcess = CheckBoxList<Path>()
 
-    @Name("AI Instruction")
-    val transformationMessage = JBTextArea(4, 40)
+        @Name("AI Instruction")
+        val transformationMessage = JBTextArea(4, 40)
 
-    @Name("Recent Instructions")
-    val recentInstructions = JComboBox<String>()
+        @Name("Recent Instructions")
+        val recentInstructions = JComboBox<String>()
 
-    @Name("Output File")
-    val outputFilename = JBTextField()
+        @Name("Output File")
+        val outputFilename = JBTextField()
 
-    @Name("Output Directory")
-    val outputDirectory = JBTextField()
-  }
-
-  class UserSettings(
-    var transformationMessage: String = "Create user documentation",
-    var outputFilename: String = "compiled_documentation.md",
-    var filesToProcess: List<Path> = listOf(),
-    var singleOutputFile: Boolean = true,
-    var outputDirectory: String = "docs/"
-  )
-
-  class Settings(
-    val settings: UserSettings? = null,
-    val project: Project? = null,
-    val root: Path? = null
-  )
-
-  override fun getConfig(project: Project?, e: AnActionEvent): Settings? {
-    var root = e.getSelectedFolder()?.toNioPath()
-    val files = if (root == null) {
-      e.getSelectedFiles().map { it.toNioPath() }.toTypedArray()
-    } else {
-      Files.walk(root).filter { Files.isRegularFile(it) && !Files.isDirectory(it) }.toList().filterNotNull().sortedBy { it.toString() }.toTypedArray()
+        @Name("Output Directory")
+        val outputDirectory = JBTextField()
     }
-    val settingsUI = SettingsUI().apply {
-      filesToProcess.setItems(files.toMutableList()) { path ->
-        root?.relativize(path)?.toString() ?: path.toString()
-      }
-      files.forEach { path ->
-        filesToProcess.setItemSelected(path, true)
-      }
-      outputDirectory.text = "docs/"
-    }
-    val mruDocumentationInstructions = AppSettingsState.instance.getRecentCommands("DocumentationInstructions")
-    settingsUI.recentInstructions.model = DefaultComboBoxModel(
-      mruDocumentationInstructions.getMostRecent(10).map {
-        "${it.split(" ").first()} ${it.split(" ").drop(1).joinToString(" ")}"
-      }.toTypedArray()
+
+    class UserSettings(
+        var transformationMessage: String = "Create user documentation",
+        var outputFilename: String = "compiled_documentation.md",
+        var filesToProcess: List<Path> = listOf(),
+        var singleOutputFile: Boolean = true,
+        var outputDirectory: String = "docs/"
     )
-    settingsUI.recentInstructions.selectedIndex = -1
-    settingsUI.recentInstructions.addActionListener { updateUIFromSelection(settingsUI) }
-    val dialog = DocumentationCompilerDialog(project, settingsUI)
-    dialog.show()
-    val settings: UserSettings = dialog.userSettings
-    settings.singleOutputFile = settingsUI.singleOutputFile.isSelected
-    settings.outputDirectory = settingsUI.outputDirectory.text
-    val result = dialog.isOK
-    settings.filesToProcess = when {
-      result -> files.filter { path -> settingsUI.filesToProcess.isItemSelected(path) }.sortedBy { it.toString() }.toList()
 
-      else -> listOf()
-    }
-    if (settings.filesToProcess.isEmpty()) return null
-    mruDocumentationInstructions.addInstructionToHistory("${settings.outputFilename} ${settings.transformationMessage}")
+    class Settings(
+        val settings: UserSettings? = null,
+        val project: Project? = null,
+        val root: Path? = null
+    )
 
-    return Settings(settings, project, root)
-  }
-
-  private fun updateUIFromSelection(settingsUI: SettingsUI) {
-    val selected = settingsUI.recentInstructions.selectedItem as? String
-    if (selected != null) {
-      val parts = selected.split(" ", limit = 2)
-      if (parts.size == 2) {
-        settingsUI.outputFilename.text = parts[0]
-        settingsUI.transformationMessage.text = parts[1]
-      } else {
-        settingsUI.transformationMessage.text = selected
-      }
-    } else {
-      settingsUI.transformationMessage.text = ""
-    }
-  }
-
-  override fun processSelection(state: SelectionState, config: Settings?, progress: ProgressIndicator): Array<File> {
-    progress.fraction = 0.0
-    if (config?.settings == null) {
-
-      return emptyArray<File>().also {
-
-        return@also
-      }
-    }
-    progress.text = "Initializing documentation generation..."
-
-    val projectRoot = state.projectRoot.toPath()
-    val outputDirectory = config.settings.outputDirectory
-    var outputPath = (config.root ?: state.projectRoot.toPath()).resolve(config.settings.outputFilename)
-    val relativePath = (config.root ?: state.projectRoot.toPath())?.relativize(outputPath) ?: outputPath
-    outputPath = state.projectRoot.toPath().resolve(outputDirectory).resolve(relativePath)
-
-    if (outputPath.toFile().exists()) {
-      val extension = outputPath.toString().split(".").last()
-      val name = outputPath.toString().split(".").dropLast(1).joinToString(".")
-      val fileIndex = (1..Int.MAX_VALUE).find {
-        !projectRoot.resolve("$name.$it.$extension").toFile().exists()
-      }
-      outputPath = projectRoot.resolve("$name.$fileIndex.$extension") ?: outputPath
-    }
-
-    val executorService = Executors.newFixedThreadPool(4)
-    val transformationMessage = config.settings.transformationMessage
-    val markdownContent = TreeMap<String, String>()
-    try {
-      val selectedPaths = config.settings.filesToProcess.sortedBy { it.toString() }
-      val partitionedPaths = if(null != projectRoot) Files.walk(projectRoot).filter { Files.isRegularFile(it) && !Files.isDirectory(it) }.toList().sortedBy { it.toString() }
-        .groupBy { selectedPaths.contains(it) } else selectedPaths.groupBy { true }
-      val totalFiles = partitionedPaths[true]?.size ?: 0
-      var processedFiles = 0
-      val pathList = partitionedPaths[true]?.toList()?.filterNotNull()?.map<Path, Future<Path?>> { path ->
-        executorService.submit<Path?> {
-          var retries = 0
-          val maxRetries = 3
-          while (retries < maxRetries) {
-            try {
-              val fileContent = IOUtils.toString(FileInputStream(path.toFile()), "UTF-8") ?: return@submit null
-              val transformContent = transformContent(
-                path, fileContent, transformationMessage, AppSettingsState.instance.smartChatClient, projectRoot
-              )
-              processTransformedContent(
-                path, transformContent, config, projectRoot, outputDirectory, outputPath, markdownContent
-              )
-              synchronized(progress) {
-                processedFiles++
-                progress.fraction = processedFiles.toDouble() / totalFiles
-                progress.text = "Processing file ${processedFiles} of ${totalFiles}"
-              }
-              return@submit path
-            } catch (e: Exception) {
-              retries++
-              if (retries >= maxRetries) {
-                log.error("Failed to process file after $maxRetries attempts: $path", e)
-                return@submit null
-              }
-              log.warn("Error processing file: $path. Retrying (attempt $retries)", e)
-              Thread.sleep(1000L * retries)
+    override fun getConfig(project: Project?, e: AnActionEvent): Settings? {
+        var root = e.getSelectedFolder()?.toNioPath()
+        val files = if (root == null) {
+            e.getSelectedFiles().map { it.toNioPath() }.toTypedArray()
+        } else {
+            Files.walk(root).filter { Files.isRegularFile(it) && !Files.isDirectory(it) }.toList().filterNotNull()
+                .sortedBy { it.toString() }.toTypedArray()
+        }
+        val settingsUI = SettingsUI().apply {
+            filesToProcess.setItems(files.toMutableList()) { path ->
+                root?.relativize(path)?.toString() ?: path.toString()
             }
-          }
-          null
+            files.forEach { path ->
+                filesToProcess.setItemSelected(path, true)
+            }
+            outputDirectory.text = "docs/"
         }
-      }?.toTypedArray()?.mapNotNull { future ->
-        try {
-          future.get(2, TimeUnit.MINUTES)
-
-        } catch (e: Exception) {
-          when (e) {
-            is TimeoutException -> log.error("File processing timed out", e)
-            else -> log.error("Error processing file", e)
-          }
-          null
-        }
-      } ?: listOf()
-      if (config.settings.singleOutputFile == true) {
-        val sortedContent = markdownContent.entries.joinToString("\n\n") { (path, content) ->
-          "# $path\n\n$content"
-        }
-        outputPath.parent.toFile().mkdirs()
-        Files.write(outputPath, sortedContent.toByteArray())
-        open(config.project!!, outputPath)
-        return arrayOf(outputPath.toFile())
-      } else {
-        val outputDir = projectRoot.resolve(outputDirectory) ?: File(outputDirectory).toPath()
-        outputDir.toFile().mkdirs()
-        open(config.project!!, projectRoot.resolve(outputDirectory) ?: outputDir)
-        return pathList.map { it.toFile() }.toTypedArray()
-      }
-    } finally {
-      executorService.shutdown()
-    }
-  }
-
-  private fun processTransformedContent(
-    path: Path,
-    transformContent: String,
-    config: Settings?,
-    projectRoot: Path,
-    outputDirectory: String,
-    outputPath: Path,
-    markdownContent: TreeMap<String, String>
-  ) {
-    if (config?.settings?.singleOutputFile == true) {
-      markdownContent[projectRoot.relativize(path).toString()] = transformContent.replace("(?s)(?<![^\\n])#".toRegex(), "\n##")
-    } else {
-      var individualOutputPath = /*selectedFolder*/ projectRoot.relativize(
-        path.parent.resolve(
-          path.fileName.toString().split('.').dropLast(1).joinToString(".") + "." + outputPath.fileName
+        val mruDocumentationInstructions = AppSettingsState.instance.getRecentCommands("DocumentationInstructions")
+        settingsUI.recentInstructions.model = DefaultComboBoxModel(
+            mruDocumentationInstructions.getMostRecent(10).map {
+                "${it.split(" ").first()} ${it.split(" ").drop(1).joinToString(" ")}"
+            }.toTypedArray()
         )
-      )
-      individualOutputPath = projectRoot.resolve(individualOutputPath) ?: individualOutputPath
-      individualOutputPath = projectRoot.relativize(individualOutputPath) ?: individualOutputPath
-      individualOutputPath = projectRoot.resolve(outputDirectory).resolve(individualOutputPath) ?: individualOutputPath
-      individualOutputPath.parent?.toFile()?.mkdirs()
-      Files.write(individualOutputPath, transformContent.toByteArray())
-    }
-  }
+        settingsUI.recentInstructions.selectedIndex = -1
+        settingsUI.recentInstructions.addActionListener { updateUIFromSelection(settingsUI) }
+        val dialog = DocumentationCompilerDialog(project, settingsUI)
+        dialog.show()
+        val settings: UserSettings = dialog.userSettings
+        settings.singleOutputFile = settingsUI.singleOutputFile.isSelected
+        settings.outputDirectory = settingsUI.outputDirectory.text
+        val result = dialog.isOK
+        settings.filesToProcess = when {
+            result -> files.filter { path -> settingsUI.filesToProcess.isItemSelected(path) }.sortedBy { it.toString() }
+                .toList()
 
-  private fun transformContent(
-    path: Path, fileContent: String, transformationMessage: String, model: ChatInterface, projectRoot: Path
-  ) = run {
-    model.chat(
-      listOf(
-        ModelSchema.ChatMessage(
-          ModelSchema.Role.system, """
+            else -> listOf()
+        }
+        if (settings.filesToProcess.isEmpty()) return null
+        mruDocumentationInstructions.addInstructionToHistory("${settings.outputFilename} ${settings.transformationMessage}")
+
+        return Settings(settings, project, root)
+    }
+
+    private fun updateUIFromSelection(settingsUI: SettingsUI) {
+        val selected = settingsUI.recentInstructions.selectedItem as? String
+        if (selected != null) {
+            val parts = selected.split(" ", limit = 2)
+            if (parts.size == 2) {
+                settingsUI.outputFilename.text = parts[0]
+                settingsUI.transformationMessage.text = parts[1]
+            } else {
+                settingsUI.transformationMessage.text = selected
+            }
+        } else {
+            settingsUI.transformationMessage.text = ""
+        }
+    }
+
+    override fun processSelection(state: SelectionState, config: Settings?, progress: ProgressIndicator): Array<File> {
+        progress.fraction = 0.0
+        if (config?.settings == null) {
+
+            return emptyArray<File>().also {
+
+                return@also
+            }
+        }
+        progress.text = "Initializing documentation generation..."
+
+        val projectRoot = state.projectRoot.toPath()
+        val outputDirectory = config.settings.outputDirectory
+        var outputPath = (config.root ?: state.projectRoot.toPath()).resolve(config.settings.outputFilename)
+        val relativePath = (config.root ?: state.projectRoot.toPath())?.relativize(outputPath) ?: outputPath
+        outputPath = state.projectRoot.toPath().resolve(outputDirectory).resolve(relativePath)
+
+        if (outputPath.toFile().exists()) {
+            val extension = outputPath.toString().split(".").last()
+            val name = outputPath.toString().split(".").dropLast(1).joinToString(".")
+            val fileIndex = (1..Int.MAX_VALUE).find {
+                !projectRoot.resolve("$name.$it.$extension").toFile().exists()
+            }
+            outputPath = projectRoot.resolve("$name.$fileIndex.$extension") ?: outputPath
+        }
+
+        val executorService = Executors.newFixedThreadPool(4)
+        val transformationMessage = config.settings.transformationMessage
+        val markdownContent = TreeMap<String, String>()
+        try {
+            val selectedPaths = config.settings.filesToProcess.sortedBy { it.toString() }
+            val partitionedPaths = if (null != projectRoot) Files.walk(projectRoot)
+                .filter { Files.isRegularFile(it) && !Files.isDirectory(it) }.toList().sortedBy { it.toString() }
+                .groupBy { selectedPaths.contains(it) } else selectedPaths.groupBy { true }
+            val totalFiles = partitionedPaths[true]?.size ?: 0
+            var processedFiles = 0
+            val pathList = partitionedPaths[true]?.toList()?.filterNotNull()?.map<Path, Future<Path?>> { path ->
+                executorService.submit<Path?> {
+                    var retries = 0
+                    val maxRetries = 3
+                    while (retries < maxRetries) {
+                        try {
+                            val fileContent =
+                                IOUtils.toString(FileInputStream(path.toFile()), "UTF-8") ?: return@submit null
+                            val transformContent = transformContent(
+                                path,
+                                fileContent,
+                                transformationMessage,
+                                AppSettingsState.instance.smartChatClient,
+                                projectRoot
+                            )
+                            processTransformedContent(
+                                path,
+                                transformContent,
+                                config,
+                                projectRoot,
+                                outputDirectory,
+                                outputPath,
+                                markdownContent
+                            )
+                            synchronized(progress) {
+                                processedFiles++
+                                progress.fraction = processedFiles.toDouble() / totalFiles
+                                progress.text = "Processing file ${processedFiles} of ${totalFiles}"
+                            }
+                            return@submit path
+                        } catch (e: Exception) {
+                            retries++
+                            if (retries >= maxRetries) {
+                                log.error("Failed to process file after $maxRetries attempts: $path", e)
+                                return@submit null
+                            }
+                            log.warn("Error processing file: $path. Retrying (attempt $retries)", e)
+                            Thread.sleep(1000L * retries)
+                        }
+                    }
+                    null
+                }
+            }?.toTypedArray()?.mapNotNull { future ->
+                try {
+                    future.get(2, TimeUnit.MINUTES)
+
+                } catch (e: Exception) {
+                    when (e) {
+                        is TimeoutException -> log.error("File processing timed out", e)
+                        else -> log.error("Error processing file", e)
+                    }
+                    null
+                }
+            } ?: listOf()
+            if (config.settings.singleOutputFile == true) {
+                val sortedContent = markdownContent.entries.joinToString("\n\n") { (path, content) ->
+                    "# $path\n\n$content"
+                }
+                outputPath.parent.toFile().mkdirs()
+                Files.write(outputPath, sortedContent.toByteArray())
+                open(config.project!!, outputPath)
+                return arrayOf(outputPath.toFile())
+            } else {
+                val outputDir = projectRoot.resolve(outputDirectory) ?: File(outputDirectory).toPath()
+                outputDir.toFile().mkdirs()
+                open(config.project!!, projectRoot.resolve(outputDirectory) ?: outputDir)
+                return pathList.map { it.toFile() }.toTypedArray()
+            }
+        } finally {
+            executorService.shutdown()
+        }
+    }
+
+    private fun processTransformedContent(
+        path: Path,
+        transformContent: String,
+        config: Settings?,
+        projectRoot: Path,
+        outputDirectory: String,
+        outputPath: Path,
+        markdownContent: TreeMap<String, String>
+    ) {
+        if (config?.settings?.singleOutputFile == true) {
+            markdownContent[projectRoot.relativize(path).toString()] =
+                transformContent.replace("(?s)(?<![^\\n])#".toRegex(), "\n##")
+        } else {
+            var individualOutputPath = /*selectedFolder*/ projectRoot.relativize(
+                path.parent.resolve(
+                    path.fileName.toString().split('.').dropLast(1).joinToString(".") + "." + outputPath.fileName
+                )
+            )
+            individualOutputPath = projectRoot.resolve(individualOutputPath) ?: individualOutputPath
+            individualOutputPath = projectRoot.relativize(individualOutputPath) ?: individualOutputPath
+            individualOutputPath =
+                projectRoot.resolve(outputDirectory).resolve(individualOutputPath) ?: individualOutputPath
+            individualOutputPath.parent?.toFile()?.mkdirs()
+            Files.write(individualOutputPath, transformContent.toByteArray())
+        }
+    }
+
+    private fun transformContent(
+        path: Path, fileContent: String, transformationMessage: String, model: ChatInterface, projectRoot: Path
+    ) = run {
+        model.chat(
+            listOf(
+                ModelSchema.ChatMessage(
+                    ModelSchema.Role.system, """
                         You will combine natural language instructions with a user provided code example to document code.
                         """.trimIndent().toContentList(), null
-        ),
-        ModelSchema.ChatMessage(
-          ModelSchema.Role.user,
-          "## Project:\n${getProjectStructure(projectRoot)}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
-        ),
-      )
-    ).choices.first().message?.content?.trim()
-  } ?: fileContent
+                ),
+                ModelSchema.ChatMessage(
+                    ModelSchema.Role.user,
+                    "## Project:\n${getProjectStructure(projectRoot)}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
+                ),
+            )
+        ).choices.first().message?.content?.trim()
+    } ?: fileContent
 
-  companion object {
-    private val scheduledPool = Executors.newScheduledThreadPool(1)
-  }
-  fun open(project: Project, outputPath: Path) {
-    lateinit var function: () -> Unit
-    function = {
-      val file = outputPath.toFile()
-      if (file.exists()) {
+    companion object {
+        private val scheduledPool = Executors.newScheduledThreadPool(1)
+    }
 
-        ApplicationManager.getApplication().invokeLater {
-          val ioFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
-          if (false == (ioFile?.let { FileEditorManager.getInstance(project).isFileOpen(it) })) {
-            val localFileSystem = LocalFileSystem.getInstance()
+    fun open(project: Project, outputPath: Path) {
+        lateinit var function: () -> Unit
+        function = {
+            val file = outputPath.toFile()
+            if (file.exists()) {
 
-            val virtualFile = localFileSystem.refreshAndFindFileByIoFile(file)
-            virtualFile?.let {
-              FileEditorManager.getInstance(project).openFile(it, true)
-            } ?: scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
-          } else {
-            scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
-          }
+                ApplicationManager.getApplication().invokeLater {
+                    val ioFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
+                    if (false == (ioFile?.let { FileEditorManager.getInstance(project).isFileOpen(it) })) {
+                        val localFileSystem = LocalFileSystem.getInstance()
+
+                        val virtualFile = localFileSystem.refreshAndFindFileByIoFile(file)
+                        virtualFile?.let {
+                            FileEditorManager.getInstance(project).openFile(it, true)
+                        } ?: scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
+                    } else {
+                        scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
+                    }
+                }
+            } else {
+                scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
+            }
         }
-      } else {
         scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
-      }
     }
-    scheduledPool.schedule(function, 100, TimeUnit.MILLISECONDS)
-  }
 
-  inner class DocumentationCompilerDialog(project: Project?, private val settingsUI: SettingsUI) : DialogWrapper(project) {
-    val userSettings = UserSettings()
+    inner class DocumentationCompilerDialog(project: Project?, private val settingsUI: SettingsUI) :
+        DialogWrapper(project) {
+        val userSettings = UserSettings()
 
-    init {
-      title = "Compile Documentation"
+        init {
+            title = "Compile Documentation"
 
-      settingsUI.transformationMessage.text = userSettings.transformationMessage
-      settingsUI.outputFilename.text = userSettings.outputFilename
-      settingsUI.outputDirectory.text = userSettings.outputDirectory
-      settingsUI.singleOutputFile.isSelected = userSettings.singleOutputFile
-      settingsUI.recentInstructions.addActionListener {
-        val selected = settingsUI.recentInstructions.selectedItem as? String
-        selected?.let {
-          updateUIFromSelection(settingsUI)
+            settingsUI.transformationMessage.text = userSettings.transformationMessage
+            settingsUI.outputFilename.text = userSettings.outputFilename
+            settingsUI.outputDirectory.text = userSettings.outputDirectory
+            settingsUI.singleOutputFile.isSelected = userSettings.singleOutputFile
+            settingsUI.recentInstructions.addActionListener {
+                val selected = settingsUI.recentInstructions.selectedItem as? String
+                selected?.let {
+                    updateUIFromSelection(settingsUI)
+                }
+            }
+            init()
         }
-      }
-      init()
-    }
 
-    override fun createCenterPanel(): JComponent {
-      val panel = JPanel(BorderLayout()).apply {
-        val filesScrollPane = JBScrollPane(settingsUI.filesToProcess).apply {
-          preferredSize = Dimension(600, 400)
+        override fun createCenterPanel(): JComponent {
+            val panel = JPanel(BorderLayout()).apply {
+                val filesScrollPane = JBScrollPane(settingsUI.filesToProcess).apply {
+                    preferredSize = Dimension(600, 400)
 
+                }
+                add(filesScrollPane, BorderLayout.CENTER)
+
+
+                val optionsPanel = JPanel().apply {
+                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                    border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
+
+                    add(JLabel("Recent Instructions"))
+                    add(settingsUI.recentInstructions)
+                    add(Box.createVerticalStrut(10))
+                    add(JLabel("AI Instruction"))
+                    add(settingsUI.transformationMessage)
+                    add(Box.createVerticalStrut(10))
+                    add(Box.createVerticalStrut(10))
+
+                    add(JLabel("Output File"))
+                    add(settingsUI.outputFilename)
+                    add(Box.createVerticalStrut(10))
+                    add(JLabel("Output Directory"))
+                    add(settingsUI.outputDirectory)
+                    add(Box.createVerticalStrut(10))
+                    add(settingsUI.singleOutputFile)
+                }
+                add(optionsPanel, BorderLayout.SOUTH)
+            }
+            return panel
         }
-        add(filesScrollPane, BorderLayout.CENTER)
+
+        override fun doOKAction() {
+            if (!validateInput()) {
+                return
+            }
+            super.doOKAction()
+            userSettings.transformationMessage = settingsUI.transformationMessage.text
+            userSettings.outputFilename = settingsUI.outputFilename.text
+            userSettings.outputDirectory = settingsUI.outputDirectory.text
 
 
-        val optionsPanel = JPanel().apply {
-          layout = BoxLayout(this, BoxLayout.Y_AXIS)
-          border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
-
-          add(JLabel("Recent Instructions"))
-          add(settingsUI.recentInstructions)
-          add(Box.createVerticalStrut(10))
-          add(JLabel("AI Instruction"))
-          add(settingsUI.transformationMessage)
-          add(Box.createVerticalStrut(10))
-          add(Box.createVerticalStrut(10))
-
-          add(JLabel("Output File"))
-          add(settingsUI.outputFilename)
-          add(Box.createVerticalStrut(10))
-          add(JLabel("Output Directory"))
-          add(settingsUI.outputDirectory)
-          add(Box.createVerticalStrut(10))
-          add(settingsUI.singleOutputFile)
+            userSettings.filesToProcess =
+                settingsUI.filesToProcess.items.filter { path -> settingsUI.filesToProcess.isItemSelected(path) }
+            userSettings.singleOutputFile = settingsUI.singleOutputFile.isSelected
         }
-        add(optionsPanel, BorderLayout.SOUTH)
-      }
-      return panel
+
+        private fun validateInput(): Boolean {
+            if (settingsUI.transformationMessage.text.isBlank()) {
+                Messages.showErrorDialog("AI Instruction cannot be empty", "Input Error")
+                return false
+            }
+            if (settingsUI.outputFilename.text.isBlank()) {
+                Messages.showErrorDialog("Output File cannot be empty", "Input Error")
+                return false
+            }
+            if (settingsUI.outputDirectory.text.isBlank()) {
+                Messages.showErrorDialog("Output Directory cannot be empty", "Input Error")
+                return false
+            }
+            return true
+        }
     }
-
-    override fun doOKAction() {
-      if (!validateInput()) {
-        return
-      }
-      super.doOKAction()
-      userSettings.transformationMessage = settingsUI.transformationMessage.text
-      userSettings.outputFilename = settingsUI.outputFilename.text
-      userSettings.outputDirectory = settingsUI.outputDirectory.text
-
-
-      userSettings.filesToProcess = settingsUI.filesToProcess.items.filter { path -> settingsUI.filesToProcess.isItemSelected(path) }
-      userSettings.singleOutputFile = settingsUI.singleOutputFile.isSelected
-    }
-
-    private fun validateInput(): Boolean {
-      if (settingsUI.transformationMessage.text.isBlank()) {
-        Messages.showErrorDialog("AI Instruction cannot be empty", "Input Error")
-        return false
-      }
-      if (settingsUI.outputFilename.text.isBlank()) {
-        Messages.showErrorDialog("Output File cannot be empty", "Input Error")
-        return false
-      }
-      if (settingsUI.outputDirectory.text.isBlank()) {
-        Messages.showErrorDialog("Output Directory cannot be empty", "Input Error")
-        return false
-      }
-      return true
-    }
-  }
 }
 
 val <T> CheckBoxList<T>.items: List<T>
-  get() {
-    val items = mutableListOf<T>()
-    for (i in 0 until model.size) {
-      items.add(getItemAt(i)!!)
+    get() {
+        val items = mutableListOf<T>()
+        for (i in 0 until model.size) {
+            items.add(getItemAt(i)!!)
+        }
+        return items
     }
-    return items
-  }

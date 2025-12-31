@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -227,15 +226,15 @@ DESCRIPTION: another detailed description
             transcriptWriter?.write("**Response:**\n$imageSpecResponse\n\n")
             // Parse image specifications
             val imageSpecs = parseImageSpecs(imageSpecResponse)
-          val imageChat = orchestrationConfig.defaultImage.getChildClient(task)
+            val imageChat = orchestrationConfig.defaultImage.getChildClient(task)
             // Generate each image
             imageSpecs.take(executionConfig.image_count).forEach { (filename, description) ->
                 val filename = filename
                 try {
                     newTask.add("Generating image: <b>$filename</b>...", additionalClasses = "text-info")
-                  val imageAgent = ImageProcessingAgent(
+                    val imageAgent = ImageProcessingAgent(
                         prompt = "Create a high-quality image for a web page based on the description",
-                    model = imageChat,
+                        model = imageChat,
                         temperature = 0.7,
                     )
                     val result = imageAgent.answer(
@@ -516,7 +515,10 @@ Provide the complete updated HTML structure within a code block:
             updatedHtml
         } else {
             log.warn("Failed to insert image references, using original HTML structure")
-            newTask.add("⚠️ Failed to insert image references, using original structure", additionalClasses = "text-warning")
+            newTask.add(
+                "⚠️ Failed to insert image references, using original structure",
+                additionalClasses = "text-warning"
+            )
             htmlStructure
         }
     }

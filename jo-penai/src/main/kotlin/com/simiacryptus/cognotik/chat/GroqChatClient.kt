@@ -1,26 +1,26 @@
 package com.simiacryptus.cognotik.chat
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
- import java.io.BufferedOutputStream
- import java.util.concurrent.ExecutorService
+import java.io.BufferedOutputStream
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
 
- class GroqChatClient(
+class GroqChatClient(
     apiKey: String,
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     apiBase: String,
     scheduledPool: ListeningScheduledExecutorService,
- ) : SingleProviderChatClient(
+) : SingleProviderChatClient(
     APIProvider.Groq,
     apiKey = apiKey,
     apiBase = apiBase,
@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
     companion object {
         private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(GroqChatClient::class.java)
         private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
-        
+
         const val HEADER_CONTENT_TYPE = "Content-Type"
         const val HEADER_ACCEPT = "Accept"
         const val HEADER_AUTHORIZATION = "Authorization"
@@ -61,18 +61,20 @@ import java.util.concurrent.ConcurrentHashMap
         val context_window: Int,
         val public_apps: Boolean
     )
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class GroqModelsResponse(
         val `object`: String,
         val data: List<GroqModel>
     )
+
     override fun getModels(): List<ChatModel>? {
         // Check cache first
         modelsCache[apiBase]?.let { cachedModels ->
             //log.debug("Returning cached models for apiBase: $apiBase")
             return cachedModels
         }
-        
+
         return try {
             log.info("Fetching available models from Groq API")
             val result = get("$apiBase/models")

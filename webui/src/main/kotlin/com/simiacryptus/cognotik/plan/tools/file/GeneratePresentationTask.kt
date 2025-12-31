@@ -431,7 +431,10 @@ Style: Clean, modern, professional presentation aesthetic
                     log.debug("Generated image for slide ${slideIndex + 1}: $imageFilename")
                 } catch (e: Exception) {
                     log.error("Failed to generate image for slide ${slideIndex + 1}", e)
-                    newTask.add("⚠️ Failed to generate image for slide ${slideIndex + 1}: ${e.message}", additionalClasses = "text-danger")
+                    newTask.add(
+                        "⚠️ Failed to generate image for slide ${slideIndex + 1}: ${e.message}",
+                        additionalClasses = "text-danger"
+                    )
                 }
             }
         } catch (e: Exception) {

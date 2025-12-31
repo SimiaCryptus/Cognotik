@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.Session
@@ -13,12 +12,11 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
-import java.io.FileOutputStream
 import java.io.OutputStream
-import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
+
 class CouncilModeConfig(
     var council: List<CognitiveSchemaStrategy> = listOf(
         ProjectManagerStrategy(name = "CEO", description = "Focus on high-level goals and business value."),
@@ -91,7 +89,7 @@ open class CouncilMode(
                 }
 
                 // Initialize all council members
-            config.council.forEach { strategy ->
+                config.council.forEach { strategy ->
                     val state = strategy.initialize(
                         userMessage,
                         contextData(),
@@ -127,7 +125,7 @@ open class CouncilMode(
                             }
                         }
                         // Display Council States
-                    config.council.forEach { strategy ->
+                        config.council.forEach { strategy ->
                             ui.newTask().apply {
                                 inputTabs["${strategy.name} State"] = placeholder
                                 val state = reasoningStates[strategy.name]!!
@@ -138,7 +136,7 @@ open class CouncilMode(
 
                     // Nominations
                     val nominations = mutableListOf<Pair<String, AdaptivePlanningMode.TaskData>>()
-                val nominationFutures = config.council.map { strategy ->
+                    val nominationFutures = config.council.map { strategy ->
                         ui.pool.submit<List<Pair<String, AdaptivePlanningMode.TaskData>>> {
                             try {
                                 val state = reasoningStates[strategy.name]!!
@@ -212,13 +210,15 @@ open class CouncilMode(
                         taskExecutionTask.add(renderMarkdown("\n```json\n${taskConfig?.toJson()}\n```\n", ui = ui))
                         writeToTranscript("**Description:** $taskDescription\n\n```json\n${JsonUtil.toJson(taskConfig)}\n```\n\n")
                         taskExecutionTask.verbose(
-                            renderMarkdown("""
+                            renderMarkdown(
+                                """
 Executing task: `$currentTaskId` - $taskDescription
 Full TaskData JSON:
 ```json 
 ${JsonUtil.toJson(taskConfig)}
 ```
-""".trimIndent(), ui = ui)
+""".trimIndent(), ui = ui
+                            )
                         )
                         iterationTabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder
 
@@ -257,9 +257,18 @@ ${JsonUtil.toJson(taskConfig)}
                     executionRecords.addAll(completedTasks)
 
                     // Update States
-                config.council.forEach { strategy ->
+                    config.council.forEach { strategy ->
                         val oldState = reasoningStates[strategy.name]!!
-                        val newState = updateState(strategy, oldState, completedTasks, currentUserMessage.get(), contextData(), orchestrationConfig, iterationTask, describer)
+                        val newState = updateState(
+                            strategy,
+                            oldState,
+                            completedTasks,
+                            currentUserMessage.get(),
+                            contextData(),
+                            orchestrationConfig,
+                            iterationTask,
+                            describer
+                        )
                         reasoningStates[strategy.name] = newState
                     }
                     currentUserMessage.set(null)
@@ -279,7 +288,7 @@ ${JsonUtil.toJson(taskConfig)}
         }
     }
 
-    private fun  updateState(
+    private fun updateState(
         strategy: CognitiveSchemaStrategy,
         state: Any,
         completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
@@ -290,7 +299,7 @@ ${JsonUtil.toJson(taskConfig)}
         describer: TaskContextYamlDescriber
     ): Any {
         @Suppress("UNCHECKED_CAST")
-        return strategy.update(state , completedTasks, userMessage, contextData, orchestrationConfig, task, describer)
+        return strategy.update(state, completedTasks, userMessage, contextData, orchestrationConfig, task, describer)
     }
 
     private fun formatState(strategy: CognitiveSchemaStrategy, state: Any): String {
@@ -298,7 +307,7 @@ ${JsonUtil.toJson(taskConfig)}
         return strategy.formatState(state)
     }
 
-    private fun  getNominations(
+    private fun getNominations(
         userMessage: String,
         strategy: CognitiveSchemaStrategy,
         state: Any,
@@ -372,7 +381,7 @@ ${JsonUtil.toJson(taskConfig)}
             "${index + 1}. [$nominator] $taskDesc"
         }.joinToString("\n\n")
 
-    config.council.forEach { strategy ->
+        config.council.forEach { strategy ->
             val state = reasoningStates[strategy.name]!!
             val voter = ParsedAgent(
                 name = "Voter",
@@ -398,9 +407,9 @@ ${JsonUtil.toJson(taskConfig)}
                 }
             }
         }
-        
+
         return votes.entries.sortedByDescending { it.value }
-        .take(maxTasksPerIteration)
+            .take(maxTasksPerIteration)
             .map { nominations[it.key - 1].second }
     }
 

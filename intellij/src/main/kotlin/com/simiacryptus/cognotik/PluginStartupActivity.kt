@@ -137,6 +137,7 @@ class PluginStartupActivity : ProjectActivity {
                     log.debug("AWS bucket not configured")
                     null
                 }
+
                 else -> AwsPlatform(
                     bucket = awsBucket!!,
                     region = Region.of(awsRegion!!),

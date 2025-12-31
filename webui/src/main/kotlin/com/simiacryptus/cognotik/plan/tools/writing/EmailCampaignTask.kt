@@ -7,19 +7,14 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.nio.file.FileSystems
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 class EmailCampaignTask(
     orchestrationConfig: OrchestrationConfig,
@@ -347,7 +342,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
                 val contextTask = task.ui.newTask(false)
                 tabs["Brand Context"] = contextTask.placeholder
-                
+
                 contextTask.add("# Brand & Campaign Context\n".renderMarkdown)
                 if (priorContext.isNotBlank()) {
                     contextTask.expandable("Prior Context", MarkdownUtil.renderMarkdown(priorContext, ui = task.ui))

@@ -589,7 +589,8 @@ class CustomFileSetPatchServer(
 
                 else -> {
                     val newSession = task.newSession()
-                    status = task.add("""Processing <a href="#${newSession.sessionId}" target="_blank" class="linked-task-link">${fileSet.name}</a>...<br/>""")!!
+                    status =
+                        task.add("""Processing <a href="#${newSession.sessionId}" target="_blank" class="linked-task-link">${fileSet.name}</a>...<br/>""")!!
                     newSession.newTask()
                 }
             }
@@ -728,7 +729,7 @@ class CustomFileSetPatchServer(
         toInput: (String) -> List<String>,
         socketManager: SocketManager
     ) {
-        val design = mainActor.answer(toInput(userMessage),).toContentList().firstOrNull()?.text ?: ""
+        val design = mainActor.answer(toInput(userMessage)).toContentList().firstOrNull()?.text ?: ""
         if (design.isNotBlank()) {
             task.add(
                 AddApplyFileDiffLinks.instrumentFileDiffs(

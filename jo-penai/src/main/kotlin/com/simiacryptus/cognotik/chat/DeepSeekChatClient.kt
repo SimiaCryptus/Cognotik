@@ -2,9 +2,9 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
@@ -17,7 +17,7 @@ class DeepSeekChatClient(
     apiBase: String = "https://api.deepseek.com",
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-            scheduledPool: ListeningScheduledExecutorService,
+    scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
     APIProvider.DeepSeek,
     apiKey = apiKey,

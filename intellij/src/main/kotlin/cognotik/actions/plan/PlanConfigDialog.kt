@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.models.AIModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.newSettings
@@ -109,7 +108,8 @@ class PlanConfigDialog(
         ComboBox(visibleModelsCache.distinctBy { it.modelName }.map { it.modelName }.toTypedArray()).apply {
             maximumSize = Dimension(CONFIG_COMBO_WIDTH, CONFIG_COMBO_HEIGHT)
             selectedItem =
-                settings.defaultImageModel?.model?.modelName ?: AppSettingsState.instance.imageChatModel?.model?.modelName
+                settings.defaultImageModel?.model?.modelName
+                    ?: AppSettingsState.instance.imageChatModel?.model?.modelName
             toolTipText = "Multimodal AI model for image-related tasks"
         }
 

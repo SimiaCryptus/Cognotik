@@ -399,7 +399,8 @@ Provide a detailed synthesis and a clear final recommendation.
             val duration = System.currentTimeMillis() - startTime
             val summary = "Ethical reasoning analysis completed for dilemma: ${dilemma.truncateForDisplay(200)}"
             log.info("$summary (duration: ${duration}ms)")
-            val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+            val transcriptFile =
+                this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (transcriptLink, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
 
             task.safeComplete(summary, log)
@@ -435,10 +436,14 @@ Provide a detailed synthesis and a clear final recommendation.
     }
 
     private fun createTranscript(task: SessionTask): Pair<FileOutputStream?, String> {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile =
+            this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        val links = "<a href='$link' target='_blank'>Markdown</a> | <a href='${link.removeSuffix(".md")}.html' target='_blank'>HTML</a> | <a href='${link.removeSuffix(".md")}.pdf' target='_blank'>PDF</a>"
+        val links =
+            "<a href='$link' target='_blank'>Markdown</a> | <a href='${link.removeSuffix(".md")}.html' target='_blank'>HTML</a> | <a href='${
+                link.removeSuffix(".md")
+            }.pdf' target='_blank'>PDF</a>"
         return Pair(markdownTranscript, links)
     }
 

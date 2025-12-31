@@ -4,11 +4,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
@@ -612,7 +608,12 @@ class DecompositionSynthesisTask(
                 synthesized.solution
             } else {
                 log.info("Skipping synthesis, returning individual subproblem solutions")
-                overviewTask.add(MarkdownUtil.renderMarkdown("ℹ️ Synthesis skipped - returning individual solutions\n\n", ui = task.ui))
+                overviewTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        "ℹ️ Synthesis skipped - returning individual solutions\n\n",
+                        ui = task.ui
+                    )
+                )
                 // Just return the subproblem solutions
                 solutions.joinToString("\n\n") { "${it.subproblem_id}:\n${it.solution}" }
             }

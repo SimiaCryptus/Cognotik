@@ -15,7 +15,10 @@ abstract class BaseAgent<I, R>(
         vararg messages: ModelSchema.ChatMessage = this.chatMessages(input),
     ): R
 
-    protected open fun response(vararg input: ModelSchema.ChatMessage, model: AIModel = this.model.modelType): ModelSchema.ChatResponse =
+    protected open fun response(
+        vararg input: ModelSchema.ChatMessage,
+        model: AIModel = this.model.modelType
+    ): ModelSchema.ChatResponse =
         this.model.chat(input.toList())
 
     open fun answer(input: I): R = respond(input = input, *chatMessages(input))

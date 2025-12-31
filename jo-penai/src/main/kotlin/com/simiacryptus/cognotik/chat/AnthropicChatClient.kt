@@ -5,24 +5,24 @@ import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
- import org.slf4j.event.Level
+import org.slf4j.event.Level
 import java.io.BufferedOutputStream
- import java.net.URLEncoder
- import java.util.concurrent.ExecutorService
+import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
 
- class AnthropicChatClient(
+class AnthropicChatClient(
     apiKey: String,
     workPool: ExecutorService,
     apiBase: String,
     logLevel: Level,
     logStreams: MutableList<BufferedOutputStream>,
     scheduledPool: ListeningScheduledExecutorService,
- ) : SingleProviderChatClient(
+) : SingleProviderChatClient(
     APIProvider.Anthropic,
     apiKey = apiKey,
     apiBase = apiBase,
@@ -40,10 +40,11 @@ import java.util.concurrent.ConcurrentHashMap
         request.addHeader("x-api-key", apiKey)
         request.addHeader("anthropic-version", "2023-06-01")
     }
+
     override fun getModels(): List<ChatModel>? {
         // Check cache first
         modelsCache[apiBase]?.let { return it }
-        
+
         return try {
             val modelsResponse = fetchAllModels()
             val models = modelsResponse.mapNotNull { modelInfo ->
@@ -75,7 +76,7 @@ import java.util.concurrent.ConcurrentHashMap
     }
 
 
-     private fun fetchAllModels(): List<ModelInfo> {
+    private fun fetchAllModels(): List<ModelInfo> {
         val allModels = mutableListOf<ModelInfo>()
         var hasMore = true
         var afterId: String? = null
@@ -172,7 +173,7 @@ import java.util.concurrent.ConcurrentHashMap
                             id = response.id, choices = listOf(
                                 ModelSchema.ChatChoice(
                                     message = ModelSchema.ChatMessageResponse(
-                                      content = response.content?.joinToString("\n") { it.text ?: "" },
+                                        content = response.content?.joinToString("\n") { it.text ?: "" },
                                     ), index = 0
                                 )
                             ), usage = ModelSchema.Usage(
@@ -200,6 +201,7 @@ import java.util.concurrent.ConcurrentHashMap
             }
         }
     }
+
     private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
         require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
         require(model.modelName?.isNotBlank() == true) { "Model name cannot be blank" }
@@ -243,19 +245,20 @@ import java.util.concurrent.ConcurrentHashMap
         data class AnthropicUsage(
             val input_tokens: Int? = null, val output_tokens: Int? = null
         )
+
         data class ModelInfo(
             val id: String,
             val type: String = "model",
             val display_name: String,
             val created_at: String
         )
+
         data class ListModelsResponse(
             val data: List<ModelInfo>,
             val first_id: String?,
             val last_id: String?,
             val has_more: Boolean
         )
-
 
 
     }

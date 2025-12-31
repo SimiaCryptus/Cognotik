@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import java.io.FileOutputStream
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -110,8 +109,11 @@ class GitHubSearchTask(
             transcriptStream?.write(actorAnswerText.toByteArray())
 
             task.add(MarkdownUtil.renderMarkdown(actorAnswerText, ui = task.ui))
-            
-            val transcriptLinks = "Transcript: <a href='$link' target='_blank'>Markdown</a> | <a href='${link.removeSuffix(".md")}.html' target='_blank'>HTML</a> | <a href='${link.removeSuffix(".md")}.pdf' target='_blank'>PDF</a>"
+
+            val transcriptLinks =
+                "Transcript: <a href='$link' target='_blank'>Markdown</a> | <a href='${link.removeSuffix(".md")}.html' target='_blank'>HTML</a> | <a href='${
+                    link.removeSuffix(".md")
+                }.pdf' target='_blank'>PDF</a>"
             task.add(transcriptLinks)
 
             resultFn(actorAnswerText)

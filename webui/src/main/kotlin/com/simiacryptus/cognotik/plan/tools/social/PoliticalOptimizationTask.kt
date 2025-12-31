@@ -1,16 +1,15 @@
 package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -60,7 +59,12 @@ class PoliticalOptimizationTask(
         @Description("Perspectives to evaluate from (e.g., 'progressive', 'conservative', 'libertarian', 'centrist')")
         val perspectives: List<String>? = listOf("progressive", "conservative", "libertarian", "centrist"),
         @Description("Evaluation criteria (e.g., 'clarity', 'persuasiveness', 'factual_accuracy', 'emotional_appeal')")
-        val evaluation_criteria: List<String>? = listOf("clarity", "persuasiveness", "factual_accuracy", "emotional_appeal"),
+        val evaluation_criteria: List<String>? = listOf(
+            "clarity",
+            "persuasiveness",
+            "factual_accuracy",
+            "emotional_appeal"
+        ),
         @Description("Consensus mode: 'maximize' (find agreement), 'minimize' (find wedge issues), or 'explore' (both)")
         val consensus_mode: String? = "explore",
 
@@ -258,7 +262,11 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             val overviewContent = buildString {
                 appendLine("# Political Optimization Task")
                 appendLine()
-                appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+                appendLine(
+                    "**Started:** ${
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    }"
+                )
                 appendLine()
                 appendLine("## Configuration")
                 appendLine()
@@ -284,7 +292,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("## Progress")
                 appendLine()
-               appendLine("- â ³ Evaluating initial text from ${perspectives.size} perspectives...")
+                appendLine("- â ³ Evaluating initial text from ${perspectives.size} perspectives...")
             }
             overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent))
             transcript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
@@ -309,7 +317,14 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 )
             )
 
-            log.info("Initial evaluation: consensus=${String.format("%.2f", initialEvaluation.consensus_score)}, fitness=${String.format("%.2f", initialFitness)}")
+            log.info(
+                "Initial evaluation: consensus=${
+                    String.format(
+                        "%.2f",
+                        initialEvaluation.consensus_score
+                    )
+                }, fitness=${String.format("%.2f", initialFitness)}"
+            )
 
             // Write initial evaluation
             transcript?.write("\n\n## Initial Evaluation\n\n".toByteArray(StandardCharsets.UTF_8))
@@ -319,12 +334,19 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             overviewTask.add(buildString {
                 appendLine()
                 appendLine("- âœ“ Initial evaluation complete")
-                appendLine("  - Consensus Score: **${String.format("%.2f", initialEvaluation.consensus_score)}** (${if (initialEvaluation.consensus_score > 0) "unifying" else "divisive"})")
+                appendLine(
+                    "  - Consensus Score: **${
+                        String.format(
+                            "%.2f",
+                            initialEvaluation.consensus_score
+                        )
+                    }** (${if (initialEvaluation.consensus_score > 0) "unifying" else "divisive"})"
+                )
                 appendLine("  - Average Score: **${String.format("%.1f", initialEvaluation.average_score)}/100**")
                 appendLine("  - Variance: **${String.format("%.2f", initialEvaluation.score_variance)}**")
-               appendLine("  - Wedge Issue: ${if (initialEvaluation.is_wedge_issue) "âš ï¸  Yes" else "âœ“ No"}")
+                appendLine("  - Wedge Issue: ${if (initialEvaluation.is_wedge_issue) "âš ï¸  Yes" else "âœ“ No"}")
                 appendLine()
-               appendLine("- â ³ Starting evolution...")
+                appendLine("- â ³ Starting evolution...")
             }.let { MarkdownUtil.renderMarkdown(it) })
 
             // Track best variants
@@ -359,8 +381,10 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     "minimize" -> currentPopulation.sortedBy { it.fitness }.take(selectionSize)
                     else -> {
                         // Explore mode: keep mix of consensus and divisive
-                        val topConsensus = currentPopulation.sortedByDescending { it.evaluation.consensus_score }.take(selectionSize / 2)
-                        val topDivisive = currentPopulation.sortedBy { it.evaluation.consensus_score }.take(selectionSize - topConsensus.size)
+                        val topConsensus = currentPopulation.sortedByDescending { it.evaluation.consensus_score }
+                            .take(selectionSize / 2)
+                        val topDivisive = currentPopulation.sortedBy { it.evaluation.consensus_score }
+                            .take(selectionSize - topConsensus.size)
                         (topConsensus + topDivisive).distinctBy { it.text }
                     }
                 }
@@ -479,14 +503,28 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     appendLine()
                     appendLine("### Population Statistics")
                     appendLine()
-                    appendLine("- **Consensus Range:** ${String.format("%.2f", consensusScores.minOrNull() ?: 0.0)} to ${String.format("%.2f", consensusScores.maxOrNull() ?: 0.0)}")
+                    appendLine(
+                        "- **Consensus Range:** ${
+                            String.format(
+                                "%.2f",
+                                consensusScores.minOrNull() ?: 0.0
+                            )
+                        } to ${String.format("%.2f", consensusScores.maxOrNull() ?: 0.0)}"
+                    )
                     appendLine("- **Average Consensus:** ${String.format("%.2f", consensusScores.average())}")
                     appendLine("- **Average Quality:** ${String.format("%.1f", avgScores.average())}/100")
                     appendLine("- **Wedge Issues:** ${currentPopulation.count { it.evaluation.is_wedge_issue }}")
                     appendLine()
                     appendLine("### Most Unifying Variant")
                     appendLine()
-                    appendLine("**Consensus Score:** ${String.format("%.2f", generationBestConsensus.evaluation.consensus_score)}")
+                    appendLine(
+                        "**Consensus Score:** ${
+                            String.format(
+                                "%.2f",
+                                generationBestConsensus.evaluation.consensus_score
+                            )
+                        }"
+                    )
                     appendLine()
                     appendLine("$TT")
                     appendLine(generationBestConsensus.text)
@@ -497,7 +535,14 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     appendLine()
                     appendLine("### Most Divisive Variant")
                     appendLine()
-                    appendLine("**Consensus Score:** ${String.format("%.2f", generationBestDivisive.evaluation.consensus_score)}")
+                    appendLine(
+                        "**Consensus Score:** ${
+                            String.format(
+                                "%.2f",
+                                generationBestDivisive.evaluation.consensus_score
+                            )
+                        }"
+                    )
                     appendLine()
                     appendLine("$TT")
                     appendLine(generationBestDivisive.text)
@@ -510,9 +555,22 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     appendLine()
                     perspectives.forEach { perspective ->
                         val scores = currentPopulation.map { variant ->
-                            variant.evaluation.perspective_evaluations.find { it.perspective == perspective }?.overall_score ?: 0.0
+                            variant.evaluation.perspective_evaluations.find { it.perspective == perspective }?.overall_score
+                                ?: 0.0
                         }
-                        appendLine("- **$perspective:** Avg ${String.format("%.1f", scores.average())}/100, Range ${String.format("%.1f", scores.minOrNull() ?: 0.0)}-${String.format("%.1f", scores.maxOrNull() ?: 0.0)}")
+                        appendLine(
+                            "- **$perspective:** Avg ${
+                                String.format(
+                                    "%.1f",
+                                    scores.average()
+                                )
+                            }/100, Range ${String.format("%.1f", scores.minOrNull() ?: 0.0)}-${
+                                String.format(
+                                    "%.1f",
+                                    scores.maxOrNull() ?: 0.0
+                                )
+                            }"
+                        )
                     }
                 }
                 generationTask.add(MarkdownUtil.renderMarkdown(generationResults))
@@ -522,7 +580,14 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 // Update overview
                 overviewTask.add(buildString {
                     appendLine()
-                    appendLine("- âœ“ Generation $generation: Consensus=${String.format("%.2f", consensusScores.average())}, Quality=${String.format("%.1f", avgScores.average())}")
+                    appendLine(
+                        "- âœ“ Generation $generation: Consensus=${
+                            String.format(
+                                "%.2f",
+                                consensusScores.average()
+                            )
+                        }, Quality=${String.format("%.1f", avgScores.average())}"
+                    )
                 }.let { MarkdownUtil.renderMarkdown(it) })
             }
 
@@ -537,11 +602,32 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("## Most Unifying Text")
                 appendLine()
-                appendLine("**Consensus Score:** ${String.format("%.2f", bestConsensusVariant.evaluation.consensus_score)} (Higher = More Agreement)")
+                appendLine(
+                    "**Consensus Score:** ${
+                        String.format(
+                            "%.2f",
+                            bestConsensusVariant.evaluation.consensus_score
+                        )
+                    } (Higher = More Agreement)"
+                )
                 appendLine()
-                appendLine("**Average Quality:** ${String.format("%.1f", bestConsensusVariant.evaluation.average_score)}/100")
+                appendLine(
+                    "**Average Quality:** ${
+                        String.format(
+                            "%.1f",
+                            bestConsensusVariant.evaluation.average_score
+                        )
+                    }/100"
+                )
                 appendLine()
-                appendLine("**Score Variance:** ${String.format("%.2f", bestConsensusVariant.evaluation.score_variance)} (Lower = More Agreement)")
+                appendLine(
+                    "**Score Variance:** ${
+                        String.format(
+                            "%.2f",
+                            bestConsensusVariant.evaluation.score_variance
+                        )
+                    } (Lower = More Agreement)"
+                )
                 appendLine()
                 appendLine("**Generation Found:** ${bestConsensusVariant.generation}")
                 appendLine()
@@ -559,9 +645,17 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("| Perspective | Overall Score | Key Strengths |")
                 appendLine("|-------------|---------------|---------------|")
-                bestConsensusVariant.evaluation.perspective_evaluations.sortedByDescending { it.overall_score }.forEach { eval ->
-                    appendLine("| ${eval.perspective} | ${String.format("%.1f", eval.overall_score)}/100 | ${eval.strengths.firstOrNull() ?: "N/A"} |")
-                }
+                bestConsensusVariant.evaluation.perspective_evaluations.sortedByDescending { it.overall_score }
+                    .forEach { eval ->
+                        appendLine(
+                            "| ${eval.perspective} | ${
+                                String.format(
+                                    "%.1f",
+                                    eval.overall_score
+                                )
+                            }/100 | ${eval.strengths.firstOrNull() ?: "N/A"} |"
+                        )
+                    }
                 appendLine()
                 appendLine("### Detailed Perspective Analysis")
                 appendLine()
@@ -603,11 +697,32 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("## Most Divisive Text (Wedge Issue)")
                 appendLine()
-                appendLine("**Consensus Score:** ${String.format("%.2f", bestDivisiveVariant.evaluation.consensus_score)} (Lower/Negative = More Divisive)")
+                appendLine(
+                    "**Consensus Score:** ${
+                        String.format(
+                            "%.2f",
+                            bestDivisiveVariant.evaluation.consensus_score
+                        )
+                    } (Lower/Negative = More Divisive)"
+                )
                 appendLine()
-                appendLine("**Average Quality:** ${String.format("%.1f", bestDivisiveVariant.evaluation.average_score)}/100")
+                appendLine(
+                    "**Average Quality:** ${
+                        String.format(
+                            "%.1f",
+                            bestDivisiveVariant.evaluation.average_score
+                        )
+                    }/100"
+                )
                 appendLine()
-                appendLine("**Score Variance:** ${String.format("%.2f", bestDivisiveVariant.evaluation.score_variance)} (Higher = More Disagreement)")
+                appendLine(
+                    "**Score Variance:** ${
+                        String.format(
+                            "%.2f",
+                            bestDivisiveVariant.evaluation.score_variance
+                        )
+                    } (Higher = More Disagreement)"
+                )
                 appendLine()
                 appendLine("**Generation Found:** ${bestDivisiveVariant.generation}")
                 appendLine()
@@ -626,7 +741,14 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine("| Perspective | Overall Score | Key Concerns |")
                 appendLine("|-------------|---------------|--------------|")
                 bestDivisiveVariant.evaluation.perspective_evaluations.sortedBy { it.overall_score }.forEach { eval ->
-                    appendLine("| ${eval.perspective} | ${String.format("%.1f", eval.overall_score)}/100 | ${eval.concerns.firstOrNull() ?: eval.weaknesses.firstOrNull() ?: "N/A"} |")
+                    appendLine(
+                        "| ${eval.perspective} | ${
+                            String.format(
+                                "%.1f",
+                                eval.overall_score
+                            )
+                        }/100 | ${eval.concerns.firstOrNull() ?: eval.weaknesses.firstOrNull() ?: "N/A"} |"
+                    )
                 }
                 appendLine()
                 appendLine("### Detailed Perspective Analysis")
@@ -656,14 +778,33 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("## Polarization Analysis")
                 appendLine()
-                val highScorers = bestDivisiveVariant.evaluation.perspective_evaluations.filter { it.overall_score > 60 }
+                val highScorers =
+                    bestDivisiveVariant.evaluation.perspective_evaluations.filter { it.overall_score > 60 }
                 val lowScorers = bestDivisiveVariant.evaluation.perspective_evaluations.filter { it.overall_score < 40 }
                 if (highScorers.isNotEmpty() && lowScorers.isNotEmpty()) {
                     appendLine("### Perspectives That Favor This Text")
-                    highScorers.forEach { appendLine("- **${it.perspective}** (${String.format("%.1f", it.overall_score)}/100): ${it.strengths.firstOrNull() ?: ""}") }
+                    highScorers.forEach {
+                        appendLine(
+                            "- **${it.perspective}** (${
+                                String.format(
+                                    "%.1f",
+                                    it.overall_score
+                                )
+                            }/100): ${it.strengths.firstOrNull() ?: ""}"
+                        )
+                    }
                     appendLine()
                     appendLine("### Perspectives That Oppose This Text")
-                    lowScorers.forEach { appendLine("- **${it.perspective}** (${String.format("%.1f", it.overall_score)}/100): ${it.concerns.firstOrNull() ?: it.weaknesses.firstOrNull() ?: ""}") }
+                    lowScorers.forEach {
+                        appendLine(
+                            "- **${it.perspective}** (${
+                                String.format(
+                                    "%.1f",
+                                    it.overall_score
+                                )
+                            }/100): ${it.concerns.firstOrNull() ?: it.weaknesses.firstOrNull() ?: ""}"
+                        )
+                    }
                 }
             }
             divisiveAnalysisTask.add(MarkdownUtil.renderMarkdown(divisiveAnalysis))
@@ -684,7 +825,19 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 evolutionHistory.forEachIndexed { index, population ->
                     val consensusScores = population.map { it.evaluation.consensus_score }
                     val qualityScores = population.map { it.evaluation.average_score }
-                    appendLine("| $index | ${String.format("%.2f", consensusScores.maxOrNull() ?: 0.0)} | ${String.format("%.2f", consensusScores.minOrNull() ?: 0.0)} | ${String.format("%.2f", consensusScores.average())} | ${String.format("%.1f", qualityScores.average())} |")
+                    appendLine(
+                        "| $index | ${
+                            String.format(
+                                "%.2f",
+                                consensusScores.maxOrNull() ?: 0.0
+                            )
+                        } | ${String.format("%.2f", consensusScores.minOrNull() ?: 0.0)} | ${
+                            String.format(
+                                "%.2f",
+                                consensusScores.average()
+                            )
+                        } | ${String.format("%.1f", qualityScores.average())} |"
+                    )
                 }
                 appendLine()
                 appendLine("## Strategy Effectiveness")
@@ -692,7 +845,8 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 val strategyStats = mutableMapOf<String, MutableList<Double>>()
                 evolutionHistory.flatten().forEach { variant ->
                     if (variant.strategy.isNotEmpty()) {
-                        strategyStats.getOrPut(variant.strategy) { mutableListOf() }.add(variant.evaluation.consensus_score)
+                        strategyStats.getOrPut(variant.strategy) { mutableListOf() }
+                            .add(variant.evaluation.consensus_score)
                     }
                 }
                 appendLine("| Strategy | Avg Consensus | Count | Unifying Rate | Divisive Rate |")
@@ -701,7 +855,14 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                     val avgConsensus = scores.average()
                     val unifyingRate = scores.count { it > 0 }.toDouble() / scores.size * 100
                     val divisiveRate = scores.count { it < 0 }.toDouble() / scores.size * 100
-                    appendLine("| $strategy | ${String.format("%.2f", avgConsensus)} | ${scores.size} | ${String.format("%.0f%%", unifyingRate)} | ${String.format("%.0f%%", divisiveRate)} |")
+                    appendLine(
+                        "| $strategy | ${String.format("%.2f", avgConsensus)} | ${scores.size} | ${
+                            String.format(
+                                "%.0f%%",
+                                unifyingRate
+                            )
+                        } | ${String.format("%.0f%%", divisiveRate)} |"
+                    )
                 }
                 appendLine()
                 appendLine("## Perspective Trends")
@@ -716,7 +877,14 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                             variant.evaluation.perspective_evaluations.find { it.perspective == perspective }?.overall_score
                         }
                         if (scores.isNotEmpty()) {
-                            appendLine("| $gen | ${String.format("%.1f", scores.average())} | ${String.format("%.1f", scores.minOrNull() ?: 0.0)}-${String.format("%.1f", scores.maxOrNull() ?: 0.0)} |")
+                            appendLine(
+                                "| $gen | ${String.format("%.1f", scores.average())} | ${
+                                    String.format(
+                                        "%.1f",
+                                        scores.minOrNull() ?: 0.0
+                                    )
+                                }-${String.format("%.1f", scores.maxOrNull() ?: 0.0)} |"
+                            )
                         }
                     }
                     appendLine()
@@ -738,9 +906,30 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine("| Metric | Value |")
                 appendLine("|--------|-------|")
                 appendLine("| Initial Consensus | ${String.format("%.2f", initialEvaluation.consensus_score)} |")
-                appendLine("| Best Consensus | ${String.format("%.2f", bestConsensusVariant.evaluation.consensus_score)} |")
-                appendLine("| Most Divisive | ${String.format("%.2f", bestDivisiveVariant.evaluation.consensus_score)} |")
-                appendLine("| Consensus Improvement | ${String.format("%+.2f", bestConsensusVariant.evaluation.consensus_score - initialEvaluation.consensus_score)} |")
+                appendLine(
+                    "| Best Consensus | ${
+                        String.format(
+                            "%.2f",
+                            bestConsensusVariant.evaluation.consensus_score
+                        )
+                    } |"
+                )
+                appendLine(
+                    "| Most Divisive | ${
+                        String.format(
+                            "%.2f",
+                            bestDivisiveVariant.evaluation.consensus_score
+                        )
+                    } |"
+                )
+                appendLine(
+                    "| Consensus Improvement | ${
+                        String.format(
+                            "%+.2f",
+                            bestConsensusVariant.evaluation.consensus_score - initialEvaluation.consensus_score
+                        )
+                    } |"
+                )
                 appendLine("| Generations | $numGenerations |")
                 appendLine("| Total Variants | ${evolutionHistory.flatten().size} |")
                 appendLine("| Total Time | ${totalTime / 1000}s |")
@@ -754,14 +943,33 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             transcript?.close()
 
             log.info("PoliticalOptimizationTask completed: time=${totalTime}ms, consensus_improvement=${bestConsensusVariant.evaluation.consensus_score - initialEvaluation.consensus_score}")
-            task.complete("Optimization complete: found consensus variant (${String.format("%.2f", bestConsensusVariant.evaluation.consensus_score)}) and divisive variant (${String.format("%.2f", bestDivisiveVariant.evaluation.consensus_score)}) in ${totalTime / 1000}s")
+            task.complete(
+                "Optimization complete: found consensus variant (${
+                    String.format(
+                        "%.2f",
+                        bestConsensusVariant.evaluation.consensus_score
+                    )
+                }) and divisive variant (${
+                    String.format(
+                        "%.2f",
+                        bestDivisiveVariant.evaluation.consensus_score
+                    )
+                }) in ${totalTime / 1000}s"
+            )
 
             val transcriptFile = "political_optimization_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (link, _) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
             val summaryMessage = buildString {
                 appendLine("## Most Unifying Text")
                 appendLine()
-                appendLine("**Consensus Score:** ${String.format("%.2f", bestConsensusVariant.evaluation.consensus_score)}")
+                appendLine(
+                    "**Consensus Score:** ${
+                        String.format(
+                            "%.2f",
+                            bestConsensusVariant.evaluation.consensus_score
+                        )
+                    }"
+                )
                 appendLine()
                 appendLine("$TT")
                 appendLine(bestConsensusVariant.text)
@@ -774,7 +982,14 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("## Most Divisive Text")
                 appendLine()
-                appendLine("**Consensus Score:** ${String.format("%.2f", bestDivisiveVariant.evaluation.consensus_score)}")
+                appendLine(
+                    "**Consensus Score:** ${
+                        String.format(
+                            "%.2f",
+                            bestDivisiveVariant.evaluation.consensus_score
+                        )
+                    }"
+                )
                 appendLine()
                 appendLine("$TT")
                 appendLine(bestDivisiveVariant.text)
@@ -785,7 +1000,13 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
                 appendLine()
                 appendLine("---")
                 appendLine()
-                appendLine("Detailed analysis: <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>")
+                appendLine(
+                    "Detailed analysis: <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+                        link.removeSuffix(
+                            ".md"
+                        )
+                    }.pdf' target='_blank'>pdf</a>"
+                )
             }
             resultFn(summaryMessage)
 
@@ -797,6 +1018,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             resultFn("ERROR: ${e.message}")
         }
     }
+
     private fun evaluateFromMultiplePerspectives(
         text: String,
         perspectives: List<String>,
@@ -914,10 +1136,12 @@ $text
                 // Maximize consensus (positive score) and quality
                 (evaluation.consensus_score * consensusWeight) + (evaluation.average_score * qualityWeight)
             }
+
             "minimize" -> {
                 // Maximize divisiveness (negative consensus score) while maintaining some quality
                 (-evaluation.consensus_score * consensusWeight) + (evaluation.average_score * qualityWeight * 0.5)
             }
+
             else -> { // "explore"
                 // Reward both high consensus and high divisiveness, weighted by quality
                 val consensusMagnitude = abs(evaluation.consensus_score)
@@ -1000,7 +1224,12 @@ $strategy
 ${perspectives.joinToString(", ")}
 
 ## Parent Evaluation Summary
-**Consensus Score:** ${String.format("%.2f", parentEvaluation.consensus_score)} (${if (parentEvaluation.consensus_score > 0) "unifying" else "divisive"})
+**Consensus Score:** ${
+                    String.format(
+                        "%.2f",
+                        parentEvaluation.consensus_score
+                    )
+                } (${if (parentEvaluation.consensus_score > 0) "unifying" else "divisive"})
 **Average Quality:** ${String.format("%.1f", parentEvaluation.average_score)}/100
 **Variance:** ${String.format("%.2f", parentEvaluation.score_variance)}
 **Wedge Issue:** ${if (parentEvaluation.is_wedge_issue) "Yes" else "No"}
@@ -1012,11 +1241,13 @@ ${parentEvaluation.common_ground.joinToString("\n") { "- $it" }}
 ${parentEvaluation.points_of_contention.joinToString("\n") { "- $it" }}
 
 ## Perspective-Specific Feedback
-${parentEvaluation.perspective_evaluations.joinToString("\n\n") { eval ->
-                    "**${eval.perspective}** (${String.format("%.1f", eval.overall_score)}/100):\n" +
-                            "- Strengths: ${eval.strengths.joinToString("; ")}\n" +
-                            "- Concerns: ${eval.concerns.joinToString("; ")}"
-                }}
+${
+                    parentEvaluation.perspective_evaluations.joinToString("\n\n") { eval ->
+                        "**${eval.perspective}** (${String.format("%.1f", eval.overall_score)}/100):\n" +
+                                "- Strengths: ${eval.strengths.joinToString("; ")}\n" +
+                                "- Concerns: ${eval.concerns.joinToString("; ")}"
+                    }
+                }
 
 ## Instructions
 Apply the "$strategy" mutation strategy to create a variant that better achieves the optimization goal.
@@ -1131,7 +1362,14 @@ $text2
 
     private fun formatEvaluationReport(evaluation: MultiPerspectiveEvaluation): String {
         return buildString {
-            appendLine("**Consensus Score:** ${String.format("%.2f", evaluation.consensus_score)} (${if (evaluation.consensus_score > 0) "Unifying" else "Divisive"})")
+            appendLine(
+                "**Consensus Score:** ${
+                    String.format(
+                        "%.2f",
+                        evaluation.consensus_score
+                    )
+                } (${if (evaluation.consensus_score > 0) "Unifying" else "Divisive"})"
+            )
             appendLine()
             appendLine("**Average Quality:** ${String.format("%.1f", evaluation.average_score)}/100")
             appendLine()

@@ -121,12 +121,13 @@ class ImageChatAction : BaseAction() {
       """.trimIndent()
 
         override val sysMessage: ChatMessage
-            get() = ChatMessage(ModelSchema.Role.system, listOf(
+            get() = ChatMessage(
+                ModelSchema.Role.system, listOf(
                 ContentPart(text = super.systemPrompt)
             ) + codeFiles.filter { isImg(it.name) }.map { path ->
                 val bufferedImage = root.resolve(path.toFile()).readBufferedImage()
                 ContentPart(text = "${path}").apply { image = bufferedImage }
-            } )
+            })
 
         fun File.readBufferedImage(): BufferedImage? {
             return try {
@@ -241,7 +242,7 @@ class ImageChatAction : BaseAction() {
 
         fun readFileContent(file: File): String {
             return try {
-                if(isImg(file.name.lowercase())) {
+                if (isImg(file.name.lowercase())) {
                     return ""
                 }
                 file.getDocumentReader().use { reader ->

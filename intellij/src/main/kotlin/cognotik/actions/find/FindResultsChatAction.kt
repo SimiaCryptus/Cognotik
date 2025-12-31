@@ -101,7 +101,7 @@ class FindResultsChatAction(
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
-      if (!super.isEnabled(event)) return false
+        if (!super.isEnabled(event)) return false
         val usageView = event.getData(UsageView.USAGE_VIEW_KEY)
         return usageView != null && usageView.usages.isNotEmpty()
     }
@@ -186,7 +186,7 @@ class FindResultsChatAction(
                              You will be answering questions about code with the following find results:
                              """.trimIndent() + getCodeContext(),
                             model = model
-                        ).answer(listOf(userMessage),)
+                        ).answer(listOf(userMessage))
                     ) + "</div>"
                 )
                 task.placeholder

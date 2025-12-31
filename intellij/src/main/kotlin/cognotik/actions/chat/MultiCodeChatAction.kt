@@ -205,6 +205,7 @@ class MultiCodeChatAction : BaseAction() {
                         name.endsWith(".rtf") ||
                         name.endsWith(".html") || name.endsWith(".htm") ||
                         name.endsWith(".eml") -> true
+
                 file.inputStream.use { it.isBinary } -> true
                 else -> false
             }

@@ -114,7 +114,8 @@ class AutoFixTask(
                         commands = this.executionConfig?.commands?.map { commandWithDir ->
                             val alias = commandWithDir.command.firstOrNull()
                             val toolExecutable = if (alias != null) {
-                                val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+                                val tools =
+                                    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
                                 tools.find { it.provider?.getExecutables()?.contains(alias) == true }?.let { toolData ->
                                     if (toolData.path != null) {
                                         toolData.provider!!.resolve(toolData.path).firstOrNull()?.let { File(it) }
@@ -196,12 +197,14 @@ class AutoFixTask(
     }
 
     private fun createTranscript(task: SessionTask): Pair<FileOutputStream?, String> {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile =
+            this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        val html = "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-            link.removeSuffix(".md")
-        }.pdf' target='_blank'>pdf</a>"
+        val html =
+            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+                link.removeSuffix(".md")
+            }.pdf' target='_blank'>pdf</a>"
         return Pair(markdownTranscript, html)
     }
 

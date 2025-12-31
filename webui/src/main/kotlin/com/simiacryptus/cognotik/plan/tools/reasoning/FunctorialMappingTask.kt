@@ -3,7 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.newLogStream
 import org.slf4j.Logger
@@ -110,14 +113,16 @@ FunctorialMapping - Translate problems from one category to another
         // Overview Tab
         val overviewTask = task.ui.newTask()
         tabs["Overview"] = overviewTask.placeholder
-            
+
         overviewTask.header("Functorial Mapping Task")
-        overviewTask.add("""
+        overviewTask.add(
+            """
             <b>Problem:</b> $problem<br/>
             <b>Source Category:</b> $sourceDef<br/>
             <b>Target Category:</b> $targetDef<br/>
             <b>Properties:</b> $properties
-        """.trimIndent())
+        """.trimIndent()
+        )
         overviewTask.complete()
 
         try {
@@ -125,7 +130,7 @@ FunctorialMapping - Translate problems from one category to another
             val step1Task = task.ui.newTask()
             tabs["1. Categories"] = step1Task.placeholder
             step1Task.header("Formalizing Categories...", level = 3)
-            
+
             val categoryPrompt = """
                 You are a Category Theory expert.
                 Formalize the following domains as Categories (Objects and Morphisms).
@@ -139,7 +144,7 @@ FunctorialMapping - Translate problems from one category to another
                 Output a structured description of the Objects and Morphisms for both categories.
                 Use mathematical notation where appropriate.
             """.trimIndent()
-            
+
             val categories = ChatAgent(
                 model = api,
                 temperature = 0.3,
@@ -153,7 +158,7 @@ FunctorialMapping - Translate problems from one category to another
             val step2Task = task.ui.newTask()
             tabs["2. Functor"] = step2Task.placeholder
             step2Task.header("Constructing Functor...", level = 3)
-            
+
             val functorPrompt = """
                 You are a Category Theory expert.
                 Based on the category definitions:
@@ -167,7 +172,7 @@ FunctorialMapping - Translate problems from one category to another
                 2. Define how F maps Morphisms from Source to Target.
                 3. Explain why this mapping is a valid functor (preserves identity and composition).
             """.trimIndent()
-            
+
             val functor = ChatAgent(
                 model = api,
                 temperature = 0.4,
@@ -181,7 +186,7 @@ FunctorialMapping - Translate problems from one category to another
             val step3Task = task.ui.newTask()
             tabs["3. Transport"] = step3Task.placeholder
             step3Task.header("Transporting Problem...", level = 3)
-            
+
             val transportPrompt = """
                 You are a Category Theory expert.
                 Using the Functor F defined as:
@@ -195,7 +200,7 @@ FunctorialMapping - Translate problems from one category to another
                 
                 Express the problem strictly in terms of the Target Category's objects and morphisms.
             """.trimIndent()
-            
+
             val transportedProblem = ChatAgent(
                 model = api,
                 temperature = 0.3,
@@ -209,7 +214,7 @@ FunctorialMapping - Translate problems from one category to another
             val step4Task = task.ui.newTask()
             tabs["4. Solution"] = step4Task.placeholder
             step4Task.header("Solving in Target Category...", level = 3)
-            
+
             val solvePrompt = """
                 You are an expert in the Target Domain defined earlier.
                 Solve the following problem using tools and reasoning appropriate for this domain.
@@ -219,7 +224,7 @@ FunctorialMapping - Translate problems from one category to another
                 
                 Provide a detailed solution and the final result.
             """.trimIndent()
-            
+
             val targetSolution = ChatAgent(
                 model = api,
                 temperature = 0.5,
@@ -233,7 +238,7 @@ FunctorialMapping - Translate problems from one category to another
             val step5Task = task.ui.newTask()
             tabs["5. Result"] = step5Task.placeholder
             step5Task.header("Mapping Solution Back...", level = 3)
-            
+
             val inversePrompt = """
                 You are a Category Theory expert.
                 We have solved the problem in the Target Category. Now map the solution back to the Source Category.
@@ -251,7 +256,7 @@ FunctorialMapping - Translate problems from one category to another
                 If the functor is not strictly invertible, provide the best interpretation or adjoint mapping.
                 State the final answer clearly.
             """.trimIndent()
-            
+
             val finalResult = ChatAgent(
                 model = api,
                 temperature = 0.3,

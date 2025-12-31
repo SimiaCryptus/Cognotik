@@ -150,13 +150,17 @@ class CognitiveConfigDialog(
                             else -> text.ifEmpty { null }
                         }
                     }
+
                     is JBTextArea -> component.text.trim()
                     is ComboBox<*> -> {
                         val selected = component.selectedItem as? String
                         val paramClass = prop.returnType.classifier as? KClass<*>
                         if (selected != null && paramClass?.java?.isEnum == true) {
                             paramClass.java.enumConstants.find { it.toString() == selected }
-                        } else if (selected != null && paramClass != null && DynamicEnum::class.java.isAssignableFrom(paramClass.java)) {
+                        } else if (selected != null && paramClass != null && DynamicEnum::class.java.isAssignableFrom(
+                                paramClass.java
+                            )
+                        ) {
                             val companion = paramClass.java.getDeclaredField("Companion").get(null)
                             val valueOfMethod = companion.javaClass.getMethod("valueOf", String::class.java)
                             try {
@@ -168,9 +172,10 @@ class CognitiveConfigDialog(
                             null
                         }
                     }
+
                     else -> null
                 }
-                
+
                 if (prop is KMutableProperty<*>) {
                     try {
                         prop.setter.call(config, value)

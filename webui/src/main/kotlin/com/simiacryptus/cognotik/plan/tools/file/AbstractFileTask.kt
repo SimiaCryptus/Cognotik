@@ -42,30 +42,32 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
     ) = getInputFiles()
         .mapNotNull { fn(it) }
         .joinToString("\n\n")
-    protected fun getInputFiles(): List<File> = ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf()))
-        .flatMap { pattern: String ->
-            if (root.resolve(pattern).exists()) {
-                return@flatMap listOf(root.resolve(pattern).toFile())
-            }
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            (FileSelectionUtils.filteredWalk(root.toFile()) {
-                //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    it.isDirectory -> true
-                    !matcher.matches(root.relativize(it.toPath())) -> false
-                    else -> true
+
+    protected fun getInputFiles(): List<File> =
+        ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf()))
+            .flatMap { pattern: String ->
+                if (root.resolve(pattern).exists()) {
+                    return@flatMap listOf(root.resolve(pattern).toFile())
                 }
-            })
-        }.filter { file ->
-            file.isFile && file.exists() && !isIgnored(file)
-        }
-        .distinct()
-        .filterNotNull()
-        .sortedBy { it }
+                val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+                (FileSelectionUtils.filteredWalk(root.toFile()) {
+                    //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                    when {
+                        FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+                        it.isDirectory -> true
+                        !matcher.matches(root.relativize(it.toPath())) -> false
+                        else -> true
+                    }
+                })
+            }.filter { file ->
+                file.isFile && file.exists() && !isIgnored(file)
+            }
+            .distinct()
+            .filterNotNull()
+            .sortedBy { it }
 
 
-    protected open fun isIgnored(file: File): Boolean = when(file.extension) {
+    protected open fun isIgnored(file: File): Boolean = when (file.extension) {
         /* Common Binary Files */
         "class", "jar", "exe", "dll", "bin", "img", "iso", "zip", "tar", "gz", "7z" -> true
         /* Common Image and Media */

@@ -58,7 +58,14 @@ abstract class PatchApp(
     private var lastParsedErrors: ParsedErrors? = null
 
     private val previousParsedErrorsRecords = mutableListOf<ParsedErrorRecord>()
-    data class FixAttempt(val error: String, val patch: String, val timestamp: Long = System.currentTimeMillis(), val iteration: Int = 0)
+
+    data class FixAttempt(
+        val error: String,
+        val patch: String,
+        val timestamp: Long = System.currentTimeMillis(),
+        val iteration: Int = 0
+    )
+
     private val fixHistory = mutableMapOf<String, MutableList<FixAttempt>>()
 
     abstract fun codeFiles(): Set<Path>
@@ -169,7 +176,8 @@ abstract class PatchApp(
                 log.debug("Initialized retries to $retries")
             }
             val currentIteration = settings.maxRetries - retries + 1
-            val newTask = task.linkedTask("Run Command${if (retries < settings.maxRetries) " (Retry ${settings.maxRetries - retries}/$settings.maxRetries)" else ""}")
+            val newTask =
+                task.linkedTask("Run Command${if (retries < settings.maxRetries) " (Retry ${settings.maxRetries - retries}/$settings.maxRetries)" else ""}")
             Thread {
                 log.info("Starting run thread")
                 updateStatus("Running command (Iteration $currentIteration)...")
@@ -179,7 +187,9 @@ abstract class PatchApp(
                 if (result.exitCode != 0) {
                     if (retries > 0) {
                         val errorStats = previousParsedErrorsRecords
-                            .flatMap { record -> record.errors?.errors?.map { it.message to record.iteration } ?: emptyList() }
+                            .flatMap { record ->
+                                record.errors?.errors?.map { it.message to record.iteration } ?: emptyList()
+                            }
                             .groupBy({ it.first }, { it.second })
                             .map { (msg, iters) -> "'${msg?.take(20)}...' (${iters.distinct().size} iters)" }
                             .joinToString(", ")
@@ -388,7 +398,7 @@ abstract class PatchApp(
                         log.info("Processing individual error: ${error.message}")
                         statusBuffer.set("Status: Analyzing error details...")
                         subSession.update()
-                        
+
                         subSession.header("Processing error: $msg", 3)
                         subSession.add(
                             renderMarkdown(

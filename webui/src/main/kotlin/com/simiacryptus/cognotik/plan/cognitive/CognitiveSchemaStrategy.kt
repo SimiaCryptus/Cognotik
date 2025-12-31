@@ -298,6 +298,7 @@ class ScientificMethodStrategy : CognitiveSchemaStrategy("Scientific Researcher"
             describer = describer
         ).answer(listOf(userMessage) + contextData).obj
     }
+
     override fun update(
         currentState: Any,
         completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
@@ -376,6 +377,7 @@ class AgileDeveloperStrategy : CognitiveSchemaStrategy("Agile Developer", "Itera
             describer = describer
         ).answer(listOf(userMessage) + contextData).obj
     }
+
     override fun update(
         currentState: Any,
         completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
@@ -465,6 +467,7 @@ class CriticalAuditorStrategy : CognitiveSchemaStrategy("Critical Auditor", "Sec
             describer = describer
         ).answer(listOf(userMessage) + contextData).obj
     }
+
     override fun update(
         currentState: Any,
         completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
@@ -547,6 +550,7 @@ class CreativeWriterStrategy : CognitiveSchemaStrategy("Creative Writer", "Narra
             describer = describer
         ).answer(listOf(userMessage) + contextData).obj
     }
+
     override fun update(
         currentState: Any,
         completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,

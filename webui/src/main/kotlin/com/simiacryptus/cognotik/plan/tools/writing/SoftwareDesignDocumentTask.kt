@@ -232,7 +232,11 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
                     if (executionConfig.generate_phase_plan) appendLine("- ✅ Phase Planning")
                     if (executionConfig.generate_project_data) appendLine("- ✅ Project Data JSON")
                     appendLine()
-                    appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+                    appendLine(
+                        "**Started:** ${
+                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        }"
+                    )
                 }.renderMarkdown
             )
             overviewStatusBuffer = overviewTask.add("**Status:** 🔄 Gathering context...".renderMarkdown)
@@ -271,7 +275,8 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
                 val useCaseTask = ui.newTask()
                 tabs["Use Cases"] = useCaseTask.placeholder
 
-                val useCaseBuffer = useCaseTask.add("## Use Cases\n\n🔄 Analyzing actors and use cases...".renderMarkdown)
+                val useCaseBuffer =
+                    useCaseTask.add("## Use Cases\n\n🔄 Analyzing actors and use cases...".renderMarkdown)
                 task.update()
 
                 val useCaseAnalysis = designAgent.answer(
@@ -343,7 +348,8 @@ Provide detailed, actionable use case documentation.
                 val requirementsTask = ui.newTask()
                 tabs["Requirements"] = requirementsTask.placeholder
 
-                val requirementsBuffer = requirementsTask.add("## Requirements\n\n🔄 Defining functional and non-functional requirements...".renderMarkdown)
+                val requirementsBuffer =
+                    requirementsTask.add("## Requirements\n\n🔄 Defining functional and non-functional requirements...".renderMarkdown)
                 task.update()
 
                 val requirementsAnalysis = designAgent.answer(
@@ -410,7 +416,8 @@ Provide detailed, prioritized requirements.
                 val architectureTask = ui.newTask()
                 tabs["Architecture"] = architectureTask.placeholder
 
-                val architectureBuffer = architectureTask.add("## Architecture\n\n🔄 Designing system architecture...".renderMarkdown)
+                val architectureBuffer =
+                    architectureTask.add("## Architecture\n\n🔄 Designing system architecture...".renderMarkdown)
                 task.update()
 
                 val architectureAnalysis = designAgent.answer(
@@ -522,7 +529,8 @@ Provide detailed architecture documentation with all diagrams.
                 val dataModelTask = ui.newTask()
                 tabs["Data Model"] = dataModelTask.placeholder
 
-                val dataModelBuffer = dataModelTask.add("## Data Model\n\n🔄 Designing data structures...".renderMarkdown)
+                val dataModelBuffer =
+                    dataModelTask.add("## Data Model\n\n🔄 Designing data structures...".renderMarkdown)
                 task.update()
 
                 val dataModelAnalysis = designAgent.answer(
@@ -794,7 +802,8 @@ Provide actionable test documentation.
                 val phasePlanTask = ui.newTask()
                 tabs["Phase Plan"] = phasePlanTask.placeholder
 
-                val phasePlanBuffer = phasePlanTask.add("## Phase Plan\n\n🔄 Planning development phases...".renderMarkdown)
+                val phasePlanBuffer =
+                    phasePlanTask.add("## Phase Plan\n\n🔄 Planning development phases...".renderMarkdown)
                 task.update()
 
                 val phasePlanAnalysis = designAgent.answer(
@@ -883,7 +892,8 @@ Provide detailed phase planning with realistic timelines.
                 val projectDataTask = ui.newTask()
                 tabs["Project Data"] = projectDataTask.placeholder
 
-                val projectDataBuffer = projectDataTask.add("## Project Data\n\n🔄 Generating structured project data...".renderMarkdown)
+                val projectDataBuffer =
+                    projectDataTask.add("## Project Data\n\n🔄 Generating structured project data...".renderMarkdown)
                 task.update()
 
                 // Generate detailed tasks and sprints
@@ -1013,20 +1023,26 @@ Provide comprehensive, realistic project breakdown.
                     appendLine()
                     appendLine("**Total Time:** ${duration / 1000.0}s")
                     appendLine()
-                    appendLine("**Sections Generated:** ${
-                        listOfNotNull(
-                            if (executionConfig.generate_use_cases) "Use Cases" else null,
-                            if (executionConfig.generate_requirements) "Requirements" else null,
-                            if (executionConfig.generate_architecture) "Architecture" else null,
-                            if (executionConfig.generate_data_model) "Data Model" else null,
-                            if (executionConfig.generate_flow_diagrams) "Flow Diagrams" else null,
-                            if (executionConfig.generate_test_plan) "Test Plan" else null,
-                            if (executionConfig.generate_phase_plan) "Phase Plan" else null,
-                            if (executionConfig.generate_project_data) "Project Data" else null
-                        ).size
-                    }")
+                    appendLine(
+                        "**Sections Generated:** ${
+                            listOfNotNull(
+                                if (executionConfig.generate_use_cases) "Use Cases" else null,
+                                if (executionConfig.generate_requirements) "Requirements" else null,
+                                if (executionConfig.generate_architecture) "Architecture" else null,
+                                if (executionConfig.generate_data_model) "Data Model" else null,
+                                if (executionConfig.generate_flow_diagrams) "Flow Diagrams" else null,
+                                if (executionConfig.generate_test_plan) "Test Plan" else null,
+                                if (executionConfig.generate_phase_plan) "Phase Plan" else null,
+                                if (executionConfig.generate_project_data) "Project Data" else null
+                            ).size
+                        }"
+                    )
                     appendLine()
-                    appendLine("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
+                    appendLine(
+                        "**Completed:** ${
+                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        }"
+                    )
                 }.renderMarkdown
             )
             overviewTask.update()
@@ -1037,7 +1053,9 @@ Provide comprehensive, realistic project breakdown.
             )
             task.update()
 
-            val relativePath = "${projectName.replace(" ", "_").lowercase()}_design_document_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+            val relativePath = "${
+                projectName.replace(" ", "_").lowercase()
+            }_design_document_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (transcriptLink, _) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
             task.safeComplete(
                 "Software design document generated in ${duration / 1000}s. " +
@@ -1073,14 +1091,14 @@ Provide comprehensive, realistic project breakdown.
             if (overviewStatusBuffer != null) {
                 overviewStatusBuffer.setLength(0)
                 overviewStatusBuffer.append(
-                buildString {
-                    appendLine("## ❌ Error Occurred")
-                    appendLine()
-                    appendLine("**Error:** ${e.message}")
-                    appendLine()
-                    appendLine("**Type:** ${e.javaClass.simpleName}")
-                }.renderMarkdown
-            )
+                    buildString {
+                        appendLine("## ❌ Error Occurred")
+                        appendLine()
+                        appendLine("**Error:** ${e.message}")
+                        appendLine()
+                        appendLine("**Type:** ${e.javaClass.simpleName}")
+                    }.renderMarkdown
+                )
             } else {
                 overviewTask.add(
                     buildString {
@@ -1380,7 +1398,9 @@ Provide comprehensive, production-ready documentation.
 
     private fun initializeTranscript(task: SessionTask, projectName: String): FileOutputStream? {
         return try {
-            val relativePath = "${projectName.replace(" ", "_").lowercase()}_design_document_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+            val relativePath = "${
+                projectName.replace(" ", "_").lowercase()
+            }_design_document_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (link, file) = Pair(task.linkTo(relativePath), task.resolveUserFile(relativePath))
             val transcriptStream = file?.outputStream()
             task.complete(

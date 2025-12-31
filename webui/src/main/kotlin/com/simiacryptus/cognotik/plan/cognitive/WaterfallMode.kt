@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.cognitive
-import com.simiacryptus.cognotik.agents.ParsedAgent
 
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -21,8 +21,6 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.io.path.Path
 
 /**
@@ -256,6 +254,7 @@ open class WaterfallMode(
             str
         )
     }
+
     private fun loadPrePlanned(userMessage: String, root: Path, task: SessionTask): TaskBreakdownWithPrompt {
         val parsedConfig = parseConfig(userMessage, root.toString(), task)
         task.add("Loading plan from `${parsedConfig.planFile}` with variables: ${parsedConfig.variables}".renderMarkdown())
@@ -275,6 +274,7 @@ open class WaterfallMode(
         task.add("Plan loaded with ${planWrapper.plan.size} steps.")
         return planWrapper
     }
+
     private fun parseConfig(message: String, root: String, task: SessionTask): WaterfallModeConfig {
         val describer = TaskContextYamlDescriber(orchestrationConfig)
         Tasks.initDescriber(orchestrationConfig, describer)
@@ -303,6 +303,7 @@ $availableFiles
         )
         return agent.answer(listOf(message)).obj
     }
+
     private fun replaceVariables(node: Any?, variables: Map<String, String>): Any? {
         return when (node) {
             is String -> {
@@ -312,6 +313,7 @@ $availableFiles
                 }
                 result
             }
+
             is Map<*, *> -> node.entries.associate { (k, v) -> k to replaceVariables(v, variables) }
             is List<*> -> node.map { replaceVariables(it, variables) }
             else -> node

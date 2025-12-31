@@ -227,7 +227,7 @@ class FindResultsModificationAction(
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
-      if (!super.isEnabled(event)) return false
+        if (!super.isEnabled(event)) return false
         val usageView = event.getData(UsageView.USAGE_VIEW_KEY)
         return usageView != null && usageView.usages.isNotEmpty()
     }

@@ -17,21 +17,22 @@ open class ParsedImageAgent<T : Any>(
     temperature: Double = 0.3,
     val validation: Boolean = true,
     open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
-    "com.simiacryptus", "aicoder.actions"
-  ) {
-    override val includeMethods: Boolean get() = false
-  },
+        "com.simiacryptus", "aicoder.actions"
+    ) {
+        override val includeMethods: Boolean get() = false
+    },
 ) : BaseAgent<List<ImageAndText>, ParsedResponse<T>>(
-  prompt = prompt,
-  name = name,
-  model = model,
-  temperature = temperature,
+    prompt = prompt,
+    name = name,
+    model = model,
+    temperature = temperature,
 ) {
     init {
         requireNotNull(resultClass) {
             "Result class is required"
         }
     }
+
     override fun chatMessages(questions: List<ImageAndText>) = arrayOf(
         ModelSchema.ChatMessage(
             role = ModelSchema.Role.system,
@@ -54,6 +55,7 @@ open class ParsedImageAgent<T : Any>(
             }
         )
     )
+
     private inner class ParsedResponseImpl(vararg messages: ModelSchema.ChatMessage) :
         ParsedResponse<T>(resultClass!!) {
         override val text =
@@ -74,6 +76,7 @@ open class ParsedImageAgent<T : Any>(
 
         override val obj get() = _obj
     }
+
     override fun respond(input: List<ImageAndText>, vararg messages: ModelSchema.ChatMessage): ParsedResponse<T> =
         try {
             ParsedResponseImpl(*messages)
@@ -81,6 +84,7 @@ open class ParsedImageAgent<T : Any>(
             log.info("Failed to parse response", e)
             throw e
         }
+
     override fun withModel(model: ChatInterface): ParsedImageAgent<T> = ParsedImageAgent(
         resultClass = resultClass,
         exampleInstance = exampleInstance,
@@ -91,6 +95,7 @@ open class ParsedImageAgent<T : Any>(
         validation = validation,
         describer = describer,
     )
+
     companion object {
         private val log = LoggerFactory.getLogger(ParsedImageAgent::class.java)
     }

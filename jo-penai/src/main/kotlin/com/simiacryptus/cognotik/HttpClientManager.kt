@@ -1,10 +1,9 @@
 package com.simiacryptus.cognotik
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.exceptions.*
-import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.LoggerFactory
 import org.apache.hc.client5.http.config.ConnectionConfig
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy
@@ -56,10 +55,12 @@ abstract class HttpClientManager(
         private const val DEFAULT_USER_AGENT = "Cognotik/1.0"
         val client by lazy { createHttpClient(DEFAULT_USER_AGENT) }
         fun createHttpClient(userAgent: String = DEFAULT_USER_AGENT): CloseableHttpClient = HttpClientBuilder.create()
-            .setRetryStrategy(DefaultHttpRequestRetryStrategy(
-                /* maxRetries = */ 0,
-                /* defaultRetryInterval = */ Timeout.ofSeconds(15)
-            ))
+            .setRetryStrategy(
+                DefaultHttpRequestRetryStrategy(
+                    /* maxRetries = */ 0,
+                    /* defaultRetryInterval = */ Timeout.ofSeconds(15)
+                )
+            )
             .setConnectionManager(with(PoolingHttpClientConnectionManager()) {
                 defaultSocketConfig = with(SocketConfig.custom()) {
                     setSoTimeout(Timeout.ofSeconds(3000))
@@ -145,7 +146,12 @@ abstract class HttpClientManager(
             return@Callable fn()
         })
 
-        fun handleException(future: Future<*>, e: Throwable, callerStack: String, logStreams: MutableList<BufferedOutputStream> = logStreams1): Nothing {
+        fun handleException(
+            future: Future<*>,
+            e: Throwable,
+            callerStack: String,
+            logStreams: MutableList<BufferedOutputStream> = logStreams1
+        ): Nothing {
             future.cancel(true)
             when (e) {
                 is InterruptedException -> {
@@ -196,7 +202,11 @@ abstract class HttpClientManager(
             } catch (e: Throwable) {
                 val exception = unwrapException(e)
                 throwIfNonrecoverable(exception, sleepPeriod)
-                this.log(Level.DEBUG, "Request failed; retrying ($i/$retryCount) after ${sleepPeriod}ms: ${toString(exception)}", logStreams)
+                this.log(
+                    Level.DEBUG,
+                    "Request failed; retrying ($i/$retryCount) after ${sleepPeriod}ms: ${toString(exception)}",
+                    logStreams
+                )
                 if (i <= retryCount) {
                     Thread.sleep(sleepPeriod)
                 }
@@ -217,6 +227,7 @@ abstract class HttpClientManager(
                 log(Level.INFO, "Rate limited, waiting ${delayMs}ms before retry", logStreams)
                 Thread.sleep(delayMs)
             }
+
             is AIServiceException -> if (exception.isFatal) throw exception
             is Exception -> return
             else -> throw exception
@@ -265,7 +276,10 @@ abstract class HttpClientManager(
         logStreams: MutableList<BufferedOutputStream> = this.logStreams,
         fn: () -> T,
     ): T =
-        withExpBackoffRetry(retryCount, logStreams = logStreams) { withTimeout(Duration.ofSeconds(requestTimeoutSeconds), logStreams = logStreams, fn) }
+        withExpBackoffRetry(
+            retryCount,
+            logStreams = logStreams
+        ) { withTimeout(Duration.ofSeconds(requestTimeoutSeconds), logStreams = logStreams, fn) }
 
     fun <T> withPerformanceLogging(logStreams: MutableList<BufferedOutputStream> = this.logStreams, fn: () -> T): T {
         val start = Date()
@@ -284,7 +298,7 @@ abstract class HttpClientManager(
         logStreams: MutableList<BufferedOutputStream> = this.logStreams,
         format: Boolean = true
     ) {
-        val message = if(format) formatMessage(msg, level) else msg
+        val message = if (format) formatMessage(msg, level) else msg
         logFmt(message, logStreams)
         logSys(level, msg)
     }
@@ -297,7 +311,8 @@ abstract class HttpClientManager(
 
     protected open fun formatMessage(msg: String, level: Level) =
         "\n* [$level] [${"%.3f".format((System.currentTimeMillis() - startTime) / 1000.0)}] ${
-        (msg.takeIf { it.isNotBlank() } ?: "")}\n"
+            (msg.takeIf { it.isNotBlank() } ?: "")
+        }\n"
 
     protected open fun logSys(level: Level, message: String) {
         when (level) {

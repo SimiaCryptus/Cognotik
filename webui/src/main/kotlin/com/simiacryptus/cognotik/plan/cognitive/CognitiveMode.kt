@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 
 /**
  * The CognitiveMode interface defines the “cognitive” strategy
@@ -22,8 +22,9 @@ abstract class CognitiveMode<U : CognitiveModeConfig>(
     val session: Session,
     val user: User,
 ) {
-    val config : U get() = orchestrationConfig.cognitiveSettings as? U
-        ?: throw IllegalStateException("Cognitive settings not defined")
+    val config: U
+        get() = orchestrationConfig.cognitiveSettings as? U
+            ?: throw IllegalStateException("Cognitive settings not defined")
 
     /**
      * Initialize the internal cognitive state.
@@ -43,7 +44,8 @@ abstract class CognitiveMode<U : CognitiveModeConfig>(
 
     fun transcript(
         task: SessionTask,
-        transcriptFile: String = (this.config.type?.name ?: this.javaClass.simpleName) + "_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        transcriptFile: String = (this.config.type?.name
+            ?: this.javaClass.simpleName) + "_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
     ): FileOutputStream? {
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()

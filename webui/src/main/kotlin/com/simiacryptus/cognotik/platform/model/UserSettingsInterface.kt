@@ -17,7 +17,6 @@ import com.simiacryptus.cognotik.models.ToolData
 import com.simiacryptus.cognotik.models.ToolProvider.Companion.discoverAllToolsFromPath
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import kotlin.collections.flatMap
 
 /**
  * Interface for managing user-specific settings and configurations.
@@ -49,7 +48,7 @@ interface UserSettingsInterface {
  * @property apis List of API configurations for various providers (OpenAI, Anthropic, etc.)
  * @property tools List of custom tools/commands available to the user
  * @property etc Additional miscellaneous settings stored as key-value pairs
-* @property toolPaths Map of tool providers to their executable paths
+ * @property toolPaths Map of tool providers to their executable paths
  */
 @JsonSerialize(using = UserSettingsSerializer::class)
 @JsonDeserialize(using = UserSettingsDeserializer::class)
@@ -75,7 +74,8 @@ data class UserSettings(
     @get:JsonIgnore
     val chatModels: Map<String, ChatModel>
         get() = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
-            val provider = APIProvider.values().find { apiData.provider == it } ?: return@flatMap emptyList<Pair<String, ChatModel>>()
+            val provider = APIProvider.values().find { apiData.provider == it }
+                ?: return@flatMap emptyList<Pair<String, ChatModel>>()
             provider.getChatModels(apiData.key ?: "", apiData.baseUrl).map { model -> model.modelName to model }
         }.toMap()
 
@@ -120,7 +120,7 @@ class UserSettingsDeserializer : JsonDeserializer<UserSettings>() {
             } else {
                 mutableListOf()
             }
-            if(tools.isEmpty()) {
+            if (tools.isEmpty()) {
                 tools.addAll(discoverAllToolsFromPath())
             }
             val etc = if (node.has("etc")) {

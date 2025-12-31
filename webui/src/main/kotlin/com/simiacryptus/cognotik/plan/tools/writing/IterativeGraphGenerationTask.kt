@@ -77,6 +77,7 @@ open class IterativeGraphGenerationTask<T : IterativeGraphGenerationTask.Iterati
         val actions: List<GraphAction> = emptyList(),
         val is_finished: Boolean = false
     ) : ValidatedObject
+
     data class GraphAction(
         @Description("Type of action to perform: ADD_NODE, ADD_EDGE, or MERGE_NODES")
         val type: String = "ADD_NODE", // ADD_NODE, ADD_EDGE, MERGE_NODES
@@ -266,6 +267,7 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
                                 }
                             }
                         }
+
                         "MERGE_NODES" -> {
                             val keepV = findVertex(g, action.target)
                             val removeV = findVertex(g, action.source)

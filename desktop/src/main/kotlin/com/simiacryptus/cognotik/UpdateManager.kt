@@ -17,7 +17,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -38,8 +38,8 @@ object UpdateManager {
     // Cache the latest release to avoid repeated API calls
     private var cachedLatestRelease: Release? = null
     private var lastCheckTime: Long = 0
-   private var cachedLatestVersion: Version? = null
-   private var lastVersionCheckTime: Long = 0
+    private var cachedLatestVersion: Version? = null
+    private var lastVersionCheckTime: Long = 0
     private const val CACHE_DURATION_MS = 3600000 // 1 hour
 
     data class Release(
@@ -183,35 +183,35 @@ object UpdateManager {
     val latestVersion: Version
         get() {
             log.debug("Retrieving latest version information")
-           val now = System.currentTimeMillis()
-           if (cachedLatestVersion != null && now - lastVersionCheckTime < CACHE_DURATION_MS) {
-               log.debug("Using cached version information (age: ${(now - lastVersionCheckTime) / 1000} seconds)")
-               return cachedLatestVersion!!
-           }
-           
+            val now = System.currentTimeMillis()
+            if (cachedLatestVersion != null && now - lastVersionCheckTime < CACHE_DURATION_MS) {
+                log.debug("Using cached version information (age: ${(now - lastVersionCheckTime) / 1000} seconds)")
+                return cachedLatestVersion!!
+            }
+
             try {
                 val release = fetchLatestRelease()
                 return if (release != null) {
                     val version = release.tagName.removePrefix("v")
                     log.info("Latest available version: $version")
-                   val versionObj = Version(version)
-                   cachedLatestVersion = versionObj
-                   lastVersionCheckTime = now
-                   versionObj
+                    val versionObj = Version(version)
+                    cachedLatestVersion = versionObj
+                    lastVersionCheckTime = now
+                    versionObj
                 } else {
                     log.warn("Could not determine latest version, using current version as fallback")
-                   val currentVer = currentVersion
-                   cachedLatestVersion = currentVer
-                   lastVersionCheckTime = now
-                   currentVer
+                    val currentVer = currentVersion
+                    cachedLatestVersion = currentVer
+                    lastVersionCheckTime = now
+                    currentVer
                 }
             } catch (e: Exception) {
                 log.error("Failed to fetch latest version", e)
                 log.debug("Stack trace for version fetch failure", e)
-               val currentVer = currentVersion
-               cachedLatestVersion = currentVer
-               lastVersionCheckTime = now
-               return currentVer
+                val currentVer = currentVersion
+                cachedLatestVersion = currentVer
+                lastVersionCheckTime = now
+                return currentVer
             }
         }
 
@@ -421,30 +421,30 @@ object UpdateManager {
                     log.debug("Creating update script for macOS")
                     val scriptFile = File.createTempFile("cognotik-update-", ".sh")
                     scriptFile.setExecutable(true)
-                    
+
                     // Write the update script
                     val installerPath = installerFile.absolutePath
                     val scriptPath = scriptFile.absolutePath
-                    
+
                     val template = loadScriptTemplate("/scripts/update/mac_update.sh.template")
                     val finalSrc = template
                         .replace("@@INSTALLER_PATH@@", installerPath)
                         .replace("@@SCRIPT_PATH@@", scriptPath)
                         .replace("@@APP_NAME@@", appName)
-                    
+
                     log.debug("Writing to macOS update script file: ${scriptFile.absolutePath}: \n${finalSrc.indent("  ")}")
                     scriptFile.writeText(finalSrc)
-                    
+
                     // Show confirmation dialog
                     log.debug("Showing update confirmation to user")
                     JOptionPane.showMessageDialog(
                         null,
                         "The application will now close and update to the latest version.\n" +
-                        "You may need to enter your password for the installation process.",
+                                "You may need to enter your password for the installation process.",
                         "Update Confirmation",
                         JOptionPane.INFORMATION_MESSAGE
                     )
-                    
+
                     log.info("Executing update script: ${scriptFile.absolutePath}")
                     // Execute the update script in a new terminal
                     ProcessBuilder("open", "-a", "Terminal", scriptFile.absolutePath).start()
@@ -528,7 +528,7 @@ object UpdateManager {
     }
 
     fun checkUpdate() {
-        if(latestVersion.greaterThan(currentVersion)) {
+        if (latestVersion.greaterThan(currentVersion)) {
             confirm("Update to ${latestVersion.version}?") {
                 Thread {
                     try {

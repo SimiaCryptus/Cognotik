@@ -28,7 +28,7 @@ class KotlinInterpreterTest : InterpreterTestBase() {
     @Test
     fun `test validate with invalid function`() {
         val interpreter = newInterpreter(mapOf())
-                                
+
         @Language("kotlin") val code = """
             fun invalidFunction() {
                 undefinedVariable + 1
@@ -36,7 +36,7 @@ class KotlinInterpreterTest : InterpreterTestBase() {
         """.trimIndent()
 
         val result = interpreter.validate(code)
-        Assertions.assertInstanceOf(FailedToImplementException::class.java,result)
+        Assertions.assertInstanceOf(FailedToImplementException::class.java, result)
         try {
             interpreter.run(code)
             Assertions.fail<Any>("Expected exception")

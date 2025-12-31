@@ -8,7 +8,8 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.models.ModelSchema.*
+import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.toContentList
 import java.io.File

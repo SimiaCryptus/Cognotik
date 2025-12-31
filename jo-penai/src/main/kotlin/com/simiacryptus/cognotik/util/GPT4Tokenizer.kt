@@ -307,7 +307,7 @@ class GPT4Tokenizer(isCodex: Boolean = false) {
 
     fun estimateTokenCount(input: String): Int {
 //        log.debug("Estimating token count for input")
-        if(input.length >= 0){
+        if (input.length >= 0) {
             return input.length / 3
         }
         var count = 0

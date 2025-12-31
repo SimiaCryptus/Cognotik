@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
@@ -17,15 +16,14 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.Path
 
 /**
-* Configuration for AdaptivePlanningMode.
-*/
+ * Configuration for AdaptivePlanningMode.
+ */
 open class AdaptivePlanningConfig(
     type: CognitiveModeType<*> = CognitiveModeType.Adaptive,
     var maxTaskHistoryChars: Int = 10000,
@@ -33,6 +31,7 @@ open class AdaptivePlanningConfig(
     var maxIterations: Int = 10,
     val cognitiveStrategy: CognitiveSchemaStrategy = CognitiveSchemaStrategy.ProjectManager
 ) : CognitiveModeConfig(type)
+
 /**
  * A cognitive mode that implements the auto-planning strategy with iterative thinking.
  */
@@ -367,11 +366,11 @@ ${JsonUtil.toJson(taskConfig)}
                 })
         )
         val inputMessages = listOf(userMessage) + contextData() + listOf(
-                """
+            """
         Current thinking status: ${config.cognitiveStrategy.formatState(reasoningState)}
         ${config.cognitiveStrategy.getTaskSelectionGuidance(reasoningState)}
         """.trimIndent()
-            ) + formatEvalRecords()
+        ) + formatEvalRecords()
 
         val responseText = if (orchestrationConfig.autoFix) {
             parsedActor.answer(inputMessages).text
@@ -466,7 +465,6 @@ ${JsonUtil.toJson(taskConfig)}
             return futures.flatMap { it.get() }
         }
     }
-
 
 
     private fun formatEvalRecords(maxTotalLength: Int = config.maxTaskHistoryChars): List<String> {

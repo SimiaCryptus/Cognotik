@@ -101,7 +101,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
         try {
             // Step 1: Generate the Image
             task.header("Step 1: Drawing Sprites...", level = 3)
-            
+
             val imageGenPrompt = """
                 Create a sprite sheet based on this description: $description.
                 Requirements:
@@ -125,7 +125,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             val imageOutputPath = root.resolve(imageFile)
             imageOutputPath.toFile().parentFile?.mkdirs()
             ImageIO.write(generatedImage, "png", imageOutputPath.toFile())
-            
+
             val imageLink = task.linkTo(imageFile)
             task.add("""<a href="$imageLink" target="_blank"><img src="$imageLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>""")
 
@@ -134,7 +134,9 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
 
             val parserAgent = ParsedImageAgent(
                 resultClass = SpriteSheetMetadata::class.java,
-                model = (typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: defaultSmart).getChildClient(task),
+                model = (typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: defaultSmart).getChildClient(
+                    task
+                ),
                 prompt = """
                     Identify all distinct sprites in this image.
                     The image resolution is 1000x1000.
@@ -163,7 +165,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
                     height = (sprite.height * generatedImage.height / 1000.0).toInt()
                 )
             })
-            
+
             // Save Metadata
             val jsonOutputPath = root.resolve(metadataFile)
             val mapper = jacksonObjectMapper().writerWithDefaultPrettyPrinter()
@@ -208,7 +210,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             // Display Results
             val metadataLink = task.linkTo(metadataFile)
 
-            
+
             val tabs = TabbedDisplay(task)
 
             // Tab 1: Overview
@@ -233,14 +235,16 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             tabs["Sprites"] = spriteHtml.toString()
 
             // Tab 4: Data Table
-            val tableRows = metadata.sprites.joinToString("\n") { 
-                "| ${it.name} | ${it.x}, ${it.y} | ${it.width}x${it.height} |" 
+            val tableRows = metadata.sprites.joinToString("\n") {
+                "| ${it.name} | ${it.x}, ${it.y} | ${it.width}x${it.height} |"
             }
-            tabs["Data"] = MarkdownUtil.renderMarkdown("""
+            tabs["Data"] = MarkdownUtil.renderMarkdown(
+                """
 | Name | Position | Size |
 |------|----------|------|
 $tableRows
-            """.trimIndent(), ui = task.ui)
+            """.trimIndent(), ui = task.ui
+            )
 
             task.complete("Generated sprite sheet with ${metadata.sprites.size} sprites")
             resultFn("Generated sprite sheet: $imageFile and $metadataFile")

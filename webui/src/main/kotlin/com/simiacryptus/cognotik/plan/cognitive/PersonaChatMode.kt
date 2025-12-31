@@ -107,13 +107,13 @@ open class PersonaChatMode(
     ) {
         try {
             val expandedUserMessage = if (config.useExpansionSyntax) expandTopics(userMessage) else userMessage
-            
+
             val expansionFunctions = processMsgRecursive(
                 expandedUserMessage, task, parsingChatter, defaultChat
             )
             val aggregateResponse = StringBuilder()
             runAll(expansionFunctions, aggregateResponse)
-            
+
             synchronized(messagesLock) {
                 messages.add(ModelSchema.ChatMessage(ModelSchema.Role.user, expandedUserMessage.toContentList()))
                 if (aggregateResponse.isNotEmpty()) {
@@ -124,7 +124,7 @@ open class PersonaChatMode(
                     )
                 }
             }
-            
+
             if (aggregateResponse.isNotEmpty()) {
                 writeToTranscript("## Assistant\n\n${aggregateResponse}\n\n")
             }
@@ -193,9 +193,8 @@ open class PersonaChatMode(
         }!!
 
 
-
         val tabs = TabbedDisplay(task)
-        
+
         val planTask = this.task.ui.newTask(false).apply { tabs["Plan"] = placeholder }
         val chosenTask = if (orchestrationConfig.autoFix) {
             val result = requestToTaskWithPersona(
@@ -285,7 +284,7 @@ open class PersonaChatMode(
         resultSemaphore.acquire()
         val resultString = resultRef.get() ?: ""
         aggregateResponse.append(resultString).append("\n\n")
-        
+
         val executionRecord = AdaptivePlanningMode.ExecutionRecord(
             task = chosenTask?.component2(),
             result = resultString
@@ -305,7 +304,7 @@ open class PersonaChatMode(
             tabs["State"] = placeholder
             complete(renderMarkdown("### Updated Persona State\n" + config.cognitiveStrategy.formatState(newState)))
         }
-        
+
         task.complete()
     }
 
@@ -419,7 +418,7 @@ open class PersonaChatMode(
         val inputCnt: Int = 1
         private val messageMaps = ConcurrentHashMap<Session, ConcurrentLinkedQueue<ModelSchema.ChatMessage>>()
         private val log = LoggerFactory.getLogger(PersonaChatMode::class.java)
-        
+
         fun requestToTaskWithPersona(
             defaultModel: ChatInterface,
             fastModel: ChatInterface,

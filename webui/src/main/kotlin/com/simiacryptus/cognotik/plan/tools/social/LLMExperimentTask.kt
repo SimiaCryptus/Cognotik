@@ -537,7 +537,9 @@ Be specific and reference the data provided.
                 appendLine("---")
                 appendLine()
                 appendLine(
-                    "Full experiment report: <a href='$transcriptLink' target='_blank'>${transcriptLink.split('/','\\').last()}</a> <a href='${
+                    "Full experiment report: <a href='$transcriptLink' target='_blank'>${
+                        transcriptLink.split('/', '\\').last()
+                    }</a> <a href='${
                         transcriptLink.removeSuffix(".md") + ".html"
                     }' target='_blank'>html</a>"
                 )
@@ -788,8 +790,7 @@ Be specific and reference the data provided.
     }
 
 
-
-  private fun generateStatisticalTables(
+    private fun generateStatisticalTables(
         results: List<ExperimentalResult>,
         conditions: List<ExperimentalCondition>,
         significanceLevel: Double
@@ -1353,11 +1354,12 @@ Be specific and reference the data provided.
             return byteStream.size() * 8 // bits
         }
 
-      /**
-       * Calculates the compressibility between two strings based on their compressed sizes.
-       * 1 -> incompressible (high diversity)
-       * 2 -> duplicate (low diversity)
-       */
-        fun compressibility(strA: String, strB: String): Double = (compressedStringBits(strA) + compressedStringBits(strA)).toDouble() / compressedStringBits(strA + strB).toDouble()
+        /**
+         * Calculates the compressibility between two strings based on their compressed sizes.
+         * 1 -> incompressible (high diversity)
+         * 2 -> duplicate (low diversity)
+         */
+        fun compressibility(strA: String, strB: String): Double =
+            (compressedStringBits(strA) + compressedStringBits(strA)).toDouble() / compressedStringBits(strA + strB).toDouble()
     }
 }

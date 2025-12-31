@@ -82,11 +82,13 @@ class LLMPollSimulationTask(
                             return "Question '${question.id}' of type ${question.type} must have options"
                         }
                     }
+
                     QuestionType.LIKERT_SCALE, QuestionType.RATING -> {
                         if (question.min == null || question.max == null) {
                             return "Question '${question.id}' of type ${question.type} must have min and max validation"
                         }
                     }
+
                     else -> {}
                 }
             }
@@ -151,10 +153,11 @@ class LLMPollSimulationTask(
         val reasoning: Map<String, String>? = null
     )
 
-data class ParsedResponse(
+    data class ParsedResponse(
         val answer: Any? = null,
         val reasoning: String? = null
     )
+
     data class QuestionResponse(
         @Description("The answer to the question")
         val answer: Any? = null,
@@ -528,7 +531,11 @@ Be specific and reference the data provided.
                 appendLine("Sample Responses:")
                 successfulResponses.take(3).forEach { response ->
                     appendLine("- Demographics: ${response.demographics}")
-                    appendLine("  Answers: ${response.answers.entries.take(3).joinToString(", ") { "${it.key}: ${it.value}" }}")
+                    appendLine(
+                        "  Answers: ${
+                            response.answers.entries.take(3).joinToString(", ") { "${it.key}: ${it.value}" }
+                        }"
+                    )
                 }
             }
 
@@ -559,7 +566,14 @@ Be specific and reference the data provided.
                 appendLine()
                 appendLine("- **Total Respondents:** $totalRespondents")
                 appendLine("- **Successful Responses:** ${successfulResponses.size}")
-                appendLine("- **Response Rate:** ${String.format("%.1f", successfulResponses.size * 100.0 / totalRespondents)}%")
+                appendLine(
+                    "- **Response Rate:** ${
+                        String.format(
+                            "%.1f",
+                            successfulResponses.size * 100.0 / totalRespondents
+                        )
+                    }%"
+                )
                 appendLine("- **Total Time:** ${totalTime / 1000.0}s")
                 appendLine("- **Avg Response Time:** ${avgResponseTime / 1000.0}s")
                 appendLine()
@@ -575,7 +589,11 @@ Be specific and reference the data provided.
 
             transcriptWriter?.apply {
                 write("---\n\n")
-                write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n")
+                write(
+                    "**Completed:** ${
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    }\n\n"
+                )
                 write("**Total Time:** ${totalTime / 1000.0}s | **Responses:** ${successfulResponses.size}/$totalRespondents\n")
                 flush()
                 close()
@@ -592,7 +610,14 @@ Be specific and reference the data provided.
                     appendLine()
                     appendLine("**Responses:** ${successfulResponses.size}/$totalRespondents")
                     appendLine()
-                    appendLine("**Response Rate:** ${String.format("%.1f", successfulResponses.size * 100.0 / totalRespondents)}%")
+                    appendLine(
+                        "**Response Rate:** ${
+                            String.format(
+                                "%.1f",
+                                successfulResponses.size * 100.0 / totalRespondents
+                            )
+                        }%"
+                    )
                 }.renderMarkdown()
             )
 
@@ -605,7 +630,13 @@ Be specific and reference the data provided.
                 appendLine()
                 appendLine("---")
                 appendLine()
-                appendLine("Full poll report: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a>")
+                appendLine(
+                    "Full poll report: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${
+                        transcriptLink.removeSuffix(
+                            ".md"
+                        )
+                    }.html' target='_blank'>html</a>"
+                )
             }
             resultFn(finalMessage)
 
@@ -713,7 +744,7 @@ Instructions:
         """.trimIndent()
     }
 
-private fun conductSurvey(
+    private fun conductSurvey(
         respondent: SimulatedRespondent,
         questions: List<SurveyQuestion>,
         api: ChatInterface,
@@ -813,6 +844,7 @@ For the answer field, return the appropriate type based on the question:
                     appendLine()
                     appendLine("Provide your answer as a comma-separated list of numbers (e.g., '1, 3, 4')")
                 }
+
                 QuestionType.SINGLE_CHOICE -> {
                     appendLine("Select one:")
                     question.options?.forEachIndexed { idx, option ->
@@ -821,6 +853,7 @@ For the answer field, return the appropriate type based on the question:
                     appendLine()
                     appendLine("Provide your answer as a single number (e.g., '2')")
                 }
+
                 QuestionType.LIKERT_SCALE -> {
                     val min = question.min as? Int ?: 1
                     val max = question.max as? Int ?: 5
@@ -829,6 +862,7 @@ For the answer field, return the appropriate type based on the question:
                     appendLine()
                     appendLine("Provide your answer as a single number")
                 }
+
                 QuestionType.RATING -> {
                     val min = question.min as? Int ?: 1
                     val max = question.max as? Int ?: 10
@@ -836,9 +870,11 @@ For the answer field, return the appropriate type based on the question:
                     appendLine()
                     appendLine("Provide your answer as a single number")
                 }
+
                 QuestionType.YES_NO -> {
                     appendLine("Answer Yes or No")
                 }
+
                 QuestionType.RANKING -> {
                     appendLine("Rank the following options in order of preference (1 = most preferred):")
                     question.options?.forEachIndexed { idx, option ->
@@ -847,9 +883,11 @@ For the answer field, return the appropriate type based on the question:
                     appendLine()
                     appendLine("Provide your ranking as a comma-separated list (e.g., '3, 1, 2, 4')")
                 }
+
                 QuestionType.OPEN_ENDED -> {
                     appendLine("Please provide your answer in your own words.")
                 }
+
                 else -> {}
             }
 
@@ -859,7 +897,6 @@ For the answer field, return the appropriate type based on the question:
             }
         }
     }
-
 
 
     private fun generateDescriptiveStatistics(
@@ -895,6 +932,7 @@ For the answer field, return the appropriate type based on the question:
                     }
                     stats.appendLine()
                 }
+
                 QuestionType.LIKERT_SCALE, QuestionType.RATING -> {
                     val numericAnswers = answers.mapNotNull { (it as? Number)?.toDouble() }
                     if (numericAnswers.isNotEmpty()) {
@@ -911,6 +949,7 @@ For the answer field, return the appropriate type based on the question:
                         stats.appendLine()
                     }
                 }
+
                 QuestionType.YES_NO -> {
                     val yesCount = answers.count { it.toString().equals("Yes", ignoreCase = true) }
                     val noCount = answers.count { it.toString().equals("No", ignoreCase = true) }
@@ -919,6 +958,7 @@ For the answer field, return the appropriate type based on the question:
                     stats.appendLine("- No: $noCount (${String.format("%.1f", noCount * 100.0 / responses.size)}%)")
                     stats.appendLine()
                 }
+
                 QuestionType.OPEN_ENDED -> {
                     val avgLength = answers.map { it.toString().length }.average()
                     stats.appendLine("**Text Analysis:**\n")
@@ -932,6 +972,7 @@ For the answer field, return the appropriate type based on the question:
                     }
                     stats.appendLine()
                 }
+
                 else -> {}
             }
         }
@@ -955,7 +996,12 @@ For the answer field, return the appropriate type based on the question:
             val dimensionValues = responses.mapNotNull { it.demographics[dimension] }.distinct().sorted()
 
             questions.forEach { question ->
-                if (question.type in listOf(QuestionType.SINGLE_CHOICE, QuestionType.YES_NO, QuestionType.LIKERT_SCALE)) {
+                if (question.type in listOf(
+                        QuestionType.SINGLE_CHOICE,
+                        QuestionType.YES_NO,
+                        QuestionType.LIKERT_SCALE
+                    )
+                ) {
                     crossTabs.appendLine("**${question.id}**\n")
 
                     // Create cross-tab table
@@ -971,9 +1017,17 @@ For the answer field, return the appropriate type based on the question:
                                 val frequency = answers.groupingBy { it.toString() }.eachCount()
                                 frequency.forEach { (answer, count) ->
                                     val percentage = if (subset.isNotEmpty()) count * 100.0 / subset.size else 0.0
-                                    crossTabs.appendLine("| $dimValue | $answer | $count | ${String.format("%.1f", percentage)}% |")
+                                    crossTabs.appendLine(
+                                        "| $dimValue | $answer | $count | ${
+                                            String.format(
+                                                "%.1f",
+                                                percentage
+                                            )
+                                        }% |"
+                                    )
                                 }
                             }
+
                             QuestionType.LIKERT_SCALE -> {
                                 val numericAnswers = answers.mapNotNull { (it as? Number)?.toDouble() }
                                 if (numericAnswers.isNotEmpty()) {
@@ -981,6 +1035,7 @@ For the answer field, return the appropriate type based on the question:
                                     crossTabs.appendLine("| $dimValue | Mean | ${String.format("%.2f", mean)} | - |")
                                 }
                             }
+
                             else -> {}
                         }
                     }
@@ -1057,7 +1112,14 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                 val overallCounts = sentiments.groupingBy { it.overall }.eachCount()
                 sentiment.appendLine("**Overall Classification:**\n")
                 overallCounts.forEach { (classification, count) ->
-                    sentiment.appendLine("- $classification: $count (${String.format("%.1f", count * 100.0 / sentiments.size)}%)")
+                    sentiment.appendLine(
+                        "- $classification: $count (${
+                            String.format(
+                                "%.1f",
+                                count * 100.0 / sentiments.size
+                            )
+                        }%)"
+                    )
                 }
                 sentiment.appendLine()
             }
@@ -1092,15 +1154,30 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                         val midpoint = (min + max) / 2.0
 
                         if (abs(mean - midpoint) < 0.5) {
-                            biases.appendLine("⚠️ **${question.id}**: Possible central tendency bias (mean=${String.format("%.2f", mean)}, midpoint=$midpoint)")
+                            biases.appendLine(
+                                "⚠️ **${question.id}**: Possible central tendency bias (mean=${
+                                    String.format(
+                                        "%.2f",
+                                        mean
+                                    )
+                                }, midpoint=$midpoint)"
+                            )
                         }
 
                         // Check for low variance (acquiescence bias)
                         if (stdDev < 0.5) {
-                            biases.appendLine("⚠️ **${question.id}**: Low variance detected (sd=${String.format("%.2f", stdDev)}), possible acquiescence bias")
+                            biases.appendLine(
+                                "⚠️ **${question.id}**: Low variance detected (sd=${
+                                    String.format(
+                                        "%.2f",
+                                        stdDev
+                                    )
+                                }), possible acquiescence bias"
+                            )
                         }
                     }
                 }
+
                 QuestionType.MULTIPLE_CHOICE -> {
                     // Check for primacy/recency effects
                     val selections = mutableMapOf<Int, Int>()
@@ -1123,13 +1200,28 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                             .values.average()
 
                         if (firstOption > avgMiddle * 1.5) {
-                            biases.appendLine("⚠️ **${question.id}**: Possible primacy effect (first option selected ${String.format("%.1f", firstOption * 100.0 / responses.size)}% of time)")
+                            biases.appendLine(
+                                "⚠️ **${question.id}**: Possible primacy effect (first option selected ${
+                                    String.format(
+                                        "%.1f",
+                                        firstOption * 100.0 / responses.size
+                                    )
+                                }% of time)"
+                            )
                         }
                         if (lastOption > avgMiddle * 1.5) {
-                            biases.appendLine("⚠️ **${question.id}**: Possible recency effect (last option selected ${String.format("%.1f", lastOption * 100.0 / responses.size)}% of time)")
+                            biases.appendLine(
+                                "⚠️ **${question.id}**: Possible recency effect (last option selected ${
+                                    String.format(
+                                        "%.1f",
+                                        lastOption * 100.0 / responses.size
+                                    )
+                                }% of time)"
+                            )
                         }
                     }
                 }
+
                 else -> {}
             }
         }
@@ -1156,7 +1248,14 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                         val maxDiff = groupMeans.values.maxOrNull()!! - groupMeans.values.minOrNull()!!
 
                         if (maxDiff > 1.0) {
-                            biases.appendLine("⚠️ **${question.id}** by $dimension: Significant difference detected (max diff=${String.format("%.2f", maxDiff)})")
+                            biases.appendLine(
+                                "⚠️ **${question.id}** by $dimension: Significant difference detected (max diff=${
+                                    String.format(
+                                        "%.2f",
+                                        maxDiff
+                                    )
+                                })"
+                            )
                             groupMeans.forEach { (value, mean) ->
                                 biases.appendLine("  - $value: ${String.format("%.2f", mean)}")
                             }
@@ -1174,7 +1273,14 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
         val fastResponses = responses.count { it.response_time < avgResponseTime * 0.5 }
 
         if (fastResponses > responses.size * 0.2) {
-            biases.appendLine("⚠️ **Fast Responses**: ${String.format("%.1f", fastResponses * 100.0 / responses.size)}% of responses were unusually fast, possible satisficing behavior")
+            biases.appendLine(
+                "⚠️ **Fast Responses**: ${
+                    String.format(
+                        "%.1f",
+                        fastResponses * 100.0 / responses.size
+                    )
+                }% of responses were unusually fast, possible satisficing behavior"
+            )
         }
 
         biases.appendLine()

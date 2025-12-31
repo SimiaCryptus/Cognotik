@@ -141,19 +141,26 @@ CausalInference - Identify causal relationships and root causes
             // Overview tab
             val overviewTask = task.ui.newTask()
             tabs["Overview"] = overviewTask.placeholder
-            
+
             // Static Overview Content
             overviewTask.add(MarkdownUtil.renderMarkdown("## Input Files\n\n${getInputFileCode()}", ui = ui))
-            overviewTask.add(MarkdownUtil.renderMarkdown("---\n\n## Causal Inference Analysis\n\n**Observed Effect:** $observedEffect", ui = ui))
-            
+            overviewTask.add(
+                MarkdownUtil.renderMarkdown(
+                    "---\n\n## Causal Inference Analysis\n\n**Observed Effect:** $observedEffect",
+                    ui = ui
+                )
+            )
+
             // Dynamic Status Buffer
-            val overviewStatusBuffer = overviewTask.add(MarkdownUtil.renderMarkdown("**Status:** 🔄 Gathering evidence...", ui = ui))
+            val overviewStatusBuffer =
+                overviewTask.add(MarkdownUtil.renderMarkdown("**Status:** 🔄 Gathering evidence...", ui = ui))
 
             // Gather evidence from sources
             log.debug("Gathering evidence from ${executionConfig?.evidence_sources?.size ?: 0} sources")
             val evidenceTask = task.ui.newTask()
             tabs["Evidence Sources"] = evidenceTask.placeholder
-            val evidenceStatusBuffer = evidenceTask.add(MarkdownUtil.renderMarkdown("## Evidence Sources\n\n🔄 Loading evidence...", ui = ui))
+            val evidenceStatusBuffer =
+                evidenceTask.add(MarkdownUtil.renderMarkdown("## Evidence Sources\n\n🔄 Loading evidence...", ui = ui))
 
             val evidenceContext = gatherEvidence()
             log.debug("Evidence gathered: ${evidenceContext.length} characters")
@@ -170,14 +177,19 @@ CausalInference - Identify causal relationships and root causes
         """.trimMargin().toByteArray()
             )
             evidenceStatusBuffer?.setLength(0)
-            evidenceStatusBuffer?.append(MarkdownUtil.renderMarkdown(
-                "## Evidence Sources\n\n✅ Evidence gathered successfully\n\n**Sources processed:** ${executionConfig?.evidence_sources?.size ?: 0}", 
-                ui = ui
-            ))
-            
+            evidenceStatusBuffer?.append(
+                MarkdownUtil.renderMarkdown(
+                    "## Evidence Sources\n\n✅ Evidence gathered successfully\n\n**Sources processed:** ${executionConfig?.evidence_sources?.size ?: 0}",
+                    ui = ui
+                )
+            )
+
             evidenceTask.expandable(
-                "Evidence Context", 
-                MarkdownUtil.renderMarkdown("```\n${evidenceContext.take(maxOutputLength)}${if (evidenceContext.length > maxOutputLength) "\n... (truncated)" else ""}\n```", ui = ui)
+                "Evidence Context",
+                MarkdownUtil.renderMarkdown(
+                    "```\n${evidenceContext.take(maxOutputLength)}${if (evidenceContext.length > maxOutputLength) "\n... (truncated)" else ""}\n```",
+                    ui = ui
+                )
             )
             task.update()
             log.debug("Retrieving prior context from execution state")
@@ -194,10 +206,12 @@ CausalInference - Identify causal relationships and root causes
 
             // Update overview with causes
             overviewStatusBuffer?.setLength(0)
-            overviewStatusBuffer?.append(MarkdownUtil.renderMarkdown(
-                "$causesText\n\n**Status:** 🔄 Analyzing causal relationships...", 
-                ui = ui
-            ))
+            overviewStatusBuffer?.append(
+                MarkdownUtil.renderMarkdown(
+                    "$causesText\n\n**Status:** 🔄 Analyzing causal relationships...",
+                    ui = ui
+                )
+            )
             overviewTask.update()
             log.debug("Building analysis prompt with ${potentialCauses.size} potential causes")
 
@@ -241,18 +255,22 @@ CausalInference - Identify causal relationships and root causes
             )
 
             analysisBuffer?.setLength(0)
-            analysisBuffer?.append(MarkdownUtil.renderMarkdown(
-                "## Causal Analysis Results\n\n✅ Analysis complete\n\n$answer",
-                ui = ui
-            ))
+            analysisBuffer?.append(
+                MarkdownUtil.renderMarkdown(
+                    "## Causal Analysis Results\n\n✅ Analysis complete\n\n$answer",
+                    ui = ui
+                )
+            )
             task.update()
 
             // Update overview status
             overviewStatusBuffer?.setLength(0)
-            overviewStatusBuffer?.append(MarkdownUtil.renderMarkdown(
-                "$causesText\n\n**Status:** ✅ Analysis complete", 
-                ui = ui
-            ))
+            overviewStatusBuffer?.append(
+                MarkdownUtil.renderMarkdown(
+                    "$causesText\n\n**Status:** ✅ Analysis complete",
+                    ui = ui
+                )
+            )
             overviewTask.update()
 
             // If building causal graph, generate visualization

@@ -5,12 +5,10 @@ import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
-import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -37,7 +35,10 @@ class SmartCodeChatAction : BaseAction() {
     override fun handle(event: AnActionEvent) {
         val root = getRoot(event) ?: return
         val codeFiles =
-            MultiCodeChatAction.getFiles(PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext) ?: arrayOf(), root).toMutableSet()
+            MultiCodeChatAction.getFiles(
+                PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(event.dataContext) ?: arrayOf(),
+                root
+            ).toMutableSet()
 
         try {
             UITools.runAsync(event.project, "Initializing Smart Code Chat", true) { progress ->

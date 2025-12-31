@@ -157,10 +157,12 @@ class ChainOfThoughtTask(
             overviewTask.expandable("Input Files", MarkdownUtil.renderMarkdown(inputFileContent, ui = ui))
         }
 
-        overviewTask.add("<b>Started:</b> ${
-            java.time.LocalDateTime.now()
-                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-        }")
+        overviewTask.add(
+            "<b>Started:</b> ${
+                java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            }"
+        )
         overviewTask.append("<hr/>")
         overviewTask.header("Progress", level = 2)
         overviewTask.add("<i>Initializing reasoning process...</i>")
@@ -371,13 +373,23 @@ class ChainOfThoughtTask(
             // Update overview with completion stats
             overviewTask.append("<hr/>")
             overviewTask.header("✅ Reasoning Complete", level = 2)
-            overviewTask.add("""
+            overviewTask.add(
+                """
                 <b>Total Time:</b> ${totalTime / 1000.0}s<br/>
                 <b>Steps Completed:</b> ${reasoningChain.size}<br/>
                 <b>Average Step Time:</b> ${avgStepTime / 1000.0}s<br/>
-                <b>Final Confidence:</b> ${String.format("%.1f%%", reasoningChain.lastOrNull()?.confidence?.times(100) ?: 0.0)}<br/>
-                <b>Completed:</b> ${java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-            """.trimIndent())
+                <b>Final Confidence:</b> ${
+                    String.format(
+                        "%.1f%%",
+                        reasoningChain.lastOrNull()?.confidence?.times(100) ?: 0.0
+                    )
+                }<br/>
+                <b>Completed:</b> ${
+                    java.time.LocalDateTime.now()
+                        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                }
+            """.trimIndent()
+            )
             task.update()
             transcript?.close()
 
@@ -392,11 +404,13 @@ class ChainOfThoughtTask(
             // Update overview with error
             overviewTask.append("<hr/>")
             overviewTask.header("❌ Error Occurred", level = 2)
-            overviewTask.add("""
+            overviewTask.add(
+                """
                 <b>Error:</b> ${e.message}<br/>
                 <b>Type:</b> ${e.javaClass.simpleName}<br/>
                 <b>Steps Completed:</b> ${reasoningChain.size} of $maxSteps
-            """.trimIndent(), additionalClasses = "alert alert-danger")
+            """.trimIndent(), additionalClasses = "alert alert-danger"
+            )
             task.update()
 
             val errorOutput = buildString {

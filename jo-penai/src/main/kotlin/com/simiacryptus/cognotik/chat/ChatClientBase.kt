@@ -4,19 +4,18 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.toJson
+import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.core5.http.HttpEntity
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
 import org.apache.hc.core5.http.io.entity.StringEntity
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.toJson
-import org.apache.hc.client5.http.classic.methods.HttpGet
-import org.json.JSONObject
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.io.IOException
@@ -108,7 +107,8 @@ abstract class ChatClientBase(
                 ),
                 logStreams
             )
-            val response = innerPost(client, request) ?: throw IOException("Empty response from POST request to ${request.uri}")
+            val response =
+                innerPost(client, request) ?: throw IOException("Empty response from POST request to ${request.uri}")
             log(
                 level = Level.DEBUG,
                 msg = String.format(
@@ -117,7 +117,7 @@ abstract class ChatClientBase(
                     requestID,
                     response.let {
                         try {
-                            fromJson<Map<String,Any>>(it, Map::class.java).toJson()
+                            fromJson<Map<String, Any>>(it, Map::class.java).toJson()
                         } catch (e: Exception) {
                             it
                         }

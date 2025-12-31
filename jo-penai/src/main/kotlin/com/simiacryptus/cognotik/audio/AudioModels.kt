@@ -7,9 +7,9 @@ import java.util.concurrent.atomic.AtomicReference
 
 @Suppress("unused")
 class AudioModels(
-  override val modelName: String,
-  val type: AudioModelType = AudioModelType.Transcription,
-  override val provider: APIProvider = APIProvider.OpenAI,
+    override val modelName: String,
+    val type: AudioModelType = AudioModelType.Transcription,
+    override val provider: APIProvider = APIProvider.OpenAI,
 ) : AIModel {
 
     private val _api = AtomicReference<AIModel?>(null)

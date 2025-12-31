@@ -106,8 +106,9 @@ class CommandSessionTask(
     )
 
     override fun promptSegment(): String {
-        val executables : List<String>? = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
-            .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
+        val executables: List<String>? =
+            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+                .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
         val activeSessionsInfo = activeSessions.entries.joinToString("\n") { (id, state) ->
             val pendingBytes = state.outputBuffer.length
             val alive = state.process.isAlive
@@ -138,8 +139,6 @@ class CommandSessionTask(
         executionConfig ?: throw IllegalStateException("Execution config is null")
 
 
-
-
         val resultBuffer = StringBuffer()
         val execute: (Boolean) -> Unit = { shouldComplete ->
             task.ui.pool.submit {
@@ -163,9 +162,11 @@ class CommandSessionTask(
                         val command = executionConfig!!.command
                         val executable = command.firstOrNull()
                         val resolvedCommand = if (executable != null) {
-                            val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
-                            val resolvedExecutable = tools.find { it.provider?.getExecutables()?.contains(executable) == true }
-                                ?.resolve(executable)
+                            val tools =
+                                ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+                            val resolvedExecutable =
+                                tools.find { it.provider?.getExecutables()?.contains(executable) == true }
+                                    ?.resolve(executable)
                             if (resolvedExecutable != null) {
                                 listOf(resolvedExecutable) + command.drop(1)
                             } else {
@@ -183,10 +184,12 @@ class CommandSessionTask(
                                     .start()
                             } catch (e: Throwable) {
                                 log.warn("Failed to start PTY process, falling back to ProcessBuilder", e)
-                                ProcessBuilder(resolvedCommand).directory(task.resolveUserFile(".")).redirectErrorStream(true).start()
+                                ProcessBuilder(resolvedCommand).directory(task.resolveUserFile("."))
+                                    .redirectErrorStream(true).start()
                             }
                         } else {
-                            ProcessBuilder(resolvedCommand).directory(task.resolveUserFile(".")).redirectErrorStream(true).start()
+                            ProcessBuilder(resolvedCommand).directory(task.resolveUserFile("."))
+                                .redirectErrorStream(true).start()
                         }
 
                         log.info("Started new process for command: ${resolvedCommand.joinToString(" ")}")

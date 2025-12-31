@@ -340,7 +340,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
                 val contextTask = task.ui.newTask(false)
                 tabs["Data Sources"] = contextTask.placeholder
-                
+
                 contextTask.add("# Data Sources & Context".renderMarkdown)
                 if (fullContext.isNotBlank()) {
                     contextTask.expandable("Input Context", fullContext.truncateForDisplay(3000).renderMarkdown)

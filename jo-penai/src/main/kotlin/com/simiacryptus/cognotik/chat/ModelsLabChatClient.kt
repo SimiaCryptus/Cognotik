@@ -76,7 +76,7 @@ class ModelsLabChatClient(
                         ModelSchema.ChatResponse(
                             id = response.chat_id, choices = listOf(
                                 ModelSchema.ChatChoice(
-                                    message = ModelSchema.ChatMessageResponse(content = response.message,), index = 0
+                                    message = ModelSchema.ChatMessageResponse(content = response.message), index = 0
                                 )
                             ), usage = response.meta?.let {
                                 ModelSchema.Usage(

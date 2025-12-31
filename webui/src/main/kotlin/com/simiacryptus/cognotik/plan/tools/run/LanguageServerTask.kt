@@ -83,17 +83,6 @@ class LanguageServerTask(
                 ?: throw IllegalArgumentException("No Language Server configured for extension: .$extension")
 
 
-
-
-
-
-
-
-
-
-
-
-
             val executeLsp = {
                 task.header("LSP Execution: $action", level = 3)
                 val statusBuffer = task.add("Starting LSP for .$extension...")
@@ -139,12 +128,14 @@ class LanguageServerTask(
                             // but many LSPs send them right after didOpen.
                             "Diagnostics are pushed asynchronously. Check transcript for 'textDocument/publishDiagnostics'."
                         }
+
                         "definition" -> {
                             validatePosition()
                             val params = positionParams(mapper, fileUri)
                             val response = lsp.sendRequest("textDocument/definition", params)
                             formatLocationResponse(response, "Definition")
                         }
+
                         "references" -> {
                             validatePosition()
                             val params = positionParams(mapper, fileUri).apply {
@@ -153,12 +144,14 @@ class LanguageServerTask(
                             val response = lsp.sendRequest("textDocument/references", params)
                             formatLocationResponse(response, "References")
                         }
+
                         "hover" -> {
                             validatePosition()
                             val params = positionParams(mapper, fileUri)
                             val response = lsp.sendRequest("textDocument/hover", params)
                             response?.get("contents")?.toString() ?: "No hover info"
                         }
+
                         else -> throw IllegalArgumentException("Unknown action: $action")
                     }
                     // 4. Shutdown
@@ -338,25 +331,26 @@ class LanguageServerTask(
         }
     }
 
-    val serverCommands: Map<String, List<String>> get() {
-        val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
-        val executables: List<String>? = tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
-        return mapOf(
-            "py" to listOf("pylsp"),
-            "js" to listOf("typescript-language-server", "--stdio"),
-            "ts" to listOf("typescript-language-server", "--stdio"),
-            "kt" to listOf("kotlin-language-server"),
-            "java" to listOf("jdtls"),
-            "c" to listOf("clangd"),
-            "cpp" to listOf("clangd"),
-            "go" to listOf("gopls"),
-            "rs" to listOf("rust-analyzer"),
-            "sh" to listOf("bash-language-server", "start"),
-            "tex" to listOf("texlab"),
-            "yaml" to listOf("yaml-language-server", "--stdio"),
-            "dockerfile" to listOf("docker-langserver", "--stdio")
-        ).filter { (_, cmd) -> executables?.contains(cmd[0]) ?: false }
-    }
+    val serverCommands: Map<String, List<String>>
+        get() {
+            val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+            val executables: List<String>? = tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
+            return mapOf(
+                "py" to listOf("pylsp"),
+                "js" to listOf("typescript-language-server", "--stdio"),
+                "ts" to listOf("typescript-language-server", "--stdio"),
+                "kt" to listOf("kotlin-language-server"),
+                "java" to listOf("jdtls"),
+                "c" to listOf("clangd"),
+                "cpp" to listOf("clangd"),
+                "go" to listOf("gopls"),
+                "rs" to listOf("rust-analyzer"),
+                "sh" to listOf("bash-language-server", "start"),
+                "tex" to listOf("texlab"),
+                "yaml" to listOf("yaml-language-server", "--stdio"),
+                "dockerfile" to listOf("docker-langserver", "--stdio")
+            ).filter { (_, cmd) -> executables?.contains(cmd[0]) ?: false }
+        }
 
     companion object {
         private val log = LoggerFactory.getLogger(LanguageServerTask::class.java)

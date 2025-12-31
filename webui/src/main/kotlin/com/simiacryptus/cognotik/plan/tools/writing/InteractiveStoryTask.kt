@@ -7,11 +7,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.newLogStream
 import org.slf4j.Logger
@@ -690,7 +686,15 @@ Make it immersive and compelling. The reader should feel invested immediately.
             structure.decision_points.forEachIndexed { index, decisionPoint ->
                 log.info("Writing decision point ${index + 1}/${structure.decision_points.size}: ${decisionPoint.id}")
 
-                overviewTask.add(MarkdownUtil.renderMarkdown("- ${decisionPoint.id}: ${decisionPoint.decision_prompt.truncateForDisplay(50)} "))
+                overviewTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        "- ${decisionPoint.id}: ${
+                            decisionPoint.decision_prompt.truncateForDisplay(
+                                50
+                            )
+                        } "
+                    )
+                )
                 task.update()
 
                 val dpTask = task.ui.newTask()

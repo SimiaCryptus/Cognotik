@@ -155,6 +155,7 @@ class TaskTypeSelectionDialog(
         init()
         title = if (allowMultipleSelection) "Select Task Types" else "Select Task Type"
     }
+
     override fun getDimensionServiceKey(): String = "TaskTypeSelectionDialog"
 
 

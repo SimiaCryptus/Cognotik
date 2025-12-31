@@ -469,11 +469,11 @@ Apply rigorous journalistic standards. Be skeptical but fair.
                     resultBuilder.append("## Key Facts\n")
                     factChecks.take(3).forEach { fact ->
                         resultBuilder.append("\n")
-                            "- ${fact.verification_status.uppercase()}: ${
-                                fact.claim.truncateForDisplay(
-                                    maxDescriptionLength
-                                )
-                            }\n"
+                        "- ${fact.verification_status.uppercase()}: ${
+                            fact.claim.truncateForDisplay(
+                                maxDescriptionLength
+                            )
+                        }\n"
                     }
                     resultBuilder.append("\n")
 
@@ -577,11 +577,11 @@ Ensure balanced representation of different viewpoints.
                     resultBuilder.append("## Key Perspectives\n")
                     perspectives.take(3).forEach { source ->
                         resultBuilder.append("\n")
-                            "- **${source.source_name}** (${source.role}): ${
-                                source.perspective.truncateForDisplay(
-                                    maxDescriptionLength
-                                )
-                            }\n"
+                        "- **${source.source_name}** (${source.role}): ${
+                            source.perspective.truncateForDisplay(
+                                maxDescriptionLength
+                            )
+                        }\n"
 
                     }
                     resultBuilder.append("\n")
@@ -886,11 +886,11 @@ Consider angles that:
                     resultBuilder.append("## Story Angles\n")
                     angles.sortedByDescending { it.newsworthiness_score }.take(2).forEach { angle ->
                         resultBuilder.append("\n")
-                            "- **${angle.angle_title}**: ${
-                                angle.focus.truncateForDisplay(
-                                    maxDescriptionLength
-                                )
-                            }\n"
+                        "- **${angle.angle_title}**: ${
+                            angle.focus.truncateForDisplay(
+                                maxDescriptionLength
+                            )
+                        }\n"
 
                     }
                     resultBuilder.append("\n")

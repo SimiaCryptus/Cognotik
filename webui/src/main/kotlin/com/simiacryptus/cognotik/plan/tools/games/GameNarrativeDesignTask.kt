@@ -201,6 +201,7 @@ class GameNarrativeDesignTask(
             }
         }
     }
+
     data class NarrativeAct(
         val act_number: Int = 1,
         val title: String = "",

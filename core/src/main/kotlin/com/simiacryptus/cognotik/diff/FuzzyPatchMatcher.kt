@@ -791,7 +791,7 @@ open class FuzzyPatchMatcher(
                 else -> line
             }
 
-LineRecord(
+            LineRecord(
                 index = index, line = run {
                     when {
                         content.startsWith("+++") || content.startsWith("---") || content.startsWith("@@") -> null

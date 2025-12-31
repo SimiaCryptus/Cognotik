@@ -39,6 +39,7 @@ class PersuasiveEssayTask(
         task_type = PersuasiveEssay.name,
         name = "Persuasive Essay Task"
     )
+
     class PersuasiveEssayTaskExecutionConfigData(
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
         val input_files: List<String>? = null,

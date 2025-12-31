@@ -313,8 +313,20 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
                 val contextContent = buildString {
                     appendLine("# Research Sources & Context")
                     if (fullContext.isNotBlank()) appendLine("\n## Input Context\n${fullContext.truncateForDisplay(3000)}")
-                    if (priorContext.isNotBlank()) appendLine("\n## Prior Context\n${priorContext.truncateForDisplay(2000)}")
-                    if (contextFiles.isNotBlank()) appendLine("\n## Related Files\n${contextFiles.truncateForDisplay(2000)}")
+                    if (priorContext.isNotBlank()) appendLine(
+                        "\n## Prior Context\n${
+                            priorContext.truncateForDisplay(
+                                2000
+                            )
+                        }"
+                    )
+                    if (contextFiles.isNotBlank()) appendLine(
+                        "\n## Related Files\n${
+                            contextFiles.truncateForDisplay(
+                                2000
+                            )
+                        }"
+                    )
                 }
                 markdownTranscript?.write(contextContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
                 task.update()
@@ -912,7 +924,7 @@ Provide the complete revised paper.
             val filename = "Research_Paper_${System.currentTimeMillis()}.md"
             val fileUrl = task.saveFile(filename, finalPaper.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             finalTask.add("<div class='mt-3'><a href='$fileUrl' class='btn btn-primary' target='_blank'>Download Markdown</a></div>")
-            
+
             markdownTranscript?.write(finalPaper.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             task.update()
 

@@ -10,9 +10,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -287,7 +285,12 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
 
                 log.info("Exploring path $pathsExplored with ${currentPath.size} steps, priority=$priority")
 
-                overviewTask.add(MarkdownUtil.renderMarkdown("\n- 🔍 Exploring path $pathsExplored (${currentPath.size} steps)...", ui = task.ui))
+                overviewTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        "\n- 🔍 Exploring path $pathsExplored (${currentPath.size} steps)...",
+                        ui = task.ui
+                    )
+                )
 
                 // Explore this path
                 val result = explorePath(
@@ -537,7 +540,12 @@ Create the initial reasoning step that captures the starting state of the proble
             // Check if we've reached the goal
             val goalCheck = checkGoal(steps, goal, api)
             if (goalCheck.goal_reached) {
-                solutionTask.add(MarkdownUtil.renderMarkdown("\n✅ **Goal Reached!**\n\n${goalCheck.explanation}\n", ui = task.ui))
+                solutionTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        "\n✅ **Goal Reached!**\n\n${goalCheck.explanation}\n",
+                        ui = task.ui
+                    )
+                )
                 return ReasoningPath(
                     steps = steps,
                     reached_goal = true,

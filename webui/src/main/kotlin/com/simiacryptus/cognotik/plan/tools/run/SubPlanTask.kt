@@ -12,9 +12,6 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
 class SubPlanTask(
     orchestrationConfig: OrchestrationConfig, planTask: SubPlanTaskExecutionConfigData?
@@ -103,7 +100,8 @@ class SubPlanTask(
             val typeConfig = this.typeConfig ?: throw RuntimeException()
             // Get the cognitive mode for sub-planning
             val cognitiveMode =
-                (typeConfig.cognitiveMode?.newSettings() ?: orchestrationConfig.cognitiveSettings ?: CognitiveModeType.Adaptive.newSettings())
+                (typeConfig.cognitiveMode?.newSettings() ?: orchestrationConfig.cognitiveSettings
+                ?: CognitiveModeType.Adaptive.newSettings())
 
             val subConfig = orchestrationConfig.copy(
                 taskSettings = typeConfig.taskSettings,

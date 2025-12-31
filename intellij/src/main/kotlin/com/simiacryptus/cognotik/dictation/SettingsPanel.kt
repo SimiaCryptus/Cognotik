@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.dictation
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
-import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout

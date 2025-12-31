@@ -188,26 +188,31 @@ class RCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
         "command" to listOf("Rscript".resolveTool()), "language" to "r"
     )
 )
+
 class PhpCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
     defs + mapOf(
         "command" to listOf("php".resolveTool()), "language" to "php"
     )
 )
+
 class LuaCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
     defs + mapOf(
         "command" to listOf("lua".resolveTool()), "language" to "lua"
     )
 )
+
 class GoCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
     defs + mapOf(
         "command" to listOf("go".resolveTool(), "run"), "language" to "go"
     )
 )
+
 class RustCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
     defs + mapOf(
         "command" to listOf("rust-script".resolveTool()), "language" to "rust"
     )
 )
+
 class ScalaCodeRuntime(defs: Map<String, Any> = emptyMap()) : ProcessCodeRuntime(
     defs + mapOf(
         "command" to listOf("scala".resolveTool()), "language" to "scala"

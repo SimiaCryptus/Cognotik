@@ -44,7 +44,11 @@ class StructuralInvariantAnalysisTask(
     ), ValidatedObject {
         override fun validate(): String? {
             if (subject_object.isNullOrBlank()) return "subject_object must not be null or blank"
-            if (output_format !in listOf("fingerprint", "signature")) return "output_format must be 'fingerprint' or 'signature'"
+            if (output_format !in listOf(
+                    "fingerprint",
+                    "signature"
+                )
+            ) return "output_format must be 'fingerprint' or 'signature'"
             return ValidatedObject.validateFields(this)
         }
     }
@@ -94,10 +98,10 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
             log.info("Starting Structural Invariant Analysis: $subject")
 
             val tabbedDisplay = TabbedDisplay(task)
-            
+
             task.ui.newTask(false).apply {
                 tabbedDisplay["Overview"] = placeholder
-                    
+
                 header("Structural Invariant Analysis")
                 add("<b>Subject:</b> $subject")
                 add("<b>Transformations:</b> ${transformations.joinToString(", ")}")
@@ -107,9 +111,10 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
                 }
             }
 
-            val inputFileContent = super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
+            val inputFileContent =
+                super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
             val priorCode = getPriorCode(agent.executionState)
-            
+
             val prompt = buildPrompt(subject, transformations, format, inputFileContent, priorCode)
             task.ui.newTask(false).apply {
                 tabbedDisplay["Prompt"] = placeholder

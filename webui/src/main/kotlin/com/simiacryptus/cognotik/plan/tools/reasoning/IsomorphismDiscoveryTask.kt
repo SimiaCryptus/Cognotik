@@ -124,7 +124,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
         try {
             val startTime = System.currentTimeMillis()
             log.info("Starting IsomorphismDiscoveryTask with source='${executionConfig?.source_domain}', target='${executionConfig?.target_domain}'")
-            
+
             executionConfig?.validate()?.let { validationError ->
                 log.error("Configuration validation failed: $validationError")
                 task.safeComplete("CONFIGURATION ERROR: $validationError", log)
@@ -141,7 +141,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             val tabs = TabbedDisplay(task)
             val api = defaultSmart ?: return
             transcriptStream = task.newLogStream("Transcript")
-            
+
             writeTranscriptHeader(transcriptStream, sourceDomain, targetDomain, strictness)
 
             // Overview
@@ -161,11 +161,12 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
 
             // Context
             val priorContext = getPriorCode(agent.executionState)
-            val inputFileContent = super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
+            val inputFileContent =
+                super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
             val relatedFileContent = getRelatedFilesContent()
-            
+
             writeToTranscript(transcriptStream, "## Context\n\n$inputFileContent\n\n$relatedFileContent\n\n")
-            
+
             val contextHtml = MarkdownUtil.renderMarkdown("## Context\n\n$inputFileContent\n\n$relatedFileContent")
             overviewTask.expandable("Context Data", contextHtml)
             overviewTask.add(MarkdownUtil.renderMarkdown("- ✓ Context gathered\n- ⏳ Analyzing structures and mappings..."))
@@ -221,7 +222,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             )
 
             var result = parser.answer(listOf(prompt)).obj
-            
+
             if (result == null) {
                 throw RuntimeException("Failed to generate isomorphism result")
             }
@@ -229,7 +230,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             // Display Results
             analysisTask.add(MarkdownUtil.renderMarkdown(formatAnalysisResult(result)))
             task.update()
-            
+
             writeToTranscript(transcriptStream, "## Analysis Result\n\n$result\n\n")
 
             // Synthesis
@@ -248,9 +249,9 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
                 appendLine("- **Verifications:** ${result.verification_cases.count { it.holds }} / ${result.verification_cases.size} passed")
             }.let { MarkdownUtil.renderMarkdown(it) })
             task.update()
-            
+
             writeTranscriptFooter(transcriptStream, System.currentTimeMillis() - startTime)
-            
+
             task.safeComplete("Isomorphism discovery completed with ${result.mappings.size} mappings.", log)
             resultFn(synthesisText)
 
@@ -301,12 +302,12 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             appendLine("## Mappings")
             appendLine("| Source | Target | Rationale |")
             appendLine("|--------|--------|-----------|")
-            result.mappings.forEach { 
+            result.mappings.forEach {
                 appendLine("| ${it.source_element} | ${it.target_element} | ${it.rationale} |")
             }
             appendLine()
             appendLine("## Verification")
-            result.verification_cases.forEach { 
+            result.verification_cases.forEach {
                 val icon = if (it.holds) "✅" else "❌"
                 appendLine("### $icon ${it.source_operation} → ${it.target_operation}")
                 appendLine(it.explanation)

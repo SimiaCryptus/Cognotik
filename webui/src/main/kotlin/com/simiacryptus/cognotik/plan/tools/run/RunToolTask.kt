@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.util.AgentPatterns
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
@@ -44,7 +43,7 @@ class RunToolTask(
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
     ) {
-        val executable : File?
+        val executable: File?
             get() {
 
                 val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
@@ -66,11 +65,12 @@ class RunToolTask(
     }
 
     override fun promptSegment(): String {
-        val executables : List<String>? = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
-            .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
+        val executables: List<String>? =
+            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+                .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
 
         return "RunTool - Execute a tool with custom arguments\n" +
-            "  * Available tools: ${executables?.joinToString(", ") ?: "None"}\n"
+                "  * Available tools: ${executables?.joinToString(", ") ?: "None"}\n"
     }
 
     override fun run(

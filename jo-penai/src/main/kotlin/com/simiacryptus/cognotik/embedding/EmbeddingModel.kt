@@ -1,23 +1,23 @@
 package com.simiacryptus.cognotik.embedding
- import com.fasterxml.jackson.core.JsonGenerator
- import com.fasterxml.jackson.core.JsonParser
- import com.fasterxml.jackson.core.JsonToken
- import com.fasterxml.jackson.databind.DeserializationContext
- import com.fasterxml.jackson.databind.JsonDeserializer
- import com.fasterxml.jackson.databind.JsonNode
- import com.fasterxml.jackson.databind.SerializerProvider
- import com.fasterxml.jackson.databind.annotation.JsonDeserialize
- import com.fasterxml.jackson.databind.annotation.JsonSerialize
- import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
- import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.core.JsonToken
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.LoggerFactory
- import org.slf4j.event.Level
- import java.io.BufferedOutputStream
- import java.util.concurrent.ExecutorService
+import org.slf4j.event.Level
+import java.io.BufferedOutputStream
+import java.util.concurrent.ExecutorService
 
 interface Embedder {
     fun embed(input: String): DoubleArray
@@ -37,10 +37,10 @@ open class EmbeddingModel(
 ) {
     private val log = LoggerFactory.getLogger(EmbeddingModel::class.java)
     override fun toString() = modelName
-    
+
     override fun pricing(usage: ModelSchema.Usage) = usage.prompt_tokens * tokenPricePerK / 1000.0
         .also { log.info("Calculated pricing for model: $modelName with prompt tokens: ${usage.prompt_tokens}, price: $it") }
-    
+
     fun instance(
         key: String = "",
         base: String = provider?.base ?: "",
@@ -60,18 +60,19 @@ open class EmbeddingModel(
             logStreams = logStreams,
             scheduledPool = scheduledPool
         ) ?: throw IllegalArgumentException("Unsupported provider: $provider")
-        
+
         return EmbedderClient(client, this, onUsage)
     }
 
     companion object {
         val log = LoggerFactory.getLogger(EmbeddingModel::class.java)
-        
-        fun values(): Map<String, EmbeddingModel> = values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
-        
+
+        fun values(): Map<String, EmbeddingModel> =
+            values.mapNotNull { (key, value) -> value?.let { key to it } }.toMap()
+
         private val values: MutableMap<String, EmbeddingModel?> by lazy {
-            (OpenAIEmbeddingModels.values + 
-             OllamaEmbeddingModels.values).toMutableMap()
+            (OpenAIEmbeddingModels.values +
+                    OllamaEmbeddingModels.values).toMutableMap()
         }
 
         init {
@@ -92,18 +93,20 @@ class EmbeddingModelsDeserializer : JsonDeserializer<EmbeddingModel>() {
         return when (p.currentToken) {
             JsonToken.VALUE_STRING -> {
                 val modelName = p.readValueAs(String::class.java)
-                EmbeddingModel.values().entries.find { 
+                EmbeddingModel.values().entries.find {
                     it.key == modelName || it.value.modelName == modelName
                 }?.value ?: throw IllegalArgumentException("Unknown embedding model: $modelName")
             }
+
             JsonToken.START_OBJECT -> {
                 val node = p.readValueAsTree<JsonNode>()
                 val modelName = node.get("modelName")?.asText() ?: node.get("name")?.asText()
-                    ?: throw IllegalArgumentException("Object format must contain 'modelName' or 'name' field")
-                EmbeddingModel.values().entries.find { 
+                ?: throw IllegalArgumentException("Object format must contain 'modelName' or 'name' field")
+                EmbeddingModel.values().entries.find {
                     it.key == modelName || it.value.modelName == modelName
                 }?.value ?: throw IllegalArgumentException("Unknown embedding model: $modelName")
             }
+
             else -> throw IllegalArgumentException("EmbeddingModel must be deserialized from either a string or an object")
         }
     }

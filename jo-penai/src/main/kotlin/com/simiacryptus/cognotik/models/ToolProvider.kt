@@ -183,6 +183,7 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
                 "texlab",
                 "yaml-language-server"
             )
+
             override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
         }
         val Dot = object : ToolProvider("Dot") {

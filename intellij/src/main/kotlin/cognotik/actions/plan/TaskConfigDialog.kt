@@ -66,6 +66,7 @@ class TaskConfigDialog(
         title = "Edit ${taskType.name} Configuration"
         isResizable = true
     }
+
     override fun getDimensionServiceKey(): String = "TaskConfigEditDialog"
 
 
@@ -363,7 +364,6 @@ class TaskConfigDialog(
             subTaskConfigListModel.removeElement(entry)
         }
     }
-
 
 
     override fun doOKAction() {

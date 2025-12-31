@@ -227,59 +227,59 @@ interface ModelSchema {
         var image_url: String? = null,
         var input_audio: AudioInput? = null
     ) {
-      var image_data: ByteArray?
-        @JsonIgnore
-        get() {
-          return if (image_url != null && image_url!!.startsWith("data:image/")) {
-              val parts = image_url!!.split(",")
-              Base64.getDecoder().decode(parts[1])
-          } else {
-              null
-          }
-        }
-        @JsonIgnore
-        set(value) {
-          if (value != null) {
-              val base64Data = Base64.getEncoder().encodeToString(value)
-              image_url = "data:image/jpeg;base64,$base64Data"
-          } else {
-              image_url = null
-          }
-        }
-      var image: BufferedImage?
-        @JsonIgnore
-        get() {
-          val data = image_data
-          return if (data != null) {
-              ImageIO.read(data.inputStream())
-          } else {
-              null
-          }
-        }
-        @JsonIgnore
-        set(value) {
-          if (value != null) {
-              val output = ByteArrayOutputStream()
-              ImageIO.write(value, "jpg", output)
-              val base64Data = Base64.getEncoder().encodeToString(output.toByteArray())
-              image_url = "data:image/jpeg;base64,$base64Data"
-          } else {
-              image_url = null
-          }
-        }
-      var audio_data: ByteArray?
-        @JsonIgnore
-        get() {
-          return input_audio?.audioBytes
-        }
-        @JsonIgnore
-        set(value) {
-            input_audio = if (value != null) {
-                AudioInput(Base64.getEncoder().encodeToString(value), input_audio?.format ?: "mp3")
-            } else {
-                null
+        var image_data: ByteArray?
+            @JsonIgnore
+            get() {
+                return if (image_url != null && image_url!!.startsWith("data:image/")) {
+                    val parts = image_url!!.split(",")
+                    Base64.getDecoder().decode(parts[1])
+                } else {
+                    null
+                }
             }
-        }
+            @JsonIgnore
+            set(value) {
+                if (value != null) {
+                    val base64Data = Base64.getEncoder().encodeToString(value)
+                    image_url = "data:image/jpeg;base64,$base64Data"
+                } else {
+                    image_url = null
+                }
+            }
+        var image: BufferedImage?
+            @JsonIgnore
+            get() {
+                val data = image_data
+                return if (data != null) {
+                    ImageIO.read(data.inputStream())
+                } else {
+                    null
+                }
+            }
+            @JsonIgnore
+            set(value) {
+                if (value != null) {
+                    val output = ByteArrayOutputStream()
+                    ImageIO.write(value, "jpg", output)
+                    val base64Data = Base64.getEncoder().encodeToString(output.toByteArray())
+                    image_url = "data:image/jpeg;base64,$base64Data"
+                } else {
+                    image_url = null
+                }
+            }
+        var audio_data: ByteArray?
+            @JsonIgnore
+            get() {
+                return input_audio?.audioBytes
+            }
+            @JsonIgnore
+            set(value) {
+                input_audio = if (value != null) {
+                    AudioInput(Base64.getEncoder().encodeToString(value), input_audio?.format ?: "mp3")
+                } else {
+                    null
+                }
+            }
 
         companion object {
             private val log = LoggerFactory.getLogger(ContentPart::class.java)
@@ -302,6 +302,7 @@ interface ModelSchema {
                 log.info("Creating audio ContentPart")
                 return ContentPart(input_audio = AudioInput(data, format))
             }
+
             fun audio(data: ByteArray, format: String): ContentPart {
                 log.info("Creating audio ContentPart")
                 return ContentPart(input_audio = AudioInput(Base64.getEncoder().encodeToString(data), format))
@@ -324,53 +325,53 @@ interface ModelSchema {
     )
 
     data class ChatMessageResponse(
-      val role: Role? = null,
-      val content: String? = null,
-      val function_call: FunctionCall? = null,
-      var image_url: String? = null,
-      var image_mime_type: String? = null,
+        val role: Role? = null,
+        val content: String? = null,
+        val function_call: FunctionCall? = null,
+        var image_url: String? = null,
+        var image_mime_type: String? = null,
     ) {
-      var image: BufferedImage?
-        @JsonIgnore
-        get() {
-          return if (image_url != null && image_url!!.startsWith("data:image/")) {
-              val parts = image_url!!.split(",")
-              val data = Base64.getDecoder().decode(parts[1])
-              ImageIO.read(data.inputStream())
-          } else {
-              null
-          }
-        }
-        @JsonIgnore
-        set(value) {
-          if (value != null) {
-              val output = ByteArrayOutputStream()
-              ImageIO.write(value, "jpg", output)
-              val base64Data = Base64.getEncoder().encodeToString(output.toByteArray())
-              image_url = "data:image/jpeg;base64,$base64Data"
-          } else {
-              image_url = null
-          }
-        }
-      var image_data: ByteArray?
-        @JsonIgnore
-        get() {
-          return if (image_url != null && image_url!!.startsWith("data:image/")) {
-              val parts = image_url!!.split(",")
-              Base64.getDecoder().decode(parts[1])
-          } else {
-              null
-          }
-        }
-        @JsonIgnore
-        set(value) {
-          if (value != null) {
-              val base64Data = Base64.getEncoder().encodeToString(value)
-              image_url = "data:image/jpeg;base64,$base64Data"
-          } else {
-              image_url = null
-          }
-        }
+        var image: BufferedImage?
+            @JsonIgnore
+            get() {
+                return if (image_url != null && image_url!!.startsWith("data:image/")) {
+                    val parts = image_url!!.split(",")
+                    val data = Base64.getDecoder().decode(parts[1])
+                    ImageIO.read(data.inputStream())
+                } else {
+                    null
+                }
+            }
+            @JsonIgnore
+            set(value) {
+                if (value != null) {
+                    val output = ByteArrayOutputStream()
+                    ImageIO.write(value, "jpg", output)
+                    val base64Data = Base64.getEncoder().encodeToString(output.toByteArray())
+                    image_url = "data:image/jpeg;base64,$base64Data"
+                } else {
+                    image_url = null
+                }
+            }
+        var image_data: ByteArray?
+            @JsonIgnore
+            get() {
+                return if (image_url != null && image_url!!.startsWith("data:image/")) {
+                    val parts = image_url!!.split(",")
+                    Base64.getDecoder().decode(parts[1])
+                } else {
+                    null
+                }
+            }
+            @JsonIgnore
+            set(value) {
+                if (value != null) {
+                    val base64Data = Base64.getEncoder().encodeToString(value)
+                    image_url = "data:image/jpeg;base64,$base64Data"
+                } else {
+                    image_url = null
+                }
+            }
     }
 
     enum class Role {
@@ -452,8 +453,8 @@ interface ModelSchema {
     )
 
     data class ImageObject(
-      val url: String? = null,
-      val b64_json: String? = null
+        val url: String? = null,
+        val b64_json: String? = null
     )
 
     data class ImageGenerationResponse(

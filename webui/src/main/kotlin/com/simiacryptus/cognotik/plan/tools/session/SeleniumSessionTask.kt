@@ -12,7 +12,6 @@ import org.openqa.selenium.devtools.v136.log.Log
 import org.openqa.selenium.devtools.v136.network.Network
 import org.openqa.selenium.remote.RemoteWebDriver
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
@@ -260,7 +259,8 @@ class SeleniumSessionTask(
             } catch (e: Exception) {
                 "Error: ${e.message}"
             }
-            tabs["Page Source"] = "<pre><code class=\"language-html\">${pageSource.replace("<", "&lt;").take(50000)}</code></pre>"
+            tabs["Page Source"] =
+                "<pre><code class=\"language-html\">${pageSource.replace("<", "&lt;").take(50000)}</code></pre>"
 
 
             val result = formatResults(executionConfig, selenium, results)

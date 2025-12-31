@@ -8,11 +8,7 @@ import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.get
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.Discussable
-import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -65,7 +61,7 @@ open class ParallelMode(
             task.echo(userMessage.renderMarkdown)
 
             transcript?.write("User Message: $userMessage\n".toByteArray())
-            
+
             val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
                 ?: task.ui.dataStorage?.getSessionDir(user, session)?.toPath()
                 ?: File(".").toPath()
@@ -203,7 +199,7 @@ $taskDescriptions
 If the user mentions specific files or globs, include them in the variables map.
 If the user specifies concurrency, set it; otherwise default to ${config.defaultConcurrency}.
 If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mode to Zip. Default is ${config.defaultMode}.
-            """ + (orchestrationConfig.workingDir?.let {root ->
+            """ + (orchestrationConfig.workingDir?.let { root ->
                 "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
             } ?: ""),
             model = orchestrationConfig.defaultSmart.getChildClient(task),
@@ -245,7 +241,10 @@ If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mod
         }
     }
 
-    private fun generateCombinations(variables: Map<String, List<Any>>, mode: ParallelModeConfig.CombinationMode): List<Map<String, Any>> {
+    private fun generateCombinations(
+        variables: Map<String, List<Any>>,
+        mode: ParallelModeConfig.CombinationMode
+    ): List<Map<String, Any>> {
         if (variables.isEmpty()) return listOf(emptyMap())
 
         val keys = variables.keys.toList()

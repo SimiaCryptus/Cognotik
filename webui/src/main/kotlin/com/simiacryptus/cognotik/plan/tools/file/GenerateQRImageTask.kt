@@ -22,7 +22,6 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 import java.awt.image.BufferedImage
 import java.io.File
-import java.util.*
 import javax.imageio.ImageIO
 
 class GenerateQRImageTask(

@@ -4,18 +4,15 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.set
-import com.simiacryptus.cognotik.util.toJson
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import com.simiacryptus.cognotik.webui.session.newLogStream
@@ -1235,16 +1232,19 @@ open class HierarchicalPlanningMode(
     data class GoalDecomposition(
         val subgoals: List<Goal>? = null, val tasks: List<Task>? = null
     )
+
     data class PlanningState(
         val goalIdCounter: Int = 1,
         val taskIdCounter: Int = 1,
         val goals: List<Goal> = emptyList(),
         val tasks: List<Task> = emptyList()
     )
+
     private fun getStateFile(): File {
         val dir = task.ui.dataStorage?.getSessionDir(user, session) ?: File(".")
         return File(dir, "planning_state.json")
     }
+
     private fun saveState() {
         try {
             val state = PlanningState(
@@ -1258,6 +1258,7 @@ open class HierarchicalPlanningMode(
             log.error("Failed to save state", e)
         }
     }
+
     private fun loadState(): Boolean {
         val file = getStateFile()
         if (!file.exists()) return false

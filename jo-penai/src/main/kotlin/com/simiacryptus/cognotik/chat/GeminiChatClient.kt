@@ -5,23 +5,23 @@ import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
- import java.util.concurrent.ExecutorService
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
 
- class GeminiChatClient(
+class GeminiChatClient(
     apiKey: String,
     apiBase: String,
     workPool: ExecutorService,
     logLevel: Level = Level.INFO,
     logStreams: MutableList<BufferedOutputStream>,
     scheduledPool: ListeningScheduledExecutorService,
- ) : SingleProviderChatClient(
+) : SingleProviderChatClient(
     APIProvider.Gemini,
     apiKey = apiKey,
     apiBase = apiBase,
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap
     override fun getModels(): List<ChatModel>? {
         // Check cache first
         modelsCache[apiBase]?.let { return it }
-        
+
         return try {
             val responseBody = get("${apiBase}/v1beta/models?key=$apiKey")
             checkError(responseBody)
@@ -107,7 +107,7 @@ import java.util.concurrent.ConcurrentHashMap
     companion object {
         private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(GeminiChatClient::class.java)
         private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
-        
+
         data class ModelsListResponse(
             val models: List<ModelInfo>? = null,
             val nextPageToken: String? = null
@@ -136,7 +136,7 @@ import java.util.concurrent.ConcurrentHashMap
                     choices = fromJson.candidates?.mapIndexed { index, candidate ->
                         ModelSchema.ChatChoice(
                             message = ModelSchema.ChatMessageResponse(
-                              content = candidate.content?.parts?.joinToString("\n") { it.text ?: "" },
+                                content = candidate.content?.parts?.joinToString("\n") { it.text ?: "" },
                             ), index = index
                         )
                     } ?: emptyList(),
