@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
-import com.simiacryptus.cognotik.plan.tools.run.CodingTask
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
@@ -74,10 +73,7 @@ class RunCodeTask(
         val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
             ?: defaultSmart).getChildClient(task)
 
-//        val taskSettings = this.orchestrationConfig.getTaskSettings(TaskType.RunCodeTask)
-        val taskSettings = typeConfig as? RunCodeTaskTypeConfig
-        val runtime =
-            taskSettings?.codeRuntime ?: CodeRuntimes.GroovyRuntime // Kotlin has issues running within IntelliJ
+        val runtime = typeConfig.codeRuntime ?: CodeRuntimes.GroovyRuntime // Kotlin has issues running within IntelliJ
         val defs = mapOf(
             "env" to (orchestrationConfig.env ?: emptyMap()),
             "workingDir" to (

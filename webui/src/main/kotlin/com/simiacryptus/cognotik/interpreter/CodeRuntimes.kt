@@ -113,10 +113,6 @@ class CodeRuntimes(
             return constructor(defs)
         }
 
-        fun getRuntime(
-            runtimeName: String, defs: Map<String, Any> = mapOf()
-        ) = getRuntime(valueOf(runtimeName), defs)
-
         fun valueOf(name: String): CodeRuntimes = valueOf(CodeRuntimes::class.java, name)
         private fun register(runtime: CodeRuntimes) = register(CodeRuntimes::class.java, runtime)
     }
