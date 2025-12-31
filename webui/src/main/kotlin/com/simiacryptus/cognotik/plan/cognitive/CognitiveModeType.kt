@@ -25,7 +25,7 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
         val Parallel = CognitiveModeType("Parallel", ParallelModeConfig::class.java, inputCnt = ParallelMode.inputCnt)
         val Protocol = CognitiveModeType("Protocol", ProtocolModeConfig::class.java, inputCnt = ProtocolMode.inputCnt)
         val Council = CognitiveModeType("Council", CouncilModeConfig::class.java, inputCnt = CouncilMode.inputCnt)
-        val PrePlanned = CognitiveModeType("PrePlanned", PrePlannedModeConfig::class.java, inputCnt = PrePlannedMode.inputCnt)
+        val PersonaChat = CognitiveModeType("PersonaChat", PersonaChatConfig::class.java, inputCnt = PersonaChatMode.inputCnt)
 
         private val constructors by lazy {
             val map = mutableMapOf<CognitiveModeType<*>, (SessionTask, OrchestrationConfig, Session, User) -> CognitiveMode<*>>()
@@ -40,13 +40,13 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
             }
 
             register(Chat) { task, config, session, user -> ConversationalMode(task, config, session, user) }
-            register(Adaptive) { task, config, session, user -> AdaptivePlanningMode(task, config, session, user, cognitiveStrategy = ProjectManagerStrategy()) }
+            register(Adaptive) { task, config, session, user -> AdaptivePlanningMode(task, config, session, user) }
             register(Waterfall) { task, config, session, user -> WaterfallMode(task, config, session, user) }
             register(Hierarchical) { task, config, session, user -> HierarchicalPlanningMode(task, config, session, user) }
             register(Parallel) { task, config, session, user -> ParallelMode(task, config, session, user) }
             register(Protocol) { task, config, session, user -> ProtocolMode(task, config, session, user) }
             register(Council) { task, config, session, user -> CouncilMode(task, config, session, user) }
-            register(PrePlanned) { task, config, session, user -> PrePlannedMode(task, config, session, user) }
+            register(PersonaChat) { task, config, session, user -> PersonaChatMode(task, config, session, user) }
             map
         }
 

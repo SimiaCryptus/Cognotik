@@ -90,6 +90,7 @@ open class ProtocolMode(
                     var statePassed = false
                     var retryCount = 0
                     val maxRetries = config.maxRetries
+                    var nextState: String? = null
 
                     while (!statePassed && retryCount++ < maxRetries) {
                         if (retryCount > 1) {
@@ -112,6 +113,7 @@ open class ProtocolMode(
 
                         if (validation.passed) {
                             statePassed = true
+                            nextState = validation.nextState
                             history.add("State ${currentState.name} completed successfully. Action: ${actionConfig.task_description}. Result: $actionResult")
                         } else {
                             history.add("State ${currentState.name} failed. Feedback: ${validation.feedback}")
@@ -119,7 +121,7 @@ open class ProtocolMode(
                     }
 
                     if (statePassed) {
-                        currentStateName = currentState.nextState
+                        currentStateName = nextState
                     } else {
                         stateTask.add(renderMarkdown("State ${currentState.name} failed after $maxRetries retries."))
                         writeToTranscript("State ${currentState.name} failed after max retries.\n")
@@ -141,11 +143,10 @@ open class ProtocolMode(
     private fun defineProtocol(userMessage: String): ProtocolDefinition {
         val prompt = """
             Define a strict protocol (state machine) to achieve the user's request.
-            If the user asks for TDD, use a Red -> Green -> Refactor cycle.
-            If the user asks for documentation, use Read -> Draft -> Verify.
-            Otherwise, design a logical flow of states.
+            The protocol can have branching, loops, or be linear.
             Each state must have clear instructions and validation criteria.
-            The validation criteria will be used by a referee agent to check if the state exit condition is met.
+            The validation criteria will be used by a referee agent to determine success and the next state.
+            Explicitly mention in validation criteria which state to transition to under what conditions.
         """.trimIndent()
 
         return ParsedAgent(
@@ -228,7 +229,9 @@ open class ProtocolMode(
             $result
             
             Did the task result satisfy the validation criteria?
-            Provide feedback explaining why it passed or failed.
+            If yes, determine the next state based on the criteria.
+            If the protocol is finished, the next state should be null.
+            Provide feedback explaining your decision.
         """.trimIndent()
 
         return ParsedAgent(
@@ -271,17 +274,17 @@ open class ProtocolMode(
         val name: String,
         @Description("Instructions for the agent in this state")
         val instructions: String,
-        @Description("Criteria for the referee to validate transition")
-        val validationCriteria: String,
-        @Description("The name of the next state on success, or null if terminal")
-        val nextState: String?
+        @Description("Criteria for the referee to validate success and decide the next state")
+        val validationCriteria: String
     )
 
     data class ValidationResult(
         @Description("Whether the criteria were met")
         val passed: Boolean,
         @Description("Feedback or reason for failure/success")
-        val feedback: String
+        val feedback: String,
+        @Description("The name of the next state to transition to, or null if terminal")
+        val nextState: String?
     )
 
     companion object {

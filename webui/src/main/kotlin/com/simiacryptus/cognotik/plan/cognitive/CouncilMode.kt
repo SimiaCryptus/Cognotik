@@ -19,7 +19,7 @@ import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
 class CouncilModeConfig(
-    var council: List<CognitiveSchemaStrategy<out Any>> = listOf(
+    var council: List<CognitiveSchemaStrategy> = listOf(
         ProjectManagerStrategy(name = "CEO", description = "Focus on high-level goals and business value."),
         ProjectManagerStrategy(name = "CTO", description = "Focus on technical feasibility and architecture."),
         ProjectManagerStrategy(name = "QA", description = "Focus on testing and quality assurance.")
@@ -248,8 +248,8 @@ ${JsonUtil.toJson(taskConfig)}
         }
     }
 
-    private fun <T> updateState(
-        strategy: CognitiveSchemaStrategy<T>,
+    private fun  updateState(
+        strategy: CognitiveSchemaStrategy,
         state: Any,
         completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
         userMessage: String?,
@@ -257,24 +257,24 @@ ${JsonUtil.toJson(taskConfig)}
         orchestrationConfig: OrchestrationConfig,
         task: SessionTask,
         describer: TaskContextYamlDescriber
-    ): T {
+    ): Any {
         @Suppress("UNCHECKED_CAST")
-        return strategy.update(state as T, completedTasks, userMessage, contextData, orchestrationConfig, task, describer)
+        return strategy.update(state , completedTasks, userMessage, contextData, orchestrationConfig, task, describer)
     }
 
-    private fun <T> formatState(strategy: CognitiveSchemaStrategy<T>, state: Any): String {
+    private fun formatState(strategy: CognitiveSchemaStrategy, state: Any): String {
         @Suppress("UNCHECKED_CAST")
-        return strategy.formatState(state as T)
+        return strategy.formatState(state)
     }
 
-    private fun <T> getNominations(
+    private fun  getNominations(
         userMessage: String,
-        strategy: CognitiveSchemaStrategy<T>,
+        strategy: CognitiveSchemaStrategy,
         state: Any,
         task: SessionTask
     ): List<AdaptivePlanningMode.TaskData>? {
         @Suppress("UNCHECKED_CAST")
-        val typedState = state as T
+        val typedState = state
         Tasks.initDescriber(orchestrationConfig, describer)
         val parsedActor = ParsedAgent(
             name = "TaskChooser",

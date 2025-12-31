@@ -104,6 +104,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             val imageGenPrompt = """
                 Create a sprite sheet based on this description: $description.
                 Requirements:
+                - The image is 1:1 aspect ratio, minimum 512x512 pixels.
                 - Arrange sprites in a grid or logical layout.
                 - Use a solid, contrasting background color (e.g., magenta or bright green) to make separation easy.
                 - Ensure sprites do not overlap.
@@ -135,11 +136,12 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
                 model = (typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: defaultSmart).getChildClient(task),
                 prompt = """
                     Identify all distinct sprites in this image.
+                    The image resolution is 1000x1000.
                     For each sprite, provide:
                     1. A descriptive name (e.g., 'walk_frame_1', 'idle_stand').
-                    2. The exact bounding box (x, y, width, height).
+                    2. The exact bounding box (x, y, width, height) in pixels.
                     Ignore the background color.
-                """.trimIndent()
+                """.trimIndent(),
             )
 
             val parseResult = parserAgent.answer(
@@ -151,7 +153,15 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
                 )
             )
 
-            val metadata = parseResult.obj
+            val rawMetadata = parseResult.obj
+            val metadata = rawMetadata.copy(sprites = rawMetadata.sprites.map { sprite ->
+                sprite.copy(
+                    x = (sprite.x * generatedImage.width / 1000.0).toInt(),
+                    y = (sprite.y * generatedImage.height / 1000.0).toInt(),
+                    width = (sprite.width * generatedImage.width / 1000.0).toInt(),
+                    height = (sprite.height * generatedImage.height / 1000.0).toInt()
+                )
+            })
             
             // Save Metadata
             val jsonOutputPath = root.resolve(metadataFile)
