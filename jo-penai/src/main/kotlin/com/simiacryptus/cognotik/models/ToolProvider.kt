@@ -201,6 +201,66 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             override fun getExecutables() = listOf("ffmpeg")
             override fun getVersion(path: String) = runCommand(listOf(path, "-version"))
         }
+        val Julia = object : ToolProvider("Julia") {
+            override fun getExecutables() = listOf("julia")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val PariGP = object : ToolProvider("PariGP") {
+            override fun getExecutables() = listOf("gp")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Prolog = object : ToolProvider("Prolog") {
+            override fun getExecutables() = listOf("swipl", "gprolog", "prolog")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Z3 = object : ToolProvider("Z3") {
+            override fun getExecutables() = listOf("z3")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val CVC5 = object : ToolProvider("CVC5") {
+            override fun getExecutables() = listOf("cvc5")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Lean = object : ToolProvider("Lean") {
+            override fun getExecutables() = listOf("lean")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Coq = object : ToolProvider("Coq") {
+            override fun getExecutables() = listOf("coqc")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Isabelle = object : ToolProvider("Isabelle") {
+            override fun getExecutables() = listOf("isabelle")
+            override fun getVersion(path: String) = runCommand(listOf(path, "version"))
+        }
+        val Agda = object : ToolProvider("Agda") {
+            override fun getExecutables() = listOf("agda")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Haskell = object : ToolProvider("Haskell") {
+            override fun getExecutables() = listOf("ghc", "runhaskell")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val OCaml = object : ToolProvider("OCaml") {
+            override fun getExecutables() = listOf("ocaml", "ocamlc")
+            override fun getVersion(path: String) = runCommand(listOf(path, "-version"))
+        }
+        val Maxima = object : ToolProvider("Maxima") {
+            override fun getExecutables() = listOf("maxima")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Singular = object : ToolProvider("Singular") {
+            override fun getExecutables() = listOf("Singular", "singular")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Sage = object : ToolProvider("Sage") {
+            override fun getExecutables() = listOf("sage")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
+        val Gap = object : ToolProvider("Gap") {
+            override fun getExecutables() = listOf("gap")
+            override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
+        }
 
         init {
             register(ToolProvider::class.java, Git)
@@ -232,6 +292,21 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             register(ToolProvider::class.java, Gnuplot)
             register(ToolProvider::class.java, Pandoc)
             register(ToolProvider::class.java, Ffmpeg)
+            register(ToolProvider::class.java, Julia)
+            register(ToolProvider::class.java, PariGP)
+            register(ToolProvider::class.java, Prolog)
+            register(ToolProvider::class.java, Z3)
+            register(ToolProvider::class.java, CVC5)
+            register(ToolProvider::class.java, Lean)
+            register(ToolProvider::class.java, Coq)
+            register(ToolProvider::class.java, Isabelle)
+            register(ToolProvider::class.java, Agda)
+            register(ToolProvider::class.java, Haskell)
+            register(ToolProvider::class.java, OCaml)
+            register(ToolProvider::class.java, Maxima)
+            register(ToolProvider::class.java, Singular)
+            register(ToolProvider::class.java, Sage)
+            register(ToolProvider::class.java, Gap)
         }
 
         @JvmStatic
