@@ -1081,32 +1081,6 @@ Provide the complete revised email body only.
         }
     }
 
-    private fun getInputFileCode(): String = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            (FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            })
-        }.filter { file ->
-            file.isFile && file.exists()
-        }
-        .distinct()
-        .sortedBy { it }
-        .joinToString("\n\n") { relativePath ->
-            val file = root.toFile().resolve(relativePath)
-            try {
-                "# $relativePath\n\n```\n${file.readText()}\n```"
-            } catch (e: Throwable) {
-                log.warn("Error reading file: $relativePath", e)
-                ""
-            }
-        }
-
     private fun getContextFiles(): String {
         val relatedFiles = executionConfig?.related_files ?: return ""
         if (relatedFiles.isEmpty()) return ""
@@ -1134,19 +1108,6 @@ Provide the complete revised email body only.
             }
         }
     }
-
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.add(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(".md")
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
-    }
-
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(EmailCampaignTask::class.java)

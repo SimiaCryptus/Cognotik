@@ -104,14 +104,6 @@ interface ModelSchema {
         val text: String? = null, val index: Int = 0, val logprobs: LogProbs? = null, val finish_reason: String? = null
     )
 
-    data class SpeechRequest(
-        val input: String,
-        val model: String = "tts-1",
-        val voice: String = "alloy",
-
-        val response_format: String? = "mp3",
-        val speed: Double? = 1.0
-    )
 
     data class TranscriptionPacket(
         val id: Int? = 0,
@@ -396,30 +388,6 @@ interface ModelSchema {
         val function_call: FunctionCall? = null,
     )
 
-
-
-    data class EditRequest(
-        val model: String = "",
-        val input: String? = null,
-        val instruction: String = "",
-        val temperature: Double? = 0.0,
-        val n: Int? = null,
-        val top_p: Double? = null
-    )
-
-    data class ModelListResponse(
-        val data: List<ModelData>? = listOf(), val `object`: String? = null
-    )
-
-    data class ModelData(
-        val id: String? = null,
-        val `object`: String? = null,
-        val owned_by: String? = null,
-        val root: String? = null,
-        val parent: String? = null,
-        val created: Long? = null,
-        val permission: List<Map<String, Object>>? = listOf(),
-    )
 
     data class EmbeddingResponse(
         val `object`: String? = null,

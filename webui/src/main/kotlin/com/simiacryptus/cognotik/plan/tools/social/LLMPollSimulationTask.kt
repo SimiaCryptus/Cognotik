@@ -121,8 +121,6 @@ class LLMPollSimulationTask(
         OPEN_ENDED,
         YES_NO,
         RANKING,
-        MATRIX,
-        DEMOGRAPHIC
     }
 
     data class RespondentProfile(

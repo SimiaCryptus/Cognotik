@@ -1173,30 +1173,6 @@ Provide comprehensive, production-ready documentation.
         }
     }
 
-    private fun extractTasksFromRequirements(analysis: String, tasks: MutableList<Task>, epics: MutableList<Epic>) {
-        // Extract functional requirements as tasks
-        val frPattern = "FR-(\\d+)".toRegex()
-        val matches = frPattern.findAll(analysis)
-
-        matches.forEachIndexed { index, match ->
-            val frId = match.value
-            tasks.add(
-                Task(
-                    id = "TASK-${100 + index}",
-                    title = "Implement $frId",
-                    description = "Implementation task for requirement $frId",
-                    type = "story",
-                    epic_id = "EPIC-UC",
-                    sprint_id = null,
-                    priority = if (index < 5) "High" else "Medium",
-                    story_points = listOf(2, 3, 5, 8).random(),
-                    acceptance_criteria = listOf("$frId is fully implemented", "All test cases pass"),
-                    labels = listOf("requirement", frId)
-                )
-            )
-        }
-    }
-
     private fun extractMilestonesFromPhasePlan(analysis: String, milestones: MutableList<Milestone>) {
         val milestonePattern = "M\\d+:?\\s*([^|\\n]+)".toRegex()
         val matches = milestonePattern.findAll(analysis)

@@ -46,7 +46,6 @@ class MathematicalReasoningTask(
                 </ul>
             """
         )
-        private const val TT = """```"""
     }
 
     class MathematicalReasoningTaskExecutionConfigData(
@@ -192,8 +191,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val (transcript, transcriptLink) = transcript(task)
-        task.add(transcriptLink)
+        val transcript = transcript(task)
         try {
             val startTime = System.currentTimeMillis()
             log.info("Starting MathematicalReasoningTask with problem: ${executionConfig?.problem_statement?.take(100)}")
@@ -898,15 +896,5 @@ Rank them by likelihood of success.
             appendLine()
             appendLine("*Proof completed in ${path.steps.size} steps with ${path.path_confidence}% confidence.*")
         }
-    }
-
-    private fun transcript(task: SessionTask): Pair<FileOutputStream?, String> {
-        val transcriptFile = "math_proof_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        val html = "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(".md")
-            }.pdf' target='_blank'>pdf</a>"
-        return markdownTranscript to html
     }
 }

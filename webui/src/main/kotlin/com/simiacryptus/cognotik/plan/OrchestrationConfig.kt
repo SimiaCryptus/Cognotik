@@ -232,19 +232,4 @@ class OrchestrationConfig(
         }
     }
 
-    fun addTaskConfig(taskType: TaskType<*, *>, newConfig: TaskTypeConfig) {
-        val configs = getTaskConfigs(taskType)
-        if (configs.any { it.name == newConfig.name }) {
-            throw IllegalArgumentException("A configuration with the name '${newConfig.name}' already exists for task type '${taskType.name}'")
-        }
-        taskSettings[newConfig.task_type!!] = newConfig
-    }
-
-    fun removeTaskConfig(taskType: TaskType<*, *>, selectedConfig: String) {
-        val configs = getTaskConfigs(taskType)
-        val configToRemove = configs.firstOrNull { it.name == selectedConfig }
-        if (configToRemove != null) {
-            taskSettings.remove(configToRemove.task_type)
-        }
-    }
 }

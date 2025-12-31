@@ -637,3 +637,13 @@ abstract class PatchApp(
     }
 
 }
+
+fun File.findAbsolute(vararg files: File?): File {
+    for (file in files) {
+        val potential = File(file, this.path)
+        if (potential.exists()) {
+            return potential
+        }
+    }
+    return this
+}

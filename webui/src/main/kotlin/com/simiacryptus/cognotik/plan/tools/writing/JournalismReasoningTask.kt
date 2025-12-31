@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -84,9 +83,6 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
 
         @Description("Whether to assess newsworthiness and public interest")
         val assess_newsworthiness: Boolean = true,
-
-        @Description("Whether to include file content in the analysis")
-        val include_file_content: Boolean = false,
 
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -240,21 +236,6 @@ JournalismReasoning - Investigate stories through journalistic principles and me
   ** Produces structured journalistic analysis with verified facts
         """.trimIndent()
     }
-
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "journalism_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.add(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
-    }
-
 
     override fun run(
         agent: TaskOrchestrator,

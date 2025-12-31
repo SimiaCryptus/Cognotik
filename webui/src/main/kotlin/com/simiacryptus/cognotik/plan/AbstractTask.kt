@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
+import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.input.isDocumentFile
@@ -9,8 +10,11 @@ import com.simiacryptus.cognotik.util.set
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Path
+import java.text.SimpleDateFormat
+import java.util.Date
 import kotlin.io.path.exists
 
 abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
@@ -108,6 +112,15 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
         }
 
+    fun transcript(
+        task: SessionTask,
+        transcriptFile: String = this.taskType + "_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+    ): FileOutputStream? {
+        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
+        val markdownTranscript = file?.outputStream()
+        task.add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
+        return markdownTranscript
+    }
 
     companion object {
         val log = LoggerFactory.getLogger(AbstractTask::class.java)

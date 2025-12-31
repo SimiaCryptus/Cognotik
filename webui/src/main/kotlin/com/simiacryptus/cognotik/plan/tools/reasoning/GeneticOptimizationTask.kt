@@ -864,21 +864,6 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
   }
 
 
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val transcriptFile = "full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-    val markdownTranscript = file?.outputStream()
-    task.add(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>"
-    )
-    return markdownTranscript
-  }
-
-
   private fun generateMutation(
     text: String,
     parentScore: EvaluationScore,

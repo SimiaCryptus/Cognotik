@@ -3,10 +3,8 @@ package com.simiacryptus.cognotik.exceptions
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonParseException
-import com.google.gson.JsonSyntaxException
 import com.simiacryptus.cognotik.models.LLMModel
 import java.io.IOException
-import java.nio.charset.Charset
 import java.util.regex.Pattern
 
 object ErrorUtil {
@@ -137,7 +135,5 @@ object ErrorUtil {
             )
         }
     }
-
-    val allowedCharset: Charset = Charset.forName("ASCII")
 
 }

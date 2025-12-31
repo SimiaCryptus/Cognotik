@@ -318,27 +318,6 @@ $availableFiles
         }
     }
 
-
-    /**
-     * Creates a transcript file for logging the session's interactions.
-     * The transcript is written in Markdown format and includes links to HTML and PDF versions.
-     *
-     * @param task The session task used to create the file
-     * @return FileOutputStream for writing to the transcript, or null if creation failed
-     */
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.add("""
-            Writing transcript to:
-            * [Markdown]($link)
-            * [HTML](${link.removeSuffix(".md")}.html)
-            * [PDF](${link.removeSuffix(".md")}.pdf)
-        """.trimIndent().renderMarkdown())
-        return markdownTranscript
-    }
-
     companion object {
         val inputCnt = 1
     }

@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
@@ -12,7 +11,6 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -434,42 +432,6 @@ Provide a detailed synthesis and a clear final recommendation.
             task.safeComplete("Analysis failed: ${e.message}", log)
             resultFn("ERROR: Ethical reasoning analysis failed - ${e.message}")
         }
-    }
-
-    private fun isTextFile(file: File): Boolean {
-        val textExtensions = setOf(
-            "txt",
-            "md",
-            "kt",
-            "java",
-            "js",
-            "ts",
-            "py",
-            "rb",
-            "go",
-            "rs",
-            "c",
-            "cpp",
-            "h",
-            "hpp",
-            "css",
-            "html",
-            "xml",
-            "json",
-            "yaml",
-            "yml",
-            "properties",
-            "gradle",
-            "maven"
-        )
-        return textExtensions.contains(file.extension.lowercase())
-    }
-
-    private fun extractDocumentContent(file: File) = try {
-        file.getDocumentReader().use { it.getText() }
-    } catch (e: Exception) {
-        log.warn("Failed to extract content from ${file.name}", e)
-        file.readText()
     }
 
     private fun createTranscript(task: SessionTask): Pair<FileOutputStream?, String> {

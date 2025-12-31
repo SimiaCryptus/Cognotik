@@ -316,4 +316,3 @@ class GeminiSdkChatClient(
 
 
 private fun ByteArray.base64() = java.util.Base64.getEncoder().encodeToString(this)
-private fun String.base64() = java.util.Base64.getDecoder().decode(this)

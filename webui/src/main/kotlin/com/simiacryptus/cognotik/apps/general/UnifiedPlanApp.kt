@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -22,7 +21,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 
 /**
  * A unified application that can use different cognitive modes based on configuration.
@@ -48,7 +46,6 @@ abstract class UnifiedPlanApp(
     private val rangeExpansionPattern = Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""")
     private val topicReferencePattern = Regex("""@([A-Z][a-zA-Z0-9_]*)""")
 
-    private val expansionPool = Executors.newFixedThreadPool(4)
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     override val stickyInput = true
     override val inputCnt: Int = 4
@@ -189,39 +186,6 @@ ${settings?.toJson()}
                 matchResult.value
             }
         }
-    }
-
-    /**
-     * Checks if the message contains any expansion syntax
-     */
-    private fun hasExpansionSyntax(message: String): Boolean {
-        return expansionExpressionPattern.find(message) != null ||
-                sequenceExpansionPattern.find(message) != null ||
-                rangeExpansionPattern.find(message) != null
-    }
-
-    /**
-     * Processes a message that contains expansion expressions.
-     * This will create multiple tabs for each expansion option and process each variant.
-     */
-    private fun processMessageWithExpansions(
-        session: Session,
-        user: User = defaultUser,
-        userMessage: String,
-        ui: SocketManager,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val task = ui.newTask()
-        val processor = FixedConcurrencyProcessor(expansionPool, 4)
-        processMessageRecursive(
-            session = session,
-            user = user,
-            currentMessage = userMessage,
-            ui = ui,
-            task = task,
-            processor = processor,
-            orchestrationConfig = orchestrationConfig
-        )
     }
 
     /**

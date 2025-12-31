@@ -370,22 +370,6 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             return results
         }
 
-        @JvmStatic
-        fun discoverCommon(): List<ToolData> {
-            val roots = mutableListOf<String>()
-            val os = System.getProperty("os.name").lowercase()
-            if (os.contains("win")) {
-                roots.add("C:\\Program Files")
-                roots.add("C:\\Program Files (x86)")
-                roots.add(System.getProperty("user.home") + "\\AppData\\Local\\Programs")
-            } else {
-                roots.add("/usr/bin")
-                roots.add("/usr/local/bin")
-                roots.add("/opt")
-                roots.add("/opt/homebrew/bin")
-            }
-            return roots.map { File(it) }.flatMap { scanRecursive(it, 3) }.distinct()
-        }
     }
 }
 

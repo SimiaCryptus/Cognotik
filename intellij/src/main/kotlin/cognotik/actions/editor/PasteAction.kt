@@ -240,8 +240,6 @@ private fun String.makeAbsolute(): String {
     }
 }
 
-class SmartPasteAction : PasteActionBase({ it.smartChatClient })
-
 /**
  * Fast paste action using faster but simpler model
  */

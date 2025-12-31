@@ -62,9 +62,6 @@ class ArticleGenerationTask(
         @Description("Number of revision passes for quality improvement")
         val revision_passes: Int = 1,
 
-        @Description("Whether to generate headline and subheadline")
-        val generate_headlines: Boolean = true,
-
         @Description("Whether to generate social media snippets")
         val generate_social_snippets: Boolean = false,
 

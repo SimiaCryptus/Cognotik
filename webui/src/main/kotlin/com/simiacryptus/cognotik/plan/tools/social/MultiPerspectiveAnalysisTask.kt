@@ -327,24 +327,6 @@ Provide a comprehensive synthesis that integrates all perspectives.
         }
     }
 
-    private fun getInputFileCode(): String = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            }
-        }.filter { it.isFile && it.exists() }
-        .distinct()
-        .sortedBy { it }
-        .joinToString("\n\n") { file ->
-            "# ${root.relativize(file.toPath())}\n\n```\n${file.readText()}\n```"
-        }
-
 
     private fun getContextFiles(): String {
         val relatedFiles = executionConfig?.related_files ?: return ""

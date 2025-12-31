@@ -683,30 +683,6 @@ Generate the Mermaid timeline diagram now:
         }.joinToString("\n\n")
     }
 
-    private fun getInputFileCode(): String {
-        val patterns = (executionConfig?.input_files ?: listOf())
-        if (patterns.isEmpty()) {
-            return ""
-        }
-        return patterns.flatMap { pattern ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            root.toFile().walkTopDown()
-                .filter { file -> file.isFile && matcher.matches(root.relativize(file.toPath())) }
-                .map { it.toPath() }
-                .toList()
-        }.distinct().sortedBy { it }
-            .joinToString("\n\n") { relativePath ->
-                val file = root.toFile().resolve(relativePath.toString())
-                try {
-                    val content = file.readText()
-                    "# $relativePath\n\n```\n$content\n```"
-                } catch (e: Throwable) {
-                    log.warn("Error reading file: $relativePath", e)
-                    ""
-                }
-            }
-    }
-
     private fun formatTimeline(events: List<TimelineEvent>): String {
         return buildString {
             appendLine()

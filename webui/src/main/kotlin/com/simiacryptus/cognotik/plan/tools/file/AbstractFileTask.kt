@@ -1,8 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.util.AgentPatterns
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.AbstractTask
@@ -12,7 +10,6 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.FileTaskExecutionConfig
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
@@ -66,18 +63,6 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
         .distinct()
         .filterNotNull()
         .sortedBy { it }
-    open fun displayInputFiles(task: SessionTask) {
-        val files = getInputFiles()
-        val data = files.associate { file ->
-            val relativePath = root.toFile().toPath().relativize(file.toPath()).toString()
-            val content = toString(file)?.toString() ?: ""
-            val html = MarkdownUtil.renderMarkdown(content, ui = task.ui)
-            relativePath to html
-        }
-        if (data.isNotEmpty()) {
-            task.add(AgentPatterns.displayMapInTabs(data))
-        }
-    }
 
 
     protected open fun isIgnored(file: File): Boolean = when(file.extension) {

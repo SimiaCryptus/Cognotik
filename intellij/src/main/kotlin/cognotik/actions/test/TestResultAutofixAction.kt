@@ -67,17 +67,6 @@ class TestResultAutofixAction : BaseAction() {
             return str
         }
 
-        fun findGitRoot(path: Path?): Path? {
-            var current: Path? = path
-            while (current != null) {
-                if (current.resolve(".git").toFile().exists()) {
-                    return current
-                }
-                current = current.parent
-            }
-            return null
-        }
-
         fun findGitRoot(virtualFile: VirtualFile?): VirtualFile? {
             var current: VirtualFile? = virtualFile
             while (current != null) {

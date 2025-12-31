@@ -66,10 +66,6 @@ class InteractiveStoryTask(
 
         @Description("Average word count per story segment")
         val segment_word_count: Int = 300,
-
-        @Description("Whether to include consequence tracking across choices")
-        val track_consequences: Boolean = true,
-
         @Description("Writing style (e.g., 'descriptive', 'action-packed', 'dialogue-heavy', 'introspective')")
         val writing_style: String = "descriptive",
 

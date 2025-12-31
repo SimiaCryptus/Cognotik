@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import java.nio.charset.Charset
 import java.util.*
 
 object StringUtil {
@@ -106,15 +105,6 @@ object StringUtil {
             items.removeAt(index)
         }
         return items
-    }
-
-    @JvmStatic
-    fun restrictCharacterSet(text: String, charset: Charset): String {
-        log.debug("restrictCharacterSet called with text of length: {}, charset: {}", text.length, charset)
-        val encoder = charset.newEncoder()
-        val sb = StringBuilder()
-        text.toCharArray().filter(encoder::canEncode).forEach(sb::append)
-        return sb.toString()
     }
 
 }

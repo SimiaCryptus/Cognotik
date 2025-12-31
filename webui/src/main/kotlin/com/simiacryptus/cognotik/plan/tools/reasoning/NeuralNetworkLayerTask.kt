@@ -1868,19 +1868,4 @@ Be practical and specific. Consider both research and production use cases.
       )
     }
   }
-
-  private fun transcript(task: SessionTask): FileOutputStream? {
-    val transcriptFile = "nn_layer_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-    val markdownTranscript = file?.outputStream()
-    task.complete(
-      "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-        link.removeSuffix(
-          ".md"
-        )
-      }.pdf' target='_blank'>pdf</a>",
-      additionalClasses = "verbose"
-    )
-    return markdownTranscript
-  }
 }

@@ -48,11 +48,6 @@ class AbductiveReasoningTask(
 
     protected val codeFiles = mutableMapOf<Path, String>()
 
-    data class LinkInfo(
-        val link: String,
-        val file: File?
-    )
-
 
     data class HypothesesResponse(
         val hypotheses: List<Hypothesis> = emptyList(),
@@ -909,20 +904,6 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         score >= 0.6 -> "Plausible - reasonable given background knowledge"
         score >= 0.4 -> "Possible - not impossible but less common"
         else -> "Unlikely - requires unusual circumstances"
-    }
-
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "abductive_reasoning_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.add(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
     }
 
     private fun writeToTranscript(transcript: FileOutputStream?, content: StringBuilder) {

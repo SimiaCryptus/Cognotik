@@ -15,13 +15,9 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
-import java.io.FileOutputStream
-import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 class ScriptwritingTask(
     orchestrationConfig: OrchestrationConfig,
@@ -1107,81 +1103,6 @@ Provide the complete revised script with all formatting intact.
         }
         markdownTranscript?.close()
     }
-
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
-    }
-
-    private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            (FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            })
-        }.filter { file ->
-            file.isFile && file.exists()
-        }
-        .distinct()
-        .sortedBy { it }
-        .joinToString("\n\n") { relativePath ->
-            val file = root.toFile().resolve(relativePath)
-            try {
-                val content = if (!isTextFile(file)) {
-                    extractDocumentContent(file)
-                } else {
-                    codeFiles[file.toPath()] ?: file.readText()
-                }
-                "# $relativePath\n\n```\n$content\n```"
-            } catch (e: Throwable) {
-                log.warn("Error reading file: $relativePath", e)
-                ""
-            }
-        }
-
-    private fun isTextFile(file: File): Boolean {
-        val textExtensions = setOf(
-            "txt",
-            "md",
-            "kt",
-            "java",
-            "js",
-            "ts",
-            "py",
-            "rb",
-            "go",
-            "rs",
-            "c",
-            "cpp",
-            "h",
-            "hpp",
-            "css",
-            "html",
-            "xml",
-            "json",
-            "yaml",
-            "yml",
-            "properties",
-            "gradle",
-            "maven"
-        )
-        return textExtensions.contains(file.extension.lowercase())
-    }
-
 
     private fun getContextFiles(): String {
         val relatedFiles = executionConfig?.related_files ?: return ""

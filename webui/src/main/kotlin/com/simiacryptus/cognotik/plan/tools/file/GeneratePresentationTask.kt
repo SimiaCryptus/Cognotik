@@ -32,8 +32,6 @@ class GeneratePresentationTask(
         task_description: String? = null,
         @Description("Whether to generate images for key slides")
         val generate_images: Boolean = false,
-        @Description("Image generation model to use (e.g., 'DallE3', 'DallE2')")
-        val image_model: String = "DallE3",
         @Description("Width of generated images in pixels")
         val image_width: Int = 1024,
         @Description("Height of generated images in pixels")

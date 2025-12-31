@@ -286,8 +286,7 @@ class GeneratePresentationAction : BaseAction() {
         related_files = relatedFiles,
         task_description = taskDescriptionArea.text,
         generate_images = generateImagesCheckbox.isSelected,
-        image_model = imageModelCombo.selectedItem as? String ?: "DallE3",
-        max_images = imageCountSpinner.value as Int,
+          max_images = imageCountSpinner.value as Int,
         state = TaskState.Pending
       )
     }

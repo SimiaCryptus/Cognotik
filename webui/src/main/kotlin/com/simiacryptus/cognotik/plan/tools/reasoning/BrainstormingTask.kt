@@ -29,7 +29,6 @@ class BrainstormingTask(
     planTask
 ) {
 
-    val maxSummaryLength: Int = 10000
     private var transcriptStream: FileOutputStream? = null
     protected val codeFiles = mutableMapOf<Path, String>()
 

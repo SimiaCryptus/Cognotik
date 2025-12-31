@@ -406,19 +406,3 @@ fun ApiChatModel.instance(
         )
     }
 )
-
-private fun ChatModel.toApiChatModel(
-    user: User = defaultUser
-): ApiChatModel {
-    val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user = user)
-    val apiData = userSettings.apis.firstOrNull { it.provider == this.provider }
-    return ApiChatModel(
-        model = this,
-        provider = ApiData(
-            provider = this.provider,
-            key = apiData?.key ?: "NONE",
-            baseUrl = apiData?.baseUrl ?: this.provider?.base
-            ?: throw IllegalStateException("No API base configured for model $model"),
-        ).validate()
-    )
-}

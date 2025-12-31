@@ -332,21 +332,6 @@ class SubPlanTask(
         }
     }
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.add(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
-    }
-
-
     companion object {
         private val log = LoggerFactory.getLogger(SubPlanTask::class.java)
 
