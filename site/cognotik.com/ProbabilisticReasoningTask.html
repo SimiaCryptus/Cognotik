@@ -57,6 +57,31 @@
             outline: 0;
             box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.25);
         }
+        /* Checkbox groups */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background-color: var(--surface-color);
+            padding: var(--spacing-sm);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+        .checkbox-label input[type="checkbox"] {
+            width: 1.2em;
+            height: 1.2em;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
 
         /* Feature icons */
         .feature-icon svg {
@@ -67,7 +92,7 @@
         
         /* Simulator overrides */
         .tab-content {
-            height: 600px; /* Taller than default for this tool */
+            height: 750px; /* Taller to accommodate extra analysis sections */
         }
 
         .hypothesis-row {
@@ -214,6 +239,26 @@ Web server logs show connection timeouts</textarea>
                         <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">One item per line</div>
                     </div>
                     <div class="control-group">
+                        <label>Input Files (Optional Context)</label>
+                        <input type="text" id="input_files" placeholder="e.g. src/**/*.kt, logs/*.log">
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Glob patterns to include codebase context</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Analysis Options</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="calc_ev" checked> Calculate Expected Value
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="id_uncertainties" checked> Identify Key Uncertainties
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="suggest_exp" checked> Suggest Experiments
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
                         <label>Risk Tolerance</label>
                         <select id="risk">
                             <option value="low">Low</option>
@@ -305,6 +350,11 @@ Web server logs show connection timeouts</textarea>
             setTimeout(() => {
                 const context = document.getElementById('context').value;
                 const evidence = document.getElementById('evidence').value.split('\n').filter(e => e.trim());
+                const inputFiles = document.getElementById('input_files').value;
+                const doEv = document.getElementById('calc_ev').checked;
+                const doUncertainty = document.getElementById('id_uncertainties').checked;
+                const doExp = document.getElementById('suggest_exp').checked;
+                const risk = document.getElementById('risk').value;
                 
                 // Mock Logic: Just shuffle probabilities slightly
                 const results = initialHypotheses.map(h => {
@@ -319,6 +369,10 @@ Web server logs show connection timeouts</textarea>
                 results.sort((a, b) => b.newProb - a.newProb);
 
                 let md = `<div class="markdown-h1">Analysis Results</div>`;
+                if (inputFiles) {
+                    md += `<p style="color:var(--text-muted); font-size:0.8rem;"><em>Included context from files matching: ${inputFiles}</em></p>`;
+                }
+
                 md += `<div class="markdown-h2">Bayesian Update</div>`;
                 md += `<p>Based on the evidence provided, here are the updated beliefs:</p><br>`;
                 
@@ -330,11 +384,27 @@ Web server logs show connection timeouts</textarea>
                     md += `<div><span class="markdown-bold">${h.name}</span>: ${pct}% (<span style="color:${color}">${sign}${delta}%</span>)</div>`;
                 });
 
-                md += `<br><div class="markdown-h2">Key Insight</div>`;
+                md += `<br><div class="markdown-h2">Likelihood Assessment</div>`;
                 md += `<p>The evidence strongly suggests <b>${results[0].name}</b> is the most likely cause. The observation "${evidence[0] || 'of the evidence'}" was highly diagnostic.</p>`;
 
-                md += `<br><div class="markdown-h2">Suggested Experiment</div>`;
-                md += `<p>Check the specific error codes in the transaction logs to differentiate between ${results[0].name} and ${results[1].name}.</p>`;
+                if (doEv) {
+                    md += `<br><div class="markdown-h2">Expected Value & Risk (${risk} tolerance)</div>`;
+                    md += `<p>Given a <b>${risk}</b> risk tolerance, the optimal path assumes ${results[0].name}.</p>`;
+                    md += `<div class="markdown-list">• <b>Upside:</b> Resolution within 2 hours if correct.</div>`;
+                    md += `<div class="markdown-list">• <b>Downside Risk:</b> If ${results[1].name} is actual cause, delay increases by 4 hours.</div>`;
+                }
+
+                if (doUncertainty) {
+                    md += `<br><div class="markdown-h2">Critical Uncertainties</div>`;
+                    md += `<p>The primary uncertainty is distinguishing between <b>${results[0].name}</b> and <b>${results[1].name}</b>, as they share similar symptoms regarding ${evidence[0] ? evidence[0].substring(0, 15) + '...' : 'observed behavior'}.</p>`;
+                }
+
+                if (doExp) {
+                    md += `<br><div class="markdown-h2">Suggested Experiments</div>`;
+                    md += `<p>To resolve the ambiguity between the top two hypotheses:</p>`;
+                    md += `<div class="markdown-list">1. Check specific error codes in transaction logs (High Value).</div>`;
+                    md += `<div class="markdown-list">2. Isolate the database subnet to test latency (Medium Value).</div>`;
+                }
 
                 output.innerHTML = md;
             }, 1500);

@@ -36,21 +36,21 @@
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 </i>
                 <h3>Structured Arguments</h3>
-                <p>Develops clear claims supported by evidence, logic, and examples for maximum impact.</p>
+                <p>Develops clear claims supported by evidence, logic, and examples, organized into a coherent outline before writing.</p>
             </div>
             <div class="feature-card">
                 <i>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
                 </i>
-                <h3>Rhetorical Devices</h3>
-                <p>Effectively employs ethos, pathos, and logos to persuade the target audience.</p>
+                <h3>Visual Storytelling</h3>
+                <p>Automatically generates cover art, outline visualizations, and conceptual images for every argument to enhance engagement.</p>
             </div>
             <div class="feature-card">
                 <i>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 </i>
-                <h3>Counterarguments</h3>
-                <p>Anticipates opposing viewpoints and provides strong rebuttals to strengthen the position.</p>
+                <h3>Iterative Refinement</h3>
+                <p>Performs dedicated revision passes to polish tone, strengthen logic, and ensure the specific call-to-action lands effectively.</p>
             </div>
         </div>
     </section>
@@ -64,13 +64,42 @@
                     <label>Thesis Statement</label>
                     <textarea id="thesis">Space exploration is a vital investment for humanity's future.</textarea>
                 </div>
-                <div class="control-group">
-                    <label>Target Audience</label>
-                    <input type="text" id="audience" value="General Public">
+                <div class="control-row" style="display: flex; gap: 1rem;">
+                    <div class="control-group" style="flex: 1;">
+                        <label>Audience</label>
+                        <input type="text" id="audience" value="General Public">
+                    </div>
+                    <div class="control-group" style="flex: 1;">
+                        <label>Tone</label>
+                        <input type="text" id="tone" value="Inspirational">
+                    </div>
+                </div>
+                <div class="control-row" style="display: flex; gap: 1rem;">
+                    <div class="control-group" style="flex: 1;">
+                        <label>Word Count</label>
+                        <input type="number" id="wordCount" value="1500" step="100">
+                    </div>
+                    <div class="control-group" style="flex: 1;">
+                        <label>Arguments</label>
+                        <input type="number" id="argCount" value="3" min="1" max="10">
+                    </div>
                 </div>
                 <div class="control-group">
-                    <label>Tone</label>
-                    <input type="text" id="tone" value="Inspirational">
+                    <label>Call to Action</label>
+                    <select id="cta" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-color); border-radius: 4px;">
+                        <option value="strong">Strong</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="reflective">Reflective</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
+                <div class="control-group" style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="useCounter" checked> Counterarguments
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="useImages" checked> Generate Images
+                    </label>
                 </div>
                 <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Generate Essay</button>
             </div>
@@ -105,17 +134,27 @@
     <script>
         function runSimulation() {
             const thesis = document.getElementById('thesis').value;
+            const argCount = document.getElementById('argCount').value;
+            const useCounter = document.getElementById('useCounter').checked;
+            const useImages = document.getElementById('useImages').checked;
             const logsEl = document.getElementById('output-logs');
             
             logsEl.innerHTML = '';
             const steps = [
                 `[INFO] Analyzing thesis: "${thesis.substring(0, 30)}..."`,
+                useImages ? `[INFO] Generating cover image...` : null,
                 `[INFO] Creating outline...`,
+                useImages ? `[INFO] Generating outline visualization...` : null,
                 `[INFO] Writing introduction...`,
-                `[INFO] Developing arguments...`,
-                `[INFO] Addressing counterarguments...`,
+                `[INFO] Developing Argument 1...`,
+                argCount > 1 ? `[INFO] Developing Argument 2...` : null,
+                argCount > 2 ? `[INFO] Developing Argument 3...` : null,
+                useCounter ? `[INFO] Addressing counterarguments & rebuttals...` : null,
+                `[INFO] Writing conclusion...`,
+                `[INFO] Performing revision pass 1/1...`,
+                `[INFO] Assembling final document...`,
                 `[SUCCESS] Essay Generated.`
-            ];
+            ].filter(Boolean);
             
             let i = 0;
             const interval = setInterval(() => {
@@ -135,8 +174,10 @@
                         1. <strong>Intro:</strong> The boundless frontier awaits.<br>
                         2. <strong>Arg 1:</strong> Technological innovation spinoffs.<br>
                         3. <strong>Arg 2:</strong> Resource acquisition and sustainability.<br>
-                        4. <strong>Counter:</strong> "It's too expensive" -> Rebuttal: ROI is massive.<br>
-                        5. <strong>Conclusion:</strong> A call to look upward.
+                        ${useCounter ? '4. <strong>Counter:</strong> "It\'s too expensive" -> Rebuttal: ROI is massive.<br>' : ''}
+                        ${useCounter ? '5' : '4'}. <strong>Conclusion:</strong> A call to look upward.<br>
+                        <br>
+                        <em>Output includes PDF, HTML, and ${useImages ? '4 generated images' : 'text transcript'}.</em>
                     `;
                     result.style.color = 'var(--text-color)';
                     result.style.marginTop = '1rem';

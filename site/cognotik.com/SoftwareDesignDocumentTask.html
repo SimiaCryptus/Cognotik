@@ -870,8 +870,8 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
                         <div class="icon-container">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                         </div>
-                        <h3>Project Planning</h3>
-                        <p>Outputs structured JSON containing Epics, User Stories, Sprints, and Releases calculated based on velocity.</p>
+                        <h3>Phase & Project Planning</h3>
+                        <p>Generates development phases with milestones and structured JSON containing Epics, Tasks, Sprints, and Releases.</p>
                     </div>
 
                     <!-- Feature 5: Flow Analysis -->
@@ -929,6 +929,17 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
                                 <input type="text" id="techStack" value="Kotlin, Kafka, React, AWS">
                             </div>
                         </div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label for="stakeholders">Stakeholders</label>
+                                <input type="text" id="stakeholders" value="Product Owner, DevOps Team">
+                            </div>
+                            <div class="input-group">
+                                <label for="constraints">Constraints</label>
+                                <input type="text" id="constraints" value="GDPR Compliance, AWS Only">
+                            </div>
+                        </div>
+
 
                         <div class="input-group">
                             <label>Generation Options</label>
@@ -937,6 +948,11 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
                                     <input type="checkbox" checked name="gen_usecases">
                                     <span class="toggle-slider"></span>
                                     <span class="toggle-label">Use Cases</span>
+                                </label>
+                                <label class="toggle-control">
+                                    <input type="checkbox" checked name="gen_reqs">
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Requirements</span>
                                 </label>
                                 <label class="toggle-control">
                                     <input type="checkbox" checked name="gen_arch">
@@ -949,6 +965,21 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
                                     <span class="toggle-label">Data Model</span>
                                 </label>
                                 <label class="toggle-control">
+                                    <input type="checkbox" checked name="gen_flow">
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Flow Diagrams</span>
+                                </label>
+                                <label class="toggle-control">
+                                    <input type="checkbox" checked name="gen_test">
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Test Plan</span>
+                                </label>
+                                <label class="toggle-control">
+                                    <input type="checkbox" checked name="gen_phase">
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">Phase Plan</span>
+                                </label>
+                                <label class="toggle-control">
                                     <input type="checkbox" checked name="gen_json">
                                     <span class="toggle-slider"></span>
                                     <span class="toggle-label">Project JSON</span>
@@ -958,9 +989,15 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
 
                         <div class="input-group">
                             <label>Sprint Planning</label>
-                            <div class="range-control">
-                                <label for="sprintCount">Sprints: <span id="sprintCountVal">6</span></label>
-                                <input type="range" id="sprintCount" min="2" max="12" value="6">
+                            <div class="input-row">
+                                <div class="range-control" style="flex: 1;">
+                                    <label for="sprintCount">Sprints: <span id="sprintCountVal">6</span></label>
+                                    <input type="range" id="sprintCount" min="2" max="12" value="6">
+                                </div>
+                                <div class="range-control" style="flex: 1;">
+                                    <label for="sprintDuration">Duration (Weeks): <span id="sprintDurationVal">2</span></label>
+                                    <input type="range" id="sprintDuration" min="1" max="4" value="2">
+                                </div>
                             </div>
                         </div>
 
@@ -1177,10 +1214,17 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
             // ==========================================
             const sprintSlider = document.getElementById('sprintCount');
             const sprintDisplay = document.getElementById('sprintCountVal');
+            const durationSlider = document.getElementById('sprintDuration');
+            const durationDisplay = document.getElementById('sprintDurationVal');
         
             if (sprintSlider && sprintDisplay) {
                 sprintSlider.addEventListener('input', (e) => {
                     sprintDisplay.textContent = e.target.value;
+                });
+            }
+            if (durationSlider && durationDisplay) {
+                durationSlider.addEventListener('input', (e) => {
+                    durationDisplay.textContent = e.target.value;
                 });
             }
         
@@ -1203,12 +1247,18 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
                     projectName: document.getElementById('projectName').value || "Untitled Project",
                     description: document.getElementById('systemDesc').value,
                     audience: document.getElementById('targetAudience').value,
+                    stakeholders: document.getElementById('stakeholders').value,
                     techStack: document.getElementById('techStack').value.split(',').map(s => s.trim()),
                     sprintCount: parseInt(document.getElementById('sprintCount').value),
+                    sprintDuration: parseInt(document.getElementById('sprintDuration').value),
                     options: {
                         useCases: document.querySelector('input[name="gen_usecases"]').checked,
+                        requirements: document.querySelector('input[name="gen_reqs"]').checked,
                         arch: document.querySelector('input[name="gen_arch"]').checked,
                         data: document.querySelector('input[name="gen_data"]').checked,
+                        flow: document.querySelector('input[name="gen_flow"]').checked,
+                        test: document.querySelector('input[name="gen_test"]').checked,
+                        phase: document.querySelector('input[name="gen_phase"]').checked,
                         json: document.querySelector('input[name="gen_json"]').checked
                     }
                 };
@@ -1294,27 +1344,47 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
         
                 // Generate Sprints
                 const sprints = [];
+                const startDate = new Date();
                 for (let i = 1; i <= data.sprintCount; i++) {
+                    const sprintStart = new Date(startDate);
+                    sprintStart.setDate(startDate.getDate() + ((i-1) * data.sprintDuration * 7));
+                    const sprintEnd = new Date(sprintStart);
+                    sprintEnd.setDate(sprintStart.getDate() + (data.sprintDuration * 7));
+
                     sprints.push({
                         id: `SPRINT-${i}`,
                         name: `Sprint ${i}`,
+                        number: i,
+                        start_date: sprintStart.toISOString().split('T')[0],
+                        end_date: sprintEnd.toISOString().split('T')[0],
                         goals: i === 1 ? ["Setup Infrastructure", "Hello World"] : ["Feature Implementation", "Testing"],
-                        capacity: 40
+                        capacity_points: 40,
+                        task_ids: [`TASK-${i}01`, `TASK-${i}02`]
                     });
                 }
         
                 // Construct Object
                 const projectData = {
                     project_name: data.projectName,
+                    description: data.description,
                     created_at: new Date().toISOString(),
-                    tech_stack: data.techStack,
                     epics: [
-                        { id: "EPIC-ARCH", name: "System Architecture", priority: "High", story_points: 21 },
-                        { id: "EPIC-CORE", name: "Core Features", priority: "High", story_points: 34 }
+                        { id: "EPIC-ARCH", name: "System Architecture", description: "Core infra setup", priority: "High", story_points: 21 },
+                        { id: "EPIC-CORE", name: "Core Features", description: "Main business logic", priority: "High", story_points: 34 }
+                    ],
+                    releases: [
+                        { id: "REL-1", name: "MVP", version: "1.0.0", target_date: sprints[Math.floor(sprints.length/2)].end_date, status: "Planned" }
                     ],
                     sprints: sprints,
-                    releases: [
-                        { version: "1.0.0", target_date: "2024-12-01", status: "Planned" }
+                    tasks: [
+                        { id: "TASK-101", title: "Setup Repo", type: "Chore", epic_id: "EPIC-ARCH", sprint_id: "SPRINT-1", priority: "High", story_points: 3 },
+                        { id: "TASK-102", title: "DB Schema", type: "Task", epic_id: "EPIC-ARCH", sprint_id: "SPRINT-1", priority: "High", story_points: 5 }
+                    ],
+                    milestones: [
+                        { id: "MS-1", name: "Architecture Complete", target_date: sprints[0].end_date, deliverables: ["Design Docs", "Infra"] }
+                    ],
+                    dependencies: [
+                        { id: "DEP-1", source_id: "TASK-101", dependency_type: "blocks", target_id: "TASK-102" }
                     ]
                 };
         
@@ -1334,12 +1404,16 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
                     { msg: `Initializing SoftwareDesignDocumentTask for '${data.projectName}'...`, type: 'info', delay: 0 },
                     { msg: `Analyzing system description (${data.description.length} chars)...`, type: 'debug', delay: 600 },
                     { msg: `Identified tech stack: ${data.techStack.join(', ')}`, type: 'info', delay: 1200 },
-                    { msg: `Generating C4 Context and Container diagrams...`, type: 'info', delay: 1800 },
-                    { msg: `Defining data models and ERD relationships...`, type: 'info', delay: 2400 },
-                    { msg: `Calculating velocity for ${data.sprintCount} sprints...`, type: 'debug', delay: 3000 },
-                    { msg: `Structuring Project Data JSON...`, type: 'info', delay: 3600 },
-                    { msg: `Document generation complete.`, type: 'success', delay: 4200 }
                 ];
+                if(data.options.useCases) logSteps.push({ msg: `Generating Use Cases and Actor definitions...`, type: 'info', delay: 1600 });
+                if(data.options.requirements) logSteps.push({ msg: `Defining Functional and Non-Functional Requirements...`, type: 'info', delay: 2000 });
+                if(data.options.arch) logSteps.push({ msg: `Generating C4 Context and Container diagrams...`, type: 'info', delay: 2400 });
+                if(data.options.data) logSteps.push({ msg: `Defining data models and ERD relationships...`, type: 'info', delay: 2800 });
+                if(data.options.flow) logSteps.push({ msg: `Mapping sequence and activity flows...`, type: 'info', delay: 3200 });
+                if(data.options.test) logSteps.push({ msg: `Creating Test Plan and Strategy...`, type: 'info', delay: 3600 });
+                if(data.options.phase) logSteps.push({ msg: `Calculating velocity for ${data.sprintCount} sprints (${data.sprintDuration} weeks each)...`, type: 'debug', delay: 4000 });
+                if(data.options.json) logSteps.push({ msg: `Structuring Project Data JSON...`, type: 'info', delay: 4400 });
+                logSteps.push({ msg: `Document generation complete.`, type: 'success', delay: 4800 });
         
                 let completedSteps = 0;
         

@@ -91,6 +91,25 @@
             margin: 0 auto 1.5rem auto;
             color: var(--accent-secondary);
         }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
 
         /* Markdown Preview */
         .markdown-preview h1 { font-size: 1.5em; margin: 0.5em 0; color: var(--accent-secondary); }
@@ -157,6 +176,27 @@
                     <h3>Contextual Analysis</h3>
                     <p>Provides historical background, broader implications, and trend analysis.</p>
                 </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <h3>Bias Detection</h3>
+                    <p>Analyzes framing, missing voices, and conflicts of interest to ensure balance.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </div>
+                    <h3>Gap Analysis</h3>
+                    <p>Identifies unanswered questions and missing evidence critical to the story.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                    </div>
+                    <h3>Editorial Strategy</h3>
+                    <p>Generates alternative story angles and synthesizes findings into a cohesive report.</p>
+                </div>
             </div>
         </div>
     </section>
@@ -177,6 +217,11 @@
                         <textarea id="elements" placeholder="Who, What, Where, When, Why, How">Who: Artists, Writers, Designers
 What: Generative AI tools
 Why: Efficiency vs. Displacement</textarea>
+                    </div>
+                    <div class="control-group">
+                        <label>Alternative Angles</label>
+                        <input type="range" id="angles" min="1" max="5" value="3" oninput="document.getElementById('angle-val').innerText = this.value">
+                        <div style="text-align: right; font-size: 0.8em; color: var(--text-muted);">Count: <span id="angle-val">3</span></div>
                     </div>
                     <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Investigate</button>
                 </div>
@@ -231,6 +276,7 @@ Why: Efficiency vs. Displacement</textarea>
         function runSimulation() {
             const topic = document.getElementById('story_topic').value;
             const elements = document.getElementById('elements').value;
+            const anglesCount = document.getElementById('angles').value;
             const reportEl = document.getElementById('output-report');
             const logsEl = document.getElementById('output-logs');
             
@@ -241,9 +287,12 @@ Why: Efficiency vs. Displacement</textarea>
                 `[INFO] Initializing JournalismReasoningTask...`,
                 `[INFO] Topic: ${topic}`,
                 `[INFO] Verifying facts...`,
-                `[INFO] Identifying perspectives...`,
+                `[INFO] Identifying source perspectives...`,
                 `[INFO] Analyzing context...`,
-                `[INFO] Checking for bias...`,
+                `[INFO] Checking for biases and balance...`,
+                `[INFO] Exploring ${anglesCount} alternative angles...`,
+                `[INFO] Identifying information gaps...`,
+                `[INFO] Generating editorial synthesis...`,
                 `[SUCCESS] Investigation complete.`
             ];
             
@@ -260,11 +309,11 @@ Why: Efficiency vs. Displacement</textarea>
                     logIndex++;
                 } else {
                     clearInterval(logInterval);
-                    renderReport(topic);
+                    renderReport(topic, anglesCount);
                 }
             }, 400);
         }
-        function renderReport(topic) {
+        function renderReport(topic, anglesCount) {
             const reportEl = document.getElementById('output-report');
             const markdown = `
 <h1>Investigation: ${topic}</h1>
@@ -285,10 +334,24 @@ Why: Efficiency vs. Displacement</textarea>
 <h2>Context Analysis</h2>
 <p>This shift parallels previous technological disruptions like the advent of photography or digital design software. The rapid pace of adoption is the primary differentiator.</p>
 
+<h2>Bias & Balance</h2>
+<ul>
+    <li><strong>Potential Bias:</strong> Heavy focus on visual arts; less coverage on writing/music.</li>
+    <li><strong>Missing Voices:</strong> Consumers of AI art and independent developers.</li>
+    <li><strong>Assessment:</strong> Generally balanced, but needs more economic data.</li>
+</ul>
+
+<h2>Story Angles</h2>
+<ul>
+    <li><strong>1. The Human Element:</strong> Focus on artists adapting their workflow (Human Interest).</li>
+    <li><strong>2. The Legal Frontier:</strong> Deep dive into copyright lawsuits (Policy/Legal).</li>
+    ${anglesCount > 2 ? '<li><strong>3. The Economic Shift:</strong> Impact on freelance rates and agency models (Business).</li>' : ''}
+</ul>
+
 <h2>Information Gaps</h2>
 <ul>
-    <li>Long-term impact on wages in creative sectors.</li>
-    <li>Specific legal precedents for AI-generated works in current courts.</li>
+    <li>🔴 <strong>Critical:</strong> Long-term impact on wages in creative sectors.</li>
+    <li>🟡 <strong>Important:</strong> Specific legal precedents for AI-generated works in current courts.</li>
 </ul>
 
 <h2>Editorial Synthesis</h2>

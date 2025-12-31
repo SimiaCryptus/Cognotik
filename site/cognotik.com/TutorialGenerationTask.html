@@ -114,10 +114,10 @@
                 </div>
                 <div class="feature-card">
                     <i style="display: inline-flex; justify-content: center; align-items: center;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     </i>
-                    <h3>Troubleshooting</h3>
-                    <p>Anticipates common issues and provides solutions to help users succeed.</p>
+                    <h3>Validation & Verification</h3>
+                    <p>Includes specific checks and expected outcomes to ensure the user has succeeded at every step.</p>
                 </div>
             </div>
         </div>
@@ -147,8 +147,28 @@
                         </select>
                     </div>
                     <div class="control-group">
+                        <label>Verbosity</label>
+                        <select id="verbosity">
+                            <option value="concise">Concise</option>
+                            <option value="detailed" selected>Detailed</option>
+                            <option value="verbose">Verbose</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
                         <label>Estimated Duration (minutes)</label>
                         <input type="text" id="duration" value="30">
+                    </div>
+                    <div class="control-group">
+                        <label>Target Steps</label>
+                        <input type="number" id="step_count" value="5" min="3" max="20">
+                    </div>
+                    <div class="control-group" style="flex-direction: row; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                        <input type="checkbox" id="inc_validation" checked style="width: auto;">
+                        <label for="inc_validation" style="margin: 0; font-weight: normal;">Include Validation</label>
+                    </div>
+                    <div class="control-group" style="flex-direction: row; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="inc_troubleshooting" checked style="width: auto;">
+                        <label for="inc_troubleshooting" style="margin: 0; font-weight: normal;">Include Troubleshooting</label>
                     </div>
                     <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Generate Tutorial</button>
                 </div>
@@ -207,6 +227,11 @@
             const platform = document.getElementById('target_platform').value;
             const skill = document.getElementById('skill_level').value;
             const duration = document.getElementById('duration').value;
+            const verbosity = document.getElementById('verbosity').value;
+            const steps = document.getElementById('step_count').value;
+            const incValidation = document.getElementById('inc_validation').checked;
+            const incTroubleshooting = document.getElementById('inc_troubleshooting').checked;
+
             const reportEl = document.getElementById('output-tutorial');
             const logsEl = document.getElementById('output-logs');
             
@@ -216,11 +241,17 @@
             const logs = [
                 `[INFO] Initializing TutorialGenerationTask...`,
                 `[INFO] Goal: ${goal}`,
-                `[INFO] Platform: ${platform}`,
-                `[INFO] Creating outline...`,
-                `[INFO] Writing step-by-step instructions...`,
-                `[INFO] Generating code examples...`,
-                `[INFO] Adding troubleshooting tips...`,
+                `[INFO] Config: ${platform} | ${skill} | ${verbosity}`,
+                `[INFO] Phase 1: Planning & Outline...`,
+                `[INFO] Generated outline with ${steps} steps and prerequisites.`,
+                `[INFO] Phase 2: Writing detailed steps...`,
+                `[INFO] Writing Step 1...`,
+                `[INFO] Writing Step 2...`,
+                `[INFO] Writing Step 3...`,
+                `[INFO] Adding code examples and visual checkpoints...`,
+                `[INFO] Phase 3: Compiling troubleshooting section...`,
+                `[INFO] Phase 4: Generating next steps suggestions...`,
+                `[INFO] Phase 5: Final Assembly...`,
                 `[SUCCESS] Tutorial generation complete.`
             ];
             
@@ -237,46 +268,96 @@
                     logIndex++;
                 } else {
                     clearInterval(logInterval);
-                    renderTutorial(goal, platform, skill, duration);
+                    renderTutorial(goal, platform, skill, duration, incValidation, incTroubleshooting);
                 }
             }, 400);
         }
-        function renderTutorial(goal, platform, skill, duration) {
+        function renderTutorial(goal, platform, skill, duration, incValidation, incTroubleshooting) {
             const reportEl = document.getElementById('output-tutorial');
+            let validationSection = '';
+            if (incValidation) {
+                validationSection = `
+<p><strong>Verify Success:</strong></p>
+<ol>
+    <li>Run <code>curl http://localhost:3000</code> to verify the build locally.</li>
+    <li>Check the S3 console to confirm files are listed.</li>
+</ol>`;
+            }
+            let troubleshootingSection = '';
+            if (incTroubleshooting) {
+                troubleshootingSection = `
+<h2>Troubleshooting</h2>
+<h3>1. Error: Access Denied</h3>
+<p><strong>Symptoms:</strong> 403 Forbidden when accessing the S3 URL.</p>
+<p><strong>Solution:</strong> Ensure your bucket policy allows <code>s3:GetObject</code> for <code>Principal: "*"</code> or check the "Block Public Access" settings.</p>
+<hr>`;
+            }
+
             const markdown = `
 <h1>${goal}</h1>
-<p><strong>Platform:</strong> ${platform} | <strong>Skill Level:</strong> ${skill} | <strong>Time:</strong> ${duration} mins</p>
+<p>
+    <strong>⏱️ Estimated Time:</strong> ${duration} minutes<br>
+    <strong>🎯 Skill Level:</strong> ${skill.charAt(0).toUpperCase() + skill.slice(1)}<br>
+    <strong>💻 Platform:</strong> ${platform}
+</p>
+<hr>
+
+<h2>What You'll Learn</h2>
+<ul>
+    <li>✓ How to build a production-ready React application</li>
+    <li>✓ Configuring AWS S3 for static website hosting</li>
+    <li>✓ Deploying assets using the AWS CLI</li>
+</ul>
+<hr>
 
 <h2>Prerequisites</h2>
+<h3>Required</h3>
 <ul>
-    <li>AWS Account with S3 access</li>
-    <li>Node.js and npm installed</li>
-    <li>AWS CLI configured</li>
+    <li><strong>AWS Account</strong> (Account): Access to create S3 buckets.</li>
+    <li><strong>Node.js</strong> (Software): Version 14+ installed.</li>
+    <li><strong>AWS CLI</strong> (Tool): Configured with valid credentials.</li>
 </ul>
+<hr>
 
-<h2>Step 1: Build the React Application</h2>
+<h2>Tutorial Steps</h2>
+
+<h3>Step 1: Build the React Application</h3>
 <p>First, we need to create a production build of your application.</p>
-<code>npm run build</code>
+<p><em>Run in: <code>/project-root</code></em></p>
+<pre><code>npm run build</code></pre>
 <p>This will create a <code>build</code> directory with your static files.</p>
+<p><strong>Expected Outcome:</strong> A <code>build/</code> folder appears containing <code>index.html</code> and static assets.</p>
+<hr>
 
-<h2>Step 2: Create an S3 Bucket</h2>
+<h3>Step 2: Create an S3 Bucket</h3>
 <p>Create a new bucket to host your website.</p>
-<code>aws s3 mb s3://my-react-app-bucket</code>
+<pre><code>aws s3 mb s3://my-react-app-bucket</code></pre>
+<hr>
 
-<h2>Step 3: Configure Static Website Hosting</h2>
+<h3>Step 3: Configure Static Website Hosting</h3>
 <p>Enable website hosting for your bucket.</p>
-<code>aws s3 website s3://my-react-app-bucket --index-document index.html</code>
+<pre><code>aws s3 website s3://my-react-app-bucket --index-document index.html</code></pre>
+<hr>
 
-<h2>Step 4: Deploy Files</h2>
+<h3>Step 4: Deploy Files</h3>
 <p>Sync your build folder to the S3 bucket.</p>
-<code>aws s3 sync build/ s3://my-react-app-bucket --acl public-read</code>
 
-<h2>Troubleshooting</h2>
-<p><strong>Error: Access Denied</strong><br>
-Ensure your IAM user has the <code>AmazonS3FullAccess</code> policy attached.</p>
+<pre><code>aws s3 sync build/ s3://my-react-app-bucket --acl public-read</code></pre>
+<p>📸 [Screenshot of the upload progress bar completing]</p>
+<p><strong>Expected Outcome:</strong> All files are uploaded to S3.</p>
+${validationSection}
+<hr>
+
+${troubleshootingSection}
 
 <h2>Next Steps</h2>
-<p>Consider setting up CloudFront for CDN distribution and HTTPS support.</p>
+<p>🎉 Congratulations on completing this tutorial!</p>
+<h3>Try These Next</h3>
+<ul>
+    <li>Set up CloudFront for CDN distribution and HTTPS support.</li>
+    <li>Configure a custom domain name using Route 53.</li>
+    <li>Automate this deployment using GitHub Actions.</li>
+</ul>
             `;
             reportEl.innerHTML = markdown;
         }

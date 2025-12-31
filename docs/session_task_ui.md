@@ -198,6 +198,22 @@ tabs.delete("Details")
 // Clearing all tabs
 tabs.clear()
 ```
+### Streaming Content into Tabs (Placeholders)
+A powerful pattern in Cognotik is embedding a live, streaming `SessionTask` inside a tab. This allows you to update specific tabs asynchronously without refreshing the entire tab container.
+The `placeholder` property of a `SessionTask` returns the HTML container string (usually a `div` with the specific `messageID`) needed to anchor that task within another layout.
+**Common Pattern:**
+```kotlin
+val tabs = TabbedDisplay(task)
+// Create a new task and immediately embed its placeholder into a tab.
+// The 'apply' block ensures the task is registered in the tab before we start writing to it.
+val workerTask = task.ui.newTask().apply { 
+    tabs["Live Progress"] = placeholder 
+}
+// Now, writing to workerTask updates the content *inside* the "Live Progress" tab
+workerTask.add("Step 1 complete...")
+workerTask.add("Step 2 complete...")
+workerTask.complete()
+```
 
 ---
 
