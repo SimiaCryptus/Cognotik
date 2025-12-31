@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.get
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -16,10 +17,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.file.Path
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.io.path.Path
 
 open class ProtocolMode(
@@ -37,7 +35,6 @@ open class ProtocolMode(
 
     private val log = LoggerFactory.getLogger(ProtocolMode::class.java)
     private var isRunning = false
-    private var transcriptStream: FileOutputStream? = null
     private val history = mutableListOf<String>()
 
     override fun initialize() {
@@ -56,7 +53,11 @@ open class ProtocolMode(
 
     private fun startProtocolSession(userMessage: String) {
         task.echo(userMessage.renderMarkdown)
-        transcriptStream = transcript(task)
+         val transcript = task.transcript()
+         fun writeToTranscript(content: String) {
+             transcript?.write(content.toByteArray())
+             transcript?.flush()
+         }
         
         this.task.ui.pool.execute {
             try {
@@ -74,18 +75,32 @@ open class ProtocolMode(
                 val protocol = if (config.protocolFile != null) {
                     loadPrePlanned(userMessage, coordinator.root, task)
                 } else {
-                    val p = defineProtocol(userMessage)
-                    try {
-                        val protocolFile = coordinator.root.resolve("protocol.json").toFile()
-                        JsonUtil.toJson(p).let { json ->
-                            protocolFile.writeText(json)
-                            task.add("Protocol saved to [${protocolFile.name}](${task.linkTo("protocol.json")})")
-                        }
-                    } catch (e: Exception) {
-                        log.warn("Failed to save protocol json", e)
-                    }
-                    p
-                }
+                     val definer = { msgs: List<String> -> defineProtocol(msgs) }
+                     val p = if (orchestrationConfig.autoFix) {
+                         definer(listOf(userMessage))
+                     } else {
+                         Discussable(
+                             task = task,
+                             heading = "Protocol Definition",
+                             userMessage = { userMessage },
+                             initialResponse = { definer(listOf(it)) },
+                             outputFn = { renderMarkdown("```json\n${JsonUtil.toJson(it)}\n```") },
+                             reviseResponse = { history ->
+                                 definer(history.map { "${it.second}: ${it.first}" })
+                             }
+                         ).call()
+                     }
+                     try {
+                         val protocolFile = coordinator.root.resolve("protocol.json").toFile()
+                         JsonUtil.toJson(p).let { json ->
+                             protocolFile.writeText(json)
+                             task.add("Protocol saved to [${protocolFile.name}](${task.linkTo("protocol.json")})")
+                         }
+                     } catch (e: Exception) {
+                         log.warn("Failed to save protocol json", e)
+                     }
+                     p
+                }!!
                 writeToTranscript("# Protocol Definition\n\n```json\n${JsonUtil.toJson(protocol)}\n```\n\n")
                 
                 val protocolDisplay = TabbedDisplay(task)
@@ -118,14 +133,54 @@ open class ProtocolMode(
                         }
 
                         // 1. Execute Action
-                        val actionTask = executeStateAction(currentState, userMessage, coordinator, stateTask)
-                        val actionResult = actionTask.second
-                        val actionConfig = actionTask.first
-                        
-                        writeToTranscript("### Action\n\n**Task:** ${actionConfig.task_description}\n\n**Result:**\n$actionResult\n\n")
+                         val taskConfig = if (orchestrationConfig.autoFix) {
+                             selectTask(currentState, userMessage, history)
+                         } else {
+                             Discussable(
+                                 task = stateTask,
+                                 heading = "Task Selection",
+                                 userMessage = { "Select task for state: ${currentState.name}" },
+                                 initialResponse = { selectTask(currentState, userMessage, history) },
+                                 outputFn = { renderMarkdown("Selected Task: **${it.task_description}**") },
+                                 reviseResponse = { h ->
+                                     selectTask(currentState, userMessage, history + h.map { "${it.second}: ${it.first}" })
+                                 }
+                             ).call()
+                         }
+
+                         val result = StringBuilder()
+                         val taskImpl = TaskType.getImpl(orchestrationConfig, taskConfig)
+                         val executionTask = stateTask.ui.newTask(false)
+                         stateTask.add(executionTask.placeholder)
+                         executionTask.add(renderMarkdown("Executing: ${taskConfig?.task_description}"))
+
+                         taskImpl.run(
+                             agent = coordinator,
+                             messages = listOf(userMessage),
+                             task = executionTask,
+                             resultFn = { result.append(it) },
+                             orchestrationConfig = orchestrationConfig
+                         )
+                         val actionResult = result.toString()
+
+                        writeToTranscript("### Action\n\n**Task:** ${taskConfig!!.task_description}\n\n**Result:**\n$actionResult\n\n")
 
                         // 2. Validate
-                        val validation = validateState(currentState, actionConfig, actionResult, stateTask)
+                         val validation = if (orchestrationConfig.autoFix) {
+                             validateState(currentState, taskConfig!!, actionResult)
+                         } else {
+                             Discussable(
+                                 task = stateTask,
+                                 heading = "Validation",
+                                 userMessage = { "Validate result for state: ${currentState.name}" },
+                                 initialResponse = { validateState(currentState, taskConfig!!, actionResult) },
+                                 outputFn = { renderMarkdown("Passed: ${it.passed}\nFeedback: ${it.feedback}") },
+                                 reviseResponse = { h ->
+                                     validateState(currentState,
+                                         taskConfig!!, actionResult, h.map { "${it.second}: ${it.first}" })
+                                 }
+                             ).call()
+                         }!!
                         writeToTranscript("### Validation\n\n**Passed:** ${validation.passed}\n\n**Feedback:** ${validation.feedback}\n\n")
                         
                         stateTask.add(renderMarkdown("**Validation:** ${if (validation.passed) "PASSED" else "FAILED"}\n\n${validation.feedback}"))
@@ -133,7 +188,7 @@ open class ProtocolMode(
                         if (validation.passed) {
                             statePassed = true
                             nextState = validation.nextState
-                            history.add("State ${currentState.name} completed successfully. Action: ${actionConfig.task_description}. Result: $actionResult")
+                            history.add("State ${currentState.name} completed successfully. Action: ${taskConfig!!.task_description}. Result: $actionResult")
                         } else {
                             history.add("State ${currentState.name} failed. Feedback: ${validation.feedback}")
                         }
@@ -154,12 +209,12 @@ open class ProtocolMode(
                 task.error(e)
             } finally {
                 isRunning = false
-                transcriptStream?.close()
+                 transcript?.close()
             }
         }
     }
 
-    private fun defineProtocol(userMessage: String): ProtocolDefinition {
+     private fun defineProtocol(messages: List<String>): ProtocolDefinition {
         val prompt = """
             Define a strict protocol (state machine) to achieve the user's request.
             The protocol can have branching, loops, or be linear.
@@ -176,15 +231,14 @@ open class ProtocolMode(
             parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
             temperature = orchestrationConfig.temperature,
             describer = describer
-        ).answer(listOf(userMessage)).obj
+         ).answer(messages).obj
     }
 
-    private fun executeStateAction(
+     private fun selectTask(
         state: ProtocolState,
         userMessage: String,
-        coordinator: TaskOrchestrator,
-        uiTask: SessionTask
-    ): Pair<TaskExecutionConfig, String> {
+         history: List<String>
+     ): TaskExecutionConfig {
         Tasks.initDescriber(orchestrationConfig, describer)
         val prompt = """
             You are executing the state '${state.name}' of a protocol.
@@ -209,34 +263,22 @@ open class ProtocolMode(
                         describer.describe(taskType.executionConfigClass).trim().trimIndent().indent("  ")
                     }".trim()
                 })
-        ).answer(listOf(userMessage) + history).obj
 
-        val taskConfig = tasks.tasks?.firstOrNull() ?: throw IllegalStateException("No task generated for state ${state.name}")
         
-        val result = StringBuilder()
-        val taskImpl = TaskType.getImpl(orchestrationConfig, taskConfig)
         
-        val executionTask = uiTask.ui.newTask(false)
-        uiTask.add(executionTask.placeholder)
         
-        executionTask.add(renderMarkdown("Executing: ${taskConfig.task_description}"))
         
-        taskImpl.run(
-            agent = coordinator,
-            messages = listOf(userMessage),
-            task = executionTask,
-            resultFn = { result.append(it) },
-            orchestrationConfig = orchestrationConfig
-        )
         
-        return taskConfig to result.toString()
+         ).answer(listOf(userMessage) + history).obj
+
+         return tasks.tasks?.firstOrNull() ?: throw IllegalStateException("No task generated for state ${state.name}")
     }
 
     private fun validateState(
         state: ProtocolState,
         taskConfig: TaskExecutionConfig,
         result: String,
-        uiTask: SessionTask
+         messages: List<String> = emptyList()
     ): ValidationResult {
         val prompt = """
             You are the Referee.
@@ -261,7 +303,7 @@ open class ProtocolMode(
             parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
             temperature = orchestrationConfig.temperature,
             describer = describer
-        ).answer(emptyList()).obj
+         ).answer(messages).obj
     }
 
     override fun contextData(): List<String> = history
@@ -322,20 +364,7 @@ open class ProtocolMode(
     }
 
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "protocol_mode_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a>"
-        )
-        return markdownTranscript
-    }
 
-    private fun writeToTranscript(content: String) {
-        transcriptStream?.write(content.toByteArray())
-        transcriptStream?.flush()
-    }
 
     data class ProtocolDefinition(
         @Description("The list of states in the protocol")

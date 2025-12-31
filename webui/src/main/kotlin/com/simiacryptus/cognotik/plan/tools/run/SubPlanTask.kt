@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -171,36 +170,68 @@ class SubPlanTask(
             transcript?.write(planningInfo.toByteArray())
             planningTask.add(planningInfo.renderMarkdown)
 
-            // Execute the sub-plan using the cognitive mode
-            val executionTask = task.ui.newTask(false)
-            tabs["Execution"] = executionTask.placeholder
 
-            log.debug("Executing sub-plan with ${contextMessages.size} context messages")
 
-            // Handle the user message through the cognitive mode
-            transcript?.write("\n\n## Execution\n\n".toByteArray())
-            transcript?.write("**Planning Goal:**\n\n".toByteArray())
-            transcript?.write(planningGoal.toByteArray())
-            transcript?.write("\n\n".toByteArray())
 
-            cognitiveInstance.handleUserMessage(planningGoal, executionTask)
 
-            // Collect results from the cognitive mode's context
-            val results = cognitiveInstance.contextData()
 
-            log.info("Sub-plan execution completed with ${results.size} results")
 
-            // Create summary if configured
-            val summaryTask = task.ui.newTask(false)
-            tabs["Summary"] = summaryTask.placeholder
 
-            val summary = createSummary(results, planningGoal, summaryTask, orchestrationConfig)
-            transcript?.write("\n\n## Summary\n\n".toByteArray())
-            transcript?.write(summary.toByteArray())
-            transcript?.write("\n\n".toByteArray())
-            summaryTask.add(summary.renderMarkdown)
-            tabs.update()
-            resultFn(summary)
+            fun runExecution(): String {
+                // Execute the sub-plan using the cognitive mode
+                val executionTask = task.ui.newTask(false)
+                tabs["Execution"] = executionTask.placeholder
+
+                log.debug("Executing sub-plan with ${contextMessages.size} context messages")
+
+                // Handle the user message through the cognitive mode
+                transcript?.write("\n\n## Execution\n\n".toByteArray())
+                transcript?.write("**Planning Goal:**\n\n".toByteArray())
+                transcript?.write(planningGoal.toByteArray())
+                transcript?.write("\n\n".toByteArray())
+
+                cognitiveInstance.handleUserMessage(planningGoal, executionTask)
+
+                // Collect results from the cognitive mode's context
+                val results = cognitiveInstance.contextData()
+
+                log.info("Sub-plan execution completed with ${results.size} results")
+
+                // Create summary if configured
+                val summaryTask = task.ui.newTask(false)
+                tabs["Summary"] = summaryTask.placeholder
+
+                val summary = createSummary(results, planningGoal, summaryTask, orchestrationConfig)
+                transcript?.write("\n\n## Summary\n\n".toByteArray())
+                transcript?.write(summary.toByteArray())
+                transcript?.write("\n\n".toByteArray())
+                summaryTask.add(summary.renderMarkdown)
+                tabs.update()
+                return summary
+            }
+
+            if (orchestrationConfig.autoFix) {
+                val summary = runExecution()
+                resultFn(summary)
+            } else {
+                val semaphore = java.util.concurrent.Semaphore(0)
+                task.add(task.ui.hrefLink("▶ Run Sub-Plan", "btn btn-primary") {
+                    task.ui.pool.submit {
+                        try {
+                            val summary = runExecution()
+                            val footer = acceptButtonFooter(task.ui) {
+                                resultFn(summary)
+                                semaphore.release()
+                            }
+                            task.append(footer)
+                        } catch (e: Exception) {
+                            log.error("Error in manual sub-plan execution", e)
+                            task.error(e)
+                        }
+                    }
+                })
+                semaphore.acquire()
+            }
 
         } catch (e: Exception) {
             log.error("Error executing SubPlanningTask", e)

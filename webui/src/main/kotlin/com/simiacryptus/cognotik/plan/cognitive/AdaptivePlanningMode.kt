@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.models.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
@@ -364,21 +365,32 @@ ${JsonUtil.toJson(taskConfig)}
                     }".trim()
                 })
         )
-        val answer = parsedActor.answer(
-            listOf(userMessage) + contextData() + listOf(
+        val inputMessages = listOf(userMessage) + contextData() + listOf(
                 """
         Current thinking status: ${config.cognitiveStrategy.formatState(reasoningState)}
         ${config.cognitiveStrategy.getTaskSelectionGuidance(reasoningState)}
         """.trimIndent()
-            ) + formatEvalRecords(),
-        )
+            ) + formatEvalRecords()
+
+        val responseText = if (orchestrationConfig.autoFix) {
+            parsedActor.answer(inputMessages).text
+        } else {
+            Discussable(
+                task = task,
+                heading = "Plan Review",
+                userMessage = { userMessage },
+                initialResponse = { parsedActor.answer(inputMessages) },
+                outputFn = { it.text },
+                reviseResponse = { history -> parsedActor.respond(history.map { it.component1() }) }
+            ).call()?.text
+        }
 
         val executor = this.task.ui.pool
             ?: throw IllegalStateException("SocketManager or its pool is null for expansion processing")
         val processor = FixedConcurrencyProcessor(executor, 4)
 
         val expandedTasks = processTaskExpansionRecursive(
-            currentText = answer.text,
+            currentText = responseText ?: "",
             task = task,
             parsedActor = parsedActor,
             processor = processor
@@ -614,5 +626,3 @@ ${JsonUtil.toJson(taskConfig)}
 
     }
 }
-
-

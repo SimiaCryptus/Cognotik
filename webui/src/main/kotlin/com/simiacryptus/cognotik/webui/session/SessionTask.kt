@@ -29,7 +29,7 @@ open class SessionTask(
 
     fun append(
         htmlToAppend: String,
-        showSpinner: Boolean
+        showSpinner: Boolean = true
     ): StringBuilder? {
         val stringBuilder: StringBuilder?
         if (htmlToAppend.isNotBlank()) {

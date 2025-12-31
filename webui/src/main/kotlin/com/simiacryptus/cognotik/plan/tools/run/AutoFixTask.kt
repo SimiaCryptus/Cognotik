@@ -102,11 +102,12 @@ class AutoFixTask(
     ) {
         val semaphore = Semaphore(0)
         Retryable(task = task) {
-            val markdownTranscript = transcript(task)
-            val task = task.ui.newTask()
-            task.ui.pool.submit {
+            val subTask = task.ui.newTask()
+            subTask.ui.pool.submit {
+                val (markdownTranscript, transcriptLink) = createTranscript(subTask)
+                subTask.add(transcriptLink)
                 val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
-                    ?: defaultSmart).getChildClient(task)
+                    ?: defaultSmart).getChildClient(subTask)
                 CmdPatchApp(
                     root = agent.root,
                     settings = PatchApp.Settings(
@@ -148,56 +149,60 @@ class AutoFixTask(
                         transcript.write("## Commands\n".toByteArray())
                     }
                 }.run(
-                    task = task, model = model
+                    task = subTask, model = model
                 ).apply {
+                    markdownTranscript?.let { transcript ->
+                        transcript.write("\n## Result\n".toByteArray())
+                        transcript.write("Exit code: ${this.exitCode}\n".toByteArray())
+                        transcript.close()
+                    }
                     when {
                         this.exitCode == 0 -> {
-                            resultFn("All Commands completed")
-                            semaphore.release()
-                            markdownTranscript?.let { transcript ->
-                                transcript.write("\n## Result\n".toByteArray())
-                                transcript.write("All commands completed successfully (exit code: 0)\n".toByteArray())
-                                transcript.close()
+                            if (orchestrationConfig.autoFix) {
+                                resultFn("All Commands completed")
+                                semaphore.release()
+                                subTask.complete()
+                            } else {
+                                subTask.add(
+                                    subTask.ui.hrefLink("Accept & Continue", "btn btn-primary") {
+                                        resultFn("All Commands completed")
+                                        semaphore.release()
+                                        subTask.complete()
+                                    }
+                                )
                             }
                         }
 
                         else -> {
-                            task.add(
-                                task.ui.hrefLink("Ignore Error", "href-link cmd-button") {
+                            subTask.add(
+                                subTask.ui.hrefLink("Ignore Error", "href-link cmd-button") {
                                     resultFn("Error: ${this.exitCode}")
                                     semaphore.release()
-                                    markdownTranscript?.let { transcript ->
-                                        transcript.write("\n## Result\n".toByteArray())
-                                        transcript.write("Command failed with exit code: ${this.exitCode}\n".toByteArray())
-                                        transcript.close()
-                                    }
+                                    subTask.complete()
                                 }
                             )
                         }
                     }
                 }
             }
-            task.placeholder
+            subTask.placeholder
         }
         try {
             semaphore.acquire()
         } catch (e: Throwable) {
             log.warn("Error", e)
         }
+        task.complete()
     }
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
+    private fun createTranscript(task: SessionTask): Pair<FileOutputStream?, String> {
         val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
+        val html = "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+            link.removeSuffix(".md")
+        }.pdf' target='_blank'>pdf</a>"
+        return Pair(markdownTranscript, html)
     }
 
 }

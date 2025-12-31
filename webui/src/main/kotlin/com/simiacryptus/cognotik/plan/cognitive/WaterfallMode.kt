@@ -118,6 +118,7 @@ open class WaterfallMode(
                 orchestrationConfig = orchestrationConfig,
                 // Use the budgeted and task-specific client
             )
+            task.complete()
         } catch (e: Throwable) {
             task.error(e) // Report error on the current task
             log.error("Error in execute", e)
@@ -145,7 +146,7 @@ open class WaterfallMode(
         return if (!orchestrationConfig.autoFix)
             Discussable(
                 task = task,
-                heading = "",
+                heading = "Plan Generation",
                 userMessage = { userMessage },
                 initialResponse = {
                     newPlan(
@@ -243,11 +244,9 @@ open class WaterfallMode(
         root: Path
     ) = { str: String ->
         listOf(
-            if (!codeFiles.all { it.key.toFile().isFile } || codeFiles.size > 2) "Files:\n${
-                codeFiles.keys.joinToString(
-                    "\n"
-                ) { "* $it" }
-            }  " else {
+            if (!codeFiles.all { it.key.toFile().isFile } || codeFiles.size > 2) {
+                "Files:\n${codeFiles.keys.joinToString("\n") { "* $it" }}"
+            } else {
                 files.joinToString("\n\n") {
                     val path = root.relativize(it.toPath())
                     "\n## $path\n\n${(codeFiles[path] ?: "").let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
@@ -330,7 +329,7 @@ $availableFiles
         val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
+        task.add(
             "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(
                     ".md"

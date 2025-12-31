@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.get
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -59,13 +60,47 @@ open class ParallelMode(
     )
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
+        val transcript = task.transcript()
         try {
             task.echo(userMessage.renderMarkdown)
 
-            val plan = parseConfig(userMessage)
+            transcript?.write("User Message: $userMessage\n".toByteArray())
+            
             val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
                 ?: task.ui.dataStorage?.getSessionDir(user, session)?.toPath()
                 ?: File(".").toPath()
+            val parser = createParserAgent(task)
+            val plan = if (orchestrationConfig.autoFix) {
+                parser.answer(listOf(userMessage)).obj
+            } else {
+                Discussable(
+                    task = task,
+                    heading = "Parallel Execution Plan",
+                    userMessage = { userMessage },
+                    initialResponse = { parser.answer(listOf(it)).obj },
+                    outputFn = { plan ->
+                        val expandedVariables = plan.variables.mapValues { (_, value) -> expandVariable(value, root) }
+                        val combinations = generateCombinations(expandedVariables, plan.mode)
+                        buildString {
+                            append("<div>")
+                            append("<b>Template:</b> <pre>${plan.template}</pre>")
+                            append("<b>Concurrency:</b> ${plan.concurrency}<br/>")
+                            append("<b>Mode:</b> ${plan.mode}<br/>")
+                            append("<b>Tasks to run:</b> ${combinations.size}<br/>")
+                            append("<details><summary>Variables</summary><pre>${JsonUtil.toJson(plan.variables)}</pre></details>")
+                            append("<details><summary>Combinations (First 10)</summary><ul>")
+                            combinations.take(10).forEach { append("<li>${JsonUtil.toJson(it)}</li>") }
+                            append("</ul></details>")
+                            append("</div>")
+                        }
+                    },
+                    reviseResponse = { history ->
+                        parser.answer(history.map { it.first }).obj
+                    }
+                ).call()!!
+            }
+            transcript?.write("Plan: ${JsonUtil.toJson(plan)}\n".toByteArray())
+
 
             val expandedVariables = plan.variables.mapValues { (_, value) -> expandVariable(value, root) }
             val combinations = generateCombinations(expandedVariables, plan.mode)
@@ -137,10 +172,12 @@ open class ParallelMode(
         } catch (e: Throwable) {
             task.error(e)
             log.error("Error in ParallelMode", e)
+        } finally {
+            transcript?.close()
         }
     }
 
-    private fun parseConfig(message: String): ParallelPlan {
+    private fun createParserAgent(task: SessionTask): ParsedAgent<ParallelPlan> {
         val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
         val taskDescriptions = availableTaskTypes.joinToString("\n") { taskType ->
             val impl = TaskType.getImpl(orchestrationConfig, taskType)
@@ -149,7 +186,7 @@ open class ParallelMode(
 
         val describer = TaskContextYamlDescriber(orchestrationConfig)
         Tasks.initDescriber(orchestrationConfig, describer)
-        val agent = ParsedAgent(
+        return ParsedAgent(
             name = "ParallelConfigParser",
             resultClass = ParallelPlan::class.java,
             exampleInstance = ParallelPlan(
@@ -177,7 +214,6 @@ If the user implies pairing items (e.g. "zip", "pair", "corresponding"), set mod
             temperature = 0.1,
             describer = describer
         )
-        return agent.answer(listOf(message)).obj
     }
 
     private fun expandVariable(value: Any, root: Path): List<Any> {

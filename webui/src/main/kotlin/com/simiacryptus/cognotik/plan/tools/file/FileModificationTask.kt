@@ -75,12 +75,24 @@ FileModification - Modify existing files or create new files
         val completionNotes = mutableListOf<String>()
         // Initialize transcript for this task
         val transcript = task.transcript()
-        transcript?.let { stream ->
-            stream.write("# File Modification Task Transcript\n\n".toByteArray())
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+
+        try {
+            transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
             Retryable(task = task) {
                 val task = task.ui.newTask(false)
                 val typeConfig = typeConfig ?: throw RuntimeException()
                 task.ui.pool.submit {
+                    completionNotes.clear()
                     val chatInterface =
                         (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                             ?: this.defaultSmart).getChildClient(task)
@@ -164,63 +176,56 @@ FileModification - Modify existing files or create new files
                     transcript?.write(codeResult.toByteArray())
                     transcript?.write("\n\n".toByteArray())
 
-                    if (orchestrationConfig.autoFix) {
-                        val markdown = renderMarkdown(codeResult, ui = task.ui) {
-                            AddApplyFileDiffLinks.instrumentFileDiffs(
-                                task.ui,
-                                root = agent.root,
-                                response = it,
-                                handle = { newCodeMap ->
-                                    newCodeMap.forEach { (path, _) ->
-                                        completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
-                                    }
-                                },
-                                shouldAutoApply = { orchestrationConfig.autoFix },
-                                model = chatInterface,
-                                defaultFile = defaultFile,
-                                orchestrationConfig.processor
-                            ) + "\n\n## Auto-applied changes"
+                    val footer = if (orchestrationConfig.autoFix) {
+                        "\n\n## Auto-applied changes"
+                    } else {
+                        acceptButtonFooter(task.ui) {
+                            task.complete()
+                            semaphore.release()
                         }
+                    }
+
+                    val markdown = renderMarkdown(codeResult, ui = task.ui) {
+                        AddApplyFileDiffLinks.instrumentFileDiffs(
+                            task.ui,
+                            root = agent.root,
+                            response = it,
+                            handle = { newCodeMap ->
+                                newCodeMap.forEach { (path, _) ->
+                                    completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
+                                }
+                            },
+                            shouldAutoApply = { orchestrationConfig.autoFix },
+                            model = chatInterface,
+                            defaultFile = defaultFile,
+                            processor = orchestrationConfig.processor
+                        ) + footer
+                    }
+
+                    if (orchestrationConfig.autoFix) {
                         // Log auto-applied changes to transcript
                         transcript?.write("## Auto-Applied Changes\n\n".toByteArray())
                         transcript?.write(completionNotes.joinToString("\n").toByteArray())
                         task.complete(markdown)
                         semaphore.release()
                     } else {
-                        task.complete(renderMarkdown(codeResult, ui = task.ui) {
-                            AddApplyFileDiffLinks.instrumentFileDiffs(
-                                task.ui,
-                                root = agent.root,
-                                response = it,
-                                handle = { newCodeMap ->
-                                    newCodeMap.forEach { (path, _) ->
-                                        completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
-                                    }
-                                },
-                                model = chatInterface,
-                                defaultFile = defaultFile,
-                                processor = orchestrationConfig.processor,
-                            ) + acceptButtonFooter(task.ui) {
-                                task.complete()
-                                semaphore.release()
-                            }
-                        })
+                        task.complete(markdown)
                     }
                     transcript?.flush()
                 }
                 task.placeholder
             }
-        }
 
-        try {
             semaphore.acquire()
             // Write final completion notes to transcript
             transcript?.write("\n## Completion Notes\n\n".toByteArray())
             transcript?.write(completionNotes.joinToString("\n").toByteArray())
-            transcript?.close()
             resultFn(completionNotes.joinToString("\n"))
         } catch (e: Throwable) {
             log.warn("Error", e)
+            task.error(e)
+        } finally {
+            transcript?.close()
         }
     }
 

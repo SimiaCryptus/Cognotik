@@ -121,33 +121,45 @@ class RunCodeTask(
                 transcript?.write("## Execution Result\n".toByteArray())
                 transcript?.write("**Result Value:**\n```\n${response.result.resultValue}\n```\n\n".toByteArray())
                 transcript?.write("**Output:**\n```\n${response.result.resultOutput}\n```\n\n".toByteArray())
-                var formHandle: StringBuilder? = null
-                if (!orchestrationConfig.autoFix) formHandle = task.add(
-                    "<div>\n${
-                        if (!super.canPlay) "" else super.playButton(task, request, response, formText) { formHandle!! }
-                    }\n${
-                        ui.hrefLink("Continue", "href-link play-button") {
-                            response.let {
-                                transcript?.write("## User Action: Continue\n\n".toByteArray())
-                                "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
-                            }.apply { resultFn(this) }
-                            semaphore.release()
+
+                if (orchestrationConfig.autoFix) {
+                    if (autoRunCounter.incrementAndGet() <= 1) {
+                        // Auto-fix: Execute immediately
+                        responseAction(task, "Running...", null, formText) {
+                            execute(task, response, request)
                         }
-                    }\n</div>\n${
-                        super.ui.textInput(oneAtATime { feedback: String ->
-                            super.responseAction(task, "Revising...", formHandle!!, formText) {
-                                transcript?.write("## User Feedback\n$feedback\n\n".toByteArray())
-                                super.feedback(task, feedback, request, response)
-                            }
-                        })
-                    }", additionalClasses = "reply-message"
-                ) else if (autoRunCounter.incrementAndGet() <= 1) {
-                    responseAction(task, "Running...", formHandle, formText) {
-                        execute(task, response, request)
                     }
+                    task.complete()
+                    return
                 }
+                // Interactive Mode
+                var formHandle: StringBuilder? = null
+                val buttonsHtml = StringBuilder()
+                if (super.canPlay) {
+                    buttonsHtml.append(super.playButton(task, request, response, formText) { formHandle!! })
+                }
+                buttonsHtml.append(ui.hrefLink("Continue", "href-link play-button") {
+                    transcript?.write("## User Action: Continue\n\n".toByteArray())
+                    val finalOutput = "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
+                    resultFn(finalOutput)
+                    semaphore.release()
+                })
+                val feedbackHtml = ui.textInput(oneAtATime { feedback: String ->
+                    transcript?.write("## User Feedback\n$feedback\n\n".toByteArray())
+                    super.responseAction(task, "Revising...", formHandle, formText) {
+                        super.feedback(task, feedback, request, response)
+                    }
+                })
+                val html = """
+                    <div class="d-flex flex-row gap-2">
+                        $buttonsHtml
+                    </div>
+                    <div class="mt-2">
+                        $feedbackHtml
+                    </div>
+                """.trimIndent()
+                formHandle = task.add(html, additionalClasses = "reply-message")
                 formText.append(formHandle.toString())
-                formHandle.toString()
                 task.complete()
             }
 

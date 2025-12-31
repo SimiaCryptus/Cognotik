@@ -190,16 +190,60 @@ open class PersonaChatMode(
             }
         }!!
 
-        val (reasoning, chosenTask) = requestToTaskWithPersona(
-            defaultModel, parserChatter,
-            userMessage,
-            orchestrationConfig,
-            currentState,
-            config.cognitiveStrategy,
-            getConversationContext(),
-            describer
-        )
 
+
+        val tabs = TabbedDisplay(task)
+        
+        val planTask = this.task.ui.newTask(false).apply { tabs["Plan"] = placeholder }
+        val chosenTask = if (orchestrationConfig.autoFix) {
+            val result = requestToTaskWithPersona(
+                defaultModel, parserChatter,
+                userMessage,
+                orchestrationConfig,
+                currentState,
+                config.cognitiveStrategy,
+                getConversationContext(),
+                describer
+            )
+            planTask.add(result.first.text.renderMarkdown())
+            planTask.complete("Executing task:\n```json\n${JsonUtil.toJson(result.second)}\n```".renderMarkdown())
+            result
+        } else {
+            Discussable(
+                task = planTask,
+                heading = "Plan Review",
+                userMessage = { userMessage },
+                initialResponse = { prompt ->
+                    requestToTaskWithPersona(
+                        defaultModel, parserChatter,
+                        prompt,
+                        orchestrationConfig,
+                        currentState,
+                        config.cognitiveStrategy,
+                        getConversationContext(),
+                        describer
+                    )
+                },
+                outputFn = { (reasoning, task) ->
+                    reasoning.text.renderMarkdown() + "\n```json\n${JsonUtil.toJson(task)}\n```".renderMarkdown()
+                },
+                reviseResponse = { history ->
+                    val feedbackHistory = history.map { (msg, role) ->
+                        "${if (role == ModelSchema.Role.user) "USER" else "ASSISTANT"}: $msg"
+                    }
+                    val lastUserMsg = history.lastOrNull { it.second == ModelSchema.Role.user }?.first ?: userMessage
+                    requestToTaskWithPersona(
+                        defaultModel, parserChatter,
+                        lastUserMsg,
+                        orchestrationConfig,
+                        currentState,
+                        config.cognitiveStrategy,
+                        getConversationContext() + feedbackHistory.dropLast(1),
+                        describer
+                    )
+                }
+            ).call()
+        }
         val taskConfigJson = JsonUtil.toJson(chosenTask)
         synchronized(messagesLock) {
             messages.add(
@@ -209,20 +253,12 @@ open class PersonaChatMode(
                 )
             )
         }
-
         val resultSemaphore = Semaphore(0)
         val resultRef = AtomicReference<String>()
-        val tabs = TabbedDisplay(task)
-        
-        this.task.ui.newTask(false).apply {
-            tabs["Plan"] = placeholder
-            add(reasoning.text.renderMarkdown())
-            complete("Executing task:\n```json\n${JsonUtil.toJson(chosenTask)}\n```".renderMarkdown())
-        }
         
         this.task.ui.newTask(false).apply {
             tabs["Run"] = placeholder
-            TaskType.getImpl(orchestrationConfig, chosenTask).run(
+            TaskType.getImpl(orchestrationConfig, chosenTask?.component2()).run(
                 agent = TaskOrchestrator(
                     user = user,
                     session = session,
@@ -249,7 +285,7 @@ open class PersonaChatMode(
         aggregateResponse.append(resultString).append("\n\n")
         
         val executionRecord = AdaptivePlanningMode.ExecutionRecord(
-            task = chosenTask,
+            task = chosenTask?.component2(),
             result = resultString
         )
         val newState = config.cognitiveStrategy.update(

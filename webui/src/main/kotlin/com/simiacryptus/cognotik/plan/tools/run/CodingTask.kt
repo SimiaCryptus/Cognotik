@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
@@ -33,6 +34,7 @@ open class CodingTask<T : CodeRuntime>(
     val model: ChatInterface,
     private val mainTask: SessionTask,
     val retryable: Boolean = true,
+    val autoFix: Boolean = false,
 ) {
 
     open val codeAgent by lazy {
@@ -120,7 +122,11 @@ open class CodingTask<T : CodeRuntime>(
     ) {
         try {
             displayCode(task, response)
-            displayFeedback(task, append(codeRequest, response), response)
+            if (autoFix && canPlay) {
+                execute(task, response, codeRequest)
+            } else {
+                displayFeedback(task, append(codeRequest, response), response)
+            }
         } catch (e: Throwable) {
             task.error(e)
             log.warn("Error", e)
@@ -140,6 +146,7 @@ open class CodingTask<T : CodeRuntime>(
         val string = response.renderedResponse
             ?: "\n```${codeAgent.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```\n"
         task.expanded("Code", string.renderMarkdown)
+        task.transcript()?.write("# Generated Code\n$string\n".toByteArray())
     }
 
     open fun displayFeedback(
@@ -253,8 +260,22 @@ open class CodingTask<T : CodeRuntime>(
     protected open fun execute(
         task: SessionTask, response: CodeAgent.CodeResult
     ): String {
+        val transcript = task.transcript()
         val resultValue = response.result.resultValue
         val resultOutput = response.result.resultOutput
+        transcript?.write(
+            """
+            # Execution Result
+            ## Output
+            ```text
+            $resultOutput
+            ```
+            ## Value
+            ```text
+            $resultValue
+            ```
+            """.trimIndent().toByteArray()
+        )
         val tabs = TabbedDisplay(task)
         tabs["Result"] = "```text\n$resultValue\n```".renderMarkdown()
         tabs["Output"] = "```text\n$resultOutput\n```".renderMarkdown()

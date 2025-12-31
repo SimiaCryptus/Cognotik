@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.safeComplete
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
@@ -143,6 +144,7 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
         log.info("Starting IllustrateDocumentTask for: $documentFile (maxImages=$maxImages, format=$imageFormat, autoInsert=$autoInsert)")
 
         val ui = task.ui
+        val transcript = task.transcript()
 
         try {
 // Read document content
@@ -212,6 +214,17 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
                     )
                 )
             }
+            if (!orchestrationConfig.autoFix) {
+                val semaphore = Semaphore(0)
+                task.add(MarkdownUtil.renderMarkdown("### ✋ Approval Required", ui = ui))
+                task.add(MarkdownUtil.renderMarkdown("Please review the planned images above.", ui = ui))
+                task.add(ui.hrefLink("🚀 Proceed with Generation", "btn btn-primary") {
+                    semaphore.release()
+                })
+                semaphore.acquire()
+                task.add(MarkdownUtil.renderMarkdown("✅ **User Approved**. Starting generation...", ui = ui))
+            }
+
 
 // Step 2: Generate images
             log.info("Generating ${suggestions.size} images")
@@ -327,6 +340,8 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
 
             task.safeComplete("Document illustration failed: ${e.message}", log)
             resultFn(errorOutput)
+        } finally {
+            transcript?.close()
         }
     }
 
@@ -454,8 +469,8 @@ existing line 4
 ```
 Generate the patches now.
 """.trimIndent()
-            val task = task.ui.newTask(false).apply { task.add(placeholder) }
-            task.ui.pool.submit {
+            val subTask = task.ui.newTask(false).apply { add("Generating patches...") }
+            subTask.ui.pool.submit {
                 try {
                     val chatAgent = ChatAgent(
                         name = "DocumentImageIntegrator", prompt = patchPrompt, model = chatChatter, temperature = 0.3
@@ -463,9 +478,9 @@ Generate the patches now.
                     val response = chatAgent.answer(listOf(patchPrompt))
                     log.debug("Patch generation response: $response")
                     if (orchestrationConfig.autoFix) {
-                        task.complete(MarkdownUtil.renderMarkdown(response, ui = task.ui) {
+                        subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
                             AddApplyFileDiffLinks.instrumentFileDiffs(
-                                task.ui,
+                                subTask.ui,
                                 root = root,
                                 response = it,
                                 handle = { newCodeMap ->
@@ -482,9 +497,9 @@ Generate the patches now.
                         })
                         semaphore.release()
                     } else {
-                        task.complete(MarkdownUtil.renderMarkdown(response, ui = task.ui) {
+                        subTask.complete(MarkdownUtil.renderMarkdown(response, ui = subTask.ui) {
                             AddApplyFileDiffLinks.instrumentFileDiffs(
-                                task.ui,
+                                subTask.ui,
                                 root = root,
                                 response = it,
                                 handle = { newCodeMap ->
@@ -496,15 +511,15 @@ Generate the patches now.
                                 model = chatChatter,
                                 defaultFile = documentFile,
                                 processor = orchestrationConfig.processor
-                            ) + acceptButtonFooter(task.ui) {
-                                task.complete()
+                            ) + acceptButtonFooter(subTask.ui) {
+                                subTask.complete()
                                 semaphore.release()
                             }
                         })
                     }
                 } catch (e: Exception) {
                     log.error("Failed to generate or apply patches", e)
-                    task.error(e)
+                    subTask.error(e)
                     semaphore.release()
                 }
             }

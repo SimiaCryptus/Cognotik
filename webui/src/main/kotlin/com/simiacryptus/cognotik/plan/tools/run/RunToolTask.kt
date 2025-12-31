@@ -4,9 +4,11 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.util.AgentPatterns
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
+import java.util.concurrent.Semaphore
 
 class RunToolTask(
     orchestrationConfig: OrchestrationConfig,
@@ -87,28 +89,57 @@ class RunToolTask(
             val executable = executionConfig.executable?.absolutePath
                 ?: throw IllegalArgumentException("Executable for tool '$tool' not found")
             val command = listOf(executable) + args
+            val commandStr = command.joinToString(" ")
 
-            transcript?.write("## Command\n```bash\n${command.joinToString(" ")}\n```\n\n".toByteArray())
+            transcript?.write("## Command\n```bash\n$commandStr\n```\n\n".toByteArray())
 
-            val process = ProcessBuilder(command)
-                .directory(workingDir)
-                .redirectErrorStream(true)
-                .start()
+            fun execute(): String {
+                val process = ProcessBuilder(command)
+                    .directory(workingDir)
+                    .redirectErrorStream(true)
+                    .start()
 
-            val output = process.inputStream.bufferedReader().readText()
-            val exitCode = process.waitFor()
+                val output = process.inputStream.bufferedReader().readText()
+                val exitCode = process.waitFor()
 
-            transcript?.write("## Output\n```\n$output\n```\n\n".toByteArray())
+                transcript?.write("## Output\n```\n$output\n```\n\n".toByteArray())
 
-            if (exitCode == 0) {
-                resultFn("Tool execution successful.\nOutput:\n$output")
+                return if (exitCode == 0) {
+                    "Tool execution successful.\nOutput:\n$output"
+                } else {
+                    "Tool execution failed with exit code $exitCode.\nOutput:\n$output"
+                }
+            }
+            if (orchestrationConfig.autoFix) {
+                task.add("Executing tool: <b>$tool</b>")
+                resultFn(execute())
+                task.complete()
             } else {
-                resultFn("Tool execution failed with exit code $exitCode.\nOutput:\n$output")
+                task.add("Proposed command to run:")
+                task.add("<pre>$commandStr</pre>")
+                val semaphore = Semaphore(0)
+                var result = "Skipped"
+                task.add(task.ui.hrefLink("Run Tool") {
+                    try {
+                        task.add("Running...")
+                        result = execute()
+                        task.expandable("Output", "<pre>${result.replace("<", "&lt;")}</pre>")
+                        task.add(acceptButtonFooter(task.ui) {
+                            semaphore.release()
+                        })
+                    } catch (e: Exception) {
+                        task.error(e)
+                    }
+                })
+                semaphore.acquire()
+                resultFn(result)
+                task.complete()
             }
         } catch (e: Exception) {
             log.warn("Error running tool", e)
             transcript?.write("## Error\n```\n${e.message}\n```\n\n".toByteArray())
             resultFn("Error running tool: ${e.message}")
+            task.complete()
         } finally {
             transcript?.close()
         }

@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.FileOutputStream
+import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Future
@@ -47,7 +48,7 @@ open class CouncilMode(
     private val executionRecords = mutableListOf<AdaptivePlanningMode.ExecutionRecord>()
     private val reasoningStates = mutableMapOf<String, Any>()
     private var isRunning = false
-    private var transcriptStream: FileOutputStream? = null
+    private var transcriptStream: OutputStream? = null
     private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+))}""")
     private val maxTaskHistoryChars: Int get() = config.maxTaskHistoryChars
     private val maxTasksPerIteration: Int get() = config.maxTasksPerIteration
@@ -72,7 +73,7 @@ open class CouncilMode(
 
     private fun startCouncilChat(userMessage: String) {
         task.echo(renderMarkdown(userMessage))
-        transcriptStream = transcript(task)
+        transcriptStream = task.transcript()
 
         val continueLoop = true
         val tabbedDisplay = TabbedDisplay(task)
@@ -170,6 +171,33 @@ open class CouncilMode(
                         task.add(renderMarkdown("No tasks selected by vote. Finishing Council Chat."))
                         break
                     }
+                    if (!orchestrationConfig.autoFix) {
+                        val semaphore = java.util.concurrent.Semaphore(0)
+                        var approved = false
+                        val planHtml = StringBuilder()
+                        planHtml.append("### Proposed Plan\n")
+                        selectedTasks.forEachIndexed { index, taskData ->
+                            planHtml.append("${index + 1}. **${taskData.task.tasks?.firstOrNull()?.task_type ?: "Task"}**: ${taskData.task.tasks?.firstOrNull()?.task_description}\n")
+                        }
+                        task.add(renderMarkdown(planHtml.toString()))
+                        val buttons = StringBuilder()
+                        buttons.append(task.ui.hrefLink("Execute Plan", "btn btn-success mr-2") {
+                            approved = true
+                            semaphore.release()
+                        })
+                        buttons.append(" ")
+                        buttons.append(task.ui.hrefLink("Stop Council", "btn btn-danger") {
+                            approved = false
+                            semaphore.release()
+                        })
+                        task.add(buttons.toString())
+                        semaphore.acquire()
+                        if (!approved) {
+                            task.add(renderMarkdown("Council stopped by user."))
+                            break
+                        }
+                    }
+
 
                     // Execution
                     val taskResults = mutableListOf<Pair<TaskExecutionConfig, Future<String>>>()
@@ -444,15 +472,6 @@ ${JsonUtil.toJson(taskConfig)}
         return formattedRecords
     }
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "council_chat_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a>"
-        )
-        return markdownTranscript
-    }
 
     private fun writeToTranscript(content: String) {
         transcriptStream?.write(content.toByteArray())

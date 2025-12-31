@@ -216,13 +216,54 @@ open class ConversationalMode(
         defaultModel: ChatInterface,
         parserChatter: ChatInterface
     ) {
-        val (reasoning, chosenTask) = requestToTask(
-            defaultModel, parserChatter,
-            userMessage,
-            this@ConversationalMode.orchestrationConfig,
-            this@ConversationalMode.systemPrompt,
-            this.getConversationContext()
-        )
+        val tabs = TabbedDisplay(task)
+        val planTask = this.task.ui.newTask(false)
+        tabs["Plan"] = planTask.placeholder
+
+        val chosenTask: Pair<ParsedResponse<Tasks>, TaskExecutionConfig>? = if (orchestrationConfig.autoFix) {
+            val result = requestToTask(
+                defaultModel, parserChatter,
+                userMessage,
+                this@ConversationalMode.orchestrationConfig,
+                this@ConversationalMode.systemPrompt,
+                this.getConversationContext()
+            )
+            planTask.add(result.first.text.renderMarkdown())
+            planTask.complete("Executing task:\n```json\n${JsonUtil.toJson(result.second)}\n```".renderMarkdown())
+            result
+        } else {
+            Discussable(
+                task = planTask,
+                heading = "Plan Task",
+                userMessage = { userMessage },
+                initialResponse = {
+                    requestToTask(
+                        defaultModel, parserChatter,
+                        userMessage,
+                        this@ConversationalMode.orchestrationConfig,
+                        this@ConversationalMode.systemPrompt,
+                        this.getConversationContext()
+                    )
+                },
+                outputFn = { (reasoning, taskConfig) ->
+                    reasoning.text.renderMarkdown() +
+                            "\n\nProposed Task:\n```json\n${JsonUtil.toJson(taskConfig)}\n```".renderMarkdown()
+                },
+                reviseResponse = { history ->
+                    val discussionContext = history.map { (msg, role) ->
+                        "${role.name.uppercase()}: $msg"
+                    }
+                    requestToTask(
+                        defaultModel, parserChatter,
+                        userMessage,
+                        this@ConversationalMode.orchestrationConfig,
+                        this@ConversationalMode.systemPrompt,
+                        this.getConversationContext() + discussionContext
+                    )
+                }
+            ).call()
+        }
+
         // Add task configuration to conversation history
         val taskConfigJson = JsonUtil.toJson(chosenTask)
         synchronized(messagesLock) {
@@ -236,15 +277,9 @@ open class ConversationalMode(
 
         val resultSemaphore = Semaphore(0)
         val resultRef = AtomicReference<String>()
-        val tabs = TabbedDisplay(task)
-        this.task.ui.newTask(false).apply {
-            tabs["Plan"] = placeholder
-            add(reasoning.text.renderMarkdown())
-            complete("Executing task:\n```json\n${JsonUtil.toJson(chosenTask)}\n```".renderMarkdown())
-        }
         this.task.ui.newTask(false).apply {
             tabs["Run"] = placeholder
-            TaskType.getImpl(orchestrationConfig, chosenTask).run(
+            TaskType.getImpl(orchestrationConfig, chosenTask?.component2()).run(
                 agent = TaskOrchestrator(
                     user = user,
                     session = session,
