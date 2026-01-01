@@ -11,7 +11,7 @@ assistants.
 ### Core Components
 
 ```
-cognotik-interpreter/
+Cognotik/
 ├── core/                    # Core interpreter interface and utilities
 ├── kotlin/                  # Kotlin interpreter implementation
 ├── groovy/                  # Groovy interpreter implementation

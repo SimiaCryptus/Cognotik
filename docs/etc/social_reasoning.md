@@ -2358,7 +2358,7 @@ All files are accessible via links in the task completion message.
 
 ### See Also
 
-- [LLMExperimentTask](./LLMExperimentTask.md) - Run controlled LLM experiments
+- [LLMExperimentTask](LLMExperimentTask.md) - Run controlled LLM experiments
 - [GameTheoryTask](./GameTheoryTask.md) - Simulate strategic interactions
 - [MultiPerspectiveAnalysisTask](./MultiPerspectiveAnalysisTask.md) - Analyze from multiple viewpoints
 
