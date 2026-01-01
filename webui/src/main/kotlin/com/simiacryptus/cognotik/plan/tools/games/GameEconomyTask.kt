@@ -267,7 +267,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask()
+        val overviewTask = task.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         try {
@@ -317,7 +317,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
                 contextBuilder.append(priorContext)
                 contextBuilder.append("\n\n")
 
-                val contextTask = task.ui.newTask(false)
+                val contextTask = task.newTask()
                 tabs["Context"] = contextTask.placeholder
                 contextTask.add(
                     MarkdownUtil.renderMarkdown(
@@ -367,7 +367,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             // Step 1: Design resource system
             var stepStartTime = System.currentTimeMillis()
             log.debug("Designing resource system")
-            val resourceTask = task.ui.newTask()
+            val resourceTask = task.newTask()
             tabs["Resources"] = resourceTask.placeholder
             val resourceBuffer = resourceTask.add(
                 MarkdownUtil.renderMarkdown("## Resource System\n\n🔄 Designing resource types and flows...", ui = ui)
@@ -409,7 +409,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             // Step 2: Design progression system
             stepStartTime = System.currentTimeMillis()
             log.debug("Designing progression system")
-            val progressionTask = task.ui.newTask()
+            val progressionTask = task.newTask()
             tabs["Progression"] = progressionTask.placeholder
             val progressionBuffer = progressionTask.add(
                 MarkdownUtil.renderMarkdown("## Progression System\n\n🔄 Designing level curves and unlocks...", ui = ui)
@@ -470,7 +470,7 @@ Generate the progression system design now:
             // Step 3: Design loot and reward system
             stepStartTime = System.currentTimeMillis()
             log.debug("Designing loot system")
-            val lootTask = task.ui.newTask()
+            val lootTask = task.newTask()
             tabs["Loot & Rewards"] = lootTask.placeholder
             val lootBuffer = lootTask.add(
                 MarkdownUtil.renderMarkdown(
@@ -539,7 +539,7 @@ Generate the loot and reward system design now:
             // Step 4: Design monetization strategy
             stepStartTime = System.currentTimeMillis()
             log.debug("Designing monetization strategy")
-            val monetizationTask = task.ui.newTask()
+            val monetizationTask = task.newTask()
             tabs["Monetization"] = monetizationTask.placeholder
             val monetizationBuffer = monetizationTask.add(
                 MarkdownUtil.renderMarkdown("## Monetization Strategy\n\n🔄 Designing monetization approach...", ui = ui)
@@ -613,7 +613,7 @@ Generate the monetization strategy now:
             // Step 5: Design engagement systems
             stepStartTime = System.currentTimeMillis()
             log.debug("Designing engagement systems")
-            val engagementTask = task.ui.newTask()
+            val engagementTask = task.newTask()
             tabs["Engagement"] = engagementTask.placeholder
             val engagementBuffer = engagementTask.add(
                 MarkdownUtil.renderMarkdown("## Engagement Systems\n\n🔄 Designing retention mechanics...", ui = ui)
@@ -686,7 +686,7 @@ Generate the engagement systems design now:
             // Step 6: Generate economy forecast
             stepStartTime = System.currentTimeMillis()
             log.debug("Generating economy forecast")
-            val forecastTask = task.ui.newTask()
+            val forecastTask = task.newTask()
             tabs["Forecast"] = forecastTask.placeholder
             val forecastBuffer = forecastTask.add(
                 MarkdownUtil.renderMarkdown("## Economy Forecast\n\n🔄 Projecting economy health...", ui = ui)
@@ -757,7 +757,7 @@ Generate the ${executionConfig.forecast_months}-month economy forecast now:
             if (executionConfig.generate_balance_report) {
                 stepStartTime = System.currentTimeMillis()
                 log.debug("Generating balance report")
-                val balanceTask = task.ui.newTask()
+                val balanceTask = task.newTask()
                 tabs["Balance Report"] = balanceTask.placeholder
                 val balanceBuffer = balanceTask.add(
                     MarkdownUtil.renderMarkdown("## Balance Report\n\n🔄 Analyzing economy balance...", ui = ui)
@@ -836,7 +836,7 @@ Generate the comprehensive balance report now:
             // Step 8: Generate structured summary using ParsedAgent
             stepStartTime = System.currentTimeMillis()
             log.debug("Generating structured summary")
-            val summaryTask = task.ui.newTask()
+            val summaryTask = task.newTask()
             tabs["Summary"] = summaryTask.placeholder
             val summaryBuffer = summaryTask.add(
                 MarkdownUtil.renderMarkdown("## Summary\n\n🔄 Generating comprehensive summary...", ui = ui)

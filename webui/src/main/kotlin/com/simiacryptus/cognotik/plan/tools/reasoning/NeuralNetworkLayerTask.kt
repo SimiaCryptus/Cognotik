@@ -387,7 +387,7 @@ class NeuralNetworkLayerTask(
             val api = defaultSmart
 
             // Overview tab
-            val overviewTask = task.ui.newTask(false)
+            val overviewTask = task.newTask()
             tabs["Overview"] = overviewTask.placeholder
             val overviewContent = buildString {
                 appendLine("# Neural Network Layer Analysis: $layerName")
@@ -429,7 +429,7 @@ class NeuralNetworkLayerTask(
             transcript?.write("$overviewContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate executive summary first
-            val summaryTask = task.ui.newTask(false)
+            val summaryTask = task.newTask()
             tabs["Executive Summary"] = summaryTask.placeholder
             val summary = generateExecutiveSummary(layerName, forwardDesc, inputShape, outputShape, parameters, api)
             val summaryContent = buildString {
@@ -472,7 +472,7 @@ class NeuralNetworkLayerTask(
             transcript?.write("\n---\n\n$summaryContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate intuitive explanation
-            val intuitiveTask = task.ui.newTask(false)
+            val intuitiveTask = task.newTask()
             tabs["Intuitive Explanation"] = intuitiveTask.placeholder
             val intuitive = generateIntuitiveExplanation(layerName, forwardDesc, summary, api)
             val intuitiveContent = buildString {
@@ -519,7 +519,7 @@ class NeuralNetworkLayerTask(
             transcript?.write("\n---\n\n$intuitiveContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate conceptual diagram
-            val diagramTask = task.ui.newTask(false)
+            val diagramTask = task.newTask()
             tabs["Conceptual Diagram"] = diagramTask.placeholder
             val diagram = generateConceptualDiagram(layerName, forwardDesc, inputShape, outputShape, parameters, api)
             val diagramContent = buildString {
@@ -561,7 +561,7 @@ class NeuralNetworkLayerTask(
             transcript?.write("\n---\n\n$diagramContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Generate formal definition
-            val definitionTask = task.ui.newTask(false)
+            val definitionTask = task.newTask()
             tabs["Formal Definition"] = definitionTask.placeholder
             val definition =
                 generateLayerDefinition(layerName, forwardDesc, inputShape, outputShape, parameters, activation, api)
@@ -594,7 +594,7 @@ class NeuralNetworkLayerTask(
             // Generate gradient derivation
             overviewTask.add("\n- ⏳ Deriving gradients...".renderMarkdown)
             task.update()
-            val gradientTask = task.ui.newTask(false)
+            val gradientTask = task.newTask()
             tabs["Gradients"] = gradientTask.placeholder
             val gradients = generateGradientDerivation(layerName, definition, parameters, api)
             val gradientContent = buildString {
@@ -635,7 +635,7 @@ class NeuralNetworkLayerTask(
             if (includeHigherOrder && analysisDepth != "basic") {
                 overviewTask.add("\n- ⏳ Analyzing higher-order derivatives...".renderMarkdown)
                 task.update()
-                val higherOrderTask = task.ui.newTask(false)
+                val higherOrderTask = task.newTask()
                 tabs["Higher-Order Analysis"] = higherOrderTask.placeholder
                 val higherOrder = generateHigherOrderAnalysis(layerName, definition, gradients, analysisDepth, api)
                 val higherOrderContent = buildString {
@@ -683,7 +683,7 @@ class NeuralNetworkLayerTask(
             if (includeLyapunov && analysisDepth != "basic") {
                 overviewTask.add("\n- ⏳ Performing Lyapunov stability analysis...".renderMarkdown)
                 task.update()
-                val stabilityTask = task.ui.newTask(false)
+                val stabilityTask = task.newTask()
                 tabs["Stability Analysis"] = stabilityTask.placeholder
                 val stability = generateStabilityAnalysis(layerName, definition, gradients, api)
                 val stabilityContent = buildString {
@@ -725,7 +725,7 @@ class NeuralNetworkLayerTask(
             if (includeLipschitz) {
                 overviewTask.add("\n- ⏳ Analyzing Lipschitz properties...".renderMarkdown)
                 task.update()
-                val lipschitzTask = task.ui.newTask(false)
+                val lipschitzTask = task.newTask()
                 tabs["Lipschitz Analysis"] = lipschitzTask.placeholder
                 val lipschitz = generateLipschitzAnalysis(layerName, definition, gradients, api)
                 val lipschitzContent = buildString {
@@ -761,7 +761,7 @@ class NeuralNetworkLayerTask(
             if (includeNumerical) {
                 overviewTask.add("\n- ⏳ Analyzing numerical stability...".renderMarkdown)
                 task.update()
-                val numericalTask = task.ui.newTask(false)
+                val numericalTask = task.newTask()
                 tabs["Numerical Stability"] = numericalTask.placeholder
                 val numerical = generateNumericalStability(layerName, definition, api)
                 val numericalContent = buildString {
@@ -796,7 +796,7 @@ class NeuralNetworkLayerTask(
             // Generate implementations
             overviewTask.add("\n- ⏳ Generating implementations...".renderMarkdown)
             task.update()
-            val implTask = task.ui.newTask(false)
+            val implTask = task.newTask()
             tabs["Implementations"] = implTask.placeholder
             val implementations = languages.map { lang ->
                 generateImplementation(layerName, definition, gradients, parameters, lang, api)
@@ -843,7 +843,7 @@ class NeuralNetworkLayerTask(
             transcript?.write("\n---\n\n$implContent\n".toByteArray(StandardCharsets.UTF_8))
 
             // Complexity analysis
-            val complexityTask = task.ui.newTask(false)
+            val complexityTask = task.newTask()
             tabs["Complexity"] = complexityTask.placeholder
             val complexity = generateComplexityAnalysis(layerName, definition, inputShape, outputShape, parameters, api)
             val complexityContent = buildString {
@@ -875,7 +875,7 @@ class NeuralNetworkLayerTask(
             // Originality analysis
             overviewTask.add("\n- ⏳ Analyzing originality...".renderMarkdown)
             task.update()
-            val originalityTask = task.ui.newTask(false)
+            val originalityTask = task.newTask()
             tabs["Originality"] = originalityTask.placeholder
             val originality = generateOriginalityAnalysis(layerName, definition, forwardDesc, api)
             val originalityContent = buildString {
@@ -929,7 +929,7 @@ class NeuralNetworkLayerTask(
             // Use case analysis
             overviewTask.add("\n- ⏳ Analyzing use cases...".renderMarkdown)
             task.update()
-            val useCaseTask = task.ui.newTask(false)
+            val useCaseTask = task.newTask()
             tabs["Use Cases"] = useCaseTask.placeholder
             val useCases = generateUseCaseAnalysis(layerName, definition, forwardDesc, inputShape, outputShape, api)
             val useCaseContent = buildString {
@@ -1008,7 +1008,7 @@ class NeuralNetworkLayerTask(
             // Practical guidance
             overviewTask.add("\n- ⏳ Generating practical guidance...".renderMarkdown)
             task.update()
-            val guidanceTask = task.ui.newTask(false)
+            val guidanceTask = task.newTask()
             tabs["Practical Guidance"] = guidanceTask.placeholder
             val numerical = if (includeNumerical) {
                 generateNumericalStability(layerName, definition, api)

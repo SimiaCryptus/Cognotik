@@ -369,7 +369,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
         val tabs = TabbedDisplay(task)
         transcriptStream = initializeTranscript(task)
 
-        val overviewTask = ui.newTask(false)
+        val overviewTask = task.newTask()
         try {
             tabs["Overview"] = overviewTask.placeholder
 
@@ -425,7 +425,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
 
             if (priorContext.isNotBlank() || inputFileContext.isNotBlank()) {
                 transcriptStream?.write("## Context\n\n$priorContext\n\n$inputFileContext\n\n---\n\n".toByteArray())
-                val contextTask = ui.newTask(false)
+                val contextTask = task.newTask()
                 tabs["Context"] = contextTask.placeholder
                 contextTask.add(
                     buildString {
@@ -458,7 +458,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
 
             // Step 1: Generate Core Mechanics
             log.info("Generating $numMechanics core mechanics")
-            val mechanicsTask = ui.newTask(false)
+            val mechanicsTask = task.newTask()
             tabs["Core Mechanics"] = mechanicsTask.placeholder
 
             mechanicsTask.add("## Core Mechanics\n\n🔄 Generating mechanics...".renderMarkdown)
@@ -564,7 +564,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
 
             // Step 2: Analyze Mechanic Interactions
             log.debug("Analyzing mechanic interactions")
-            val interactionsTask = ui.newTask(false)
+            val interactionsTask = task.newTask()
             tabs["Interaction Matrix"] = interactionsTask.placeholder
 
             interactionsTask.add("## Mechanic Interactions\n\n🔄 Analyzing interactions...".renderMarkdown)
@@ -692,7 +692,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             // Step 3: Progression System (if enabled)
             if (executionConfig.include_progression_system) {
                 log.debug("Designing progression system")
-                val progressionTask = ui.newTask(false)
+                val progressionTask = task.newTask()
                 tabs["Progression System"] = progressionTask.placeholder
 
                 progressionTask.add("## Progression System\n\n🔄 Designing progression curve...".renderMarkdown)
@@ -824,7 +824,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             // Step 4: Economy System (if enabled)
             if (executionConfig.include_economy_system) {
                 log.debug("Designing economy system")
-                val economyTask = ui.newTask(false)
+                val economyTask = task.newTask()
                 tabs["Economy System"] = economyTask.placeholder
 
                 economyTask.add("## Economy System\n\n🔄 Designing resource economy...".renderMarkdown)
@@ -939,7 +939,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
 
             // Step 5: Balance Analysis
             log.debug("Performing balance analysis")
-            val balanceTask = ui.newTask(false)
+            val balanceTask = task.newTask()
             tabs["Balance Analysis"] = balanceTask.placeholder
 
             balanceTask.add("## Balance Analysis\n\n🔄 Analyzing game balance...".renderMarkdown)
@@ -1087,7 +1087,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
 
             // Step 6: Playtesting Predictions
             log.debug("Generating playtesting predictions")
-            val playtestingTask = ui.newTask(false)
+            val playtestingTask = task.newTask()
             tabs["Playtesting"] = playtestingTask.placeholder
 
             playtestingTask.add("## Playtesting Predictions\n\n🔄 Simulating player scenarios...".renderMarkdown)
@@ -1199,7 +1199,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
             // Step 7: Tuning Guide (if enabled)
             if (executionConfig.generate_tuning_guide) {
                 log.debug("Generating tuning guide")
-                val tuningTask = ui.newTask(false)
+                val tuningTask = task.newTask()
                 tabs["Tuning Guide"] = tuningTask.placeholder
 
                 tuningTask.add("## Tuning Guide\n\n🔄 Generating tuning parameters...".renderMarkdown)

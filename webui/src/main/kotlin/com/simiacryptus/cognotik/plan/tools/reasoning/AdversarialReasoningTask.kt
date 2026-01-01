@@ -161,12 +161,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                     "exploits=$generateExploits, mitigations=$suggestMitigations"
         )
 
-        val ui = task.ui
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = ui.newTask()
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
         transcriptStream?.let {
             it.write("# 🔴 Adversarial Reasoning / Red Team Analysis\n\n".toByteArray())
             it.write("**Target System:** $targetSystem\n\n".toByteArray())
@@ -214,8 +212,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         val inputFileContent = getInputFileCode()
         if (priorContext.isNotBlank() || fileContext.isNotBlank() || inputFileContent.isNotBlank()) {
-            val contextTask = ui.newTask()
-            tabs["Context"] = contextTask.placeholder
+            val contextTask = tabs.newTask("Context")
             transcriptStream?.let {
                 it.write("## Context for Analysis\n\n".toByteArray())
                 if (priorContext.isNotBlank()) {
@@ -258,8 +255,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                 val vectorStartTime = System.currentTimeMillis()
                 log.info("Analyzing attack vector ${index + 1}/${attackVectors.size}: $vector")
 
-                val vectorTask = ui.newTask()
-                tabs["Vector: ${vector.capitalize()}"] = vectorTask.placeholder
+                val vectorTask = tabs.newTask("Vector: ${vector.capitalize()}")
                 transcriptStream?.let {
                     it.write("## Attack Vector: ${vector.capitalize()}\n\n".toByteArray())
                     it.write("**Adversary Capability:** $adversaryCapability\n\n".toByteArray())
@@ -366,8 +362,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             // Generate mitigations if requested
             if (suggestMitigations && allVulnerabilities.isNotEmpty()) {
                 log.info("Generating mitigation strategies")
-                val mitigationTask = ui.newTask()
-                tabs["Mitigations"] = mitigationTask.placeholder
+                val mitigationTask = tabs.newTask("Mitigations")
 
                 mitigationTask.header("🛡️ Mitigation Strategies")
                 mitigationTask.add("**Status:** Generating recommendations...".renderMarkdown)
@@ -408,8 +403,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
             // Generate executive summary
             log.info("Generating executive summary")
-            val summaryTask = ui.newTask()
-            tabs["Executive Summary"] = summaryTask.placeholder
+            val summaryTask = tabs.newTask("Executive Summary")
 
             summaryTask.header("📊 Executive Summary")
             summaryTask.add("**Status:** Generating summary...".renderMarkdown)

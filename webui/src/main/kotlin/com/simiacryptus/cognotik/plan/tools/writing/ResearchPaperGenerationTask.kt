@@ -253,8 +253,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Research Paper Generation")
@@ -298,8 +297,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Sources"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Sources")
                 contextTask.header("Research Sources & Context")
                 if (fullContext.isNotBlank()) {
                     contextTask.expandable("Input Context", fullContext.truncateForDisplay(3000).renderMarkdown)
@@ -334,8 +332,7 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
 
             // Phase 1: Research Analysis
             log.info("Phase 1: Analyzing research sources")
-            val analysisTask = task.ui.newTask(false)
-            tabs["Analysis"] = analysisTask.placeholder
+            val analysisTask = tabs.newTask("Analysis")
 
             val analysisBuffer = analysisTask.add(
                 buildString {
@@ -392,8 +389,7 @@ Be thorough and academic in tone.
 
             // Phase 2: Create Paper Outline
             log.info("Phase 2: Creating paper outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
 
             val outlineBuffer = outlineTask.add(
                 buildString {
@@ -506,8 +502,7 @@ Ensure academic rigor appropriate for ${executionConfig.academic_level} level.
                 overviewTask.add("- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown)
                 task.update()
 
-                val sectionTask = task.ui.newTask(false)
-                tabs["Section ${sectionOutline.section_number}"] = sectionTask.placeholder
+                val sectionTask = tabs.newTask("Section ${sectionOutline.section_number}")
 
                 val sectionBuffer = sectionTask.add(
                     buildString {
@@ -622,8 +617,7 @@ Write in a ${executionConfig.academic_level} level academic style.
             overviewTask.add("\n### Phase 4: Bibliography Generation\n*Compiling citations...*\n".renderMarkdown)
             task.update()
 
-            val bibliographyTask = task.ui.newTask(false)
-            tabs["Bibliography"] = bibliographyTask.placeholder
+            val bibliographyTask = tabs.newTask("Bibliography")
 
             val bibBuffer = bibliographyTask.add(
                 buildString {
@@ -716,8 +710,7 @@ Ensure all citations are properly formatted and complete.
                 task.update()
 
                 log.info("Phase 5: Generating peer review")
-                val reviewTask = task.ui.newTask(false)
-                tabs["Peer Review"] = reviewTask.placeholder
+                val reviewTask = tabs.newTask("Peer Review")
 
                 val reviewBuffer = reviewTask.add(
                     buildString {
@@ -815,8 +808,7 @@ Format as a professional peer review.
                 task.update()
 
                 log.info("Phase 6: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask(false)
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -885,8 +877,7 @@ Provide the complete revised paper.
             task.update()
 
             log.info("Phase 7: Assembling final paper")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Paper"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Paper")
 
             val finalPaper = buildString {
                 appendLine("# ${outline.title}")

@@ -131,12 +131,10 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
         val api = defaultSmart ?: return
 
-        val ui = task.ui
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val maxHypotheses = executionConfig.max_hypotheses.coerceIn(1, 10)
         val evaluateCriteria = executionConfig.evaluate_criteria ?: listOf(
@@ -183,8 +181,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
         try {
             // Observations tab
-            val observationsTask = ui.newTask(false)
-            tabs["Observations"] = observationsTask.placeholder
+            val observationsTask = tabs.newTask("Observations")
             observationsTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -208,8 +205,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             val combinedContext = (priorContext + "\n\n" + inputContext.joinToString("\n\n")).trim()
             if (priorContext.isNotBlank()) {
                 log.debug("Found prior context: ${priorContext.length} characters")
-                val contextTask = ui.newTask(false)
-                tabs["Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Context")
                 contextTask.add(
                     buildString {
                         writeToTranscript(transcript, this)
@@ -233,8 +229,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             )
 
             // Generate or use existing hypotheses
-            val hypothesesTask = ui.newTask(false)
-            tabs["Hypotheses"] = hypothesesTask.placeholder
+            val hypothesesTask = tabs.newTask("Hypotheses")
             hypothesesTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -332,8 +327,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             )
 
             // Comparative analysis
-            val analysisTask = ui.newTask(false)
-            tabs["Analysis"] = analysisTask.placeholder
+            val analysisTask = tabs.newTask("Analysis")
             analysisTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -385,8 +379,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
             // Generate validation tests if requested
             var testSuggestions: String
             if (suggestTests) {
-                val testsTask = ui.newTask(false)
-                tabs["Validation Tests"] = testsTask.placeholder
+                val testsTask = tabs.newTask("Validation Tests")
                 testsTask.add(
                     buildString {
                         writeToTranscript(transcript, this)
@@ -433,8 +426,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
             // Best explanation summary
             val bestHypothesis = hypotheses.maxByOrNull { it.overall_score }
-            val summaryTask = ui.newTask(false)
-            tabs["Best Explanation"] = summaryTask.placeholder
+            val summaryTask = tabs.newTask("Best Explanation")
             summaryTask.add(
                 buildString {
                     writeToTranscript(transcript, this)

@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.BufferedWriter
@@ -232,11 +233,13 @@ class DataTableCompilationTask(
         val progressTotal = rowsList.obj.rows.size
         var progressCurrent = 0
         val statusBuffer = task.add("Initializing extraction...")
+        val tabs = TabbedDisplay(task)
 
         rowsList.obj.rows.forEach { row ->
             progressCurrent++
             statusBuffer?.setLength(0)
             statusBuffer?.append("Processing row ${progressCurrent}/${progressTotal}: ${row.id}")
+            val rowTask = tabs.newTask(row.id)
             task.update()
             val rowDataResponse = ParsedAgent(
                 name = "CellExtractor",
@@ -253,7 +256,7 @@ class DataTableCompilationTask(
                         "Expected Columns:\n${columnsList.joinToString("\n") { "- ${it.id}: ${it.name} (${it.description})" }}\n\n" +
                         "Special Instructions:\n${executionConfig?.cell_extraction_instructions}\n\n" +
                         "IMPORTANT: Respond with ONLY the single JSON object for the row `${row.id}`. Do NOT return a JSON array.",
-                model = chatter,
+                model = chatter.getChildClient(rowTask),
                 parsingChatter = defaultFast,
                 temperature = orchestrationConfig.temperature,
                 describer = TaskContextYamlDescriber(orchestrationConfig),
@@ -280,6 +283,7 @@ class DataTableCompilationTask(
                 }
                 out.write("\n".toByteArray())
             }
+            rowTask.complete()
         }
 
         task.header("Step 5: Compiling and saving data table", level = 2)

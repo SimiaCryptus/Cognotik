@@ -148,8 +148,7 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
         val g: GraphTraversalSource = graph.traversal()
 
         val tabs = TabbedDisplay(task)
-        val mainTask = task.ui.newTask(false)
-        tabs["Progress"] = mainTask.placeholder
+        val mainTask = tabs.newTask("Progress")
 
         // Load context
         val fileContext = try {

@@ -111,10 +111,9 @@ class SystemsThinkingTask(
         val tabs = TabbedDisplay(task)
         transcriptStream = initializeTranscript(task)
 
-        val overviewTask = ui.newTask(false)
+        // Overview tab
+        val overviewTask = tabs.newTask("Overview")
         try {
-            // Overview tab
-            tabs["Overview"] = overviewTask.placeholder
 
             val timeHorizon = executionConfig.time_horizon ?: "6 months"
             val interventions = executionConfig.simulate_interventions ?: emptyList()
@@ -172,8 +171,7 @@ class SystemsThinkingTask(
 
             if (priorContext.isNotBlank() || inputFileContext.isNotBlank() || relatedContext.isNotBlank()) {
                 transcriptStream?.write("## Context\n\n$priorContext\n\n$inputFileContext\n\n$relatedContext\n\n---\n\n".toByteArray())
-                val contextTask = ui.newTask(false)
-                tabs["Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Context")
                 contextTask.header("Context", level = 1)
 
                 if (priorContext.isNotBlank()) {
@@ -224,8 +222,7 @@ class SystemsThinkingTask(
 
             // Step 1: System Structure Analysis
             log.debug("Analyzing system structure and components")
-            val structureTask = ui.newTask(false)
-            tabs["System Structure"] = structureTask.placeholder
+            val structureTask = tabs.newTask("System Structure")
 
             structureTask.header("System Structure", level = 2)
             structureTask.add(MarkdownUtil.renderMarkdown("🔄 Analyzing components and relationships...", ui = task.ui))
@@ -258,8 +255,7 @@ Provide a clear, structured analysis.
             // Step 2: Feedback Loops
             if (executionConfig.identify_feedback_loops) {
                 log.debug("Identifying feedback loops")
-                val loopsTask = ui.newTask(false)
-                tabs["Feedback Loops"] = loopsTask.placeholder
+                val loopsTask = tabs.newTask("Feedback Loops")
 
                 loopsTask.header("Feedback Loops", level = 2)
                 loopsTask.add(
@@ -308,8 +304,7 @@ Provide the analysis and diagram.
             // Step 3: Delays and Accumulations
             if (executionConfig.map_delays) {
                 log.debug("Mapping delays and accumulations")
-                val delaysTask = ui.newTask(false)
-                tabs["Delays & Accumulations"] = delaysTask.placeholder
+                val delaysTask = tabs.newTask("Delays & Accumulations")
 
                 delaysTask.header("Delays & Accumulations", level = 2)
                 delaysTask.add(MarkdownUtil.renderMarkdown("🔄 Analyzing time lags and stocks...", ui = task.ui))
@@ -348,8 +343,7 @@ Provide specific examples with estimated time scales.
             // Step 4: System Archetypes
             if (executionConfig.identify_archetypes) {
                 log.debug("Identifying system archetypes")
-                val archetypesTask = ui.newTask(false)
-                tabs["System Archetypes"] = archetypesTask.placeholder
+                val archetypesTask = tabs.newTask("System Archetypes")
 
                 archetypesTask.header("System Archetypes", level = 2)
                 archetypesTask.add(MarkdownUtil.renderMarkdown("🔄 Identifying common patterns...", ui = task.ui))
@@ -393,8 +387,7 @@ Focus on the most relevant archetypes.
             // Step 5: Emergent Behavior
             if (executionConfig.analyze_emergent_behavior) {
                 log.debug("Analyzing emergent behavior")
-                val emergentTask = ui.newTask(false)
-                tabs["Emergent Behavior"] = emergentTask.placeholder
+                val emergentTask = tabs.newTask("Emergent Behavior")
 
                 emergentTask.header("Emergent Behavior", level = 2)
                 emergentTask.add(MarkdownUtil.renderMarkdown("🔄 Predicting system-level patterns...", ui = task.ui))
@@ -429,8 +422,7 @@ Consider both positive and negative emergent behaviors.
             // Step 6: Leverage Points
             if (executionConfig.find_leverage_points) {
                 log.debug("Finding leverage points")
-                val leverageTask = ui.newTask(false)
-                tabs["Leverage Points"] = leverageTask.placeholder
+                val leverageTask = tabs.newTask("Leverage Points")
 
                 leverageTask.header("Leverage Points", level = 2)
                 leverageTask.add(
@@ -482,8 +474,7 @@ Focus on the most impactful leverage points.
             // Step 7: Intervention Simulation
             if (interventions.isNotEmpty()) {
                 log.debug("Simulating ${interventions.size} interventions")
-                val simulationTask = ui.newTask(false)
-                tabs["Intervention Simulation"] = simulationTask.placeholder
+                val simulationTask = tabs.newTask("Intervention Simulation")
                 simulationTask.header("Intervention Simulation", level = 2)
 
                 simulationTask.add(
@@ -545,8 +536,7 @@ $simulationAnalysis
 
             // Step 8: Synthesis and Recommendations
             log.debug("Generating synthesis and recommendations")
-            val synthesisTask = ui.newTask(false)
-            tabs["Synthesis"] = synthesisTask.placeholder
+            val synthesisTask = tabs.newTask("Synthesis")
 
             synthesisTask.header("Synthesis & Recommendations", level = 2)
             synthesisTask.add(MarkdownUtil.renderMarkdown("🔄 Generating comprehensive synthesis...", ui = task.ui))

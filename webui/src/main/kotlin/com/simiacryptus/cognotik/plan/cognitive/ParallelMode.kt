@@ -29,12 +29,10 @@ class ParallelModeConfig(
 }
 
 open class ParallelMode(
-    task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser
 ) : CognitiveMode<ParallelModeConfig>(
-    task,
     orchestrationConfig,
     session,
     user
@@ -42,7 +40,7 @@ open class ParallelMode(
 
     private val log = LoggerFactory.getLogger(ParallelMode::class.java)
 
-    override fun initialize() {
+    override fun initialize(task : SessionTask) {
         log.debug("Initializing ParallelMode")
     }
 
@@ -109,7 +107,7 @@ open class ParallelMode(
             val futures = combinations.map { combination ->
                 processor.submit {
                     val label = combination.values.joinToString(",") { it.toString() }.take(30)
-                    val task = task.ui.newTask(cancelable = false, root = false).apply { tabs[label] = placeholder }
+                    val task = tabs.newTask(label)
 
                     try {
                         val renderedMessage = renderTemplate(plan.template, combination)

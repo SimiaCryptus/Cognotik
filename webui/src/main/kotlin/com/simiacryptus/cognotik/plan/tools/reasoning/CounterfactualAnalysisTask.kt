@@ -111,8 +111,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
 
         try {
             val tabs = TabbedDisplay(task)
-            val overviewTask = task.ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
+            val overviewTask = tabs.newTask("Overview")
 
             overviewTask.add(
                 MarkdownUtil.renderMarkdown(
@@ -439,5 +438,3 @@ $priorCode
         )
     }
 }
-
-

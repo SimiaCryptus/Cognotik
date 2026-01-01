@@ -24,15 +24,13 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 open class HierarchicalPlanningMode(
-    task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser,
-    maxConcurrency: Int = 4,
+    val maxConcurrency: Int = 4,
     private val maxIterations: Int = 200,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 ) : CognitiveMode<CognitiveModeConfig>(
-    task,
     orchestrationConfig,
     session,
     user
@@ -60,9 +58,9 @@ open class HierarchicalPlanningMode(
         transcriptStream?.flush()
     }
 
-    val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(task.ui.pool, maxConcurrency)
+    lateinit var processor: FixedConcurrencyProcessor
 
-    override fun initialize() {
+    override fun initialize(task : SessionTask) {
         log.debug("Initializing GoalOrientedMode")
         goalTree.clear()
         taskMap.clear()
@@ -74,6 +72,7 @@ open class HierarchicalPlanningMode(
     }
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
+        processor = FixedConcurrencyProcessor(task.ui.pool, maxConcurrency)
         log.debug("Handling user message: $userMessage")
         if (isRunning.getAndSet(true)) {
             task.add(MarkdownUtil.renderMarkdown("Goal-Oriented Mode is already running. Please wait for the current session to complete or stop it."))
@@ -100,7 +99,7 @@ open class HierarchicalPlanningMode(
 
 
         val stopLinkRef = AtomicReference<StringBuilder>()
-        val stopLink = task.add(this.task.ui.hrefLink("Stop Goal-Oriented Processing") {
+        val stopLink = task.add(task.ui.hrefLink("Stop Goal-Oriented Processing") {
             log.info("Stop requested by user.")
             stopRequested.set(true)
             stopLinkRef.get()?.set("Stop signal sent. Waiting for current iteration to finish...")
@@ -138,10 +137,10 @@ open class HierarchicalPlanningMode(
         val coordinator = TaskOrchestrator(
             user = user,
             session = session,
-            dataStorage = this.task.ui.dataStorage
+            dataStorage = task.ui.dataStorage
                 ?: throw IllegalStateException("SocketManager or its dataStorage is null"),
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                ?: this.task.ui.dataStorage?.getSessionDir(
+                ?: task.ui.dataStorage?.getSessionDir(
                     user,
                     session
                 )?.toPath() ?: File(".").toPath())
@@ -150,7 +149,7 @@ open class HierarchicalPlanningMode(
         try {
             var loaded = false
             if (userMessage.trim().equals("resume", ignoreCase = true)) {
-                loaded = loadState()
+                loaded = loadState(task)
                 if (loaded) {
                     logToSession("Resumed previous session state.")
                 } else {
@@ -180,8 +179,8 @@ open class HierarchicalPlanningMode(
         while (iteration < maxIterations && !stopRequested.get()) {
             if (stopRequested.get()) break
             iteration++
-            if (nextIteration(iteration, coordinator, planningChatter)) break
-            saveState()
+            if (nextIteration(task, iteration, coordinator, planningChatter)) break
+            saveState(task)
         }
 
         // Cancel periodic updates and do final update
@@ -203,6 +202,7 @@ open class HierarchicalPlanningMode(
     }
 
     private fun nextIteration(
+        task : SessionTask,
         iteration: Int,
         coordinator: TaskOrchestrator,
         planningChatInterface: ChatInterface
@@ -221,7 +221,7 @@ open class HierarchicalPlanningMode(
 
         for (goal in decomposableGoals) {
             if (stopRequested.get()) break
-            expandGoal(goal, coordinator, planningChatInterface)
+            expandGoal(task, goal, coordinator, planningChatInterface)
             updateGoalTreeUI()
         }
 
@@ -244,7 +244,7 @@ open class HierarchicalPlanningMode(
                 debouncedUpdateGoalTreeUI() // Update UI when task starts running
 
                 log.info("Submitting Task ID ${t.id} (${t.description}) to processor.")
-                val executionUiTask = task.ui.newTask()
+                val executionUiTask = task.newTask()
                 taskTasks[t.id] = executionUiTask
                 val future = processor.submit {
                     executeTask(
@@ -282,6 +282,7 @@ open class HierarchicalPlanningMode(
     }
 
     private fun expandGoal(
+        task : SessionTask,
         goal: Goal,
         coordinator: TaskOrchestrator,
         planningChatInterface: ChatInterface
@@ -289,7 +290,7 @@ open class HierarchicalPlanningMode(
         logToSession("Decomposing goal: ${goal.description} (ID: ${goal.id})")
         logToSession("\n### Goal Decomposition: ${goal.id}\n")
         // Create a goal tab for this goal
-        val task = this.task.ui.newTask()
+        val task = task.newTask()
         goalTasks[goal.id] = task
         task.add(MarkdownUtil.renderMarkdown("# Goal: ${goal.description}\n\nID: ${goal.id}"))
 
@@ -1240,12 +1241,12 @@ open class HierarchicalPlanningMode(
         val tasks: List<Task> = emptyList()
     )
 
-    private fun getStateFile(): File {
+    private fun getStateFile(task : SessionTask): File {
         val dir = task.ui.dataStorage?.getSessionDir(user, session) ?: File(".")
         return File(dir, "planning_state.json")
     }
 
-    private fun saveState() {
+    private fun saveState(task : SessionTask) {
         try {
             val state = PlanningState(
                 goalIdCounter = goalIdCounter.get(),
@@ -1253,14 +1254,14 @@ open class HierarchicalPlanningMode(
                 goals = goalTree.values.toList(),
                 tasks = taskMap.values.toList()
             )
-            getStateFile().writeText(state.toJson())
+            getStateFile(task).writeText(state.toJson())
         } catch (e: Exception) {
             log.error("Failed to save state", e)
         }
     }
 
-    private fun loadState(): Boolean {
-        val file = getStateFile()
+    private fun loadState(task : SessionTask): Boolean {
+        val file = getStateFile(task)
         if (!file.exists()) return false
         try {
             val state = JsonUtil.fromJson<PlanningState>(file.readText(), PlanningState::class.java)
@@ -1272,14 +1273,14 @@ open class HierarchicalPlanningMode(
             state.tasks.forEach { taskMap[it.id] = it }
             // Reconstruct UI mappings
             goalTree.values.forEach { goal ->
-                val t = task.ui.newTask()
+                val t = task.newTask()
                 goalTasks[goal.id] = t
                 t.add(MarkdownUtil.renderMarkdown("# Goal: ${goal.description}\n\nID: ${goal.id}"))
             }
-            taskMap.values.forEach { task ->
-                val t = this.task.ui.newTask()
-                taskTasks[task.id] = t
-                t.add(MarkdownUtil.renderMarkdown("# Task: ${task.description}\n\nID: ${task.id}"))
+            taskMap.values.forEach { v ->
+                val t = task.newTask()
+                taskTasks[v.id] = t
+                t.add(MarkdownUtil.renderMarkdown("# Task: ${v.description}\n\nID: ${v.id}"))
             }
             updateGoalTreeUI()
             return true

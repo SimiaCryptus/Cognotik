@@ -125,8 +125,7 @@ class ChainOfThoughtTask(
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Chain of Thought Reasoning")
@@ -179,8 +178,7 @@ class ChainOfThoughtTask(
         }
 
         if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
-            val contextTask = task.ui.newTask(false)
-            tabs["Context"] = contextTask.placeholder
+            val contextTask = tabs.newTask("Context")
             contextTask.header("Context")
             if (priorContext.isNotBlank()) {
                 contextTask.expandable("Previous Tasks", MarkdownUtil.renderMarkdown(priorContext, ui = ui))
@@ -211,8 +209,7 @@ class ChainOfThoughtTask(
                 val stepStartTime = System.currentTimeMillis()
                 log.info("Starting reasoning step $stepNumber of $maxSteps")
 
-                val stepTask = ui.newTask(false)
-                tabs["Step $stepNumber"] = stepTask.placeholder
+                val stepTask = tabs.newTask("Step $stepNumber")
                 stepTask.header("Step $stepNumber of $maxSteps")
                 stepTask.add("<b>Status:</b> Processing...")
                 stepTask.add("<b>Question:</b> $currentQuestion")
@@ -344,8 +341,7 @@ class ChainOfThoughtTask(
 
             // Generate final summary
             log.info("Generating summary of reasoning chain")
-            val summaryTask = task.ui.newTask(false)
-            tabs["Summary"] = summaryTask.placeholder
+            val summaryTask = tabs.newTask("Summary")
 
             summaryTask.header("Summary")
             summaryTask.add("<b>Status:</b> Generating comprehensive summary...")

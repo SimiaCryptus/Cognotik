@@ -142,7 +142,6 @@ ${settings?.toJson()}
             } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
             val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeType.Chat).getImpl(
-                task = ui.newTask(true),
                 orchestrationConfig = settings,
                 session = session,
                 user = user
@@ -163,8 +162,8 @@ ${settings?.toJson()}
 //                return
 //            }
 
-            cognitiveMode.apply { initialize() }.handleUserMessage(expandedMessage, ui.newTask(true))
-
+            val task = ui.newTask(true)
+            cognitiveMode.apply { initialize(task) }.handleUserMessage(expandedMessage, task)
         } catch (e: Throwable) {
             log.error("Error processing user message", e)
             ui.newTask().error(e)
@@ -224,11 +223,10 @@ ${settings?.toJson()}
             return
         }
         val cognitiveMode = orchestrationConfig.cognitiveMode?.getImpl(
-            task = task,
             orchestrationConfig = orchestrationConfig,
             session = session,
             user = user
-        )?.apply { initialize() } ?: throw IllegalStateException("Cognitive mode not configured")
+        )?.apply { initialize(task) } ?: throw IllegalStateException("Cognitive mode not configured")
         cognitiveMode.handleUserMessage(currentMessage, task)
     }
 

@@ -120,8 +120,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             val tabs = TabbedDisplay(task)
 
             // Overview tab
-            val overviewTask = task.ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
+            val overviewTask = tabs.newTask("Overview")
 
             val domainContext = executionConfig.domain_context ?: "general domain"
             val initialStates = executionConfig.initial_states ?: emptyList()
@@ -169,8 +168,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
             // Step 1: Identify States
             log.info("Step 1: Identifying all possible states")
-            val statesTask = task.ui.newTask(false)
-            tabs["States"] = statesTask.placeholder
+            val statesTask = tabs.newTask("States")
 
             val statesLoading = statesTask.add(
                 MarkdownUtil.renderMarkdown(
@@ -236,8 +234,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
             // Step 2: Identify Transitions
             log.info("Step 2: Identifying state transitions and events")
-            val transitionsTask = task.ui.newTask(false)
-            tabs["Transitions"] = transitionsTask.placeholder
+            val transitionsTask = tabs.newTask("Transitions")
 
             val transitionsLoading = transitionsTask.add(
                 MarkdownUtil.renderMarkdown(
@@ -277,8 +274,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
             // Step 3: Generate State Diagram
             log.info("Step 3: Generating state diagram")
-            val diagramTask = task.ui.newTask(false)
-            tabs["State Diagram"] = diagramTask.placeholder
+            val diagramTask = tabs.newTask("State Diagram")
 
             val diagramLoading = diagramTask.add(
                 MarkdownUtil.renderMarkdown("## State Diagram\n\n🔄 Generating visual representation...", ui = ui)
@@ -351,8 +347,7 @@ Generate the Mermaid diagram now:
             var edgeCasesAnalysis: String
             if (executionConfig.identify_edge_cases) {
                 log.info("Step 4: Identifying edge cases and error states")
-                val edgeCasesTask = task.ui.newTask(false)
-                tabs["Edge Cases"] = edgeCasesTask.placeholder
+                val edgeCasesTask = tabs.newTask("Edge Cases")
 
                 val edgeCasesLoading = edgeCasesTask.add(
                     MarkdownUtil.renderMarkdown(
@@ -403,8 +398,7 @@ Provide a structured analysis of edge cases and recommendations.
             var validationAnalysis = ""
             if (executionConfig.validate_properties) {
                 log.info("Step 5: Validating FSM properties")
-                val validationTask = task.ui.newTask(false)
-                tabs["Validation"] = validationTask.placeholder
+                val validationTask = tabs.newTask("Validation")
 
                 val validationLoading = validationTask.add(
                     MarkdownUtil.renderMarkdown(
@@ -461,8 +455,7 @@ Provide a structured validation report.
             var testScenariosAnalysis: String
             if (executionConfig.generate_test_scenarios) {
                 log.info("Step 6: Generating test scenarios")
-                val testScenariosTask = task.ui.newTask(false)
-                tabs["Test Scenarios"] = testScenariosTask.placeholder
+                val testScenariosTask = tabs.newTask("Test Scenarios")
 
                 val testScenariosLoading = testScenariosTask.add(
                     MarkdownUtil.renderMarkdown("## Test Scenario Generation\n\n🔄 Creating test scenarios...", ui = ui)
@@ -515,8 +508,7 @@ Generate at least 5-10 diverse test scenarios.
 
             // Step 7: Generate Summary
             log.info("Step 7: Generating comprehensive summary")
-            val summaryTask = task.ui.newTask(false)
-            tabs["Summary"] = summaryTask.placeholder
+            val summaryTask = tabs.newTask("Summary")
 
             val summaryLoading = summaryTask.add(
                 MarkdownUtil.renderMarkdown("## Summary\n\n🔄 Generating comprehensive summary...", ui = ui)
@@ -868,4 +860,3 @@ Format as a clear table or structured list.
         )
     }
 }
-

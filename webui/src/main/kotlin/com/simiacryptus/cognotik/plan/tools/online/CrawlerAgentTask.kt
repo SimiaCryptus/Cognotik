@@ -318,7 +318,7 @@ class CrawlerAgentTask(
                 return "Warning: No seed items found to start crawling"
             }
             // Create seed links tab
-            val seedLinksTask = crawlTask.ui.newTask(false)
+            val seedLinksTask = crawlTask.newTask()
             crawlTabs["Seed Links"] = seedLinksTask.placeholder
             val seedLinksContent = buildString {
                 appendLine("# Seed Links")
@@ -755,7 +755,7 @@ class CrawlerAgentTask(
         log.info("Queuing page for processing: url='$pageUrl', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
 
         val subTask = try {
-            tabs.task.ui.newTask(false).apply {
+            tabs.task.newTask().apply {
                 tabs[pageUrl] = placeholder
             }
         } catch (e: Exception) {
@@ -1229,7 +1229,7 @@ class CrawlerAgentTask(
         errorCount: Int
     ) {
         try {
-            val queueDetailsTask = tabs.task.ui.newTask(false)
+            val queueDetailsTask = tabs.task.newTask()
             tabs["Queue Details"] = queueDetailsTask.placeholder
             val queueDetails = buildString {
                 appendLine("# Page Queue Details")

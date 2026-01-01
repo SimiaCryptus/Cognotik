@@ -228,8 +228,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask()
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         overviewTask.add(
             buildString {
@@ -278,8 +277,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
             }
 
             // Progress tab
-            val progressTask = task.ui.newTask()
-            tabs["Progress"] = progressTask.placeholder
+            val progressTask = tabs.newTask("Progress")
 
             // Conduct survey
             val responses = ConcurrentHashMap<String, SurveyResponse>()
@@ -368,8 +366,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
             }
 
             // Generate descriptive statistics
-            val statsTask = task.ui.newTask()
-            tabs["Statistics"] = statsTask.placeholder
+            val statsTask = tabs.newTask("Statistics")
 
             statsTask.add(
                 buildString {
@@ -397,8 +394,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
 
             // Cross-tabulation analysis
             if (executionConfig?.cross_tabulation == true && executionConfig.include_demographics) {
-                val crossTabTask = task.ui.newTask()
-                tabs["Cross-Tabulation"] = crossTabTask.placeholder
+                val crossTabTask = tabs.newTask("Cross-Tabulation")
 
                 crossTabTask.add(
                     buildString {
@@ -431,8 +427,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
 
             // Sentiment analysis
             if (executionConfig?.sentiment_analysis == true) {
-                val sentimentTask = task.ui.newTask()
-                tabs["Sentiment"] = sentimentTask.placeholder
+                val sentimentTask = tabs.newTask("Sentiment")
 
                 sentimentTask.add(
                     buildString {
@@ -461,8 +456,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
 
             // Bias detection
             if (executionConfig?.bias_detection == true) {
-                val biasTask = task.ui.newTask()
-                tabs["Bias Detection"] = biasTask.placeholder
+                val biasTask = tabs.newTask("Bias Detection")
 
                 biasTask.add(
                     buildString {
@@ -491,8 +485,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
 
             // Generate insights
             log.info("Generating insights from poll results")
-            val insightsTask = task.ui.newTask()
-            tabs["Insights"] = insightsTask.placeholder
+            val insightsTask = tabs.newTask("Insights")
 
             insightsTask.add(
                 buildString {

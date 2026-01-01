@@ -140,7 +140,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         val tabbedDisplay = TabbedDisplay(task)
 
         // Overview tab with input context
-        val overviewTask = task.ui.newTask().apply {
+        val overviewTask = task.newTask().apply {
             tabbedDisplay["Overview"] = placeholder
             header("Abstraction Ladder Analysis: $concept", 2)
             add(
@@ -167,7 +167,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         try {
             if (direction == "up" || direction == "both") {
                 log.info("Performing upward abstraction analysis")
-                val upwardTab = task.ui.newTask()
+                val upwardTab = task.newTask()
                 tabbedDisplay["Upward Analysis"] = upwardTab.placeholder
                 val upwardAnalysis = analyzeUpward(
                     concept = concept,
@@ -190,7 +190,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
 
             if (direction == "down" || direction == "both") {
                 log.info("Performing downward concretization analysis")
-                val downwardTab = task.ui.newTask()
+                val downwardTab = task.newTask()
                 tabbedDisplay["Downward Analysis"] = downwardTab.placeholder
                 val downwardAnalysis = analyzeDownward(
                     concept = concept,
@@ -213,7 +213,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
 
             if (identifyPatterns) {
                 log.info("Generating pattern summary and recommendations")
-                val patternTab = task.ui.newTask()
+                val patternTab = task.newTask()
                 tabbedDisplay["Pattern Analysis"] = patternTab.placeholder
                 val patternSummary = generatePatternSummary(
                     concept = concept,

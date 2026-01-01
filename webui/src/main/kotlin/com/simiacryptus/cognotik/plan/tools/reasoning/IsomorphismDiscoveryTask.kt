@@ -145,7 +145,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             writeTranscriptHeader(transcriptStream, sourceDomain, targetDomain, strictness)
 
             // Overview
-            val overviewTask = task.ui.newTask(false)
+            val overviewTask = task.newTask()
             tabs["Overview"] = overviewTask.placeholder
             overviewTask.add(buildString {
                 appendLine("# Isomorphism Discovery Task")
@@ -173,7 +173,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             task.update()
 
             // Analysis
-            val analysisTask = task.ui.newTask(false)
+            val analysisTask = task.newTask()
             tabs["Analysis"] = analysisTask.placeholder
             analysisTask.add(buildString {
                 appendLine("# Structural Analysis")
@@ -234,7 +234,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
             writeToTranscript(transcriptStream, "## Analysis Result\n\n$result\n\n")
 
             // Synthesis
-            val synthesisTask = task.ui.newTask(false)
+            val synthesisTask = task.newTask()
             tabs["Synthesis"] = synthesisTask.placeholder
             val synthesisText = formatSynthesis(result, sourceDomain, targetDomain)
             synthesisTask.add(MarkdownUtil.renderMarkdown(synthesisText))

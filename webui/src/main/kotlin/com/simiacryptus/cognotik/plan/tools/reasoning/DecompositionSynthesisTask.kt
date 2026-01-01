@@ -209,7 +209,7 @@ class DecompositionSynthesisTask(
 
 
         // Overview tab
-        val overviewTask = ui.newTask()
+        val overviewTask = task.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         val overviewContent = buildString {
@@ -237,7 +237,7 @@ class DecompositionSynthesisTask(
             // Get context from related files and dependencies
             val context = buildContext(agent, root)
             // Context tab
-            val contextTask = ui.newTask()
+            val contextTask = task.newTask()
             tabs["Context"] = contextTask.placeholder
             contextTask.add(buildString {
                 appendLine("# Task Context")
@@ -265,7 +265,7 @@ class DecompositionSynthesisTask(
             transcriptStream?.let { writeToTranscript(it, "\n✅ Context built successfully\n\n") }
             // Step 4: Decompose the problem
             // Decomposition tab
-            val decompositionTask = ui.newTask()
+            val decompositionTask = task.newTask()
             tabs["Decomposition"] = decompositionTask.placeholder
             decompositionTask.add(buildString {
                 appendLine("# Problem Decomposition")
@@ -368,7 +368,7 @@ class DecompositionSynthesisTask(
             }
 
             // Subproblem Solutions tab
-            val solutionsTask = ui.newTask()
+            val solutionsTask = task.newTask()
             tabs["Subproblem Solutions"] = solutionsTask.placeholder
             solutionsTask.add(buildString {
                 appendLine("# Subproblem Solutions")
@@ -454,7 +454,7 @@ class DecompositionSynthesisTask(
 
             val finalResult = if (executionConfig.synthesize_solution) {
                 // Synthesis tab
-                val synthesisTask = ui.newTask()
+                val synthesisTask = task.newTask()
                 tabs["Synthesis"] = synthesisTask.placeholder
                 synthesisTask.add(buildString {
                     appendLine("# Solution Synthesis")
@@ -524,7 +524,7 @@ class DecompositionSynthesisTask(
                 // Validate coherence if requested
                 if (executionConfig.validate_coherence) {
                     // Validation tab
-                    val validationTask = ui.newTask()
+                    val validationTask = task.newTask()
                     tabs["Validation"] = validationTask.placeholder
                     validationTask.add(buildString {
                         appendLine("# Coherence Validation")

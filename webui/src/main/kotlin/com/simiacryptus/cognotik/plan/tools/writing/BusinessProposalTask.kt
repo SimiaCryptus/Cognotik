@@ -376,8 +376,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
 
         val tabs = TabbedDisplay(task)
         fun <T> runPhase(tabName: String, block: (SessionTask) -> T): T {
-            val subTask = task.ui.newTask(false)
-            tabs[tabName] = subTask.placeholder
+            val subTask = tabs.newTask(tabName)
             try {
                 return block(subTask)
             } finally {
@@ -387,8 +386,7 @@ BusinessProposal - Generate comprehensive business proposals with ROI analysis a
 
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Business Proposal Generation")

@@ -27,12 +27,10 @@ import kotlin.io.path.Path
  * A cognitive mode that implements the traditional plan-ahead strategy.
  */
 open class WaterfallMode(
-    task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser
 ) : CognitiveMode<WaterfallMode.WaterfallModeConfig>(
-    task,
     orchestrationConfig,
     session,
     user
@@ -46,7 +44,7 @@ open class WaterfallMode(
     private val log = LoggerFactory.getLogger(WaterfallMode::class.java)
     private var transcriptStream: FileOutputStream? = null
 
-    override fun initialize() {
+    override fun initialize(task : SessionTask) {
         log.debug("Initializing PlanAheadMode")
         transcriptStream = transcript(task)
     }
@@ -67,9 +65,9 @@ open class WaterfallMode(
             val coordinator = TaskOrchestrator(
                 user = user,
                 session = session,
-                dataStorage = this.task.ui.dataStorage!!,
+                dataStorage = task.ui.dataStorage!!,
                 root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                    ?: this.task.ui.dataStorage?.getSessionDir(
+                    ?: task.ui.dataStorage?.getSessionDir(
                         user,
                         session
                     )?.toPath() ?: File(".").toPath()

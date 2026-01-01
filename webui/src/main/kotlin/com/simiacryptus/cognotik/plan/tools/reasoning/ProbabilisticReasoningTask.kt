@@ -165,8 +165,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
         }
 
         // Overview tab
-        val overviewTask = ui.newTask()
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Probabilistic Reasoning Analysis")
@@ -192,8 +191,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
         val inputFileContent = getInputFileCode(agent)
         if (inputFileContent.isNotBlank()) {
             log.debug("Found input files: ${inputFileContent.length} characters")
-            val filesTask = ui.newTask()
-            tabs["Input Files"] = filesTask.placeholder
+            val filesTask = tabs.newTask("Input Files")
             filesTask.add(
                 MarkdownUtil.renderMarkdown("# Input Files\n\n$inputFileContent", ui = ui)
             )
@@ -203,8 +201,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
         val priorContext = getPriorCode(agent.executionState)
         if (priorContext.isNotBlank()) {
             log.debug("Found prior context: ${priorContext.length} characters")
-            val contextTask = ui.newTask()
-            tabs["Context"] = contextTask.placeholder
+            val contextTask = tabs.newTask("Context")
             contextTask.add(
                 MarkdownUtil.renderMarkdown(
                     """
@@ -223,8 +220,7 @@ ProbabilisticReasoning - Reason under uncertainty using Bayesian analysis
 
         try {
             // Prior Probabilities tab
-            val priorTask = ui.newTask()
-            tabs["Prior Probabilities"] = priorTask.placeholder
+            val priorTask = tabs.newTask("Prior Probabilities")
 
             val priorContent = buildString {
                 appendLine("# Prior Probabilities")
@@ -271,8 +267,7 @@ Consider both the strength of evidence and its reliability.
             )
 
             // Bayesian Update tab
-            val updateTask = ui.newTask()
-            tabs["Bayesian Update"] = updateTask.placeholder
+            val updateTask = tabs.newTask("Bayesian Update")
 
             updateTask.add(
                 MarkdownUtil.renderMarkdown(buildString {
@@ -335,8 +330,7 @@ Consider both the strength of evidence and its reliability.
             // Expected Value Analysis (if requested)
             if (executionConfig.calculate_expected_value) {
                 log.debug("Calculating expected values")
-                val evTask = ui.newTask()
-                tabs["Expected Value"] = evTask.placeholder
+                val evTask = tabs.newTask("Expected Value")
 
                 evTask.add(
                     MarkdownUtil.renderMarkdown(buildString {
@@ -394,8 +388,7 @@ Consider both the strength of evidence and its reliability.
             // Key Uncertainties (if requested)
             if (executionConfig.identify_key_uncertainties) {
                 log.debug("Identifying key uncertainties")
-                val uncertaintyTask = ui.newTask()
-                tabs["Key Uncertainties"] = uncertaintyTask.placeholder
+                val uncertaintyTask = tabs.newTask("Key Uncertainties")
 
                 uncertaintyTask.add(
                     MarkdownUtil.renderMarkdown(buildString {
@@ -453,8 +446,7 @@ Consider both the strength of evidence and its reliability.
             // Experiment Suggestions (if requested)
             if (executionConfig.suggest_experiments) {
                 log.debug("Suggesting experiments")
-                val experimentTask = ui.newTask()
-                tabs["Suggested Experiments"] = experimentTask.placeholder
+                val experimentTask = tabs.newTask("Suggested Experiments")
 
                 experimentTask.add(
                     MarkdownUtil.renderMarkdown(buildString {

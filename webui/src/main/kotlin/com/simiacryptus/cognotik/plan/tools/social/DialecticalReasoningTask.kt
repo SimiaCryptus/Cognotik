@@ -110,13 +110,11 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
         log.info("Configuration: thesis='$thesis', antithesis='$antithesis', context='$context', levels=$synthesisLevels, preserveStrengths=$preserveStrengths")
 
         val api = defaultSmart ?: return
-        val ui = task.ui
         val tabs = TabbedDisplay(task)
         transcriptStream = initializeTranscript(task)
 
         // Overview tab
-        val overviewTask = ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         overviewTask.header("Dialectical Reasoning Analysis", level = 1)
         overviewTask.add(
@@ -159,8 +157,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
         val inputFilesContent = getInputFileCode()
 
         if (priorContext.isNotBlank() || relatedFilesContent.isNotBlank()) {
-            val contextTask = ui.newTask(false)
-            tabs["Context"] = contextTask.placeholder
+            val contextTask = tabs.newTask("Context")
             contextTask.header("Context Information", level = 1)
             if (priorContext.isNotBlank()) {
                 contextTask.expandable("Prior Task Results", priorContext.truncateForDisplay().renderMarkdown)
@@ -196,8 +193,7 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
         try {
             // Step 1: Analyze Thesis
             log.info("Analyzing thesis")
-            val thesisTask = ui.newTask(false)
-            tabs["Thesis"] = thesisTask.placeholder
+            val thesisTask = tabs.newTask("Thesis")
 
             thesisTask.header("Thesis Analysis", level = 1)
             thesisTask.add("**Statement:** $thesis\n\n*Analyzing...*".renderMarkdown)
@@ -262,8 +258,7 @@ Be thorough and objective in your analysis.
 
             // Step 2: Analyze Antithesis
             log.info("Analyzing antithesis")
-            val antithesisTask = ui.newTask(false)
-            tabs["Antithesis"] = antithesisTask.placeholder
+            val antithesisTask = tabs.newTask("Antithesis")
 
             antithesisTask.header("Antithesis Analysis", level = 1)
             antithesisTask.add("**Statement:** $antithesis\n\n*Analyzing...*".renderMarkdown)
@@ -332,8 +327,7 @@ Be thorough and objective in your analysis.
 
             // Step 3: Explore Contradictions
             log.info("Exploring contradictions and tensions")
-            val contradictionsTask = ui.newTask(false)
-            tabs["Contradictions"] = contradictionsTask.placeholder
+            val contradictionsTask = tabs.newTask("Contradictions")
 
             contradictionsTask.header("Contradictions & Tensions", level = 1)
             contradictionsTask.add("*Analyzing...*".renderMarkdown)
@@ -407,8 +401,7 @@ Be thorough in exploring the dialectical tension.
 
             for (level in 1..synthesisLevels) {
                 log.info("Generating synthesis level $level of $synthesisLevels")
-                val synthesisTask = ui.newTask(false)
-                tabs["Synthesis L$level"] = synthesisTask.placeholder
+                val synthesisTask = tabs.newTask("Synthesis L$level")
 
                 synthesisTask.header("Synthesis - Level $level", level = 1)
                 synthesisTask.add("*Generating higher-level synthesis...*".renderMarkdown)
@@ -527,8 +520,7 @@ Aim for progressively deeper insight and integration.
 
             // Step 5: Final Integration
             log.info("Generating final integration")
-            val integrationTask = ui.newTask(false)
-            tabs["Final Integration"] = integrationTask.placeholder
+            val integrationTask = tabs.newTask("Final Integration")
 
             integrationTask.header("Final Integration", level = 1)
             integrationTask.add("*Synthesizing all levels...*".renderMarkdown)

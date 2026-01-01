@@ -182,7 +182,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
 
 
             // Create overview tab
-            val overviewTask = task.ui.newTask()
+            val overviewTask = task.newTask()
             tabs["Overview"] = overviewTask.placeholder
             val overviewContent = buildString {
                 appendLine("# Analogical Reasoning Task")
@@ -229,7 +229,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
 
             // Step 1: Generate analogies
             log.info("Starting analogy generation phase")
-            val analogiesTask = task.ui.newTask()
+            val analogiesTask = task.newTask()
             tabs["Analogy Generation"] = analogiesTask.placeholder
             analogiesTask.add(buildString {
                 appendLine("# Generating Analogies")
@@ -367,7 +367,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
             // Step 2: Validate mappings if requested
             if (validateMappings) {
                 log.info("Starting mapping validation phase")
-                val validationTask = task.ui.newTask()
+                val validationTask = task.newTask()
                 tabs["Validation"] = validationTask.placeholder
                 validationTask.add(buildString {
                     appendLine("# Mapping Validation")
@@ -447,7 +447,7 @@ Provide a brief validation assessment.
             log.info("Formatting and displaying final results")
 
             log.info("Formatting and displaying final results")
-            val synthesisTask = task.ui.newTask()
+            val synthesisTask = task.newTask()
             tabs["Synthesis & Recommendations"] = synthesisTask.placeholder
 
             val formattedResult = formatAnalogicalReasoningResult(result)

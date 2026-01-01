@@ -256,8 +256,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
         val inputFileContent = getInputFileCode()
         if (inputFileContent.isNotBlank()) {
             log.info("Loaded input files for context")
-            val inputFilesTask = task.ui.newTask()
-            tabs["Input Files"] = inputFilesTask.placeholder
+            val inputFilesTask = tabs.newTask("Input Files")
             inputFilesTask.add(
                 buildString {
                     appendLine("# Input Files")
@@ -278,8 +277,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
 
 
         // Overview tab
-        val overviewTask = task.ui.newTask()
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Technical Explanation Generation")
@@ -341,8 +339,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask()
-                tabs["Reference Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Reference Context")
                 contextTask.add(
                     buildString {
                         appendLine("# Reference Context")
@@ -369,8 +366,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
 
             // Phase 1: Create outline
             log.info("Phase 1: Creating explanation outline")
-            val outlineTask = task.ui.newTask()
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
                 buildString {
@@ -551,8 +547,7 @@ Ensure the outline:
                 overviewTask.add("- Section ${index + 1}: ${conceptOutline.concept.truncateForDisplay(50)} ".renderMarkdown)
                 overviewTask.update()
 
-                val sectionTask = task.ui.newTask()
-                tabs["Section ${index + 1}"] = sectionTask.placeholder
+                val sectionTask = tabs.newTask("Section ${index + 1}")
 
                 sectionTask.add(
                     buildString {
@@ -715,8 +710,7 @@ ${
                 overviewTask.update()
 
                 log.info("Phase 3: Generating comparisons")
-                val comparisonTask = task.ui.newTask()
-                tabs["Comparisons"] = comparisonTask.placeholder
+                val comparisonTask = tabs.newTask("Comparisons")
 
                 comparisonTask.add(
                     buildString {
@@ -784,8 +778,7 @@ Make comparisons clear and helpful for ${executionConfig.target_audience}.
                 overviewTask.update()
 
                 log.info("Phase 4: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask()
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -868,8 +861,7 @@ Provide the complete revised explanation.
             overviewTask.update()
 
             log.info("Phase 5: Assembling final explanation")
-            val finalTask = task.ui.newTask()
-            tabs["Complete Explanation"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Explanation")
 
             val finalExplanation = buildString {
                 appendLine("# ${outline.title}")

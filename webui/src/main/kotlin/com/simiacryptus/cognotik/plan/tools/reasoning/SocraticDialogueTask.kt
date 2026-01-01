@@ -146,8 +146,7 @@ class SocraticDialogueTask(
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Socratic Dialogue: Exploring the Question")
@@ -251,8 +250,7 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                 flush()
             }
             // Add context tab
-            val contextTask = task.ui.newTask(false)
-            tabs["Context"] = contextTask.placeholder
+            val contextTask = tabs.newTask("Context")
             contextTask.add(
                 buildString {
                     appendLine("# Context from Previous Tasks")
@@ -281,8 +279,7 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                 log.info("Starting exchange $depth of $maxDepth")
 
                 // Create tab for this exchange
-                val exchangeTask = task.ui.newTask(false)
-                tabs["Exchange $depth"] = exchangeTask.placeholder
+                val exchangeTask = tabs.newTask("Exchange $depth")
 
                 exchangeTask.add(
                     buildString {
@@ -414,8 +411,7 @@ Provide only the question, without preamble.
             }
 
             log.info("Generating synthesis of dialogue")
-            val synthesisTask = task.ui.newTask(false)
-            tabs["Synthesis"] = synthesisTask.placeholder
+            val synthesisTask = tabs.newTask("Synthesis")
 
             synthesisTask.add(
                 buildString {

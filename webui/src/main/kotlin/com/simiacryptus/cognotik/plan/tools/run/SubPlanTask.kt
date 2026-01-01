@@ -115,7 +115,7 @@ class SubPlanTask(
             val tabs = TabbedDisplay(task)
 
             // Create planning context
-            val planningTask = task.ui.newTask()
+            val planningTask = task.newTask()
             tabs["Planning"] = planningTask.placeholder
 
             // Get the planning goal
@@ -140,8 +140,8 @@ class SubPlanTask(
 
             // Initialize the cognitive mode
             val cognitiveInstance = cognitiveMode.type!!.getImpl(
-                task = planningTask, orchestrationConfig = subConfig, session = agent.session, user = agent.user
-            ).apply { initialize() }
+                orchestrationConfig = subConfig, session = agent.session, user = agent.user
+            ).apply { initialize(task) }
 
             // Display planning information
             val planningInfo = buildString {
@@ -178,7 +178,7 @@ class SubPlanTask(
 
             fun runExecution(): String {
                 // Execute the sub-plan using the cognitive mode
-                val executionTask = task.ui.newTask()
+                val executionTask = task.newTask()
                 tabs["Execution"] = executionTask.placeholder
 
                 log.debug("Executing sub-plan with ${contextMessages.size} context messages")
@@ -197,7 +197,7 @@ class SubPlanTask(
                 log.info("Sub-plan execution completed with ${results.size} results")
 
                 // Create summary if configured
-                val summaryTask = task.ui.newTask()
+                val summaryTask = task.newTask()
                 tabs["Summary"] = summaryTask.placeholder
 
                 val summary = createSummary(results, planningGoal, summaryTask, orchestrationConfig)

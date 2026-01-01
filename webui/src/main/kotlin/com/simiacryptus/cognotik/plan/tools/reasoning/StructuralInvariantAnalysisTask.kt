@@ -99,8 +99,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
 
             val tabbedDisplay = TabbedDisplay(task)
 
-            task.ui.newTask(false).apply {
-                tabbedDisplay["Overview"] = placeholder
+            tabbedDisplay.newTask("Overview").apply {
 
                 header("Structural Invariant Analysis")
                 add("<b>Subject:</b> $subject")
@@ -116,14 +115,12 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
             val priorCode = getPriorCode(agent.executionState)
 
             val prompt = buildPrompt(subject, transformations, format, inputFileContent, priorCode)
-            task.ui.newTask(false).apply {
-                tabbedDisplay["Prompt"] = placeholder
+            tabbedDisplay.newTask("Prompt").apply {
                 expandable("Full Prompt", "<pre>${prompt.replace("<", "&lt;")}</pre>")
             }
 
 
-            task.ui.newTask(false).apply {
-                tabbedDisplay["Analysis"] = placeholder
+            tabbedDisplay.newTask("Analysis").apply {
                 add("Performing structural analysis... This may take a moment.", additionalClasses = "text-info")
             }
 
@@ -134,8 +131,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
 
             val response = chatAgent.answer(listOf(prompt))
 
-            task.ui.newTask(false).apply {
-                tabbedDisplay["Result"] = placeholder
+            tabbedDisplay.newTask("Result").apply {
                 add(MarkdownUtil.renderMarkdown(response, ui = task.ui))
                 transcriptStream?.write("\n\n## Analysis Result\n\n$response".toByteArray(StandardCharsets.UTF_8))
             }

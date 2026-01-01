@@ -452,7 +452,7 @@ existing line 4
 ```
 Generate the patches now.
 """.trimIndent()
-            val subTask = task.ui.newTask(false).apply { add("Generating patches...") }
+            val subTask = task.newTask().apply { add("Generating patches...") }
             subTask.ui.pool.submit {
                 try {
                     val chatAgent = ChatAgent(

@@ -125,8 +125,7 @@ class MultiPerspectiveAnalysisTask(
 
 
         val tabs = TabbedDisplay(task)
-        val overviewTask = task.ui.newTask()
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         overviewTask.add(
             MarkdownUtil.renderMarkdown(
@@ -165,9 +164,7 @@ class MultiPerspectiveAnalysisTask(
 
         // Analyze from each perspective
         perspectives.forEach { perspective ->
-            val perspectiveTask = task.ui.newTask().apply {
-                tabs[perspective] = placeholder
-            }
+            val perspectiveTask = tabs.newTask(perspective)
 
             val prompt = """
 You are analyzing the following subject from the **$perspective perspective**.
@@ -221,9 +218,7 @@ Provide a thorough analysis from the $perspective viewpoint.
 
         // Synthesize if requested
         val finalResult = if (executionConfig.synthesize) {
-            val synthesisTask = task.ui.newTask().apply {
-                tabs["Synthesis"] = placeholder
-            }
+            val synthesisTask = tabs.newTask("Synthesis")
             synthesisTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## Synthesizing Perspectives...",

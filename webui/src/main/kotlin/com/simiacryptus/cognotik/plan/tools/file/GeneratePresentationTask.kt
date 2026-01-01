@@ -124,7 +124,7 @@ class GeneratePresentationTask(
         val revealInitCode = this::class.java.getResource("/presentations/reveal_init.js")?.readText() ?: ""
         filesToWrite.add("reveal_init.js" to revealInitCode)
 
-        val newTask = task.ui.newTask(false)
+        val newTask = task.newTask()
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
         val api = defaultSmart

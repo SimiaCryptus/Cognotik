@@ -91,7 +91,7 @@ DataIngest - Parse unstructured logs/text into structured data
     ) {
         val ui = task.ui
         val tabs = TabbedDisplay(task)
-        val logTask = task.ui.newTask(false)
+        val logTask = task.newTask()
         tabs["Log"] = logTask.placeholder
 
         fun log(msg: String) {
@@ -133,7 +133,7 @@ DataIngest - Parse unstructured logs/text into structured data
             val parsingChatter = defaultFast.getChildClient(task)
             val defaultChatter = defaultSmart.getChildClient(task)
 
-            val discoveryTask = task.ui.newTask(false)
+            val discoveryTask = task.newTask()
             tabs["Discovery"] = discoveryTask.placeholder
             val statusBuffer = discoveryTask.add("Initializing discovery...")
             discoveryTask.update()

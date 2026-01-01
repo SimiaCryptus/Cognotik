@@ -253,7 +253,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
 
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false).apply { tabs["Overview"] = placeholder }
+        val overviewTask = tabs.newTask("Overview")
         val overviewContent = buildString {
             appendLine("# Narrative Generation")
             appendLine()
@@ -297,8 +297,7 @@ NarrativeGeneration - Generate complete narratives from analysis and outlines
 
 // Phase 2: Generate detailed outline
             log.info("Phase 2: Generating narrative outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
                 buildString {
@@ -648,8 +647,7 @@ Create approximately ${actSummary.estimated_scenes} scenes for this act. For eac
                 overviewTask.add("- Act ${sceneOutline.act_number}, Scene ${sceneOutline.scene_number}: ${sceneOutline?.title} ".renderMarkdown)
                 overviewTask.update()
 
-                val sceneTask = task.ui.newTask(false)
-                tabs["Act ${sceneOutline.act_number} Scene ${sceneOutline.scene_number}"] = sceneTask.placeholder
+                val sceneTask = tabs.newTask("Act ${sceneOutline.act_number} Scene ${sceneOutline.scene_number}")
 
                 sceneTask.add(
                     buildString {
@@ -851,8 +849,7 @@ Provide the revised scene content only.
 
             // Phase 4: Create final compiled version
             log.info("Phase 4: Assembling final narrative")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Narrative"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Narrative")
 
             val finalNarrative = buildString {
                 appendLine("# ${outline.title}")
@@ -1006,8 +1003,7 @@ Provide the revised scene content only.
     ): String? {
         try {
             log.info("Generating cover image for: $title")
-            val task = task.ui.newTask(false)
-            tabs["Cover Image"] = task.placeholder
+            val task = tabs.newTask("Cover Image")
             task.add(
                 buildString {
                     appendLine("# Cover Image")
@@ -1074,8 +1070,7 @@ Provide the revised scene content only.
     ): String? {
         return try {
             log.info("Generating reference image for setting: ${settingProfile.setting_id}")
-            val task = task.ui.newTask(false)
-            tabs["Setting: ${settingProfile.setting_id}"] = task.placeholder
+            val task = tabs.newTask("Setting: ${settingProfile.setting_id}")
             task.add(
                 buildString {
                     appendLine("# Setting Reference: ${settingProfile.setting_id}")
@@ -1173,8 +1168,7 @@ Provide the revised scene content only.
     ): String? {
         return try {
             log.info("Generating reference image for character: ${characterProfile.name}")
-            val task = task.ui.newTask(false)
-            tabs["Character: ${characterProfile.name}"] = task.placeholder
+            val task = tabs.newTask("Character: ${characterProfile.name}")
             task.add(
                 buildString {
                     appendLine("# Character Reference: ${characterProfile.name}")
@@ -1279,8 +1273,7 @@ Provide the revised scene content only.
     ) {
         try {
             log.info("Generating image for Act $actNumber, Scene $sceneNumber: $sceneTitle")
-            val sceneImageTask = task.ui.newTask(false)
-            tabs["Act $actNumber Scene $sceneNumber Image"] = sceneImageTask.placeholder
+            val sceneImageTask = tabs.newTask("Act $actNumber Scene $sceneNumber Image")
             sceneImageTask.add(
                 buildString {
                     appendLine("# Act $actNumber, Scene $sceneNumber Image")

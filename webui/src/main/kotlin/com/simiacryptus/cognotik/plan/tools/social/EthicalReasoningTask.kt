@@ -142,8 +142,7 @@ class EthicalReasoningTask(
         val (transcript, transcriptLinks) = createTranscript(task)
         task.add("Report: $transcriptLinks")
         val tabs = TabbedDisplay(task)
-        val overviewTask = task.ui.newTask()
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         try {
             transcript?.write("# Ethical Reasoning Analysis\n\n".toByteArray())
@@ -188,16 +187,14 @@ class EthicalReasoningTask(
             }
 
             if (fullContext.isNotBlank()) {
-                val contextTask = task.ui.newTask()
-                tabs["Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Context")
                 contextTask.add(MarkdownUtil.renderMarkdown("## Analysis Context\n\n$fullContext", ui = ui))
                 contextTask.complete()
             }
 
             // Step 1: Dilemma & Stakeholder Analysis
             log.debug("Analyzing dilemma and stakeholders")
-            val analysisTask = task.ui.newTask()
-            tabs["Dilemma Analysis"] = analysisTask.placeholder
+            val analysisTask = tabs.newTask("Dilemma Analysis")
             val analysisLoading = analysisTask.add(
                 MarkdownUtil.renderMarkdown("## Dilemma & Stakeholder Analysis\n\n🔄 Analyzing...", ui = ui)
             )
@@ -258,8 +255,7 @@ Provide a detailed analysis.
             for (framework in frameworks) {
                 val capitalizedFramework = framework.replaceFirstChar { it.titlecase() }
                 log.debug("Applying framework: $framework")
-                val frameworkTask = task.ui.newTask()
-                tabs["Framework: $capitalizedFramework"] = frameworkTask.placeholder
+                val frameworkTask = tabs.newTask("Framework: $capitalizedFramework")
                 val frameworkLoading = frameworkTask.add(
                     MarkdownUtil.renderMarkdown("## $capitalizedFramework Analysis\n\n🔄 Applying framework...", ui = ui)
                 )
@@ -307,8 +303,7 @@ Provide a clear and structured analysis.
 
             // Step 3: Synthesis and Recommendation
             log.debug("Synthesizing framework analyses")
-            val synthesisTask = task.ui.newTask()
-            tabs["Synthesis"] = synthesisTask.placeholder
+            val synthesisTask = tabs.newTask("Synthesis")
             val synthesisLoading = synthesisTask.add(
                 MarkdownUtil.renderMarkdown("## Synthesis & Recommendation\n\n🔄 Synthesizing results...", ui = ui)
             )

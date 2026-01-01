@@ -342,6 +342,12 @@ Stack Trace:
             }
         }>$linkText</a>"""
     }
+
+    fun newTask(showSpinner: Boolean = true): SessionTask {
+        val newTask = ui.newTask(false)
+        add(newTask.placeholder, showSpinner = showSpinner)
+        return newTask
+    }
 }
 
 val Throwable.stackTraceTxt: String

@@ -36,13 +36,11 @@ open class AdaptivePlanningConfig(
  * A cognitive mode that implements the auto-planning strategy with iterative thinking.
  */
 open class AdaptivePlanningMode(
-    task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 ) : CognitiveMode<AdaptivePlanningConfig>(
-    task,
     orchestrationConfig,
     session,
     user
@@ -56,7 +54,7 @@ open class AdaptivePlanningMode(
     private var transcriptStream: FileOutputStream? = null
     private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+))}""")
 
-    override fun initialize() {
+    override fun initialize(task : SessionTask) {
         log.debug("Initializing AutoPlanMode")
     }
 
@@ -65,7 +63,7 @@ open class AdaptivePlanningMode(
         if (!isRunning) {
             isRunning = true
             log.debug("Starting new auto plan chat session")
-            startAutoPlanChat(userMessage)
+            startAutoPlanChat(task, userMessage)
         } else {
             log.debug("Injecting user message into ongoing chat")
             task.echo("User: $userMessage".renderMarkdown)
@@ -73,25 +71,25 @@ open class AdaptivePlanningMode(
         }
     }
 
-    private fun startAutoPlanChat(userMessage: String) {
+    private fun startAutoPlanChat(task : SessionTask, userMessage: String) {
         log.debug("Starting auto plan chat with initial message: $userMessage")
         task.echo(renderMarkdown(userMessage))
         transcriptStream = transcript(task)
 
         val continueLoop = true
         val tabbedDisplay = TabbedDisplay(task)
-        this.task.ui.pool.execute {
+        task.ui.pool.execute {
             try {
                 log.debug("Starting main execution loop")
                 task.complete()
 
-                val coordinator = this.task.ui.dataStorage?.let {
+                val coordinator = task.ui.dataStorage?.let {
                     TaskOrchestrator(
                         user = user,
                         session = session,
                         dataStorage = it,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: this.task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                            ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     )
                 }
                 log.debug("Created plan coordinator")
@@ -119,25 +117,21 @@ open class AdaptivePlanningMode(
                     val ui = task.ui
                     val iterationTabbedDisplay = TabbedDisplay(task, additionalClasses = "iteration")
 
-                    ui.newTask().apply {
-                        iterationTabbedDisplay["Inputs"] = placeholder
+                    iterationTabbedDisplay.newTask("Inputs").apply {
                         val inputTabs = TabbedDisplay(this)
-                        ui.newTask().apply {
-                            inputTabs["Project Info"] = placeholder
+                        inputTabs.newTask("Project Info").apply {
                             contextData().forEach {
                                 complete(renderMarkdown(it, tabs = false))
                             }
                             complete()
                         }
                         formatEvalRecords().forEachIndexed { index, it ->
-                            ui.newTask().apply {
-                                inputTabs["Task ${index + 1}"] = placeholder
+                            inputTabs.newTask("Task ${index + 1}").apply {
                                 complete(renderMarkdown(it))
                             }
                             complete(renderMarkdown(it))
                         }
-                        ui.newTask().apply {
-                            inputTabs["Thinking Status"] = placeholder
+                        inputTabs.newTask("Thinking Status").apply {
                             complete(renderMarkdown(config.cognitiveStrategy.formatState(currentThinkingStatus)))
                         }
                     }
@@ -168,7 +162,7 @@ open class AdaptivePlanningMode(
                         val currentTaskId = "task_${index + 1}"
                         writeToTranscript("### Task $currentTaskId\n\n")
                         log.debug("Executing task $currentTaskId")
-                        val taskExecutionTask = ui.newTask()
+                        val taskExecutionTask = task.newTask()
                         val taskConfig = currentTask.task.tasks?.get(index)
                         val taskDescription =
                             taskConfig?.task_description ?: "No description provided for this task item."
@@ -223,7 +217,7 @@ ${JsonUtil.toJson(taskConfig)}
                     executionRecords.addAll(completedTasks)
 
                     val thinkingStatusTask =
-                        ui.newTask().apply { iterationTabbedDisplay["Thinking Status"] = placeholder }
+                        iterationTabbedDisplay.newTask("Thinking Status")
                     try {
                         log.debug("Updating thinking status")
                         writeToTranscript("### Updated Thinking Status\n\n")
@@ -262,7 +256,7 @@ ${JsonUtil.toJson(taskConfig)}
             } finally {
                 log.debug("Finalizing auto plan chat")
                 isRunning = false
-                val summaryTask = this.task.ui.newTask().apply { tabbedDisplay["Summary"] = placeholder }
+                val summaryTask = tabbedDisplay.newTask("Summary")
                 summaryTask.add(
                     renderMarkdown(
                         "Auto Plan Chat completed. Final thinking status:\n${
@@ -385,7 +379,7 @@ ${JsonUtil.toJson(taskConfig)}
             ).call()?.text
         }
 
-        val executor = this.task.ui.pool
+        val executor = task.ui.pool
             ?: throw IllegalStateException("SocketManager or its pool is null for expansion processing")
         val processor = FixedConcurrencyProcessor(executor, 4)
 
@@ -457,7 +451,7 @@ ${JsonUtil.toJson(taskConfig)}
             val tabs = TabbedDisplay(task)
             val futures = options.map { option ->
                 processor.submit {
-                    val subTask = this.task.ui.newTask().apply { tabs[option] = placeholder }
+                    val subTask = tabs.newTask(option)
                     val nextText = currentText.replaceFirst(match.value, option)
                     processTaskExpansionRecursive(nextText, subTask, parsedActor, processor)
                 }

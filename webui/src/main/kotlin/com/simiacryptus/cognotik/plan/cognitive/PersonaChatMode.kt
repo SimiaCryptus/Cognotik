@@ -31,13 +31,11 @@ open class PersonaChatConfig(
 ) : CognitiveModeConfig(type)
 
 open class PersonaChatMode(
-    task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 ) : CognitiveMode<PersonaChatConfig>(
-    task,
     orchestrationConfig,
     session,
     user
@@ -61,7 +59,7 @@ open class PersonaChatMode(
     private val sequenceExpansionPattern = Regex("""@\{([^}]+(?:\s*->\s*[^}]+)+)\}""")
     private val rangeExpansionPattern = Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""")
 
-    override fun initialize() {
+    override fun initialize(task : SessionTask) {
         val enabledTasks = TaskType.getAvailableTaskTypes(orchestrationConfig)
         log.debug("PersonaChatMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}")
         transcriptStream = task.transcript()
@@ -82,13 +80,13 @@ open class PersonaChatMode(
 
         task.echo(userMessage.renderMarkdown)
         writeToTranscript("## User\n\n$userMessage\n\n")
-        this.task.ui.pool.submit {
+        task.ui.pool.submit {
             try {
                 while (!Thread.interrupted()) {
                     sleep(100)
                     val msg = messageBuffer.poll() ?: continue
-                    val t = this.task.ui.newTask()
-                    this.task.add(t.placeholder)
+                    val t = task.newTask()
+                    task.add(t.placeholder)
                     execute(t, msg, parserChatter, defaultChat)
                 }
             } finally {
@@ -112,7 +110,7 @@ open class PersonaChatMode(
                 expandedUserMessage, task, parsingChatter, defaultChat
             )
             val aggregateResponse = StringBuilder()
-            runAll(expansionFunctions, aggregateResponse)
+            runAll(task, expansionFunctions, aggregateResponse)
 
             synchronized(messagesLock) {
                 messages.add(ModelSchema.ChatMessage(ModelSchema.Role.user, expandedUserMessage.toContentList()))
@@ -183,8 +181,8 @@ open class PersonaChatMode(
                     task,
                     describer
                 )
-                val stateTask = this.task.ui.newTask(false)
-                this.task.add(stateTask.placeholder)
+                val stateTask = task.newTask()
+                task.add(stateTask.placeholder)
                 stateTask.complete(renderMarkdown("### Initial Persona State\n" + config.cognitiveStrategy.formatState(s)))
                 s
             } else {
@@ -195,7 +193,7 @@ open class PersonaChatMode(
 
         val tabs = TabbedDisplay(task)
 
-        val planTask = this.task.ui.newTask(false).apply { tabs["Plan"] = placeholder }
+        val planTask = tabs.newTask("Plan")
         val chosenTask = if (orchestrationConfig.autoFix) {
             val result = requestToTaskWithPersona(
                 defaultModel, parserChatter,
@@ -257,8 +255,7 @@ open class PersonaChatMode(
         val resultSemaphore = Semaphore(0)
         val resultRef = AtomicReference<String>()
 
-        this.task.ui.newTask(false).apply {
-            tabs["Run"] = placeholder
+        tabs.newTask("Run").apply {
             TaskType.getImpl(orchestrationConfig, chosenTask?.component2()).run(
                 agent = TaskOrchestrator(
                     user = user,
@@ -270,7 +267,7 @@ open class PersonaChatMode(
                 messages = getConversationContext().takeLast(10) + listOf("USER: $userMessage"),
                 task = this,
                 resultFn = { result ->
-                    ui.newTask(false).apply {
+                    task.newTask().apply {
                         tabs["Output"] = placeholder
                         complete(result.renderMarkdown())
                     }
@@ -300,7 +297,7 @@ open class PersonaChatMode(
         )
         reasoningState.set(newState)
 
-        this.task.ui.newTask(false).apply {
+        task.newTask().apply {
             tabs["State"] = placeholder
             complete(renderMarkdown("### Updated Persona State\n" + config.cognitiveStrategy.formatState(newState)))
         }
@@ -308,7 +305,7 @@ open class PersonaChatMode(
         task.complete()
     }
 
-    private fun runAll(function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
+    private fun runAll(task : SessionTask, function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
         val fixedConcurrencyProcessor = FixedConcurrencyProcessor(task.ui.pool, 4)
         function1s.map { function1 ->
             fixedConcurrencyProcessor.submit {
@@ -348,7 +345,7 @@ open class PersonaChatMode(
         return match.groupValues[1].split('|', ',').flatMap { option ->
             recursiveFn(
                 currentMessage.replaceFirst(match.value, option),
-                this.task.ui.newTask(false).apply { tabs[option] = placeholder })
+                task.newTask().apply { tabs[option] = placeholder })
         }.apply {
             tabs.update()
         }
@@ -368,12 +365,12 @@ open class PersonaChatMode(
             val newMessage = currentMessage.replaceFirst(expression, item)
             val subTaskFunctions = processMsgRecursive(
                 currentMessage = newMessage,
-                task = this.task.ui.newTask(false).apply { tabs[item] = placeholder },
+                task = task.newTask().apply { tabs[item] = placeholder },
                 defaultChatter = defaultChatter,
                 parsingChatter = parsingChatter
             )
             val subAggregate = StringBuilder()
-            runAll(subTaskFunctions, subAggregate)
+            runAll(task, subTaskFunctions, subAggregate)
             aggregatedResponse.append("[").append(item).append("]\n").append(subAggregate.toString()).append("\n")
         }
         tabs.update()

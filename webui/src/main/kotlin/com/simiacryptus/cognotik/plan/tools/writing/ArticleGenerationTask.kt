@@ -199,8 +199,7 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
 
 
         // Overview tab
-        val overviewTask = task.ui.newTask()
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Article Generation")
@@ -242,8 +241,7 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
             log.info("Phase 1: Running journalism investigation")
             val investigationResult = StringBuilder()
 
-            val investigationTask = task.ui.newTask()
-            tabs["Investigation"] = investigationTask.placeholder
+            val investigationTask = tabs.newTask("Investigation")
 
             super.run(agent, messages, investigationTask, { result ->
                 investigationResult.append(result)
@@ -257,8 +255,7 @@ ArticleGeneration - Generate complete journalistic articles from investigation a
 
             // Phase 2: Generate article structure
             log.info("Phase 2: Generating article structure")
-            val structureTask = task.ui.newTask()
-            tabs["Article Structure"] = structureTask.placeholder
+            val structureTask = tabs.newTask("Article Structure")
 
             structureTask.add(
                 buildString {
@@ -371,8 +368,7 @@ Ensure the structure:
 
             // Phase 3: Write the article
             log.info("Phase 3: Writing article")
-            val writingTask = task.ui.newTask()
-            tabs["Article Draft"] = writingTask.placeholder
+            val writingTask = tabs.newTask("Article Draft")
 
             writingTask.add(
                 buildString {
@@ -533,8 +529,7 @@ Provide the revised article content only.
                 overviewTask.add("\n### Phase 4: Social Media\n*Creating social snippets...*\n".renderMarkdown)
 
 
-                val socialTask = task.ui.newTask()
-                tabs["Social Media"] = socialTask.placeholder
+                val socialTask = tabs.newTask("Social Media")
 
                 socialTask.add(
                     buildString {

@@ -253,8 +253,7 @@ class PersuasiveEssayTask(
         }
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Persuasive Essay Generation")
@@ -302,8 +301,7 @@ class PersuasiveEssayTask(
 
             if (priorContext.isNotBlank() || inputFileContent.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Research Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Research Context")
                 contextTask.add(
                     buildString {
                         appendLine("# Research Context")
@@ -329,8 +327,7 @@ class PersuasiveEssayTask(
 
             // Phase 1: Create outline
             log.info("Phase 1: Creating essay outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
                 buildString {
@@ -480,8 +477,7 @@ Ensure the outline:
 
             // Phase 2: Write Introduction
             log.info("Phase 2: Writing introduction")
-            val introTask = task.ui.newTask(false)
-            tabs["Introduction"] = introTask.placeholder
+            val introTask = tabs.newTask("Introduction")
 
             introTask.add(
                 buildString {
@@ -569,8 +565,7 @@ Speak directly to the ${executionConfig.target_audience}.
                 overviewTask.add("- Argument ${index + 1}: ${argOutline.claim.truncateForDisplay(50)} ".renderMarkdown)
                 overviewTask.update()
 
-                val argTask = task.ui.newTask(false)
-                tabs["Argument ${index + 1}"] = argTask.placeholder
+                val argTask = tabs.newTask("Argument ${index + 1}")
 
                 argTask.add(
                     buildString {
@@ -692,8 +687,7 @@ Aim for approximately ${argOutline.estimated_word_count} words.
                 overviewTask.update()
 
                 log.info("Phase 4: Writing counterarguments and rebuttals")
-                val counterTask = task.ui.newTask(false)
-                tabs["Counterarguments"] = counterTask.placeholder
+                val counterTask = tabs.newTask("Counterarguments")
 
                 counterTask.add(
                     buildString {
@@ -778,8 +772,7 @@ Aim for approximately $counterargumentWords words.
             overviewTask.update()
 
             log.info("Phase 5: Writing conclusion")
-            val conclusionTask = task.ui.newTask(false)
-            tabs["Conclusion"] = conclusionTask.placeholder
+            val conclusionTask = tabs.newTask("Conclusion")
 
             conclusionTask.add(
                 buildString {
@@ -877,8 +870,7 @@ End on a strong note that reinforces your position.
                 overviewTask.update()
 
                 log.info("Phase 6: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask(false)
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -952,8 +944,7 @@ Provide the complete revised essay.
             overviewTask.update()
 
             log.info("Phase 7: Assembling final essay")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Essay"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Essay")
 
             val finalEssay = buildString {
                 appendLine("# ${outline.title}")
@@ -1119,8 +1110,7 @@ Provide the complete revised essay.
     ) {
         try {
             log.info("Generating cover image for: $title")
-            val imageTask = task.ui.newTask(false)
-            tabs["Cover Image"] = imageTask.placeholder
+            val imageTask = tabs.newTask("Cover Image")
             imageTask.add(
                 buildString {
                     appendLine("# Cover Image")
@@ -1188,8 +1178,7 @@ Provide the complete revised essay.
     ) {
         try {
             log.info("Generating outline visualization image")
-            val imageTask = task.ui.newTask(false)
-            tabs["Outline Visualization"] = imageTask.placeholder
+            val imageTask = tabs.newTask("Outline Visualization")
             imageTask.add(
                 buildString {
                     appendLine("# Outline Visualization")
@@ -1265,8 +1254,7 @@ Provide the complete revised essay.
     ) {
         try {
             log.info("Generating image for argument $argumentNumber")
-            val imageTask = task.ui.newTask(false)
-            tabs["Argument $argumentNumber Image"] = imageTask.placeholder
+            val imageTask = tabs.newTask("Argument $argumentNumber Image")
             imageTask.add(
                 buildString {
                     appendLine("# Argument $argumentNumber Visualization")
@@ -1336,8 +1324,7 @@ Provide the complete revised essay.
     ) {
         try {
             log.info("Generating counterargument visualization image")
-            val imageTask = task.ui.newTask(false)
-            tabs["Counterargument Image"] = imageTask.placeholder
+            val imageTask = tabs.newTask("Counterargument Image")
             imageTask.add(
                 buildString {
                     appendLine("# Counterargument Visualization")

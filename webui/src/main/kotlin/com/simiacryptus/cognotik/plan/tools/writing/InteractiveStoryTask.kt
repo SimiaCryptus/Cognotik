@@ -265,8 +265,7 @@ class InteractiveStoryTask(
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask()
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Interactive Story Generation")
@@ -344,8 +343,7 @@ class InteractiveStoryTask(
                     flush()
                 }
                 log.debug("Found prior context: ${priorContext.length} chars")
-                val contextTask = task.ui.newTask()
-                tabs["Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Context")
                 contextTask.add(
                     MarkdownUtil.renderMarkdown(buildString {
                         appendLine("# Context from Previous Tasks")
@@ -363,8 +361,7 @@ class InteractiveStoryTask(
                 flush()
             }
             log.info("Phase 1: Creating story structure")
-            val structureTask = task.ui.newTask()
-            tabs["Story Structure"] = structureTask.placeholder
+            val structureTask = tabs.newTask("Story Structure")
 
             structureTask.add(
                 MarkdownUtil.renderMarkdown(buildString {
@@ -587,8 +584,7 @@ Focus on structure and connections, not detailed prose.
                 flush()
             }
             log.info("Phase 2: Writing opening segment")
-            val openingTask = task.ui.newTask()
-            tabs["Opening"] = openingTask.placeholder
+            val openingTask = tabs.newTask("Opening")
 
             openingTask.add(
                 MarkdownUtil.renderMarkdown(buildString {
@@ -697,8 +693,7 @@ Make it immersive and compelling. The reader should feel invested immediately.
                 )
                 task.update()
 
-                val dpTask = task.ui.newTask()
-                tabs["${decisionPoint.id}"] = dpTask.placeholder
+                val dpTask = tabs.newTask("${decisionPoint.id}")
 
                 dpTask.add(
                     MarkdownUtil.renderMarkdown(buildString {
@@ -847,8 +842,7 @@ Make the reader feel the weight of their choice. Each option should feel viable 
                 overviewTask.add(MarkdownUtil.renderMarkdown("- ${ending.id}: ${ending.ending_type} "))
                 task.update()
 
-                val endingTask = task.ui.newTask()
-                tabs["${ending.id}"] = endingTask.placeholder
+                val endingTask = tabs.newTask("${ending.id}")
 
                 endingTask.add(
                     MarkdownUtil.renderMarkdown(buildString {
@@ -952,8 +946,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
 
             // Phase 5: Create interactive story map
             log.info("Phase 5: Creating interactive story map")
-            val mapTask = task.ui.newTask()
-            tabs["Story Map"] = mapTask.placeholder
+            val mapTask = tabs.newTask("Story Map")
 
             val storyMap = buildString {
                 appendLine("# ${structure.title} - Interactive Story Map")

@@ -102,7 +102,7 @@ class AutoFixTask(
     ) {
         val semaphore = Semaphore(0)
         Retryable(task = task) {
-            val subTask = task.ui.newTask()
+            val subTask = task.newTask()
             subTask.ui.pool.submit {
                 val (markdownTranscript, transcriptLink) = createTranscript(subTask)
                 subTask.add(transcriptLink)

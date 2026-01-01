@@ -12,6 +12,8 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.util.*
@@ -53,22 +55,22 @@ open class CodingTask<T : CodeRuntime>(
         codeRequest: CodeAgent.CodeRequest,
         task: SessionTask = mainTask,
     ) {
-        val subTask = ui.newTask(root = false)
+        val subTask = task.newTask()
         task.complete(subTask.placeholder)
         if (retryable) {
-            Retryable.retryable(ui) { innerTask ->
+            Retryable(ui.newTask(true), process = { innerTask: SessionTask ->
                 try {
                     val statusSB = innerTask.add("Running...")
                     displayCode(innerTask, codeRequest)
                     statusSB?.clear()
-                    innerTask.update()
                 } catch (e: Throwable) {
                     log.warn("Error", e)
                     innerTask.error(e)
                 } finally {
                     innerTask.complete()
                 }
-            }
+                Unit
+            }.async(task.ui))
         } else {
             ui.pool.submit {
                 try {

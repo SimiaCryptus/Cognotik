@@ -111,8 +111,7 @@ FunctorialMapping - Translate problems from one category to another
         val transcript = task.newLogStream("Functorial Mapping Transcript")
 
         // Overview Tab
-        val overviewTask = task.ui.newTask()
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         overviewTask.header("Functorial Mapping Task")
         overviewTask.add(
@@ -127,8 +126,7 @@ FunctorialMapping - Translate problems from one category to another
 
         try {
             // Step 1: Category Definition
-            val step1Task = task.ui.newTask()
-            tabs["1. Categories"] = step1Task.placeholder
+            val step1Task = tabs.newTask("1. Categories")
             step1Task.header("Formalizing Categories...", level = 3)
 
             val categoryPrompt = """
@@ -155,8 +153,7 @@ FunctorialMapping - Translate problems from one category to another
             transcript.write("\n## Categories\n\n$categories\n".toByteArray())
 
             // Step 2: Functor Construction
-            val step2Task = task.ui.newTask()
-            tabs["2. Functor"] = step2Task.placeholder
+            val step2Task = tabs.newTask("2. Functor")
             step2Task.header("Constructing Functor...", level = 3)
 
             val functorPrompt = """
@@ -183,8 +180,7 @@ FunctorialMapping - Translate problems from one category to another
             transcript.write("\n## Functor\n\n$functor\n".toByteArray())
 
             // Step 3: Problem Transport
-            val step3Task = task.ui.newTask()
-            tabs["3. Transport"] = step3Task.placeholder
+            val step3Task = tabs.newTask("3. Transport")
             step3Task.header("Transporting Problem...", level = 3)
 
             val transportPrompt = """
@@ -211,8 +207,7 @@ FunctorialMapping - Translate problems from one category to another
             transcript.write("\n## Transported Problem\n\n$transportedProblem\n".toByteArray())
 
             // Step 4: Remote Solution
-            val step4Task = task.ui.newTask()
-            tabs["4. Solution"] = step4Task.placeholder
+            val step4Task = tabs.newTask("4. Solution")
             step4Task.header("Solving in Target Category...", level = 3)
 
             val solvePrompt = """
@@ -235,8 +230,7 @@ FunctorialMapping - Translate problems from one category to another
             transcript.write("\n## Target Solution\n\n$targetSolution\n".toByteArray())
 
             // Step 5: Inverse Transport
-            val step5Task = task.ui.newTask()
-            tabs["5. Result"] = step5Task.placeholder
+            val step5Task = tabs.newTask("5. Result")
             step5Task.header("Mapping Solution Back...", level = 3)
 
             val inversePrompt = """

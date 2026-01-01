@@ -14,10 +14,43 @@ The `SessionTask` is your primary canvas. It manages a buffer of HTML content an
 
 ### SocketManager
 The `SocketManager` handles the connection between the server and the browser. You rarely instantiate this directly; instead, you access it via `task.ui`. It is used to create new tasks, handle file paths, and manage interactivity.
-**Creating Tasks Manually:**
+
+### Creating Sub-Tasks
+
+You can create nested tasks to organize output. There are two main ways to do this:
+
+1. **Inline Sub-Task (`task.newTask()`):**
+   Calling `task.newTask()` creates a new task and immediately appends its placeholder to the current task's output.
+   **Crucially, this reserves the display order.** You can continue adding content to the parent `task`, but any content added to the sub-task will appear in the reserved spot (above the subsequent parent content). This is useful for parallel processing or updating a specific section of the UI while the main thread continues.
+
+2. **Manual Placement (Inner Tasks):**
+   Calling `task.ui.newTask(false)` creates a "detached" task. It is **not** rendered automatically. Instead, you must
+   use the task's `placeholder` property (a string containing a `div` with the specific `messageID`) to place it within
+   the UI.
+   This is essential for complex layouts, such as putting a streaming task inside a table cell or a specific HTML
+   structure.
+
 ```kotlin
-// Create a standard task
-val subTask = task.ui.newTask()
+// 1. Inline: Reserves a spot in the current output stream
+val subTask = task.newTask()
+// We can add to the parent task immediately
+task.add("This appears BELOW the subTask")
+
+// Later, we can update the subTask, and it appears ABOVE the text we just added
+subTask.add("I am a sub-task, appearing in my reserved spot")
+subTask.complete()
+
+// 2. Manual: Must be placed explicitly
+val innerTask = task.ui.newTask(false)
+// Inject the placeholder into a custom layout
+task.add(innerTask.placeholder)
+// Now content added to innerTask appears inside the .custom-box div
+innerTask.add("I am inside the box")
+```
+
+**Other Options:**
+
+```kotlin
 
 // Create a cancelable task (renders with a close button)
 // If the user clicks 'X', the task element is removed from the DOM.
@@ -198,18 +231,23 @@ tabs.delete("Details")
 // Clearing all tabs
 tabs.clear()
 ```
-### Streaming Content into Tabs (Placeholders)
-A powerful pattern in Cognotik is embedding a live, streaming `SessionTask` inside a tab. This allows you to update specific tabs asynchronously without refreshing the entire tab container.
-The `placeholder` property of a `SessionTask` returns the HTML container string (usually a `div` with the specific `messageID`) needed to anchor that task within another layout.
-**Common Pattern:**
+
+### Streaming Content into Tabs
+
+A powerful pattern in Cognotik is embedding a live, streaming `SessionTask` inside a tab.
+
+While you can manually create a detached task (`newTask(false)`) and assign its `placeholder` to a tab, the
+`TabbedDisplay` class provides a helper method `newTask(label)` to do this automatically. **This is the preferred
+method.**
+
 ```kotlin
 val tabs = TabbedDisplay(task)
-// Create a new task and immediately embed its placeholder into a tab.
-// The 'apply' block ensures the task is registered in the tab before we start writing to it.
-val workerTask = task.ui.newTask().apply { 
-    tabs["Live Progress"] = placeholder 
-}
-// Now, writing to workerTask updates the content *inside* the "Live Progress" tab
+
+// Creates a new task, adds a tab named "Live Progress", 
+// and places the task's placeholder inside it.
+val workerTask = tabs.newTask("Live Progress")
+
+// Writing to workerTask updates the content *inside* the tab
 workerTask.add("Step 1 complete...")
 workerTask.add("Step 2 complete...")
 workerTask.complete()

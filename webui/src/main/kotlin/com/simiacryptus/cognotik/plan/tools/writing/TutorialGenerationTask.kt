@@ -284,8 +284,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
         transcript?.write("# Tutorial Generation Transcript\n\n".toByteArray())
         transcript?.write("**Goal:** $goal\n\n".toByteArray())
         transcript?.write(
@@ -341,8 +340,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Context")
                 contextTask.add(
                     buildString {
                         appendLine("# Context & Resources")
@@ -369,8 +367,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
 
             // Phase 1: Create outline
             log.info("Phase 1: Creating tutorial outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
             transcript?.write("## Phase 1: Planning & Outline\n\n".toByteArray())
             transcript?.write("Creating tutorial structure...\n\n".toByteArray())
             transcript?.write("**Configuration:**\n".toByteArray())
@@ -575,8 +572,7 @@ Ensure the outline:
                 transcript?.write("Writing detailed instructions...\n\n".toByteArray())
 
 
-                val stepTask = task.ui.newTask(false)
-                tabs["Step ${index + 1}"] = stepTask.placeholder
+                val stepTask = tabs.newTask("Step ${index + 1}")
 
                 stepTask.add(
                     buildString {
@@ -727,8 +723,7 @@ Guidelines:
 
 
                 log.info("Phase 3: Creating troubleshooting section")
-                val troubleshootingTask = task.ui.newTask(false)
-                tabs["Troubleshooting"] = troubleshootingTask.placeholder
+                val troubleshootingTask = tabs.newTask("Troubleshooting")
 
                 troubleshootingTask.add(
                     buildString {
@@ -839,8 +834,7 @@ Focus on issues that:
 
 
                 log.info("Phase 4: Creating next steps section")
-                val nextStepsTask = task.ui.newTask(false)
-                tabs["Next Steps"] = nextStepsTask.placeholder
+                val nextStepsTask = tabs.newTask("Next Steps")
 
                 nextStepsTask.add(
                     buildString {
@@ -926,8 +920,7 @@ Make suggestions:
 
 
             log.info("Phase 5: Assembling final tutorial")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Tutorial"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Tutorial")
 
             val finalTutorial = buildString {
                 appendLine("# ${outline.title}")

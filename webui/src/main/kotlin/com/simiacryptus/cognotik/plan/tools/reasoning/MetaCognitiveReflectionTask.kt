@@ -142,14 +142,12 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
 
         val tabbedDisplay = TabbedDisplay(task)
-        val overviewTask = task.ui.newTask()
-        tabbedDisplay["Overview"] = overviewTask.placeholder
+        val overviewTask = tabbedDisplay.newTask("Overview")
 
         overviewTask.header("Meta-Cognitive Reflection on Task: $subjectTaskId", level = 2)
         val priorContext = getPriorCode(agent.executionState)
         if (priorContext.isNotBlank()) {
-            val contextTask = task.ui.newTask()
-            tabbedDisplay["Context"] = contextTask.placeholder
+            val contextTask = tabbedDisplay.newTask("Context")
             contextTask.header("Prior Context", level = 3)
             contextTask.safeComplete(
                 MarkdownUtil.renderMarkdown(
@@ -237,8 +235,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
         overviewTask.safeComplete("", log)
         // Step 4: Create agent and perform reflection
-        val reflectionTask = task.ui.newTask()
-        tabbedDisplay["Reflection Analysis"] = reflectionTask.placeholder
+        val reflectionTask = tabbedDisplay.newTask("Reflection Analysis")
         reflectionTask.header("Analyzing reasoning process...", level = 3)
 
 
@@ -265,8 +262,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             )
             reflectionTask.safeComplete("✅ Reflection analysis complete", log)
             // Step 5: Generate and display summary
-            val summaryTask = task.ui.newTask()
-            tabbedDisplay["Summary"] = summaryTask.placeholder
+            val summaryTask = tabbedDisplay.newTask("Summary")
 
 
             val summary = generateReflectionSummary(reflectionResult)

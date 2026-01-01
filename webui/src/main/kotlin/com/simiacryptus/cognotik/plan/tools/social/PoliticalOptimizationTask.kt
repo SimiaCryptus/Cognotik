@@ -256,9 +256,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             val api = defaultSmart
             transcript?.write("# Political Optimization Task Transcript\n\n".toByteArray())
 
-            // Create overview tab
-            val overviewTask = task.ui.newTask()
-            tabs["Overview"] = overviewTask.placeholder
+            val overviewTask = tabs.newTask("Overview")
             val overviewContent = buildString {
                 appendLine("# Political Optimization Task")
                 appendLine()
@@ -359,8 +357,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             for (generation in 1..numGenerations) {
                 log.info("Starting generation $generation/$numGenerations")
 
-                val generationTask = task.ui.newTask()
-                tabs["Generation $generation"] = generationTask.placeholder
+                val generationTask = tabs.newTask("Generation $generation")
                 transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
                 transcript?.write("# Generation $generation\n\n".toByteArray(StandardCharsets.UTF_8))
 
@@ -594,9 +591,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             // Create analysis tabs
             log.info("Creating detailed analysis")
 
-            // Consensus Analysis tab
-            val consensusAnalysisTask = task.ui.newTask()
-            tabs["Consensus Analysis"] = consensusAnalysisTask.placeholder
+            val consensusAnalysisTask = tabs.newTask("Consensus Analysis")
             val consensusAnalysis = buildString {
                 appendLine("# Consensus Analysis")
                 appendLine()
@@ -689,9 +684,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(consensusAnalysis.toByteArray(StandardCharsets.UTF_8))
 
-            // Divisiveness Analysis tab
-            val divisiveAnalysisTask = task.ui.newTask()
-            tabs["Divisiveness Analysis"] = divisiveAnalysisTask.placeholder
+            val divisiveAnalysisTask = tabs.newTask("Divisiveness Analysis")
             val divisiveAnalysis = buildString {
                 appendLine("# Divisiveness Analysis")
                 appendLine()
@@ -812,9 +805,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
             transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
             transcript?.write(divisiveAnalysis.toByteArray(StandardCharsets.UTF_8))
 
-            // Evolution Visualization tab
-            val evolutionTask = task.ui.newTask()
-            tabs["Evolution"] = evolutionTask.placeholder
+            val evolutionTask = tabs.newTask("Evolution")
             val evolutionAnalysis = buildString {
                 appendLine("# Evolution Analysis")
                 appendLine()

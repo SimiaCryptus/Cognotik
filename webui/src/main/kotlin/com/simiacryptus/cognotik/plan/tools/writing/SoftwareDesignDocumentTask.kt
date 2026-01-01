@@ -197,14 +197,12 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
 
         val api = defaultSmart.getChildClient(task)
 
-        val ui = task.ui
         val tabs = TabbedDisplay(task)
         transcriptStream = initializeTranscript(task, projectName)
 
-        val overviewTask = ui.newTask()
+        val overviewTask = tabs.newTask("Overview")
         var overviewStatusBuffer: StringBuilder? = null
         try {
-            tabs["Overview"] = overviewTask.placeholder
 
             val targetAudience = executionConfig.target_audience ?: "general users"
             val stakeholders = executionConfig.stakeholders ?: emptyList()
@@ -272,8 +270,7 @@ SoftwareDesignDocument - Generate comprehensive software design documentation
             // Section 1: Use Cases
             if (executionConfig.generate_use_cases) {
                 log.debug("Generating use cases and actor documentation")
-                val useCaseTask = ui.newTask()
-                tabs["Use Cases"] = useCaseTask.placeholder
+                val useCaseTask = tabs.newTask("Use Cases")
 
                 val useCaseBuffer =
                     useCaseTask.add("## Use Cases\n\n🔄 Analyzing actors and use cases...".renderMarkdown)
@@ -345,8 +342,7 @@ Provide detailed, actionable use case documentation.
             // Section 2: Requirements
             if (executionConfig.generate_requirements) {
                 log.debug("Generating requirements specification")
-                val requirementsTask = ui.newTask()
-                tabs["Requirements"] = requirementsTask.placeholder
+                val requirementsTask = tabs.newTask("Requirements")
 
                 val requirementsBuffer =
                     requirementsTask.add("## Requirements\n\n🔄 Defining functional and non-functional requirements...".renderMarkdown)
@@ -413,8 +409,7 @@ Provide detailed, prioritized requirements.
             // Section 3: Architecture
             if (executionConfig.generate_architecture) {
                 log.debug("Generating architectural diagrams")
-                val architectureTask = ui.newTask()
-                tabs["Architecture"] = architectureTask.placeholder
+                val architectureTask = tabs.newTask("Architecture")
 
                 val architectureBuffer =
                     architectureTask.add("## Architecture\n\n🔄 Designing system architecture...".renderMarkdown)
@@ -526,8 +521,7 @@ Provide detailed architecture documentation with all diagrams.
             // Section 4: Data Model
             if (executionConfig.generate_data_model) {
                 log.debug("Generating data model and ERD")
-                val dataModelTask = ui.newTask()
-                tabs["Data Model"] = dataModelTask.placeholder
+                val dataModelTask = tabs.newTask("Data Model")
 
                 val dataModelBuffer =
                     dataModelTask.add("## Data Model\n\n🔄 Designing data structures...".renderMarkdown)
@@ -616,8 +610,7 @@ Provide complete data model documentation.
             // Section 5: Flow Diagrams
             if (executionConfig.generate_flow_diagrams) {
                 log.debug("Generating sequence and activity diagrams")
-                val flowTask = ui.newTask()
-                tabs["Flow Diagrams"] = flowTask.placeholder
+                val flowTask = tabs.newTask("Flow Diagrams")
 
                 val flowBuffer = flowTask.add("## Flow Diagrams\n\n🔄 Mapping system flows...".renderMarkdown)
                 task.update()
@@ -702,8 +695,7 @@ Provide detailed flow documentation for all critical paths.
             // Section 6: Test Plan
             if (executionConfig.generate_test_plan) {
                 log.debug("Generating test plan")
-                val testPlanTask = ui.newTask()
-                tabs["Test Plan"] = testPlanTask.placeholder
+                val testPlanTask = tabs.newTask("Test Plan")
 
                 val testPlanBuffer = testPlanTask.add("## Test Plan\n\n🔄 Creating test strategy...".renderMarkdown)
                 task.update()
@@ -799,8 +791,7 @@ Provide actionable test documentation.
             // Section 7: Phase Planning
             if (executionConfig.generate_phase_plan) {
                 log.debug("Generating phase plan")
-                val phasePlanTask = ui.newTask()
-                tabs["Phase Plan"] = phasePlanTask.placeholder
+                val phasePlanTask = tabs.newTask("Phase Plan")
 
                 val phasePlanBuffer =
                     phasePlanTask.add("## Phase Plan\n\n🔄 Planning development phases...".renderMarkdown)
@@ -889,8 +880,7 @@ Provide detailed phase planning with realistic timelines.
             // Section 8: Project Data JSON
             if (executionConfig.generate_project_data) {
                 log.debug("Generating project data JSON")
-                val projectDataTask = ui.newTask()
-                tabs["Project Data"] = projectDataTask.placeholder
+                val projectDataTask = tabs.newTask("Project Data")
 
                 val projectDataBuffer =
                     projectDataTask.add("## Project Data\n\n🔄 Generating structured project data...".renderMarkdown)

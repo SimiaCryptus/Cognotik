@@ -123,7 +123,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
         val api = defaultSmart.getChildClient(task)
         val tabs = TabbedDisplay(task)
 
-        val overviewTask = task.ui.newTask().apply { tabs["Overview"] = placeholder }
+        val overviewTask = tabs.newTask("Overview")
         overviewTask.header("Comic Book Generation: ${genConfig.subject}", 1)
         val statusBuffer = overviewTask.add("Generating script...")
         task.update()
@@ -178,7 +178,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
                 }
             }
 
-            val scriptTask = task.ui.newTask().apply { tabs["Script"] = placeholder }
+            val scriptTask = tabs.newTask("Script")
             scriptTask.add(scriptContent.renderMarkdown)
             transcript?.write(scriptContent)
             transcript?.flush()
@@ -193,7 +193,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
             if (genConfig.generate_images) {
                 var lastImage: java.awt.image.BufferedImage? = null
-                val charRefTask = task.ui.newTask().apply { tabs["Characters"] = placeholder }
+                val charRefTask = tabs.newTask("Characters")
                 charRefTask.header("Character References", 1)
 
                 val charAgent = ImageProcessingAgent(
@@ -247,7 +247,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
                 finalOutput.append("# ${script.title}\n\n")
 
                 script.pages.forEach { page ->
-                    val pageTask = task.ui.newTask().apply { tabs["Page ${page.page_number}"] = placeholder }
+                    val pageTask = tabs.newTask("Page ${page.page_number}")
                     pageTask.header("Page ${page.page_number}", 1)
                     finalOutput.append("## Page ${page.page_number}\n\n")
 

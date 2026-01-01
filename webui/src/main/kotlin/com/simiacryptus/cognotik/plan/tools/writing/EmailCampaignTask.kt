@@ -281,8 +281,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Email Campaign Generation")
@@ -340,8 +339,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Brand Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Brand Context")
 
                 contextTask.add("# Brand & Campaign Context\n".renderMarkdown)
                 if (priorContext.isNotBlank()) {
@@ -360,8 +358,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
 
             // Phase 1: Develop campaign strategy
             log.info("Phase 1: Developing campaign strategy")
-            val strategyTask = task.ui.newTask(false)
-            tabs["Strategy"] = strategyTask.placeholder
+            val strategyTask = tabs.newTask("Strategy")
 
             strategyTask.add(
                 buildString {
@@ -462,8 +459,7 @@ Consider:
 
             // Phase 2: Create email outlines
             log.info("Phase 2: Creating email sequence outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Sequence Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Sequence Outline")
 
             outlineTask.add(
                 buildString {
@@ -575,8 +571,7 @@ Maintain ${executionConfig.brand_voice} voice and address ${executionConfig.targ
 
                 overviewTask.add("- Email ${outline.email_number}: ${outline.main_message.truncateForDisplay(50)} ".renderMarkdown)
 
-                val emailTask = task.ui.newTask(false)
-                tabs["Email ${outline.email_number}"] = emailTask.placeholder
+                val emailTask = tabs.newTask("Email ${outline.email_number}")
 
                 emailTask.add(
                     buildString {
@@ -805,8 +800,7 @@ ${if (executionConfig.include_ps) "- PS section" else ""}
                 overviewTask.add("\n### Phase 4: Revision\n*Refining email sequence...*\n".renderMarkdown)
 
                 log.info("Phase 4: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask(false)
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -885,8 +879,7 @@ Provide the complete revised email body only.
             overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete campaign...*\n".renderMarkdown)
 
             log.info("Phase 5: Assembling final campaign")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Campaign"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Campaign")
 
             val finalCampaign = buildString {
                 appendLine("# Email Campaign: $campaignGoal")

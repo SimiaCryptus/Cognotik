@@ -182,9 +182,9 @@ Keep responses concise (typically 1-3 sentences or a few words/numbers as approp
         val jsonResult = formatAsJson(rows, columns, cellResults)
 
         val tabs = TabbedDisplay(task)
-        tabs["Table"] = formattedTable
-        tabs["CSV"] = "<pre>$csvResult</pre>"
-        tabs["JSON"] = "<pre>$jsonResult</pre>"
+        tabs.newTask("Table").apply { add(formattedTable); complete() }
+        tabs.newTask("CSV").apply { add("<pre>$csvResult</pre>"); complete() }
+        tabs.newTask("JSON").apply { add("<pre>$jsonResult</pre>"); complete() }
 
         task.complete()
         resultFn(formattedTable)

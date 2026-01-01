@@ -160,7 +160,7 @@ class ConstraintSatisfactionTask(
         """.trimMargin()
             )
             val tabbedDisplay = TabbedDisplay(task)
-            tabbedDisplay["Problem Overview"] = MarkdownUtil.renderMarkdown(
+            tabbedDisplay.newTask("Problem Overview").add(MarkdownUtil.renderMarkdown(
                 """
                 |## Constraint Satisfaction Problem
                 |
@@ -175,7 +175,7 @@ class ConstraintSatisfactionTask(
                 |**Strategy**: $searchStrategy (max iterations: $maxIterations)
                 """.trimMargin(),
                 ui = task.ui
-            )
+            ))
             transcriptStream?.write(
                 """
           |## Constraint Satisfaction Problem
@@ -188,10 +188,11 @@ class ConstraintSatisfactionTask(
         """.trimMargin().toByteArray()
             )
             // Step 2: Gather Context
-            tabbedDisplay["Context"] = MarkdownUtil.renderMarkdown(
+            val contextTask = tabbedDisplay.newTask("Context")
+            contextTask.add(MarkdownUtil.renderMarkdown(
                 "### Gathering context from previous tasks...",
                 ui = task.ui
-            )
+            ))
             transcriptStream?.write(
                 """
           |
@@ -213,14 +214,14 @@ class ConstraintSatisfactionTask(
                 priorCode,
                 inputFileContent
             )
-            tabbedDisplay["Context"] = MarkdownUtil.renderMarkdown(
+            contextTask.add(MarkdownUtil.renderMarkdown(
                 """
             |### Context Gathered
             |✅ Previous task results collected
             |✅ Prompt constructed
             """.trimMargin(),
                 ui = task.ui
-            )
+            ))
             transcriptStream?.write(
                 """
           |
@@ -228,10 +229,11 @@ class ConstraintSatisfactionTask(
         """.trimMargin().toByteArray()
             )
             // Step 3: Generate Solution
-            tabbedDisplay["Solution Generation"] = MarkdownUtil.renderMarkdown(
+            val solutionGenerationTask = tabbedDisplay.newTask("Solution Generation")
+            solutionGenerationTask.add(MarkdownUtil.renderMarkdown(
                 "### Generating constraint satisfaction solution...\n\nThis may take a moment.",
                 ui = task.ui
-            )
+            ))
             transcriptStream?.write(
                 """
           |
@@ -246,13 +248,13 @@ class ConstraintSatisfactionTask(
             )
 
             var answer: String? = chatAgent.answer(toInput(""))
-            tabbedDisplay["Solution Generation"] = MarkdownUtil.renderMarkdown(
+            solutionGenerationTask.add(MarkdownUtil.renderMarkdown(
                 """
             |### Solution Generated
             |✅ Complete
             """.trimMargin(),
                 ui = task.ui
-            )
+            ))
             transcriptStream?.write(
                 """
           |
@@ -262,14 +264,14 @@ class ConstraintSatisfactionTask(
             // Step 4: Display Solution
 
             val solution = answer
-            tabbedDisplay["Final Solution"] = MarkdownUtil.renderMarkdown(
+            tabbedDisplay.newTask("Final Solution").add(MarkdownUtil.renderMarkdown(
                 """
                 |## Solution
                 |
                 |${solution?.truncateForDisplay() ?: "No solution generated."}
                 """.trimMargin(),
                 ui = task.ui
-            )
+            ))
             transcriptStream?.write(
                 """
           |

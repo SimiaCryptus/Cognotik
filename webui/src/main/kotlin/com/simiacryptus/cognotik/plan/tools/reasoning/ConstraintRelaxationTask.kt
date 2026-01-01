@@ -135,7 +135,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
         val tabs = TabbedDisplay(task)
         val transcript = task.transcript("constraint_relaxation")
-        val overviewTask = task.ui.newTask()
+        val overviewTask = task.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         val overviewContent = buildString {
@@ -180,7 +180,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         val priorContext = getPriorCode(agent.executionState)
         if (priorContext.isNotBlank()) {
             log.debug("Found prior context: ${priorContext.length} characters")
-            val contextTask = task.ui.newTask()
+            val contextTask = task.newTask()
             tabs["Context"] = contextTask.placeholder
             contextTask.add(
                 MarkdownUtil.renderMarkdown(buildString {
@@ -218,7 +218,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         try {
             // Step 1: Analyze and order constraints
             log.info("Analyzing constraint structure")
-            val analysisTask = task.ui.newTask()
+            val analysisTask = task.newTask()
             tabs["Constraint Analysis"] = analysisTask.placeholder
 
             analysisTask.add(
@@ -263,7 +263,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
             // Step 2: Solve the fully relaxed problem
             log.info("Solving relaxed problem with ${relaxedConstraints.size} constraints relaxed")
-            val relaxedSolutionTask = task.ui.newTask()
+            val relaxedSolutionTask = task.newTask()
             tabs["Relaxed Solution"] = relaxedSolutionTask.placeholder
 
             relaxedSolutionTask.add(
@@ -340,7 +340,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
                 val iterationStartTime = System.currentTimeMillis()
                 log.info("Reintroducing constraint ${index + 1}/${constraintsToReintroduce.size}: $constraint")
 
-                val iterationTask = task.ui.newTask()
+                val iterationTask = task.newTask()
                 tabs["Iteration ${index + 1}"] = iterationTask.placeholder
 
                 iterationTask.add(
@@ -412,7 +412,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
 
             // Step 4: Generate final synthesis
             log.info("Generating final synthesis")
-            val synthesisTask = task.ui.newTask()
+            val synthesisTask = task.newTask()
             tabs["Final Synthesis"] = synthesisTask.placeholder
 
             synthesisTask.add(

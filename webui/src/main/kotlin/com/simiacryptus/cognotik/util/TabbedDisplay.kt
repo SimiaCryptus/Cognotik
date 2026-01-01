@@ -11,6 +11,13 @@ open class TabbedDisplay(
     val id: UUID = UUID.randomUUID(),
 ) {
 
+    fun newTask(label: String = label(tabs.size)): SessionTask {
+        log.debug("Creating new tab with label: $label")
+        val task = task.ui.newTask(false)
+        this[label] = task.placeholder
+        return task
+    }
+
     var selectedTab: Int = 0
 
     companion object {

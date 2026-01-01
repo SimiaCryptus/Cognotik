@@ -118,7 +118,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
             return
         }
 
-        val newTask = task.ui.newTask()
+        val newTask = task.newTask()
         val transcriptStream = newTask.transcript("html_generation_${htmlFile.substringBeforeLast(".")}")
         val transcriptWriter = transcriptStream?.bufferedWriter()
 

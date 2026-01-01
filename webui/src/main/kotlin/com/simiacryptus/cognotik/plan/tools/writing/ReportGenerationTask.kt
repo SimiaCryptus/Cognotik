@@ -291,8 +291,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Report Generation")
@@ -338,8 +337,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Data Sources"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Data Sources")
 
                 contextTask.add("# Data Sources & Context".renderMarkdown)
                 if (fullContext.isNotBlank()) {
@@ -366,8 +364,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
 
             // Phase 1: Data Analysis
             log.info("Phase 1: Analyzing data and metrics")
-            val dataAnalysisTask = task.ui.newTask(false)
-            tabs["Data Analysis"] = dataAnalysisTask.placeholder
+            val dataAnalysisTask = tabs.newTask("Data Analysis")
 
             dataAnalysisTask.add(
                 buildString {
@@ -472,8 +469,7 @@ Be specific with numbers and percentages where available.
 
             // Phase 2: Create Report Outline
             log.info("Phase 2: Creating report outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
                 buildString {
@@ -600,8 +596,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
                 overviewTask.add("- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown)
                 task.update()
 
-                val sectionTask = task.ui.newTask(false)
-                tabs["Section ${sectionOutline.section_number}"] = sectionTask.placeholder
+                val sectionTask = tabs.newTask("Section ${sectionOutline.section_number}")
 
                 sectionTask.add(
                     buildString {
@@ -730,8 +725,7 @@ Be specific, data-driven, and actionable.
                 task.update()
 
                 log.info("Phase 4: Generating recommendations")
-                val recommendationsTask = task.ui.newTask(false)
-                tabs["Recommendations"] = recommendationsTask.placeholder
+                val recommendationsTask = tabs.newTask("Recommendations")
 
                 recommendationsTask.add(
                     buildString {
@@ -846,8 +840,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
                 task.update()
 
                 log.info("Phase 5: Generating risk assessment")
-                val riskTask = task.ui.newTask(false)
-                tabs["Risk Assessment"] = riskTask.placeholder
+                val riskTask = tabs.newTask("Risk Assessment")
 
                 riskTask.add(
                     buildString {
@@ -954,8 +947,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
                 task.update()
 
                 log.info("Phase 6: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask(false)
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -1025,8 +1017,7 @@ Provide the complete revised report.
             task.update()
 
             log.info("Phase 7: Assembling final report")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Report"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Report")
 
             val finalReport = buildString {
                 appendLine("# ${outline.title}")

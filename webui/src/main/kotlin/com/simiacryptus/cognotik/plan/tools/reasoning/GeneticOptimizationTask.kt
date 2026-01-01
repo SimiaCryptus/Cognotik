@@ -243,8 +243,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             transcript?.write("# Genetic Optimization Task Transcript\n\n".toByteArray())
 
             // Create overview tab
-            val overviewTask = task.ui.newTask()
-            tabs["Overview"] = overviewTask.placeholder
+            val overviewTask = tabs.newTask("Overview")
             val overviewContent = buildString {
                 appendLine("# Genetic Optimization Task")
                 appendLine()
@@ -363,8 +362,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
             for (generation in 1..numGenerations) {
                 log.info("Starting generation $generation/$numGenerations")
 
-                val generationTask = task.ui.newTask()
-                tabs["Generation $generation"] = generationTask.placeholder
+                val generationTask = tabs.newTask("Generation $generation")
                 transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
                 transcript?.write("# Generation $generation\n\n".toByteArray(StandardCharsets.UTF_8))
                 generationTask.add(buildString {
@@ -597,8 +595,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
 
             // Create evolution visualization tab
             log.info("Creating evolution visualization")
-            val evolutionTask = task.ui.newTask()
-            tabs["Evolution Analysis"] = evolutionTask.placeholder
+            val evolutionTask = tabs.newTask("Evolution Analysis")
             val evolutionAnalysis = buildString {
                 appendLine("# Evolution Analysis")
                 appendLine()

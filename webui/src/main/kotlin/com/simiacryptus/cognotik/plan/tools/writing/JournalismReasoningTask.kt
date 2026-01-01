@@ -279,8 +279,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
             val tabs = TabbedDisplay(task)
 
             // Overview tab
-            val overviewTask = task.ui.newTask()
-            tabs["Overview"] = overviewTask.placeholder
+            val overviewTask = tabs.newTask("Overview")
 
             val overviewContent = buildString {
                 appendLine("# Journalism Investigation")
@@ -339,8 +338,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
             val priorContext = getPriorCode(agent.executionState)
             if (priorContext.isNotBlank()) {
                 log.debug("Found prior context: ${priorContext.length} characters")
-                val contextTask = task.ui.newTask()
-                tabs["Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Context")
                 contextTask.add(
                     buildString {
                         appendLine("# Context from Previous Tasks")
@@ -359,8 +357,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
                     log.info("Step 1: Verifying facts")
                     overviewTask.add("\n✅ Verifying facts and claims...\n".renderMarkdown)
 
-                    val factsTask = task.ui.newTask()
-                    tabs["Fact Verification"] = factsTask.placeholder
+                    val factsTask = tabs.newTask("Fact Verification")
 
                     factsTask.add(
                         buildString {
@@ -485,8 +482,7 @@ Apply rigorous journalistic standards. Be skeptical but fair.
                     log.info("Step 2: Identifying source perspectives")
                     overviewTask.add("✅ Identifying perspectives and sources...\n".renderMarkdown)
 
-                    val perspectivesTask = task.ui.newTask()
-                    tabs["Perspectives"] = perspectivesTask.placeholder
+                    val perspectivesTask = tabs.newTask("Perspectives")
 
                     perspectivesTask.add(
                         buildString {
@@ -594,8 +590,7 @@ Ensure balanced representation of different viewpoints.
                     log.info("Step 3: Analyzing context and background")
                     overviewTask.add("✅ Analyzing context and background...\n".renderMarkdown)
 
-                    val contextTask = task.ui.newTask()
-                    tabs["Context Analysis"] = contextTask.placeholder
+                    val contextTask = tabs.newTask("Context Analysis")
 
                     contextTask.add(
                         buildString {
@@ -684,8 +679,7 @@ Help readers understand why this story matters and how it fits into the bigger p
                     log.info("Step 4: Identifying biases and balance issues")
                     overviewTask.add("✅ Checking for biases and balance...\n".renderMarkdown)
 
-                    val biasTask = task.ui.newTask()
-                    tabs["Bias Analysis"] = biasTask.placeholder
+                    val biasTask = tabs.newTask("Bias Analysis")
 
                     biasTask.add(
                         buildString {
@@ -782,8 +776,7 @@ Be thorough but fair. Distinguish between legitimate perspective and problematic
                     log.info("Step 5: Exploring alternative story angles")
                     overviewTask.add("✅ Exploring alternative angles...\n".renderMarkdown)
 
-                    val anglesTask = task.ui.newTask()
-                    tabs["Story Angles"] = anglesTask.placeholder
+                    val anglesTask = tabs.newTask("Story Angles")
 
                     anglesTask.add(
                         buildString {
@@ -903,8 +896,7 @@ Consider angles that:
                     log.info("Step 6: Identifying information gaps")
                     overviewTask.add("✅ Identifying information gaps...\n".renderMarkdown)
 
-                    val gapsTask = task.ui.newTask()
-                    tabs["Information Gaps"] = gapsTask.placeholder
+                    val gapsTask = tabs.newTask("Information Gaps")
 
                     gapsTask.add(
                         buildString {
@@ -1030,8 +1022,7 @@ Prioritize gaps that are most important for understanding the full story.
                 log.info("Step 7: Generating editorial synthesis")
                 overviewTask.add("✅ Generating editorial synthesis...\n".renderMarkdown)
 
-                val synthesisTask = task.ui.newTask()
-                tabs["Editorial Synthesis"] = synthesisTask.placeholder
+                val synthesisTask = tabs.newTask("Editorial Synthesis")
 
                 synthesisTask.add(
                     buildString {

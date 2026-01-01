@@ -21,13 +21,11 @@ import java.nio.file.Path
 import kotlin.io.path.Path
 
 open class ProtocolMode(
-    task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 ) : CognitiveMode<ProtocolModeConfig>(
-    task,
     orchestrationConfig,
     session,
     user
@@ -37,21 +35,21 @@ open class ProtocolMode(
     private var isRunning = false
     private val history = mutableListOf<String>()
 
-    override fun initialize() {
+    override fun initialize(task : SessionTask) {
         log.debug("Initializing ProtocolMode")
     }
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         if (!isRunning) {
             isRunning = true
-            startProtocolSession(userMessage)
+            startProtocolSession(task, userMessage)
         } else {
             task.echo("User: $userMessage".renderMarkdown)
             history.add("User Message: $userMessage")
         }
     }
 
-    private fun startProtocolSession(userMessage: String) {
+    private fun startProtocolSession(task : SessionTask, userMessage: String) {
         task.echo(userMessage.renderMarkdown)
         val transcript = task.transcript()
         fun writeToTranscript(content: String) {
@@ -59,23 +57,23 @@ open class ProtocolMode(
             transcript?.flush()
         }
 
-        this.task.ui.pool.execute {
+        task.ui.pool.execute {
             try {
                 task.complete()
-                val coordinator = this.task.ui.dataStorage?.let {
+                val coordinator = task.ui.dataStorage?.let {
                     TaskOrchestrator(
                         user = user,
                         session = session,
                         dataStorage = it,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: this.task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                            ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     )
                 } ?: throw IllegalStateException("Coordinator could not be initialized")
 
                 val protocol = if (config.protocolFile != null) {
                     loadPrePlanned(userMessage, coordinator.root, task)
                 } else {
-                    val definer = { msgs: List<String> -> defineProtocol(msgs) }
+                    val definer = { msgs: List<String> -> defineProtocol(task, msgs) }
                     val p = if (orchestrationConfig.autoFix) {
                         definer(listOf(userMessage))
                     } else {
@@ -115,7 +113,7 @@ open class ProtocolMode(
                         ?: throw IllegalStateException("State $currentStateName not found")
 
                     writeToTranscript("## State: ${currentState.name}\n\n")
-                    val stateTask = task.ui.newTask(false)
+                    val stateTask = task.newTask()
                     protocolDisplay["${iteration}. ${currentState.name}"] = stateTask.placeholder
                     stateTask.header("State: ${currentState.name}", level = 3)
                     stateTask.add(renderMarkdown("**Instructions:** ${currentState.instructions}"))
@@ -133,17 +131,17 @@ open class ProtocolMode(
 
                         // 1. Execute Action
                         val taskConfig = if (orchestrationConfig.autoFix) {
-                            selectTask(currentState, userMessage, history)
+                            selectTask(task, currentState, userMessage, history)
                         } else {
                             Discussable(
                                 task = stateTask,
                                 heading = "Task Selection",
                                 userMessage = { "Select task for state: ${currentState.name}" },
-                                initialResponse = { selectTask(currentState, userMessage, history) },
+                                initialResponse = { selectTask(task, currentState, userMessage, history) },
                                 outputFn = { renderMarkdown("Selected Task: **${it.task_description}**") },
                                 reviseResponse = { h ->
                                     selectTask(
-                                        currentState,
+                                        task, currentState,
                                         userMessage,
                                         history + h.map { "${it.second}: ${it.first}" })
                                 }
@@ -152,7 +150,7 @@ open class ProtocolMode(
 
                         val result = StringBuilder()
                         val taskImpl = TaskType.getImpl(orchestrationConfig, taskConfig)
-                        val executionTask = stateTask.ui.newTask(false)
+                        val executionTask = stateTask.newTask()
                         stateTask.add(executionTask.placeholder)
                         executionTask.add(renderMarkdown("Executing: ${taskConfig?.task_description}"))
 
@@ -169,17 +167,17 @@ open class ProtocolMode(
 
                         // 2. Validate
                         val validation = if (orchestrationConfig.autoFix) {
-                            validateState(currentState, taskConfig!!, actionResult)
+                            validateState(task, currentState, taskConfig!!, actionResult)
                         } else {
                             Discussable(
                                 task = stateTask,
                                 heading = "Validation",
                                 userMessage = { "Validate result for state: ${currentState.name}" },
-                                initialResponse = { validateState(currentState, taskConfig!!, actionResult) },
+                                initialResponse = { validateState(task, currentState, taskConfig!!, actionResult) },
                                 outputFn = { renderMarkdown("Passed: ${it.passed}\nFeedback: ${it.feedback}") },
                                 reviseResponse = { h ->
                                     validateState(
-                                        currentState,
+                                        task, currentState,
                                         taskConfig!!, actionResult, h.map { "${it.second}: ${it.first}" })
                                 }
                             ).call()
@@ -226,7 +224,7 @@ open class ProtocolMode(
         }
     }
 
-    private fun defineProtocol(messages: List<String>): ProtocolDefinition {
+    private fun defineProtocol(task : SessionTask, messages: List<String>): ProtocolDefinition {
         val prompt = """
             Define a strict protocol (state machine) to achieve the user's request.
             The protocol can have branching, loops, or be linear.
@@ -247,6 +245,7 @@ open class ProtocolMode(
     }
 
     private fun selectTask(
+        task : SessionTask,
         state: ProtocolState,
         userMessage: String,
         history: List<String>
@@ -283,6 +282,7 @@ open class ProtocolMode(
     }
 
     private fun validateState(
+        task : SessionTask,
         state: ProtocolState,
         taskConfig: TaskExecutionConfig,
         result: String,

@@ -232,8 +232,7 @@ class ScriptwritingTask(
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Script Generation")
@@ -286,8 +285,7 @@ class ScriptwritingTask(
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Research Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Research Context")
                 contextTask.add(
                     buildString {
                         appendLine("# Research Context")
@@ -310,8 +308,7 @@ class ScriptwritingTask(
             // Phase 1: Create outline
             log.info("Phase 1: Creating script outline")
             markdownTranscript?.write("# Script Outline\n\n".toByteArray())
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
                 buildString {
@@ -451,8 +448,7 @@ Ensure the outline:
                 overviewTask.add("- Opening Hook ".renderMarkdown)
                 task.update()
 
-                val hookTask = task.ui.newTask(false)
-                tabs["Opening"] = hookTask.placeholder
+                val hookTask = tabs.newTask("Opening")
 
                 hookTask.add(
                     buildString {
@@ -551,8 +547,7 @@ Ensure the dialogue sounds natural when spoken aloud.
                 overviewTask.add("- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown)
                 task.update()
 
-                val sectionTask = task.ui.newTask(false)
-                tabs["Section ${sectionOutline.section_number}"] = sectionTask.placeholder
+                val sectionTask = tabs.newTask("Section ${sectionOutline.section_number}")
 
                 sectionTask.add(
                     buildString {
@@ -692,8 +687,7 @@ Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of co
             overviewTask.add("- Closing ".renderMarkdown)
             task.update()
 
-            val closingTask = task.ui.newTask(false)
-            tabs["Closing"] = closingTask.placeholder
+            val closingTask = tabs.newTask("Closing")
 
             closingTask.add(
                 buildString {
@@ -797,8 +791,7 @@ Target duration: 15-20 seconds.
                 task.update()
 
                 log.info("Phase 3: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask(false)
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -864,8 +857,7 @@ Provide the complete revised script with all formatting intact.
             task.update()
 
             log.info("Phase 4: Assembling final script")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Script"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Script")
 
             val finalScript = buildString {
                 appendLine("# ${outline.title}")
@@ -942,8 +934,7 @@ Provide the complete revised script with all formatting intact.
 
             // Production notes tab
             if (executionConfig.include_notes) {
-                val productionNotesTask = task.ui.newTask(false)
-                tabs["Production Notes"] = productionNotesTask.placeholder
+                val productionNotesTask = tabs.newTask("Production Notes")
 
                 val productionNotes = buildString {
                     appendLine("# Production Notes")

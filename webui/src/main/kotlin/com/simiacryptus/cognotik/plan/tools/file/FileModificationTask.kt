@@ -8,12 +8,15 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModifi
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
+import java.nio.file.Path
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
@@ -75,25 +78,14 @@ FileModification - Modify existing files or create new files
         val completionNotes = mutableListOf<String>()
         // Initialize transcript for this task
         val transcript = task.transcript()
-
-
-
-
-
-
-
-
-
-
-
         try {
             transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
-            Retryable.retryable(task.ui) { task ->
+            Retryable(task, process = { task : SessionTask ->
                 val typeConfig = typeConfig ?: throw RuntimeException()
                 completionNotes.clear()
                 val chatInterface =
                     (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
-                        ?: this.defaultSmart).getChildClient(task)
+                        ?: defaultSmart).getChildClient(task)
                 val chatAgent = ChatAgent(
                     name = "FileModification",
                     prompt = """
@@ -159,7 +151,7 @@ FileModification - Modify existing files or create new files
                                 val file = root.resolve(it).toFile()
                                 if (file.exists()) {
                                     val relativePath = root.relativize(file.toPath())
-                                    "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { "$TRIPLE_TILDE\n${it}\n$TRIPLE_TILDE" }}"
+                                    "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { "${TRIPLE_TILDE}\n${it}\n${TRIPLE_TILDE}" }}"
                                 } else {
                                     "File not found: $it"
                                 }
@@ -189,7 +181,7 @@ FileModification - Modify existing files or create new files
                         root = agent.root,
                         response = it,
                         handle = { newCodeMap ->
-                            newCodeMap.forEach { (path, _) ->
+                            newCodeMap.forEach<Path, String> { (path, _) ->
                                 completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
                             }
                         },
@@ -203,14 +195,14 @@ FileModification - Modify existing files or create new files
                 if (orchestrationConfig.autoFix) {
                     // Log auto-applied changes to transcript
                     transcript?.write("## Auto-Applied Changes\n\n".toByteArray())
-                    transcript?.write(completionNotes.joinToString("\n").toByteArray())
+                    transcript?.write(completionNotes.joinToString<String>("\n").toByteArray())
                     task.complete(markdown)
                     semaphore.release()
                 } else {
                     task.complete(markdown)
                 }
                 transcript?.flush()
-            }
+            }.async(task.ui))
 
             semaphore.acquire()
             // Write final completion notes to transcript
@@ -281,3 +273,4 @@ FileModification - Modify existing files or create new files
         }
     }
 }
+

@@ -17,7 +17,6 @@ import java.util.*
  * thought updates.
  */
 abstract class CognitiveMode<U : CognitiveModeConfig>(
-    val task: SessionTask,
     val orchestrationConfig: OrchestrationConfig,
     val session: Session,
     val user: User,
@@ -29,7 +28,7 @@ abstract class CognitiveMode<U : CognitiveModeConfig>(
     /**
      * Initialize the internal cognitive state.
      */
-    abstract fun initialize()
+    abstract fun initialize(task : SessionTask)
 
     /**
      * Handle a user message and trigger the appropriate planning or execution.

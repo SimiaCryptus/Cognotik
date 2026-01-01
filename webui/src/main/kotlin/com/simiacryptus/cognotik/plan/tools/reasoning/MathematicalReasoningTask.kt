@@ -217,8 +217,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
             val api = defaultSmart
 
             // Create overview tab
-            val overviewTask = task.ui.newTask()
-            tabs["Overview"] = overviewTask.placeholder
+            val overviewTask = tabs.newTask("Overview")
             val overviewContent = buildString {
                 appendLine("# Mathematical Reasoning Task")
                 appendLine()
@@ -268,8 +267,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
             var successfulPath: ReasoningPath? = null
 
             // Create solution tab
-            val solutionTask = task.ui.newTask()
-            tabs["Solution"] = solutionTask.placeholder
+            val solutionTask = tabs.newTask("Solution")
 
             // Path search loop
             var pathsExplored = 0
@@ -332,8 +330,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
 
             // Create proof tab if successful
             if (successfulPath != null) {
-                val proofTask = task.ui.newTask()
-                tabs["Formal Proof"] = proofTask.placeholder
+                val proofTask = tabs.newTask("Formal Proof")
                 val proofContent = generateFormalProof(successfulPath, problemStatement, goal, detailLevel)
                 proofTask.add(MarkdownUtil.renderMarkdown(proofContent, ui = task.ui))
                 proofTask.complete()
@@ -343,8 +340,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
 
             // Show all paths if requested
             if (showAllPaths && exploredPaths.size > 1) {
-                val pathsTask = task.ui.newTask()
-                tabs["All Paths"] = pathsTask.placeholder
+                val pathsTask = tabs.newTask("All Paths")
                 val pathsContent = buildString {
                     appendLine("# All Explored Paths")
                     appendLine()

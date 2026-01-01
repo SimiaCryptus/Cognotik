@@ -30,12 +30,10 @@ class CouncilModeConfig(
 
 
 open class CouncilMode(
-    task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser
 ) : CognitiveMode<CouncilModeConfig>(
-    task,
     orchestrationConfig,
     session,
     user
@@ -53,14 +51,14 @@ open class CouncilMode(
     private val maxIterations: Int get() = config.maxIterations
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 
-    override fun initialize() {
+    override fun initialize(task : SessionTask) {
         log.debug("Initializing CouncilMode")
     }
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         if (!isRunning) {
             isRunning = true
-            startCouncilChat(userMessage)
+            startCouncilChat(task, userMessage)
         } else {
             task.echo(renderMarkdown("User: $userMessage", ui = task.ui))
             currentUserMessage.set(userMessage)
@@ -69,22 +67,22 @@ open class CouncilMode(
 
     override fun contextData(): List<String> = emptyList()
 
-    private fun startCouncilChat(userMessage: String) {
+    private fun startCouncilChat(task : SessionTask, userMessage: String) {
         task.echo(renderMarkdown(userMessage, ui = task.ui))
         transcriptStream = task.transcript()
 
         val continueLoop = true
         val tabbedDisplay = TabbedDisplay(task)
-        this.task.ui.pool.execute {
+        task.ui.pool.execute {
             try {
                 task.complete()
-                val coordinator = this.task.ui.dataStorage?.let {
+                val coordinator = task.ui.dataStorage?.let {
                     TaskOrchestrator(
                         user = user,
                         session = session,
                         dataStorage = it,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: this.task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                            ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     )
                 }
 
@@ -104,30 +102,25 @@ open class CouncilMode(
                 var iteration = 0
                 while (iteration++ < maxIterations && continueLoop) {
                     writeToTranscript("## Iteration $iteration\n\n")
-                    val iterationTask = this.task.ui.newTask()
-                    tabbedDisplay["Iteration $iteration"] = iterationTask.placeholder
+                    val iterationTask = tabbedDisplay.newTask("Iteration $iteration")
                     val ui = iterationTask.ui
                     val iterationTabbedDisplay = TabbedDisplay(iterationTask, additionalClasses = "iteration")
 
                     // Display Inputs
-                    ui.newTask().apply {
-                        iterationTabbedDisplay["Inputs"] = placeholder
+                    iterationTabbedDisplay.newTask("Inputs").apply {
                         val inputTabs = TabbedDisplay(this)
-                        ui.newTask().apply {
-                            inputTabs["Project Info"] = placeholder
+                        inputTabs.newTask("Project Info").apply {
                             contextData().forEach { complete(renderMarkdown(it, tabs = false, ui = ui)) }
                             complete()
                         }
                         formatEvalRecords().forEachIndexed { index, it ->
-                            ui.newTask().apply {
-                                inputTabs["Task ${index + 1}"] = placeholder
+                            inputTabs.newTask("Task ${index + 1}").apply {
                                 complete(renderMarkdown(it, ui = ui))
                             }
                         }
                         // Display Council States
                         config.council.forEach { strategy ->
-                            ui.newTask().apply {
-                                inputTabs["${strategy.name} State"] = placeholder
+                            inputTabs.newTask("${strategy.name} State").apply {
                                 val state = reasoningStates[strategy.name]!!
                                 complete(renderMarkdown(formatState(strategy, state), ui = ui))
                             }
@@ -204,7 +197,7 @@ open class CouncilMode(
                     for ((index, currentTask) in selectedTasks.withIndex()) {
                         val currentTaskId = "task_${index + 1}"
                         writeToTranscript("### Task $currentTaskId\n\n")
-                        val taskExecutionTask = ui.newTask()
+                        val taskExecutionTask = task.newTask()
                         val taskConfig = currentTask.task.tasks?.firstOrNull()
                         val taskDescription = taskConfig?.task_description ?: "No description provided."
                         taskExecutionTask.add(renderMarkdown("\n```json\n${taskConfig?.toJson()}\n```\n", ui = ui))
@@ -354,7 +347,7 @@ ${JsonUtil.toJson(taskConfig)}
             ) + formatEvalRecords(),
         )
 
-        val executor = this.task.ui.pool ?: return null
+        val executor = task.ui.pool ?: return null
         val processor = FixedConcurrencyProcessor(executor, 4)
         val expandedTasks = processTaskExpansionRecursive(answer.text, task, parsedActor, processor)
 
@@ -452,7 +445,7 @@ ${JsonUtil.toJson(taskConfig)}
             val tabs = TabbedDisplay(task)
             val futures = options.map { option ->
                 processor.submit {
-                    val subTask = this.task.ui.newTask(false).apply { tabs[option] = placeholder }
+                    val subTask = tabs.newTask(option)
                     val nextText = currentText.replaceFirst(match.value, option)
                     processTaskExpansionRecursive(nextText, subTask, parsedActor, processor)
                 }

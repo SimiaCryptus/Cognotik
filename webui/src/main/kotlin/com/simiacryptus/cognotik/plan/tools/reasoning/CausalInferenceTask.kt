@@ -139,8 +139,7 @@ CausalInference - Identify causal relationships and root causes
             )
 
             // Overview tab
-            val overviewTask = task.ui.newTask()
-            tabs["Overview"] = overviewTask.placeholder
+            val overviewTask = tabs.newTask("Overview")
 
             // Static Overview Content
             overviewTask.add(MarkdownUtil.renderMarkdown("## Input Files\n\n${getInputFileCode()}", ui = ui))
@@ -157,8 +156,7 @@ CausalInference - Identify causal relationships and root causes
 
             // Gather evidence from sources
             log.debug("Gathering evidence from ${executionConfig?.evidence_sources?.size ?: 0} sources")
-            val evidenceTask = task.ui.newTask()
-            tabs["Evidence Sources"] = evidenceTask.placeholder
+            val evidenceTask = tabs.newTask("Evidence Sources")
             val evidenceStatusBuffer =
                 evidenceTask.add(MarkdownUtil.renderMarkdown("## Evidence Sources\n\n🔄 Loading evidence...", ui = ui))
 
@@ -230,8 +228,7 @@ CausalInference - Identify causal relationships and root causes
                 model = api,
             )
             // Analysis tab
-            val analysisTask = task.ui.newTask()
-            tabs["Causal Analysis"] = analysisTask.placeholder
+            val analysisTask = tabs.newTask("Causal Analysis")
             val analysisBuffer = analysisTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## Causal Analysis\n\n🔄 Performing causal inference...",
@@ -276,8 +273,7 @@ CausalInference - Identify causal relationships and root causes
             // If building causal graph, generate visualization
             if (executionConfig.build_causal_graph) {
                 log.debug("Building causal graph visualization")
-                val graphTask = task.ui.newTask()
-                tabs["Causal Graph"] = graphTask.placeholder
+                val graphTask = tabs.newTask("Causal Graph")
                 val graphBuffer = graphTask.add(
                     MarkdownUtil.renderMarkdown(
                         "## Causal Graph\n\n🔄 Generating causal graph visualization...",
@@ -391,7 +387,7 @@ Generate the Mermaid diagram now:
 
             task.error(e)
 
-            val errorTask = task.ui.newTask()
+            val errorTask = task.newTask()
 //            tabs["Error"] = errorTask.placeholder
             errorTask.add(
                 MarkdownUtil.renderMarkdown(

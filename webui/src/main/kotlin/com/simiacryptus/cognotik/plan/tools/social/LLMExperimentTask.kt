@@ -138,8 +138,7 @@ class LLMExperimentTask(
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask()
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("**Repetitions per Condition:** $repetitions")
@@ -195,8 +194,7 @@ class LLMExperimentTask(
 
         try {
             // Create progress tab
-            val progressTask = task.ui.newTask()
-            tabs["Progress"] = progressTask.placeholder
+            val progressTask = tabs.newTask("Progress")
 
             conditions.forEachIndexed { conditionIndex, condition ->
                 val conditionStartTime = System.currentTimeMillis()
@@ -330,8 +328,7 @@ class LLMExperimentTask(
 
             // Generate detailed statistical tables
             log.info("Generating detailed statistical tables")
-            val statisticalTablesTask = task.ui.newTask()
-            tabs["Statistical Tables"] = statisticalTablesTask.placeholder
+            val statisticalTablesTask = tabs.newTask("Statistical Tables")
             statisticalTablesTask.add(
                 buildString {
                     appendLine("# Detailed Statistical Analysis")
@@ -367,8 +364,7 @@ class LLMExperimentTask(
                     appendLine("*Analyzing results...*")
                 }.renderMarkdown()
             )
-            val analysisTask = task.ui.newTask()
-            tabs["Analysis"] = analysisTask.placeholder
+            val analysisTask = tabs.newTask("Analysis")
             analysisTask.add(
                 buildString {
                     appendLine("# Statistical Analysis")
@@ -392,8 +388,7 @@ class LLMExperimentTask(
 
             // Generate insights using LLM
             log.info("Generating insights from experimental results")
-            val insightsTask = task.ui.newTask()
-            tabs["Insights"] = insightsTask.placeholder
+            val insightsTask = tabs.newTask("Insights")
 
             insightsTask.add(
                 buildString {
