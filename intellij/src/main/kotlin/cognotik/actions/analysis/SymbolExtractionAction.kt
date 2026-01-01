@@ -11,14 +11,24 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.simiacryptus.cognotik.util.LoggerFactory
-import org.slf4j.Logger
+import org.apache.tinkerpop.gremlin.structure.T
+import org.apache.tinkerpop.gremlin.structure.Vertex
+import org.apache.tinkerpop.gremlin.structure.VertexProperty
+import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONWriter
+import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
+import org.jetbrains.kotlin.com.intellij.psi.PsiModifier
+import org.jetbrains.kotlin.com.intellij.psi.PsiModifierListOwner
+import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
+import org.jetbrains.kotlin.psi.KtModifierListOwner
 import java.io.File
-import java.util.Stack
+import java.io.FileOutputStream
+import java.util.*
 
 class SymbolExtractionAction : BaseAction() {
 
@@ -38,8 +48,7 @@ class SymbolExtractionAction : BaseAction() {
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Extracting Symbols", true) {
             override fun run(indicator: ProgressIndicator) {
                 if(verbose) log.info("Background task started")
-                val nodes = mutableMapOf<String, GraphNode>()
-                val edges = mutableListOf<GraphEdge>()
+                val graph = TinkerGraph.open()
                 val fileList = mutableListOf<VirtualFile>()
 
                 ReadAction.run<Throwable> {
@@ -58,6 +67,11 @@ class SymbolExtractionAction : BaseAction() {
 
                 indicator.isIndeterminate = false
                 val totalFiles = fileList.size
+                fun getOrCreateVertex(id: String, label: String): Vertex {
+                    val iter = graph.vertices(id)
+                    return if (iter.hasNext()) iter.next() else graph.addVertex(T.label, label, T.id, id)
+                }
+
 
                 fileList.forEachIndexed { index, virtualFile ->
                     if (indicator.isCanceled) {
@@ -74,19 +88,48 @@ class SymbolExtractionAction : BaseAction() {
                                 if(verbose) log.debug("Analyzing file: ${virtualFile.path}")
                                 
                                 val fileId = virtualFile.path
-                                nodes[fileId] = GraphNode(fileId, "File", mapOf("name" to virtualFile.name))
-                                val scopeStack = Stack<String>()
+                                val fileV = getOrCreateVertex(fileId, "File")
+                                fileV.property(VertexProperty.Cardinality.single, "name", virtualFile.name)
+                                val scopeStack = Stack<Vertex>()
 
                                 psiFile.accept(object : PsiRecursiveElementVisitor() {
                                     override fun visitElement(element: PsiElement) {
                                         var pushed = false
                                         if (element is PsiNamedElement) {
-                                            element.name?.let {
-                                                val nodeId = "$fileId::$it"
-                                                nodes[nodeId] = GraphNode(nodeId, "Symbol", mapOf("name" to it, "file" to fileId))
-                                                scopeStack.push(nodeId)
+                                            element.name?.let { elementName ->
+                                                val nodeId = "$fileId::$elementName"
+                                                val symbolV = getOrCreateVertex(nodeId, "Symbol")
+                                                symbolV.property(VertexProperty.Cardinality.single, "name", elementName)
+                                                symbolV.property(VertexProperty.Cardinality.single, "file", fileId)
+                                                val range = element.textRange
+                                                if (range != null) {
+                                                    symbolV.property(VertexProperty.Cardinality.single, "startOffset", range.startOffset)
+                                                    symbolV.property(VertexProperty.Cardinality.single, "endOffset", range.endOffset)
+                                                    val document = PsiDocumentManager.getInstance(project).getDocument(psiFile)
+                                                    if (document != null) {
+                                                        symbolV.property(VertexProperty.Cardinality.single, "line", document.getLineNumber(range.startOffset) + 1)
+                                                    }
+                                                }
+                                                if (element is KtModifierListOwner) {
+                                                    element.modifierList?.let { modList ->
+                                                        val visibility = when {
+                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("public")) -> "public"
+                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("private")) -> "private"
+                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("internal")) -> "internal"
+                                                            else -> "package"
+                                                        }
+                                                        symbolV.property(VertexProperty.Cardinality.single, "visibility", visibility)
+                                                        val modifiers = listOf(PsiModifier.STATIC, PsiModifier.FINAL, PsiModifier.ABSTRACT, PsiModifier.SYNCHRONIZED)
+                                                            .filter { m -> modList.hasModifier(KtModifierKeywordToken.keywordModifier(m.lowercase())) }
+                                                        if (modifiers.isNotEmpty()) symbolV.property(VertexProperty.Cardinality.single, "modifiers", modifiers.joinToString(","))
+                                                        val annotations = modList.annotations.mapNotNull { a -> a.name }
+                                                        if (annotations.isNotEmpty()) symbolV.property(VertexProperty.Cardinality.single, "annotations", annotations.joinToString(","))
+                                                    }
+                                                }
+
+                                                scopeStack.push(symbolV)
                                                 pushed = true
-                                                if(verbose) log.trace("Found definition: $it")
+                                                if(verbose) log.trace("Found definition: $elementName")
                                             }
                                         }
                                         try {
@@ -98,16 +141,14 @@ class SymbolExtractionAction : BaseAction() {
                                                         val name = resolved.name
                                                         if (name != null && resolvedFile != null) {
                                                             val targetId = "$resolvedFile::$name"
-                                                            if (!nodes.containsKey(targetId)) {
-                                                                nodes[targetId] = GraphNode(
-                                                                    targetId,
-                                                                    "Symbol",
-                                                                    mapOf("name" to name, "file" to resolvedFile)
-                                                                )
+                                                            val targetV = getOrCreateVertex(targetId, "Symbol")
+                                                            if (!targetV.properties<Any>("name").hasNext()) {
+                                                                targetV.property(VertexProperty.Cardinality.single, "name", name)
+                                                                targetV.property(VertexProperty.Cardinality.single, "file", resolvedFile)
                                                             }
-                                                            val sourceId =
-                                                                if (scopeStack.isNotEmpty()) scopeStack.peek() else fileId
-                                                            edges.add(GraphEdge(sourceId, targetId, "REFERENCES"))
+                                                            val sourceV =
+                                                                if (scopeStack.isNotEmpty()) scopeStack.peek() else fileV
+                                                            sourceV.addEdge("REFERENCES", targetV)
                                                         }
                                                     }
                                                 } catch (e: Exception) {
@@ -141,16 +182,14 @@ class SymbolExtractionAction : BaseAction() {
                 try {
                     if(verbose) log.info("Serializing result")
                     
-                    val json = toJson(nodes.values, edges)
                     val jsonFile = File(project.basePath, "symbol_graph.json")
-                    jsonFile.writeText(json)
+                    FileOutputStream(jsonFile).use { os ->
+                        GraphSONWriter.build().create().writeGraph(os, graph)
+                    }
                     
-                    val graphml = toGraphML(nodes.values, edges)
-                    val graphmlFile = File(project.basePath, "symbol_graph.graphml")
-                    graphmlFile.writeText(graphml)
 
                     ApplicationManager.getApplication().invokeLater {
-                        Messages.showInfoMessage(project, "Symbol graph saved to ${jsonFile.absolutePath} and ${graphmlFile.absolutePath}", "Analysis Complete")
+                        Messages.showInfoMessage(project, "Symbol graph saved to ${jsonFile.absolutePath}", "Analysis Complete")
                     }
                 } catch (e: Exception) {
                     log.error("Error saving analysis", e)
@@ -161,68 +200,6 @@ class SymbolExtractionAction : BaseAction() {
             }
         })
     }
-
-    private fun toJson(nodes: Collection<GraphNode>, edges: List<GraphEdge>): String {
-        val sb = StringBuilder()
-        sb.append("{\n  \"nodes\": [\n")
-        nodes.forEachIndexed { i, node ->
-            if (i > 0) sb.append(",\n")
-            sb.append("    { \"id\": \"${escape(node.id)}\", \"label\": \"${escape(node.label)}\", \"properties\": { ")
-            val props = node.properties.entries.joinToString(", ") { "\"${escape(it.key)}\": \"${escape(it.value.toString())}\"" }
-            sb.append(props).append(" } }")
-        }
-        sb.append("\n  ],\n  \"edges\": [\n")
-        edges.forEachIndexed { i, edge ->
-            if (i > 0) sb.append(",\n")
-            sb.append("    { \"source\": \"${escape(edge.source)}\", \"target\": \"${escape(edge.target)}\", \"label\": \"${escape(edge.label)}\" }")
-        }
-        sb.append("\n  ]\n}")
-        return sb.toString()
-    }
-    private fun toGraphML(nodes: Collection<GraphNode>, edges: List<GraphEdge>): String {
-        val sb = StringBuilder()
-        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-        sb.append("<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\"\n")
-        sb.append("    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
-        sb.append("    xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns\n")
-        sb.append("     http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">\n")
-        sb.append("  <key id=\"label\" for=\"node\" attr.name=\"label\" attr.type=\"string\"/>\n")
-        sb.append("  <key id=\"name\" for=\"node\" attr.name=\"name\" attr.type=\"string\"/>\n")
-        sb.append("  <key id=\"file\" for=\"node\" attr.name=\"file\" attr.type=\"string\"/>\n")
-        sb.append("  <graph id=\"G\" edgedefault=\"directed\">\n")
-        nodes.forEach { node ->
-            sb.append("    <node id=\"${escapeXML(node.id)}\">\n")
-            sb.append("      <data key=\"label\">${escapeXML(node.label)}</data>\n")
-            node.properties.forEach { (k, v) ->
-                sb.append("      <data key=\"${escapeXML(k)}\">${escapeXML(v.toString())}</data>\n")
-            }
-            sb.append("    </node>\n")
-        }
-        edges.forEach { edge ->
-            sb.append("    <edge source=\"${escapeXML(edge.source)}\" target=\"${escapeXML(edge.target)}\" label=\"${escapeXML(edge.label)}\"/>\n")
-        }
-        sb.append("  </graph>\n</graphml>")
-        return sb.toString()
-    }
-    
-    private fun escape(s: String): String {
-        return s.replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
-    }
-
-    private fun escapeXML(s: String): String {
-        return s.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&apos;")
-    }
-
-    data class GraphNode(val id: String, val label: String, val properties: Map<String, Any>)
-    data class GraphEdge(val source: String, val target: String, val label: String)
 
     companion object {
         val log = LoggerFactory.getLogger(SymbolExtractionAction::class.java)

@@ -46,6 +46,16 @@ dependencies {
         exclude(group = "com.google.oauth-client")
     }
 
+    // Needed for PsiModifier and other PSI classes
+/*
+    implementation(libs.intellij.core) {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.slf4j")
+    }
+*/
+    implementation(kotlin("compiler-embeddable"))
+
+
     implementation(libs.aws.bedrockruntime)
     implementation(libs.aws.s3)
     implementation(libs.aws.kms)
@@ -65,6 +75,7 @@ dependencies {
     implementation(libs.jetty.websocket.client)
     implementation(libs.slf4j.api)
     implementation(libs.logback.classic)
+    implementation(libs.tinkerpop)
 
     implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
     implementation("com.github.jai-imageio:jai-imageio-jpeg2000:1.4.0")

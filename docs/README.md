@@ -17,6 +17,9 @@ Understanding the foundation of the system, including session management, storag
     *   **Must Read:** Explains the "Multiplicative Scaling" philosophy.
     *   Deep dive into the Strategy Patterns used for Models, Providers, and Tasks.
     *   Historical context on interoperability and AI-assisted development.
+*   **[User Settings Subsystem](./user_settings.md)**
+    *   Managing API credentials and local tool configurations.
+    *   Persistence, security masking, and JSON migration logic.
 *   **[Generative Use Cases](./use_case_categories.md)**
     *   A taxonomy of generative AI patterns (0→1 Creation, 1→1 Transformation, Synthesis, etc.).
 
@@ -61,6 +64,11 @@ Documentation for the web-based components of the framework.
 *   **[Server-Driven UI](./session_task_ui.md)**
     *   Guide to the `SessionTask` UI system.
     *   How to build interactive, streaming UIs using Kotlin (Tabs, Buttons, Markdown rendering).
+*   **[Application API](./application_api.md)**
+    *   Detailed reference for HTTP endpoints (Session management, File system, Usage).
+*   **[WebSocket Protocol](./websocket_protocol.md)**
+    *   Technical guide to the real-time communication protocol.
+    *   Message replay, synchronization, and data transport.
 
 ### 6. Developer Standards & Best Practices
 Guidelines for extending the framework and maintaining quality.
