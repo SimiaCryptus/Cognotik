@@ -11,6 +11,8 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.webui.chat.ChatSocket
+import java.io.File
+import java.io.OutputStream
 import java.net.URLDecoder
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -33,7 +35,54 @@ abstract class SocketManager(
             LinkedHashMap()
         }
     )
-
+    fun resolveSystemFile(relativePath: String): File? {
+        require(relativePath.isNotBlank()) { "File path cannot be blank" }
+        require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
+        return dataStorage?.getDataDir(
+            owner,
+            sessionId
+        )?.let { dir ->
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
+            }
+            val resolve = dir.resolve(relativePath)
+            resolve.parentFile?.let { parent ->
+                if (!parent.exists()) {
+                    if (!parent.mkdirs()) SessionTask.log.warn("Failed to create parent directory: {}", parent.absolutePath)
+                }
+            }
+            SessionTask.log.debug("Successfully created file path: {}", resolve.absolutePath)
+            resolve
+        }
+    }
+    fun resolveUserFile(relativePath: String): File? {
+        require(relativePath.isNotBlank()) { "File path cannot be blank" }
+        require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
+        return dataStorage?.getSessionDir(
+            owner,
+            sessionId
+        )?.let { dir ->
+            val resolve = if (dir.exists()) {
+                dir.resolve(relativePath)
+            } else {
+                if (!dir.mkdirs()) {
+                    throw RuntimeException("Failed to create directory: ${dir.absolutePath}")
+                }
+                val resolve = dir.resolve(relativePath)
+                resolve.parentFile?.let { parent ->
+                    if (!parent.exists()) {
+                        if (!parent.mkdirs()) SessionTask.log.warn(
+                            "Failed to create parent directory: {}",
+                            parent.absolutePath
+                        )
+                    }
+                }
+                SessionTask.log.debug("Successfully created file path: {}", resolve.absolutePath)
+                resolve
+            }
+            resolve
+        }
+    }
     @Suppress("unused")
     private val createdBy = Thread.currentThread().stackTrace
     private val messageTimestamps = HashMap<String, Long>()
@@ -129,7 +178,7 @@ abstract class SocketManager(
         }
     }
 
-    fun send(out: String) {
+    open fun send(out: String) {
         if (out.isBlank()) {
             log.warn("Attempted to send an empty message")
             return
@@ -592,6 +641,7 @@ class ReadonlySocketManager(
 }
 class ServerlessSocketManager(
     session: Session,
+    val messageEvents: OutputStream? = null,
     storageInterface: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     owner: User = defaultUser,
     clazz: Class<*>
@@ -604,7 +654,14 @@ class ServerlessSocketManager(
     override fun onRun(userMessage: String, socket: ChatSocket) {
         // No-op for serverless execution
     }
+
+    override fun send(out: String) {
+        super.send(out)
+        messageEvents?.write((out + "\n").toByteArray())
+        messageEvents?.flush()
+    }
+
     override fun createLinkedManager(newSession: Session): SocketManager {
-        return ServerlessSocketManager(newSession, dataStorage, owner, javaClass)
+        return ServerlessSocketManager(newSession, messageEvents, dataStorage, owner, javaClass)
     }
 }

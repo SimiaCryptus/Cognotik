@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.UpdateManager.checkUpdate
-import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
+import com.simiacryptus.cognotik.apps.UnifiedPlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ToolProvider

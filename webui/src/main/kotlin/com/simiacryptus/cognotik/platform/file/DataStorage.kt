@@ -53,6 +53,9 @@ open class DataStorage(
         user: User?,
         session: Session
     ): File {
+        if (dataPaths.containsKey(session)) {
+            return dataPaths[session]!!
+        }
         Session.validateSessionId(session)
         log.debug("Getting data directory for session: {}, user: {}", session, user?.email)
         val parts = session.sessionId.split("-")
@@ -206,5 +209,6 @@ open class DataStorage(
     companion object {
         val log = LoggerFactory.getLogger(DataStorage::class.java)
         val sessionPaths = mutableMapOf<Session, File>()
+        val dataPaths = mutableMapOf<Session, File>()
     }
 }

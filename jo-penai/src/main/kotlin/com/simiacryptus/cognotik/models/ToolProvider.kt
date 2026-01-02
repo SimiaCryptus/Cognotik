@@ -98,7 +98,23 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
             override fun getVersion(path: String) = runCommand(listOf(path, "--version"))
         }
         val Jdk = object : ToolProvider("Jdk") {
-            override fun getExecutables() = listOf("java", "javac")
+            override fun getExecutables() = listOf(
+                "java", // Java Runtime
+                "javac", // Java Compiler
+                "jdb", // Java Debugger
+                "javap", // Java Class File Disassembler
+                "jlink", // Java Linker
+                "jarsigner", // Java Archive Signer
+                "javadoc", // Java Documentation Generator
+                "jshell", // Java Shell (REPL)
+                "jcmd", // Java Command Tool
+                "jconsole", // Java Monitoring and Management Console
+                "jstat", // Java Virtual Machine Statistics Monitoring Tool
+                "jmap", // Java Memory Map Tool
+                "jhat", // Java Heap Analysis Tool
+                "jinfo", // Java Configuration Info Tool
+                "jstack"  // Java Stack Trace Tool
+            )
             override fun getVersion(path: String) = runCommand(listOf(path, "-version"))
         }
         val Docker = object : ToolProvider("Docker") {
@@ -171,17 +187,17 @@ open class ToolProvider(name: String) : DynamicEnum<ToolProvider>(name) {
         }
         val LanguageServer = object : ToolProvider("LanguageServer") {
             override fun getExecutables() = listOf(
-                "pylsp",
-                "typescript-language-server",
-                "kotlin-language-server",
-                "jdtls",
-                "clangd",
-                "gopls",
-                "rust-analyzer",
-                "bash-language-server",
-                "docker-langserver",
-                "texlab",
-                "yaml-language-server"
+                "pylsp", // Python Language Server
+                "typescript-language-server", // TypeScript Language Server
+                "kotlin-language-server", // Kotlin Language Server
+                "jdtls", // Java Language Server
+                "clangd", // C/C++ Language Server
+                "gopls", // Go Language Server
+                "rust-analyzer", // Rust Language Server
+                "bash-language-server", // Bash Language Server
+                "docker-langserver", // Docker Language Server
+                "texlab", // LaTeX Language Server
+                "yaml-language-server" // YAML Language Server
             )
 
             override fun getVersion(path: String) = runCommand(listOf(path, "--version"))

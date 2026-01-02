@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
-import com.simiacryptus.cognotik.apps.general.TaskHarness
+import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask.MCPToolTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask.MCPToolTaskTypeConfig
+import com.simiacryptus.cognotik.util.PlanHarness
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
 
@@ -13,7 +13,7 @@ object MCPToolTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
+        PlanHarness.Companion.configurePlatform()
     }
 
     //@Test

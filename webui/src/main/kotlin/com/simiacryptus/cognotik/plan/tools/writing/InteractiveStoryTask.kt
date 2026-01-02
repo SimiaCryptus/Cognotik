@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.newLogStream
 import org.slf4j.Logger
 import java.io.File
 import java.nio.file.FileSystems

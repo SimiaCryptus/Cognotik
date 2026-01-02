@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User

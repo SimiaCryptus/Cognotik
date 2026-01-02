@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.apps.general.TaskHarness
+import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.reasoning.StructuralInvariantAnalysisTask.StructuralInvariantAnalysisTaskExecutionConfigData
+import com.simiacryptus.cognotik.util.PlanHarness
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
 object StructuralInvariantAnalysisTaskTest {
@@ -12,7 +12,7 @@ object StructuralInvariantAnalysisTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
+        PlanHarness.Companion.configurePlatform()
     }
 
     //@Test

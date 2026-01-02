@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
