@@ -153,22 +153,23 @@ Only include fields where a value can be confidently determined from the context
 
             val configFields = executionConfig?.fields ?: emptyMap()
             val fieldData = extractedFields + configFields
-            task.expandable(
-                "Extracted Fields",
-                "<pre>${fieldData.entries.joinToString("\n") { "${it.key}: ${it.value}" }}</pre>"
-            )
+            val fieldDataJson = fieldData.entries.joinToString(",\n  ", "{\n  ", "\n}") {
+                "\"${it.key}\": \"${it.value.replace("\"", "\\\"")}\""
+            }
+            task.expandable("Extracted Fields", "<pre>$fieldDataJson</pre>")
 
 
             transcript?.write("# PDF Form Fill Execution\n".toByteArray())
             transcript?.write("Template: $templatePath\n".toByteArray())
             transcript?.write("Output: $outputPath\n".toByteArray())
-            transcript?.write("## Field Data\n```json\n${fieldData}\n```\n".toByteArray())
+            transcript?.write("## Field Data\n```json\n${fieldDataJson}\n```\n".toByteArray())
 
             statusBuffer?.setLength(0)
             statusBuffer?.append("Filling ${fieldData.size} fields into $outputPath...")
             task.update()
 
             try {
+                outputFile.parentFile?.mkdirs()
 
                 val bytes = ByteArrayOutputStream().use { baos ->
                     Loader.loadPDF(templateFile).use { doc ->

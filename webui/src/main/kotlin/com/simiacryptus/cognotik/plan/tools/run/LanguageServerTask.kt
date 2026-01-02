@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.IOException
 import java.util.concurrent.Semaphore
 
 class LanguageServerTask(
@@ -80,16 +81,20 @@ class LanguageServerTask(
 
             val extension = file.extension
             val command = serverCommands[extension]
-                ?: throw IllegalArgumentException("No Language Server configured for extension: .$extension")
+                ?: throw IllegalArgumentException("No Language Server support defined for extension: .$extension")
 
 
             val executeLsp = {
                 task.header("LSP Execution: $action", level = 3)
                 val statusBuffer = task.add("Starting LSP for .$extension...")
                 transcript?.write("# LSP Session\nCommand: ${command.joinToString(" ")}\nTarget: $filePath\nAction: $action\n\n".toByteArray())
-                val process = ProcessBuilder(command)
-                    .directory(root.toFile())
-                    .start()
+                val process = try {
+                    ProcessBuilder(command)
+                        .directory(root.toFile())
+                        .start()
+                } catch (e: IOException) {
+                    throw RuntimeException("Failed to start Language Server '${command.joinToString(" ")}'. Ensure it is installed and on your PATH.", e)
+                }
                 val lsp = LspClient(process.inputStream, process.outputStream, mapper, transcript)
                 try {
                     // 1. Initialize
@@ -333,8 +338,6 @@ class LanguageServerTask(
 
     val serverCommands: Map<String, List<String>>
         get() {
-            val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
-            val executables: List<String>? = tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
             return mapOf(
                 "py" to listOf("pylsp"),
                 "js" to listOf("typescript-language-server", "--stdio"),
@@ -349,7 +352,7 @@ class LanguageServerTask(
                 "tex" to listOf("texlab"),
                 "yaml" to listOf("yaml-language-server", "--stdio"),
                 "dockerfile" to listOf("docker-langserver", "--stdio")
-            ).filter { (_, cmd) -> executables?.contains(cmd[0]) ?: false }
+            )
         }
 
     companion object {

@@ -354,7 +354,7 @@ GameTheory - Analyze strategic interactions using game theory
             structureTask.update()
 
             // Step 2: Build payoff matrix if requested
-            var payoffMatrix: String
+            var payoffMatrix = ""
             if (executionConfig.build_payoff_matrix) {
                 stepStartTime = System.currentTimeMillis()
                 log.debug("Building payoff matrix")
@@ -513,7 +513,7 @@ Generate the dominant strategy analysis now:
             }
 
             // Step 5: Find Pareto optimal outcomes if requested
-            var paretoOptimal: String
+            var paretoOptimal = ""
             if (executionConfig.find_pareto_optimal) {
                 stepStartTime = System.currentTimeMillis()
                 log.debug("Finding Pareto optimal outcomes")
@@ -568,7 +568,7 @@ Generate the Pareto optimality analysis now:
             }
 
             // Step 6: Repeated game analysis if requested
-            var repeatedGameAnalysis: String
+            var repeatedGameAnalysis = ""
             if (executionConfig.repeated_game_analysis) {
                 stepStartTime = System.currentTimeMillis()
                 log.debug("Analyzing repeated game dynamics")
@@ -808,18 +808,36 @@ Provide this in a clear, structured format.
                     appendLine(structureAnalysis.truncateForDisplay(maxOutputLengthPerField))
                     appendLine()
                 }
+                if (payoffMatrix.isNotEmpty()) {
+                    appendLine("## Payoff Matrix")
+                    appendLine(payoffMatrix.truncateForDisplay(maxOutputLengthPerField))
+                    appendLine()
+                }
+
 
                 if (nashEquilibria.isNotEmpty()) {
                     appendLine("## Nash Equilibria")
                     appendLine(nashEquilibria.truncateForDisplay(maxOutputLengthPerField))
                     appendLine()
                 }
+                if (paretoOptimal.isNotEmpty()) {
+                    appendLine("## Pareto Optimality")
+                    appendLine(paretoOptimal.truncateForDisplay(maxOutputLengthPerField))
+                    appendLine()
+                }
+
 
                 if (dominantStrategies.isNotEmpty()) {
                     appendLine("## Dominant Strategies")
                     appendLine(dominantStrategies.truncateForDisplay(maxOutputLengthPerField))
                     appendLine()
                 }
+                if (repeatedGameAnalysis.isNotEmpty()) {
+                    appendLine("## Repeated Game Analysis")
+                    appendLine(repeatedGameAnalysis.truncateForDisplay(maxOutputLengthPerField))
+                    appendLine()
+                }
+
 
                 if (recommendations.isNotEmpty()) {
                     appendLine("## Key Recommendations")

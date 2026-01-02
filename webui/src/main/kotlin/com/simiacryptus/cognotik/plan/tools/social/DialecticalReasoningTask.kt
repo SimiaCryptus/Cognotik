@@ -155,6 +155,11 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
         val priorContext = getPriorCode(agent.executionState)
         val relatedFilesContent = getRelatedFilesContent()
         val inputFilesContent = getInputFileCode()
+        val combinedContext = listOfNotNull(
+            if (priorContext.isNotBlank()) "Prior Context:\n$priorContext" else null,
+            if (relatedFilesContent.isNotBlank()) "Related Information:\n$relatedFilesContent" else null,
+            if (inputFilesContent.isNotBlank()) "Input Files:\n$inputFilesContent" else null
+        ).joinToString("\n\n")
 
         if (priorContext.isNotBlank() || relatedFilesContent.isNotBlank()) {
             val contextTask = tabs.newTask("Context")
@@ -188,6 +193,20 @@ DialecticalReasoning - Resolve contradictions through thesis-antithesis-synthesi
         val resultBuilder = StringBuilder()
         resultBuilder.append("# Dialectical Analysis\n\n")
         resultBuilder.append("**Context:** $context\n\n")
+        fun writeToTranscript(header: String, content: String, timeMs: Long) {
+            transcriptStream?.write(
+                """
+                |## $header
+                |
+                |$content
+                |
+                |**Status:** ✅ Complete (${timeMs / 1000.0}s)
+                |
+                |---
+                |
+            """.trimMargin().toByteArray()
+            )
+        }
 
 
         try {
@@ -204,8 +223,7 @@ You are analyzing a thesis statement in a dialectical reasoning process.
 
 Context: $context
 
-${if (priorContext.isNotBlank()) "Prior Context:\n$priorContext\n\n" else ""}
-${if (relatedFilesContent.isNotBlank()) "Related Information:\n$relatedFilesContent\n\n" else ""}
+$combinedContext
 
 Your task is to thoroughly analyze the thesis:
 "$thesis"
@@ -228,20 +246,9 @@ Be thorough and objective in your analysis.
             val thesisTime = System.currentTimeMillis() - stepStartTime
             log.info("Thesis analysis completed in ${thesisTime}ms: ${thesisAnalysis.length} characters")
             stepStartTime = System.currentTimeMillis()
-            transcriptStream?.write(
-                """
-        |## Thesis Analysis
-        |
-        |**Statement:** $thesis
-        |
-        |$thesisAnalysis
-        |
-        |**Status:** ✅ Complete (${thesisTime / 1000.0}s)
-        |
-        |---
-        |
-      """.trimMargin().toByteArray()
-            )
+
+            writeToTranscript("Thesis Analysis", "**Statement:** $thesis\n\n$thesisAnalysis", thesisTime)
+            resultBuilder.append("## Thesis Analysis\n\n**Statement:** $thesis\n\n$thesisAnalysis\n\n")
 
             thesisTask.header("Analysis", level = 2)
             thesisTask.add(thesisAnalysis.renderMarkdown)
@@ -269,8 +276,7 @@ You are analyzing an antithesis statement in a dialectical reasoning process.
 
 Context: $context
 
-${if (priorContext.isNotBlank()) "Prior Context:\n$priorContext\n\n" else ""}
-${if (relatedFilesContent.isNotBlank()) "Related Information:\n$relatedFilesContent\n\n" else ""}
+$combinedContext
 
 The thesis being opposed is:
 "$thesis"
@@ -297,20 +303,9 @@ Be thorough and objective in your analysis.
             val antithesisTime = System.currentTimeMillis() - stepStartTime
             log.info("Antithesis analysis completed in ${antithesisTime}ms: ${antithesisAnalysis.length} characters")
             stepStartTime = System.currentTimeMillis()
-            transcriptStream?.write(
-                """
-        |## Antithesis Analysis
-        |
-        |**Statement:** $antithesis
-        |
-        |$antithesisAnalysis
-        |
-        |**Status:** ✅ Complete (${antithesisTime / 1000.0}s)
-        |
-        |---
-        |
-      """.trimMargin().toByteArray()
-            )
+
+            writeToTranscript("Antithesis Analysis", "**Statement:** $antithesis\n\n$antithesisAnalysis", antithesisTime)
+            resultBuilder.append("## Antithesis Analysis\n\n**Statement:** $antithesis\n\n$antithesisAnalysis\n\n")
 
             antithesisTask.header("Analysis", level = 2)
             antithesisTask.add(antithesisAnalysis.renderMarkdown)
@@ -337,6 +332,7 @@ Be thorough and objective in your analysis.
 You are exploring the contradictions and tensions between thesis and antithesis in a dialectical process.
 
 Context: $context
+$combinedContext
 
 Thesis: "$thesis"
 Thesis Analysis:
@@ -365,18 +361,9 @@ Be thorough in exploring the dialectical tension.
             val contradictionsTime = System.currentTimeMillis() - stepStartTime
             log.info("Contradictions analysis completed in ${contradictionsTime}ms: ${contradictionsAnalysis.length} characters")
             stepStartTime = System.currentTimeMillis()
-            transcriptStream?.write(
-                """
-        |## Contradictions & Tensions
-        |
-        |$contradictionsAnalysis
-        |
-        |**Status:** ✅ Complete (${contradictionsTime / 1000.0}s)
-        |
-        |---
-        |
-      """.trimMargin().toByteArray()
-            )
+
+            writeToTranscript("Contradictions & Tensions", contradictionsAnalysis, contradictionsTime)
+            resultBuilder.append("## Contradictions & Tensions\n\n$contradictionsAnalysis\n\n")
 
             contradictionsTask.header("Analysis", level = 2)
             contradictionsTask.add(contradictionsAnalysis.renderMarkdown)
@@ -411,6 +398,7 @@ Be thorough in exploring the dialectical tension.
 You are generating a dialectical synthesis that transcends the opposition between thesis and antithesis.
 
 Context: $context
+$combinedContext
 
 Thesis: "$currentThesis"
 Analysis: $currentThesisAnalysis
@@ -445,6 +433,7 @@ Be creative and insightful in finding the higher-level synthesis.
 You are generating a higher-level dialectical synthesis (Level $level).
 
 Context: $context
+$combinedContext
 
 Previous Synthesis (Level ${level - 1}):
 $previousSynthesis
@@ -479,28 +468,15 @@ Aim for progressively deeper insight and integration.
                 val synthesisTime = System.currentTimeMillis() - stepStartTime
                 log.info("Synthesis level $level completed in ${synthesisTime}ms: ${synthesis.length} characters")
                 stepStartTime = System.currentTimeMillis()
-                transcriptStream?.write(
-                    """
-          |## Synthesis - Level $level
-          |
-          |$synthesis
-          |
-          |**Status:** ✅ Complete (${synthesisTime / 1000.0}s)
-          |
-          |---
-          |
-        """.trimMargin().toByteArray()
-                )
+
+                writeToTranscript("Synthesis - Level $level", synthesis, synthesisTime)
 
                 synthesisResults.add(synthesis)
                 previousSynthesis = synthesis
 
 
                 // Add to concise result only for first and last levels
-                if (level == 1 || level == synthesisLevels) {
-                    resultBuilder.append("### Synthesis Level $level\n\n")
-                    resultBuilder.append("${synthesis.truncateForDisplay(maxDescriptionLength)}\n\n")
-                }
+                resultBuilder.append("## Synthesis Level $level\n\n$synthesis\n\n")
 
                 synthesisTask.header("Result", level = 2)
                 synthesisTask.add(synthesis.renderMarkdown)
@@ -530,6 +506,7 @@ Aim for progressively deeper insight and integration.
 You are providing a final integration of the entire dialectical reasoning process.
 
 Context: $context
+$combinedContext
 
 Original Thesis: "$thesis"
 Original Antithesis: "$antithesis"
@@ -556,18 +533,8 @@ Be comprehensive yet concise in your final integration.
             val integrationTime = System.currentTimeMillis() - stepStartTime
             log.info("Final integration completed in ${integrationTime}ms: ${finalIntegration.length} characters")
             // stepStartTime = System.currentTimeMillis() // Not needed for the last step
-            transcriptStream?.write(
-                """
-        |## Final Integration
-        |
-        |$finalIntegration
-        |
-        |**Status:** ✅ Complete (${integrationTime / 1000.0}s)
-        |
-        |---
-        |
-      """.trimMargin().toByteArray()
-            )
+
+            writeToTranscript("Final Integration", finalIntegration, integrationTime)
 
             resultBuilder.append("## Final Integration\n\n")
             resultBuilder.append(finalIntegration)
@@ -612,7 +579,6 @@ Be comprehensive yet concise in your final integration.
         |
       """.trimMargin().toByteArray()
             )
-            transcriptStream?.close()
 
 
             task.safeComplete(
@@ -647,7 +613,6 @@ Be comprehensive yet concise in your final integration.
         |
       """.trimMargin().toByteArray()
             )
-            transcriptStream?.close()
 
 
             val errorOutput = buildString {
@@ -666,6 +631,8 @@ Be comprehensive yet concise in your final integration.
                 }
             }
             resultFn(errorOutput)
+        } finally {
+            transcriptStream?.close()
         }
     }
 

@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.writing.InteractiveStoryTask.InteractiveStoryTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object InteractiveStoryTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(15, unit = TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = InteractiveStoryTask.InteractiveStory,
             typeConfig = TaskTypeConfig(
                 task_type = InteractiveStoryTask.InteractiveStory.name
@@ -29,9 +29,9 @@ object InteractiveStoryTaskTest {
                 genre = "sci-fi",
                 target_audience = "adult",
                 tone = "mysterious",
-                num_decision_points = 2,
+                num_decision_points = 3,
                 choices_per_decision = 2,
-                num_endings = 2,
+                num_endings = 3,
                 track_state_variables = true,
                 state_variables = listOf("oxygen", "sanity", "data_recovered"),
                 writing_style = "descriptive",

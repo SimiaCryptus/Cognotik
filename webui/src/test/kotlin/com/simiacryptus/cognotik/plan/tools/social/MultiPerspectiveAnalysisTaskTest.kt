@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.social
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.social.MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysisTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object MultiPerspectiveAnalysisTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysis,
             typeConfig = TaskTypeConfig(
                 task_type = MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysis.name

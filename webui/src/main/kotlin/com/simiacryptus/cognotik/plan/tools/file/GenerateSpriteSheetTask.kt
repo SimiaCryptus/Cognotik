@@ -139,10 +139,11 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
                 ),
                 prompt = """
                     Identify all distinct sprites in this image.
-                    The image resolution is 1000x1000.
+                    Output coordinates assuming a 1000x1000 image size, regardless of actual aspect ratio.
                     For each sprite, provide:
                     1. A descriptive name (e.g., 'walk_frame_1', 'idle_stand').
                     2. The exact bounding box (x, y, width, height) in pixels.
+                    Ensure bounding boxes are tight around the sprite content.
                     Ignore the background color.
                 """.trimIndent(),
             )
@@ -158,11 +159,15 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
 
             val rawMetadata = parseResult.obj
             val metadata = rawMetadata.copy(sprites = rawMetadata.sprites.map { sprite ->
+                val scaledX = (sprite.x * generatedImage.width / 1000.0).toInt().coerceIn(0, generatedImage.width - 1)
+                val scaledY = (sprite.y * generatedImage.height / 1000.0).toInt().coerceIn(0, generatedImage.height - 1)
+                val scaledW = (sprite.width * generatedImage.width / 1000.0).toInt().coerceAtMost(generatedImage.width - scaledX)
+                val scaledH = (sprite.height * generatedImage.height / 1000.0).toInt().coerceAtMost(generatedImage.height - scaledY)
                 sprite.copy(
-                    x = (sprite.x * generatedImage.width / 1000.0).toInt(),
-                    y = (sprite.y * generatedImage.height / 1000.0).toInt(),
-                    width = (sprite.width * generatedImage.width / 1000.0).toInt(),
-                    height = (sprite.height * generatedImage.height / 1000.0).toInt()
+                    x = scaledX,
+                    y = scaledY,
+                    width = scaledW,
+                    height = scaledH
                 )
             })
 
@@ -184,13 +189,9 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             val spriteHtml = StringBuilder()
             metadata.sprites.forEach { sprite ->
                 try {
-                    val x = sprite.x.coerceIn(0, generatedImage.width - 1)
-                    val y = sprite.y.coerceIn(0, generatedImage.height - 1)
-                    val w = sprite.width.coerceAtMost(generatedImage.width - x)
-                    val h = sprite.height.coerceAtMost(generatedImage.height - y)
-                    g.drawRect(x, y, w, h)
-                    if (w > 0 && h > 0) {
-                        val subImage = generatedImage.getSubimage(x, y, w, h)
+                    g.drawRect(sprite.x, sprite.y, sprite.width, sprite.height)
+                    if (sprite.width > 0 && sprite.height > 0) {
+                        val subImage = generatedImage.getSubimage(sprite.x, sprite.y, sprite.width, sprite.height)
                         val safeName = sprite.name.replace(Regex("[^a-zA-Z0-9.-]"), "_")
                         val spriteFileName = "$safeName.png"
                         ImageIO.write(subImage, "png", spriteDir.resolve(spriteFileName).toFile())

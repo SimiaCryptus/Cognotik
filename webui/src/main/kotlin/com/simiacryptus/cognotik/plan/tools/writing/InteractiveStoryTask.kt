@@ -444,7 +444,7 @@ Expand the outline into a complete structure with:
 1. The title from the outline
 2. A brief opening description (2-3 sentences, NOT the full narrative)
 3. Decision points with:
-   - A unique ID (e.g., "decision_1", "decision_2")
+   - A unique ID (e.g., "decision_1", "decision_2" - use snake_case for compatibility)
    - A brief narrative description (1-2 sentences)
    - A clear decision prompt
    - ${executionConfig.choices_per_decision} meaningful choices
@@ -971,7 +971,8 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 appendLine()
                 appendLine(openingSegment.content)
                 appendLine()
-                appendLine("**→ Continue to: ${structure.decision_points.firstOrNull()?.id ?: "ending"}**")
+                val firstNodeId = structure.decision_points.firstOrNull()?.id ?: "ending"
+                appendLine("**→ [Continue to: $firstNodeId](#$firstNodeId)**")
                 appendLine()
                 appendLine("---")
                 appendLine()
@@ -997,7 +998,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                             appendLine("State changes: ${choice.state_changes.entries.joinToString(", ") { "${it.key} ${if (it.value >= 0) "+" else ""}${it.value}" }}")
                         }
                         appendLine()
-                        appendLine("**→ Continue to: ${choice.leads_to}**")
+                        appendLine("**→ [Continue to: ${choice.leads_to}](#${choice.leads_to})**")
                         appendLine()
                     }
                     appendLine("---")
@@ -1164,12 +1165,8 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 appendLine("## Output Files")
                 appendLine()
                 appendLine("- [Story Map (Interactive)]($mapLink) - Complete playable story with all paths")
-                appendLine("  - [HTML](${mapLink.removeSuffix(".md")}.html)")
-                appendLine("  - [PDF](${mapLink.removeSuffix(".md")}.pdf)")
                 appendLine()
                 appendLine("- [Story Summary]($summaryLink) - Generation summary and statistics")
-                appendLine("  - [HTML](${summaryLink.removeSuffix(".md")}.html)")
-                appendLine("  - [PDF](${summaryLink.removeSuffix(".md")}.pdf)")
                 appendLine()
                 appendLine("## Quick Stats")
                 appendLine()

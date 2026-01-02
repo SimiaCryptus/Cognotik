@@ -47,6 +47,7 @@ open class PersonaChatMode(
     }
 
     private val messagesLock = Any()
+    private val transcriptLock = Any()
     private val messages get() = messageMaps.computeIfAbsent(session) { ConcurrentLinkedQueue() }
     private val messageBuffer = ConcurrentLinkedQueue<String>()
     private var transcriptStream: FileOutputStream? = null
@@ -128,6 +129,7 @@ open class PersonaChatMode(
             }
         } catch (e: Exception) {
             log.error("Error executing task", e)
+            writeToTranscript("## Error\n\n${e.message}\n```\n${e.stackTraceToString()}\n```\n\n")
             task.error(e)
         }
     }
@@ -244,6 +246,7 @@ open class PersonaChatMode(
             ).call()
         }
         val taskConfigJson = JsonUtil.toJson(chosenTask)
+        writeToTranscript("### Plan\n\nExecuting task:\n```json\n$taskConfigJson\n```\n\n")
         synchronized(messagesLock) {
             messages.add(
                 ModelSchema.ChatMessage(
@@ -394,8 +397,10 @@ open class PersonaChatMode(
     }
 
     private fun writeToTranscript(content: String) {
-        transcriptStream?.write(content.toByteArray())
-        transcriptStream?.flush()
+        synchronized(transcriptLock) {
+            transcriptStream?.write(content.toByteArray())
+            transcriptStream?.flush()
+        }
     }
 
     private fun getConversationContext(): List<String> {

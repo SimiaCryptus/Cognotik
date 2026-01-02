@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.run.RunToolTask.RunToolTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.run.RunToolTask.RunToolTaskTypeConfig
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object RunToolTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = RunToolTask.RunTool,
             typeConfig = RunToolTaskTypeConfig(
                 task_type = RunToolTask.RunTool.name

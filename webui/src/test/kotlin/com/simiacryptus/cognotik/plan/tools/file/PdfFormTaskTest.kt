@@ -1,13 +1,15 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.data.toFile
 import com.simiacryptus.cognotik.plan.tools.file.PdfFormTask.PdfFormExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.PdfFormTask.PdfFormTypeConfig
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm
 import org.apache.pdfbox.pdmodel.interactive.form.PDTextField
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -18,13 +20,13 @@ object PdfFormTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
-        val harness = TaskTestHarness(
+        val harness = TaskHarness(
             taskType = PdfFormTask.PdfForm,
             typeConfig = PdfFormTypeConfig(
                 template_file = "template.pdf"
@@ -32,7 +34,8 @@ object PdfFormTaskTest {
             executionConfig = PdfFormExecutionConfig(
                 output_file = "output.pdf",
                 fields = mapOf("name" to "John Doe"),
-                task_description = "Fill the name field in the PDF form"
+                task_description = "Fill the name field in the PDF form",
+                flatten = false
             ),
             timeoutMinutes = 10,
         )
@@ -59,6 +62,12 @@ object PdfFormTaskTest {
         harness.run()
 
         // Verify that the output file was created
-        assertTrue(harness.workspace.resolve("output.pdf").exists(), "The output PDF file should exist after task execution")
+        val outputFile = harness.workspace.resolve("output.pdf")
+        assertTrue(outputFile.exists(), "The output PDF file should exist after task execution")
+
+        Loader.loadPDF(outputFile.toFile()).use { pdf ->
+            val field = pdf.documentCatalog.acroForm.getField("name")
+            assertEquals("John Doe", field.valueAsString)
+        }
     }
 }

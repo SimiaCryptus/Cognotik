@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask.ImageTableTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask.ImageTableTaskTypeConfig
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object ImageTableTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
     @Test
     @Timeout(15, unit = TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = ImageTableTask.ImageTable,
             typeConfig = ImageTableTaskTypeConfig(
                 parallel_generation = 2,

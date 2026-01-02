@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.social
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.social.EthicalReasoningTask.EthicalReasoningTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object EthicalReasoningTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = EthicalReasoningTask.EthicalReasoning,
             typeConfig = TaskTypeConfig(
                 task_type = EthicalReasoningTask.EthicalReasoning.name

@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.data.toFile
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.ReadDocumentsTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.ReadDocumentsTaskTypeConfig
@@ -13,13 +13,13 @@ object ReadDocumentsTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = ReadDocumentsTask.ReadDocuments,
             typeConfig = ReadDocumentsTaskTypeConfig(
                 task_type = ReadDocumentsTask.ReadDocuments.name

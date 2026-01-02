@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.social
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.social.GameTheoryTask.GameTheoryTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object GameTheoryTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testPrisonersDilemma() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = GameTheoryTask.GameTheory,
             typeConfig = TaskTypeConfig(
                 task_type = GameTheoryTask.GameTheory.name
@@ -52,7 +52,7 @@ object GameTheoryTaskTest {
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testRepeatedGame() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = GameTheoryTask.GameTheory,
             typeConfig = TaskTypeConfig(
                 task_type = GameTheoryTask.GameTheory.name

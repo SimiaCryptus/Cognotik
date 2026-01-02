@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.reasoning.SocraticDialogueTask.SocraticDialogueTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object SocraticDialogueTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testSocraticDialogue() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = SocraticDialogueTask.SocraticDialogue,
             typeConfig = TaskTypeConfig(
                 task_type = SocraticDialogueTask.SocraticDialogue.name

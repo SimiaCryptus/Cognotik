@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.data
 
-import com.simiacryptus.cognotik.apps.general.PlanTestHarness
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.DataIngestTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -15,13 +14,13 @@ object DataIngestTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
-        val harness = TaskTestHarness(
+        val harness = TaskHarness(
             taskType = DataIngestTask.DataIngest,
             typeConfig = TaskTypeConfig(
                 task_type = DataIngestTask.DataIngest.name

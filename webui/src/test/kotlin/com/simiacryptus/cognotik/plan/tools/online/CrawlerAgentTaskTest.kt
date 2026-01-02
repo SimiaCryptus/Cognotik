@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.online
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType
@@ -14,13 +14,13 @@ object CrawlerAgentTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testCrawler() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = CrawlerAgentTask.CrawlerAgent,
             typeConfig = CrawlerTaskTypeConfig(
                 task_type = CrawlerAgentTask.CrawlerAgent.name,
@@ -40,7 +40,7 @@ object CrawlerAgentTaskTest {
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testDirectUrlCrawler() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = CrawlerAgentTask.CrawlerAgent,
             typeConfig = CrawlerTaskTypeConfig(
                 task_type = CrawlerAgentTask.CrawlerAgent.name,

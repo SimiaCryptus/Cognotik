@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.apps.general
 
-import com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.trayIcon
+import com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.trayIcon
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
@@ -27,7 +27,7 @@ import java.text.SimpleDateFormat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
+open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val taskType: TaskType<T, U>,
     val typeConfig: U,
     val executionConfig: T,
@@ -166,7 +166,7 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     )
 
     companion object {
-        private val log = LoggerFactory.getLogger(TaskTestHarness::class.java)
+        private val log = LoggerFactory.getLogger(TaskHarness::class.java)
     }
 }
 

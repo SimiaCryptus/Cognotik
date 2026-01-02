@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.session
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.session.JdbcSessionTask.JdbcSessionTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object JdbcSessionTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
     @Test
     @Timeout(5, unit = TimeUnit.MINUTES)
     fun testJdbcSession() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = JdbcSessionTask.JdbcSession,
             typeConfig = TaskTypeConfig(
                 task_type = JdbcSessionTask.JdbcSession.name
@@ -50,7 +50,7 @@ object JdbcSessionTaskTest {
         val dbUrl = "jdbc:hsqldb:mem:persistent_db;shutdown=false"
 
         // First task: Create table and insert data without closing session
-        TaskTestHarness(
+        TaskHarness(
             taskType = JdbcSessionTask.JdbcSession,
             typeConfig = TaskTypeConfig(
                 task_type = JdbcSessionTask.JdbcSession.name
@@ -70,7 +70,7 @@ object JdbcSessionTaskTest {
         ).run()
 
         // Second task: Query the data using the same sessionId
-        TaskTestHarness(
+        TaskHarness(
             taskType = JdbcSessionTask.JdbcSession,
             typeConfig = TaskTypeConfig(
                 task_type = JdbcSessionTask.JdbcSession.name

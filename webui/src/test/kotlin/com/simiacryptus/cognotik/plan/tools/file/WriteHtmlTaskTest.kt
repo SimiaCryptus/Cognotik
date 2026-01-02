@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask.WriteHtmlTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -12,13 +12,13 @@ object WriteHtmlTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = WriteHtmlTask.WriteHtml,
             typeConfig = TaskTypeConfig(
                 task_type = WriteHtmlTask.WriteHtml.name
@@ -35,7 +35,7 @@ object WriteHtmlTaskTest {
      @Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun testWithImages() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = WriteHtmlTask.WriteHtml,
             typeConfig = TaskTypeConfig(
                 task_type = WriteHtmlTask.WriteHtml.name

@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.reasoning.MathematicalReasoningTask.MathematicalReasoningTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -12,13 +12,13 @@ object MathematicalReasoningTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun testAlgebraicSolving() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = MathematicalReasoningTask.MathematicalReasoning,
             typeConfig = TaskTypeConfig(
                 task_type = MathematicalReasoningTask.MathematicalReasoning.name
@@ -37,7 +37,7 @@ object MathematicalReasoningTaskTest {
      @Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun testCalculusDerivation() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = MathematicalReasoningTask.MathematicalReasoning,
             typeConfig = TaskTypeConfig(
                 task_type = MathematicalReasoningTask.MathematicalReasoning.name

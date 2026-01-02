@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.session
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask.SeleniumSessionTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object SeleniumSessionTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = SeleniumSessionTask.SeleniumSession,
             typeConfig = TaskTypeConfig(
                 task_type = SeleniumSessionTask.SeleniumSession.name
@@ -43,7 +43,7 @@ object SeleniumSessionTaskTest {
         val sessionId = "test-session-${java.util.UUID.randomUUID()}"
         
         // First task: Open session
-        TaskTestHarness(
+        TaskHarness(
             taskType = SeleniumSessionTask.SeleniumSession,
             typeConfig = TaskTypeConfig(
                 task_type = SeleniumSessionTask.SeleniumSession.name
@@ -58,7 +58,7 @@ object SeleniumSessionTaskTest {
         ).run()
 
         // Second task: Reuse session
-        TaskTestHarness(
+        TaskHarness(
             taskType = SeleniumSessionTask.SeleniumSession,
             typeConfig = TaskTypeConfig(
                 task_type = SeleniumSessionTask.SeleniumSession.name

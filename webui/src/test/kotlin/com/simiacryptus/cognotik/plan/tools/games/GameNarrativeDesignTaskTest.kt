@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.games
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.games.GameNarrativeDesignTask.GameNarrativeDesignConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -12,13 +12,13 @@ object GameNarrativeDesignTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = GameNarrativeDesignTask.GameNarrativeDesign,
             typeConfig = TaskTypeConfig(
                 task_type = GameNarrativeDesignTask.GameNarrativeDesign.name
@@ -34,6 +34,7 @@ object GameNarrativeDesignTaskTest {
                 include_dialogue_trees = true,
                 include_character_arcs = true,
                 include_side_quests = true,
+                include_game_mechanics = true,
                 tone = "heroic",
                 player_role = "protagonist",
                 estimated_playtime_hours = 5,

@@ -675,9 +675,11 @@ Be specific and reference the data provided.
                 } else {
                     generateRealisticDemographics()
                 }
+                val contextVariation = contextVariations[Random().nextInt(contextVariations.size)]
+
 
                 // Build persona prompt
-                val personaPrompt = buildPersonaPrompt(profile, demographics)
+                val personaPrompt = buildPersonaPrompt(profile, demographics, contextVariation)
 
                 respondents.add(
                     SimulatedRespondent(
@@ -716,7 +718,11 @@ Be specific and reference the data provided.
         return demographics
     }
 
-    private fun buildPersonaPrompt(profile: RespondentProfile, demographics: Map<String, String>): String {
+    private fun buildPersonaPrompt(
+        profile: RespondentProfile,
+        demographics: Map<String, String>,
+        contextVariation: String
+    ): String {
         return """
 You are participating in a survey. Please respond authentically based on your profile:
 
@@ -727,6 +733,7 @@ ${demographics.entries.joinToString("\n") { "- ${it.key}: ${it.value}" }}
 
 ${if (profile.background_context != null) "Background:\n${profile.background_context}\n\n" else ""}
 ${if (!profile.characteristics.isNullOrEmpty()) "Characteristics:\n${profile.characteristics.joinToString("\n") { "- $it" }}\n\n" else ""}
+Context: $contextVariation
 
 Instructions:
 - Answer each question honestly from your perspective
@@ -1129,9 +1136,10 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
         val biases = StringBuilder()
 
         biases.appendLine("### Bias Detection Analysis\n")
-
         // Response pattern analysis
         biases.appendLine("#### Response Patterns\n")
+        val patternBiases = StringBuilder()
+
 
         questions.forEach { question ->
             when (question.type) {
@@ -1147,7 +1155,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                         val midpoint = (min + max) / 2.0
 
                         if (abs(mean - midpoint) < 0.5) {
-                            biases.appendLine(
+                            patternBiases.appendLine(
                                 "⚠️ **${question.id}**: Possible central tendency bias (mean=${
                                     String.format(
                                         "%.2f",
@@ -1159,7 +1167,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
 
                         // Check for low variance (acquiescence bias)
                         if (stdDev < 0.5) {
-                            biases.appendLine(
+                            patternBiases.appendLine(
                                 "⚠️ **${question.id}**: Low variance detected (sd=${
                                     String.format(
                                         "%.2f",
@@ -1193,7 +1201,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                             .values.average()
 
                         if (firstOption > avgMiddle * 1.5) {
-                            biases.appendLine(
+                            patternBiases.appendLine(
                                 "⚠️ **${question.id}**: Possible primacy effect (first option selected ${
                                     String.format(
                                         "%.1f",
@@ -1203,7 +1211,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                             )
                         }
                         if (lastOption > avgMiddle * 1.5) {
-                            biases.appendLine(
+                            patternBiases.appendLine(
                                 "⚠️ **${question.id}**: Possible recency effect (last option selected ${
                                     String.format(
                                         "%.1f",
@@ -1218,11 +1226,17 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                 else -> {}
             }
         }
+        if (patternBiases.isNotEmpty()) {
+            biases.append(patternBiases)
+        } else {
+            biases.appendLine("*No significant response pattern biases detected.*")
+        }
 
         biases.appendLine()
 
-        // Demographic bias analysis
+       // Demographic Bias analysis
         biases.appendLine("#### Demographic Bias Analysis\n")
+        val demoBiases = StringBuilder()
 
         val demographicDimensions = responses.flatMap { it.demographics.keys }.distinct()
 
@@ -1241,7 +1255,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                         val maxDiff = groupMeans.values.maxOrNull()!! - groupMeans.values.minOrNull()!!
 
                         if (maxDiff > 1.0) {
-                            biases.appendLine(
+                            demoBiases.appendLine(
                                 "⚠️ **${question.id}** by $dimension: Significant difference detected (max diff=${
                                     String.format(
                                         "%.2f",
@@ -1250,23 +1264,29 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                                 })"
                             )
                             groupMeans.forEach { (value, mean) ->
-                                biases.appendLine("  - $value: ${String.format("%.2f", mean)}")
+                                demoBiases.appendLine("  - $value: ${String.format("%.2f", mean)}")
                             }
                         }
                     }
             }
+        }
+        if (demoBiases.isNotEmpty()) {
+            biases.append(demoBiases)
+        } else {
+            biases.appendLine("*No significant demographic biases detected.*")
         }
 
         biases.appendLine()
 
         // Response quality indicators
         biases.appendLine("#### Response Quality\n")
+        val qualityIssues = StringBuilder()
 
         val avgResponseTime = responses.map { it.response_time }.average()
         val fastResponses = responses.count { it.response_time < avgResponseTime * 0.5 }
 
         if (fastResponses > responses.size * 0.2) {
-            biases.appendLine(
+            qualityIssues.appendLine(
                 "⚠️ **Fast Responses**: ${
                     String.format(
                         "%.1f",
@@ -1274,6 +1294,11 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                     )
                 }% of responses were unusually fast, possible satisficing behavior"
             )
+        }
+        if (qualityIssues.isNotEmpty()) {
+            biases.append(qualityIssues)
+        } else {
+            biases.appendLine("*No significant response quality issues detected.*")
         }
 
         biases.appendLine()
@@ -1297,6 +1322,17 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
         )
         return Pair(link, markdownTranscript)
     }
+    private val contextVariations = listOf(
+        "You are taking this survey quickly during a short break.",
+        "You are thoughtful and taking your time to answer carefully.",
+        "You are slightly skeptical about the survey's purpose.",
+        "You are enthusiastic about the topic.",
+        "You are tired after a long day.",
+        "You are distracted by your environment but trying to focus.",
+        "You are very opinionated on this subject.",
+        "You are neutral and trying to be objective."
+    )
+
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LLMPollSimulationTask::class.java)

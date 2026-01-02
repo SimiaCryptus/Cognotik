@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.writing.ComicBookGenerationTask.ComicBookGenerationTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -12,13 +12,13 @@ object ComicBookGenerationTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
     @Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = ComicBookGenerationTask.ComicBookGeneration,
             typeConfig = TaskTypeConfig(
                 task_type = ComicBookGenerationTask.ComicBookGeneration.name
@@ -27,6 +27,7 @@ object ComicBookGenerationTaskTest {
                 subject = "A robot discovering a forgotten garden in a cyberpunk city",
                 target_pages = 1,
                 art_style = "cyberpunk noir",
+                style_details = "High contrast, neon lights, rain-slicked surfaces",
                 generate_images = false // Set to false for faster unit testing of the script logic
             ),
             timeoutMinutes = 10,

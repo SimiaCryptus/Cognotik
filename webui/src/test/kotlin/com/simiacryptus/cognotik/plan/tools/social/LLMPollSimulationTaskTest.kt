@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.social
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.social.LLMPollSimulationTask.*
 import org.junit.jupiter.api.BeforeAll
@@ -13,7 +13,7 @@ object LLMPollSimulationTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
@@ -67,7 +67,7 @@ object LLMPollSimulationTaskTest {
             )
         )
 
-        TaskTestHarness(
+        TaskHarness(
             taskType = LLMPollSimulationTask.LLMPollSimulation,
             typeConfig = TaskTypeConfig(
                 task_type = LLMPollSimulationTask.LLMPollSimulation.name
@@ -75,12 +75,12 @@ object LLMPollSimulationTaskTest {
             executionConfig = LLMPollSimulationTaskExecutionConfigData(
                 questions = questions,
                 respondent_profiles = profiles,
-                respondents_per_profile = 2, // Small number for testing
+                respondents_per_profile = 3, // Small number for testing
                 include_demographics = true,
                 cross_tabulation = true,
                 sentiment_analysis = true,
                 bias_detection = true,
-                temperature = 0.5
+                temperature = 0.7
             ),
             timeoutMinutes = 15,
         ).run()

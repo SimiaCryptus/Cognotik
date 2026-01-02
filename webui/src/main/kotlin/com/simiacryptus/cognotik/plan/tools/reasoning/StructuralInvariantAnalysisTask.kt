@@ -233,7 +233,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
     }
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(StructuralInvariantAnalysisTask::class.java)
+      private val log = LoggerFactory.getLogger(StructuralInvariantAnalysisTask::class.java)
         val StructuralInvariantAnalysis = TaskType(
             name = "StructuralInvariantAnalysis",
             category = "Reasoning",

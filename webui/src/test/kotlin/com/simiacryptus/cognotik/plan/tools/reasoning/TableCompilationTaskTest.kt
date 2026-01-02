@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.reasoning
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.reasoning.TableCompilationTask.TableCompilationTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.reasoning.TableCompilationTask.TableCompilationTaskTypeConfig
 import org.junit.jupiter.api.BeforeAll
@@ -12,13 +12,13 @@ object TableCompilationTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = TableCompilationTask.TableCompilation,
             typeConfig = TableCompilationTaskTypeConfig(
                 task_type = TableCompilationTask.TableCompilation.name,

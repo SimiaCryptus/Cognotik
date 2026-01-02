@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.writing.ArticleGenerationTask.ArticleGenerationTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object ArticleGenerationTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
-        val harness = TaskTestHarness(
+        val harness = TaskHarness(
             taskType = ArticleGenerationTask.ArticleGeneration,
             typeConfig = TaskTypeConfig(
                 task_type = ArticleGenerationTask.ArticleGeneration.name

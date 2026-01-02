@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.io.OutputStream
 import java.io.PrintWriter
 import java.util.concurrent.ConcurrentHashMap
 
@@ -18,7 +17,7 @@ class CommandSessionTask(
     orchestrationConfig,
     planTask
 ) {
-    class SessionState(val process: Process, var transcript: OutputStream? = null) {
+    class SessionState(val process: Process) {
         val outputBuffer = StringBuffer()
         val monitorThread = Thread {
             try {
@@ -28,15 +27,8 @@ class CommandSessionTask(
                     if (reader.ready()) {
                         val read = reader.read(buffer)
                         if (read > 0) {
-                            val text = String(buffer, 0, read)
                             synchronized(outputBuffer) {
                                 outputBuffer.append(buffer, 0, read)
-                            }
-                            try {
-                                transcript?.write(text.toByteArray())
-                                transcript?.flush()
-                            } catch (_: Exception) {
-                                // Ignore
                             }
                         }
                     } else {
@@ -48,7 +40,6 @@ class CommandSessionTask(
             } catch (e: Exception) {
                 log.warn("Error monitoring session output", e)
             } finally {
-                transcript?.close()
                 if (process.isAlive) {
                     process.destroyForcibly()
                 }
@@ -93,7 +84,7 @@ class CommandSessionTask(
         @Description("Commands to send to the interactive session") val inputs: List<String> = listOf(),
         @Description("Session ID for reusing existing sessions") val sessionId: String? = null,
         @Description("Timeout in milliseconds for commands to finish") val timeout: Long = TIMEOUT_MS,
-        @Description("Timeout in milliseconds for output to finish") val idle_timeout: Long = TIMEOUT_MS,
+        @Description("Timeout in milliseconds for output to finish") val idle_timeout: Long = 2000,
         @Description("Whether to use a pseudo-terminal (requires pty4j)") val tty: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -193,11 +184,10 @@ class CommandSessionTask(
                         }
 
                         log.info("Started new process for command: ${resolvedCommand.joinToString(" ")}")
-                        val state = SessionState(process, transcript)
+                        val state = SessionState(process)
                         executionConfig.sessionId?.let { id -> activeSessions[id] = state }
                         state
                     }
-                    sessionState.transcript = transcript
 
                     val writer = PrintWriter(sessionState.process.outputStream, true)
 
@@ -221,7 +211,7 @@ class CommandSessionTask(
                         val outputHeader = "Output:"
                         val outputContent = output.take(10000)
                         val outputBlock = "```\n$outputContent\n```"
-                        val value = "$outputHeader\n$outputBlock"
+                        val value = "\n\n$outputHeader\n$outputBlock"
                         transcript?.write(value.toByteArray())
                         task.add(value.renderMarkdown())
                         resultBuffer.appendLine(value)

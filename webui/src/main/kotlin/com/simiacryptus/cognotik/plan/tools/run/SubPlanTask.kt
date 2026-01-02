@@ -123,9 +123,7 @@ class SubPlanTask(
                 ?: throw IllegalArgumentException("No planning goal specified for SubPlanningTask")
 
             // Append purpose if available
-            if (typeConfig.purpose.isNotEmpty()) planningGoal = planningGoal + """
-                Purpose: ${typeConfig.purpose}
-            """.trimIndent()
+            if (typeConfig.purpose.isNotEmpty()) planningGoal += "\n\nPurpose: ${typeConfig.purpose}"
 
             // Build context for the sub-planner
             val contextMessages = buildContextMessages(messages)
@@ -268,6 +266,18 @@ class SubPlanTask(
         results: List<String>, goal: String, task: SessionTask, orchestrationConfig: OrchestrationConfig
     ): String {
         log.info("Creating summary of ${results.size} sub-plan results")
+        if (results.isEmpty()) {
+            return buildString {
+                appendLine("# Sub-Planning Execution Completed")
+                appendLine()
+                appendLine("**Goal:** $goal")
+                appendLine()
+                appendLine("The sub-plan executed successfully. No specific data context was returned.")
+                appendLine()
+                appendLine("Check the Execution tab for detailed logs.")
+            }
+        }
+
 
         val combinedResults = results.joinToString("\n\n---\n\n")
 

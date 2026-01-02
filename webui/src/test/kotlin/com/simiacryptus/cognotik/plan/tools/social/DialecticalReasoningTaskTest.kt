@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.social
 
-import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.apps.general.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.social.DialecticalReasoningTask.DialecticalReasoningTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
@@ -13,13 +13,13 @@ object DialecticalReasoningTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
      @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
-        TaskTestHarness(
+        TaskHarness(
             taskType = DialecticalReasoningTask.DialecticalReasoning,
             typeConfig = TaskTypeConfig(
                 task_type = DialecticalReasoningTask.DialecticalReasoning.name
@@ -28,7 +28,7 @@ object DialecticalReasoningTaskTest {
                 thesis = "Functional programming is the superior paradigm for building scalable and maintainable software systems.",
                 antithesis = "Object-oriented programming is the superior paradigm for building scalable and maintainable software systems.",
                 context = "Modern enterprise software development and team productivity.",
-                synthesis_levels = 2,
+                synthesis_levels = 3,
                 preserve_strengths = true
             ),
             timeoutMinutes = 10,

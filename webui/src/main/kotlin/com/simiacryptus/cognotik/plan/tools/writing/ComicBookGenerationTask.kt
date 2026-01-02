@@ -37,6 +37,9 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
 
         @Description("Art style (e.g., 'manga', 'western superhero', 'noir', 'cartoon')")
         val art_style: String = "western superhero",
+        @Description("Additional style details or visual guidelines")
+        val style_details: String = "",
+
 
         @Description("Whether to generate images for each row")
         val generate_images: Boolean = true,
@@ -137,6 +140,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
                     Subject: ${genConfig.subject}
                     Target Pages: ${genConfig.target_pages}
                     Style: ${genConfig.art_style}
+                    ${if (genConfig.style_details.isNotBlank()) "Style Details: ${genConfig.style_details}" else ""}
                     
                     Structure the output with:
                     - Title and Premise
@@ -150,7 +154,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
                     - Dialog (Character: Text)
                     - Captions (if any)
                     
-                    For each row, provide a 'visual_description' that summarizes the row for an artist to draw as a strip.
+                    For each row, provide a 'visual_description' that summarizes the row for an artist to draw as a strip. Include lighting, mood, and composition details.
                 """.trimIndent(),
                 model = api,
                 parsingChatter = parsingChatter,
@@ -197,7 +201,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
                 charRefTask.header("Character References", 1)
 
                 val charAgent = ImageProcessingAgent(
-                    prompt = "Create a character sheet for a comic book. Style: ${genConfig.art_style}",
+                    prompt = "Create a character sheet for a comic book. Style: ${genConfig.art_style} ${genConfig.style_details}",
                     model = orchestrationConfig.defaultImage.getChildClient(task),
                     temperature = 0.7
                 )
@@ -205,7 +209,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
                 script.characters.forEach { char ->
                     try {
                         val charPrompt =
-                            "Character: ${char.name}\nDescription: ${char.description}\nVisual Traits: ${char.visual_traits}\nStyle: ${genConfig.art_style}"
+                            "Character: ${char.name}\nDescription: ${char.description}\nVisual Traits: ${char.visual_traits}\nStyle: ${genConfig.art_style} ${genConfig.style_details}"
                         val inputs = mutableListOf<ImageAndText>()
                         if (lastImage != null) {
                             inputs.add(ImageAndText(text = "Style Reference", image = lastImage))
@@ -238,7 +242,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
                 task.update()
 
                 val imageAgent = ImageProcessingAgent(
-                    prompt = "Create a comic book strip based on the description. Style: ${genConfig.art_style}",
+                    prompt = "Create a comic book strip based on the description. Style: ${genConfig.art_style} ${genConfig.style_details}",
                     model = orchestrationConfig.defaultImage.getChildClient(task),
                     temperature = 0.7
                 )
@@ -253,7 +257,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
                     page.rows.forEach { row ->
                         val rowPrompt = buildString {
-                            appendLine("Comic strip row, style: ${genConfig.art_style}")
+                            appendLine("Comic strip row, style: ${genConfig.art_style} ${genConfig.style_details}")
                             appendLine("Description: ${row.visual_description}")
                             appendLine("Panels:")
                             row.frames.forEach { frame ->
@@ -311,7 +315,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
                             val rowHtml = """
                                 <div class='comic-row'>
-                                  <img src='$link' alt='Page ${page.page_number} Row ${row.row_number}' style='width: 100%; max-width: 800px; border: 1px solid #ccc;' />
+                                  <img src='$link' alt='Page ${page.page_number} Row ${row.row_number}' title='${row.visual_description.replace("'", "&apos;")}' style='width: 100%; max-width: 800px; border: 1px solid #ccc;' />
                                 </div>
                             """.trimIndent()
 

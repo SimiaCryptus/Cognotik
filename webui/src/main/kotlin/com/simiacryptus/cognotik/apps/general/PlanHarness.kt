@@ -38,7 +38,7 @@ import java.text.SimpleDateFormat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-open class PlanTestHarness(
+open class PlanHarness(
     val prompt: String,
     val cognitiveSettings: CognitiveModeConfig,
     val modelInstanceFn: (ApiChatModel) -> ChatInterface = { model ->
@@ -241,6 +241,6 @@ open class PlanTestHarness(
             return Pair(shutdownLatch, trayIcon)
         }
 
-        private val log = LoggerFactory.getLogger(PlanTestHarness::class.java)
+        private val log = LoggerFactory.getLogger(PlanHarness::class.java)
     }
 }
