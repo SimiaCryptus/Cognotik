@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.data.toFile
 import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
 object IllustrateDocumentTaskTest {
@@ -35,7 +34,7 @@ object IllustrateDocumentTaskTest {
         )
 
         // Create a sample document to illustrate
-        harness.root.resolve("test_document.md").toFile().writeText(
+        harness.workspace.resolve("test_document.md").toFile().writeText(
             """
             # System Architecture Overview
             

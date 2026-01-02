@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask.LanguageServerTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask.LanguageServerTaskTypeConfig
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
 
@@ -35,7 +34,7 @@ object LanguageServerTaskTest {
         )
 
         // Create a sample file in the harness root for the LSP to analyze
-        val sampleFile = harness.root.resolve("Sample.kt")
+        val sampleFile = harness.workspace.resolve("Sample.kt")
         sampleFile.parentFile.mkdirs()
         sampleFile.writeText("""
             fun main() {
@@ -63,7 +62,7 @@ object LanguageServerTaskTest {
         )
 
         // Create a file with a syntax error
-        val errorFile = harness.root.resolve("Error.kt")
+        val errorFile = harness.workspace.resolve("Error.kt")
         errorFile.parentFile.mkdirs()
         errorFile.writeText("""
             fun main() {

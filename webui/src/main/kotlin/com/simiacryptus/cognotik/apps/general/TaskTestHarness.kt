@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -47,14 +48,15 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
 ) {
     private val log = LoggerFactory.getLogger(TaskTestHarness::class.java)
-    val root = createTempDirectory()
+    val workspace = createTempDirectory()
 
     fun run() {
-        log.info("Running task in ephemeral workspace: ${root.absolutePath}")
+        log.info("Running task in ephemeral workspace: ${workspace.absolutePath}")
 
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
         val session = Session.newGlobalID()
+        DataStorage.sessionPaths[session] = workspace
 
         val singleTaskApp = object : SingleTaskApp(
             path = "/test",
@@ -76,8 +78,10 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
 
             override fun <T : Any> initSettings(session: Session): T {
-                val orchestrationConfig = newConfig(session, root)
-                getSettingsFile(session, defaultUser).writeText(orchestrationConfig.toJson())
+                val orchestrationConfig = newConfig(session, workspace)
+                val settingsFile = getSettingsFile(session, defaultUser)
+                val json = orchestrationConfig.toJson()
+                settingsFile.writeText(json)
                 @Suppress("UNCHECKED_CAST")
                 return orchestrationConfig as T
             }

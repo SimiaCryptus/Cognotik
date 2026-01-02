@@ -82,14 +82,11 @@ class IllustrateDocumentAction : BaseAction() {
         taskConfig: IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData,
         session: Session
     ) {
-
-
         progress.text = "Starting server..."
         setupTaskSession(session, orchestrationConfig, taskConfig)
-
-        progress.text = "Opening browser..."
         try {
             Thread.sleep(500)
+            progress.text = "Opening browser..."
             val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
             log.info("Opening browser to $uri")
             browse(uri)

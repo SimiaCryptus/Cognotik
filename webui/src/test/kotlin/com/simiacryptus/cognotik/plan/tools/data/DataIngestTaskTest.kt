@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.DataIngestTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -35,7 +34,7 @@ object DataIngestTaskTest {
         )
 
         // Create a sample log file for the task to ingest
-        harness.root.resolve("sample.log").toFile().writeText(
+        harness.workspace.resolve("sample.log").toFile().writeText(
             """
             2023-10-27 10:00:01 INFO  Main - Application starting
             2023-10-27 10:00:02 DEBUG Config - Loading properties from disk

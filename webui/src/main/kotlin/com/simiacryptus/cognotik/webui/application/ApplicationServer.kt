@@ -143,7 +143,7 @@ abstract class ApplicationServer(
             userId?.email ?: "anonymous",
             clazz.simpleName
         )
-        val settingsFile = getSettingsFile(session, userId ?: UserSettingsManager.defaultUser)
+        val settingsFile = getSettingsFile(session, userId ?: defaultUser)
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
         if (settingsFile.exists()) try {
             val text = settingsFile.readText()

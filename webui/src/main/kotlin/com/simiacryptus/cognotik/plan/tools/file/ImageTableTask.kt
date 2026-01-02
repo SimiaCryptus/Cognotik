@@ -130,8 +130,8 @@ ImageTable - Generate a table/grid of AI-generated images
         task.add("Generating ${rows.size}x${columns.size} image grid (${rows.size * columns.size} total images)")
 
         // Create output directory
-        val outputPath = agent.root.resolve(outputDir)
-        outputPath.toFile().mkdirs()
+        val outputPath = task.resolveUserFile(outputDir)
+        outputPath?.mkdirs()
 
         // Initialize the results table to store image paths
         val imageResults = Array(rows.size) { Array(columns.size) { "" } }
@@ -199,10 +199,10 @@ ImageTable - Generate a table/grid of AI-generated images
                     val safeRowLabel = sanitizeFilename(rowLabel)
                     val safeColLabel = sanitizeFilename(colLabel)
                     val filename = "${safeRowLabel}_${safeColLabel}.$imageFormat"
-                    val imagePath = outputPath.resolve(filename)
+                    val imagePath = outputPath?.resolve(filename)
 
                     // Save the image
-                    ImageIO.write(generatedImage, imageFormat, imagePath.toFile())
+                    ImageIO.write(generatedImage, imageFormat, imagePath)
 
                     // Store the relative path
                     val relativePath = "$outputDir/$filename"
@@ -229,8 +229,8 @@ ImageTable - Generate a table/grid of AI-generated images
 
         // Save the HTML table to a file
         val htmlFilename = "image_table.html"
-        val htmlPath = outputPath.resolve(htmlFilename)
-        htmlPath.toFile().writeText(generateStandaloneHtml(rows, columns, imageResults))
+        val htmlPath = outputPath?.resolve(htmlFilename)
+        htmlPath?.writeText(generateStandaloneHtml(rows, columns, imageResults))
 
         val summary = buildString {
             appendLine("Successfully generated ${rows.size}x${columns.size} image table.")

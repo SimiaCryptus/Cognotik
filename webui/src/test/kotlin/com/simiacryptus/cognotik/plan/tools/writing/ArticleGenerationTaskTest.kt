@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.writing.ArticleGenerationTask.ArticleGenerationTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.io.File
 
@@ -42,7 +41,7 @@ object ArticleGenerationTaskTest {
         )
 
         // Seed input data for the task to process
-        val workingDir = harness.root
+        val workingDir = harness.workspace
         workingDir.mkdirs()
         File(workingDir, "context.md").writeText("""
             # AI in Software Engineering

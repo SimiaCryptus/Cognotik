@@ -10,7 +10,6 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm
 import org.apache.pdfbox.pdmodel.interactive.form.PDTextField
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
 object PdfFormTaskTest {
@@ -38,7 +37,7 @@ object PdfFormTaskTest {
         )
 
         // Create a simple PDF template with a form field in the harness workspace
-        val templatePath = harness.root.resolve("template.pdf")
+        val templatePath = harness.workspace.resolve("template.pdf")
         val doc = PDDocument()
         try {
             val page = PDPage()
@@ -59,6 +58,6 @@ object PdfFormTaskTest {
         harness.run()
 
         // Verify that the output file was created
-        assertTrue(harness.root.resolve("output.pdf").exists(), "The output PDF file should exist after task execution")
+        assertTrue(harness.workspace.resolve("output.pdf").exists(), "The output PDF file should exist after task execution")
     }
 }

@@ -204,9 +204,7 @@ open class DataStorage(
     ): Date? = metadataStorage.getSessionTime(user, session)
 
     companion object {
-
         val log = LoggerFactory.getLogger(DataStorage::class.java)
         val sessionPaths = mutableMapOf<Session, File>()
-
     }
 }

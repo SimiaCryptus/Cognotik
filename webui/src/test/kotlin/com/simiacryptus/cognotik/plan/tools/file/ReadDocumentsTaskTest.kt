@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.plan.tools.data.toFile
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.ReadDocumentsTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.ReadDocumentsTaskTypeConfig
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
 object ReadDocumentsTaskTest {
@@ -32,7 +31,7 @@ object ReadDocumentsTaskTest {
             ),
             timeoutMinutes = 10,
         ).apply {
-            root.resolve("Calculator.kt").toFile().writeText(
+            workspace.resolve("Calculator.kt").toFile().writeText(
                 """
                     class Calculator {
                         fun add(a: Int, b: Int): Int = a + b
