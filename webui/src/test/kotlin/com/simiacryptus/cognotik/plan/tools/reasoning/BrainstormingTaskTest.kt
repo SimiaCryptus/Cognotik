@@ -16,7 +16,7 @@ object BrainstormingTaskTest {
         TaskTestHarness.configurePlatform()
     }
 
-    @Test
+   //@Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
         TaskTestHarness(

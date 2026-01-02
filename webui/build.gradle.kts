@@ -102,6 +102,7 @@ dependencies {
     testImplementation(kotlin("scripting-compiler-embeddable"))
     testImplementation(kotlin("compiler-embeddable"))
     testImplementation(kotlin("script-runtime"))
+    testImplementation(kotlin("test"))
 }
 
 node {

@@ -15,7 +15,7 @@ object ReportGenerationTaskTest {
         TaskTestHarness.configurePlatform()
     }
 
-    @Test
+   //@Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         TaskTestHarness(

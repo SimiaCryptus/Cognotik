@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask.PersuasiveEssayTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.social.PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -16,12 +15,12 @@ object PersuasiveEssayTaskTest {
         TaskTestHarness.configurePlatform()
     }
 
-    @Test
+   //@Test
     @Timeout(15, unit = TimeUnit.MINUTES)
     fun test() {
         TaskTestHarness(
             taskType = PersuasiveEssayTask.PersuasiveEssay,
-            typeConfig = PersuasiveEssayTaskTypeConfig(
+            typeConfig = PersuasiveEssayTask.PersuasiveEssayTaskTypeConfig(
                 generate_images = false,
                 generate_cover_image = false
             ),

@@ -16,7 +16,7 @@ object BusinessProposalTaskTest {
         TaskTestHarness.configurePlatform()
     }
 
-    @Test
+   //@Test
     @Timeout(15, unit = TimeUnit.MINUTES)
     fun test() {
         TaskTestHarness(

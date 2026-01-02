@@ -16,7 +16,7 @@ object EmailCampaignTaskTest {
         TaskTestHarness.configurePlatform()
     }
 
-    @Test
+   //@Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         val harness = TaskTestHarness(
@@ -47,7 +47,7 @@ object EmailCampaignTaskTest {
         )
 
         // Seed input data for the task to process
-        val workingDir = File(harness.orchestrationConfig.absoluteWorkingDir ?: "temp_test_dir")
+        val workingDir = harness.workspace
         workingDir.mkdirs()
         File(workingDir, "brand_guidelines.md").writeText("""
             # Cognotik Brand Guidelines

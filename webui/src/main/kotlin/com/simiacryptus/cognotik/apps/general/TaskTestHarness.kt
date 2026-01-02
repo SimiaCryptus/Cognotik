@@ -125,13 +125,53 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
 
         } finally {
-            if(openBrowser) {
-                javax.swing.JOptionPane.showMessageDialog(
-                    null,
-                    "Task completed. Click OK to shut down the server and exit.",
-                    "Task Test Harness",
-                    javax.swing.JOptionPane.INFORMATION_MESSAGE
-                )
+            if (openBrowser) {
+                val shutdownLatch = CountDownLatch(1)
+                var trayIcon: java.awt.TrayIcon? = null
+                if (java.awt.SystemTray.isSupported()) {
+                    val tray = java.awt.SystemTray.getSystemTray()
+                    val image = java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_RGB)
+                    val g = image.createGraphics()
+                    g.color = java.awt.Color.GREEN
+                    g.fillRect(0, 0, 16, 16)
+                    g.dispose()
+
+                    val popup = java.awt.PopupMenu()
+                    val exitItem = java.awt.MenuItem("Exit")
+                    exitItem.addActionListener { shutdownLatch.countDown() }
+                    popup.add(exitItem)
+
+                    trayIcon = java.awt.TrayIcon(image, "Task Test Harness", popup)
+                    trayIcon.isImageAutoSize = true
+                    try {
+                        tray.add(trayIcon)
+                    } catch (e: java.awt.AWTException) {
+                        log.warn("TrayIcon could not be added.")
+                    }
+                }
+
+                val inputThread = Thread {
+                    try {
+                        log.info("Press Enter to shut down...")
+                        System.`in`.read()
+                    } catch (e: Exception) {
+                        // ignore
+                    } finally {
+                        shutdownLatch.countDown()
+                    }
+                }
+                inputThread.isDaemon = true
+                inputThread.start()
+
+                try {
+                    shutdownLatch.await()
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                }
+
+                if (trayIcon != null && java.awt.SystemTray.isSupported()) {
+                    java.awt.SystemTray.getSystemTray().remove(trayIcon)
+                }
             }
             jettyServer.stop()
         }
