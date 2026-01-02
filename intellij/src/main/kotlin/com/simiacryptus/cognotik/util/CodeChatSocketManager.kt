@@ -15,7 +15,7 @@ open class CodeChatSocketManager(
     val codeSelection: String,
     model: ChatInterface,
     parsingModel: ChatInterface,
-    storage: StorageInterface?,
+    storage: StorageInterface,
 ) : ChatSocketManager(
     session = session,
     smartModel = model,
