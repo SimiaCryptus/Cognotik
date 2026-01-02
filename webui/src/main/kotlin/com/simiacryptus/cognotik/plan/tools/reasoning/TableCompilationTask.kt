@@ -309,6 +309,7 @@ Keep responses concise (typically 1-3 sentences or a few words/numbers as approp
         val TableCompilation = TaskType(
             "TableCompilation",
             "Reasoning",
+            TableCompilationTask::class.java,
             TableCompilationTaskExecutionConfigData::class.java,
             TableCompilationTaskTypeConfig::class.java,
             "Generate structured tables with AI-computed cell values",
@@ -321,7 +322,7 @@ Keep responses concise (typically 1-3 sentences or a few words/numbers as approp
                 <li>Supports markdown, HTML, and CSV output formats</li>
                 <li>Useful for comparison matrices, analysis tables, decision matrices</li>
               </ul>
-            """
+            """,
         )
     }
 }

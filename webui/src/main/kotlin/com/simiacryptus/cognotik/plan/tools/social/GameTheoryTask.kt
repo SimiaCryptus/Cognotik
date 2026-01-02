@@ -31,6 +31,7 @@ class GameTheoryTask(
         val GameTheory = TaskType(
             "GameTheory",
             "Reasoning",
+            GameTheoryTask::class.java,
             GameTheoryTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze strategic interactions using game theory",
@@ -47,7 +48,7 @@ class GameTheoryTask(
                 <li>Handles cooperative, non-cooperative, zero-sum, and sequential games</li>
                 <li>Useful for competitive analysis, negotiation, and strategic planning</li>
               </ul>
-            """
+            """,
         )
         private val textExtensions = setOf(
             "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs",

@@ -818,6 +818,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
         val ConstraintRelaxation = TaskType(
             "ConstraintRelaxation",
             "Reasoning",
+            ConstraintRelaxationTask::class.java,
             ConstraintRelaxationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Solve over-constrained problems through progressive constraint relaxation",
@@ -833,7 +834,7 @@ ConstraintRelaxation - Solve over-constrained problems through progressive const
                 <li>Configurable reintroduction order (by priority, difficulty, or dependency)</li>
                 <li>Useful for over-constrained problems, algorithm design, and architecture under constraints</li>
               </ul>
-            """
+            """,
         )
     }
 }

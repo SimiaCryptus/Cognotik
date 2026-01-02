@@ -1301,6 +1301,7 @@ Make suggestions:
         val TutorialGeneration = TaskType(
             "TutorialGeneration",
             "Writing",
+            TutorialGenerationTask::class.java,
             TutorialGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create complete, step-by-step tutorials for processes and projects",
@@ -1318,7 +1319,7 @@ Make suggestions:
                 <li>Platform-specific instructions and requirements</li>
                 <li>Ideal for how-to guides, educational content, and project-based learning</li>
               </ul>
-            """
+            """,
         )
     }
 }

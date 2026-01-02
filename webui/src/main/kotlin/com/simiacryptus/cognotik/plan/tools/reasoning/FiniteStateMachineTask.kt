@@ -842,6 +842,7 @@ Format as a clear table or structured list.
         val FiniteStateMachine = TaskType(
             "FiniteStateMachine",
             "Reasoning",
+            FiniteStateMachineTask::class.java,
             FiniteStateMachineTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Model concepts using finite state machine analysis",
@@ -856,7 +857,7 @@ Format as a clear table or structured list.
           <li>Generates comprehensive test scenarios</li>
           <li>Useful for system design, protocol analysis, and workflow validation</li>
         </ul>
-      """
+      """,
         )
     }
 }

@@ -750,6 +750,7 @@ Provide a brief validation assessment.
         val AnalogicalReasoning = TaskType(
             "AnalogicalReasoning",
             "Reasoning",
+            AnalogicalReasoningTask::class.java,
             AnalogicalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Solve problems by finding and applying analogies from different domains",
@@ -764,7 +765,7 @@ Provide a brief validation assessment.
                 <li>Suggests concrete solutions based on analogies</li>
                 <li>Useful for design thinking and novel approaches</li>
               </ul>
-            """
+            """,
         )
     }
 }

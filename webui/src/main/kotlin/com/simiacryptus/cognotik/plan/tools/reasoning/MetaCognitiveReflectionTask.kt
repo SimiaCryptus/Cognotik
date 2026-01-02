@@ -575,6 +575,7 @@ Begin your meta-cognitive reflection now:
         val MetaCognitiveReflection = TaskType(
             "MetaCognitiveReflection",
             "Reasoning",
+            MetaCognitiveReflectionTask::class.java,
             MetaCognitiveReflectionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Reflect on and critique reasoning processes",
@@ -588,7 +589,7 @@ Begin your meta-cognitive reflection now:
                 <li>Suggests improvements to reasoning quality</li>
                 <li>Checks logical consistency and completeness</li>
               </ul>
-            """
+            """,
         )
     }
 }

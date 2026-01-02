@@ -27,6 +27,7 @@ class MathematicalReasoningTask(
         val MathematicalReasoning = TaskType(
             "MathematicalReasoning",
             "Reasoning",
+            MathematicalReasoningTask::class.java,
             MathematicalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Solve mathematical problems through step-by-step logical reasoning with verifiable steps",
@@ -42,7 +43,7 @@ class MathematicalReasoningTask(
                     <li>Validates intermediate results for correctness</li>
                     <li>Generates human-readable mathematical proofs</li>
                 </ul>
-            """
+            """,
         )
     }
 

@@ -1102,6 +1102,7 @@ Provide the complete revised email body only.
         val EmailCampaign = TaskType(
             "EmailCampaign",
             "Writing",
+            EmailCampaignTask::class.java,
             EmailCampaignTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete email sequences for marketing, sales, or outreach",
@@ -1119,7 +1120,7 @@ Provide the complete revised email body only.
                 <li>Provides implementation notes and best practices</li>
                 <li>Ideal for marketing automation, sales outreach, and customer engagement</li>
               </ul>
-            """
+            """,
         )
     }
 }

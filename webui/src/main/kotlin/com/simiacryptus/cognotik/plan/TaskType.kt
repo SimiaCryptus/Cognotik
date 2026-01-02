@@ -4,11 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
-import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.Companion.DataIngest
 import com.simiacryptus.cognotik.plan.tools.file.*
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
-import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
-import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.ReadDocuments
 import com.simiacryptus.cognotik.plan.tools.games.GameEconomyTask
 import com.simiacryptus.cognotik.plan.tools.games.GameLevelDesignTask
 import com.simiacryptus.cognotik.plan.tools.games.GameMechanicsDesignTask
@@ -17,16 +13,14 @@ import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask
 import com.simiacryptus.cognotik.plan.tools.online.GitHubSearchTask
 import com.simiacryptus.cognotik.plan.tools.online.MCPToolTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.*
-import com.simiacryptus.cognotik.plan.tools.reasoning.ChainOfThoughtTask.Companion.ChainOfThought
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.run.RunToolTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
-import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.Companion.SubPlan
 import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
+import com.simiacryptus.cognotik.plan.tools.session.JdbcSessionTask
 import com.simiacryptus.cognotik.plan.tools.social.*
 import com.simiacryptus.cognotik.plan.tools.writing.*
-import com.simiacryptus.cognotik.plan.tools.writing.ResearchPaperGenerationTask.Companion.ResearchPaperGeneration
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -36,6 +30,7 @@ import com.simiacryptus.cognotik.util.DynamicEnumSerializer
 class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
     name: String,
     val category: String,
+    val taskClass: Class<out AbstractTask<out T,out U>>,
     val executionConfigClass: Class<out T>,
     val taskSettingsClass: Class<out U>,
     val description: String? = null,
@@ -48,239 +43,97 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 mutableMapOf()
 
             fun <T : TaskExecutionConfig, U : TaskTypeConfig> registerConstructor(
-                taskType: TaskType<T, U>, constructor: (OrchestrationConfig, T?) -> AbstractTask<T, U>
+                taskType: TaskType<T, U>
             ) {
-                taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskExecutionConfig? ->
-                    constructor(settings, task as T?) as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
+                try {
+                    val constructor = taskType.getConstructor()
+                    taskConstructors[taskType] = { settings: OrchestrationConfig, task: TaskExecutionConfig? ->
+                        @Suppress("UNCHECKED_CAST")
+                        constructor(settings, task as T?) as AbstractTask<TaskExecutionConfig, TaskTypeConfig>
+                    }
+                    register(taskType)
+                } catch (e: NoSuchMethodException) {
+                    throw RuntimeException("Failed to register task type: ${taskType.name}. Ensure that the task class has a constructor with parameters (OrchestrationConfig, ${taskType.executionConfigClass.name})", e)
                 }
-                register(taskType)
-            }
-            registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet) { settings, task ->
-                GenerateSpriteSheetTask(settings, task)
-            }
-            registerConstructor(FunctorialMappingTask.FunctorialMapping) { settings, task ->
-                FunctorialMappingTask(settings, task)
-            }
-            registerConstructor(StructuralInvariantAnalysisTask.StructuralInvariantAnalysis) { settings, task ->
-                StructuralInvariantAnalysisTask(settings, task)
-            }
-            registerConstructor(IterativeGraphGenerationTask.IterativeGraphGeneration) { settings, task ->
-                IterativeGraphGenerationTask(settings, task)
-            }
-            registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery) { settings, task ->
-                IsomorphismDiscoveryTask(settings, task)
-            }
-            registerConstructor(TableCompilationTask.TableCompilation) { settings, task ->
-                TableCompilationTask(settings, task)
-            }
-            registerConstructor(ImageTableTask.ImageTable) { settings, task ->
-                ImageTableTask(settings, task)
-            }
-            registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument) { settings, task ->
-                SoftwareDesignDocumentTask(settings, task)
-            }
-            registerConstructor(PoliticalOptimizationTask.PoliticalOptimization) { settings, task ->
-                PoliticalOptimizationTask(settings, task)
-            }
-            registerConstructor(LLMPollSimulationTask.LLMPollSimulation) { settings, task ->
-                LLMPollSimulationTask(settings, task)
-            }
-            registerConstructor(LLMExperimentTask.LLMExperiment) { settings, task ->
-                LLMExperimentTask(settings, task)
-            }
-            registerConstructor(GameLevelDesignTask.GameLevelDesign) { settings, task ->
-                GameLevelDesignTask(settings, task)
-            }
-            registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign) { settings, task ->
-                GameNarrativeDesignTask(settings, task)
-            }
-            registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign) { settings, task ->
-                GameMechanicsDesignTask(settings, task)
-            }
-            registerConstructor(GameEconomyTask.GameEconomy) { settings, task ->
-                GameEconomyTask(settings, task)
-            }
-            registerConstructor(ResearchPaperGeneration) { settings, task ->
-                ResearchPaperGenerationTask(settings, task)
-            }
-            registerConstructor(ChainOfThought) { settings, task ->
-                ChainOfThoughtTask(settings, task)
-            }
-            registerConstructor(ReadDocuments) { settings, task ->
-                ReadDocumentsTask(settings, task)
-            }
-            registerConstructor(DiscussionTask.Discussion) { settings, task ->
-                DiscussionTask(settings, task)
-            }
-            registerConstructor(CrawlerAgentTask.CrawlerAgent) { settings, task ->
-                CrawlerAgentTask(settings, task)
-            }
-            registerConstructor(FileModification) { settings, task ->
-                FileModificationTask(settings, task)
-            }
-            registerConstructor(FileSearch) { settings, task ->
-                FileSearchTask(settings, task)
-            }
-            registerConstructor(GitHubSearchTask.GitHubSearch) { settings, task ->
-                GitHubSearchTask(settings, task)
-            }
-            registerConstructor(RunCodeTask.RunCode) { settings, task ->
-                RunCodeTask(settings, task)
-            }
-            registerConstructor(RunToolTask.RunTool) { settings, task ->
-                RunToolTask(settings, task)
-            }
-//            registerConstructor(SeleniumSessionTask.SeleniumSession) { settings, task ->
-//                SeleniumSessionTask(settings, task)
-//            }
-            registerConstructor(CommandSessionTask.CommandSession) { settings, task ->
-                CommandSessionTask(settings, task)
-            }
-            registerConstructor(AutoFixTask.AutoFix) { settings, task ->
-                AutoFixTask(settings, task)
-            }
-            registerConstructor(MCPToolTask.MCPTool) { settings, task ->
-                MCPToolTask(settings, task)
-            }
-            registerConstructor(WriteHtmlTask.WriteHtml) { settings, task ->
-                WriteHtmlTask(settings, task)
-            }
-            registerConstructor(GeneratePresentationTask.GeneratePresentation) { settings, task ->
-                GeneratePresentationTask(settings, task)
-            }
-            registerConstructor(MetaCognitiveReflectionTask.MetaCognitiveReflection) { settings, task ->
-                MetaCognitiveReflectionTask(settings, task)
-            }
-            registerConstructor(CausalInferenceTask.CausalInference) { settings, task ->
-                CausalInferenceTask(settings, task)
-            }
-            registerConstructor(AbstractionLadderTask.AbstractionLadder) { settings, task ->
-                AbstractionLadderTask(settings, task)
-            }
-            registerConstructor(CounterfactualAnalysisTask.CounterfactualAnalysis) { settings, task ->
-                CounterfactualAnalysisTask(settings, task)
-            }
-            registerConstructor(AnalogicalReasoningTask.AnalogicalReasoning) { settings, task ->
-                AnalogicalReasoningTask(settings, task)
-            }
-            registerConstructor(SocraticDialogueTask.SocraticDialogue) { settings, task ->
-                SocraticDialogueTask(settings, task)
-            }
-            registerConstructor(DecisionTreeTask.DecisionTree) { settings, task ->
-                DecisionTreeTask(settings, task)
-            }
-            registerConstructor(MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysis) { settings, task ->
-                MultiPerspectiveAnalysisTask(settings, task)
-            }
-            registerConstructor(ConstraintSatisfactionTask.ConstraintSatisfaction) { settings, task ->
-                ConstraintSatisfactionTask(settings, task)
-            }
-            registerConstructor(DecompositionSynthesisTask.DecompositionSynthesis) { settings, task ->
-                DecompositionSynthesisTask(settings, task)
-            }
-            registerConstructor(BrainstormingTask.Brainstorming) { settings, task ->
-                BrainstormingTask(settings, task)
-            }
-            registerConstructor(FiniteStateMachineTask.FiniteStateMachine) { settings, task ->
-                FiniteStateMachineTask(settings, task)
-            }
-            registerConstructor(GameTheoryTask.GameTheory) { settings, task ->
-                GameTheoryTask(settings, task)
-            }
-            registerConstructor(AbductiveReasoningTask.AbductiveReasoning) { settings, task ->
-                AbductiveReasoningTask(settings, task)
-            }
-            registerConstructor(AdversarialReasoningTask.AdversarialReasoning) { settings, task ->
-                AdversarialReasoningTask(settings, task)
-            }
-            registerConstructor(ConstraintRelaxationTask.ConstraintRelaxation) { settings, task ->
-                ConstraintRelaxationTask(settings, task)
-            }
-            registerConstructor(DialecticalReasoningTask.DialecticalReasoning) { settings, task ->
-                DialecticalReasoningTask(settings, task)
-            }
-            registerConstructor(LateralThinkingTask.LateralThinking) { settings, task ->
-                LateralThinkingTask(settings, task)
-            }
-            registerConstructor(ProbabilisticReasoningTask.ProbabilisticReasoning) { settings, task ->
-                ProbabilisticReasoningTask(settings, task)
-            }
-            registerConstructor(SystemsThinkingTask.SystemsThinking) { settings, task ->
-                SystemsThinkingTask(settings, task)
-            }
-            registerConstructor(TemporalReasoningTask.TemporalReasoning) { settings, task ->
-                TemporalReasoningTask(settings, task)
-            }
-            registerConstructor(NarrativeGenerationTask.NarrativeGeneration) { settings, task ->
-                NarrativeGenerationTask(settings, task)
-            }
-            registerConstructor(GeneticOptimizationTask.GeneticOptimization) { settings, task ->
-                GeneticOptimizationTask(settings, task)
-            }
-            registerConstructor(MathematicalReasoningTask.MathematicalReasoning) { settings, task ->
-                MathematicalReasoningTask(settings, task)
-            }
-            registerConstructor(NeuralNetworkLayerTask.NeuralNetworkLayer) { settings, task ->
-                NeuralNetworkLayerTask(settings, task)
-            }
-            registerConstructor(SubPlan) { settings, task ->
-                SubPlanTask(settings, task)
-            }
-            registerConstructor(EthicalReasoningTask.EthicalReasoning) { settings, task ->
-                EthicalReasoningTask(settings, task)
-            }
-            registerConstructor(ArticleGenerationTask.ArticleGeneration) { settings, task ->
-                ArticleGenerationTask(settings, task)
-            }
-            registerConstructor(PersuasiveEssayTask.PersuasiveEssay) { settings, task ->
-                PersuasiveEssayTask(settings, task)
-            }
-            registerConstructor(BusinessProposalTask.BusinessProposal) { settings, task ->
-                BusinessProposalTask(settings, task)
-            }
-            registerConstructor(EmailCampaignTask.EmailCampaign) { settings, task ->
-                EmailCampaignTask(settings, task)
-            }
-            registerConstructor(InteractiveStoryTask.InteractiveStory) { settings, task ->
-                InteractiveStoryTask(settings, task)
-            }
-            registerConstructor(JournalismReasoningTask.JournalismReasoning) { settings, task ->
-                JournalismReasoningTask(settings, task)
-            }
-            registerConstructor(LanguageServerTask.LanguageServer) { settings, task ->
-                LanguageServerTask(settings, task)
-            }
-            registerConstructor(PdfFormTask.PdfForm) { settings, task ->
-                PdfFormTask(settings, task)
-            }
-            registerConstructor(TechnicalExplanationTask.TechnicalExplanation) { settings, task ->
-                TechnicalExplanationTask(settings, task)
-            }
-            registerConstructor(TutorialGenerationTask.TutorialGeneration) { settings, task ->
-                TutorialGenerationTask(settings, task)
-            }
-            registerConstructor(ReportGenerationTask.ReportGeneration) { settings, task ->
-                ReportGenerationTask(settings, task)
-            }
-            registerConstructor(ScriptwritingTask.Scriptwriting) { settings, task ->
-                ScriptwritingTask(settings, task)
-            }
-            registerConstructor(GenerateImageTask.GenerateImage) { settings, task ->
-                GenerateImageTask(settings, task)
-            }
-            registerConstructor(IllustrateDocumentTask.IllustrateDocument) { settings, task ->
-                IllustrateDocumentTask(settings, task)
-            }
-            registerConstructor(ComicBookGenerationTask.ComicBookGeneration) { settings, task ->
-                ComicBookGenerationTask(settings, task)
-            }
-            registerConstructor(DataIngest) { settings, task ->
-                DataIngestTask(settings, task)
-            }
 
-            registerConstructor(GenerateQRImageTask.GenerateQRImage) { settings, task ->
-                GenerateQRImageTask(settings, task)
             }
+            registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet)
+            registerConstructor(FunctorialMappingTask.FunctorialMapping)
+            registerConstructor(StructuralInvariantAnalysisTask.StructuralInvariantAnalysis)
+            registerConstructor(IterativeGraphGenerationTask.IterativeGraphGeneration)
+            registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery)
+            registerConstructor(TableCompilationTask.TableCompilation)
+            registerConstructor(JdbcSessionTask.JdbcSession)
+            registerConstructor(ImageTableTask.ImageTable)
+            registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument)
+            registerConstructor(PoliticalOptimizationTask.PoliticalOptimization)
+            registerConstructor(LLMPollSimulationTask.LLMPollSimulation)
+            registerConstructor(LLMExperimentTask.LLMExperiment)
+            registerConstructor(GameLevelDesignTask.GameLevelDesign)
+            registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign)
+            registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign)
+            registerConstructor(GameEconomyTask.GameEconomy)
+            registerConstructor(ResearchPaperGenerationTask.ResearchPaperGeneration)
+            registerConstructor(ChainOfThoughtTask.ChainOfThought)
+            registerConstructor(ReadDocumentsTask.ReadDocuments)
+            registerConstructor(DiscussionTask.Discussion)
+            registerConstructor(CrawlerAgentTask.CrawlerAgent)
+            registerConstructor(FileModificationTask.FileModification)
+            registerConstructor(FileSearchTask.FileSearch)
+            registerConstructor(GitHubSearchTask.GitHubSearch)
+            registerConstructor(RunCodeTask.RunCode)
+            registerConstructor(RunToolTask.RunTool)
+//            registerConstructor(SeleniumSessionTask.SeleniumSession)
+            registerConstructor(CommandSessionTask.CommandSession)
+            registerConstructor(AutoFixTask.AutoFix)
+            registerConstructor(MCPToolTask.MCPTool)
+            registerConstructor(WriteHtmlTask.WriteHtml)
+            registerConstructor(GeneratePresentationTask.GeneratePresentation)
+            registerConstructor(MetaCognitiveReflectionTask.MetaCognitiveReflection)
+            registerConstructor(CausalInferenceTask.CausalInference)
+            registerConstructor(AbstractionLadderTask.AbstractionLadder)
+            registerConstructor(CounterfactualAnalysisTask.CounterfactualAnalysis)
+            registerConstructor(AnalogicalReasoningTask.AnalogicalReasoning)
+            registerConstructor(SocraticDialogueTask.SocraticDialogue)
+            registerConstructor(DecisionTreeTask.DecisionTree)
+            registerConstructor(MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysis)
+            registerConstructor(ConstraintSatisfactionTask.ConstraintSatisfaction)
+            registerConstructor(DecompositionSynthesisTask.DecompositionSynthesis)
+            registerConstructor(BrainstormingTask.Brainstorming)
+            registerConstructor(FiniteStateMachineTask.FiniteStateMachine)
+            registerConstructor(GameTheoryTask.GameTheory)
+            registerConstructor(AbductiveReasoningTask.AbductiveReasoning)
+            registerConstructor(AdversarialReasoningTask.AdversarialReasoning)
+            registerConstructor(ConstraintRelaxationTask.ConstraintRelaxation)
+            registerConstructor(DialecticalReasoningTask.DialecticalReasoning)
+            registerConstructor(LateralThinkingTask.LateralThinking)
+            registerConstructor(ProbabilisticReasoningTask.ProbabilisticReasoning)
+            registerConstructor(SystemsThinkingTask.SystemsThinking)
+            registerConstructor(TemporalReasoningTask.TemporalReasoning)
+            registerConstructor(NarrativeGenerationTask.NarrativeGeneration)
+            registerConstructor(GeneticOptimizationTask.GeneticOptimization)
+            registerConstructor(MathematicalReasoningTask.MathematicalReasoning)
+            registerConstructor(NeuralNetworkLayerTask.NeuralNetworkLayer)
+            registerConstructor(SubPlanTask.SubPlan)
+            registerConstructor(EthicalReasoningTask.EthicalReasoning)
+            registerConstructor(ArticleGenerationTask.ArticleGeneration)
+            registerConstructor(PersuasiveEssayTask.PersuasiveEssay)
+            registerConstructor(BusinessProposalTask.BusinessProposal)
+            registerConstructor(EmailCampaignTask.EmailCampaign)
+            registerConstructor(InteractiveStoryTask.InteractiveStory)
+            registerConstructor(JournalismReasoningTask.JournalismReasoning)
+            registerConstructor(LanguageServerTask.LanguageServer)
+            registerConstructor(PdfFormTask.PdfForm)
+            registerConstructor(TechnicalExplanationTask.TechnicalExplanation)
+            registerConstructor(TutorialGenerationTask.TutorialGeneration)
+            registerConstructor(ReportGenerationTask.ReportGeneration)
+            registerConstructor(ScriptwritingTask.Scriptwriting)
+            registerConstructor(GenerateImageTask.GenerateImage)
+            registerConstructor(IllustrateDocumentTask.IllustrateDocument)
+            registerConstructor(ComicBookGenerationTask.ComicBookGeneration)
+            registerConstructor(DataIngestTask.DataIngest)
+            registerConstructor(GenerateQRImageTask.GenerateQRImage)
+
             taskConstructors.toMap()
         }
 
@@ -306,7 +159,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             val executionConfig: TaskExecutionConfig = cfg ?: try {
                 taskType.executionConfigClass.getDeclaredConstructor().newInstance() as TaskExecutionConfig
             } catch (e: NoSuchMethodException) {
-                throw RuntimeException("Task execution config class ${taskType.executionConfigClass.name} does not have a no-arg constructor. Please provide a planTask instance.")
+                throw RuntimeException("Task execution config class ${taskType.executionConfigClass.name} does not have a no-arg constructor. Please provide a planTask instance.", e)
             }
             return constructor(orchestrationConfig, executionConfig)
         }
@@ -327,6 +180,16 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 
         private fun register(taskType: TaskType<*, *>) = register(TaskType::class.java, taskType)
     }
+
+    fun getConstructor(): (OrchestrationConfig, @UnsafeVariance T?) -> AbstractTask<out T, out U> =
+        taskClass.let { cls ->
+            val method =
+                cls.getDeclaredConstructor(OrchestrationConfig::class.java, executionConfigClass)
+            method.isAccessible = true
+            { settings: OrchestrationConfig, task: T? ->
+                method.newInstance(settings, task) as AbstractTask<T, U>
+            }
+        }
 
 }
 

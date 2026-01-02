@@ -1420,6 +1420,7 @@ Provide the complete revised essay.
         val PersuasiveEssay = TaskType(
             "PersuasiveEssay",
             "Writing",
+            PersuasiveEssayTask::class.java,
             PersuasiveEssayTaskExecutionConfigData::class.java,
             PersuasiveEssayTaskTypeConfig::class.java,
             "Generate compelling persuasive essays with structured arguments",
@@ -1436,7 +1437,7 @@ Provide the complete revised essay.
                 <li>Uses ethos, pathos, and logos for persuasive impact</li>
                 <li>Ideal for opinion pieces, proposals, advocacy, and academic arguments</li>
               </ul>
-            """
+            """,
         )
     }
 }

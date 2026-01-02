@@ -1411,6 +1411,7 @@ Provide comprehensive, production-ready documentation.
         val SoftwareDesignDocument = TaskType(
             "SoftwareDesignDocument",
             "Writing",
+            SoftwareDesignDocumentTask::class.java,
             SoftwareDesignDocumentTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comprehensive software design documentation",
@@ -1427,7 +1428,7 @@ Provide comprehensive, production-ready documentation.
                 <li>Project data JSON with tasks, epics, sprints, releases</li>
                 <li>All diagrams use Mermaid syntax</li>
               </ul>
-            """
+            """,
         )
     }
 }

@@ -237,6 +237,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
         val StructuralInvariantAnalysis = TaskType(
             name = "StructuralInvariantAnalysis",
             category = "Reasoning",
+            taskClass = StructuralInvariantAnalysisTask::class.java,
             executionConfigClass = StructuralInvariantAnalysisTaskExecutionConfigData::class.java,
             taskSettingsClass = TaskTypeConfig::class.java,
             description = "Distill an object down to its immutable properties and symmetries",
@@ -248,7 +249,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
                             <li>Extracts immutable properties (invariants)</li>
                             <li>Generates structural signatures for cross-domain comparison</li>
                           </ul>
-                        """
+                        """,
         )
     }
 }

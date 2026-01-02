@@ -1262,6 +1262,7 @@ Provide the complete revised report.
         val ReportGeneration = TaskType(
             "ReportGeneration",
             "Writing",
+            ReportGenerationTask::class.java,
             ReportGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comprehensive business reports with data analysis and recommendations",
@@ -1280,7 +1281,7 @@ Provide the complete revised report.
                 <li>Optional revision passes for quality improvement</li>
                 <li>Ideal for business reporting, performance analysis, project summaries</li>
               </ul>
-            """
+            """,
         )
     }
 }

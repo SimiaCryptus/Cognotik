@@ -910,6 +910,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         val AbductiveReasoning = TaskType(
             "AbductiveReasoning",
             "Reasoning",
+            AbductiveReasoningTask::class.java,
             AbductiveReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate and evaluate explanatory hypotheses",
@@ -923,7 +924,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                 <li>Suggests validation tests for top hypotheses</li>
                 <li>Useful for root cause analysis, bug investigation, and scientific reasoning</li>
               </ul>
-            """
+            """,
         )
     }
 }

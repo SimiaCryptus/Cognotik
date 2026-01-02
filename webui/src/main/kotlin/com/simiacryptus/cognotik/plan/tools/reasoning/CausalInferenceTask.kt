@@ -569,6 +569,7 @@ Generate the causal analysis now:
         val CausalInference = TaskType(
             "CausalInference",
             "Reasoning",
+            CausalInferenceTask::class.java,
             CausalInferenceTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Identify causal relationships and root causes",
@@ -582,7 +583,7 @@ Generate the causal analysis now:
                 <li>Provides evidence-based causal reasoning</li>
                 <li>Useful for debugging and root cause analysis</li>
               </ul>
-            """
+            """,
         )
     }
 }

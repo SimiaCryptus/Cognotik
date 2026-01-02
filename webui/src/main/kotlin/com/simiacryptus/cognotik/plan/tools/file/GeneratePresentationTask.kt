@@ -519,6 +519,7 @@ Style: Clean, modern, professional presentation aesthetic
         val GeneratePresentation = TaskType(
             "GeneratePresentation",
             "Writing",
+            GeneratePresentationTask::class.java,
             GeneratePresentationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create complete Reveal.js presentations with narration support",
@@ -534,7 +535,7 @@ Style: Clean, modern, professional presentation aesthetic
                 <li>Includes navigation and progress indicators</li>
                 <li>Optional audio narration support</li>
               </ul>
-            """
+            """,
         )
     }
 }

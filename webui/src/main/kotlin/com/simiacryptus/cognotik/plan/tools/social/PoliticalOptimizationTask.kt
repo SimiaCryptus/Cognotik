@@ -31,6 +31,7 @@ class PoliticalOptimizationTask(
         val PoliticalOptimization = TaskType(
             "PoliticalOptimization",
             "Social",
+            PoliticalOptimizationTask::class.java,
             PoliticalOptimizationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Optimize text using multi-perspective political consensus analysis",
@@ -46,7 +47,7 @@ class PoliticalOptimizationTask(
                 <li>Tracks evolution of consensus across generations</li>
                 <li>Useful for crafting bipartisan messaging, identifying divisive topics, or understanding political framing</li>
               </ul>
-            """
+            """,
         )
         private const val TT = """```"""
     }

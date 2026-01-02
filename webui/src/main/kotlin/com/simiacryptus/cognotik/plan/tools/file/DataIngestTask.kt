@@ -351,6 +351,7 @@ DataIngest - Parse unstructured logs/text into structured data
         val DataIngest = TaskType(
             "DataIngest",
             "File",
+            DataIngestTask::class.java,
             DataIngestTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Iteratively parse unstructured logs into structured data",
@@ -362,7 +363,7 @@ DataIngest - Parse unstructured logs/text into structured data
                 <li>Streams large files to produce JSONL output</li>
                 <li>Generates an index linking data back to source lines</li>
               </ul>
-            """
+            """,
         )
     }
 }

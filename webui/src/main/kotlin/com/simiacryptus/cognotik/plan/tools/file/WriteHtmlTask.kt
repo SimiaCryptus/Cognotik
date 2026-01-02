@@ -541,6 +541,7 @@ Provide the complete updated HTML structure within a code block:
         val WriteHtml = TaskType(
             "WriteHtml",
             "Writing",
+            WriteHtmlTask::class.java,
             WriteHtmlTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create complete HTML files with embedded CSS and JavaScript",
@@ -556,7 +557,7 @@ Provide the complete updated HTML structure within a code block:
                 <li>Interactive approval or auto-apply mode</li>
                 <li>Proper HTML structure and formatting</li>
               </ul>
-            """
+            """,
         )
     }
 }

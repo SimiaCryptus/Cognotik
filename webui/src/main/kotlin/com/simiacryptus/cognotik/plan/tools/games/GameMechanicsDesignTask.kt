@@ -1472,6 +1472,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
         val GameMechanicsDesign = TaskType(
             "GameMechanicsDesign",
             "Games",
+            GameMechanicsDesignTask::class.java,
             GameMechanicsDesignTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comprehensive game mechanics with balance analysis",
@@ -1486,7 +1487,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 <li>Provides tuning parameters and recommendations</li>
                 <li>Useful for game design prototyping, balancing, and competitive design</li>
               </ul>
-            """
+            """,
         )
     }
 }

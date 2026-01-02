@@ -357,6 +357,7 @@ class LanguageServerTask(
         val LanguageServer = TaskType(
             "LanguageServer",
             "File",
+            LanguageServerTask::class.java,
             LanguageServerTaskExecutionConfigData::class.java,
             LanguageServerTaskTypeConfig::class.java,
             "Interact with Language Servers (LSP)",
@@ -369,7 +370,7 @@ class LanguageServerTask(
                     <li><b>Hover:</b> Get documentation or type information at a specific position.</li>
                 </ul>
                 Requires language servers (e.g., pylsp, typescript-language-server) to be installed in the environment.
-            """.trimIndent()
+            """.trimIndent(),
         )
     }
 }

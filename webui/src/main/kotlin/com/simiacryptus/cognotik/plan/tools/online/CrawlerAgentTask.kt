@@ -1439,6 +1439,7 @@ class CrawlerAgentTask(
         val CrawlerAgent = TaskType(
             "CrawlerAgent",
             "Online & Search",
+            CrawlerAgentTask::class.java,
             CrawlerTaskExecutionConfigData::class.java,
             CrawlerTaskTypeConfig::class.java,
             "Search Google, fetch top results, and analyze content",
@@ -1450,7 +1451,7 @@ class CrawlerAgentTask(
             <li>Analyzes content for specific goals</li>
             <li>Generates detailed analysis reports</li>
  </ul>
-        """
+        """,
         )
 
     }

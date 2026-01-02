@@ -1514,6 +1514,7 @@ Ensure variants maintain the core level design while adjusting challenge.
         val GameLevelDesign = TaskType(
             "GameLevelDesign",
             "Games",
+            GameLevelDesignTask::class.java,
             GameLevelDesignTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete game level designs with layout, pacing, and encounters",
@@ -1532,7 +1533,7 @@ Ensure variants maintain the core level design while adjusting challenge.
                 <li>Optional boss encounters, puzzles, and secrets</li>
                 <li>Ideal for game development, level design documentation, and prototyping</li>
               </ul>
-            """
+            """,
         )
 
         fun getAvailableFiles(

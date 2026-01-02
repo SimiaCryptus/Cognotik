@@ -352,6 +352,7 @@ class DecisionTreeTask(
         val DecisionTree = TaskType(
             "DecisionTree",
             "Reasoning",
+            DecisionTreeTask::class.java,
             DecisionTreeTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Build an LLM-driven symbolic decision tree",
@@ -362,7 +363,7 @@ class DecisionTreeTask(
                 <li>Generates interpretable code</li>
                 <li>Uses Information Gain for split selection</li>
               </ul>
-            """
+            """,
         )
     }
 }

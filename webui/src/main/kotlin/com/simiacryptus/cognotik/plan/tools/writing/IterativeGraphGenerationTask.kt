@@ -392,10 +392,11 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
         val IterativeGraphGeneration = TaskType(
             "IterativeGraphGeneration",
             "Writing",
+            IterativeGraphGenerationTask::class.java,
             IterativeGraphGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Iteratively build a knowledge graph",
-            "Constructs a knowledge graph by iteratively analyzing context and adding nodes/edges."
+            "Constructs a knowledge graph by iteratively analyzing context and adding nodes/edges.",
         )
     }
 }

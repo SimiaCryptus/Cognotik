@@ -771,6 +771,7 @@ Make each snippet:
         val ArticleGeneration = TaskType(
             "ArticleGeneration",
             "Writing",
+            ArticleGenerationTask::class.java,
             ArticleGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete journalistic articles from investigation and analysis",
@@ -788,7 +789,7 @@ Make each snippet:
                 <li>Produces publication-ready articles with proper structure and attribution</li>
                 <li>Ideal for news writing, content creation, journalism training</li>
               </ul>
-            """
+            """,
         )
     }
 }

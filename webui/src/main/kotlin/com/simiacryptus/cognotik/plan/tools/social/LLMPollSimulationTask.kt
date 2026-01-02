@@ -1303,6 +1303,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
         val LLMPollSimulation = TaskType(
             "LLMPollSimulation",
             "Social",
+            LLMPollSimulationTask::class.java,
             LLMPollSimulationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Simulate polls and surveys with AI personas",
@@ -1320,7 +1321,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                 <li>Comprehensive reports with visualizations</li>
               </ul>
               <p><strong>Use cases:</strong> Survey instrument testing, response pattern exploration, demographic analysis, bias detection</p>
-            """
+            """,
         )
     }
 }

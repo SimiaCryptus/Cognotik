@@ -30,6 +30,7 @@ class EthicalReasoningTask(
         val EthicalReasoning = TaskType(
             "EthicalReasoning",
             "Reasoning",
+            EthicalReasoningTask::class.java,
             EthicalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze a dilemma through multiple ethical frameworks to guide decision-making.",
@@ -42,7 +43,7 @@ class EthicalReasoningTask(
                 <li>Useful for AI safety, product development, policy making, and corporate governance.</li>
                 <li>Generates a downloadable transcript in markdown, HTML, and PDF formats.</li>
               </ul>
-            """
+            """,
         )
     }
 

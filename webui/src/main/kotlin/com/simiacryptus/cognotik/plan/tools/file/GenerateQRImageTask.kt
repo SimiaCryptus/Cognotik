@@ -491,6 +491,7 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
         val GenerateQRImage = TaskType(
             "GenerateQRImage",
             "Writing",
+            GenerateQRImageTask::class.java,
             GenerateQRImageTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate artistic QR codes with AI styling",

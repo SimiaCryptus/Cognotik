@@ -899,6 +899,7 @@ Provide a well-structured, actionable summary now.
         val Brainstorming = TaskType(
             "Brainstorming",
             "Reasoning",
+            BrainstormingTask::class.java,
             BrainstormingTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate and analyze multiple solution options",
@@ -913,7 +914,7 @@ Provide a well-structured, actionable summary now.
                 <li>Identifies hybrid approaches and synergies</li>
                 <li>Useful for decision making, strategic planning, and problem solving</li>
               </ul>
-            """
+            """,
         )
     }
 }

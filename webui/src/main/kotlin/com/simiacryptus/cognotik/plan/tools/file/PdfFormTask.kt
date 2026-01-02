@@ -254,6 +254,7 @@ Only include fields where a value can be confidently determined from the context
         val PdfForm = TaskType(
             "PdfForm",
             "File",
+            PdfFormTask::class.java,
             PdfFormExecutionConfig::class.java,
             PdfFormTypeConfig::class.java,
             "Fills out a specific PDF form template with provided data.",
@@ -264,7 +265,7 @@ Only include fields where a value can be confidently determined from the context
               <li><b>Output:</b> A new PDF file with the fields populated.</li>
               <li>Automatically lists available fields from the template to the Planner.</li>
             </ul>
-            """
+            """,
         )
     }
 }

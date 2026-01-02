@@ -283,6 +283,7 @@ class MCPToolTask(
         val MCPTool = TaskType(
             "MCPTool",
             "Online & Search",
+            MCPToolTask::class.java,
             MCPToolTaskExecutionConfigData::class.java,
             MCPToolTaskTypeConfig::class.java,
             "Execute tools from Model Context Protocol servers",
@@ -297,7 +298,7 @@ class MCPToolTask(
                 <li>Automatic tool discovery and validation</li>
                 <li>Exponential backoff retry strategy</li>
               </ul>
-            """
+            """,
         )
     }
 }

@@ -373,10 +373,11 @@ ComicBookGeneration - Generate comic book scripts and visuals
         val ComicBookGeneration = TaskType(
             "ComicBookGeneration",
             "Writing",
+            ComicBookGenerationTask::class.java,
             ComicBookGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comic book scripts and visuals",
-            "Creates a comic book with page/row/frame structure and optional visual generation."
+            "Creates a comic book with page/row/frame structure and optional visual generation.",
         )
     }
 }

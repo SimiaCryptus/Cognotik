@@ -33,6 +33,7 @@ class GeneticOptimizationTask(
         val GeneticOptimization = TaskType(
             "GeneticOptimization",
             "Reasoning",
+            GeneticOptimizationTask::class.java,
             GeneticOptimizationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Iteratively evolve and perfect text through genetic algorithms",
@@ -48,7 +49,7 @@ class GeneticOptimizationTask(
                 <li>Supports custom evaluation criteria and weights</li>
                 <li>Useful for perfecting prompts, copy, documentation, and messaging</li>
               </ul>
-            """
+            """,
         )
         private const val TT = """```"""
         fun compressedStringBits(str: String): Int {

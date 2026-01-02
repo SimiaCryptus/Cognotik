@@ -819,6 +819,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
         val SystemsThinking = TaskType(
             "SystemsThinking",
             "Reasoning",
+            SystemsThinkingTask::class.java,
             SystemsThinkingTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze complex systems through feedback loops and dynamics",
@@ -833,7 +834,7 @@ Provide clear, actionable insights grounded in systems thinking principles.
                 <li>Simulates potential interventions over time</li>
                 <li>Useful for understanding system dynamics, optimization, and organizational change</li>
               </ul>
-            """
+            """,
         )
     }
 }

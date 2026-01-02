@@ -221,6 +221,7 @@ class RunCodeTask(
         val RunCode = TaskType(
             "RunCode",
             "Execution & Automation",
+            RunCodeTask::class.java,
             RunCodeTaskExecutionConfigData::class.java,
             RunCodeTaskTypeConfig::class.java,
             "Execute code snippets with oversight",
@@ -233,7 +234,7 @@ class RunCodeTask(
             <li>Error handling and reporting</li>
             <li>Interactive result review</li>
           </ul>
-        """
+        """,
         )
 
     }

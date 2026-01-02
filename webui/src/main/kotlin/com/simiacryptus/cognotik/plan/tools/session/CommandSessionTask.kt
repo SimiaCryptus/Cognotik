@@ -271,6 +271,7 @@ class CommandSessionTask(
         val CommandSession = TaskType(
             "CommandSession",
             "Session",
+            CommandSessionTask::class.java,
             CommandSessionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Execute commands in a stateful, interactive session",
@@ -284,7 +285,7 @@ class CommandSessionTask(
                     <li><b>Manage Session Lifecycle:</b> Sessions can be explicitly closed or will be cleaned up automatically.</li>
                     <li><b>TTY Support:</b> Set `tty` to true to allocate a pseudo-terminal (requires pty4j), enabling UI applications and TTY-dependent tools.</li>
                 </ul>
-            """
+            """,
         )
         private val log = LoggerFactory.getLogger(CommandSessionTask::class.java)
         private val _activeSessions = ConcurrentHashMap<String, ConcurrentHashMap<String, SessionState>>()

@@ -1239,6 +1239,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
         val InteractiveStory = TaskType(
             "InteractiveStory",
             "Writing",
+            InteractiveStoryTask::class.java,
             InteractiveStoryTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create choose-your-own-adventure narratives with branching paths",
@@ -1256,7 +1257,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 <li>Produces complete playable interactive story map</li>
                 <li>Ideal for interactive fiction, training scenarios, educational content, and games</li>
               </ul>
-            """
+            """,
         )
 
         fun getAvailableFiles(

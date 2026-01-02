@@ -458,6 +458,7 @@ Generate the constraint satisfaction solution now:
         val ConstraintSatisfaction = TaskType(
             "ConstraintSatisfaction",
             "Reasoning",
+            ConstraintSatisfactionTask::class.java,
             ConstraintSatisfactionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Solve problems with multiple competing constraints",
@@ -471,7 +472,7 @@ Generate the constraint satisfaction solution now:
                 <li>Suggests alternative solutions when applicable</li>
                 <li>Useful for architectural decisions, resource allocation, and optimization</li>
               </ul>
-            """
+            """,
         )
     }
 }

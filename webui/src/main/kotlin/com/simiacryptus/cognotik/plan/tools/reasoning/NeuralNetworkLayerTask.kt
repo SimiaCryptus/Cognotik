@@ -26,6 +26,7 @@ class NeuralNetworkLayerTask(
         val NeuralNetworkLayer = TaskType(
             "NeuralNetworkLayer",
             "Writing",
+            NeuralNetworkLayerTask::class.java,
             NeuralNetworkLayerTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Design and analyze neural network layers with formal mathematical definitions and intuitive explanations",
@@ -48,7 +49,7 @@ class NeuralNetworkLayerTask(
                     <li>Originality and novelty assessment</li>
                     <li>Practical use cases and applications</li>
                 </ul>
-            """
+            """,
         )
     }
 

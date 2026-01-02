@@ -790,6 +790,7 @@ Generate the Mermaid timeline diagram now:
         val TemporalReasoning = TaskType(
             "TemporalReasoning",
             "Reasoning",
+            TemporalReasoningTask::class.java,
             TemporalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze how systems evolve over time and predict future states",
@@ -803,7 +804,7 @@ Generate the Mermaid timeline diagram now:
                 <li>Predicts future states based on historical trends</li>
                 <li>Useful for technical debt analysis, performance degradation, and system evolution</li>
               </ul>
-            """
+            """,
         )
     }
 }

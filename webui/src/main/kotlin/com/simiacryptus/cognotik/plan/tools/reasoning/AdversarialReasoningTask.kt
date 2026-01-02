@@ -1104,6 +1104,7 @@ Consider both immediate fixes and long-term architectural improvements.
         val AdversarialReasoning = TaskType(
             "AdversarialReasoning",
             "Reasoning",
+            AdversarialReasoningTask::class.java,
             AdversarialReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Red team analysis to identify vulnerabilities and weaknesses",
@@ -1119,7 +1120,7 @@ Consider both immediate fixes and long-term architectural improvements.
                 <li>Optionally provides exploit scenarios and mitigation strategies</li>
                 <li>Supports multiple attack vectors: security, performance, logic, business, privacy, compliance</li>
               </ul>
-            """
+            """,
         )
     }
 }

@@ -72,7 +72,10 @@ Task Type: `${taskType.name}`
         return socketManager
     }
 
-    private fun executeTask(
+    protected open fun onTaskComplete(result: String) {}
+    protected open fun onTaskError(e: Throwable) {}
+
+    protected open fun executeTask(
         session: Session, user: User = defaultUser, ui: SocketManager, settings: OrchestrationConfig?
     ) {
         try {
@@ -100,6 +103,7 @@ Task Type: `${taskType.name}`
                 task = task,
                 resultFn = { result ->
                     task.complete(result.renderMarkdown)
+                    onTaskComplete(result)
                 },
                 orchestrationConfig = orchestrationConfig
             )
@@ -107,6 +111,7 @@ Task Type: `${taskType.name}`
         } catch (e: Throwable) {
             log.error("Error executing task", e)
             ui.newTask().error(e)
+            onTaskError(e)
         }
     }
 

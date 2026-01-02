@@ -33,6 +33,7 @@ class SeleniumSessionTask(
         val SeleniumSession = TaskType(
             "SeleniumSession",
             "Session",
+            SeleniumSessionTask::class.java,
             SeleniumSessionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Automate browser interactions with Selenium",
@@ -45,7 +46,7 @@ class SeleniumSessionTask(
             <li>Configurable timeouts</li>
             <li>Detailed execution results</li>
           </ul>
-        """
+        """,
         )
 
 

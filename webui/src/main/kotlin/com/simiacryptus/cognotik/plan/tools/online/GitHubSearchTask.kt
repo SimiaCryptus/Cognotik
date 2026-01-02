@@ -233,6 +233,7 @@ class GitHubSearchTask(
         val GitHubSearch = TaskType(
             "GitHubSearch",
             "Online & Search",
+            GitHubSearchTask::class.java,
             GitHubSearchTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Search GitHub repositories, code, issues and users",
@@ -245,7 +246,7 @@ class GitHubSearchTask(
             <li>Formats results with relevant details</li>
             <li>Handles API rate limiting</li>
           </ul>
-        """
+        """,
         )
 
     }

@@ -524,6 +524,7 @@ Generate the patches now.
         val IllustrateDocument = TaskType(
             "IllustrateDocument",
             "Writing",
+            IllustrateDocumentTask::class.java,
             IllustrateDocumentTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze a document and generate images to enhance its content",
@@ -539,7 +540,7 @@ Intelligently analyzes document content and generates contextually appropriate i
 <li>Provides meaningful captions and alt text</li>
 <li>Configurable image count and format</li>
 </ul>
-"""
+""",
         )
     }
 }

@@ -24,6 +24,7 @@ class FunctorialMappingTask(
         val FunctorialMapping = TaskType(
             name = "FunctorialMapping",
             category = "Reasoning",
+            taskClass = FunctorialMappingTask::class.java,
             executionConfigClass = FunctorialMappingTaskExecutionConfigData::class.java,
             taskSettingsClass = TaskTypeConfig::class.java,
             description = "Translate problems from one category to another to solve them using different tools",
@@ -37,7 +38,7 @@ class FunctorialMappingTask(
                             <li>Solve the problem in the target category</li>
                             <li>Inverse transport the solution back to the source</li>
                           </ul>
-                        """
+                        """,
         )
     }
 

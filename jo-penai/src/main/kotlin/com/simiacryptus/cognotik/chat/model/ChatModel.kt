@@ -11,12 +11,14 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 @JsonDeserialize(using = ChatModelsDeserializer::class)
 @JsonSerialize(using = ChatModelsSerializer::class)
@@ -44,10 +46,10 @@ open class ChatModel(
         base: String = provider?.base!!,
         logLevel: Level = Level.INFO,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-        workPool: ExecutorService,
+        workPool: ExecutorService = Executors.newFixedThreadPool(4),
         temperature: Double = 0.1,
-        scheduledPool: ListeningScheduledExecutorService,
-        onUsage: (LLMModel, Usage) -> Unit,
+        scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
+        onUsage: (LLMModel, Usage) -> Unit = { _, _ -> },
     ): ChatInterface = ChatInterface(
         logStreams = logStreams,
         key = key,
@@ -60,6 +62,7 @@ open class ChatModel(
         scheduledPool = scheduledPool,
         onUsage = onUsage
     )
+
 
     companion object {
 

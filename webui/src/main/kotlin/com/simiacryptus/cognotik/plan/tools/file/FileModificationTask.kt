@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModifi
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
@@ -74,6 +73,10 @@ FileModification - Modify existing files or create new files
         orchestrationConfig: OrchestrationConfig
     ) {
         val defaultFile = getDefaultFile()
+        val typeConfig = typeConfig ?: throw RuntimeException()
+        val chatInterface =
+            (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
+                ?: defaultSmart).getChildClient(task)
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
         // Initialize transcript for this task
@@ -81,11 +84,7 @@ FileModification - Modify existing files or create new files
         try {
             transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
             Retryable(task, process = { task : SessionTask ->
-                val typeConfig = typeConfig ?: throw RuntimeException()
                 completionNotes.clear()
-                val chatInterface =
-                    (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
-                        ?: defaultSmart).getChildClient(task)
                 val chatAgent = ChatAgent(
                     name = "FileModification",
                     prompt = """
@@ -236,6 +235,7 @@ FileModification - Modify existing files or create new files
         val FileModification = TaskType(
             "FileModification",
             "File",
+            FileModificationTask::class.java,
             FileModificationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create new files or modify existing code with AI-powered assistance",
@@ -251,7 +251,7 @@ FileModification - Modify existing files or create new files
                         <li>Updates imports and dependencies automatically</li>
                         <li>Preserves existing code formatting and structure</li>
                       </ul>
-                    """
+                    """,
         )
 
         fun String.getGitDiff(): String? {

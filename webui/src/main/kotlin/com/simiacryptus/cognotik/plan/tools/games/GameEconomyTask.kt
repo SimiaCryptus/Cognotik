@@ -27,6 +27,7 @@ class GameEconomyTask(
         val GameEconomy = TaskType(
             "GameEconomy",
             "Games",
+            GameEconomyTask::class.java,
             GameEconomyTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Design complete game economic systems with progression and monetization",
@@ -43,7 +44,7 @@ class GameEconomyTask(
                 <li>Provides balance recommendations and adjustment strategies</li>
                 <li>Useful for game design, economy balancing, and monetization planning</li>
               </ul>
-            """
+            """,
         )
     }
 

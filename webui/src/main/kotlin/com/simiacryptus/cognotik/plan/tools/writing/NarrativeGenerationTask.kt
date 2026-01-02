@@ -1384,6 +1384,7 @@ Provide the revised scene content only.
         val NarrativeGeneration = TaskType(
             "NarrativeGeneration",
             "Writing",
+            NarrativeGenerationTask::class.java,
             NarrativeGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete narratives from analysis and outlines",
@@ -1400,7 +1401,7 @@ Provide the revised scene content only.
                 <li>Produces complete, coherent narrative with consistent style and voice</li>
                 <li>Ideal for story generation, scenario planning, user journey narratives</li>
               </ul>
-            """
+            """,
         )
     }
 }

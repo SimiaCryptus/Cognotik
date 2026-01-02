@@ -1175,6 +1175,7 @@ Provide the complete revised script with all formatting intact.
         val Scriptwriting = TaskType(
             "Scriptwriting",
             "Writing",
+            ScriptwritingTask::class.java,
             ScriptwritingTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete scripts for videos, podcasts, and presentations",
@@ -1193,7 +1194,7 @@ Provide the complete revised script with all formatting intact.
                 <li>Optional revision passes for quality improvement</li>
                 <li>Ideal for video production, podcasts, presentations, training videos</li>
               </ul>
-            """
+            """,
         )
     }
 }

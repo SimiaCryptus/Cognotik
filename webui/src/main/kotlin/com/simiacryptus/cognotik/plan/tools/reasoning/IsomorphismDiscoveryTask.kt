@@ -361,6 +361,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
         val IsomorphismDiscovery = TaskType(
             name = "IsomorphismDiscovery",
             category = "Reasoning",
+            taskClass = IsomorphismDiscoveryTask::class.java,
             executionConfigClass = IsomorphismDiscoveryTaskExecutionConfigData::class.java,
             taskSettingsClass = TaskTypeConfig::class.java,
             description = "Search for and validate structural mappings between two distinct domains",
@@ -372,7 +373,7 @@ IsomorphismDiscovery - Search for and validate structural mappings between two d
                             <li>Verifies structural preservation (homomorphism/isomorphism)</li>
                             <li>Useful for theoretical physics, system architecture, and abstract modeling</li>
                           </ul>
-                        """.trimIndent()
+                        """.trimIndent(),
         )
     }
 }

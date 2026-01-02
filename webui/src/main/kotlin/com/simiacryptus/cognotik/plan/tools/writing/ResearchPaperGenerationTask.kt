@@ -1106,6 +1106,7 @@ Provide the complete revised paper.
         val ResearchPaperGeneration = TaskType(
             "ResearchPaperGeneration",
             "Writing",
+            ResearchPaperGenerationTask::class.java,
             ResearchPaperGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comprehensive academic research papers with citations",
@@ -1123,7 +1124,7 @@ Provide the complete revised paper.
                 <li>Revision passes for quality improvement</li>
                 <li>Ideal for academic research, literature reviews, thesis chapters</li>
               </ul>
-            """
+            """,
         )
     }
 }

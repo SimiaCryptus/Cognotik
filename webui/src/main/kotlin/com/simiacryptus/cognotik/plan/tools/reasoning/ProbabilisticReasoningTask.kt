@@ -818,6 +818,7 @@ Generate the experiment recommendations now:
         val ProbabilisticReasoning = TaskType(
             "ProbabilisticReasoning",
             "Reasoning",
+            ProbabilisticReasoningTask::class.java,
             ProbabilisticReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Reason under uncertainty using Bayesian analysis",
@@ -831,7 +832,7 @@ Generate the experiment recommendations now:
                 <li>Provides confidence intervals and sensitivity analysis</li>
                 <li>Useful for risk assessment, diagnostic reasoning, and decision making</li>
               </ul>
-            """
+            """,
         )
     }
 }

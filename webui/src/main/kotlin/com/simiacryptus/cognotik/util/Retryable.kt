@@ -50,13 +50,14 @@ open class Retryable(
 """
 
     companion object {
-
         fun ((SessionTask) -> Unit?).async(
             socketManager: SocketManager,
             pool: ImmediateExecutorService = socketManager.pool
         ): (StringBuilder) -> String = {
             val task = socketManager.newTask(false)
-            pool.submit { this(task) }
+            pool.submit {
+                this(task)
+            }
             task.placeholder
         }
     }

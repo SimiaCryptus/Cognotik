@@ -740,6 +740,7 @@ Be comprehensive yet concise in your final integration.
         val DialecticalReasoning = TaskType(
             "DialecticalReasoning",
             "Reasoning",
+            DialecticalReasoningTask::class.java,
             DialecticalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Resolve contradictions through thesis-antithesis-synthesis",
@@ -754,7 +755,7 @@ Be comprehensive yet concise in your final integration.
                 <li>Provides final integration with practical implications</li>
                 <li>Useful for architectural debates, requirement conflicts, and design philosophy</li>
               </ul>
-            """
+            """,
         )
     }
 }

@@ -421,6 +421,7 @@ $priorCode
         val CounterfactualAnalysis = TaskType(
             "CounterfactualAnalysis",
             "Reasoning",
+            CounterfactualAnalysisTask::class.java,
             CounterfactualAnalysisTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Explore what-if scenarios to understand causal relationships and decision impacts",
@@ -434,7 +435,7 @@ $priorCode
                 <li>Provides insights for risk analysis and decision validation</li>
                 <li>Useful for retrospective analysis and strategic planning</li>
               </ul>
-            """
+            """,
         )
     }
 }

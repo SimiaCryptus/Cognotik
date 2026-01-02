@@ -153,12 +153,13 @@ class RunToolTask(
         val RunTool = TaskType(
             "RunTool",
             "Execution & Automation",
+            RunToolTask::class.java,
             RunToolTaskExecutionConfigData::class.java,
             RunToolTaskTypeConfig::class.java,
             "Execute external tools",
             """
           Executes configured external tools.
-        """
+        """,
         )
     }
 }

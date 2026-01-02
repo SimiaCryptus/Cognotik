@@ -336,6 +336,7 @@ class SubPlanTask(
         val SubPlan = TaskType(
             "SubPlan",
             "Execution & Automation",
+            SubPlanTask::class.java,
             SubPlanTaskExecutionConfigData::class.java,
             SubPlanTaskTypeConfig::class.java,
             "Create and execute sub-plans using recursive planning",
@@ -350,7 +351,7 @@ class SubPlanTask(
                <li>Flexible cognitive mode selection per sub-plan</li>
                <li>Useful for complex multi-stage problems</li>
              </ul>
-           """
+           """,
         )
     }
 }

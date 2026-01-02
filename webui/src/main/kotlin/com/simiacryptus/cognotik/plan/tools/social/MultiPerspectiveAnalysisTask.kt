@@ -353,6 +353,7 @@ Provide a comprehensive synthesis that integrates all perspectives.
         val MultiPerspectiveAnalysis = TaskType(
             "MultiPerspectiveAnalysis",
             "Social",
+            MultiPerspectiveAnalysisTask::class.java,
             MultiPerspectiveAnalysisTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze problems from multiple viewpoints with synthesis",
@@ -367,7 +368,7 @@ Provide a comprehensive synthesis that integrates all perspectives.
                 <li>Useful for architectural decisions and code reviews</li>
                 <li>Supports context from related files</li>
               </ul>
-            """
+            """,
         )
     }
 }

@@ -1649,6 +1649,7 @@ Provide the complete revised proposal.
         val BusinessProposal = TaskType(
             "BusinessProposal",
             "Writing",
+            BusinessProposalTask::class.java,
             BusinessProposalTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comprehensive business proposals with ROI analysis and risk assessment",
@@ -1665,7 +1666,7 @@ Provide the complete revised proposal.
                 <li>Supports multiple proposal types (project, investment, grant, partnership, RFP)</li>
                 <li>Ideal for project proposals, funding requests, vendor responses, and business plans</li>
               </ul>
-            """
+            """,
         )
     }
 }

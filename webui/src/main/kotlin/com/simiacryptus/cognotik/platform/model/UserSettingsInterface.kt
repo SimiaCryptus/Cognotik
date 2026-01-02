@@ -234,6 +234,23 @@ data class ApiData(
     }
 }
 
+fun ChatModel.asApiChatModel(
+    key: String? = null
+) : ApiChatModel? = ApiChatModel(
+    provider = this.provider.let { provider ->
+        ApiData(
+            name = provider?.name,
+            key = key ?: this.provider?.defaultKey(),
+            baseUrl = provider?.base!!,
+            provider = provider
+        )
+    },
+    model = this,
+)
+
+fun APIProvider.defaultKey() = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis
+    .find { api -> api.provider?.name == this.name }?.key
+
 /**
  * Represents a chat model with its associated API provider configuration.
  *

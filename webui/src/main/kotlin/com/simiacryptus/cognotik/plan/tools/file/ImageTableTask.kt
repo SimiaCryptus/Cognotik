@@ -387,6 +387,7 @@ ImageTable - Generate a table/grid of AI-generated images
         val ImageTable = TaskType(
             "ImageTable",
             "File",
+            ImageTableTask::class.java,
             ImageTableTaskExecutionConfigData::class.java,
             ImageTableTaskTypeConfig::class.java,
             "Generate a table/grid of AI-generated images",
@@ -399,7 +400,7 @@ ImageTable - Generate a table/grid of AI-generated images
                 <li>Generates individual images and an HTML table view</li>
                 <li>Useful for style comparisons, product variations, character sheets</li>
               </ul>
-            """
+            """,
         )
     }
 }

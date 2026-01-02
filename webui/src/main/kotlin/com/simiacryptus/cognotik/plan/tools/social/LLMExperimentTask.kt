@@ -1321,6 +1321,7 @@ Be specific and reference the data provided.
         val LLMExperiment = TaskType(
             "LLMExperiment",
             "Social",
+            LLMExperimentTask::class.java,
             LLMExperimentTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Conduct controlled experiments on LLM behavior",
@@ -1338,7 +1339,7 @@ Be specific and reference the data provided.
                 <li>Concurrent execution for faster experiment completion</li>
               </ul>
               <p><strong>Use cases:</strong> Bias studies, cognitive studies, logical performance analysis, consistency testing</p>
-            """
+            """,
         )
 
         fun compressedStringBits(str: String): Int {

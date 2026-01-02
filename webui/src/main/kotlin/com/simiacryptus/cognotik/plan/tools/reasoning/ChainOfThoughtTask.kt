@@ -666,6 +666,7 @@ class ChainOfThoughtTask(
         val ChainOfThought = TaskType(
             "ChainOfThought",
             "Reasoning",
+            ChainOfThoughtTask::class.java,
             ChainOfThoughtTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Break down complex problems into explicit reasoning steps",
@@ -678,7 +679,7 @@ class ChainOfThoughtTask(
                 <li>Can backtrack if validation fails</li>
                 <li>Generates comprehensive reasoning chains</li>
               </ul>
-            """
+            """,
         )
     }
 }

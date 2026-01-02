@@ -156,6 +156,7 @@ class ReadDocumentsTask(
         val ReadDocuments = TaskType(
             "ReadDocuments",
             "File",
+            ReadDocumentsTask::class.java,
             ReadDocumentsTaskExecutionConfigData::class.java,
             ReadDocumentsTaskTypeConfig::class.java,
             "Directly answer questions or provide insights using the LLM, optionally referencing files.",
@@ -170,7 +171,7 @@ class ReadDocumentsTask(
               <li>Supports both one-shot and interactive discussion modes</li>
               <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
             </ul>
-            """
+            """,
         )
 
         fun getAvailableFiles(

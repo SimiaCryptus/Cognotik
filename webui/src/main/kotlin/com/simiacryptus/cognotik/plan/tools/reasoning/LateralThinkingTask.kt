@@ -36,6 +36,7 @@ class LateralThinkingTask(
         val LateralThinking = TaskType(
             "LateralThinking",
             "Reasoning",
+            LateralThinkingTask::class.java,
             LateralThinkingTaskExecutionConfigData::class.java,
             LateralThinkingTaskTypeConfig::class.java,
             "Break conventional thinking patterns to find innovative solutions",
@@ -51,7 +52,7 @@ class LateralThinkingTask(
                 <li>Suggests hybrid approaches combining multiple ideas</li>
                 <li>Ideal for innovation, breaking design impasses, and creative problem-solving</li>
               </ul>
-            """
+            """,
         )
     }
 

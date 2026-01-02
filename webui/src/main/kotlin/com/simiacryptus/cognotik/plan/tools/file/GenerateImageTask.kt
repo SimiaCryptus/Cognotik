@@ -191,6 +191,7 @@ GenerateImage - Create images using AI image generation models
         val GenerateImage = TaskType(
             "GenerateImage",
             "Writing",
+            GenerateImageTask::class.java,
             GenerateImageTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate images using AI image generation models",
@@ -201,7 +202,7 @@ GenerateImage - Create images using AI image generation models
                 <li>Context-aware generation using related files</li>
                 <li>Integration with previous task results</li>
               </ul>
-            """
+            """,
         )
     }
 }

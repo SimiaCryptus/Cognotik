@@ -24,6 +24,7 @@ class DecompositionSynthesisTask(
         val DecompositionSynthesis: TaskType<DecompositionSynthesisTaskExecutionConfigData, TaskTypeConfig> = TaskType(
             "DecompositionSynthesis",
             "Reasoning",
+            DecompositionSynthesisTask::class.java,
             DecompositionSynthesisTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Decompose complex problems and synthesize solutions",
@@ -37,7 +38,7 @@ class DecompositionSynthesisTask(
                 <li>Confidence tracking at each level</li>
                 <li>Implements divide-and-conquer reasoning</li>
               </ul>
-            """
+            """,
         )
     }
 

@@ -1061,6 +1061,7 @@ Provide the complete revised explanation.
         val TechnicalExplanation = TaskType(
             "TechnicalExplanation",
             "Writing",
+            TechnicalExplanationTask::class.java,
             TechnicalExplanationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Break down complex technical subjects into clear, digestible explanations",
@@ -1079,7 +1080,7 @@ Provide the complete revised explanation.
                 <li>Optional revision passes for clarity improvement</li>
                 <li>Ideal for documentation, onboarding, education, and knowledge sharing</li>
               </ul>
-            """
+            """,
         )
     }
 }

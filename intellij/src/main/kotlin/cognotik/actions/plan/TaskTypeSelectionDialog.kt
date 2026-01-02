@@ -2,6 +2,8 @@ package cognotik.actions.plan
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.ui.DocumentAdapter
+import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
@@ -10,6 +12,7 @@ import java.awt.Dimension
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
+import javax.swing.event.DocumentEvent
 import javax.swing.event.TreeSelectionEvent
 import javax.swing.event.TreeSelectionListener
 import javax.swing.tree.*
@@ -20,6 +23,7 @@ class TaskTypeSelectionDialog(
 ) : DialogWrapper(project) {
 
     private val selectedTaskTypes = mutableSetOf<TaskType<*, *>>()
+    private val searchField = SearchTextField(false)
     private val descriptionPane = JEditorPane().apply {
         contentType = "text/html"
         isEditable = false
@@ -39,20 +43,8 @@ class TaskTypeSelectionDialog(
         val root = DefaultMutableTreeNode("Task Types")
         val treeModel = DefaultTreeModel(root)
 
-        // Group task types by package
-        val tasksByPackage = TaskType.values()
-            .groupBy { it.category }
-            .toSortedMap()
 
-        tasksByPackage.forEach { (packageName, tasks) ->
-            val packageNode = DefaultMutableTreeNode(packageName)
-            root.add(packageNode)
 
-            tasks.sortedBy { it.name }.forEach { taskType ->
-                val taskNode = DefaultMutableTreeNode(TaskTypeNode(taskType))
-                packageNode.add(taskNode)
-            }
-        }
 
         taskTree = JTree(treeModel).apply {
             selectionModel.selectionMode = if (allowMultipleSelection) {
@@ -147,16 +139,46 @@ class TaskTypeSelectionDialog(
             })
         }
 
-        // Expand all package nodes by default
-        for (i in 0 until root.childCount) {
-            taskTree.expandPath(TreePath(arrayOf(root, root.getChildAt(i))))
-        }
+        searchField.addDocumentListener(object : DocumentAdapter() {
+            override fun textChanged(e: DocumentEvent) {
+                updateTreeModel(searchField.text)
+            }
+        })
+
+        updateTreeModel("")
 
         init()
         title = if (allowMultipleSelection) "Select Task Types" else "Select Task Type"
     }
 
     override fun getDimensionServiceKey(): String = "TaskTypeSelectionDialog"
+    private fun updateTreeModel(filter: String) {
+        val root = DefaultMutableTreeNode("Task Types")
+        val filterText = filter.trim().lowercase()
+        val tasksByPackage = TaskType.values()
+            .filter {
+                if (filterText.isEmpty()) true
+                else it.name.lowercase().contains(filterText) ||
+                        (it.description?.lowercase()?.contains(filterText) == true) ||
+                        it.category.lowercase().contains(filterText)
+            }
+            .groupBy { it.category }
+            .toSortedMap()
+        tasksByPackage.forEach { (packageName, tasks) ->
+            val packageNode = DefaultMutableTreeNode(packageName)
+            root.add(packageNode)
+            tasks.sortedBy { it.name }.forEach { taskType ->
+                val taskNode = DefaultMutableTreeNode(TaskTypeNode(taskType))
+                packageNode.add(taskNode)
+            }
+        }
+        val model = DefaultTreeModel(root)
+        taskTree.model = model
+        // Expand all package nodes
+        for (i in 0 until root.childCount) {
+            taskTree.expandPath(TreePath(arrayOf(root, root.getChildAt(i))))
+        }
+    }
 
 
     private fun updateDescription(taskTypes: List<TaskType<*, *>>) {
@@ -221,6 +243,9 @@ class TaskTypeSelectionDialog(
     }
 
     override fun createCenterPanel(): JComponent = panel {
+        row {
+            cell(searchField).align(Align.FILL)
+        }
         row {
             cell(
                 JSplitPane(

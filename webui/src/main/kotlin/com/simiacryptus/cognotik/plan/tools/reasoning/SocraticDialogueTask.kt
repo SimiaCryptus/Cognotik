@@ -611,6 +611,7 @@ Provide a structured synthesis.
         val SocraticDialogue = TaskType(
             "SocraticDialogue",
             "Reasoning",
+            SocraticDialogueTask::class.java,
             SocraticDialogueTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Explore ideas through Socratic questioning",
@@ -624,7 +625,7 @@ Provide a structured synthesis.
                 <li>Configurable dialogue depth and constraints</li>
                 <li>Generates synthesis of insights discovered</li>
               </ul>
-            """
+            """,
         )
     }
 }

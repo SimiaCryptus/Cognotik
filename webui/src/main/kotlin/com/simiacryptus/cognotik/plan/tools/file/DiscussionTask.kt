@@ -186,6 +186,7 @@ class DiscussionTask(
         val Discussion = TaskType(
             "Discussion",
             "File",
+            DiscussionTask::class.java,
             DiscussionTaskExecutionConfigData::class.java,
             DiscussionTaskTypeConfig::class.java,
             "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
@@ -200,7 +201,7 @@ class DiscussionTask(
               <li>Supports both one-shot and interactive discussion modes</li>
               <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
             </ul>
-            """
+            """,
         )
 
         fun getAvailableFiles(

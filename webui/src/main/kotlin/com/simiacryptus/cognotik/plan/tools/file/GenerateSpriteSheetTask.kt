@@ -265,6 +265,7 @@ $tableRows
         val GenerateSpriteSheet = TaskType(
             "GenerateSpriteSheet",
             "Writing",
+            GenerateSpriteSheetTask::class.java,
             GenerateSpriteSheetTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate a sprite sheet and associated JSON metadata",
@@ -275,7 +276,7 @@ $tableRows
                 <li>Analyzes the generated image to find sprite bounding boxes</li>
                 <li>Exports standard JSON metadata for game engine integration</li>
               </ul>
-            """
+            """,
         )
     }
 }

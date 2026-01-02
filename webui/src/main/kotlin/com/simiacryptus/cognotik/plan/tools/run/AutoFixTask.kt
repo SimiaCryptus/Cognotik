@@ -27,6 +27,7 @@ class AutoFixTask(
         val AutoFix = TaskType(
             "AutoFix",
             "Execution & Automation",
+            AutoFixTask::class.java,
             AutoFixTaskExecutionConfigData::class.java,
             AutoFixTaskTypeConfig::class.java,
             "Run a command and automatically fix any issues that arise",
@@ -38,7 +39,7 @@ class AutoFixTask(
             <li>Interactive approval mode</li>
             <li>Output diff formatting</li>
           </ul>
-        """
+        """,
         )
     }
 

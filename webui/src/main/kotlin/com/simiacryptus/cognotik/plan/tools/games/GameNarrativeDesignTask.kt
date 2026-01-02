@@ -1354,6 +1354,7 @@ Provide specific examples and recommendations for improvement.
         val GameNarrativeDesign = TaskType(
             "GameNarrativeDesign",
             "Games",
+            GameNarrativeDesignTask::class.java,
             GameNarrativeDesignConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create interactive game narratives with branching storylines",
@@ -1371,7 +1372,7 @@ Provide specific examples and recommendations for improvement.
                 <li>Complete design documentation for implementation</li>
                 <li>Ideal for RPGs, adventure games, visual novels, interactive fiction</li>
               </ul>
-            """
+            """,
         )
     }
 }

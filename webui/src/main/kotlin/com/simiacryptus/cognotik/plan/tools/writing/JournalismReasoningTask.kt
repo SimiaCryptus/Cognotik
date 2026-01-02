@@ -33,6 +33,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
         val JournalismReasoning = TaskType(
             "JournalismReasoning",
             "Writing",
+            JournalismReasoningTask::class.java,
             JournalismReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Investigate stories through journalistic principles and methods",
@@ -49,7 +50,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
                 <li>Useful for investigative reporting, fact-checking, editorial planning</li>
                 <li>Generates structured journalistic analysis with verified facts</li>
               </ul>
-            """
+            """,
         )
     }
 

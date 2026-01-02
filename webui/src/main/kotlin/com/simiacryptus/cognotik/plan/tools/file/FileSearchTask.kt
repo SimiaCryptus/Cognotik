@@ -359,6 +359,7 @@ FileSearch - Search for patterns in files and provide results with context
         val FileSearch = TaskType(
             "FileSearch",
             "File",
+            FileSearchTask::class.java,
             SearchTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Search project files using patterns with contextual results",
@@ -371,7 +372,7 @@ FileSearch - Search for patterns in files and provide results with context
                         <li>Filters for text-based files automatically</li>
                         <li>Provides organized, readable output format</li>
                       </ul>
-                    """
+                    """,
         )
     }
 }

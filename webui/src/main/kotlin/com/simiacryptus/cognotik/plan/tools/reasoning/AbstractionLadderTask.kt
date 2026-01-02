@@ -516,6 +516,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         val AbstractionLadder = TaskType(
             "AbstractionLadder",
             "Reasoning",
+            AbstractionLadderTask::class.java,
             AbstractionLadderTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Traverse abstraction levels to identify patterns and design insights",
@@ -530,7 +531,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
                 <li>Find code smells and anti-patterns</li>
                 <li>Generate actionable recommendations</li>
               </ul>
-            """
+            """,
         )
     }
 }
