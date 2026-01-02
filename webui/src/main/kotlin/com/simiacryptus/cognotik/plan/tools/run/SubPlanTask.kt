@@ -23,10 +23,9 @@ class SubPlanTask(
         @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveSettings: CognitiveModeConfig? = null,
         @Description("Task-specific configurations available within sub-plans") val taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
         @Description("Supplemental description of the purpose of this configuration") val purpose: String = "",
-        task_type: String = "RecursiveToolDefinition",
         model: ApiChatModel? = null,
-        name: String? = task_type,
-    ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
+        name: String? = SubPlan.name,
+    ) : TaskTypeConfig(task_type = SubPlan.name, name = name, model = model), ValidatedObject {
         val cognitiveMode: CognitiveModeType<*>? get() = cognitiveSettings?.type
         override fun validate(): String? {
             // Validate that taskSettings don't contain invalid configurations

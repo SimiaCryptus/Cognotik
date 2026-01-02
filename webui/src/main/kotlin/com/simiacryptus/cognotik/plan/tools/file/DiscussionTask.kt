@@ -102,7 +102,7 @@ class DiscussionTask(
                     taskConfig?.inquiry_questions?.joinToString(
                         "\n"
                     )
-                }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
+                }\nGoal: ${taskConfig?.inquiry_goal}\n\n${JsonUtil.toJson(executionConfig)}"
             )
             transcript?.write("# Analysis Request\n\n${input.joinToString("\n\n")}\n\n".toByteArray())
             insightActor.answer(input)

@@ -369,7 +369,7 @@ val myConfig = FileModificationConfig(name = "FileEditor")
 val executionInput = FileModificationExecutionConfig(
     instructions = "Create a Hello World python script",
     files = listOf()
-     +)
+)
 
 // 3. Run the Harness
 val harness = TaskTestHarness(
@@ -378,7 +378,7 @@ val harness = TaskTestHarness(
     executionConfig = executionInput,
     modelInstanceFn = { /* inject keys */ },
     openBrowser = false
-     +)
+)
 
 harness.run()
 ```

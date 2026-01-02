@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.SubPlanTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.SubPlanTaskTypeConfig
@@ -23,6 +24,7 @@ object SubPlanTaskTest {
         TaskTestHarness(
             taskType = SubPlanTask.SubPlan,
             typeConfig = SubPlanTaskTypeConfig(
+                cognitiveSettings = WaterfallMode.WaterfallModeConfig(),
                 taskSettings = mutableMapOf(
                     FileModificationTask.FileModification.name to TaskTypeConfig(
                         task_type = FileModificationTask.FileModification.name
