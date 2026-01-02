@@ -590,3 +590,21 @@ class ReadonlySocketManager(
     }
 
 }
+class ServerlessSocketManager(
+    session: Session,
+    storageInterface: StorageInterface?,
+    owner: User = defaultUser,
+    clazz: Class<*>
+) : SocketManager(
+    sessionId = session,
+    dataStorage = storageInterface,
+    owner = owner,
+    applicationClass = clazz
+) {
+    override fun onRun(userMessage: String, socket: ChatSocket) {
+        // No-op for serverless execution
+    }
+    override fun createLinkedManager(newSession: Session): SocketManager {
+        return ServerlessSocketManager(newSession, dataStorage, owner, javaClass)
+    }
+}

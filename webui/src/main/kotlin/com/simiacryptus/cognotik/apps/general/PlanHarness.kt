@@ -6,37 +6,20 @@ import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveSchemaStrategy
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
-import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.SessionProxyServer
-import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.CognotikAppServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
-import java.awt.AWTException
-import java.awt.Color
-import java.awt.Desktop
-import java.awt.MenuItem
-import java.awt.PopupMenu
-import java.awt.SystemTray
-import java.awt.TrayIcon
+import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.File
-import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 open class PlanHarness(
     val prompt: String,
@@ -58,101 +41,46 @@ open class PlanHarness(
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
 ) {
     val workspace = createTempDirectory()
+    private val harness = UnifiedHarness(
+        port = port,
+        serverless = false,
+        openBrowser = openBrowser,
+        modelInstanceFn = modelInstanceFn,
+        fastModel = fastModel,
+        smartModel = smartModel,
+        imageModel = imageModel
+    )
 
     fun run() {
-        log.info("Running plan in ephemeral workspace: ${workspace.absolutePath}")
-
-        val completionLatch = CountDownLatch(1)
-        val session = Session.newGlobalID()
-        DataStorage.sessionPaths[session] = workspace
-
-        val planApp = object : UnifiedPlanApp(
-            path = "/test",
-            applicationName = "Plan Test App",
-            showMenubar = false,
-            useExpansionSyntax = true
-        ) {
-            override fun instance(model: ApiChatModel) = modelInstanceFn(model)
-
-            override fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
-                task.resolveUserFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
-                super.onComplete(mode, task)
-            }
-
-            override fun <T : Any> initSettings(session: Session): T {
-                val orchestrationConfig = newConfig(session, workspace)
-                val settingsFile = getSettingsFile(session, defaultUser)
-                val json = orchestrationConfig.toJson()
-                settingsFile.writeText(json)
-                @Suppress("UNCHECKED_CAST")
-                return orchestrationConfig as T
-            }
-
-            override fun newSession(user: User, session: Session): SocketManager {
-                val socketManager = super.newSession(user, session)
-                socketManager.pool.submit {
-                    try {
-                        Thread.sleep(1000)
-                        userMessage(session, user, prompt, socketManager)
-                        completionLatch.countDown()
-                    } catch (e: Throwable) {
-                        log.error("Error running plan", e)
-                    }
-                }
-                return socketManager
-            }
-        }
-        SessionProxyServer.chats[session] = planApp
-        ApplicationServer.appInfoMap[session] = AppInfoData(
-            applicationName = "Plan Test App",
-            inputCnt = 4,
-            stickyInput = true,
-            showMenubar = false
-        )
-
-        val server = CognotikAppServer(
-            localName = "localhost",
-            port = port
-        )
-        val jettyServer = server.start()
-
+        harness.start()
         try {
-            val url = "http://localhost:$port/#$session"
-            log.info("Server started at $url")
-
-            planApp.initSettings<Any>(session)
-            SessionProxyServer.agents[session] = planApp.newSession(defaultUser, session)
-
-            if (openBrowser) {
-                try {
-                    Desktop.getDesktop().browse(URI(url))
-                } catch (e: Exception) {
-                    log.warn("Failed to open browser", e)
+            harness.runPlan(
+                prompt = prompt,
+                cognitiveSettings = cognitiveSettings,
+                timeoutMinutes = timeoutMinutes,
+                autoFix = !openBrowser,
+                workspace = workspace,
+                config = { session: Session, finalWorkspace: File ->
+                    newConfig(session, finalWorkspace)
                 }
-            }
-
-            log.info("Waiting for plan completion (or timeout)...")
-            completionLatch.await(timeoutMinutes, TimeUnit.MINUTES)
-
+            )
         } finally {
-            if (openBrowser) {
-                val pair = trayIcon()
-                val shutdownLatch = pair.first
-                val trayIcon = pair.second
-
-                try {
-                    shutdownLatch.await()
-                } catch (e: InterruptedException) {
-                    Thread.currentThread().interrupt()
-                }
-
-                if (trayIcon != null && SystemTray.isSupported()) {
-                    SystemTray.getSystemTray().remove(trayIcon)
-                }
-            }
-            jettyServer.stop()
+            harness.stop()
         }
     }
+
+    open fun newConfig(
+        session: Session,
+        finalWorkspace: File
+    ): OrchestrationConfig = OrchestrationConfig(
+        sessionId = session.sessionId,
+        workingDir = finalWorkspace.absolutePath,
+        defaultFastModel = fastModel.asApiChatModel(),
+        defaultSmartModel = smartModel.asApiChatModel(),
+        defaultImageModel = imageModel.asApiChatModel(),
+        autoFix = !openBrowser,
+        cognitiveSettings = cognitiveSettings,
+    )
 
     private fun createTempDirectory(): File {
         val time = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
@@ -161,17 +89,6 @@ open class PlanHarness(
             log.debug("Created temp directory: ${this.absolutePath}")
         }
     }
-
-    @Suppress("UNCHECKED_CAST")
-    open fun newConfig(session: Session, tempDir: File) = OrchestrationConfig(
-        sessionId = session.sessionId,
-        workingDir = tempDir.absolutePath,
-        defaultFastModel = fastModel.asApiChatModel(),
-        defaultSmartModel = smartModel.asApiChatModel(),
-        defaultImageModel = imageModel.asApiChatModel(),
-        autoFix = !openBrowser,
-        cognitiveSettings = cognitiveSettings,
-    )
 
     companion object {
         fun configurePlatform() {
