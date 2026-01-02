@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.transcript
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
@@ -59,7 +60,7 @@ open class ChatSocketManager(
     open val systemPrompt: String,
     var temperature: Double = 0.3,
     applicationClass: Class<out ChatServer>,
-    val storage: StorageInterface?,
+    val storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     open val fastTopicParsing: Boolean = true,
     val retriable: Boolean = true,
     val budget: Double,

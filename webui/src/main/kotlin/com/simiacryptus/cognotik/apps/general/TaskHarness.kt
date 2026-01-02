@@ -25,6 +25,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
         )
     },
     val port: Int = 8082,
+    val serverless: Boolean = true,
     val openBrowser: Boolean = false,
     val timeoutMinutes: Long = 30,
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
@@ -34,8 +35,8 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val workspace = createTempDirectory()
     private val harness = UnifiedHarness(
         port = port,
-        serverless = false,
         openBrowser = openBrowser,
+        serverless = serverless,
         modelInstanceFn = modelInstanceFn,
         fastModel = fastModel,
         smartModel = smartModel,

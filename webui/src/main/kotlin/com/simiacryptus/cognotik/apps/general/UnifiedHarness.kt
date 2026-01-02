@@ -53,7 +53,7 @@ open class UnifiedHarness(
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
 ) {
-    private var jettyServer: Server? = null
+    private var jettyServer: Any? = null
     private var appServer: CognotikAppServer? = null
 
     open fun start() {
@@ -74,7 +74,7 @@ open class UnifiedHarness(
     open fun stop() {
         if (serverless) return
         try {
-            jettyServer?.stop()
+            (jettyServer as? Server)?.stop()
             jettyServer = null
             appServer = null
             log.info("Server stopped")
@@ -130,7 +130,11 @@ open class UnifiedHarness(
 
             override fun newSession(user: User, session: Session): SocketManager {
                 if (serverless) {
-                    val socketManager = ServerlessSocketManager(session, null, user, this.javaClass)
+                    val socketManager = ServerlessSocketManager(
+                        session = session,
+                        owner = user,
+                        clazz = this.javaClass
+                    )
                     // Manually trigger execution since we don't have a UI to send the first message
                     // We use a thread to simulate async execution
                     Thread {
@@ -252,9 +256,16 @@ open class UnifiedHarness(
 
             override fun newSession(user: User, session: Session): SocketManager {
                 if (serverless) {
-                    return ServerlessSocketManager(session, null, user, this.javaClass)
+                    val socketManager = ServerlessSocketManager(
+                        session = session,
+                        owner = user,
+                        clazz = this.javaClass
+                    )
+                    startSession(session, user, socketManager)
+                    return socketManager
+                } else {
+                    return super.newSession(user, session)
                 }
-                return super.newSession(user, session)
             }
         }
 

@@ -51,26 +51,34 @@ abstract class SingleTaskApp(
         user: User, session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
+        startSession(session, user, socketManager)
+        return socketManager
+    }
+
+    protected fun startSession(
+        session: Session,
+        user: User,
+        socketManager: SocketManager
+    ) {
         val settings = getSettings(session, user, OrchestrationConfig::class.java)
-        if(null != instanceFn) OrchestrationConfig.instanceFn = instanceFn
+        if (null != instanceFn) OrchestrationConfig.instanceFn = instanceFn
         socketManager.newTask(cancelable = false, root = true).expandable(
             "Session Info", """
-Session ID: `${session}`
-
-Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
-
-Root: `${settings?.absoluteWorkingDir}`
-
-Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
-
-Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
-
-Task Type: `${taskType.name}`
-
-          """.renderMarkdown()
+    Session ID: `${session}`
+    
+    Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
+    
+    Root: `${settings?.absoluteWorkingDir}`
+    
+    Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
+    
+    Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+    
+    Task Type: `${taskType.name}`
+    
+              """.renderMarkdown()
         )
         socketManager.pool.submit { executeTask(session, user, socketManager, settings) }
-        return socketManager
     }
 
     protected open fun onTaskComplete(result: String, task: SessionTask) {}

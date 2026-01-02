@@ -34,6 +34,7 @@ open class PlanHarness(
         )
     },
     val port: Int = 8082,
+    val serverless: Boolean = false,
     val openBrowser: Boolean = false,
     val timeoutMinutes: Long = 30,
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
@@ -43,8 +44,8 @@ open class PlanHarness(
     val workspace = createTempDirectory()
     private val harness = UnifiedHarness(
         port = port,
-        serverless = false,
         openBrowser = openBrowser,
+        serverless = serverless,
         modelInstanceFn = modelInstanceFn,
         fastModel = fastModel,
         smartModel = smartModel,

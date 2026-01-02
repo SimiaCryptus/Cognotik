@@ -21,7 +21,7 @@ import java.util.function.Consumer
 
 abstract class SocketManager(
     val sessionId: Session,
-    val dataStorage: StorageInterface? = null,
+    val dataStorage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     val owner: User = defaultUser,
     private val applicationClass: Class<*>,
 ) {
@@ -572,7 +572,7 @@ abstract class SocketManager(
 
 class ReadonlySocketManager(
     newSession: Session,
-    storageInterface: StorageInterface?,
+    storageInterface: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     owner: User = defaultUser,
     clazz: Class<*>
 ) : SocketManager(
@@ -592,7 +592,7 @@ class ReadonlySocketManager(
 }
 class ServerlessSocketManager(
     session: Session,
-    storageInterface: StorageInterface?,
+    storageInterface: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     owner: User = defaultUser,
     clazz: Class<*>
 ) : SocketManager(

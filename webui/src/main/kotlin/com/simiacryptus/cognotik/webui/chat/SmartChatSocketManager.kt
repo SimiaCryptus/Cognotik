@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -27,7 +28,7 @@ open class SmartChatSocketManager(
     override val systemPrompt: String,
     temperature: Double = 0.3,
     applicationClass: Class<out ChatServer>,
-    storage: StorageInterface?,
+    storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     override val fastTopicParsing: Boolean = true,
     retriable: Boolean = true,
     budget: Double,

@@ -303,29 +303,31 @@ the `task_type` field (discriminator) matching the `id` from the metadata endpoi
 
 Beyond the standard Web UI and IDE plugins, Cognotik provides robust Test Harnesses for embedding agent capabilities directly into code or running integration tests. These harnesses wrap the complex server infrastructure (Jetty, Websockets, Session Management) into a simple, synchronous or asynchronous API.
 
-#### A. The Test Harness Architecture
+#### A. The Unified Harness Architecture
 
-Both harnesses share a common architecture designed for ephemeral execution:
+Both `PlanHarness` and `TaskHarness` delegate to a `UnifiedHarness` designed for ephemeral execution:
 1.  **Ephemeral Workspace:** Automatically creates a timestamped temporary directory for the session (e.g., `workspaces/TaskName/test-20231027_120000`).
-2.  **Embedded Server:** Starts a local Jetty server on a specified port (default 8082).
+2.  **Server Modes:**
+    *   **Serverless (Default for Tasks):** Runs the logic directly in the current thread/process without starting Jetty. Ideal for unit tests.
+    *   **Server (Default for Plans):** Starts a local Jetty server (default port 8082) to allow Web UI interaction.
 3.  **Session Management:** Initializes a `Session`, `User`, and `OrchestrationConfig` automatically.
 4.  **Lifecycle Management:** Blocks execution until the task completes, fails, or times out.
-5.  **Visual Debugging:** Optionally opens the Web UI in the default browser to watch the agent "think" in real-time.
 
-#### B. PlanTestHarness (Full Agent Workflow)
+#### B. PlanHarness (Full Agent Workflow)
 
-Use `PlanTestHarness` when you want to execute a high-level user prompt using a specific Cognitive Mode (e.g., "Waterfall" or "Auto Plan"). This simulates a full user session programmatically.
+Use `PlanHarness` when you want to execute a high-level user prompt using a specific Cognitive Mode (e.g., "Waterfall" or "Auto Plan"). This simulates a full user session programmatically.
 
 **Key Parameters:**
 *   `prompt`: The string instruction to the agent.
 *   `cognitiveSettings`: Configuration for the planning strategy.
-*   `openBrowser`: If `true`, opens the UI to visualize the plan.
+*   `openBrowser`: If `true`, opens the UI to visualize the plan (requires `serverless=false`).
+*   `serverless`: Defaults to `false`. Set to `true` to skip Jetty startup.
 *   `modelInstanceFn`: A factory function to inject API keys and model instances.
 
 **Example Usage:**
 
 ```kotlin
-val harness = PlanTestHarness(
+val harness = PlanHarness(
     prompt = "Research the history of the transistor and write a summary to summary.md",
     cognitiveSettings = CognitiveModeConfig(
         type = CognitiveModeType.Waterfall, // or Auto_Plan
@@ -336,27 +338,28 @@ val harness = PlanTestHarness(
         val apiKey = System.getenv("OPENAI_API_KEY")
         model.model!!.instance(key = apiKey)
     },
-    openBrowser = true, // Watch it run
+    openBrowser = true, // Watch it run in the browser
     timeoutMinutes = 15
-     +)
+)
 
 harness.run() // Blocks until completion
 ```
 
 **What happens:**
-1.  The harness boots the server.
+1.  The harness boots the server (unless `serverless=true`).
 2.  It injects the `prompt` as if a user typed it into the chat.
 3.  The agent plans, executes tools, and writes files to the temp workspace.
 4.  On completion, `results.md` is written, and the harness shuts down.
 
-#### C. TaskTestHarness (Unit Testing Tools)
+#### C. TaskHarness (Unit Testing Tools)
 
-Use `TaskTestHarness` to test a specific **Task Type** in isolation without the overhead of a planning agent. This is useful for debugging custom tools (e.g., a specific Crawler configuration or a custom API integration).
+Use `TaskHarness` to test a specific **Task Type** in isolation without the overhead of a planning agent. This is useful for debugging custom tools (e.g., a specific Crawler configuration or a custom API integration).
 
 **Key Parameters:**
 *   `taskType`: The definition of the tool (e.g., `FileModificationTask`).
 *   `typeConfig`: The static configuration for the tool (e.g., allowed domains for a crawler).
 *   `executionConfig`: The runtime input for the tool (e.g., the specific URL to crawl).
+*   `serverless`: Defaults to `true` for faster execution.
 
 **Example Usage:**
 
@@ -372,12 +375,12 @@ val executionInput = FileModificationExecutionConfig(
 )
 
 // 3. Run the Harness
-val harness = TaskTestHarness(
+val harness = TaskHarness(
     taskType = myTaskType,
     typeConfig = myConfig,
     executionConfig = executionInput,
     modelInstanceFn = { /* inject keys */ },
-    openBrowser = false
+    openBrowser = false // Usually false for unit tests
 )
 
 harness.run()
@@ -389,7 +392,7 @@ When embedding these harnesses in a standalone application (outside the standard
 
 ```kotlin
 // Call this once at application startup
-PlanTestHarness.configurePlatform()
+PlanHarness.configurePlatform()
 ```
 
 This static helper ensures that:

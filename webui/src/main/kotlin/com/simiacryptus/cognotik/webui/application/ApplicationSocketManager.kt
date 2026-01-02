@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.webui.application
 
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.StorageInterface
@@ -10,7 +11,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 abstract class ApplicationSocketManager(
     session: Session,
     owner: User = defaultUser,
-    dataStorage: StorageInterface?,
+    dataStorage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     applicationClass: Class<*>,
 ) : SocketManager(
     sessionId = session,
