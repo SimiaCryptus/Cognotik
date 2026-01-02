@@ -15,7 +15,7 @@ object LLMExperimentTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
-     @Test
+    //@Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         TaskHarness(

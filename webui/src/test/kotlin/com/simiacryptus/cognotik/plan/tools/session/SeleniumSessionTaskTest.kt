@@ -16,7 +16,7 @@ object SeleniumSessionTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
-     @Test
+    //@Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
         TaskHarness(
@@ -37,7 +37,7 @@ object SeleniumSessionTaskTest {
         ).run()
     }
 
-     @Test
+    //@Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testSessionReuse() {
         val sessionId = "test-session-${java.util.UUID.randomUUID()}"

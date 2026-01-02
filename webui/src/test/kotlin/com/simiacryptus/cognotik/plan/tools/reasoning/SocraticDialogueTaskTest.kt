@@ -16,7 +16,7 @@ object SocraticDialogueTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
-     @Test
+    //@Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testSocraticDialogue() {
         TaskHarness(

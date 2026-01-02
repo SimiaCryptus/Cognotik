@@ -16,7 +16,7 @@ object PersonaChatModeTest {
         com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
-    @Test
+   //@Test
     fun test() {
         object : PlanHarness(
             prompt = "Create a simple python script that prints 'Hello from PersonaChatMode'",

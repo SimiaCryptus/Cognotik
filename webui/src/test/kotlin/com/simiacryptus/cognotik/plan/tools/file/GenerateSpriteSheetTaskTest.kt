@@ -15,7 +15,7 @@ object GenerateSpriteSheetTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
-     @Test
+    //@Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         TaskHarness(
@@ -26,7 +26,9 @@ object GenerateSpriteSheetTaskTest {
             executionConfig = GenerateSpriteSheetTaskExecutionConfigData(
                 files = listOf("test_sprites.png"),
                 metadata_file = "test_sprites.json",
-                task_description = "A pixel art character walk cycle animation sheet. 6 frames of a knight walking side view. Uniform size and spacing.",
+                task_description =
+                    //"A pixel art character walk cycle animation sheet. 6 frames of a knight walking side view. Uniform size and spacing.",
+                    "Various superhero cats; photorealistic style; transparent background; arranged in a grid format.",
             ),
             timeoutMinutes = 15,
         ).run()

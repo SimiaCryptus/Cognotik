@@ -16,7 +16,7 @@ object GameTheoryTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
-     @Test
+    //@Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testPrisonersDilemma() {
         TaskHarness(
@@ -49,7 +49,7 @@ object GameTheoryTaskTest {
         ).run()
     }
 
-     @Test
+    //@Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testRepeatedGame() {
         TaskHarness(

@@ -57,6 +57,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
                 }
 
             }
+
             registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet)
             registerConstructor(FunctorialMappingTask.FunctorialMapping)
             registerConstructor(StructuralInvariantAnalysisTask.StructuralInvariantAnalysis)
@@ -78,12 +79,12 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(ReadDocumentsTask.ReadDocuments)
             registerConstructor(DiscussionTask.Discussion)
             registerConstructor(CrawlerAgentTask.CrawlerAgent)
+            registerConstructor(FileAppendTask.FileAppend)
             registerConstructor(FileModificationTask.FileModification)
             registerConstructor(FileSearchTask.FileSearch)
             registerConstructor(GitHubSearchTask.GitHubSearch)
             registerConstructor(RunCodeTask.RunCode)
             registerConstructor(RunToolTask.RunTool)
-//            registerConstructor(SeleniumSessionTask.SeleniumSession)
             registerConstructor(CommandSessionTask.CommandSession)
             registerConstructor(AutoFixTask.AutoFix)
             registerConstructor(MCPToolTask.MCPTool)

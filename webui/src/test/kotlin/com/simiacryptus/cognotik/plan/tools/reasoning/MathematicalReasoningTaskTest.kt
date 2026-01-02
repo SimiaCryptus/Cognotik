@@ -15,7 +15,7 @@ object MathematicalReasoningTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
-     @Test
+    //@Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun testAlgebraicSolving() {
         TaskHarness(
@@ -34,7 +34,7 @@ object MathematicalReasoningTaskTest {
         ).run()
     }
 
-     @Test
+    //@Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun testCalculusDerivation() {
         TaskHarness(

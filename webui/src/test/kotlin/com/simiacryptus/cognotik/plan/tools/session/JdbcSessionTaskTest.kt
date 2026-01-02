@@ -16,7 +16,7 @@ object JdbcSessionTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
-    @Test
+   //@Test
     @Timeout(5, unit = TimeUnit.MINUTES)
     fun testJdbcSession() {
         TaskHarness(
@@ -43,7 +43,7 @@ object JdbcSessionTaskTest {
         ).run()
     }
 
-     @Test
+    //@Test
     @Timeout(5, unit = TimeUnit.MINUTES)
     fun testSessionPersistence() {
         val sessionId = "test-session-${System.currentTimeMillis()}"

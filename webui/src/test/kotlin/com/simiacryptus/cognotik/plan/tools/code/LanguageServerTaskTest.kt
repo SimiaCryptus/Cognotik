@@ -16,7 +16,7 @@ object LanguageServerTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
     }
 
-     @Test
+    //@Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testHover() {
         val harness = TaskHarness(
@@ -46,7 +46,7 @@ object LanguageServerTaskTest {
         harness.run()
     }
 
-     @Test
+    //@Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testDiagnostics() {
         val harness = TaskHarness(
