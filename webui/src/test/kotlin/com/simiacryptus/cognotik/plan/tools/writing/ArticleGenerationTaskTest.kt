@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.writing.ArticleGenerationTask.ArticleGenerationTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.io.File
 
@@ -15,7 +16,7 @@ object ArticleGenerationTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
-    //@Test
+     @Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         val harness = TaskTestHarness(

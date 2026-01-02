@@ -17,7 +17,7 @@ object CrawlerAgentTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
-    //@Test
+     @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testCrawler() {
         TaskTestHarness(
@@ -37,7 +37,7 @@ object CrawlerAgentTaskTest {
         ).run()
     }
 
-    //@Test
+     @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testDirectUrlCrawler() {
         TaskTestHarness(

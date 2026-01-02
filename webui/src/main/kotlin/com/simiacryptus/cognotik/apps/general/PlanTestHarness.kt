@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveSchemaStrategy
@@ -21,6 +22,7 @@ import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.awt.AWTException
 import java.awt.Color
@@ -71,6 +73,11 @@ open class PlanTestHarness(
             useExpansionSyntax = true
         ) {
             override fun instance(model: ApiChatModel) = modelInstanceFn(model)
+
+            override fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
+                task.resolveUserFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
+                super.onComplete(mode, task)
+            }
 
             override fun <T : Any> initSettings(session: Session): T {
                 val orchestrationConfig = newConfig(session, workspace)

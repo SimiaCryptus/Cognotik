@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.awt.Desktop
 import java.io.File
 import java.net.URI
@@ -64,8 +65,9 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
         ) {
             override fun instance(model: ApiChatModel) = modelInstanceFn(model)
 
-            override fun onTaskComplete(result: String) {
+            override fun onTaskComplete(result: String, task: SessionTask) {
                 log.info("Task completed successfully")
+                task.resolveUserFile("result.md")?.writeText(result)
                 completionLatch.countDown()
             }
 
@@ -77,9 +79,8 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
             override fun <T : Any> initSettings(session: Session): T {
                 val orchestrationConfig = newConfig(session, workspace)
-                val settingsFile = getSettingsFile(session, defaultUser)
                 val json = orchestrationConfig.toJson()
-                settingsFile.writeText(json)
+                getSettingsFile(session, defaultUser).writeText(json)
                 @Suppress("UNCHECKED_CAST")
                 return orchestrationConfig as T
             }

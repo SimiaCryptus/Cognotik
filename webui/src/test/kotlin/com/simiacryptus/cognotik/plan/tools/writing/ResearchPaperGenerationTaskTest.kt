@@ -16,7 +16,7 @@ object ResearchPaperGenerationTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
-    //@Test
+     @Test
     @Timeout(20, unit = TimeUnit.MINUTES)
     fun test() {
         TaskTestHarness(

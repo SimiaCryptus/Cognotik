@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask.LanguageServerTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask.LanguageServerTaskTypeConfig
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
 
@@ -16,7 +17,7 @@ object LanguageServerTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
-    //@Test
+     @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testHover() {
         val harness = TaskTestHarness(
@@ -46,7 +47,7 @@ object LanguageServerTaskTest {
         harness.run()
     }
 
-    //@Test
+     @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testDiagnostics() {
         val harness = TaskTestHarness(

@@ -15,7 +15,7 @@ object PersuasiveEssayTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
-   //@Test
+    @Test
     @Timeout(15, unit = TimeUnit.MINUTES)
     fun test() {
         TaskTestHarness(

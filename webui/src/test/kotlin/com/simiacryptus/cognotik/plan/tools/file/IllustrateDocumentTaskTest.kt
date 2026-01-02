@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.data.toFile
 import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
 object IllustrateDocumentTaskTest {
@@ -15,7 +16,7 @@ object IllustrateDocumentTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
-    //@Test
+     @Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         val harness = TaskTestHarness(

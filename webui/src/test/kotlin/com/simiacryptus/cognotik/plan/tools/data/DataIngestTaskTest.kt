@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask.DataIngestTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -17,7 +18,7 @@ object DataIngestTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
-    //@Test
+     @Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
         val harness = TaskTestHarness(

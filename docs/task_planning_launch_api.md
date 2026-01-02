@@ -129,13 +129,34 @@ Once configured:
 ### 7. HTTP API Reference
 
 To implement a custom client (CLI, Web, or IDE Plugin) that launches tasks via HTTP, you need to interact with the
-configuration servlets to discover capabilities and then submit an `OrchestrationConfig` JSON payload to the launch
-endpoint.
+configuration servlets to discover capabilities, configure the environment, and launch a session.
 
 #### A. Discovery Endpoints (Metadata)
 
-Before constructing a plan, clients should fetch available configurations to render forms or validate input.
-**1. Task Types Metadata**
+Clients should fetch available configurations to render forms or validate input.
+
+**1. API Providers & Models**
+*   **Endpoint:** `/apiProviders/` (GET)
+*   **Response:** JSON Object containing configured and available providers.
+*   **Structure:**
+    ```json
+    {
+      "configuredProviders": [
+        {
+          "name": "OpenAI",
+          "baseUrl": "...",
+          "models": [
+            { "name": "gpt-4o", "maxTokens": 128000 },
+            { "name": "gpt-3.5-turbo", "maxTokens": 16000 }
+          ]
+        }
+      ],
+      "availableProviders": ["OpenAI", "Anthropic", "Ollama"]
+    }
+    ```
+*   **Usage:** Use the model names (e.g., "gpt-4o") to populate model selection dropdowns.
+
+**2. Task Types Metadata**
 
 * **Endpoint:** `/taskConfig` (GET)
 * **Response:** JSON Array of Task Definitions.
@@ -164,35 +185,66 @@ Before constructing a plan, clients should fetch available configurations to ren
     }
   ]
   ```
-* **Field Types:** `text`, `textarea`, `number`, `checkbox`, `select` (includes `options` array).
-  **2. Cognitive Modes Metadata**
+* **Field Types:**
+    *   `text`, `number`, `textarea`, `checkbox`: Standard inputs.
+    *   `select`: Dropdown (includes `options` array of strings).
+    *   `subtasks`: Special type for recursive planning. Requires a nested configuration map (see Payload).
+
+**3. Cognitive Modes Metadata**
 * **Endpoint:** `/cognitiveConfig` (GET)
 * **Response:** JSON Array of Cognitive Mode Definitions.
 * **Structure:** Similar to Task Types, but defines strategies (e.g., "Waterfall", "Auto Plan").
 
-#### B. Launch Payload (`OrchestrationConfig`)
+#### B. User Settings (API Keys)
 
-To start a session, send a POST request (endpoint depends on server implementation, typically `/api/session/launch`)
-with the `OrchestrationConfig` JSON.
-**Root Object Structure:**
+Before launching, ensure API keys are configured.
 
-| Field               | Type   | Description                                        |
-|:--------------------|:-------|:---------------------------------------------------|
-| `sessionId`         | String | Unique identifier for the session.                 |
-| `defaultSmartModel` | Object | The main reasoning model (see Model Object below). |
-| `defaultFastModel`  | Object | The cheaper parsing model.                         |
-| `taskSettings`      | Map    | **Crucial.** A map of `Key -> Configuration`.      |
-| `cognitiveSettings` | Object | The strategy configuration.                        |
-| `budget`            | Number | Max cost in USD.                                   |
-| `temperature`       | Number | 0.0 to 1.0.                                        |
-| `maxIterations`     | Number | Loop limit.                                        |
+*   **Endpoint:** `/userSettings/`
+*   **GET:** Returns current settings (keys are masked or present).
+*   **POST:** Save settings.
+    *   **Content-Type:** `application/x-www-form-urlencoded`
+    *   **Body:** `action=save&settings={JSON_STRING}`
+    *   **JSON Structure:**
+        ```json
+        {
+          "apis": [
+            { "provider": "OpenAI", "key": "sk-...", "baseUrl": "" }
+          ],
+          "tools": ["/path/to/local/tool"]
+        }
+        ```
 
-**1. Model Object (`ApiChatModel`)**
+#### C. Session Configuration & Launch
 
+To start a session, the client typically saves the session configuration to the server. The server then initializes the session state.
+
+*   **Endpoint:** `/taskChat/settings` (POST)
+*   **Content-Type:** `application/x-www-form-urlencoded`
+*   **Body Parameters:**
+    *   `sessionId`: String (Unique ID, e.g., `session_123456789`).
+    *   `action`: `save`
+    *   `settings`: JSON String of the `OrchestrationConfig`.
+
+**`settings` JSON Structure:**
+
+| Field               | Type   | Description                                     |
+|:--------------------|:-------|:------------------------------------------------|
+| `sessionId`         | String | Unique identifier for the session.              |
+| `defaultSmartModel` | String | Model ID (e.g., "gpt-4o") from `/apiProviders`. |
+| `defaultFastModel`  | String | Model ID (e.g., "gpt-4o-mini").                 |
+| `imageChatModel`    | String | Model ID for image generation (optional).       |
+| `budget`            | Number | Max cost in USD.                                |
+| `temperature`       | Number | 0.0 to 1.0.                                     |
+| `maxIterations`     | Number | Loop limit.                                     |
+| `workingDir`        | String | Path to working directory.                      |
+| `cognitiveSettings` | Object | Strategy configuration.                         |
+| `taskSettings`      | Map    | Map of `ConfigName -> Configuration`.           |
+
+**1. Cognitive Settings Object**
 ```json
 {
-  "provider": "OpenAI",
-  "modelName": "gpt-4o"
+  "type": "Waterfall",
+  "feedback_rounds": 2
 }
 ```
 
@@ -202,30 +254,22 @@ the `task_type` field (discriminator) matching the `id` from the metadata endpoi
 
 ```json
 "taskSettings": {
-"MyCrawler_1": {
-"task_type": "CrawlerAgent", <-- REQUIRED DISCRIMINATOR
-"name": "MyCrawler_1",
-"max_pages_per_task": 50,
-"allowed_domains": "example.com"
-},
-"CodeRunner": {
-"task_type": "RunCode",
-"name": "CodeRunner"
-}
-}
-```
-
-**3. Cognitive Settings (Polymorphic)**
-Similar to tasks, this requires a `type` discriminator.
-
-```json
-"cognitiveSettings": {
-"type": "Waterfall", <-- REQUIRED DISCRIMINATOR
-"feedback_rounds": 2
+  "MyCrawler_1": {
+    "task_type": "CrawlerAgent", <-- REQUIRED DISCRIMINATOR
+    "name": "MyCrawler_1",
+    "max_pages_per_task": 50,
+    "allowed_domains": "example.com"
+  },
+  "CodeRunner": {
+    "task_type": "RunCode",
+    "name": "CodeRunner"
+  }
 }
 ```
 
-#### C. Complete Example Payload
+
+
+**3. Complete Example Payload (inside `settings` parameter)**
 
 ```json
 {
@@ -234,14 +278,8 @@ Similar to tasks, this requires a `type` discriminator.
   "temperature": 0.2,
   "maxIterations": 15,
   "autoFix": true,
-  "defaultSmartModel": {
-    "provider": "OpenAI",
-    "modelName": "gpt-4"
-  },
-  "defaultFastModel": {
-    "provider": "OpenAI",
-    "modelName": "gpt-3.5-turbo"
-  },
+  "defaultSmartModel": "gpt-4o",
+  "defaultFastModel": "gpt-3.5-turbo",
   "cognitiveSettings": {
     "type": "Waterfall"
   },
@@ -258,3 +296,103 @@ Similar to tasks, this requires a `type` discriminator.
   }
 }
 ```
+
+---
+
+### 8. Embedding and Testing (Programmatic Access)
+
+Beyond the standard Web UI and IDE plugins, Cognotik provides robust Test Harnesses for embedding agent capabilities directly into code or running integration tests. These harnesses wrap the complex server infrastructure (Jetty, Websockets, Session Management) into a simple, synchronous or asynchronous API.
+
+#### A. The Test Harness Architecture
+
+Both harnesses share a common architecture designed for ephemeral execution:
+1.  **Ephemeral Workspace:** Automatically creates a timestamped temporary directory for the session (e.g., `workspaces/TaskName/test-20231027_120000`).
+2.  **Embedded Server:** Starts a local Jetty server on a specified port (default 8082).
+3.  **Session Management:** Initializes a `Session`, `User`, and `OrchestrationConfig` automatically.
+4.  **Lifecycle Management:** Blocks execution until the task completes, fails, or times out.
+5.  **Visual Debugging:** Optionally opens the Web UI in the default browser to watch the agent "think" in real-time.
+
+#### B. PlanTestHarness (Full Agent Workflow)
+
+Use `PlanTestHarness` when you want to execute a high-level user prompt using a specific Cognitive Mode (e.g., "Waterfall" or "Auto Plan"). This simulates a full user session programmatically.
+
+**Key Parameters:**
+*   `prompt`: The string instruction to the agent.
+*   `cognitiveSettings`: Configuration for the planning strategy.
+*   `openBrowser`: If `true`, opens the UI to visualize the plan.
+*   `modelInstanceFn`: A factory function to inject API keys and model instances.
+
+**Example Usage:**
+
+```kotlin
+val harness = PlanTestHarness(
+    prompt = "Research the history of the transistor and write a summary to summary.md",
+    cognitiveSettings = CognitiveModeConfig(
+        type = CognitiveModeType.Waterfall, // or Auto_Plan
+        name = "ResearchAgent"
+    ),
+    // Inject your API keys here
+    modelInstanceFn = { model ->
+        val apiKey = System.getenv("OPENAI_API_KEY")
+        model.model!!.instance(key = apiKey)
+    },
+    openBrowser = true, // Watch it run
+    timeoutMinutes = 15
+     +)
+
+harness.run() // Blocks until completion
+```
+
+**What happens:**
+1.  The harness boots the server.
+2.  It injects the `prompt` as if a user typed it into the chat.
+3.  The agent plans, executes tools, and writes files to the temp workspace.
+4.  On completion, `results.md` is written, and the harness shuts down.
+
+#### C. TaskTestHarness (Unit Testing Tools)
+
+Use `TaskTestHarness` to test a specific **Task Type** in isolation without the overhead of a planning agent. This is useful for debugging custom tools (e.g., a specific Crawler configuration or a custom API integration).
+
+**Key Parameters:**
+*   `taskType`: The definition of the tool (e.g., `FileModificationTask`).
+*   `typeConfig`: The static configuration for the tool (e.g., allowed domains for a crawler).
+*   `executionConfig`: The runtime input for the tool (e.g., the specific URL to crawl).
+
+**Example Usage:**
+
+```kotlin
+// 1. Define the Task Type and Configuration
+val myTaskType = TaskType.FileModification
+val myConfig = FileModificationConfig(name = "FileEditor")
+
+// 2. Define the specific job
+val executionInput = FileModificationExecutionConfig(
+    instructions = "Create a Hello World python script",
+    files = listOf()
+     +)
+
+// 3. Run the Harness
+val harness = TaskTestHarness(
+    taskType = myTaskType,
+    typeConfig = myConfig,
+    executionConfig = executionInput,
+    modelInstanceFn = { /* inject keys */ },
+    openBrowser = false
+     +)
+
+harness.run()
+```
+
+#### D. Platform Configuration
+
+When embedding these harnesses in a standalone application (outside the standard plugin environment), you may need to initialize the platform services (Authentication, Authorization, Tool Providers) before running a harness.
+
+```kotlin
+// Call this once at application startup
+PlanTestHarness.configurePlatform()
+```
+
+This static helper ensures that:
+1.  `TaskType` and `ToolProvider` enumerations are loaded.
+2.  A default "No-Op" Authentication/Authorization manager is installed (allowing local execution without login).
+3.  Global orchestration settings are initialized.

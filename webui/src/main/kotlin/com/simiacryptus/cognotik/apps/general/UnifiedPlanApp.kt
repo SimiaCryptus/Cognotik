@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -163,11 +164,17 @@ ${settings?.toJson()}
 //            }
 
             val task = ui.newTask(true)
-            cognitiveMode.apply { initialize(task) }.handleUserMessage(expandedMessage, task)
+            val mode = cognitiveMode.apply { initialize(task) }
+            mode.handleUserMessage(expandedMessage, task)
+            onComplete(mode, task)
         } catch (e: Throwable) {
             log.error("Error processing user message", e)
             ui.newTask().error(e)
         }
+    }
+
+    open fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
+        // No-op by default
     }
 
     /**

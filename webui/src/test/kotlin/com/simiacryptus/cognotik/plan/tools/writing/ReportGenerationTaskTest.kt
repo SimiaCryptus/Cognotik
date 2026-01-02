@@ -15,7 +15,7 @@ object ReportGenerationTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
-   //@Test
+    @Test
     @Timeout(15, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         TaskTestHarness(

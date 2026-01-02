@@ -10,6 +10,7 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm
 import org.apache.pdfbox.pdmodel.interactive.form.PDTextField
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
 object PdfFormTaskTest {
@@ -20,7 +21,7 @@ object PdfFormTaskTest {
         com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
-    //@Test
+     @Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         val harness = TaskTestHarness(

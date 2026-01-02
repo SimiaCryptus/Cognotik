@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataSt
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.text.SimpleDateFormat
@@ -72,7 +73,7 @@ Task Type: `${taskType.name}`
         return socketManager
     }
 
-    protected open fun onTaskComplete(result: String) {}
+    protected open fun onTaskComplete(result: String, task: SessionTask) {}
     protected open fun onTaskError(e: Throwable) {}
 
     protected open fun executeTask(
@@ -103,7 +104,7 @@ Task Type: `${taskType.name}`
                 task = task,
                 resultFn = { result ->
                     task.complete(result.renderMarkdown)
-                    onTaskComplete(result)
+                    onTaskComplete(result, task)
                 },
                 orchestrationConfig = orchestrationConfig
             )
