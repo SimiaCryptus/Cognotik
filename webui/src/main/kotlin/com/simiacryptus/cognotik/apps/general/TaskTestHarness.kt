@@ -105,7 +105,7 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
             log.info("Server started at $url")
 
             singleTaskApp.initSettings<Any>(session)
-            singleTaskApp.newSession(User(email = "test@example.com"), session)
+            SessionProxyServer.agents[session] = singleTaskApp.newSession(defaultUser, session)
 
             if (openBrowser) {
                 try {
