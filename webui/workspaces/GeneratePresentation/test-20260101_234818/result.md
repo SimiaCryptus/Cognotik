@@ -1,1 +1,0 @@
-Successfully wrote presentation.js, reveal_init.js, kotlin_presentation.html, presentation.css
