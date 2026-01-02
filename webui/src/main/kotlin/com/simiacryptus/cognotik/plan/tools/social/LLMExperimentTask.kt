@@ -138,8 +138,7 @@ class LLMExperimentTask(
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("**Repetitions per Condition:** $repetitions")
@@ -164,7 +163,6 @@ class LLMExperimentTask(
             appendLine("*Initializing experiment...*")
         }
         overviewTask.add(overviewContent.renderMarkdown())
-        task.update()
 
 // Generate experimental conditions
         val conditions = generateExperimentalConditions(
@@ -188,7 +186,6 @@ class LLMExperimentTask(
                 appendLine("*Running experiments...*")
             }.renderMarkdown()
         )
-        task.update()
 
         // Data collection
         val results = ConcurrentHashMap<Int, MutableList<ExperimentalResult>>()
@@ -197,8 +194,7 @@ class LLMExperimentTask(
 
         try {
             // Create progress tab
-            val progressTask = task.ui.newTask(false)
-            tabs["Progress"] = progressTask.placeholder
+            val progressTask = tabs.newTask("Progress")
 
             conditions.forEachIndexed { conditionIndex, condition ->
                 val conditionStartTime = System.currentTimeMillis()
@@ -220,7 +216,6 @@ class LLMExperimentTask(
                         appendLine()
                     }.renderMarkdown()
                 )
-                task.update()
 
                 transcriptWriter?.apply {
                     write("## Condition ${conditionIndex + 1}: Temperature ${condition.temperature}\n\n")
@@ -315,7 +310,6 @@ class LLMExperimentTask(
                         appendLine()
                     }.renderMarkdown()
                 )
-                task.update()
 
                 overviewTask.add(
                     buildString {
@@ -323,7 +317,6 @@ class LLMExperimentTask(
                         appendLine("✅ Condition ${conditionIndex + 1}/${conditions.size} complete")
                     }.renderMarkdown()
                 )
-                task.update()
 
 
             }
@@ -335,8 +328,7 @@ class LLMExperimentTask(
 
             // Generate detailed statistical tables
             log.info("Generating detailed statistical tables")
-            val statisticalTablesTask = task.ui.newTask(false)
-            tabs["Statistical Tables"] = statisticalTablesTask.placeholder
+            val statisticalTablesTask = tabs.newTask("Statistical Tables")
             statisticalTablesTask.add(
                 buildString {
                     appendLine("# Detailed Statistical Analysis")
@@ -344,7 +336,6 @@ class LLMExperimentTask(
                     appendLine("*Computing comprehensive statistics...*")
                 }.renderMarkdown()
             )
-            task.update()
             val statisticalTables = generateStatisticalTables(
                 allResults,
                 conditions,
@@ -362,7 +353,6 @@ class LLMExperimentTask(
                     appendLine(statisticalTables)
                 }.renderMarkdown()
             )
-            task.update()
 
 
             // Analysis
@@ -374,9 +364,7 @@ class LLMExperimentTask(
                     appendLine("*Analyzing results...*")
                 }.renderMarkdown()
             )
-            task.update()
-            val analysisTask = task.ui.newTask(false)
-            tabs["Analysis"] = analysisTask.placeholder
+            val analysisTask = tabs.newTask("Analysis")
             analysisTask.add(
                 buildString {
                     appendLine("# Statistical Analysis")
@@ -384,7 +372,6 @@ class LLMExperimentTask(
                     appendLine("*Computing statistics...*")
                 }.renderMarkdown()
             )
-            task.update()
             val analysis = analyzeResults(allResults, conditions, metrics, statisticalAnalysis, statisticalTables)
             transcriptWriter?.apply {
                 write("\n---\n\n## Statistical Analysis\n\n")
@@ -398,12 +385,10 @@ class LLMExperimentTask(
                     appendLine(analysis)
                 }.renderMarkdown()
             )
-            task.update()
 
             // Generate insights using LLM
             log.info("Generating insights from experimental results")
-            val insightsTask = task.ui.newTask(false)
-            tabs["Insights"] = insightsTask.placeholder
+            val insightsTask = tabs.newTask("Insights")
 
             insightsTask.add(
                 buildString {
@@ -412,7 +397,6 @@ class LLMExperimentTask(
                     appendLine("*Generating insights...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             val insightsAgent = ChatAgent(
                 prompt = """
@@ -460,7 +444,6 @@ Be specific and reference the data provided.
                     appendLine(insights)
                 }.renderMarkdown()
             )
-            task.update()
 
             // Create summary
             val totalTime = System.currentTimeMillis() - startTime
@@ -538,7 +521,6 @@ Be specific and reference the data provided.
                     )
                 }.renderMarkdown()
             )
-            task.update()
 
             log.info("LLMExperimentTask completed: trials=${allResults.size}/${totalTrials}, time=${totalTime}ms")
 
@@ -550,7 +532,9 @@ Be specific and reference the data provided.
                 appendLine("---")
                 appendLine()
                 appendLine(
-                    "Full experiment report: <a href='$transcriptLink' target='_blank'>${transcriptLink.split('/','\\').last()}</a> <a href='${
+                    "Full experiment report: <a href='$transcriptLink' target='_blank'>${
+                        transcriptLink.split('/', '\\').last()
+                    }</a> <a href='${
                         transcriptLink.removeSuffix(".md") + ".html"
                     }' target='_blank'>html</a>"
                 )
@@ -582,7 +566,6 @@ Be specific and reference the data provided.
                     appendLine("**Completed Trials:** ${results.size}/${totalTrials}")
                 }.renderMarkdown()
             )
-            task.update()
 
             val errorOutput = buildString {
                 appendLine("# Error in LLM Experiment")
@@ -802,8 +785,7 @@ Be specific and reference the data provided.
     }
 
 
-
-  private fun generateStatisticalTables(
+    private fun generateStatisticalTables(
         results: List<ExperimentalResult>,
         conditions: List<ExperimentalCondition>,
         significanceLevel: Double
@@ -1306,7 +1288,7 @@ Be specific and reference the data provided.
         val transcriptFile = "llm_experiment_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
+        task.add(
             "Writing experiment report to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(
                     ".md"
@@ -1339,6 +1321,7 @@ Be specific and reference the data provided.
         val LLMExperiment = TaskType(
             "LLMExperiment",
             "Social",
+            LLMExperimentTask::class.java,
             LLMExperimentTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Conduct controlled experiments on LLM behavior",
@@ -1356,7 +1339,7 @@ Be specific and reference the data provided.
                 <li>Concurrent execution for faster experiment completion</li>
               </ul>
               <p><strong>Use cases:</strong> Bias studies, cognitive studies, logical performance analysis, consistency testing</p>
-            """
+            """,
         )
 
         fun compressedStringBits(str: String): Int {
@@ -1367,11 +1350,12 @@ Be specific and reference the data provided.
             return byteStream.size() * 8 // bits
         }
 
-      /**
-       * Calculates the compressibility between two strings based on their compressed sizes.
-       * 1 -> incompressible (high diversity)
-       * 2 -> duplicate (low diversity)
-       */
-        fun compressibility(strA: String, strB: String): Double = (compressedStringBits(strA) + compressedStringBits(strA)).toDouble() / compressedStringBits(strA + strB).toDouble()
+        /**
+         * Calculates the compressibility between two strings based on their compressed sizes.
+         * 1 -> incompressible (high diversity)
+         * 2 -> duplicate (low diversity)
+         */
+        fun compressibility(strA: String, strB: String): Double =
+            (compressedStringBits(strA) + compressedStringBits(strA)).toDouble() / compressedStringBits(strA + strB).toDouble()
     }
 }

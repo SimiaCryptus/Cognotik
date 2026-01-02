@@ -139,34 +139,26 @@ CausalInference - Identify causal relationships and root causes
             )
 
             // Overview tab
-            val overviewTask = task.ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
-            var overviewTaskStatus = overviewTask.add(
+            val overviewTask = tabs.newTask("Overview")
+
+            // Static Overview Content
+            overviewTask.add(MarkdownUtil.renderMarkdown("## Input Files\n\n${getInputFileCode()}", ui = ui))
+            overviewTask.add(
                 MarkdownUtil.renderMarkdown(
-                    """
-            |## Input Files
-            |
-            |${getInputFileCode()}
-            |
-            |---
-            |
-            |## Causal Inference Analysis
-            |
-            |**Observed Effect:** $observedEffect
-            |
-            |**Status:** 🔄 Gathering evidence...
-        """.trimMargin(), ui = ui
+                    "---\n\n## Causal Inference Analysis\n\n**Observed Effect:** $observedEffect",
+                    ui = ui
                 )
             )
-            task.update()
+
+            // Dynamic Status Buffer
+            val overviewStatusBuffer =
+                overviewTask.add(MarkdownUtil.renderMarkdown("**Status:** 🔄 Gathering evidence...", ui = ui))
 
             // Gather evidence from sources
             log.debug("Gathering evidence from ${executionConfig?.evidence_sources?.size ?: 0} sources")
-            val evidenceTask = task.ui.newTask(false)
-            tabs["Evidence Sources"] = evidenceTask.placeholder
-            val evidenceLoading =
+            val evidenceTask = tabs.newTask("Evidence Sources")
+            val evidenceStatusBuffer =
                 evidenceTask.add(MarkdownUtil.renderMarkdown("## Evidence Sources\n\n🔄 Loading evidence...", ui = ui))
-            task.update()
 
             val evidenceContext = gatherEvidence()
             log.debug("Evidence gathered: ${evidenceContext.length} characters")
@@ -182,25 +174,19 @@ CausalInference - Identify causal relationships and root causes
         |
         """.trimMargin().toByteArray()
             )
-            evidenceLoading?.clear()
-            evidenceTask.add(
+            evidenceStatusBuffer?.setLength(0)
+            evidenceStatusBuffer?.append(
                 MarkdownUtil.renderMarkdown(
-                    """
-            |## Evidence Sources
-            |
-            |✅ Evidence gathered successfully
-            |
-            |**Sources processed:** ${executionConfig?.evidence_sources?.size ?: 0}
-            |
-            |<details>
-            |<summary>Evidence Context:</summary>
-            |
-            |```
-            |${evidenceContext.take(maxOutputLength)}${if (evidenceContext.length > maxOutputLength) "\n... (truncated)" else ""}
-            |```
-            |
-            |</details>
-        """.trimMargin(), ui = ui
+                    "## Evidence Sources\n\n✅ Evidence gathered successfully\n\n**Sources processed:** ${executionConfig?.evidence_sources?.size ?: 0}",
+                    ui = ui
+                )
+            )
+
+            evidenceTask.expandable(
+                "Evidence Context",
+                MarkdownUtil.renderMarkdown(
+                    "```\n${evidenceContext.take(maxOutputLength)}${if (evidenceContext.length > maxOutputLength) "\n... (truncated)" else ""}\n```",
+                    ui = ui
                 )
             )
             task.update()
@@ -217,21 +203,14 @@ CausalInference - Identify causal relationships and root causes
             }
 
             // Update overview with causes
-            overviewTaskStatus?.clear()
-            overviewTaskStatus = overviewTask.add(
+            overviewStatusBuffer?.setLength(0)
+            overviewStatusBuffer?.append(
                 MarkdownUtil.renderMarkdown(
-                    """
-            |## Causal Inference Analysis
-            |
-            |**Observed Effect:** $observedEffect
-            |
-            |$causesText
-            |
-            |**Status:** 🔄 Analyzing causal relationships...
-        """.trimMargin(), ui = ui
+                    "$causesText\n\n**Status:** 🔄 Analyzing causal relationships...",
+                    ui = ui
                 )
             )
-            task.update()
+            overviewTask.update()
             log.debug("Building analysis prompt with ${potentialCauses.size} potential causes")
 
             // Build the analysis prompt
@@ -249,15 +228,13 @@ CausalInference - Identify causal relationships and root causes
                 model = api,
             )
             // Analysis tab
-            val analysisTask = task.ui.newTask(false)
-            tabs["Causal Analysis"] = analysisTask.placeholder
-            val analysisTaskLoading = analysisTask.add(
+            val analysisTask = tabs.newTask("Causal Analysis")
+            val analysisBuffer = analysisTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## Causal Analysis\n\n🔄 Performing causal inference...",
                     ui = ui
                 )
             )
-            task.update()
             log.debug("Requesting causal analysis from LLM")
 
 
@@ -274,50 +251,35 @@ CausalInference - Identify causal relationships and root causes
         """.trimMargin().toByteArray()
             )
 
-            analysisTaskLoading?.clear()
-            analysisTask.add(
+            analysisBuffer?.setLength(0)
+            analysisBuffer?.append(
                 MarkdownUtil.renderMarkdown(
-                    """
-                |## Causal Analysis Results
-                |
-                |✅ Analysis complete
-                |
-                |$answer
-                """.trimMargin(),
+                    "## Causal Analysis Results\n\n✅ Analysis complete\n\n$answer",
                     ui = ui
                 )
             )
             task.update()
 
             // Update overview status
-            overviewTaskStatus?.clear()
-            overviewTask.add(
+            overviewStatusBuffer?.setLength(0)
+            overviewStatusBuffer?.append(
                 MarkdownUtil.renderMarkdown(
-                    """
-            |## Causal Inference Analysis
-            |
-            |**Observed Effect:** $observedEffect
-            |
-            |$causesText
-            |
-            |**Status:** ✅ Analysis complete
-        """.trimMargin(), ui = ui
+                    "$causesText\n\n**Status:** ✅ Analysis complete",
+                    ui = ui
                 )
             )
-            task.update()
+            overviewTask.update()
 
             // If building causal graph, generate visualization
             if (executionConfig.build_causal_graph) {
                 log.debug("Building causal graph visualization")
-                val graphTask = task.ui.newTask(false)
-                tabs["Causal Graph"] = graphTask.placeholder
-                var graphTaskStatus = graphTask.add(
+                val graphTask = tabs.newTask("Causal Graph")
+                val graphBuffer = graphTask.add(
                     MarkdownUtil.renderMarkdown(
                         "## Causal Graph\n\n🔄 Generating causal graph visualization...",
                         ui = ui
                     )
                 )
-                task.update()
 
                 val graphPrompt = """
 Based on the causal analysis above, create a Mermaid diagram showing the causal relationships.
@@ -348,9 +310,9 @@ Generate the Mermaid diagram now:
           """.trimMargin().toByteArray()
                 )
 
-                graphTaskStatus?.clear()
+                graphBuffer?.setLength(0)
                 if (mermaidCode.isNotEmpty()) {
-                    graphTaskStatus = graphTask.add(
+                    graphBuffer?.append(
                         MarkdownUtil.renderMarkdown(
                             """
                         |## Causal Graph
@@ -365,7 +327,7 @@ Generate the Mermaid diagram now:
                         )
                     )
                 } else {
-                    graphTask.add(
+                    graphBuffer?.append(
                         MarkdownUtil.renderMarkdown(
                             """
                         |## Causal Graph
@@ -425,7 +387,7 @@ Generate the Mermaid diagram now:
 
             task.error(e)
 
-            val errorTask = task.ui.newTask(false)
+            val errorTask = task.newTask()
 //            tabs["Error"] = errorTask.placeholder
             errorTask.add(
                 MarkdownUtil.renderMarkdown(
@@ -607,6 +569,7 @@ Generate the causal analysis now:
         val CausalInference = TaskType(
             "CausalInference",
             "Reasoning",
+            CausalInferenceTask::class.java,
             CausalInferenceTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Identify causal relationships and root causes",
@@ -620,7 +583,7 @@ Generate the causal analysis now:
                 <li>Provides evidence-based causal reasoning</li>
                 <li>Useful for debugging and root cause analysis</li>
               </ul>
-            """
+            """,
         )
     }
 }

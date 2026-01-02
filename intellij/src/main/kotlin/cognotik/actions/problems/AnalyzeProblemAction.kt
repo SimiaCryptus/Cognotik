@@ -168,7 +168,7 @@ class AnalyzeProblemAction : AnAction() {
                         """.trimIndent(),
                         model = AppSettingsState.instance.smartChatClient,
                         parsingChatter = AppSettingsState.instance.fastChatClient,
-                    ).answer(listOf(problemInfo),)
+                    ).answer(listOf(problemInfo))
 
                     task.add(
                         AgentPatterns.displayMapInTabs(
@@ -228,7 +228,7 @@ class AnalyzeProblemAction : AnAction() {
             The diff should include 2 lines of context before and after every change.
             """.trimIndent(),
                 model = AppSettingsState.instance.smartChatClient
-            ).answer(listOf(error.message ?: ""),)
+            ).answer(listOf(error.message ?: ""))
 
             return "<div>${
                 renderMarkdown(

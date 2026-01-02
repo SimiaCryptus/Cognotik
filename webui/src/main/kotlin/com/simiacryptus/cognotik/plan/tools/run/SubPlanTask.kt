@@ -4,7 +4,6 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -13,9 +12,6 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
 class SubPlanTask(
     orchestrationConfig: OrchestrationConfig, planTask: SubPlanTaskExecutionConfigData?
@@ -27,10 +23,9 @@ class SubPlanTask(
         @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveSettings: CognitiveModeConfig? = null,
         @Description("Task-specific configurations available within sub-plans") val taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
         @Description("Supplemental description of the purpose of this configuration") val purpose: String = "",
-        task_type: String = "RecursiveToolDefinition",
         model: ApiChatModel? = null,
-        name: String? = task_type,
-    ) : TaskTypeConfig(task_type = task_type, name = name, model = model), ValidatedObject {
+        name: String? = SubPlan.name,
+    ) : TaskTypeConfig(task_type = SubPlan.name, name = name, model = model), ValidatedObject {
         val cognitiveMode: CognitiveModeType<*>? get() = cognitiveSettings?.type
         override fun validate(): String? {
             // Validate that taskSettings don't contain invalid configurations
@@ -104,7 +99,8 @@ class SubPlanTask(
             val typeConfig = this.typeConfig ?: throw RuntimeException()
             // Get the cognitive mode for sub-planning
             val cognitiveMode =
-                (typeConfig.cognitiveMode?.newSettings() ?: orchestrationConfig.cognitiveSettings ?: CognitiveModeType.Adaptive.newSettings())
+                (typeConfig.cognitiveMode?.newSettings() ?: orchestrationConfig.cognitiveSettings
+                ?: CognitiveModeType.Adaptive.newSettings())
 
             val subConfig = orchestrationConfig.copy(
                 taskSettings = typeConfig.taskSettings,
@@ -118,7 +114,7 @@ class SubPlanTask(
             val tabs = TabbedDisplay(task)
 
             // Create planning context
-            val planningTask = task.ui.newTask(false)
+            val planningTask = task.newTask()
             tabs["Planning"] = planningTask.placeholder
 
             // Get the planning goal
@@ -127,9 +123,7 @@ class SubPlanTask(
                 ?: throw IllegalArgumentException("No planning goal specified for SubPlanningTask")
 
             // Append purpose if available
-            if (typeConfig.purpose.isNotEmpty()) planningGoal = planningGoal + """
-                Purpose: ${typeConfig.purpose}
-            """.trimIndent()
+            if (typeConfig.purpose.isNotEmpty()) planningGoal += "\n\nPurpose: ${typeConfig.purpose}"
 
             // Build context for the sub-planner
             val contextMessages = buildContextMessages(messages)
@@ -143,8 +137,8 @@ class SubPlanTask(
 
             // Initialize the cognitive mode
             val cognitiveInstance = cognitiveMode.type!!.getImpl(
-                task = planningTask, orchestrationConfig = subConfig, session = agent.session, user = agent.user
-            ).apply { initialize() }
+                orchestrationConfig = subConfig, session = agent.session, user = agent.user
+            ).apply { initialize(task) }
 
             // Display planning information
             val planningInfo = buildString {
@@ -170,37 +164,73 @@ class SubPlanTask(
             }
             transcript?.write(planningInfo.toByteArray())
             planningTask.add(planningInfo.renderMarkdown)
+            planningTask.complete()
 
-            // Execute the sub-plan using the cognitive mode
-            val executionTask = task.ui.newTask(false)
-            tabs["Execution"] = executionTask.placeholder
 
-            log.debug("Executing sub-plan with ${contextMessages.size} context messages")
 
-            // Handle the user message through the cognitive mode
-            transcript?.write("\n\n## Execution\n\n".toByteArray())
-            transcript?.write("**Planning Goal:**\n\n".toByteArray())
-            transcript?.write(planningGoal.toByteArray())
-            transcript?.write("\n\n".toByteArray())
 
-            cognitiveInstance.handleUserMessage(planningGoal, executionTask)
 
-            // Collect results from the cognitive mode's context
-            val results = cognitiveInstance.contextData()
 
-            log.info("Sub-plan execution completed with ${results.size} results")
 
-            // Create summary if configured
-            val summaryTask = task.ui.newTask(false)
-            tabs["Summary"] = summaryTask.placeholder
 
-            val summary = createSummary(results, planningGoal, summaryTask, orchestrationConfig)
-            transcript?.write("\n\n## Summary\n\n".toByteArray())
-            transcript?.write(summary.toByteArray())
-            transcript?.write("\n\n".toByteArray())
-            summaryTask.add(summary.renderMarkdown)
-            tabs.update()
-            resultFn(summary)
+            fun runExecution(): String {
+                // Execute the sub-plan using the cognitive mode
+                val executionTask = task.newTask()
+                tabs["Execution"] = executionTask.placeholder
+
+                log.debug("Executing sub-plan with ${contextMessages.size} context messages")
+
+                // Handle the user message through the cognitive mode
+                transcript?.write("\n\n## Execution\n\n".toByteArray())
+                transcript?.write("**Planning Goal:**\n\n".toByteArray())
+                transcript?.write(planningGoal.toByteArray())
+                transcript?.write("\n\n".toByteArray())
+
+                cognitiveInstance.handleUserMessage(planningGoal, executionTask)
+
+                // Collect results from the cognitive mode's context
+                val results = cognitiveInstance.contextData()
+
+                log.info("Sub-plan execution completed with ${results.size} results")
+
+                // Create summary if configured
+                val summaryTask = task.newTask()
+                tabs["Summary"] = summaryTask.placeholder
+
+                val summary = createSummary(results, planningGoal, summaryTask, orchestrationConfig)
+                transcript?.write("\n\n## Summary\n\n".toByteArray())
+                transcript?.write(summary.toByteArray())
+                transcript?.write("\n\n".toByteArray())
+                summaryTask.add(summary.renderMarkdown)
+                summaryTask.complete()
+                tabs.update()
+                return summary
+            }
+
+            if (orchestrationConfig.autoFix) {
+                val summary = runExecution()
+                resultFn(summary)
+                task.complete()
+            } else {
+                val semaphore = java.util.concurrent.Semaphore(0)
+                task.add(task.ui.hrefLink("▶ Run Sub-Plan", "btn btn-primary") {
+                    task.ui.pool.submit {
+                        try {
+                            val summary = runExecution()
+                            val footer = acceptButtonFooter(task.ui) {
+                                resultFn(summary)
+                                semaphore.release()
+                            }
+                            task.append(footer)
+                        } catch (e: Exception) {
+                            log.error("Error in manual sub-plan execution", e)
+                            task.error(e)
+                        }
+                    }
+                })
+                task.complete()
+                semaphore.acquire()
+            }
 
         } catch (e: Exception) {
             log.error("Error executing SubPlanningTask", e)
@@ -236,6 +266,18 @@ class SubPlanTask(
         results: List<String>, goal: String, task: SessionTask, orchestrationConfig: OrchestrationConfig
     ): String {
         log.info("Creating summary of ${results.size} sub-plan results")
+        if (results.isEmpty()) {
+            return buildString {
+                appendLine("# Sub-Planning Execution Completed")
+                appendLine()
+                appendLine("**Goal:** $goal")
+                appendLine()
+                appendLine("The sub-plan executed successfully. No specific data context was returned.")
+                appendLine()
+                appendLine("Check the Execution tab for detailed logs.")
+            }
+        }
+
 
         val combinedResults = results.joinToString("\n\n---\n\n")
 
@@ -297,27 +339,13 @@ class SubPlanTask(
         }
     }
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
-    }
-
-
     companion object {
         private val log = LoggerFactory.getLogger(SubPlanTask::class.java)
 
         val SubPlan = TaskType(
             "SubPlan",
             "Execution & Automation",
+            SubPlanTask::class.java,
             SubPlanTaskExecutionConfigData::class.java,
             SubPlanTaskTypeConfig::class.java,
             "Create and execute sub-plans using recursive planning",
@@ -332,7 +360,7 @@ class SubPlanTask(
                <li>Flexible cognitive mode selection per sub-plan</li>
                <li>Useful for complex multi-stage problems</li>
              </ul>
-           """
+           """,
         )
     }
 }

@@ -572,13 +572,13 @@ class CustomFileSetPatchAction : BaseAction() {
                                 treatDocumentsAsText.isSelected
                             )
                         }.filter { path ->
-                                val relativePath = patternRoot.relativize(path)
-                                // Skip current directory references
-                                if (relativePath.toString().isEmpty() || relativePath.toString() == ".") {
-                                    false
-                                } else {
-                                    matcher.matches(relativePath)
-                                }
+                            val relativePath = patternRoot.relativize(path)
+                            // Skip current directory references
+                            if (relativePath.toString().isEmpty() || relativePath.toString() == ".") {
+                                false
+                            } else {
+                                matcher.matches(relativePath)
+                            }
                         }.toList()
                     }
                 } catch (e: Exception) {
@@ -735,9 +735,9 @@ class CustomFileSetPatchAction : BaseAction() {
             return try {
                 val dirFiles = Files.walk(directory, MAX_WALK_DEPTH).use { stream ->
                     stream.filter {
-                            Files.isRegularFile(it) && isLLMTextFile(
-                                it.toFile(), treatDocumentsAsText.isSelected
-                            )
+                        Files.isRegularFile(it) && isLLMTextFile(
+                            it.toFile(), treatDocumentsAsText.isSelected
+                        )
                     }.limit(MAX_FILES_PER_PATTERN).toList()
                 }
                 if (dirFiles.isNotEmpty()) {

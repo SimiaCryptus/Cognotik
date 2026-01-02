@@ -25,7 +25,8 @@ import java.awt.datatransfer.DataFlavor.*
  * Base class for paste actions that convert clipboard content to appropriate code format
  * Supports both text and HTML clipboard content with automatic language detection
  */
-abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatInterface) : SelectionAction<String>(false) {
+abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatInterface) :
+    SelectionAction<String>(false) {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     /**
@@ -239,8 +240,6 @@ private fun String.makeAbsolute(): String {
         "https://$this"
     }
 }
-
-class SmartPasteAction : PasteActionBase({ it.smartChatClient })
 
 /**
  * Fast paste action using faster but simpler model

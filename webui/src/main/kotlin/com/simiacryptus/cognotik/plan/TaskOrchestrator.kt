@@ -56,7 +56,7 @@ class TaskOrchestrator(
         val planProcessingState = newState(plan)
         this.executionState = planProcessingState
         try {
-            val diagramTask = task.ui.newTask(false).apply { tabs["Plan"] = (placeholder) }
+            val diagramTask = tabs.newTask("Plan")
             executePlan(
                 diagramBuffer = diagramTask.add(
                     "## Task Dependency Graph\n${TRIPLE_TILDE}mermaid\n${buildMermaidGraph(planProcessingState.subTasks)}\n$TRIPLE_TILDE".renderMarkdown,
@@ -98,7 +98,7 @@ class TaskOrchestrator(
         orchestrationConfig: OrchestrationConfig,
     ) {
         val taskTabs = object : TabbedDisplay(
-            task.ui.newTask(false).apply { tabs["Session"] = placeholder },
+            tabs.newTask("Session"),
             additionalClasses = "task-tabs"
         ) {
             override fun renderTabButtons(): String {
@@ -128,12 +128,11 @@ class TaskOrchestrator(
             }
         }
         taskIdProcessingQueue.forEach { taskId ->
-            val newTask = task.ui.newTask(false)
-            executionState.uitaskMap[taskId] = newTask
             val subtask: TaskExecutionConfig? = executionState.subTasks[taskId]
             val description = subtask?.task_description
+            val newTask = taskTabs.newTask(description ?: taskId)
+            executionState.uitaskMap[taskId] = newTask
             log.debug("Creating task tab: $taskId ${System.identityHashCode(subtask)} $description")
-            taskTabs[description ?: taskId] = newTask.placeholder
         }
         Thread.sleep(100)
         while (taskIdProcessingQueue.isNotEmpty()) {
@@ -154,9 +153,7 @@ class TaskOrchestrator(
                 subTask.state = AbstractTask.TaskState.InProgress
                 taskTabs.update()
                 log.debug("Running task: ${System.identityHashCode(subTask)} ${subTask.task_description}")
-                val task = executionState.uitaskMap[taskId] ?: task.ui.newTask(false).apply {
-                    taskTabs[taskId] = placeholder
-                }
+                val task = executionState.uitaskMap[taskId] ?: taskTabs.newTask(taskId)
                 task.add(
                     ("\n## Task `" + taskId + "`" + (subTask.task_description ?: "") + "\n" +
                             TRIPLE_TILDE + "json" + JsonUtil.toJson(data = subTask) + "\n" + TRIPLE_TILDE + "\n").renderMarkdown

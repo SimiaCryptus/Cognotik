@@ -5,20 +5,18 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.FailedToImplementException
-import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.Retryable
-import com.simiacryptus.cognotik.util.TabbedDisplay
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import java.util.Locale
-import java.util.concurrent.TimeUnit
+import java.util.*
 import kotlin.reflect.KClass
 
 open class CodingTask<T : CodeRuntime>(
@@ -33,6 +31,7 @@ open class CodingTask<T : CodeRuntime>(
     val model: ChatInterface,
     private val mainTask: SessionTask,
     val retryable: Boolean = true,
+    val autoFix: Boolean = false,
 ) {
 
     open val codeAgent by lazy {
@@ -56,36 +55,35 @@ open class CodingTask<T : CodeRuntime>(
         codeRequest: CodeAgent.CodeRequest,
         task: SessionTask = mainTask,
     ) {
-        val task = ui.newTask(root = false).apply { task.complete(placeholder) }
+        val subTask = task.newTask()
+        task.complete(subTask.placeholder)
         if (retryable) {
-            Retryable(task) {
-                val task = ui.newTask(root = false)
-                ui.scheduledThreadPoolExecutor.schedule({
-                    ui.pool.submit {
-                        try {
-                            val statusSB = task.add("Running...")
-                            displayCode(task, codeRequest)
-                            statusSB?.clear()
-                        } catch (e: Throwable) {
-                            log.warn("Error", e)
-                            task.error(e)
-                        } finally {
-                            task.complete()
-                        }
-                    }
-                }, 100, TimeUnit.MILLISECONDS)
-                task.placeholder
-            }
+            Retryable(ui.newTask(true), process = { innerTask: SessionTask ->
+                try {
+                    val statusSB = innerTask.add("Running...")
+                    displayCode(innerTask, codeRequest)
+                    statusSB?.clear()
+                } catch (e: Throwable) {
+                    log.warn("Error", e)
+                    innerTask.error(e)
+                } finally {
+                    innerTask.complete()
+                }
+                Unit
+            }.async(task.ui))
         } else {
-            try {
-                val statusSB = task.add("Running...")
-                displayCode(task, codeRequest)
-                statusSB?.clear()
-            } catch (e: Throwable) {
-                log.warn("Error", e)
-                task.error(e)
-            } finally {
-                task.complete()
+            ui.pool.submit {
+                try {
+                    val statusSB = subTask.add("Running...")
+                    displayCode(subTask, codeRequest)
+                    statusSB?.clear()
+                    subTask.update()
+                } catch (e: Throwable) {
+                    log.warn("Error", e)
+                    subTask.error(e)
+                } finally {
+                    subTask.complete()
+                }
             }
         }
     }
@@ -120,7 +118,11 @@ open class CodingTask<T : CodeRuntime>(
     ) {
         try {
             displayCode(task, response)
-            displayFeedback(task, append(codeRequest, response), response)
+            if (autoFix && canPlay) {
+                execute(task, response, codeRequest)
+            } else {
+                displayFeedback(task, append(codeRequest, response), response)
+            }
         } catch (e: Throwable) {
             task.error(e)
             log.warn("Error", e)
@@ -140,29 +142,26 @@ open class CodingTask<T : CodeRuntime>(
         val string = response.renderedResponse
             ?: "\n```${codeAgent.language.lowercase(Locale.getDefault())}\n${response.code.trim()}\n```\n"
         task.expanded("Code", string.renderMarkdown)
+        task.transcript()?.write("# Generated Code\n$string\n".toByteArray())
     }
 
     open fun displayFeedback(
         task: SessionTask, request: CodeAgent.CodeRequest, response: CodeAgent.CodeResult
     ) {
+        val formHandle = task.add("", additionalClasses = "reply-message")
         val formText = StringBuilder()
-        var formHandle: StringBuilder? = null
-        formHandle = task.add(
-            "<div>\n${
-                if (!canPlay) "" else playButton(
-                    task, request, response, formText
-                ) { formHandle!! }
-            }\n</div>\n${
-                ui.textInput { feedback ->
-                    responseAction(task, "Revising...", formHandle!!, formText) {
-                        feedback(task, feedback, request, response)
-                    }
-                }
-            }",
-            additionalClasses = "reply-message"
-        )
-        formText.append(formHandle.toString())
-        formHandle.toString()
+        formText.append("<div>\n")
+        if (canPlay) {
+            formText.append(playButton(task, request, response, formText) { formHandle!! })
+        }
+        formText.append("\n</div>\n")
+        formText.append(ui.textInput { feedback ->
+            responseAction(task, "Revising...", formHandle, formText) {
+                feedback(task, feedback, request, response)
+            }
+        })
+        formHandle?.append(formText)
+        task.update()
         task.complete()
     }
 
@@ -182,17 +181,20 @@ open class CodingTask<T : CodeRuntime>(
         task: SessionTask, message: String, formHandle: StringBuilder?, formText: StringBuilder, fn: () -> Unit = {}
     ) {
         formHandle?.clear()
+        task.update()
         val header = task.header(message, 2)
         try {
             fn()
         } finally {
             header?.clear()
-            val revertButton: StringBuilder? = null
-            task.complete(ui.hrefLink("↩", "href-link regen-button") {
+            var revertButton: StringBuilder? = null
+            val link = ui.hrefLink("↩", "href-link regen-button") {
                 revertButton?.clear()
                 formHandle?.append(formText)
-                task.complete()
-            })
+                task.update()
+            }
+            revertButton = task.add(link)
+            task.complete()
         }
     }
 
@@ -253,12 +255,25 @@ open class CodingTask<T : CodeRuntime>(
     protected open fun execute(
         task: SessionTask, response: CodeAgent.CodeResult
     ): String {
+        val transcript = task.transcript()
         val resultValue = response.result.resultValue
         val resultOutput = response.result.resultOutput
+        transcript?.write(
+            """
+            # Execution Result
+            ## Output
+            ```text
+            $resultOutput
+            ```
+            ## Value
+            ```text
+            $resultValue
+            ```
+            """.trimIndent().toByteArray()
+        )
         val tabs = TabbedDisplay(task)
         tabs["Result"] = "```text\n$resultValue\n```".renderMarkdown()
         tabs["Output"] = "```text\n$resultOutput\n```".renderMarkdown()
-        task.update()
         return when {
             resultValue.isBlank() || resultValue.trim().lowercase() == "null" -> "# Output\n```text\n$resultOutput\n```"
             else -> "# Result\n```\n$resultValue\n```\n\n# Output\n```text\n$resultOutput\n```"

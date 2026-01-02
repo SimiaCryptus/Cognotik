@@ -318,7 +318,7 @@ class CrawlerAgentTask(
                 return "Warning: No seed items found to start crawling"
             }
             // Create seed links tab
-            val seedLinksTask = crawlTask.ui.newTask(false)
+            val seedLinksTask = crawlTask.newTask()
             crawlTabs["Seed Links"] = seedLinksTask.placeholder
             val seedLinksContent = buildString {
                 appendLine("# Seed Links")
@@ -341,7 +341,7 @@ class CrawlerAgentTask(
                 }
             }
             seedLinksTask.add(seedLinksContent.renderMarkdown)
-            crawlTask.update()
+            seedLinksTask.complete()
             // Log seed links to transcript
             transcriptStream?.let { stream ->
                 writeToTranscript(stream, "## Seed Links\n\n$seedLinksContent\n\n")
@@ -755,9 +755,8 @@ class CrawlerAgentTask(
         log.info("Queuing page for processing: url='$pageUrl', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
 
         val subTask = try {
-            tabs.task.ui.newTask(false).apply {
+            tabs.task.newTask().apply {
                 tabs[pageUrl] = placeholder
-                tabs.task.update()
             }
         } catch (e: Exception) {
             log.error("Failed to create subtask for URL: $pageUrl", e)
@@ -842,6 +841,9 @@ class CrawlerAgentTask(
             try {
                 val url = link
                 val title = page.title
+                task.add("## ${currentIndex}. [${title}]($url)".renderMarkdown)
+                val statusBuffer = task.add("Fetching content...", additionalClasses = "text-muted")
+
                 val processPageResult = buildString {
                     this.appendLine("## ${currentIndex}. [${title}]($url)")
                     this.appendLine()
@@ -871,6 +873,9 @@ class CrawlerAgentTask(
                             pool = agent.pool,
                             fetchStrategy = fetchStrategy
                         )
+                        statusBuffer?.setLength(0)
+                        statusBuffer?.append("Processing content...")
+                        task.update()
                         log.debug("Fetched content for '$url': ${content.length} characters")
                         if (content.length < (typeConfig.min_content_length ?: 500)) {
                             log.info("Content too short for '$url': ${content.length} < ${typeConfig.min_content_length ?: 500} chars, skipping")
@@ -885,6 +890,8 @@ class CrawlerAgentTask(
                                 metadata = mapOf("content_length" to content.length)
                             )
                             allPageResults[currentIndex] = pageResult
+                            task.add("*Content too short (${content.length} chars), skipping this result*".renderMarkdown)
+                            statusBuffer?.setLength(0); task.update()
                             return@buildString
                         }
 
@@ -904,6 +911,8 @@ class CrawlerAgentTask(
                                 pageResult,
                                 currentIndex
                             )
+                            task.add("*Error processing this result: ${pageResult.metadata["error"]}*".renderMarkdown)
+                            statusBuffer?.setLength(0); task.update()
                             return@buildString
                         }
 
@@ -917,10 +926,14 @@ class CrawlerAgentTask(
                                 pageResult,
                                 currentIndex
                             )
+                            task.add("*Irrelevant content, skipping this result*".renderMarkdown)
+                            statusBuffer?.setLength(0); task.update()
                             return@buildString
                         }
 
                         saveStrategyResult(webSearchDir, url, pageResult, currentIndex)
+                        statusBuffer?.setLength(0); task.update()
+                        task.add(pageResult.content.renderMarkdown)
 
                         this.appendLine(pageResult.content)
                         this.appendLine()
@@ -931,6 +944,7 @@ class CrawlerAgentTask(
                             this.appendLine("---")
                             this.appendLine()
                             this.appendLine("**Crawling terminated:** ${pageResult.terminationReason}")
+                            task.add("\n\n**Crawling terminated:** ${pageResult.terminationReason}".renderMarkdown)
                             this.appendLine()
                         }
 
@@ -949,12 +963,14 @@ class CrawlerAgentTask(
                             if (linkData.isNotEmpty()) {
                                 this.appendLine()
                                 this.appendLine("### Extracted Links (${linkData.size} found)")
+                                task.add("### Extracted Links (${linkData.size} found)".renderMarkdown)
                                 this.appendLine()
                             }
 
 
                             var addedCount = 0
                             val skippedLinks = mutableListOf<Pair<LinkData, String>>()
+                            val addedLinksBuffer = StringBuilder()
 
                             linkData.take(10) // Limit links per page to prevent explosion
                                 .filter { link ->
@@ -981,6 +997,7 @@ class CrawlerAgentTask(
                                     if (addToQueue(newLink, maxDepth, maxQueueSize)) {
                                         addedCount++
                                         this.appendLine("- ✅ **[${link.title ?: "Untitled"}](${link.url})** (depth: ${newLink.depth}, relevance: ${link.relevance_score})")
+                                        addedLinksBuffer.appendLine("- ✅ **[${link.title ?: "Untitled"}](${link.url})** (depth: ${newLink.depth}, relevance: ${link.relevance_score})")
                                     } else {
                                         skippedLinks.add(link to "Queue limit reached or max depth exceeded")
                                     }
@@ -988,16 +1005,21 @@ class CrawlerAgentTask(
                             // Show skipped links
                             if (skippedLinks.isNotEmpty()) {
                                 this.appendLine()
-                                this.appendLine("<details>")
-                                this.appendLine("<summary>Skipped Links (${skippedLinks.size})</summary>")
-                                this.appendLine()
-                                skippedLinks.forEach { (link, reason) ->
-                                    this.appendLine("- ⏭️ **[${link.title ?: "Untitled"}](${link.url})** - *${reason}*")
+                                val skippedBlock = buildString {
+                                    appendLine("<details>")
+                                    appendLine("<summary>Skipped Links (${skippedLinks.size})</summary>")
+                                    appendLine()
+                                    skippedLinks.forEach { (link, reason) ->
+                                        appendLine("- ⏭️ **[${link.title ?: "Untitled"}](${link.url})** - *${reason}*")
+                                    }
+                                    appendLine()
+                                    appendLine("</details>")
                                 }
-                                this.appendLine()
-                                this.appendLine("</details>")
+                                this.append(skippedBlock)
+                                task.add(skippedBlock.renderMarkdown)
                                 this.appendLine()
                             }
+                            if (addedLinksBuffer.isNotEmpty()) task.add(addedLinksBuffer.toString().renderMarkdown)
 
                             log.info("Added $addedCount new links to queue from '$url' (filtered from ${linkData.size} total)")
                             // Add summary
@@ -1032,6 +1054,7 @@ class CrawlerAgentTask(
                         }
                     } catch (e: Exception) {
                         log.error("Error processing URL: $url", e)
+                        task.error(e)
                         errorCount.incrementAndGet()
                         synchronized(pageQueueLock) {
                             page.error = e.message
@@ -1048,7 +1071,6 @@ class CrawlerAgentTask(
                         }
                     }
                 }
-                task.add(processPageResult.renderMarkdown)
                 analysisResultsMap[currentIndex] = processPageResult
                 log.info("Successfully processed page ${currentIndex}: url='${link}', processing_time=${System.currentTimeMillis() - pageStartTime}ms")
             } catch (e: Exception) {
@@ -1080,6 +1102,7 @@ class CrawlerAgentTask(
                 page.processingTimeMs = System.currentTimeMillis() - pageStartTime
                 page.completed = true
                 log.debug("Page processing completed: url='${link}', time=${page.processingTimeMs}ms, error='${page.error ?: "none"}'")
+                task.complete()
             }
         }
     }
@@ -1206,7 +1229,7 @@ class CrawlerAgentTask(
         errorCount: Int
     ) {
         try {
-            val queueDetailsTask = tabs.task.ui.newTask(false)
+            val queueDetailsTask = tabs.task.newTask()
             tabs["Queue Details"] = queueDetailsTask.placeholder
             val queueDetails = buildString {
                 appendLine("# Page Queue Details")
@@ -1271,7 +1294,6 @@ class CrawlerAgentTask(
                 }
             }
             queueDetailsTask.complete(queueDetails.renderMarkdown)
-            tabs.task.update()
             log.info("Added page queue details tab with statistics")
         } catch (e: Exception) {
             log.error("Failed to create page queue details tab", e)
@@ -1417,6 +1439,7 @@ class CrawlerAgentTask(
         val CrawlerAgent = TaskType(
             "CrawlerAgent",
             "Online & Search",
+            CrawlerAgentTask::class.java,
             CrawlerTaskExecutionConfigData::class.java,
             CrawlerTaskTypeConfig::class.java,
             "Search Google, fetch top results, and analyze content",
@@ -1428,7 +1451,7 @@ class CrawlerAgentTask(
             <li>Analyzes content for specific goals</li>
             <li>Generates detailed analysis reports</li>
  </ul>
-        """
+        """,
         )
 
     }

@@ -37,6 +37,7 @@ open class TranscriptionClient(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TranscriptionClient::class.java)
     }
+
     protected fun post(request: HttpPost): String = withClient { EntityUtils.toString(it.execute(request).entity) }
 
     open fun transcription(wavAudio: ByteArray, prompt: String = "", audioModel: AudioModels): String =
@@ -61,7 +62,8 @@ open class TranscriptionClient(
                     throw RuntimeException(IOException(errorObject["message"].asString))
                 }
                 try {
-                    val result = JsonUtil.objectMapper().readValue(response, ModelSchema.TranscriptionResult::class.java)
+                    val result =
+                        JsonUtil.objectMapper().readValue(response, ModelSchema.TranscriptionResult::class.java)
                     result.text ?: ""
                 } catch (e: Exception) {
                     jsonObject.get("text").asString ?: ""

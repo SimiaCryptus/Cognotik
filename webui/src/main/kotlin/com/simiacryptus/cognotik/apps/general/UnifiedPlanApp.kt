@@ -22,7 +22,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 
 /**
  * A unified application that can use different cognitive modes based on configuration.
@@ -48,7 +47,6 @@ abstract class UnifiedPlanApp(
     private val rangeExpansionPattern = Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""")
     private val topicReferencePattern = Regex("""@([A-Z][a-zA-Z0-9_]*)""")
 
-    private val expansionPool = Executors.newFixedThreadPool(4)
     private val aggregateTopics = ConcurrentHashMap<String, MutableList<String>>()
     override val stickyInput = true
     override val inputCnt: Int = 4
@@ -68,7 +66,8 @@ abstract class UnifiedPlanApp(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> initSettings(session: Session): T = OrchestrationConfig(sessionId = session.sessionId, null) as T
+    override fun <T : Any> initSettings(session: Session): T =
+        OrchestrationConfig(sessionId = session.sessionId, null) as T
 
     abstract fun instance(model: ApiChatModel): ChatInterface
 
@@ -144,7 +143,6 @@ ${settings?.toJson()}
             } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
             val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeType.Chat).getImpl(
-                task = ui.newTask(true),
                 orchestrationConfig = settings,
                 session = session,
                 user = user
@@ -165,12 +163,18 @@ ${settings?.toJson()}
 //                return
 //            }
 
-            cognitiveMode.apply { initialize() }.handleUserMessage(expandedMessage, ui.newTask(true))
-
+            val task = ui.newTask(true)
+            val mode = cognitiveMode.apply { initialize(task) }
+            mode.handleUserMessage(expandedMessage, task)
+            onComplete(mode, task)
         } catch (e: Throwable) {
             log.error("Error processing user message", e)
             ui.newTask().error(e)
         }
+    }
+
+    open fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
+        // No-op by default
     }
 
     /**
@@ -189,39 +193,6 @@ ${settings?.toJson()}
                 matchResult.value
             }
         }
-    }
-
-    /**
-     * Checks if the message contains any expansion syntax
-     */
-    private fun hasExpansionSyntax(message: String): Boolean {
-        return expansionExpressionPattern.find(message) != null ||
-                sequenceExpansionPattern.find(message) != null ||
-                rangeExpansionPattern.find(message) != null
-    }
-
-    /**
-     * Processes a message that contains expansion expressions.
-     * This will create multiple tabs for each expansion option and process each variant.
-     */
-    private fun processMessageWithExpansions(
-        session: Session,
-        user: User = defaultUser,
-        userMessage: String,
-        ui: SocketManager,
-        orchestrationConfig: OrchestrationConfig
-    ) {
-        val task = ui.newTask()
-        val processor = FixedConcurrencyProcessor(expansionPool, 4)
-        processMessageRecursive(
-            session = session,
-            user = user,
-            currentMessage = userMessage,
-            ui = ui,
-            task = task,
-            processor = processor,
-            orchestrationConfig = orchestrationConfig
-        )
     }
 
     /**
@@ -259,11 +230,10 @@ ${settings?.toJson()}
             return
         }
         val cognitiveMode = orchestrationConfig.cognitiveMode?.getImpl(
-            task = task,
             orchestrationConfig = orchestrationConfig,
             session = session,
             user = user
-        )?.apply { initialize() } ?: throw IllegalStateException("Cognitive mode not configured")
+        )?.apply { initialize(task) } ?: throw IllegalStateException("Cognitive mode not configured")
         cognitiveMode.handleUserMessage(currentMessage, task)
     }
 

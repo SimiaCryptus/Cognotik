@@ -16,33 +16,31 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.Path
 
 /**
-* Configuration for AdaptivePlanningMode.
-*/
+ * Configuration for AdaptivePlanningMode.
+ */
 open class AdaptivePlanningConfig(
     type: CognitiveModeType<*> = CognitiveModeType.Adaptive,
     var maxTaskHistoryChars: Int = 10000,
     var maxTasksPerIteration: Int = 5,
-    var maxIterations: Int = 10
+    var maxIterations: Int = 10,
+    val cognitiveStrategy: CognitiveSchemaStrategy = CognitiveSchemaStrategy.ProjectManager
 ) : CognitiveModeConfig(type)
+
 /**
  * A cognitive mode that implements the auto-planning strategy with iterative thinking.
  */
-open class AdaptivePlanningMode<T>(
-    task: SessionTask,
+open class AdaptivePlanningMode(
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser,
-    val cognitiveStrategy: CognitiveSchemaStrategy<T>,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 ) : CognitiveMode<AdaptivePlanningConfig>(
-    task,
     orchestrationConfig,
     session,
     user
@@ -51,12 +49,12 @@ open class AdaptivePlanningMode<T>(
     private val log = LoggerFactory.getLogger(AdaptivePlanningMode::class.java)
     private val currentUserMessage = AtomicReference<String?>(null)
     private val executionRecords = mutableListOf<ExecutionRecord>()
-    private val reasoningState = AtomicReference<T?>(null)
+    private val reasoningState = AtomicReference<Any?>(null)
     private var isRunning = false
     private var transcriptStream: FileOutputStream? = null
     private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+))}""")
 
-    override fun initialize() {
+    override fun initialize(task : SessionTask) {
         log.debug("Initializing AutoPlanMode")
     }
 
@@ -65,7 +63,7 @@ open class AdaptivePlanningMode<T>(
         if (!isRunning) {
             isRunning = true
             log.debug("Starting new auto plan chat session")
-            startAutoPlanChat(userMessage)
+            startAutoPlanChat(task, userMessage)
         } else {
             log.debug("Injecting user message into ongoing chat")
             task.echo("User: $userMessage".renderMarkdown)
@@ -73,30 +71,30 @@ open class AdaptivePlanningMode<T>(
         }
     }
 
-    private fun startAutoPlanChat(userMessage: String) {
+    private fun startAutoPlanChat(task : SessionTask, userMessage: String) {
         log.debug("Starting auto plan chat with initial message: $userMessage")
         task.echo(renderMarkdown(userMessage))
         transcriptStream = transcript(task)
 
         val continueLoop = true
         val tabbedDisplay = TabbedDisplay(task)
-        this.task.ui.pool.execute {
+        task.ui.pool.execute {
             try {
                 log.debug("Starting main execution loop")
                 task.complete()
 
-                val coordinator = this.task.ui.dataStorage?.let {
+                val coordinator = task.ui.dataStorage?.let {
                     TaskOrchestrator(
                         user = user,
                         session = session,
                         dataStorage = it,
                         root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                            ?: this.task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
+                            ?: task.ui.dataStorage!!.getSessionDir(user, session).toPath() ?: File(".").toPath()
                     )
                 }
                 log.debug("Created plan coordinator")
 
-                val initialStatus = cognitiveStrategy.initialize(
+                val initialStatus = config.cognitiveStrategy.initialize(
                     userMessage,
                     contextData(),
                     orchestrationConfig,
@@ -119,26 +117,22 @@ open class AdaptivePlanningMode<T>(
                     val ui = task.ui
                     val iterationTabbedDisplay = TabbedDisplay(task, additionalClasses = "iteration")
 
-                    ui.newTask(false).apply {
-                        iterationTabbedDisplay["Inputs"] = placeholder
+                    iterationTabbedDisplay.newTask("Inputs").apply {
                         val inputTabs = TabbedDisplay(this)
-                        ui.newTask(false).apply {
-                            inputTabs["Project Info"] = placeholder
+                        inputTabs.newTask("Project Info").apply {
                             contextData().forEach {
                                 complete(renderMarkdown(it, tabs = false))
                             }
                             complete()
                         }
                         formatEvalRecords().forEachIndexed { index, it ->
-                            ui.newTask(false).apply {
-                                inputTabs["Task ${index + 1}"] = placeholder
+                            inputTabs.newTask("Task ${index + 1}").apply {
                                 complete(renderMarkdown(it))
                             }
                             complete(renderMarkdown(it))
                         }
-                        ui.newTask(false).apply {
-                            inputTabs["Thinking Status"] = placeholder
-                            complete(renderMarkdown(cognitiveStrategy.formatState(currentThinkingStatus)))
+                        inputTabs.newTask("Thinking Status").apply {
+                            complete(renderMarkdown(config.cognitiveStrategy.formatState(currentThinkingStatus)))
                         }
                     }
 
@@ -168,13 +162,14 @@ open class AdaptivePlanningMode<T>(
                         val currentTaskId = "task_${index + 1}"
                         writeToTranscript("### Task $currentTaskId\n\n")
                         log.debug("Executing task $currentTaskId")
-                        val taskExecutionTask = ui.newTask(false)
+                        val taskExecutionTask = task.newTask()
                         val taskConfig = currentTask.task.tasks?.get(index)
                         val taskDescription =
                             taskConfig?.task_description ?: "No description provided for this task item."
                         taskExecutionTask.add("\n```json\n${taskConfig?.toJson()}\n```\n".renderMarkdown)
                         writeToTranscript("**Description:** $taskDescription\n\n```json\n${JsonUtil.toJson(taskConfig)}\n```\n\n")
-                        taskExecutionTask.verbose(
+                        taskExecutionTask.expandable(
+                            "Task Configuration",
 
                             """
  Executing task: `$currentTaskId` - $taskDescription
@@ -222,11 +217,11 @@ ${JsonUtil.toJson(taskConfig)}
                     executionRecords.addAll(completedTasks)
 
                     val thinkingStatusTask =
-                        ui.newTask(false).apply { iterationTabbedDisplay["Thinking Status"] = placeholder }
+                        iterationTabbedDisplay.newTask("Thinking Status")
                     try {
                         log.debug("Updating thinking status")
                         writeToTranscript("### Updated Thinking Status\n\n")
-                        val updatedStatus = cognitiveStrategy.update(
+                        val updatedStatus = config.cognitiveStrategy.update(
                             currentThinkingStatus,
                             completedTasks,
                             currentUserMessage.get(),
@@ -241,7 +236,7 @@ ${JsonUtil.toJson(taskConfig)}
                         thinkingStatusTask.complete(
                             renderMarkdown(
                                 "Updated Thinking Status:\n${
-                                    cognitiveStrategy.formatState(updatedStatus)
+                                    config.cognitiveStrategy.formatState(updatedStatus)
                                 }"
                             )
                         )
@@ -261,12 +256,12 @@ ${JsonUtil.toJson(taskConfig)}
             } finally {
                 log.debug("Finalizing auto plan chat")
                 isRunning = false
-                val summaryTask = this.task.ui.newTask(false).apply { tabbedDisplay["Summary"] = placeholder }
+                val summaryTask = tabbedDisplay.newTask("Summary")
                 summaryTask.add(
                     renderMarkdown(
                         "Auto Plan Chat completed. Final thinking status:\n${
                             reasoningState.get()?.let {
-                                cognitiveStrategy.formatState(it)
+                                config.cognitiveStrategy.formatState(it)
                             } ?: "null"
                         }")
                 )
@@ -295,7 +290,7 @@ ${JsonUtil.toJson(taskConfig)}
             agent = coordinator,
             messages = listOf(
                 userMessage,
-                "Current thinking status:\n${cognitiveStrategy.formatState(currentThinkingStatus)}"
+                "Current thinking status:\n${config.cognitiveStrategy.formatState(currentThinkingStatus)}"
             ) + formatEvalRecords(),
             task = task,
             resultFn = { result.append(it) },
@@ -307,7 +302,7 @@ ${JsonUtil.toJson(taskConfig)}
 
     private fun getNextTask(
         userMessage: String,
-        reasoningState: T,
+        reasoningState: Any,
         task: SessionTask
     ): List<TaskData>? {
         Tasks.initDescriber(orchestrationConfig, describer)
@@ -364,22 +359,32 @@ ${JsonUtil.toJson(taskConfig)}
                     }".trim()
                 })
         )
-        val answer = parsedActor.answer(
-            listOf(userMessage) + contextData() + listOf(
-                """
-        Current thinking status: ${cognitiveStrategy.formatState(reasoningState)}
-        ${cognitiveStrategy.getTaskSelectionGuidance(reasoningState)}
+        val inputMessages = listOf(userMessage) + contextData() + listOf(
+            """
+        Current thinking status: ${config.cognitiveStrategy.formatState(reasoningState)}
+        ${config.cognitiveStrategy.getTaskSelectionGuidance(reasoningState)}
         """.trimIndent()
-            ) + formatEvalRecords(),
-        )
+        ) + formatEvalRecords()
 
+        val responseText = if (orchestrationConfig.autoFix) {
+            parsedActor.answer(inputMessages).text
+        } else {
+            Discussable(
+                task = task,
+                heading = "Plan Review",
+                userMessage = { userMessage },
+                initialResponse = { parsedActor.answer(inputMessages) },
+                outputFn = { it.text },
+                reviseResponse = { history -> parsedActor.respond(history.map { it.component1() }) }
+            ).call()?.text
+        }
 
-        val executor = this.task.ui.pool
+        val executor = task.ui.pool
             ?: throw IllegalStateException("SocketManager or its pool is null for expansion processing")
         val processor = FixedConcurrencyProcessor(executor, 4)
 
         val expandedTasks = processTaskExpansionRecursive(
-            currentText = answer.text,
+            currentText = responseText ?: "",
             task = task,
             parsedActor = parsedActor,
             processor = processor
@@ -446,7 +451,7 @@ ${JsonUtil.toJson(taskConfig)}
             val tabs = TabbedDisplay(task)
             val futures = options.map { option ->
                 processor.submit {
-                    val subTask = this.task.ui.newTask(false).apply { tabs[option] = placeholder }
+                    val subTask = tabs.newTask(option)
                     val nextText = currentText.replaceFirst(match.value, option)
                     processTaskExpansionRecursive(nextText, subTask, parsedActor, processor)
                 }
@@ -454,7 +459,6 @@ ${JsonUtil.toJson(taskConfig)}
             return futures.flatMap { it.get() }
         }
     }
-
 
 
     private fun formatEvalRecords(maxTotalLength: Int = config.maxTaskHistoryChars): List<String> {
@@ -591,20 +595,6 @@ ${JsonUtil.toJson(taskConfig)}
         val description: String? = null
     )
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "adaptive_planning_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
-    }
-
     private fun writeToTranscript(content: String) {
         transcriptStream?.write(content.toByteArray())
     }
@@ -613,530 +603,5 @@ ${JsonUtil.toJson(taskConfig)}
     companion object {
         val inputCnt = 1
 
-    }
-}
-
-interface CognitiveSchemaStrategy<T> {
-    val name: String
-    val description: String
-    val stateClass: Class<T>
-    fun initialize(
-        userMessage: String,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): T
-
-    fun update(
-        currentState: T,
-        completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
-        userMessage: String?,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): T
-
-    fun formatState(state: T): String
-    fun getTaskSelectionGuidance(state: T): String
-}
-
-open class ProjectManagerStrategy(
-    override val name: String = "Project Manager",
-    override val description: String = "Standard goal-oriented planning.",
-    val initPrompt: String? = null,
-    val updatePrompt: String? = null
-) : CognitiveSchemaStrategy<AdaptivePlanningMode.ReasoningState> {
-    override val stateClass = AdaptivePlanningMode.ReasoningState::class.java
-    override fun initialize(
-        userMessage: String,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): AdaptivePlanningMode.ReasoningState {
-        return ParsedAgent(
-            name = "ThinkingStatusInitializer",
-            resultClass = AdaptivePlanningMode.ReasoningState::class.java,
-            exampleInstance = AdaptivePlanningMode.ReasoningState(
-                initialPrompt = "Example prompt",
-                goals = AdaptivePlanningMode.Goals(
-                    shortTerm = mutableListOf(AdaptivePlanningMode.Goal("Understand the user's request")),
-                    longTerm = mutableListOf(AdaptivePlanningMode.Goal("Complete the user's task"))
-                ),
-                knowledge = AdaptivePlanningMode.Knowledge(
-                    facts = mutableListOf("Initial Context: User's request received"),
-                    openQuestions = mutableListOf("What is the first task?")
-                ),
-                executionContext = AdaptivePlanningMode.ExecutionContext(
-                    nextSteps = mutableListOf("Analyze the initial prompt", "Identify key objectives"),
-                )
-            ),
-            prompt = initPrompt ?: """
-        Initialize a comprehensive thinking status for an AI assistant based on the user's prompt.
-        Goals:
-        1. Short-term goals: Define immediate objectives that can be accomplished in 1-2 iterations
-        2. Long-term goals: Outline the overall project objectives and desired end state
-        Knowledge Base:
-        1. Facts: Extract concrete information and requirements from the prompt
-        2. Hypotheses: Form initial assumptions that need validation
-        3. Open Questions: List critical uncertainties and information gaps
-        Execution Context:
-        1. Next Steps: Plan initial 2-3 concrete actions
-        2. Potential Challenges: Identify possible obstacles and constraints
-        3. Available Resources: List tools and capabilities at disposal
-        Analysis Guidelines:
-        * Break down complex requirements into manageable components
-        * Consider both technical and non-technical aspects
-        * Identify dependencies and prerequisites
-        * Maintain alignment between short-term actions and long-term goals
-        * Ensure scalability and maintainability of the approach
-      """.trimIndent(),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
-            temperature = orchestrationConfig.temperature,
-            describer = describer
-        ).answer(listOf(userMessage) + contextData).obj.apply {
-            initialPrompt = userMessage
-        }
-    }
-
-    override fun update(
-        currentState: AdaptivePlanningMode.ReasoningState,
-        completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
-        userMessage: String?,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): AdaptivePlanningMode.ReasoningState {
-        return ParsedAgent(
-            name = "UpdateQuestionsActor",
-            resultClass = AdaptivePlanningMode.ReasoningState::class.java,
-            exampleInstance = AdaptivePlanningMode.ReasoningState(
-                initialPrompt = "Create a Python script to analyze log files and generate a summary report",
-                confidence = 0.8,
-                iteration = 1,
-                goals = AdaptivePlanningMode.Goals(
-                    shortTerm = mutableListOf(
-                        AdaptivePlanningMode.Goal(
-                            "Understand log file format requirements",
-                            isRigid = true,
-                            priority = 1
-                        ),
-                        AdaptivePlanningMode.Goal("Define report structure", priority = 2),
-                        AdaptivePlanningMode.Goal("Plan implementation approach", priority = 3)
-                    ),
-                    longTerm = mutableListOf(
-                        AdaptivePlanningMode.Goal("Deliver working Python script", isRigid = true, priority = 1),
-                        AdaptivePlanningMode.Goal("Ensure robust error handling", priority = 2),
-                        AdaptivePlanningMode.Goal("Provide documentation", priority = 3)
-                    )
-                ),
-                knowledge = AdaptivePlanningMode.Knowledge(
-                    facts = mutableListOf(
-                        "Project requires Python programming",
-                        "Output format needs to be a summary report",
-                        "Input consists of log files"
-                    ),
-                    hypotheses = mutableListOf(
-                        "Log files might be in different formats",
-                        "Performance optimization may be needed for large files"
-                    ),
-                    openQuestions = mutableListOf(
-                        "What is the specific log file format?",
-                        "Are there any performance requirements?",
-                        "What specific metrics should be included in the report?"
-                    )
-                ),
-                executionContext = AdaptivePlanningMode.ExecutionContext(
-                    completedTasks = mutableListOf(
-                        "Initial requirements analysis",
-                        "Project scope definition"
-                    ),
-                    currentTask = AdaptivePlanningMode.CurrentTask(
-                        taskId = "TASK_003",
-                        description = "Design log parsing algorithm"
-                    ),
-                    nextSteps = mutableListOf(
-                        "Implement log file reader",
-                        "Create report generator",
-                        "Add error handling",
-                        "Invoke reflect task if needed"
-                    )
-                )
-            ),
-            prompt = updatePrompt ?: """
-      Given the current thinking status, the last completed task, its result, and any repeating error signals,
-      update the open questions and next steps to guide the planning process.
-      Reflect on what went well and what could be improved.
-      Reassess the goals (paying attention to priorities and rigidity) and adjust the confidence level.
-      If error patterns are recurring or progress slows, trigger a reflection loop by adding a 'reflect' task.
-    """.trimIndent(),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            parsingChatter = orchestrationConfig.defaultFast,
-            temperature = orchestrationConfig.temperature,
-            describer = describer
-        ).answer(
-            listOf("Current thinking status: ${formatState(currentState)}") +
-                    contextData +
-                    completedTasks.flatMap { record ->
-                        val t: TaskExecutionConfig? = record.task
-                        listOf(
-                            "Completed task: ${t?.task_description}",
-                            "Task result: ${record.result}",
-                            record.reflections?.let { "Reflection: Positive: ${it.positiveNotes}, Improvements: ${it.improvementSuggestions}" }
-                                ?: "")
-                    } +
-                    (userMessage?.let { listOf("User message: $it") } ?: listOf()),
-        ).obj.apply {
-            knowledge?.facts?.apply {
-                this.addAll(completedTasks.mapIndexed { index, record ->
-                    "Task ${(executionContext?.completedTasks?.size ?: 0) + index + 1} Result: ${record.result}"
-                })
-            }
-        }
-    }
-
-    override fun formatState(state: AdaptivePlanningMode.ReasoningState): String {
-        return "```json\n${JsonUtil.toJson(state)}\n```"
-    }
-
-    override fun getTaskSelectionGuidance(state: AdaptivePlanningMode.ReasoningState): String {
-        return "Please choose the next single task to execute based on the current status.\nIf there are no tasks to execute, return {}."
-    }
-}
-data class ScientificState(
-    @Description("The core question or problem being investigated.")
-    val researchQuestion: String? = null,
-    @Description("List of hypotheses with confidence levels and evidence requirements.")
-    val currentHypotheses: MutableList<Hypothesis>? = null,
-    @Description("Facts that have been verified through evidence.")
-    val establishedFacts: MutableList<String>? = null,
-    @Description("Theories that have been proven false.")
-    val refutedTheories: MutableList<String>? = null,
-    @Description("Log of experiments or investigations performed.")
-    val experimentLog: MutableList<String>? = null
-)
-data class Hypothesis(
-    val statement: String = "",
-    val confidence: Double = 0.0,
-    val evidenceNeeded: String = ""
-)
-class ScientificMethodStrategy : CognitiveSchemaStrategy<ScientificState> {
-    override val name = "Scientific Researcher"
-    override val description = "Hypothesis-driven investigation."
-    override val stateClass = ScientificState::class.java
-    override fun initialize(
-        userMessage: String,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): ScientificState {
-        return ParsedAgent(
-            name = "ScientificInitializer",
-            resultClass = ScientificState::class.java,
-            exampleInstance = ScientificState(
-                researchQuestion = "Why is the system crashing?",
-                currentHypotheses = mutableListOf(
-                    Hypothesis("Memory leak in loop", 0.4, "Heap dump analysis"),
-                    Hypothesis("Database timeout", 0.3, "Log timestamp correlation")
-                ),
-                establishedFacts = mutableListOf("Crashes occur every 24 hours"),
-                refutedTheories = mutableListOf("Disk space full"),
-                experimentLog = mutableListOf("Checked disk space")
-            ),
-            prompt = """
-                Formulate a scientific research plan based on the user request.
-                1. Define the core research question.
-                2. Propose initial hypotheses with confidence levels.
-                3. Identify what evidence is needed to prove/disprove them.
-                4. List any known facts provided in the prompt.
-            """.trimIndent(),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
-            temperature = orchestrationConfig.temperature,
-            describer = describer
-        ).answer(listOf(userMessage) + contextData).obj
-    }
-    override fun update(
-        currentState: ScientificState,
-        completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
-        userMessage: String?,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): ScientificState {
-        return ParsedAgent(
-            name = "ScientificUpdater",
-            resultClass = ScientificState::class.java,
-            exampleInstance = currentState,
-            prompt = """
-                Analyze the results of the recent tasks.
-                1. Did the results confirm or refute any hypothesis?
-                2. Move proven hypotheses to established facts.
-                3. Move disproven hypotheses to refuted theories.
-                4. Update confidence levels based on new evidence.
-                5. Add new hypotheses if new questions arise.
-                6. Update the experiment log.
-            """.trimIndent(),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
-            temperature = orchestrationConfig.temperature,
-            describer = describer
-        ).answer(
-            listOf("Current State: ${formatState(currentState)}") +
-                    contextData +
-                    completedTasks.map { "Task: ${it.task?.task_description}\nResult: ${it.result}" } +
-                    (userMessage?.let { listOf("User: $it") } ?: emptyList())
-        ).obj
-    }
-    override fun formatState(state: ScientificState) = JsonUtil.toJson(state)
-    override fun getTaskSelectionGuidance(state: ScientificState): String {
-        return "Select tasks specifically designed to falsify or validate the top hypothesis. Prioritize information gathering over content generation."
-    }
-}
-data class AgileState(
-    val userStory: String? = null,
-    val acceptanceCriteria: MutableList<String>? = null,
-    val currentPhase: String? = null, // "TEST_FAILING", "IMPLEMENTING", "REFACTORING"
-    val knownBugs: MutableList<String>? = null,
-    val todoList: MutableList<String>? = null
-)
-class AgileDeveloperStrategy : CognitiveSchemaStrategy<AgileState> {
-    override val name = "Agile Developer"
-    override val description = "Iterative Test-Driven Development."
-    override val stateClass = AgileState::class.java
-    override fun initialize(
-        userMessage: String,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): AgileState {
-        return ParsedAgent(
-            name = "AgileInitializer",
-            resultClass = AgileState::class.java,
-            exampleInstance = AgileState(
-                userStory = "As a user, I want to login so that I can access my data",
-                acceptanceCriteria = mutableListOf("Valid credentials logs in", "Invalid credentials shows error"),
-                currentPhase = "TEST_FAILING",
-                knownBugs = mutableListOf(),
-                todoList = mutableListOf("Create login test", "Implement login function")
-            ),
-            prompt = """
-                Break the request into a User Story and Acceptance Criteria.
-                Initialize the process in the 'TEST_FAILING' phase (TDD).
-                Create a TODO list of small, incremental steps.
-            """.trimIndent(),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
-            temperature = orchestrationConfig.temperature,
-            describer = describer
-        ).answer(listOf(userMessage) + contextData).obj
-    }
-    override fun update(
-        currentState: AgileState,
-        completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
-        userMessage: String?,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): AgileState {
-        return ParsedAgent(
-            name = "AgileUpdater",
-            resultClass = AgileState::class.java,
-            exampleInstance = currentState,
-            prompt = """
-                Update the Agile state based on task results.
-                - If in TEST_FAILING and tests passed, move to REFACTORING.
-                - If in TEST_FAILING and tests failed (as expected), move to IMPLEMENTING.
-                - If in IMPLEMENTING and tests pass, move to REFACTORING.
-                - If in REFACTORING and code is clean, pick next TODO and move to TEST_FAILING.
-                - Update known bugs and TODO list.
-            """.trimIndent(),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
-            temperature = orchestrationConfig.temperature,
-            describer = describer
-        ).answer(
-            listOf("Current State: ${formatState(currentState)}") +
-                    contextData +
-                    completedTasks.map { "Task: ${it.task?.task_description}\nResult: ${it.result}" } +
-                    (userMessage?.let { listOf("User: $it") } ?: emptyList())
-        ).obj
-    }
-    override fun formatState(state: AgileState) = JsonUtil.toJson(state)
-    override fun getTaskSelectionGuidance(state: AgileState): String {
-        return when (state.currentPhase) {
-            "TEST_FAILING" -> "Create a test file or run existing tests to confirm failure."
-            "IMPLEMENTING" -> "Write code to satisfy the failing test."
-            "REFACTORING" -> "Optimize the code without changing behavior."
-            else -> "Check acceptance criteria and pick the next item."
-        }
-    }
-}
-data class AuditState(
-    val targetScope: String? = null,
-    val riskAssessment: MutableList<Risk>? = null,
-    val complianceChecklist: MutableMap<String, Boolean>? = null,
-    val vulnerabilitiesFound: MutableList<String>? = null,
-    val finalVerdict: String? = null
-)
-data class Risk(
-    val description: String = "",
-    val severity: String = "LOW",
-    val status: String = "OPEN"
-)
-class CriticalAuditorStrategy : CognitiveSchemaStrategy<AuditState> {
-    override val name = "Critical Auditor"
-    override val description = "Security and logic validation."
-    override val stateClass = AuditState::class.java
-    override fun initialize(
-        userMessage: String,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): AuditState {
-        return ParsedAgent(
-            name = "AuditInitializer",
-            resultClass = AuditState::class.java,
-            exampleInstance = AuditState(
-                targetScope = "Login Module",
-                riskAssessment = mutableListOf(Risk("SQL Injection", "HIGH", "OPEN")),
-                complianceChecklist = mutableMapOf("GDPR" to false),
-                vulnerabilitiesFound = mutableListOf(),
-                finalVerdict = "PENDING"
-            ),
-            prompt = """
-                Identify potential risks, attack vectors, and compliance requirements in the user request.
-                Define the scope of the audit.
-                Initialize the risk assessment.
-            """.trimIndent(),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
-            temperature = orchestrationConfig.temperature,
-            describer = describer
-        ).answer(listOf(userMessage) + contextData).obj
-    }
-    override fun update(
-        currentState: AuditState,
-        completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
-        userMessage: String?,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): AuditState {
-        return ParsedAgent(
-            name = "AuditUpdater",
-            resultClass = AuditState::class.java,
-            exampleInstance = currentState,
-            prompt = """
-                Review the output. Be extremely critical.
-                - If any error or weakness is found, log it in vulnerabilities.
-                - Update risk status (MITIGATED, CONFIRMED, OPEN).
-                - Update compliance checklist.
-                - If serious issues found, escalate severity.
-            """.trimIndent(),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
-            temperature = orchestrationConfig.temperature,
-            describer = describer
-        ).answer(
-            listOf("Current State: ${formatState(currentState)}") +
-                    contextData +
-                    completedTasks.map { "Task: ${it.task?.task_description}\nResult: ${it.result}" } +
-                    (userMessage?.let { listOf("User: $it") } ?: emptyList())
-        ).obj
-    }
-    override fun formatState(state: AuditState) = JsonUtil.toJson(state)
-    override fun getTaskSelectionGuidance(state: AuditState): String {
-        return "Choose tasks that stress-test the system. Try to break the implementation. Do not fix issues, only report them."
-    }
-}
-data class NarrativeState(
-    val theme: String? = null,
-    val targetAudience: String? = null,
-    val outline: MutableList<Chapter>? = null,
-    val currentSection: String? = null,
-    val toneCheck: String? = null // e.g., "Too formal", "Just right"
-)
-data class Chapter(
-    val title: String = "",
-    val summary: String = "",
-    val status: String = "DRAFT"
-)
-class CreativeWriterStrategy : CognitiveSchemaStrategy<NarrativeState> {
-    override val name = "Creative Writer"
-    override val description = "Narrative and content generation."
-    override val stateClass = NarrativeState::class.java
-    override fun initialize(
-        userMessage: String,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): NarrativeState {
-        return ParsedAgent(
-            name = "WriterInitializer",
-            resultClass = NarrativeState::class.java,
-            exampleInstance = NarrativeState(
-                theme = "Cyberpunk Noir",
-                targetAudience = "Young Adults",
-                outline = mutableListOf(Chapter("The Setup", "Hero meets villain", "TODO")),
-                currentSection = "The Setup",
-                toneCheck = "Pending"
-            ),
-            prompt = """
-                Develop a narrative structure based on the user request.
-                Define the theme and target audience.
-                Create a high-level outline of chapters or sections.
-            """.trimIndent(),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
-            temperature = orchestrationConfig.temperature,
-            describer = describer
-        ).answer(listOf(userMessage) + contextData).obj
-    }
-    override fun update(
-        currentState: NarrativeState,
-        completedTasks: List<AdaptivePlanningMode.ExecutionRecord>,
-        userMessage: String?,
-        contextData: List<String>,
-        orchestrationConfig: OrchestrationConfig,
-        task: SessionTask,
-        describer: TaskContextYamlDescriber
-    ): NarrativeState {
-        return ParsedAgent(
-            name = "WriterUpdater",
-            resultClass = NarrativeState::class.java,
-            exampleInstance = currentState,
-            prompt = """
-                Review the generated content.
-                - Check if the tone matches the theme.
-                - Update the status of chapters (DRAFT, REVIEWED, DONE).
-                - Move to the next section if the current one is satisfactory.
-                - Adjust the outline if the story evolves differently.
-            """.trimIndent(),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            parsingChatter = orchestrationConfig.defaultFast.getChildClient(task),
-            temperature = orchestrationConfig.temperature,
-            describer = describer
-        ).answer(
-            listOf("Current State: ${formatState(currentState)}") +
-                    contextData +
-                    completedTasks.map { "Task: ${it.task?.task_description}\nResult: ${it.result}" } +
-                    (userMessage?.let { listOf("User: $it") } ?: emptyList())
-        ).obj
-    }
-    override fun formatState(state: NarrativeState) = JsonUtil.toJson(state)
-    override fun getTaskSelectionGuidance(state: NarrativeState): String {
-        return "Focus on generating content. If the tone is off, select a task to rewrite or edit. Do not execute code unless it is to generate text."
     }
 }

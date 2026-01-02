@@ -36,7 +36,7 @@ class SessionProxyServer : ApplicationServer(
     }
 
     override fun newSession(user: User, session: Session) =
-        chats[session]?.newSession(user, session) ?: agents[session]
+        agents[session] ?: chats[session]?.newSession(user, session)
         ?: throw IllegalStateException("No agent found for session $session")
 
     companion object {

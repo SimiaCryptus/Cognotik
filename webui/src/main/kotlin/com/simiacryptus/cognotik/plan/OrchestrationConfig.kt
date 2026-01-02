@@ -10,10 +10,10 @@ import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.AutoFixTaskExecutionConfigData
-import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -90,7 +90,7 @@ class OrchestrationConfig(
             taskDescriptions = availableTaskTypes.joinToString("\n") { taskType ->
                 val impl = TaskType.getImpl(this, taskType)
                 "* ${impl.promptSegment()}"
-            } + (this.workingDir?.let {root ->
+            } + (this.workingDir?.let { root ->
                 "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
             } ?: ""),
             model = defaultSmart.getChildClient(task),
@@ -232,19 +232,4 @@ class OrchestrationConfig(
         }
     }
 
-    fun addTaskConfig(taskType: TaskType<*, *>, newConfig: TaskTypeConfig) {
-        val configs = getTaskConfigs(taskType)
-        if (configs.any { it.name == newConfig.name }) {
-            throw IllegalArgumentException("A configuration with the name '${newConfig.name}' already exists for task type '${taskType.name}'")
-        }
-        taskSettings[newConfig.task_type!!] = newConfig
-    }
-
-    fun removeTaskConfig(taskType: TaskType<*, *>, selectedConfig: String) {
-        val configs = getTaskConfigs(taskType)
-        val configToRemove = configs.firstOrNull { it.name == selectedConfig }
-        if (configToRemove != null) {
-            taskSettings.remove(configToRemove.task_type)
-        }
-    }
 }

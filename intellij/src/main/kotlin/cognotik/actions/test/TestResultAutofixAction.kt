@@ -67,17 +67,6 @@ class TestResultAutofixAction : BaseAction() {
             return str
         }
 
-        fun findGitRoot(path: Path?): Path? {
-            var current: Path? = path
-            while (current != null) {
-                if (current.resolve(".git").toFile().exists()) {
-                    return current
-                }
-                current = current.parent
-            }
-            return null
-        }
-
         fun findGitRoot(virtualFile: VirtualFile?): VirtualFile? {
             var current: VirtualFile? = virtualFile
             while (current != null) {
@@ -109,7 +98,7 @@ class TestResultAutofixAction : BaseAction() {
     }
 
     override fun isEnabled(e: AnActionEvent): Boolean {
-      if (!super.isEnabled(e)) return false
+        if (!super.isEnabled(e)) return false
         val testProxy = e.getData(AbstractTestProxy.DATA_KEY)
         return testProxy != null
     }
@@ -206,7 +195,7 @@ class TestResultAutofixAction : BaseAction() {
                         """.trimIndent(),
                         model = AppSettingsState.instance.smartChatClient,
                         parsingChatter = AppSettingsState.instance.fastChatClient,
-                    ).answer(listOf(testInfo), )
+                    ).answer(listOf(testInfo))
                     if (plan.obj.errors.isNullOrEmpty()) {
                         task.add("No errors identified in test result")
                         return@Retryable task.placeholder
@@ -215,8 +204,8 @@ class TestResultAutofixAction : BaseAction() {
                     task.add(
                         AgentPatterns.displayMapInTabs(
                             mapOf(
-                              "Text" to plan.text.renderMarkdown,
-                              "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
+                                "Text" to plan.text.renderMarkdown,
+                                "JSON" to "${tripleTilde}json\n${JsonUtil.toJson(plan.obj)}\n$tripleTilde".renderMarkdown,
                             )
                         )
                     )
@@ -276,7 +265,7 @@ $projectStructure
                 The diff should include 2 lines of context before and after every change.
                 """.trimIndent(),
                 model = AppSettingsState.instance.smartChatClient
-            ).answer(listOf(error.message ?: ""), )
+            ).answer(listOf(error.message ?: ""))
             task.add("Processing suggested fixes...")
 
             val markdown = AddApplyFileDiffLinks.instrumentFileDiffs(

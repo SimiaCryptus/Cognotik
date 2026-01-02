@@ -5,9 +5,13 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 
 open class Retryable(
     task: SessionTask,
-    val socketManager: SocketManager = task.ui,
     val process: (StringBuilder) -> String
 ) : TabbedDisplay(task) {
+
+//    constructor(
+//        task: SessionTask,
+//        process: (SessionTask) -> Unit?,
+//    ) : this(task, process.async(task.ui))
 
     init {
         init()
@@ -36,7 +40,7 @@ open class Retryable(
             renderButton(index, pair.first)
         }
     }${
-        socketManager.hrefLink(
+        task.ui.hrefLink(
             "♻",
             """href-link""",
             null,
@@ -46,17 +50,15 @@ open class Retryable(
 """
 
     companion object {
-        fun retryable(
+        fun ((SessionTask) -> Unit?).async(
             socketManager: SocketManager,
-            pool: ImmediateExecutorService = socketManager.pool,
-            task: SessionTask = socketManager.newTask(true),
-            fn: (SessionTask) -> Unit
-        ) {
-            Retryable(task) {
-                val task = socketManager.newTask(false)
-                pool.submit { fn(task) }
-                task.placeholder
+            pool: ImmediateExecutorService = socketManager.pool
+        ): (StringBuilder) -> String = {
+            val task = socketManager.newTask(false)
+            pool.submit {
+                this(task)
             }
+            task.placeholder
         }
     }
 }

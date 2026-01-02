@@ -8,7 +8,8 @@ open class AuthenticationManager : AuthenticationInterface {
 
     private val users = HashMap<String, User>()
 
-    override fun getUser(accessToken: String?) = (if (null == accessToken) defaultUser else users[accessToken]) ?: defaultUser
+    override fun getUser(accessToken: String?) =
+        (if (null == accessToken) defaultUser else users[accessToken]) ?: defaultUser
 
     override fun putUser(accessToken: String, user: User): User {
         users[accessToken] = user

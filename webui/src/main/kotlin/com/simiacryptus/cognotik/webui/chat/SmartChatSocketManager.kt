@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -27,7 +28,7 @@ open class SmartChatSocketManager(
     override val systemPrompt: String,
     temperature: Double = 0.3,
     applicationClass: Class<out ChatServer>,
-    storage: StorageInterface?,
+    storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     override val fastTopicParsing: Boolean = true,
     retriable: Boolean = true,
     budget: Double,
@@ -78,7 +79,7 @@ open class SmartChatSocketManager(
         val smart = smartModel.getChildClient(task)
         // Check if we need to summarize history
         val messagesForChat = maybeCompactHistory(currentChatMessages, task)
-        
+
         // First, use fast model to determine if we should elevate to smart model
         val shouldElevate = checkQueryElevation(
             userMessage,
@@ -93,19 +94,19 @@ open class SmartChatSocketManager(
         } else {
             fast
         }
-        
+
         return buildString {
             val finalMessages = messagesForChat + ModelSchema.ChatMessage(
                 ModelSchema.Role.user,
                 userMessage.toContentList()
             )
-            
+
             task.add("")
             try {
                 val chatResponse = modelToUse.chat(finalMessages)
                 val choices = chatResponse.choices
                 var responseText = choices.firstOrNull()?.message?.content.orEmpty()
-                
+
                 choices.forEach { choice ->
                     choice.message?.image_data?.let {
                         val imageMimeType = choice.message?.image_mime_type ?: "image/png"
@@ -123,14 +124,14 @@ open class SmartChatSocketManager(
                         responseText += "\n\n" + imageLink
                     }
                 }
-                
+
                 append(responseText)
                 task.complete(renderResponse(responseText, task))
-                
+
                 // Write to transcript
                 transcriptStream?.write("## Assistant\n$responseText\n\n".transcriptFilter().toByteArray())
                 transcriptStream?.flush()
-                
+
             } catch (e: Exception) {
                 log.error("Error in API call", e)
                 val errorMsg = "Error: ${e.message}"
@@ -144,8 +145,8 @@ open class SmartChatSocketManager(
                 val topicsText = try {
                     answer.topics?.let { topics ->
                         if (topics.isNotEmpty()) {
-                            val joinToString = topics.entries.joinToString("\n") { 
-                                "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}" 
+                            val joinToString = topics.entries.joinToString("\n") {
+                                "* `{${it.key}}` - ${it.value.joinToString(", ") { "`$it`" }}"
                             }
                             task.complete(joinToString.renderMarkdown(), additionalClasses = "topics")
                             "\n\n$joinToString"
@@ -236,26 +237,26 @@ open class SmartChatSocketManager(
         task: SessionTask
     ): List<ModelSchema.ChatMessage> {
         val estimatedTokens = estimateTokenCount(messages)
-        
+
         if (estimatedTokens <= maxHistoryTokens) {
             return messages
         }
-        
+
         log.info("Compacting history: estimated $estimatedTokens tokens exceeds max $maxHistoryTokens")
-        
+
         synchronized(summaryLock) {
             // Separate system message from conversation
             val systemMessage = messages.firstOrNull { it.role == ModelSchema.Role.system }
             val conversationMessages = messages.filter { it.role != ModelSchema.Role.system }
-            
+
             // Preserve recent messages
             val recentMessages = conversationMessages.takeLast(preserveRecentMessages)
             val messagesToSummarize = conversationMessages.dropLast(preserveRecentMessages)
-            
+
             if (messagesToSummarize.isEmpty()) {
                 return messages
             }
-            
+
             // Generate summary of older messages
             val newSummary = generateSummary(messagesToSummarize, task)
             conversationSummary = if (conversationSummary != null) {
@@ -264,7 +265,7 @@ open class SmartChatSocketManager(
             } else {
                 newSummary
             }
-            
+
             // Build new message list with summary
             val summaryMessage = ModelSchema.ChatMessage(
                 ModelSchema.Role.system,
@@ -275,9 +276,9 @@ open class SmartChatSocketManager(
                     $conversationSummary
                 """.trimIndent().toContentList()
             )
-            
+
             task.add("<div class='summary-notice'>📝 <em>Conversation history summarized</em></div>")
-            
+
             return listOf(summaryMessage) + recentMessages
         }
     }
@@ -292,7 +293,7 @@ open class SmartChatSocketManager(
         val conversationText = messages.joinToString("\n\n") { msg ->
             "${msg.role}: ${msg.content?.firstOrNull()?.text ?: ""}"
         }
-        
+
         val summaryPrompt = """
             Summarize the following conversation, preserving:
             - Key topics discussed
@@ -305,13 +306,16 @@ open class SmartChatSocketManager(
             Conversation:
             $conversationText
         """.trimIndent()
-        
+
         return try {
             val summaryMessages = listOf(
-                ModelSchema.ChatMessage(ModelSchema.Role.system, "You are a helpful assistant that creates concise conversation summaries.".toContentList()),
+                ModelSchema.ChatMessage(
+                    ModelSchema.Role.system,
+                    "You are a helpful assistant that creates concise conversation summaries.".toContentList()
+                ),
                 ModelSchema.ChatMessage(ModelSchema.Role.user, summaryPrompt.toContentList())
             )
-            
+
             val response = fastModel.getChildClient(task).chat(summaryMessages)
             response.choices.firstOrNull()?.message?.content ?: "Unable to generate summary"
         } catch (e: Exception) {

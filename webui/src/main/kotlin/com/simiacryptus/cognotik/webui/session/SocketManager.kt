@@ -21,7 +21,7 @@ import java.util.function.Consumer
 
 abstract class SocketManager(
     val sessionId: Session,
-    val dataStorage: StorageInterface? = null,
+    val dataStorage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     val owner: User = defaultUser,
     private val applicationClass: Class<*>,
 ) {
@@ -572,7 +572,7 @@ abstract class SocketManager(
 
 class ReadonlySocketManager(
     newSession: Session,
-    storageInterface: StorageInterface?,
+    storageInterface: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     owner: User = defaultUser,
     clazz: Class<*>
 ) : SocketManager(
@@ -589,4 +589,22 @@ class ReadonlySocketManager(
         return false
     }
 
+}
+class ServerlessSocketManager(
+    session: Session,
+    storageInterface: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+    owner: User = defaultUser,
+    clazz: Class<*>
+) : SocketManager(
+    sessionId = session,
+    dataStorage = storageInterface,
+    owner = owner,
+    applicationClass = clazz
+) {
+    override fun onRun(userMessage: String, socket: ChatSocket) {
+        // No-op for serverless execution
+    }
+    override fun createLinkedManager(newSession: Session): SocketManager {
+        return ServerlessSocketManager(newSession, dataStorage, owner, javaClass)
+    }
 }

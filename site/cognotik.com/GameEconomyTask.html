@@ -18,16 +18,28 @@
     <section class="features">
         <div class="features-grid">
             <div class="feature-card">
-                <h3>Resource Systems</h3>
-                <p>Designs multi-resource economies with defined sources (faucets) and sinks to prevent inflation.</p>
+                <h3>Comprehensive Economy</h3>
+                <p>Designs multi-resource systems (currency, materials, premium) with defined sources, sinks, and exchange rates.</p>
             </div>
             <div class="feature-card">
-                <h3>Monetization</h3>
-                <p>Creates fair monetization strategies, including battle passes and cosmetics, avoiding pay-to-win mechanics.</p>
+                <h3>Progression & Skills</h3>
+                <p>Builds level curves (up to 100 tiers), skill trees, and unlock schedules tailored to linear, branching, or open styles.</p>
             </div>
             <div class="feature-card">
-                <h3>Economy Forecasting</h3>
-                <p>Projects economy health over time, predicting player wealth accumulation and potential imbalances.</p>
+                <h3>Loot & Monetization</h3>
+                <p>Generates balanced loot tables and fair monetization strategies (Battle Pass, cosmetics) with pay-to-win risk assessment.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Engagement & Retention</h3>
+                <p>Structures daily rewards, seasonal content, and event systems to maximize long-term player retention.</p>
+            </div>
+            <div class="feature-card">
+                <h3>6-Month Forecasting</h3>
+                <p>Projects economy health, inflation rates, and resource abundance over time to predict potential imbalances.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Balance Reporting</h3>
+                <p>Analyzes generation vs. consumption rates and provides actionable recommendations for game balance.</p>
             </div>
         </div>
     </section>
@@ -41,7 +53,15 @@
                 </div>
                 <div class="control-group">
                     <label>Game Type</label>
-                    <input type="text" value="Space Sim / Strategy">
+                    <input type="text" value="Space Sim / RPG">
+                </div>
+                <div class="control-group">
+                    <label>Progression Style</label>
+                    <select>
+                        <option>Linear</option>
+                        <option>Branching</option>
+                        <option>Open</option>
+                    </select>
                 </div>
                 <div class="control-group">
                     <label>Monetization Model</label>
@@ -51,25 +71,47 @@
                         <option>Subscription</option>
                     </select>
                 </div>
+                <div class="control-group" style="flex-direction: row; gap: 10px; align-items: center;">
+                    <label style="margin: 0;"><input type="checkbox" checked> Skill Tree</label>
+                    <label style="margin: 0;"><input type="checkbox" checked> Battle Pass</label>
+                    <label style="margin: 0;"><input type="checkbox"> Crafting</label>
+                </div>
                 <button class="run-button">Design Economy</button>
             </div>
             <div class="sim-output">
                 <div class="tab-content active" style="white-space: pre-wrap;">
 # Economy Design: Galactic Trader
 
-## Resources
-1. **Credits (Soft Currency):** Earned by trading, missions. Used for ship repairs, fuel.
-2. **Dark Matter (Premium):** Purchased or rare drops. Used for cosmetics, convenience.
-3. **Scrap (Material):** Salvaged from battles. Used for crafting.
+## Resource System
+1. **Credits (Currency):** Primary soft currency. Source: Trading, Missions. Sink: Repairs, Fuel, Market Tax.
+2. **Dark Matter (Premium):** Hard currency. Source: IAP, Rare Achievements. Sink: Cosmetics, Convenience.
+3. **Scrap (Material):** Crafting resource. Source: Salvage, Mining. Sink: Ship Upgrades.
 
-## Sinks & Faucets
-- **Faucet:** Daily missions (Credits), Mining (Scrap).
-- **Sink:** Market taxes, Ship insurance, Crafting failure risk.
+## Progression System
+- **Tiers:** 50 Levels
+- **Style:** Branching (Trader vs. Pirate paths)
+- **Skill Tree:** 3 Branches (Navigation, Combat, Mercantile)
+- **Time to Max:** ~120 hours for average player
 
-## Monetization Strategy
-- **Battle Pass:** "Smuggler's Run" - 30 tiers of cosmetic ship skins.
-- **Convenience:** Inventory expansion slots.
-- **No Pay-to-Win:** Premium currency cannot buy endgame weapons directly.
+## Loot & Rewards
+- **Common:** Scrap, Fuel Cells (Drop Rate: 40%)
+- **Rare:** Ship Blueprints, High-grade components (Drop Rate: 5%)
+- **Bosses:** Guaranteed Epic component + Title
+
+## Monetization Strategy (Free-to-Play)
+- **Battle Pass:** "Smuggler's Run" (30 tiers). Free: Resources. Premium: Exclusive "Void" Ship Skin.
+- **Convenience:** Cargo Hold Expansion, Warp Drive Cooldown reduction.
+- **Risk Assessment:** Low Pay-to-Win risk; premium items are cosmetic or time-saving only.
+
+## Engagement Hooks
+- **Daily:** "Trade Route of the Day" (Bonus Credits).
+- **Seasonal:** 3-month seasons with unique galaxy sectors opening up.
+- **Retention:** Login streak grants increasing amounts of Dark Matter.
+
+## Economy Forecast (6 Months)
+- **Month 1:** Healthy. High credit velocity as players upgrade starter ships.
+- **Month 3:** Potential Inflation. Credit accumulation may outpace sinks.
+- **Recommendation:** Introduce "Guild Tax" or high-cost capital ships in Month 3 update.
                 </div>
             </div>
         </div>

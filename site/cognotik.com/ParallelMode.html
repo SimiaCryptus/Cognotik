@@ -31,14 +31,14 @@
             <h2>Key Capabilities</h2>
             <div class="features-grid">
                 <div class="feature-card">
-                    <i data-lucide="layers"></i>
-                    <h3>Batch Processing</h3>
-                    <p>Define a task template and apply it to a list of variables, such as files or data points.</p>
+                    <i data-lucide="list-checks"></i>
+                    <h3>Interactive Planning</h3>
+                    <p>Review and revise the execution plan, including variable expansions and task combinations, before processing begins.</p>
                 </div>
                 <div class="feature-card">
                     <i data-lucide="cpu"></i>
                     <h3>Concurrency Control</h3>
-                    <p>Manage resource usage with configurable thread pools to maximize throughput without overloading the system.</p>
+                    <p>Manage resource usage with a fixed concurrency processor to maximize throughput without overloading the system.</p>
                 </div>
                 <div class="feature-card">
                     <i data-lucide="regex"></i>
@@ -53,25 +53,20 @@
             <h2>How It Works</h2>
             <div class="mode-grid" style="grid-template-columns: 1fr;">
                 <div class="mode-card">
-                    <div class="mode-title">1. Configuration</div>
-                    <p>The user provides a natural language request that implies batch processing. The system parses this into a <strong>ParallelPlan</strong> containing:</p>
-                    <ul style="margin-top: 1rem; margin-left: 1.5rem; color: var(--text-secondary);">
-                        <li><strong>Variables:</strong> Lists of items (e.g., files matching <code>src/*.kt</code>).</li>
-                        <li><strong>Template:</strong> A prompt string with placeholders (e.g., <code>"Analyze {{file}}"</code>).</li>
-                        <li><strong>Mode:</strong> Combination strategy (CrossJoin or Zip).</li>
-                    </ul>
+                    <div class="mode-title">1. Intent Analysis & Planning</div>
+                    <p>The system parses your request into a <strong>ParallelPlan</strong>. It identifies variables (lists or file globs) and a template. An interactive review step allows you to verify the expanded file lists and generated task combinations before execution.</p>
                 </div>
                 <div class="mode-card">
                     <div class="mode-title">2. Expansion & Combination</div>
-                    <p>Variables are expanded (e.g., globs resolved to file paths). The system then generates task combinations:</p>
+                    <p>Variables are expanded (e.g., globs like <code>src/*.kt</code> are resolved to file paths). The system then generates task combinations:</p>
                     <ul style="margin-top: 1rem; margin-left: 1.5rem; color: var(--text-secondary);">
                         <li><strong>CrossJoin:</strong> Executes the template for every possible combination of variables.</li>
                         <li><strong>Zip:</strong> Pairs variables by index (1st item with 1st item, etc.).</li>
                     </ul>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-title">3. Execution</div>
-                    <p>A <code>FixedConcurrencyProcessor</code> executes the generated tasks in parallel. Each task is treated as an independent session, allowing for isolated context and error handling.</p>
+                    <div class="mode-title">3. Concurrent Execution</div>
+                    <p>A <code>FixedConcurrencyProcessor</code> executes tasks in parallel. Each thread runs an isolated session where the template is rendered and dynamically routed to the appropriate agent (e.g., Coding, Shell). A <strong>Tabbed Display</strong> organizes these streams, allowing real-time monitoring of individual task outputs.</p>
                 </div>
             </div>
         </section>
@@ -82,16 +77,16 @@
             <pre><code class="language-json">
 {
   "variables": {
-    "file": ["User.kt", "Session.kt", "Auth.kt"],
-    "check": ["Security", "Performance"]
+    "file": ["src/User.kt", "src/Session.kt"],
+    "aspect": ["Security", "Performance"]
   },
-  "template": "Review {{file}} focusing on {{check}} issues.",
+  "template": "Review {{file}} focusing on {{aspect}} issues.",
+  "concurrency": 4,
   "mode": "CrossJoin",
-  "concurrency": 4
 }
             </code></pre>
             <p style="margin-top: 1rem; color: var(--text-secondary);">
-                This configuration would generate 6 tasks (3 files × 2 checks) running in parallel.
+                This configuration generates 4 tasks (2 files × 2 aspects) running in parallel, managed via a tabbed interface.
             </p>
         </section>
     </main>

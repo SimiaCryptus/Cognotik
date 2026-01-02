@@ -19,9 +19,9 @@ import java.io.FileOutputStream
 import java.lang.Thread.sleep
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.Path
+
 open class ConversationalModeConfig(
     var useExpansionSyntax: Boolean = true
 ) : CognitiveModeConfig(type = CognitiveModeType.Chat)
@@ -31,12 +31,10 @@ open class ConversationalModeConfig(
  * A cognitive mode that executes tasks based on user input while maintaining conversation history.
  */
 open class ConversationalMode(
-    task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser
 ) : CognitiveMode<ConversationalModeConfig>(
-    task,
     orchestrationConfig,
     session,
     user
@@ -64,7 +62,7 @@ open class ConversationalMode(
     private val rangeExpansionPattern =
         Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""") // Matches @(start..end:step) or @(start to end by step)
 
-    override fun initialize() {
+    override fun initialize(task : SessionTask) {
         val enabledTasks = TaskType.getAvailableTaskTypes(orchestrationConfig)
         log.debug(
             "ConversationalMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}",
@@ -95,12 +93,12 @@ open class ConversationalMode(
 
         task.echo(userMessage.renderMarkdown)
         writeToTranscript("## User\n\n$userMessage\n\n")
-        this.task.ui.pool.submit {
+        task.ui.pool.submit {
             try {
                 while (!Thread.interrupted()) {
                     sleep(100) // Brief pause to allow batching of messages
                     val userMessage = messageBuffer.poll() ?: continue
-                    val task = this.task.ui.newTask()
+                    val task = task.newTask()
                     execute(task, userMessage, parserChatter, defaultChat)
                 }
             } finally {
@@ -119,14 +117,11 @@ open class ConversationalMode(
     ) {
         try {
             val expandedUserMessage = expandTopics(userMessage)
-            synchronized(messagesLock) {
-                // Don't add the message yet - it will be added after expansion
-            }
             val expansionFunctions = processMsgRecursive(
                 expandedUserMessage, task, parsingChatter, defaultChat
             )
             val aggregateResponse = StringBuilder()
-            runAll(expansionFunctions, aggregateResponse)
+            runAll(task, expansionFunctions, aggregateResponse)
             // Now add the original user message and aggregate response to history
             synchronized(messagesLock) {
                 messages.add(ModelSchema.ChatMessage(ModelSchema.Role.user, expandedUserMessage.toContentList()))
@@ -140,7 +135,7 @@ open class ConversationalMode(
             }
 
             // Extract topics from the aggregated response
-        if (config.useExpansionSyntax && aggregateResponse.isNotEmpty()) {
+            if (config.useExpansionSyntax && aggregateResponse.isNotEmpty()) {
                 try {
                     writeToTranscript("## Assistant\n\n${aggregateResponse}\n\n")
                     val model = defaultChat
@@ -162,6 +157,7 @@ open class ConversationalMode(
                     log.error("Error in topic extraction", e)
                 }
             }
+            task.complete()
         } catch (e: Exception) {
             log.error("Error executing task", e)
             task.error(e)
@@ -216,13 +212,53 @@ open class ConversationalMode(
         defaultModel: ChatInterface,
         parserChatter: ChatInterface
     ) {
-        val (reasoning, chosenTask) = requestToTask(
-            defaultModel, parserChatter,
-            userMessage,
-            this@ConversationalMode.orchestrationConfig,
-            this@ConversationalMode.systemPrompt,
-            this.getConversationContext()
-        )
+        val tabs = TabbedDisplay(task)
+        val planTask = tabs.newTask("Plan")
+
+        val chosenTask: Pair<ParsedResponse<Tasks>, TaskExecutionConfig>? = if (orchestrationConfig.autoFix) {
+            val result = requestToTask(
+                defaultModel, parserChatter,
+                userMessage,
+                this@ConversationalMode.orchestrationConfig,
+                this@ConversationalMode.systemPrompt,
+                this.getConversationContext()
+            )
+            planTask.add(result.first.text.renderMarkdown())
+            planTask.complete("Executing task:\n```json\n${JsonUtil.toJson(result.second)}\n```".renderMarkdown())
+            result
+        } else {
+            Discussable(
+                task = planTask,
+                heading = "Plan Task",
+                userMessage = { userMessage },
+                initialResponse = {
+                    requestToTask(
+                        defaultModel, parserChatter,
+                        userMessage,
+                        this@ConversationalMode.orchestrationConfig,
+                        this@ConversationalMode.systemPrompt,
+                        this.getConversationContext()
+                    )
+                },
+                outputFn = { (reasoning, taskConfig) ->
+                    reasoning.text.renderMarkdown() +
+                            "\n\nProposed Task:\n```json\n${JsonUtil.toJson(taskConfig)}\n```".renderMarkdown()
+                },
+                reviseResponse = { history ->
+                    val discussionContext = history.map { (msg, role) ->
+                        "${role.name.uppercase()}: $msg"
+                    }
+                    requestToTask(
+                        defaultModel, parserChatter,
+                        userMessage,
+                        this@ConversationalMode.orchestrationConfig,
+                        this@ConversationalMode.systemPrompt,
+                        this.getConversationContext() + discussionContext
+                    )
+                }
+            ).call()
+        }
+
         // Add task configuration to conversation history
         val taskConfigJson = JsonUtil.toJson(chosenTask)
         synchronized(messagesLock) {
@@ -234,17 +270,9 @@ open class ConversationalMode(
             )
         }
 
-        val resultSemaphore = Semaphore(0)
         val resultRef = AtomicReference<String>()
-        val tabs = TabbedDisplay(task)
-        this.task.ui.newTask(false).apply {
-            tabs["Plan"] = placeholder
-            add(reasoning.text.renderMarkdown())
-            complete("Executing task:\n```json\n${JsonUtil.toJson(chosenTask)}\n```".renderMarkdown())
-        }
-        this.task.ui.newTask(false).apply {
-            tabs["Run"] = placeholder
-            TaskType.getImpl(orchestrationConfig, chosenTask).run(
+        tabs.newTask("Run").apply {
+            TaskType.getImpl(orchestrationConfig, chosenTask?.component2()).run(
                 agent = TaskOrchestrator(
                     user = user,
                     session = session,
@@ -255,27 +283,22 @@ open class ConversationalMode(
                 messages = getConversationContext().takeLast(10) + listOf("USER: $userMessage"),
                 task = this,
                 resultFn = { result ->
-                    ui.newTask(false).apply {
-                        tabs["Output"] = placeholder
-                        complete(result.renderMarkdown())
-                    }
+                    tabs.newTask("Output").complete(result.renderMarkdown())
                     // Don't add to messages here - it will be added in execute() after all expansions complete
                     resultRef.set(result)
-                    resultSemaphore.release()
+                    aggregateResponse.append(resultRef.get() ?: "").append("\n\n")
+                    task.complete()
                 },
                 orchestrationConfig = orchestrationConfig,
             )
             this.complete()
         }
-        resultSemaphore.acquire()
-        aggregateResponse.append(resultRef.get() ?: "").append("\n\n")
-        task.complete()
     }
 
     /**
      * Executes a list of functions, each appending to the target StringBuilder, potentially in parallel.
      */
-    private fun runAll(function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
+    private fun runAll(task : SessionTask, function1s: List<(StringBuilder) -> Unit>, target: StringBuilder) {
         val fixedConcurrencyProcessor = FixedConcurrencyProcessor(task.ui.pool, 4)
         function1s.map { function1 ->
             fixedConcurrencyProcessor.submit {
@@ -323,7 +346,7 @@ open class ConversationalMode(
         return match.groupValues[1].split('|', ',').flatMap { option ->
             recursiveFn(
                 currentMessage.replaceFirst(match.value, option),
-                this.task.ui.newTask(false).apply { tabs[option] = placeholder })
+                tabs.newTask(option))
         }.apply {
             tabs.update()
         }
@@ -343,12 +366,12 @@ open class ConversationalMode(
             val newMessage = currentMessage.replaceFirst(expression, item)
             val subTaskFunctions = processMsgRecursive(
                 currentMessage = newMessage,
-                task = this.task.ui.newTask(false).apply { tabs[item] = placeholder },
+                task = tabs.newTask(item),
                 defaultChatter = defaultChatter,
                 parsingChatter = parsingChatter
             )
             val subAggregate = StringBuilder()
-            runAll(subTaskFunctions, subAggregate)
+            runAll(task, subTaskFunctions, subAggregate)
             aggregatedResponse.append("[").append(item).append("]\n").append(subAggregate.toString()).append("\n")
         }
         tabs.update()

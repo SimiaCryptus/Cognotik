@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import cognotik.actions.agent.toFile
 import com.google.common.util.concurrent.*
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -656,11 +655,6 @@ fun AnActionEvent.getSelectedFolder(): VirtualFile? {
     return null
 }
 
-fun AnActionEvent.hasSelection(): Boolean {
-    val caret = getData(CommonDataKeys.CARET)
-    return null != caret && caret.hasSelection()
-}
-
 fun AnActionEvent.getIndent() = getData(CommonDataKeys.CARET)?.getIndent() ?: ""
 
 fun Caret?.getIndent(): CharSequence {
@@ -676,15 +670,11 @@ fun Caret?.getIndent(): CharSequence {
 fun AnActionEvent.redoableTask(
     request: Supplier<Runnable>,
 ) {
-    UITools.log.debug("Starting redoableTask with event: {}, request: {}",this,request)
+    UITools.log.debug("Starting redoableTask with event: {}, request: {}", this, request)
     Futures.addCallback(UITools.pool.submit<Runnable> {
         request.get()
     }, futureCallback(request), UITools.pool)
     UITools.log.debug("Submitted redoableTask for execution")
-}
-
-fun AnActionEvent.getRoot(): String {
-    return this.getSelectedFolder()?.toFile?.absolutePath ?: this.getSelectedFile()?.toFile?.parent ?: ""
 }
 
 fun Class<out Enum<*>?>.findValue(string: String): Enum<*>? {

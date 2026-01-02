@@ -44,7 +44,11 @@ class StructuralInvariantAnalysisTask(
     ), ValidatedObject {
         override fun validate(): String? {
             if (subject_object.isNullOrBlank()) return "subject_object must not be null or blank"
-            if (output_format !in listOf("fingerprint", "signature")) return "output_format must be 'fingerprint' or 'signature'"
+            if (output_format !in listOf(
+                    "fingerprint",
+                    "signature"
+                )
+            ) return "output_format must be 'fingerprint' or 'signature'"
             return ValidatedObject.validateFields(this)
         }
     }
@@ -94,26 +98,30 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
             log.info("Starting Structural Invariant Analysis: $subject")
 
             val tabbedDisplay = TabbedDisplay(task)
-            
-            task.ui.newTask(false).apply {
-                tabbedDisplay["Overview"] = placeholder
-                add(MarkdownUtil.renderMarkdown("""
-                    ## Structural Invariant Analysis
-                    
-                    **Subject:** $subject
-                    **Transformations:** ${transformations.joinToString(", ")}
-                    **Output Format:** $format
-                """.trimIndent(), ui = task.ui))
+
+            tabbedDisplay.newTask("Overview").apply {
+
+                header("Structural Invariant Analysis")
+                add("<b>Subject:</b> $subject")
+                add("<b>Transformations:</b> ${transformations.joinToString(", ")}")
+                add("<b>Output Format:</b> $format")
+                if (!executionConfig?.input_files.isNullOrEmpty()) {
+                    add("<b>Input Files:</b> ${executionConfig?.input_files?.joinToString(", ")}")
+                }
             }
 
-            val inputFileContent = super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
+            val inputFileContent =
+                super.getInputFileContent(executionConfig?.input_files, root, treatDocumentsAsText = true)
             val priorCode = getPriorCode(agent.executionState)
-            
-            val prompt = buildPrompt(subject, transformations, format, inputFileContent, priorCode)
 
-            task.ui.newTask(false).apply {
-                tabbedDisplay["Analysis"] = placeholder
-                add(MarkdownUtil.renderMarkdown("Performing structural analysis... This may take a moment.", ui = task.ui))
+            val prompt = buildPrompt(subject, transformations, format, inputFileContent, priorCode)
+            tabbedDisplay.newTask("Prompt").apply {
+                expandable("Full Prompt", "<pre>${prompt.replace("<", "&lt;")}</pre>")
+            }
+
+
+            tabbedDisplay.newTask("Analysis").apply {
+                add("Performing structural analysis... This may take a moment.", additionalClasses = "text-info")
             }
 
             val chatAgent = ChatAgent(
@@ -123,8 +131,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
 
             val response = chatAgent.answer(listOf(prompt))
 
-            task.ui.newTask(false).apply {
-                tabbedDisplay["Result"] = placeholder
+            tabbedDisplay.newTask("Result").apply {
                 add(MarkdownUtil.renderMarkdown(response, ui = task.ui))
                 transcriptStream?.write("\n\n## Analysis Result\n\n$response".toByteArray(StandardCharsets.UTF_8))
             }
@@ -137,11 +144,13 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
                 task.safeComplete("Analysis complete. <a href='$link' target='_blank'>View Transcript</a>", log)
                 resultFn(response)
             } else {
-                task.add(MarkdownUtil.renderMarkdown(acceptButtonFooter(task.ui) {
+                val acceptLink = task.ui.hrefLink("Accept Result", "btn btn-success") {
                     val (link, _) = task.createFile("invariant_analysis_transcript.md")
                     task.complete("Analysis accepted. <a href='$link' target='_blank'>View Transcript</a>")
                     resultFn(response)
-                }, ui = task.ui))
+                }
+                task.add("<div class='p-3'>$acceptLink</div>")
+                task.complete()
             }
 
         } catch (e: Exception) {
@@ -224,10 +233,11 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
     }
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(StructuralInvariantAnalysisTask::class.java)
+      private val log = LoggerFactory.getLogger(StructuralInvariantAnalysisTask::class.java)
         val StructuralInvariantAnalysis = TaskType(
             name = "StructuralInvariantAnalysis",
             category = "Reasoning",
+            taskClass = StructuralInvariantAnalysisTask::class.java,
             executionConfigClass = StructuralInvariantAnalysisTaskExecutionConfigData::class.java,
             taskSettingsClass = TaskTypeConfig::class.java,
             description = "Distill an object down to its immutable properties and symmetries",
@@ -239,7 +249,7 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
                             <li>Extracts immutable properties (invariants)</li>
                             <li>Generates structural signatures for cross-domain comparison</li>
                           </ul>
-                        """
+                        """,
         )
     }
 }

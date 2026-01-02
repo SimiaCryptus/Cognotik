@@ -3,10 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.extractDocumentContent
-import com.simiacryptus.cognotik.util.FileSelectionUtils
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MarkdownUtil
-import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -72,7 +69,39 @@ FileSearch - Search for patterns in files and provide results with context
         val transcript = task.transcript()
         transcript?.write(formattedResults.toByteArray())
         transcript?.close()
-        task.add(MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui))
+
+        task.header("Search Results")
+        if (searchResults.isEmpty()) {
+            task.add("No matches found.")
+        } else {
+            val totalMatches = searchResults.sumOf { it.matches.size }
+            val filesWithMatches = searchResults.distinctBy { it.file }.size
+            task.add("Found $totalMatches match(es) in $filesWithMatches file(s).")
+
+            val tabs = TabbedDisplay(task)
+            tabs["All Results"] = MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui)
+
+            val files = searchResults.groupBy { it.file }
+            if (files.size <= 20) {
+                files.forEach { (file, blocks) ->
+                    val fileMarkdown = blocks.joinToString("\n\n") { block ->
+                        val blockEndLine = block.firstLineNumberInFile + block.contextLines.size - 1
+                        val sb = StringBuilder()
+                        sb.append("### Lines ${block.firstLineNumberInFile} - $blockEndLine\n\n")
+                        sb.append("```\n")
+                        block.contextLines.forEachIndexed { indexInBlock, lineContent ->
+                            val actualLineNumber = block.firstLineNumberInFile + indexInBlock
+                            val isMatchedLine = block.matches.any { it.indexInDisplayBlockContext == indexInBlock }
+                            val prefix = if (isMatchedLine) ">" else " "
+                            sb.append("$prefix ${actualLineNumber.toString().padStart(5)}: $lineContent\n")
+                        }
+                        sb.append("```")
+                        sb.toString()
+                    }
+                    tabs[file] = MarkdownUtil.renderMarkdown(fileMarkdown, ui = task.ui)
+                }
+            }
+        }
         resultFn(formattedResults)
     }
 
@@ -330,6 +359,7 @@ FileSearch - Search for patterns in files and provide results with context
         val FileSearch = TaskType(
             "FileSearch",
             "File",
+            FileSearchTask::class.java,
             SearchTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Search project files using patterns with contextual results",
@@ -342,7 +372,7 @@ FileSearch - Search for patterns in files and provide results with context
                         <li>Filters for text-based files automatically</li>
                         <li>Provides organized, readable output format</li>
                       </ul>
-                    """
+                    """,
         )
     }
 }

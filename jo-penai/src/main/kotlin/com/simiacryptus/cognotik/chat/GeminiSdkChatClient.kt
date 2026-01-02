@@ -3,9 +3,7 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.genai.Client
 import com.google.genai.types.*
-import com.google.genai.types.Content
 import com.google.genai.types.Content.builder
-import com.google.genai.types.Part
 import com.google.genai.types.Part.fromText
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.ChatModel
@@ -18,7 +16,7 @@ import okio.ByteString.Companion.decodeBase64
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import kotlin.jvm.optionals.getOrNull
@@ -174,9 +172,17 @@ class GeminiSdkChatClient(
                                 sourceImage = resizedImage
                             }
                             val logBytes = java.io.ByteArrayOutputStream()
-                            javax.imageio.ImageIO.write(sourceImage, inlineData.mimeType().getOrNull()!!.substringAfter("image/"), logBytes)
+                            javax.imageio.ImageIO.write(
+                                sourceImage,
+                                inlineData.mimeType().getOrNull()!!.substringAfter("image/"),
+                                logBytes
+                            )
                             val imageBytes = logBytes.toByteArray()
-                            sb.append("<img src=\"data:${inlineData.mimeType().getOrNull()};base64,${imageBytes.base64()}\" alt=\"image\" width=\"${sourceImage.width}\" height=\"${sourceImage.height}\" />\n")
+                            sb.append(
+                                "<img src=\"data:${
+                                    inlineData.mimeType().getOrNull()
+                                };base64,${imageBytes.base64()}\" alt=\"image\" width=\"${sourceImage.width}\" height=\"${sourceImage.height}\" />\n"
+                            )
                         }
                     }
 
@@ -249,11 +255,13 @@ class GeminiSdkChatClient(
 
         else -> fromText("")
     }
+
     fun ModelSchema.ContentPart.parts(): List<Part> = when {
         image_url != null && text != null -> listOfNotNull(
             copy(text = null).part(),
             copy(image_url = null).part()
         )
+
         else -> listOfNotNull(
             this.part()
         )
@@ -316,4 +324,3 @@ class GeminiSdkChatClient(
 
 
 private fun ByteArray.base64() = java.util.Base64.getEncoder().encodeToString(this)
-private fun String.base64() = java.util.Base64.getDecoder().decode(this)

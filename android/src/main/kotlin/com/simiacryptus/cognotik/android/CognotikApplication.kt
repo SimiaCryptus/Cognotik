@@ -10,7 +10,7 @@ class CognotikApplication : Application() {
     companion object {
         private const val TAG = "CognotikApplication"
         private val isEmojiCompatInitialized = java.util.concurrent.atomic.AtomicBoolean(false)
-        
+
         @JvmStatic
         fun initializeEmojiCompatStatic(application: Context) {
             // Use atomic boolean to prevent multiple initialization attempts
@@ -41,6 +41,7 @@ class CognotikApplication : Application() {
                 }
             }
         }
+
         @JvmStatic
         fun safeGetEmojiCompat(): EmojiCompat? {
             try {
@@ -51,8 +52,8 @@ class CognotikApplication : Application() {
             }
         }
     }
-    
-    
+
+
     override fun onCreate() {
         super.onCreate()
         Log.i(TAG, "CognotikApplication onCreate started")
@@ -64,10 +65,10 @@ class CognotikApplication : Application() {
 
         // Initialize EmojiCompat now that context is available
         initializeEmojiCompat()
-        
+
         Log.i(TAG, "CognotikApplication onCreate completed")
     }
-    
+
     private fun initializeEmojiCompat() {
         initializeEmojiCompatStatic(this)
     }

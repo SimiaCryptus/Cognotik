@@ -171,3 +171,100 @@ class ExampleTask(
     }
 }
 ```
+
+---
+
+# Best Practices: Handling `autoFix` and User Oversight
+
+In the Cognotik environment, `autoFix` is the toggle between **Autonomous Mode** (agent-driven) and **Interactive Mode** (human-in-the-loop). Proper implementation ensures that side effects (file writes, code execution) are safely guarded while providing a seamless UI for manual review.
+
+## 1. The Core Conditional Pattern
+Every task that performs a side effect should follow this structural template:
+
+```kotlin
+if (orchestrationConfig.autoFix) {
+    // 1. Perform side effect immediately
+    // 2. Log to transcript
+    // 3. Release semaphore/call resultFn
+} else {
+    // 1. Display proposed changes/logic to UI
+    // 2. Provide interactive controls (Discussable, hrefLink)
+    // 3. Wait for user to trigger completion (acceptButtonFooter)
+}
+```
+
+## 2. Guarding Logic with `Discussable`
+Use `Discussable` when the output of a task is a "thought product" (like a plan, a report, or a design) that the user might want to refine before it becomes the "official" result of the task.
+
+*   **When to use:** `DiscussionTask`, Planning phases, or complex architectural decisions.
+*   **Best Practice:** In interactive mode, wrap the AI's response logic in a `Discussable` block. This allows the user to provide feedback, which triggers a `reviseResponse` call to the LLM.
+
+```kotlin
+// Example from DiscussionTask.kt
+if (orchestrationConfig.autoFix) {
+    insightActor.answer(input) // Direct execution
+} else {
+    Discussable(
+        task = task,
+        initialResponse = { input -> insightActor.answer(input) },
+        reviseResponse = { messages -> insightActor.respond(messages) },
+        // ...
+    ).call() // Interactive loop
+}
+```
+
+## 3. Guarding Side Effects with `hrefLink`
+Side effects like running code or applying specific patches should be bound to UI triggers when `autoFix` is disabled.
+
+*   **When to use:** Executing shell commands, running scripts, or applying specific file diffs.
+*   **Best Practice:** Use `ui.hrefLink` to create buttons that perform the action only upon a click.
+
+```kotlin
+// Example from RunCodeTask.kt
+if (!orchestrationConfig.autoFix) {
+    task.add(ui.hrefLink("▶ Run", "play-button") {
+        execute(task, response) // Side effect happens ONLY on click
+    })
+}
+```
+
+## 4. Finalizing Tasks with `acceptButtonFooter`
+When a task involves multiple potential changes (like `FileModificationTask`), the user needs a way to signal that they are satisfied with the state of the workspace and ready to move to the next task in the plan.
+
+*   **When to use:** At the end of any task where `autoFix` is false and a `Semaphore` is blocking the orchestrator.
+*   **Best Practice:** Append the `acceptButtonFooter` to the final markdown output. This button should release the semaphore or call the `resultFn`.
+
+```kotlin
+// Example from FileModificationTask.kt
+val footer = acceptButtonFooter(task.ui) {
+    task.complete()
+    semaphore.release() // Unblocks the TaskOrchestrator
+}
+task.complete(renderMarkdown(codeResult) + footer)
+```
+
+## 5. Transcript Logging
+Regardless of whether `autoFix` is enabled, all actions—both AI-generated and user-triggered—must be written to the `transcript`.
+
+*   **Auto Mode:** Log "Auto-applying changes..."
+*   **Manual Mode:** Log "User Action: [Button Name]" or "User Feedback: [Text]".
+
+This ensures that the final log of the session is a complete record of how the current state was reached.
+
+## 6. Summary Table
+
+| Feature | `autoFix == true` | `autoFix == false` |
+| :--- | :--- | :--- |
+| **Execution** | Immediate | Guarded by `hrefLink` or `Discussable` |
+| **User Feedback** | Skipped | Enabled via `ui.textInput` or `Discussable` |
+| **Completion** | Automatic `semaphore.release()` | Manual via `acceptButtonFooter` |
+| **File Diffs** | `shouldAutoApply = true` | Manual "Apply" links |
+| **Transcript** | Logs AI intent + result | Logs AI intent + User actions |
+
+## 7. Checklist for New Tasks
+1. [ ] Does the task modify files or run code?
+2. [ ] If `autoFix` is false, is there a `Semaphore` or blocking mechanism to wait for the user?
+3. [ ] Are side effects wrapped in a `hrefLink` handler for manual mode?
+4. [ ] Is there a `textInput` or `Discussable` to allow the user to correct the AI?
+5. [ ] Does the manual path end with a clear "Continue" or "Accept" button?
+6. [ ] Are all paths (Auto and Manual) logging to the `transcript`?

@@ -1,0 +1,60 @@
+package com.simiacryptus.cognotik.plan.tools.file
+
+import com.simiacryptus.cognotik.apps.general.TaskHarness
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.data.toFile
+import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask.IllustrateDocumentTaskExecutionConfigData
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+
+object IllustrateDocumentTaskTest {
+
+    @JvmStatic
+    @BeforeAll
+    fun setup() {
+        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
+    }
+
+    //@Test
+    @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
+    fun test() {
+        val harness = TaskHarness(
+            taskType = IllustrateDocumentTask.IllustrateDocument,
+            typeConfig = TaskTypeConfig(
+                task_type = IllustrateDocumentTask.IllustrateDocument.name
+            ),
+            executionConfig = IllustrateDocumentTaskExecutionConfigData(
+                files = listOf("test_document.md"),
+                maxImages = 1,
+                autoInsert = true,
+                composerDirective = "Create a simple technical diagram style illustration",
+                integratorDirective = "Insert the image after the first paragraph"
+            ),
+            timeoutMinutes = 10,
+        )
+
+        // Create a sample document to illustrate
+        harness.workspace.resolve("test_document.md").toFile().writeText(
+            """
+            # System Architecture Overview
+            
+            This document describes the high-level architecture of the Cognotik platform. 
+            The system is designed to be modular and extensible, allowing for various task types.
+            
+            ## Core Components
+            
+            The platform consists of several key components:
+            1. **Task Orchestrator**: Manages the execution flow.
+            2. **Agent System**: Handles communication with LLMs.
+            3. **Web UI**: Provides a user interface for interaction.
+            
+            ## Data Flow
+            
+            Data flows from the user through the UI to the orchestrator, which then delegates to specific agents.
+            """.trimIndent()
+        )
+
+        harness.run()
+    }
+}

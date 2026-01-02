@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.input.DocumentReader
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.AbstractTask
@@ -40,31 +39,35 @@ abstract class AbstractFileTask<T : FileTaskExecutionConfig>(
 
     protected fun getInputFileCode(
         fn: (File) -> (CharSequence?) = ::toString
-    ) = ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf()))
-        .flatMap { pattern: String ->
-            if (root.resolve(pattern).exists()) {
-                return@flatMap listOf(root.resolve(pattern).toFile())
-            }
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            (FileSelectionUtils.filteredWalk(root.toFile()) {
-                //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    it.isDirectory -> true
-                    !matcher.matches(root.relativize(it.toPath())) -> false
-                    else -> true
-                }
-            })
-        }.filter { file ->
-            file.isFile && file.exists() && !isIgnored(file)
-        }
-        .distinct()
-        .filterNotNull()
-        .sortedBy { it }
+    ) = getInputFiles()
         .mapNotNull { fn(it) }
         .joinToString("\n\n")
 
-    protected open fun isIgnored(file: File): Boolean = when(file.extension) {
+    protected fun getInputFiles(): List<File> =
+        ((executionConfig?.related_files ?: listOf()) + (executionConfig?.files ?: listOf()))
+            .flatMap { pattern: String ->
+                if (root.resolve(pattern).exists()) {
+                    return@flatMap listOf(root.resolve(pattern).toFile())
+                }
+                val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+                (FileSelectionUtils.filteredWalk(root.toFile()) {
+                    //path -> matcher.matches(root.relativize(path.toPath())) && !FileSelectionUtils.isLLMIgnored(path.toPath())
+                    when {
+                        FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
+                        it.isDirectory -> true
+                        !matcher.matches(root.relativize(it.toPath())) -> false
+                        else -> true
+                    }
+                })
+            }.filter { file ->
+                file.isFile && file.exists() && !isIgnored(file)
+            }
+            .distinct()
+            .filterNotNull()
+            .sortedBy { it }
+
+
+    protected open fun isIgnored(file: File): Boolean = when (file.extension) {
         /* Common Binary Files */
         "class", "jar", "exe", "dll", "bin", "img", "iso", "zip", "tar", "gz", "7z" -> true
         /* Common Image and Media */

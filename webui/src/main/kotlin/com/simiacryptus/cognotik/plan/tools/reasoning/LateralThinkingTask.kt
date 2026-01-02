@@ -36,6 +36,7 @@ class LateralThinkingTask(
         val LateralThinking = TaskType(
             "LateralThinking",
             "Reasoning",
+            LateralThinkingTask::class.java,
             LateralThinkingTaskExecutionConfigData::class.java,
             LateralThinkingTaskTypeConfig::class.java,
             "Break conventional thinking patterns to find innovative solutions",
@@ -51,7 +52,7 @@ class LateralThinkingTask(
                 <li>Suggests hybrid approaches combining multiple ideas</li>
                 <li>Ideal for innovation, breaking design impasses, and creative problem-solving</li>
               </ul>
-            """
+            """,
         )
     }
 
@@ -289,8 +290,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
             val tabs = TabbedDisplay(task)
 
             // Create overview tab
-            val overviewTask = task.ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
+            val overviewTask = tabs.newTask("Overview")
             val overviewContent = buildString {
                 appendLine("# Lateral Thinking Task")
                 appendLine()
@@ -327,7 +327,6 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                 appendLine("- ⏳ Gathering context...")
             }
             overviewTask.add(overviewContent.renderMarkdown)
-            task.update()
 
             log.debug("Gathering prior context")
             val priorContext = getPriorCode(agent.executionState)
@@ -341,7 +340,6 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                 appendLine("- ✓ Context gathered")
                 appendLine("- ⏳ Applying lateral thinking techniques...")
             }.renderMarkdown)
-            task.update()
 
             // Step 1: Apply each technique
             log.info("Starting technique application phase")
@@ -351,8 +349,7 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
             techniques.forEachIndexed { index, technique ->
                 log.info("Applying technique ${index + 1}/${techniques.size}: $technique")
 
-                val techniqueTask = task.ui.newTask(false)
-                tabs["${index + 1}. ${technique.capitalize()}"] = techniqueTask.placeholder
+                val techniqueTask = tabs.newTask("${index + 1}. ${technique.capitalize()}")
 
                 techniqueTask.add(buildString {
                     appendLine("# ${technique.capitalize()} Technique")
@@ -362,7 +359,6 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                     appendLine()
                     appendLine(getTechniqueDescription(technique))
                 }.renderMarkdown)
-                task.update()
 
                 val techniquePrompt = buildTechniquePrompt(
                     technique,
@@ -447,7 +443,6 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                             application.insights.forEach { appendLine("- $it") }
                         }
                     }.renderMarkdown)
-                    task.update()
                 } else {
                     log.warn("Failed to generate ideas for technique: $technique")
                     transcript?.write("\n**Status:** ⚠️ Failed to generate ideas\n".toByteArray())
@@ -455,15 +450,14 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                         appendLine()
                         appendLine("**Status:** ⚠️ Failed to generate ideas")
                     }.renderMarkdown)
-                    task.update()
                 }
+                techniqueTask.complete()
 
                 overviewTask.add(buildString {
                     appendLine()
                     transcript?.write("\n- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)\n".toByteArray())
                     appendLine("- ✓ ${technique.capitalize()} complete (${application?.ideas?.size ?: 0} ideas)")
                 }.renderMarkdown)
-                task.update()
             }
 
             log.info("All techniques applied. Total ideas generated: ${allIdeas.size}")
@@ -474,12 +468,10 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                 appendLine("- ✓ All techniques applied (${allIdeas.size} total ideas)")
                 appendLine("- ⏳ Synthesizing insights...")
             }.renderMarkdown)
-            task.update()
 
             // Step 2: Synthesize insights
             log.info("Starting synthesis phase")
-            val synthesisTask = task.ui.newTask(false)
-            tabs["Synthesis"] = synthesisTask.placeholder
+            val synthesisTask = tabs.newTask("Synthesis")
 
             synthesisTask.add(buildString {
                 appendLine("# Cross-Technique Synthesis")
@@ -487,7 +479,6 @@ LateralThinking - Break conventional thinking patterns to find innovative soluti
                 appendLine()
                 appendLine("**Status:** ⏳ Analyzing patterns and insights...")
             }.renderMarkdown)
-            task.update()
 
             val synthesisPrompt = """
 You are an expert in creative problem-solving and innovation.
@@ -546,7 +537,7 @@ Provide a comprehensive synthesis.
                 appendLine()
                 appendLine(synthesisText)
             }.renderMarkdown)
-            task.update()
+            synthesisTask.complete()
 
             // Extract recommended approaches from synthesis
             val recommendedApproaches = extractRecommendedApproaches(synthesisText)
@@ -559,14 +550,12 @@ Provide a comprehensive synthesis.
                     appendLine("- ⏳ Evaluating feasibility...")
                 }
             }.renderMarkdown)
-            task.update()
 
             // Step 3: Feasibility evaluation (if requested)
             var feasibilityEvaluation: FeasibilityEvaluation? = null
             if (evaluateFeasibility) {
                 log.info("Starting feasibility evaluation phase")
-                val feasibilityTask = task.ui.newTask(false)
-                tabs["Feasibility"] = feasibilityTask.placeholder
+                val feasibilityTask = tabs.newTask("Feasibility")
 
                 feasibilityTask.add(buildString {
                     appendLine("# Feasibility Evaluation")
@@ -574,7 +563,6 @@ Provide a comprehensive synthesis.
                     appendLine()
                     appendLine("**Status:** ⏳ Evaluating ${allIdeas.size} ideas...")
                 }.renderMarkdown)
-                task.update()
 
                 val feasibilityPrompt = """
 You are an expert in evaluating the practical feasibility of innovative ideas.
@@ -652,7 +640,6 @@ Provide a structured evaluation.
                         }
                     }.renderMarkdown)
                     transcript?.write(this.toString().toByteArray())
-                    task.update()
                 }
 
                 overviewTask.add(buildString {
@@ -660,7 +647,7 @@ Provide a structured evaluation.
                     appendLine()
                     appendLine("- ✓ Feasibility evaluation complete")
                 }.renderMarkdown)
-                task.update()
+                feasibilityTask.complete()
             }
 
             // Step 4: Create final result
@@ -674,13 +661,12 @@ Provide a structured evaluation.
 
             // Step 5: Format final output
             log.info("Formatting final results")
-            val summaryTask = task.ui.newTask(false)
-            tabs["Summary"] = summaryTask.placeholder
+            val summaryTask = tabs.newTask("Summary")
 
             val summaryContent = formatSummary(result, problem, techniques)
             summaryTask.add(summaryContent.renderMarkdown)
             transcript?.write("\n${summaryContent}\n".toByteArray())
-            task.update()
+            summaryTask.complete()
 
             // Create concise result text
             val resultText = buildString {
@@ -762,7 +748,7 @@ Provide a structured evaluation.
                 appendLine("**Status:** ✓ Complete")
                 transcript?.write(this.toString().toByteArray())
             }.renderMarkdown)
-            task.update()
+            overviewTask.complete()
 
             log.info(
                 "LateralThinkingTask completed: total_time=${totalTime}ms, techniques=${techniques.size}, ideas=${allIdeas.size}, avg_novelty=${
@@ -795,7 +781,7 @@ Provide a structured evaluation.
         } catch (e: Exception) {
             log.error("Error during LateralThinkingTask execution", e)
             task.error(e)
-            val errorTask = task.ui.newTask(false)
+            val errorTask = task.newTask()
             errorTask.add(buildString {
                 appendLine("# ❌ Error")
                 appendLine()

@@ -192,8 +192,8 @@ class MultiStepPatchAction : BaseAction() {
 
                     AgentPatterns.displayMapInTabs(
                         mapOf(
-                          "Text" to design.text.renderMarkdown,
-                          "JSON" to "```json\n${toJson(design.obj)/*.indent("  ")*/}\n```".renderMarkdown,
+                            "Text" to design.text.renderMarkdown,
+                            "JSON" to "```json\n${toJson(design.obj)/*.indent("  ")*/}\n```".renderMarkdown,
                         )
                     )
                 },

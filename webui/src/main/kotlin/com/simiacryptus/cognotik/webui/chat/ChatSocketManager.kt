@@ -5,11 +5,13 @@ import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.transcript
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.Retryable.Companion.retryable
+import com.simiacryptus.cognotik.util.Retryable
+import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.toContentList
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -58,7 +60,7 @@ open class ChatSocketManager(
     open val systemPrompt: String,
     var temperature: Double = 0.3,
     applicationClass: Class<out ChatServer>,
-    val storage: StorageInterface?,
+    val storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
     open val fastTopicParsing: Boolean = true,
     val retriable: Boolean = true,
     val budget: Double,
@@ -104,12 +106,12 @@ open class ChatSocketManager(
                 }
                 task.complete()
             } else {
-                retryable(task.ui, pool, task) { task ->
-                    chatMessages.takeLastWhile { it.role == ModelSchema.Role.assistant }
-                        .forEach { chatMessages.remove(it) }
-                    val currentChatMessages = chatMessages()
-                    innerRun(task, expandedUserMessage, currentChatMessages, markdownTranscript)
-                }
+                Retryable(task, process = { task: SessionTask ->
+                        chatMessages.takeLastWhile { it.role == ModelSchema.Role.assistant }
+                            .forEach { chatMessages.remove(it) }
+                        val currentChatMessages = chatMessages()
+                        innerRun(task, expandedUserMessage, currentChatMessages, markdownTranscript)
+                    }.async(task.ui, pool))
             }
         } catch (e: Exception) {
             log.info("Error in chat", e)

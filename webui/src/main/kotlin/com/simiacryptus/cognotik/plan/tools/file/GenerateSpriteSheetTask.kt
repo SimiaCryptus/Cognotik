@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -95,15 +96,16 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
         val metadataFile = executionConfig?.metadata_file ?: return resultFn("No metadata file specified")
         val description = executionConfig?.task_description ?: "Generate a sprite sheet"
 
-        task.add(MarkdownUtil.renderMarkdown("## Generating Sprite Sheet: `$imageFile`", ui = task.ui))
+        task.header("Generating Sprite Sheet: $imageFile", level = 2)
 
         try {
             // Step 1: Generate the Image
-            task.add(MarkdownUtil.renderMarkdown("### Step 1: Drawing Sprites...", ui = task.ui))
-            
+            task.header("Step 1: Drawing Sprites...", level = 3)
+
             val imageGenPrompt = """
                 Create a sprite sheet based on this description: $description.
                 Requirements:
+                - The image is 1:1 aspect ratio, minimum 512x512 pixels.
                 - Arrange sprites in a grid or logical layout.
                 - Use a solid, contrasting background color (e.g., magenta or bright green) to make separation easy.
                 - Ensure sprites do not overlap.
@@ -123,23 +125,27 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             val imageOutputPath = root.resolve(imageFile)
             imageOutputPath.toFile().parentFile?.mkdirs()
             ImageIO.write(generatedImage, "png", imageOutputPath.toFile())
-            
+
             val imageLink = task.linkTo(imageFile)
             task.add("""<a href="$imageLink" target="_blank"><img src="$imageLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>""")
 
             // Step 2: Parse Metadata
-            task.add(MarkdownUtil.renderMarkdown("### Step 2: Analyzing Sprite Locations...", ui = task.ui))
+            task.header("Step 2: Analyzing Sprite Locations...", level = 3)
 
             val parserAgent = ParsedImageAgent(
                 resultClass = SpriteSheetMetadata::class.java,
-                model = (typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: defaultSmart).getChildClient(task),
+                model = (typeConfig?.model?.let { orchestrationConfig.instance(it) } ?: defaultSmart).getChildClient(
+                    task
+                ),
                 prompt = """
                     Identify all distinct sprites in this image.
+                    Output coordinates assuming a 1000x1000 image size, regardless of actual aspect ratio.
                     For each sprite, provide:
                     1. A descriptive name (e.g., 'walk_frame_1', 'idle_stand').
-                    2. The exact bounding box (x, y, width, height).
+                    2. The exact bounding box (x, y, width, height) in pixels.
+                    Ensure bounding boxes are tight around the sprite content.
                     Ignore the background color.
-                """.trimIndent()
+                """.trimIndent(),
             )
 
             val parseResult = parserAgent.answer(
@@ -151,8 +157,20 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
                 )
             )
 
-            val metadata = parseResult.obj
-            
+            val rawMetadata = parseResult.obj
+            val metadata = rawMetadata.copy(sprites = rawMetadata.sprites.map { sprite ->
+                val scaledX = (sprite.x * generatedImage.width / 1000.0).toInt().coerceIn(0, generatedImage.width - 1)
+                val scaledY = (sprite.y * generatedImage.height / 1000.0).toInt().coerceIn(0, generatedImage.height - 1)
+                val scaledW = (sprite.width * generatedImage.width / 1000.0).toInt().coerceAtMost(generatedImage.width - scaledX)
+                val scaledH = (sprite.height * generatedImage.height / 1000.0).toInt().coerceAtMost(generatedImage.height - scaledY)
+                sprite.copy(
+                    x = scaledX,
+                    y = scaledY,
+                    width = scaledW,
+                    height = scaledH
+                )
+            })
+
             // Save Metadata
             val jsonOutputPath = root.resolve(metadataFile)
             val mapper = jacksonObjectMapper().writerWithDefaultPrettyPrinter()
@@ -171,13 +189,9 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             val spriteHtml = StringBuilder()
             metadata.sprites.forEach { sprite ->
                 try {
-                    val x = sprite.x.coerceIn(0, generatedImage.width - 1)
-                    val y = sprite.y.coerceIn(0, generatedImage.height - 1)
-                    val w = sprite.width.coerceAtMost(generatedImage.width - x)
-                    val h = sprite.height.coerceAtMost(generatedImage.height - y)
-                    g.drawRect(x, y, w, h)
-                    if (w > 0 && h > 0) {
-                        val subImage = generatedImage.getSubimage(x, y, w, h)
+                    g.drawRect(sprite.x, sprite.y, sprite.width, sprite.height)
+                    if (sprite.width > 0 && sprite.height > 0) {
+                        val subImage = generatedImage.getSubimage(sprite.x, sprite.y, sprite.width, sprite.height)
                         val safeName = sprite.name.replace(Regex("[^a-zA-Z0-9.-]"), "_")
                         val spriteFileName = "$safeName.png"
                         ImageIO.write(subImage, "png", spriteDir.resolve(spriteFileName).toFile())
@@ -196,29 +210,42 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
 
             // Display Results
             val metadataLink = task.linkTo(metadataFile)
-            val summary = """
-                ### Complete
-                - Image saved to: <a href="$imageLink">$imageFile</a>
-                - Metadata saved to: <a href="$metadataLink">$metadataFile</a>
-                - Identified ${metadata.sprites.size} sprites.
-                - Individual sprites saved to: `$spriteDirRelative/`
-                ### Bounding Boxes
-                <a href="$debugLink" target="_blank"><img src="$debugLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
-                ### Sprites
-                $spriteHtml
+
+
+            val tabs = TabbedDisplay(task)
+
+            // Tab 1: Overview
+            tabs["Overview"] = """
+                <ul>
+                    <li><b>Image:</b> <a href="$imageLink">$imageFile</a></li>
+                    <li><b>Metadata:</b> <a href="$metadataLink">$metadataFile</a></li>
+                    <li><b>Sprite Count:</b> ${metadata.sprites.size}</li>
+                    <li><b>Sprites Directory:</b> $spriteDirRelative/</li>
+                </ul>
+                <div style="margin-top: 10px;">
+                    <a href="$imageLink" target="_blank"><img src="$imageLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
+                </div>
             """.trimIndent()
 
-            task.add(MarkdownUtil.renderMarkdown(summary, ui = task.ui))
-            
-            // Visualize boxes on the UI (Optional visualization)
-            val tableRows = metadata.sprites.joinToString("\n") { 
-                "| ${it.name} | ${it.x}, ${it.y} | ${it.width}x${it.height} |" 
+            // Tab 2: Bounding Boxes
+            tabs["Bounding Boxes"] = """
+                <a href="$debugLink" target="_blank"><img src="$debugLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
+            """.trimIndent()
+
+            // Tab 3: Sprites
+            tabs["Sprites"] = spriteHtml.toString()
+
+            // Tab 4: Data Table
+            val tableRows = metadata.sprites.joinToString("\n") {
+                "| ${it.name} | ${it.x}, ${it.y} | ${it.width}x${it.height} |"
             }
-            task.add(MarkdownUtil.renderMarkdown("""
+            tabs["Data"] = MarkdownUtil.renderMarkdown(
+                """
 | Name | Position | Size |
 |------|----------|------|
 $tableRows
-            """.trimIndent(), ui = task.ui))
+            """.trimIndent(), ui = task.ui
+            )
 
             task.complete("Generated sprite sheet with ${metadata.sprites.size} sprites")
             resultFn("Generated sprite sheet: $imageFile and $metadataFile")
@@ -239,6 +266,7 @@ $tableRows
         val GenerateSpriteSheet = TaskType(
             "GenerateSpriteSheet",
             "Writing",
+            GenerateSpriteSheetTask::class.java,
             GenerateSpriteSheetTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate a sprite sheet and associated JSON metadata",
@@ -249,7 +277,7 @@ $tableRows
                 <li>Analyzes the generated image to find sprite bounding boxes</li>
                 <li>Exports standard JSON metadata for game engine integration</li>
               </ul>
-            """
+            """,
         )
     }
 }

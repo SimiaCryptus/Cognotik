@@ -12,6 +12,8 @@ import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.IOException
+import java.util.concurrent.Semaphore
 
 class LanguageServerTask(
     orchestrationConfig: OrchestrationConfig,
@@ -79,96 +81,128 @@ class LanguageServerTask(
 
             val extension = file.extension
             val command = serverCommands[extension]
-                ?: throw IllegalArgumentException("No Language Server configured for extension: .$extension")
+                ?: throw IllegalArgumentException("No Language Server support defined for extension: .$extension")
 
-            task.add("Starting LSP for .$extension...")
-            transcript?.write("# LSP Session\nCommand: ${command.joinToString(" ")}\nTarget: $filePath\nAction: $action\n\n".toByteArray())
 
-            val process = ProcessBuilder(command)
-                .directory(root.toFile())
-                .start()
-
-            val lsp = LspClient(process.inputStream, process.outputStream, mapper, transcript)
-
-            try {
-                // 1. Initialize
-                task.add("Initializing Server...")
-                lsp.sendRequest("initialize", mapper.createObjectNode().apply {
-                    put("processId", ProcessHandle.current().pid())
-                    put("rootUri", root.toUri().toString())
-                    putObject("capabilities").putObject("textDocument")
-                })
-
-                // 2. Open Document
-                val fileUri = file.toURI().toString()
-                lsp.sendNotification("textDocument/didOpen", mapper.createObjectNode().apply {
-                    putObject("textDocument").apply {
-                        put("uri", fileUri)
-                        put("languageId", extension)
-                        put("version", 1)
-                        put("text", file.readText())
-                    }
-                })
-
-                // 3. Perform Action
-                task.add("Executing $action...")
-                val result = when (action.lowercase()) {
-                    "diagnostics" -> {
-                        // Diagnostics are usually pushed as notifications after opening.
-                        // We wait a brief moment for them.
-                        Thread.sleep(2000)
-                        // In a real persistent client, we'd listen.
-                        // For a one-shot task, we might miss them if not immediate,
-                        // but many LSPs send them right after didOpen.
-                        "Diagnostics are pushed asynchronously. Check transcript for 'textDocument/publishDiagnostics'."
-                    }
-
-                    "definition" -> {
-                        validatePosition()
-                        val params = positionParams(mapper, fileUri)
-                        val response = lsp.sendRequest("textDocument/definition", params)
-                        formatLocationResponse(response, "Definition")
-                    }
-
-                    "references" -> {
-                        validatePosition()
-                        val params = positionParams(mapper, fileUri).apply {
-                            putObject("context").put("includeDeclaration", true)
+            val executeLsp = {
+                task.header("LSP Execution: $action", level = 3)
+                val statusBuffer = task.add("Starting LSP for .$extension...")
+                transcript?.write("# LSP Session\nCommand: ${command.joinToString(" ")}\nTarget: $filePath\nAction: $action\n\n".toByteArray())
+                val process = try {
+                    ProcessBuilder(command)
+                        .directory(root.toFile())
+                        .start()
+                } catch (e: IOException) {
+                    throw RuntimeException("Failed to start Language Server '${command.joinToString(" ")}'. Ensure it is installed and on your PATH.", e)
+                }
+                val lsp = LspClient(process.inputStream, process.outputStream, mapper, transcript)
+                try {
+                    // 1. Initialize
+                    statusBuffer?.setLength(0)
+                    statusBuffer?.append("Initializing Server...")
+                    task.update()
+                    lsp.sendRequest("initialize", mapper.createObjectNode().apply {
+                        put("processId", ProcessHandle.current().pid())
+                        put("rootUri", root.toUri().toString())
+                        putObject("capabilities").putObject("textDocument")
+                    })
+                    // 2. Open Document
+                    statusBuffer?.setLength(0)
+                    statusBuffer?.append("Opening Document...")
+                    task.update()
+                    val fileUri = file.toURI().toString()
+                    lsp.sendNotification("textDocument/didOpen", mapper.createObjectNode().apply {
+                        putObject("textDocument").apply {
+                            put("uri", fileUri)
+                            put("languageId", extension)
+                            put("version", 1)
+                            put("text", file.readText())
                         }
-                        val response = lsp.sendRequest("textDocument/references", params)
-                        formatLocationResponse(response, "References")
+                    })
+                    // 3. Perform Action
+                    statusBuffer?.setLength(0)
+                    statusBuffer?.append("Executing $action...")
+                    task.update()
+                    val result = when (action.lowercase()) {
+                        "diagnostics" -> {
+                            // Diagnostics are usually pushed as notifications after opening.
+                            // We wait a brief moment for them.
+                            Thread.sleep(2000)
+                            // In a real persistent client, we'd listen.
+                            // For a one-shot task, we might miss them if not immediate,
+                            // but many LSPs send them right after didOpen.
+                            "Diagnostics are pushed asynchronously. Check transcript for 'textDocument/publishDiagnostics'."
+                        }
+
+                        "definition" -> {
+                            validatePosition()
+                            val params = positionParams(mapper, fileUri)
+                            val response = lsp.sendRequest("textDocument/definition", params)
+                            formatLocationResponse(response, "Definition")
+                        }
+
+                        "references" -> {
+                            validatePosition()
+                            val params = positionParams(mapper, fileUri).apply {
+                                putObject("context").put("includeDeclaration", true)
+                            }
+                            val response = lsp.sendRequest("textDocument/references", params)
+                            formatLocationResponse(response, "References")
+                        }
+
+                        "hover" -> {
+                            validatePosition()
+                            val params = positionParams(mapper, fileUri)
+                            val response = lsp.sendRequest("textDocument/hover", params)
+                            response?.get("contents")?.toString() ?: "No hover info"
+                        }
+
+                        else -> throw IllegalArgumentException("Unknown action: $action")
                     }
-
-                    "hover" -> {
-                        validatePosition()
-                        val params = positionParams(mapper, fileUri)
-                        val response = lsp.sendRequest("textDocument/hover", params)
-                        response?.get("contents")?.toString() ?: "No hover info"
+                    // 4. Shutdown
+                    statusBuffer?.setLength(0)
+                    statusBuffer?.append("Shutting down...")
+                    task.update()
+                    lsp.sendRequest("shutdown", null)
+                    lsp.sendNotification("exit", null)
+                    val finalOutput = "LSP Action '$action' completed.\nResult:\n$result"
+                    transcript?.write("\n## Final Result\n$finalOutput\n".toByteArray())
+                    statusBuffer?.setLength(0)
+                    statusBuffer?.append("<b>LSP Action Completed</b>")
+                    task.update()
+                    finalOutput
+                } catch (e: Exception) {
+                    log.error("LSP Error", e)
+                    transcript?.write("\n## Error\n${e.message}\n".toByteArray())
+                    task.error(e)
+                    throw e
+                } finally {
+                    if (process.isAlive) {
+                        process.destroyForcibly()
                     }
-
-                    else -> throw IllegalArgumentException("Unknown action: $action")
                 }
-
-                // 4. Shutdown
-                lsp.sendRequest("shutdown", null)
-                lsp.sendNotification("exit", null)
-
-                val finalOutput = "LSP Action '$action' completed.\nResult:\n$result"
-                transcript?.write("\n## Final Result\n$finalOutput\n".toByteArray())
-                resultFn(finalOutput)
-
-            } catch (e: Exception) {
-                log.error("LSP Error", e)
-                transcript?.write("\n## Error\n${e.message}\n".toByteArray())
-                throw e
-            } finally {
-                if (process.isAlive) {
-                    process.destroyForcibly()
-                }
+            }
+            if (orchestrationConfig.autoFix) {
+                resultFn(executeLsp())
+            } else {
+                val semaphore = Semaphore(0)
+                task.add("Ready to run LSP action '$action' on '$filePath'.")
+                task.add(task.ui.hrefLink("Run LSP Action", "btn btn-primary") {
+                    try {
+                        resultFn(executeLsp())
+                    } catch (e: Exception) {
+                        task.error(e)
+                        resultFn("Error: ${e.message}")
+                    } finally {
+                        semaphore.release()
+                    }
+                })
+                semaphore.acquire()
             }
 
         } catch (e: Exception) {
             log.warn("Task Failed", e)
+            task.error(e)
             resultFn("Error: ${e.message}")
         } finally {
             transcript?.close()
@@ -302,31 +336,31 @@ class LanguageServerTask(
         }
     }
 
-    val serverCommands: Map<String, List<String>> get() {
-        val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
-        val executables: List<String>? = tools.flatMap { it.absoluteExecutablePaths() }.distinct().sorted()
-        return mapOf(
-            "py" to listOf("pylsp"),
-            "js" to listOf("typescript-language-server", "--stdio"),
-            "ts" to listOf("typescript-language-server", "--stdio"),
-            "kt" to listOf("kotlin-language-server"),
-            "java" to listOf("jdtls"),
-            "c" to listOf("clangd"),
-            "cpp" to listOf("clangd"),
-            "go" to listOf("gopls"),
-            "rs" to listOf("rust-analyzer"),
-            "sh" to listOf("bash-language-server", "start"),
-            "tex" to listOf("texlab"),
-            "yaml" to listOf("yaml-language-server", "--stdio"),
-            "dockerfile" to listOf("docker-langserver", "--stdio")
-        ).filter { (_, cmd) -> executables?.contains(cmd[0]) ?: false }
-    }
+    val serverCommands: Map<String, List<String>>
+        get() {
+            return mapOf(
+                "py" to listOf("pylsp"),
+                "js" to listOf("typescript-language-server", "--stdio"),
+                "ts" to listOf("typescript-language-server", "--stdio"),
+                "kt" to listOf("kotlin-language-server"),
+                "java" to listOf("jdtls"),
+                "c" to listOf("clangd"),
+                "cpp" to listOf("clangd"),
+                "go" to listOf("gopls"),
+                "rs" to listOf("rust-analyzer"),
+                "sh" to listOf("bash-language-server", "start"),
+                "tex" to listOf("texlab"),
+                "yaml" to listOf("yaml-language-server", "--stdio"),
+                "dockerfile" to listOf("docker-langserver", "--stdio")
+            )
+        }
 
     companion object {
         private val log = LoggerFactory.getLogger(LanguageServerTask::class.java)
         val LanguageServer = TaskType(
             "LanguageServer",
             "File",
+            LanguageServerTask::class.java,
             LanguageServerTaskExecutionConfigData::class.java,
             LanguageServerTaskTypeConfig::class.java,
             "Interact with Language Servers (LSP)",
@@ -339,7 +373,7 @@ class LanguageServerTask(
                     <li><b>Hover:</b> Get documentation or type information at a specific position.</li>
                 </ul>
                 Requires language servers (e.g., pylsp, typescript-language-server) to be installed in the environment.
-            """.trimIndent()
+            """.trimIndent(),
         )
     }
 }

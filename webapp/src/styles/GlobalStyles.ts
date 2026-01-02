@@ -459,13 +459,11 @@ export const GlobalStyles = createGlobalStyle<{ theme: DefaultTheme; }>`
 
     .message-content pre,
     .message-content code {
-        background: var(--theme-surface);
         color: var(--theme-text); /* Ensure code text color also uses a theme variable */
     }
 
     /* Universal code block styles using CSS variables */
     pre code {
-        background: var(--theme-surface);
         color: var(--theme-text);
         border-color: var(--theme-border);
     }

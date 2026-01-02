@@ -256,8 +256,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
         val inputFileContent = getInputFileCode()
         if (inputFileContent.isNotBlank()) {
             log.info("Loaded input files for context")
-            val inputFilesTask = task.ui.newTask(false)
-            tabs["Input Files"] = inputFilesTask.placeholder
+            val inputFilesTask = tabs.newTask("Input Files")
             inputFilesTask.add(
                 buildString {
                     appendLine("# Input Files")
@@ -269,7 +268,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
             markdownTranscript?.write("# Input Files\n\n".toByteArray(StandardCharsets.UTF_8))
             markdownTranscript?.write(inputFileContent.truncateForDisplay(3000).toByteArray(StandardCharsets.UTF_8))
             markdownTranscript?.write("\n\n".toByteArray(StandardCharsets.UTF_8))
-            task.update()
+            inputFilesTask.update()
         }
         // Include user messages in context
         if (userMessages.isNotEmpty()) {
@@ -278,8 +277,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
 
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Technical Explanation Generation")
@@ -301,7 +299,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
         }
         overviewTask.add(overviewContent.renderMarkdown)
         markdownTranscript?.write(overviewContent.toByteArray(StandardCharsets.UTF_8))
-        buildString {
+        val configContent = buildString {
             appendLine("- Target Audience: ${executionConfig.target_audience}")
             appendLine("- Level of Detail: ${executionConfig.level_of_detail}")
             appendLine("- Format: ${executionConfig.explanation_format}")
@@ -320,12 +318,16 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
             appendLine("---")
             appendLine()
         }
-        buildString {
+        overviewTask.add(configContent.renderMarkdown)
+        markdownTranscript?.write(configContent.toByteArray(StandardCharsets.UTF_8))
+
+        val phase1Content = buildString {
             appendLine("### Phase 1: Analysis & Outline")
             appendLine("*Analyzing topic and creating explanation structure...*")
         }
-        overviewTask.add(overviewContent.renderMarkdown)
-        task.update()
+        overviewTask.add(phase1Content.renderMarkdown)
+        markdownTranscript?.write(phase1Content.toByteArray(StandardCharsets.UTF_8))
+        overviewTask.update()
 
         val resultBuilder = StringBuilder()
         resultBuilder.append("# Technical Explanation: $topic\n\n")
@@ -337,8 +339,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Reference Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Reference Context")
                 contextTask.add(
                     buildString {
                         appendLine("# Reference Context")
@@ -358,15 +359,14 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
                         }
                     }.renderMarkdown
                 )
-                task.update()
+                contextTask.update()
                 markdownTranscript?.write("\n## Related Files\n".toByteArray(StandardCharsets.UTF_8))
                 markdownTranscript?.write(contextFiles.truncateForDisplay(2000).toByteArray(StandardCharsets.UTF_8))
             }
 
             // Phase 1: Create outline
             log.info("Phase 1: Creating explanation outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
                 buildString {
@@ -378,7 +378,7 @@ TechnicalExplanation - Break down complex technical subjects into clear, digesti
             )
             markdownTranscript?.write("\n# Explanation Outline\n\n".toByteArray(StandardCharsets.UTF_8))
             markdownTranscript?.write("**Status:** Creating structured outline...\n\n".toByteArray(StandardCharsets.UTF_8))
-            task.update()
+            outlineTask.update()
 
             val audienceGuidance = when (executionConfig.target_audience.lowercase()) {
                 "layperson" -> "Assume no technical background. Use everyday language and avoid jargon."
@@ -530,12 +530,12 @@ Ensure the outline:
                 appendLine("**Status:** ✅ Complete")
             }
             outlineTask.add(outlineContent.renderMarkdown)
-            task.update()
+            outlineTask.update()
             markdownTranscript?.write(outlineContent.toByteArray(StandardCharsets.UTF_8))
 
             overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
             overviewTask.add("\n### Phase 2: Content Generation\n*Writing explanation sections...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
 
             // Phase 2: Generate content for each concept
             log.info("Phase 2: Generating explanation content")
@@ -545,10 +545,9 @@ Ensure the outline:
                 log.info("Writing section ${index + 1}/${outline.key_concepts.size}: ${conceptOutline.concept}")
 
                 overviewTask.add("- Section ${index + 1}: ${conceptOutline.concept.truncateForDisplay(50)} ".renderMarkdown)
-                task.update()
+                overviewTask.update()
 
-                val sectionTask = task.ui.newTask(false)
-                tabs["Section ${index + 1}"] = sectionTask.placeholder
+                val sectionTask = tabs.newTask("Section ${index + 1}")
 
                 sectionTask.add(
                     buildString {
@@ -560,7 +559,7 @@ Ensure the outline:
                 )
                 markdownTranscript?.write("\n# ${conceptOutline.concept}\n\n".toByteArray(StandardCharsets.UTF_8))
                 markdownTranscript?.write("**Status:** Writing section...\n\n".toByteArray(StandardCharsets.UTF_8))
-                task.update()
+                sectionTask.update()
 
                 // Build context from previous sections
                 val previousContext = if (sections.isNotEmpty()) {
@@ -683,7 +682,7 @@ ${
                     appendLine("**Status:** ✅ Complete")
                 }
                 sectionTask.add(sectionContent.renderMarkdown)
-                task.update()
+                sectionTask.update()
                 markdownTranscript?.write(sectionContent.toByteArray(StandardCharsets.UTF_8))
 
                 resultBuilder.append("## ${section.title}\n\n")
@@ -700,7 +699,7 @@ ${
                 }
 
                 overviewTask.add("✅\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
             }
 
             overviewTask.add("✅ Phase 2 Complete: All sections written\n".renderMarkdown)
@@ -708,11 +707,10 @@ ${
             // Phase 3: Add comparisons if enabled
             if (executionConfig.include_comparisons) {
                 overviewTask.add("\n### Phase 3: Comparisons\n*Adding comparisons with related concepts...*\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
 
                 log.info("Phase 3: Generating comparisons")
-                val comparisonTask = task.ui.newTask(false)
-                tabs["Comparisons"] = comparisonTask.placeholder
+                val comparisonTask = tabs.newTask("Comparisons")
 
                 comparisonTask.add(
                     buildString {
@@ -728,7 +726,7 @@ ${
                         StandardCharsets.UTF_8
                     )
                 )
-                task.update()
+                comparisonTask.update()
 
                 val comparisonAgent = ChatAgent(
                     prompt = """
@@ -764,7 +762,7 @@ Make comparisons clear and helpful for ${executionConfig.target_audience}.
                         appendLine("**Status:** ✅ Complete")
                     }.renderMarkdown
                 )
-                task.update()
+                comparisonTask.update()
                 markdownTranscript?.write("\n## Related Concepts\n\n${comparisons}\n\n".toByteArray(StandardCharsets.UTF_8))
 
                 resultBuilder.append("## Comparisons with Related Concepts\n\n")
@@ -777,11 +775,10 @@ Make comparisons clear and helpful for ${executionConfig.target_audience}.
             // Phase 4: Revision (if enabled)
             if (executionConfig.revision_passes > 0) {
                 overviewTask.add("\n### Phase 4: Revision\n*Refining for clarity...*\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
 
                 log.info("Phase 4: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask(false)
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -797,7 +794,7 @@ Make comparisons clear and helpful for ${executionConfig.target_audience}.
                         StandardCharsets.UTF_8
                     )
                 )
-                task.update()
+                revisionTask.update()
 
                 val fullExplanation = resultBuilder.toString()
 
@@ -848,7 +845,7 @@ Provide the complete revised explanation.
                             appendLine()
                         }.renderMarkdown
                     )
-                    task.update()
+                    revisionTask.update()
                     markdownTranscript?.write(
                         "\n## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray(
                             StandardCharsets.UTF_8
@@ -861,11 +858,10 @@ Provide the complete revised explanation.
 
             // Phase 5: Final Assembly
             overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete explanation...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
 
             log.info("Phase 5: Assembling final explanation")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Explanation"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Explanation")
 
             val finalExplanation = buildString {
                 appendLine("# ${outline.title}")
@@ -906,7 +902,7 @@ Provide the complete revised explanation.
             }
 
             finalTask.add(finalExplanation.renderMarkdown)
-            task.update()
+            finalTask.update()
             markdownTranscript?.write("\n---\n\n${finalExplanation}\n".toByteArray(StandardCharsets.UTF_8))
 
             // Final statistics
@@ -939,7 +935,7 @@ Provide the complete revised explanation.
                 statsContent.renderMarkdown
             )
             markdownTranscript?.write(statsContent.toByteArray(StandardCharsets.UTF_8))
-            task.update()
+            overviewTask.update()
 
             // Concise summary for resultFn
             val finalResult = buildString {
@@ -983,7 +979,7 @@ Provide the complete revised explanation.
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.update()
             markdownTranscript?.close()
 
             val errorOutput = buildString {
@@ -1065,6 +1061,7 @@ Provide the complete revised explanation.
         val TechnicalExplanation = TaskType(
             "TechnicalExplanation",
             "Writing",
+            TechnicalExplanationTask::class.java,
             TechnicalExplanationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Break down complex technical subjects into clear, digestible explanations",
@@ -1083,7 +1080,7 @@ Provide the complete revised explanation.
                 <li>Optional revision passes for clarity improvement</li>
                 <li>Ideal for documentation, onboarding, education, and knowledge sharing</li>
               </ul>
-            """
+            """,
         )
     }
 }

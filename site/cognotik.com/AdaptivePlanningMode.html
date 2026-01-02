@@ -1,113 +1,117 @@
-@@ -0,0 +1,93 @@
-+<!DOCTYPE html>
-+<html lang="en">
-+<head>
-+    <link href="logo.svg" rel="icon" type="image/svg+xml">
-+    <meta charset="UTF-8">
-+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-+    <title>Adaptive Planning Mode - Cognotik</title>
-+    <link rel="stylesheet" href="assets/styles/main.css">
-+    <link rel="preconnect" href="https://fonts.googleapis.com">
-+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-+    <script src="https://unpkg.com/lucide@latest"></script>
-+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
-+</head>
-+<body>
-+    <cognotik-header current-page="adaptive-mode"></cognotik-header>
-+
-+    <main>
-+        <section class="hero">
-+            <h1>Adaptive Planning Mode</h1>
-+            <p class="subtitle">
-+                The Strategist. An iterative, self-correcting cognitive engine that thinks, acts, and reflects to solve ambiguous or evolving problems.
-+            </p>
-+        </section>
-+
-+        <section class="features">
-+            <h2>How It Works</h2>
-+            <div class="features-grid">
-+                <div class="feature-card">
-+                    <i data-lucide="refresh-cw"></i>
-+                    <h3>Iterative Loop</h3>
-+                    <p>Operates in cycles of "Think, Act, Reflect", allowing it to adjust its plan based on real-time feedback and task results.</p>
-+                </div>
-+                <div class="feature-card">
-+                    <i data-lucide="brain-circuit"></i>
-+                    <h3>Dynamic State</h3>
-+                    <p>Maintains a structured internal state (Goals, Knowledge, Context) that evolves as it gathers information.</p>
-+                </div>
-+                <div class="feature-card">
-+                    <i data-lucide="layers"></i>
-+                    <h3>Cognitive Strategies</h3>
-+                    <p>Can adopt different personas or "strategies" (e.g., Scientist, Agile Developer) to suit the nature of the task.</p>
-+                </div>
-+            </div>
-+        </section>
-+
-+        <section class="modes-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
-+            <h2>Cognitive Strategies</h2>
-+            <p style="text-align: center; margin-bottom: 2rem; color: var(--text-secondary);">
-+                Adaptive Planning isn't one-size-fits-all. It uses specialized schemas to structure its reasoning.
-+            </p>
-+            <div class="mode-grid">
-+                <div class="mode-card">
-+                    <div class="mode-title">Project Manager</div>
-+                    <p><strong>The Standard.</strong> Focuses on goals, facts, and next steps. Ideal for general-purpose task execution and planning.</p>
-+                </div>
-+                <div class="mode-card">
-+                    <div class="mode-title">Scientific Researcher</div>
-+                    <p><strong>The Investigator.</strong> Uses the scientific method: formulating hypotheses, gathering evidence, and proving or refuting theories.</p>
-+                </div>
-+                <div class="mode-card">
-+                    <div class="mode-title">Agile Developer</div>
-+                    <p><strong>The Coder.</strong> Follows TDD cycles (Red/Green/Refactor). Manages user stories, acceptance criteria, and a backlog of tasks.</p>
-+                </div>
-+                <div class="mode-card">
-+                    <div class="mode-title">Critical Auditor</div>
-+                    <p><strong>The Security Expert.</strong> Focuses on risk assessment, compliance checklists, and vulnerability scanning. It tries to break things.</p>
-+                </div>
-+                <div class="mode-card">
-+                    <div class="mode-title">Creative Writer</div>
-+                    <p><strong>The Storyteller.</strong> Manages narrative structure, themes, character arcs, and tone. Iteratively drafts and refines content.</p>
-+                </div>
-+            </div>
-+        </section>
-+
-+        <section class="code-preview" style="padding: 2rem; max-width: 800px; margin: 0 auto;">
-+            <h2>Internal State Structure</h2>
-+            <div class="code-window" style="background: #1e293b; border-radius: 8px; padding: 1rem; font-family: monospace; color: #e2e8f0;">
-+                <div class="code-header" style="display: flex; gap: 8px; margin-bottom: 1rem;">
-+                    <span class="dot red" style="width: 12px; height: 12px; background: #ef4444; border-radius: 50%;"></span>
-+                    <span class="dot yellow" style="width: 12px; height: 12px; background: #eab308; border-radius: 50%;"></span>
-+                    <span class="dot green" style="width: 12px; height: 12px; background: #22c55e; border-radius: 50%;"></span>
-+                    <span class="filename" style="margin-left: 1rem; color: #94a3b8;">ReasoningState.json</span>
-+                </div>
-+                <pre><code class="language-json" style="white-space: pre-wrap;">{
-+  "goals": {
-+    "shortTerm": [
-+      { "objective": "Validate API connection", "priority": 1 }
-+    ],
-+    "longTerm": [
-+      { "objective": "Build complete stock dashboard", "priority": 5 }
-+    ]
-+  },
-+  "knowledge": {
-+    "facts": ["User wants stock data", "API key is available"],
-+    "hypotheses": ["AlphaVantage might be rate limited"],
-+    "openQuestions": ["What is the preferred UI framework?"]
-+  },
-+  "executionContext": {
-+    "currentTask": { "taskId": "task_1", "description": "Test API endpoint" },
-+    "nextSteps": ["Parse JSON response", "Design UI layout"]
-+  }
-+}</code></pre>
-+            </div>
-+        </section>
-+    </main>
-+
-+    <script>
-+        lucide.createIcons();
-+    </script>
-+</body>
-+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Planning Mode - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+    <cognotik-header current-page="adaptive-mode"></cognotik-header>
+
+    <main>
+        <section class="hero">
+            <h1>Adaptive Planning Mode</h1>
+            <p class="subtitle">
+                The Strategist. An iterative, self-correcting cognitive engine that thinks, acts, and reflects to solve ambiguous or evolving problems.
+            </p>
+        </section>
+
+        <section class="features">
+            <h2>How It Works</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i data-lucide="refresh-cw"></i>
+                    <h3>Iterative Loop</h3>
+                    <p>Operates in cycles of "Think, Act, Reflect", allowing it to adjust its plan based on real-time feedback and task results.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="brain-circuit"></i>
+                    <h3>Dynamic State</h3>
+                    <p>Maintains a structured internal state (Goals, Knowledge, Context) that evolves as it gathers information.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-lucide="layers"></i>
+                    <h3>Cognitive Strategies</h3>
+                    <p>Can adopt different personas or "strategies" (e.g., Scientist, Agile Developer) to suit the nature of the task.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="modes-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <h2>Cognitive Strategies</h2>
+            <div class="schema-discussion" style="max-width: 800px; margin: 0 auto 3rem auto; text-align: center;">
+                <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 1.1rem; line-height: 1.6;">
+                    Most AI agents approach every problem the same way. Cognotik's <strong>Cognitive Schemas</strong> define a specific "mindset" for the agent to adopt.
+                </p>
+                <p style="color: var(--text-secondary); line-height: 1.6;">
+                    Instead of a generic "answer the prompt" approach, a schema dictates how the agent structures its memory, plans its tasks, and reflects on outcomes. Whether it's the rigorous falsification process of the Scientific Method or the iterative TDD loop of an Agile Developer, the schema ensures the reasoning process matches the domain of the problem.
+                </p>
+            </div>
+            <div class="mode-grid">
+                <div class="mode-card">
+                    <div class="mode-title">Project Manager</div>
+                    <p><strong>The Standard.</strong> Focuses on goals, facts, and next steps. Ideal for general-purpose task execution and planning.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Scientific Researcher</div>
+                    <p><strong>The Investigator.</strong> Uses the scientific method: formulating hypotheses, gathering evidence, and proving or refuting theories.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Agile Developer</div>
+                    <p><strong>The Coder.</strong> Follows TDD cycles (Red/Green/Refactor). Manages user stories, acceptance criteria, and a backlog of tasks.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Critical Auditor</div>
+                    <p><strong>The Security Expert.</strong> Focuses on risk assessment, compliance checklists, and vulnerability scanning. It tries to break things.</p>
+                </div>
+                <div class="mode-card">
+                    <div class="mode-title">Creative Writer</div>
+                    <p><strong>The Storyteller.</strong> Manages narrative structure, themes, character arcs, and tone. Iteratively drafts and refines content.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="code-preview" style="padding: 2rem; max-width: 800px; margin: 0 auto;">
+            <h2>Internal State Structure</h2>
+            <div class="code-window" style="background: #1e293b; border-radius: 8px; padding: 1rem; font-family: monospace; color: #e2e8f0;">
+                <div class="code-header" style="display: flex; gap: 8px; margin-bottom: 1rem;">
+                    <span class="dot red" style="width: 12px; height: 12px; background: #ef4444; border-radius: 50%;"></span>
+                    <span class="dot yellow" style="width: 12px; height: 12px; background: #eab308; border-radius: 50%;"></span>
+                    <span class="dot green" style="width: 12px; height: 12px; background: #22c55e; border-radius: 50%;"></span>
+                    <span class="filename" style="margin-left: 1rem; color: #94a3b8;">ReasoningState.json</span>
+                </div>
+                <pre><code class="language-json" style="white-space: pre-wrap;">{
+  "goals": {
+    "shortTerm": [
+      { "objective": "Validate API connection", "priority": 1 }
+    ],
+    "longTerm": [
+      { "objective": "Build complete stock dashboard", "priority": 5 }
+    ]
+  },
+  "knowledge": {
+    "facts": ["User wants stock data", "API key is available"],
+    "hypotheses": ["AlphaVantage might be rate limited"],
+    "openQuestions": ["What is the preferred UI framework?"]
+  },
+  "executionContext": {
+    "currentTask": { "taskId": "task_1", "description": "Test API endpoint" },
+    "nextSteps": ["Parse JSON response", "Design UI layout"]
+  }
+}</code></pre>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

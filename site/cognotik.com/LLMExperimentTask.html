@@ -55,7 +55,7 @@
     <header class="experiment-hero container">
         <div class="hero-content">
             <h1>LLM Experiment</h1>
-            <p>Conduct controlled experiments on LLM behavior with variable substitution and statistical analysis.</p>
+            <p>Conduct rigorous experiments on LLM behavior with variable substitution, temperature sweeping, and automated statistical analysis.</p>
             <a href="#demo" class="cta-button">Try the Simulator</a>
         </div>
         <div class="hero-visual">
@@ -78,14 +78,14 @@
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
                     </div>
                     <h3>Statistical Validity</h3>
-                    <p>Run multiple repetitions and perform t-tests to ensure results are statistically significant.</p>
+                    <p>Calculate t-statistics, p-values, and Cohen's d effect sizes to validate differences between temperatures and prompts.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M12 2v20"/><path d="M4.93 4.93l14.14 14.14"/><path d="M19.07 4.93L4.93 19.07"/></svg>
                     </div>
-                    <h3>Insight Generation</h3>
-                    <p>Automatically analyzes experimental data to generate human-readable insights and conclusions.</p>
+                    <h3>Response Diversity</h3>
+                    <p>Measure output consistency and creativity using compression-based diversity scoring and custom metric evaluation.</p>
                 </div>
             </div>
         </div>
@@ -104,6 +104,14 @@
                     <div class="control-group">
                         <label>Variables (JSON)</label>
                         <textarea id="variables">{"tone": ["polite", "apologetic", "direct"]}</textarea>
+                    </div>
+                    <div class="control-group">
+                        <label>Temperatures (comma-separated)</label>
+                        <input type="text" id="temperatures" value="0.1, 0.7" style="width: 100%; padding: 0.5rem; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 4px;">
+                    </div>
+                    <div class="control-group">
+                        <label>Metrics</label>
+                        <input type="text" id="metrics" value="response_length, sentiment" style="width: 100%; padding: 0.5rem; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 4px;">
                     </div>
                     <div class="control-group">
                         <label>Repetitions</label>
@@ -145,16 +153,20 @@
     <script>
         function runSimulation() {
             const template = document.getElementById('template').value;
+            const temperatures = document.getElementById('temperatures').value;
             const repetitions = document.getElementById('repetitions').value;
             const logsEl = document.getElementById('output-logs');
             
             logsEl.innerHTML = '';
             const steps = [
-                `[INFO] Initializing experiment...`,
-                `[INFO] Generating conditions from variables...`,
-                `[INFO] Running ${repetitions} trials per condition...`,
-                `[INFO] Collecting metrics (length, sentiment)...`,
-                `[INFO] Performing statistical analysis...`,
+                `[INFO] Initializing LLMExperimentTask: repetitions=${repetitions}`,
+                `[INFO] Generated 6 experimental conditions (3 variables x 2 temps)`,
+                `[INFO] Running condition 1/6: temp=0.1, vars={tone=polite}...`,
+                `[INFO] Running condition 2/6: temp=0.7, vars={tone=polite}...`,
+                `[INFO] Running condition 3/6: temp=0.1, vars={tone=apologetic}...`,
+                `[INFO] Running condition 4/6: temp=0.7, vars={tone=apologetic}...`,
+                `[INFO] Collecting metrics via LLM evaluator...`,
+                `[INFO] Generating detailed statistical tables (α = 0.05)...`,
                 `[SUCCESS] Experiment Complete.`
             ];
             
@@ -172,11 +184,28 @@
                     clearInterval(interval);
                     const result = document.createElement('div');
                     result.innerHTML = `
-                        <br><strong>Results:</strong><br>
-                        - <strong>Polite:</strong> Avg Length 150 chars, Sentiment 0.8<br>
-                        - <strong>Apologetic:</strong> Avg Length 200 chars, Sentiment 0.4<br>
-                        - <strong>Direct:</strong> Avg Length 80 chars, Sentiment 0.5<br><br>
-                        <em>Insight:</em> "Apologetic" tone significantly increases response length (p < 0.05).
+                        <br><strong style="color: var(--accent-secondary)">### Table 1: Descriptive Statistics by Temperature</strong><br>
+                        <table style="width:100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem;">
+                            <tr style="border-bottom: 1px solid #444; text-align: left;"><th>Temp</th><th>Metric</th><th>Mean</th><th>SD</th><th>CV</th></tr>
+                            <tr><td>0.1</td><td>Length</td><td>145.2</td><td>12.4</td><td>0.085</td></tr>
+                            <tr><td>0.7</td><td>Length</td><td>168.5</td><td>45.2</td><td>0.268</td></tr>
+                            <tr><td>0.1</td><td>Sentiment</td><td>8.5</td><td>0.5</td><td>0.058</td></tr>
+                            <tr><td>0.7</td><td>Sentiment</td><td>7.2</td><td>1.8</td><td>0.250</td></tr>
+                        </table>
+                        <br>
+                        <strong style="color: var(--accent-secondary)">### Table 2: Pairwise Temperature Comparisons</strong><br>
+                        <div style="font-size: 0.85rem; margin-top: 0.5rem;">
+                        | Metric | T1 | T2 | p-value | Sig | Effect Size |<br>
+                        |--------|----|----|---------|-----|-------------|<br>
+                        | Length | 0.1| 0.7| 0.0214  | ✓   | 0.68 (Med)  |<br>
+                        | Sent.  | 0.1| 0.7| 0.1540  | ✗   | 0.35 (Small)|<br>
+                        </div>
+                        <br>
+                        <strong>Response Diversity:</strong><br>
+                        - Temp 0.1: Low Diversity (Compressibility: 1.85)<br>
+                        - Temp 0.7: High Diversity (Compressibility: 1.08)<br>
+                        <br>
+                        <em>Insight:</em> Higher temperature significantly increases response length variance and diversity, but reduces sentiment consistency.
                     `;
                     result.style.color = '#e2e8f0';
                     result.style.marginTop = '1rem';

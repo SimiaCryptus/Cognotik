@@ -383,7 +383,7 @@ class GameLevelDesignTask(
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
+        val overviewTask = task.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         val overviewContent = buildString {
@@ -443,7 +443,7 @@ class GameLevelDesignTask(
                     flush()
                 }
                 log.debug("Found context: ${combinedContext.length} chars")
-                val contextTask = task.ui.newTask(false)
+                val contextTask = task.newTask()
                 tabs["Context"] = contextTask.placeholder
                 contextTask.add(
                     buildString {
@@ -463,7 +463,7 @@ class GameLevelDesignTask(
                 flush()
             }
 
-            val structureTask = task.ui.newTask(false)
+            val structureTask = task.newTask()
             tabs["Level Structure"] = structureTask.placeholder
 
             structureTask.add(
@@ -599,7 +599,7 @@ Keep zone descriptions brief - detailed content will be added later.
                 flush()
             }
 
-            val encounterTask = task.ui.newTask(false)
+            val encounterTask = task.newTask()
             tabs["Encounters"] = encounterTask.placeholder
 
             encounterTask.add(
@@ -712,7 +712,7 @@ Return the complete level with all encounters filled in.
                 flush()
             }
 
-            val pacingTask = task.ui.newTask(false)
+            val pacingTask = task.newTask()
             tabs["Pacing"] = pacingTask.placeholder
 
             pacingTask.add(
@@ -828,7 +828,7 @@ Return the complete level with pacing_curve filled in.
                     flush()
                 }
 
-                val collectiblesTask = task.ui.newTask(false)
+                val collectiblesTask = task.newTask()
                 tabs["Collectibles & Secrets"] = collectiblesTask.placeholder
 
                 collectiblesTask.add(
@@ -930,7 +930,7 @@ Return the complete level with collectibles and secrets filled in.
                 flush()
             }
 
-            val guidanceTask = task.ui.newTask(false)
+            val guidanceTask = task.newTask()
             tabs["Player Guidance"] = guidanceTask.placeholder
 
             val guidanceAgent = ParsedAgent(
@@ -1025,7 +1025,7 @@ Create comprehensive guidance that helps without patronizing.
                     flush()
                 }
 
-                val variantsTask = task.ui.newTask(false)
+                val variantsTask = task.newTask()
                 tabs["Difficulty Variants"] = variantsTask.placeholder
 
                 val variantsAgent = ParsedAgent(
@@ -1109,7 +1109,7 @@ Ensure variants maintain the core level design while adjusting challenge.
 
             log.info("Final Assembly: Compiling complete level design")
 
-            val finalTask = task.ui.newTask(false)
+            val finalTask = task.newTask()
             tabs["Complete Design"] = finalTask.placeholder
 
             val completeDesign = buildString {
@@ -1388,12 +1388,10 @@ Ensure variants maintain the core level design while adjusting challenge.
     ): String {
         return try {
             // Save complete design to file
-            val (designLink, designFile) = task.createFile("level_design.md")
-            designFile?.writeText(completeDesign)
+            val designLink = task.saveFile("level_design.md", completeDesign.toByteArray())
 
             // Save summary to file
-            val (summaryLink, summaryFile) = task.createFile("level_summary.md")
-            summaryFile?.writeText(summary)
+            val summaryLink = task.saveFile("level_summary.md", summary.toByteArray())
 
             buildString {
                 appendLine("# Level Design Generation Complete")
@@ -1516,6 +1514,7 @@ Ensure variants maintain the core level design while adjusting challenge.
         val GameLevelDesign = TaskType(
             "GameLevelDesign",
             "Games",
+            GameLevelDesignTask::class.java,
             GameLevelDesignTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete game level designs with layout, pacing, and encounters",
@@ -1534,7 +1533,7 @@ Ensure variants maintain the core level design while adjusting challenge.
                 <li>Optional boss encounters, puzzles, and secrets</li>
                 <li>Ideal for game development, level design documentation, and prototyping</li>
               </ul>
-            """
+            """,
         )
 
         fun getAvailableFiles(

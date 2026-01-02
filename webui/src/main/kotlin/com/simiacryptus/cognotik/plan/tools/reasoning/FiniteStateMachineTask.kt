@@ -23,7 +23,7 @@ class FiniteStateMachineTask(
     planTask
 ) {
     protected val codeFiles = mutableMapOf<java.nio.file.Path, String>()
-    val maxDescriptionLength = 500
+    val maxDescriptionLength = 2000
     private var transcriptStream: java.io.FileOutputStream? = null
 
     class FiniteStateMachineTaskExecutionConfigData(
@@ -116,16 +116,21 @@ FiniteStateMachine - Model concepts using finite state machine analysis
         }
 
         try {
-            // Create tabbed display for organized output
-            val tabs = TabbedDisplay(task)
-
-            // Overview tab
-            val overviewTask = task.ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
-
             val domainContext = executionConfig.domain_context ?: "general domain"
             val initialStates = executionConfig.initial_states ?: emptyList()
             val knownEvents = executionConfig.known_events ?: emptyList()
+
+            // Create tabbed display for organized output
+            val tabs = TabbedDisplay(task)
+            // Initialize full report builder
+            val fullReport = StringBuilder()
+            fullReport.append("# Finite State Machine Analysis: $conceptToModel\n\n")
+            fullReport.append("**Domain:** $domainContext\n")
+            fullReport.append("**Date:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n")
+
+            // Overview tab
+            val overviewTask = tabs.newTask("Overview")
+
             writeToTranscript("## Configuration\n\n")
             writeToTranscript("**Concept:** $conceptToModel\n\n")
             writeToTranscript(
@@ -169,8 +174,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
             // Step 1: Identify States
             log.info("Step 1: Identifying all possible states")
-            val statesTask = task.ui.newTask(false)
-            tabs["States"] = statesTask.placeholder
+            val statesTask = tabs.newTask("States")
 
             val statesLoading = statesTask.add(
                 MarkdownUtil.renderMarkdown(
@@ -202,6 +206,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             writeToTranscript("### Response\n\n")
             writeToTranscript("$statesAnalysis\n\n")
             writeToTranscript("---\n\n")
+            fullReport.append("## 1. State Identification\n\n$statesAnalysis\n\n")
 
             statesLoading?.clear()
             statesTask.add(
@@ -236,8 +241,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
             // Step 2: Identify Transitions
             log.info("Step 2: Identifying state transitions and events")
-            val transitionsTask = task.ui.newTask(false)
-            tabs["Transitions"] = transitionsTask.placeholder
+            val transitionsTask = tabs.newTask("Transitions")
 
             val transitionsLoading = transitionsTask.add(
                 MarkdownUtil.renderMarkdown(
@@ -260,6 +264,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             writeToTranscript("### Response\n\n")
             writeToTranscript("$transitionsAnalysis\n\n")
             writeToTranscript("---\n\n")
+            fullReport.append("## 2. Transition Analysis\n\n$transitionsAnalysis\n\n")
 
             transitionsLoading?.clear()
             transitionsTask.add(
@@ -277,8 +282,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
 
             // Step 3: Generate State Diagram
             log.info("Step 3: Generating state diagram")
-            val diagramTask = task.ui.newTask(false)
-            tabs["State Diagram"] = diagramTask.placeholder
+            val diagramTask = tabs.newTask("State Diagram")
 
             val diagramLoading = diagramTask.add(
                 MarkdownUtil.renderMarkdown("## State Diagram\n\n🔄 Generating visual representation...", ui = ui)
@@ -313,6 +317,11 @@ Generate the Mermaid diagram now:
                 writeToTranscript("⚠️ Failed to generate diagram\n\n```\n$diagramResult\n```\n\n")
             }
             writeToTranscript("---\n\n")
+            if (mermaidCode.isNotEmpty()) {
+                fullReport.append("## 3. State Diagram\n\n```mermaid\n$mermaidCode\n```\n\n")
+            } else {
+                fullReport.append("## 3. State Diagram\n\nFailed to generate diagram.\n\n")
+            }
 
             diagramLoading?.clear()
             if (mermaidCode.isNotEmpty()) {
@@ -351,8 +360,7 @@ Generate the Mermaid diagram now:
             var edgeCasesAnalysis: String
             if (executionConfig.identify_edge_cases) {
                 log.info("Step 4: Identifying edge cases and error states")
-                val edgeCasesTask = task.ui.newTask(false)
-                tabs["Edge Cases"] = edgeCasesTask.placeholder
+                val edgeCasesTask = tabs.newTask("Edge Cases")
 
                 val edgeCasesLoading = edgeCasesTask.add(
                     MarkdownUtil.renderMarkdown(
@@ -383,6 +391,7 @@ Provide a structured analysis of edge cases and recommendations.
                 writeToTranscript("### Response\n\n")
                 writeToTranscript("$edgeCasesAnalysis\n\n")
                 writeToTranscript("---\n\n")
+                fullReport.append("## 4. Edge Cases Analysis\n\n$edgeCasesAnalysis\n\n")
 
                 edgeCasesLoading?.clear()
                 edgeCasesTask.add(
@@ -403,8 +412,7 @@ Provide a structured analysis of edge cases and recommendations.
             var validationAnalysis = ""
             if (executionConfig.validate_properties) {
                 log.info("Step 5: Validating FSM properties")
-                val validationTask = task.ui.newTask(false)
-                tabs["Validation"] = validationTask.placeholder
+                val validationTask = tabs.newTask("Validation")
 
                 val validationLoading = validationTask.add(
                     MarkdownUtil.renderMarkdown(
@@ -441,6 +449,7 @@ Provide a structured validation report.
                 writeToTranscript("### Response\n\n")
                 writeToTranscript("$validationAnalysis\n\n")
                 writeToTranscript("---\n\n")
+                fullReport.append("## 5. Property Validation\n\n$validationAnalysis\n\n")
 
                 validationLoading?.clear()
                 validationTask.add(
@@ -461,8 +470,7 @@ Provide a structured validation report.
             var testScenariosAnalysis: String
             if (executionConfig.generate_test_scenarios) {
                 log.info("Step 6: Generating test scenarios")
-                val testScenariosTask = task.ui.newTask(false)
-                tabs["Test Scenarios"] = testScenariosTask.placeholder
+                val testScenariosTask = tabs.newTask("Test Scenarios")
 
                 val testScenariosLoading = testScenariosTask.add(
                     MarkdownUtil.renderMarkdown("## Test Scenario Generation\n\n🔄 Creating test scenarios...", ui = ui)
@@ -497,6 +505,7 @@ Generate at least 5-10 diverse test scenarios.
                 writeToTranscript("### Response\n\n")
                 writeToTranscript("$testScenariosAnalysis\n\n")
                 writeToTranscript("---\n\n")
+                fullReport.append("## 6. Test Scenarios\n\n$testScenariosAnalysis\n\n")
 
                 testScenariosLoading?.clear()
                 testScenariosTask.add(
@@ -515,8 +524,7 @@ Generate at least 5-10 diverse test scenarios.
 
             // Step 7: Generate Summary
             log.info("Step 7: Generating comprehensive summary")
-            val summaryTask = task.ui.newTask(false)
-            tabs["Summary"] = summaryTask.placeholder
+            val summaryTask = tabs.newTask("Summary")
 
             val summaryLoading = summaryTask.add(
                 MarkdownUtil.renderMarkdown("## Summary\n\n🔄 Generating comprehensive summary...", ui = ui)
@@ -544,6 +552,7 @@ Keep the summary concise but informative.
             writeToTranscript("### Response\n\n")
             writeToTranscript("$summaryAnalysis\n\n")
             writeToTranscript("---\n\n")
+            fullReport.append("## 7. Summary\n\n$summaryAnalysis\n\n")
 
             summaryLoading?.clear()
             summaryTask.add(
@@ -596,10 +605,15 @@ Keep the summary concise but informative.
             val conciseResult = buildString {
                 appendLine("# FSM Analysis: $conceptToModel")
                 appendLine()
-                appendLine("## Summary")
-                appendLine(summaryAnalysis.take(maxDescriptionLength))
-                if (summaryAnalysis.length > maxDescriptionLength) appendLine("...")
-                appendLine()
+                if (summaryAnalysis.isNotBlank()) {
+                    appendLine("## Summary")
+                    appendLine(summaryAnalysis.smartTruncate(maxDescriptionLength))
+                    appendLine()
+                } else {
+                    appendLine("## Summary")
+                    appendLine("Analysis completed successfully.")
+                    appendLine()
+                }
                 appendLine("## Key Components")
                 appendLine("- States identified and analyzed")
                 appendLine("- Transitions mapped")
@@ -620,12 +634,20 @@ Keep the summary concise but informative.
             writeToTranscript("**Status:** ✅ Analysis complete\n\n")
             closeTranscript()
 
-            val (link, _) = task.createFile("fsm_analysis.md")
+            val (link, file) = task.createFile("fsm_analysis.md")
+            file?.writeText(fullReport.toString())
+
+            var mmdLink = ""
+            if (mermaidCode.isNotEmpty()) {
+                val (l, f) = task.createFile("fsm_diagram.mmd")
+                f?.writeText(mermaidCode)
+                mmdLink = l
+            }
+
             task.complete(
                 "FSM analysis completed for: $conceptToModel. " +
                         "Full analysis written to <a href='$link' target='_blank'>$link</a> " +
-                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                        "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
+                        (if (mmdLink.isNotEmpty()) " <a href='$mmdLink' target='_blank'>Mermaid Diagram</a>" else "")
             )
             resultFn(conciseResult)
 
@@ -825,6 +847,17 @@ Format as a clear table or structured list.
 
         return ""
     }
+    private fun String.smartTruncate(maxLength: Int): String {
+        if (length <= maxLength) return this
+        val truncated = take(maxLength)
+        val lastNewline = truncated.lastIndexOf('\n')
+        return if (lastNewline > maxLength / 2) {
+            truncated.substring(0, lastNewline) + "\n...(truncated)"
+        } else {
+            truncated + "..."
+        }
+    }
+
 
     private fun writeToTranscript(content: String) {
         try {
@@ -850,6 +883,7 @@ Format as a clear table or structured list.
         val FiniteStateMachine = TaskType(
             "FiniteStateMachine",
             "Reasoning",
+            FiniteStateMachineTask::class.java,
             FiniteStateMachineTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Model concepts using finite state machine analysis",
@@ -864,8 +898,7 @@ Format as a clear table or structured list.
           <li>Generates comprehensive test scenarios</li>
           <li>Useful for system design, protocol analysis, and workflow validation</li>
         </ul>
-      """
+      """,
         )
     }
 }
-

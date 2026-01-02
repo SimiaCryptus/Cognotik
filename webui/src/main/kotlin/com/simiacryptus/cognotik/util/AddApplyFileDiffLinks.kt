@@ -173,9 +173,10 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             fun isFileResolvable(header: String?): Boolean {
                 try {
                     val prefiltered = prefilterFilename(normalizeFilename(header ?: "")) ?: ""
-                    val resolvedPath = resolver(root, prefiltered) ?: return (true != header?.contains('.') && null != defaultFile)
+                    val resolvedPath =
+                        resolver(root, prefiltered) ?: return (true != header?.contains('.') && null != defaultFile)
                     if (root.resolve(resolvedPath).toFile().exists()) return true
-                    if(!resolvedPath.contains('.') && null != defaultFile) return true // Allow default file for extensionless paths (likely to be a mis-parse)
+                    if (!resolvedPath.contains('.') && null != defaultFile) return true // Allow default file for extensionless paths (likely to be a mis-parse)
                     return false
                 } catch (e: Throwable) {
                     log.info("Error processing code block", e)
@@ -189,7 +190,9 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             val withPatchLinks: String = patchBlocks.reversed().fold(response) { markdown, (header, lang, diffValue) ->
                 var normalizeFilename = normalizeFilename(header ?: "")
                 if (normalizeFilename.isBlank() || !normalizeFilename.contains('.')) {
-                    if(defaultFile == null) { return@fold markdown }
+                    if (defaultFile == null) {
+                        return@fold markdown
+                    }
                     normalizeFilename = defaultFile
                 }
                 val filename = resolver(root, normalizeFilename) ?: return@fold markdown

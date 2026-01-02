@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import com.simiacryptus.cognotik.webui.session.newLogStream
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
 import org.apache.tinkerpop.gremlin.structure.Graph
@@ -76,6 +77,7 @@ open class IterativeGraphGenerationTask<T : IterativeGraphGenerationTask.Iterati
         val actions: List<GraphAction> = emptyList(),
         val is_finished: Boolean = false
     ) : ValidatedObject
+
     data class GraphAction(
         @Description("Type of action to perform: ADD_NODE, ADD_EDGE, or MERGE_NODES")
         val type: String = "ADD_NODE", // ADD_NODE, ADD_EDGE, MERGE_NODES
@@ -124,10 +126,12 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
         orchestrationConfig: OrchestrationConfig
     ) {
         val config = executionConfig!!
-        val transcript = task.transcript("GraphGeneration")?.let { OutputStreamWriter(it) }
+        val logStream = task.newLogStream("GraphGeneration.log")
+        val transcript = OutputStreamWriter(logStream)
 
-        transcript?.write("# Iterative Graph Generation\n\n")
-        transcript?.write("Goal: ${config.goal_prompt}\n\n")
+        transcript.write("# Iterative Graph Generation\n\n")
+        transcript.write("Goal: ${config.goal_prompt}\n\n")
+        transcript.flush()
 
         val graph: Graph = TinkerGraph.open()
         if (!config.initial_graph_file.isNullOrBlank()) {
@@ -135,17 +139,16 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
             if (file?.exists() == true) {
                 try {
                     GraphSONReader.build().create().readGraph(file.inputStream(), graph)
-                    transcript?.write("Loaded initial graph from ${config.initial_graph_file}\n")
+                    transcript.write("Loaded initial graph from ${config.initial_graph_file}\n")
                 } catch (e: Exception) {
-                    transcript?.write("Error loading initial graph: ${e.message}\n")
+                    transcript.write("Error loading initial graph: ${e.message}\n")
                 }
             }
         }
         val g: GraphTraversalSource = graph.traversal()
 
         val tabs = TabbedDisplay(task)
-        val mainTask = task.ui.newTask(false)
-        tabs["Progress"] = mainTask.placeholder
+        val mainTask = tabs.newTask("Progress")
 
         // Load context
         val fileContext = try {
@@ -177,11 +180,11 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
             val edgeCount = g.E().count().next()
 
             if (nodeCount >= config.max_nodes) {
-                transcript?.write("Max nodes reached ($nodeCount). Stopping.\n")
+                transcript.write("Max nodes reached ($nodeCount). Stopping.\n")
                 break
             }
             if (edgeCount >= config.max_edges) {
-                transcript?.write("Max edges reached ($edgeCount). Stopping.\n")
+                transcript.write("Max edges reached ($edgeCount). Stopping.\n")
                 break
             }
 
@@ -191,7 +194,8 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
                 "Graph Summary: $nodeCount nodes, $edgeCount edges. (Too large to display full state)"
             }
 
-            mainTask.add("### Iteration $iteration\nStarting Nodes: $nodeCount, Edges: $edgeCount\n".renderMarkdown)
+            mainTask.header("Iteration $iteration", 3)
+            mainTask.add("Starting Nodes: $nodeCount, Edges: $edgeCount")
 
             // 2. Agent Decision
             val prompt = """
@@ -225,8 +229,8 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
             ).answer(listOf("Analyze and update graph"))
 
             val response = agentResponse.obj
-            transcript?.write("<details>\n<summary>Iteration $iteration</summary>\n")
-            transcript?.write("Reasoning: ${response.reasoning}\n")
+            transcript.write("Reasoning: ${response.reasoning}\n")
+            mainTask.expandable("Reasoning", "<pre>${response.reasoning}</pre>")
 
             // 3. Apply Actions
             var actionsApplied = 0
@@ -262,6 +266,7 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
                                 }
                             }
                         }
+
                         "MERGE_NODES" -> {
                             val keepV = findVertex(g, action.target)
                             val removeV = findVertex(g, action.source)
@@ -276,35 +281,34 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
                                 }
                                 // Drop the old node
                                 g.V(removeV.id()).drop().iterate()
-                                transcript?.write("Merged node ${removeV.id()} into ${keepV.id()}\n")
+                                transcript.write("Merged node ${removeV.id()} into ${keepV.id()}\n")
                                 actionsApplied++
                             }
                         }
 
 
                         else -> {
-                            transcript?.write("Unknown action type: ${action.type}\n")
+                            transcript.write("Unknown action type: ${action.type}\n")
                         }
                     }
                 } catch (e: Exception) {
                     log.warn("Error applying action: $action", e)
-                    transcript?.write("Error applying action: $action - ${e.message}\n")
+                    transcript.write("Error applying action: $action - ${e.message}\n")
                 }
             }
-            transcript?.write("Applied $actionsApplied actions.\n")
-            transcript?.write("</details>\n\n")
-            transcript?.flush()
+            transcript.write("Applied $actionsApplied actions.\n")
+            transcript.flush()
 
             if (nodeCount > 0) mainTask.add("```mermaid\n${toMermaid(g)}\n```".renderMarkdown)
 
             if (response.is_finished) {
-                transcript?.write("Agent signaled completion.\n")
+                transcript.write("Agent signaled completion.\n")
                 break
             }
 
             if (actionsApplied < 2 || iteration % 3 == 0) {
                 currentChunkIndex++
-                transcript?.write("Advancing to context chunk ${currentChunkIndex + 1}\n")
+                transcript.write("Advancing to context chunk ${currentChunkIndex + 1}\n")
             }
         }
 
@@ -312,20 +316,20 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
         val os = ByteArrayOutputStream()
 
         GraphSONWriter.build().create().writeGraph(os, graph)
-        val graphJSON = os.toString()
 
-        val file = task.resolveUserFile("graph.json")
-        file?.writeText(graphJSON)
+        val graphJSON = os.toByteArray()
+        val fileUrl = task.saveFile("graph.json", graphJSON)
 
         val summary = "Graph generation complete. Nodes: ${g.V().count().next()}, Edges: ${
             g.E().count().next()
-        }. Saved to ${file?.name ?: "graph.json"}"
-        mainTask.add(summary.renderMarkdown)
+        }."
+        mainTask.add(summary)
+        mainTask.add("<a href='$fileUrl'>Download Graph JSON</a>")
         task.update()
 
         task.safeComplete(summary, log)
         resultFn(summary)
-        transcript?.close()
+        transcript.close()
     }
 
     private fun findVertex(g: GraphTraversalSource, props: Map<String, Any>?): Vertex? {
@@ -388,10 +392,11 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
         val IterativeGraphGeneration = TaskType(
             "IterativeGraphGeneration",
             "Writing",
+            IterativeGraphGenerationTask::class.java,
             IterativeGraphGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Iteratively build a knowledge graph",
-            "Constructs a knowledge graph by iteratively analyzing context and adding nodes/edges."
+            "Constructs a knowledge graph by iteratively analyzing context and adding nodes/edges.",
         )
     }
 }

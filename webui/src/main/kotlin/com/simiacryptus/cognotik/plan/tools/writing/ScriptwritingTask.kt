@@ -15,13 +15,9 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
-import java.io.FileOutputStream
-import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 class ScriptwritingTask(
     orchestrationConfig: OrchestrationConfig,
@@ -236,8 +232,7 @@ class ScriptwritingTask(
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Script Generation")
@@ -290,8 +285,7 @@ class ScriptwritingTask(
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Research Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Research Context")
                 contextTask.add(
                     buildString {
                         appendLine("# Research Context")
@@ -314,8 +308,7 @@ class ScriptwritingTask(
             // Phase 1: Create outline
             log.info("Phase 1: Creating script outline")
             markdownTranscript?.write("# Script Outline\n\n".toByteArray())
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
                 buildString {
@@ -455,8 +448,7 @@ Ensure the outline:
                 overviewTask.add("- Opening Hook ".renderMarkdown)
                 task.update()
 
-                val hookTask = task.ui.newTask(false)
-                tabs["Opening"] = hookTask.placeholder
+                val hookTask = tabs.newTask("Opening")
 
                 hookTask.add(
                     buildString {
@@ -555,8 +547,7 @@ Ensure the dialogue sounds natural when spoken aloud.
                 overviewTask.add("- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown)
                 task.update()
 
-                val sectionTask = task.ui.newTask(false)
-                tabs["Section ${sectionOutline.section_number}"] = sectionTask.placeholder
+                val sectionTask = tabs.newTask("Section ${sectionOutline.section_number}")
 
                 sectionTask.add(
                     buildString {
@@ -696,8 +687,7 @@ Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of co
             overviewTask.add("- Closing ".renderMarkdown)
             task.update()
 
-            val closingTask = task.ui.newTask(false)
-            tabs["Closing"] = closingTask.placeholder
+            val closingTask = tabs.newTask("Closing")
 
             closingTask.add(
                 buildString {
@@ -801,8 +791,7 @@ Target duration: 15-20 seconds.
                 task.update()
 
                 log.info("Phase 3: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask(false)
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -868,8 +857,7 @@ Provide the complete revised script with all formatting intact.
             task.update()
 
             log.info("Phase 4: Assembling final script")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Script"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Script")
 
             val finalScript = buildString {
                 appendLine("# ${outline.title}")
@@ -946,8 +934,7 @@ Provide the complete revised script with all formatting intact.
 
             // Production notes tab
             if (executionConfig.include_notes) {
-                val productionNotesTask = task.ui.newTask(false)
-                tabs["Production Notes"] = productionNotesTask.placeholder
+                val productionNotesTask = tabs.newTask("Production Notes")
 
                 val productionNotes = buildString {
                     appendLine("# Production Notes")
@@ -1108,81 +1095,6 @@ Provide the complete revised script with all formatting intact.
         markdownTranscript?.close()
     }
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
-    }
-
-    private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            (FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            })
-        }.filter { file ->
-            file.isFile && file.exists()
-        }
-        .distinct()
-        .sortedBy { it }
-        .joinToString("\n\n") { relativePath ->
-            val file = root.toFile().resolve(relativePath)
-            try {
-                val content = if (!isTextFile(file)) {
-                    extractDocumentContent(file)
-                } else {
-                    codeFiles[file.toPath()] ?: file.readText()
-                }
-                "# $relativePath\n\n```\n$content\n```"
-            } catch (e: Throwable) {
-                log.warn("Error reading file: $relativePath", e)
-                ""
-            }
-        }
-
-    private fun isTextFile(file: File): Boolean {
-        val textExtensions = setOf(
-            "txt",
-            "md",
-            "kt",
-            "java",
-            "js",
-            "ts",
-            "py",
-            "rb",
-            "go",
-            "rs",
-            "c",
-            "cpp",
-            "h",
-            "hpp",
-            "css",
-            "html",
-            "xml",
-            "json",
-            "yaml",
-            "yml",
-            "properties",
-            "gradle",
-            "maven"
-        )
-        return textExtensions.contains(file.extension.lowercase())
-    }
-
-
     private fun getContextFiles(): String {
         val relatedFiles = executionConfig?.related_files ?: return ""
         if (relatedFiles.isEmpty()) return ""
@@ -1263,6 +1175,7 @@ Provide the complete revised script with all formatting intact.
         val Scriptwriting = TaskType(
             "Scriptwriting",
             "Writing",
+            ScriptwritingTask::class.java,
             ScriptwritingTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete scripts for videos, podcasts, and presentations",
@@ -1281,7 +1194,7 @@ Provide the complete revised script with all formatting intact.
                 <li>Optional revision passes for quality improvement</li>
                 <li>Ideal for video production, podcasts, presentations, training videos</li>
               </ul>
-            """
+            """,
         )
     }
 }

@@ -1,197 +1,165 @@
-# Developer Guide to Actor Types in Cognotik
+This guide provides a detailed overview of the Agent types available in the **Cognotik** library.
 
-## Overview
+Cognotik is designed around a strongly typed, object-oriented approach to LLM interaction. At the core is the abstract `BaseAgent<I, R>`, where `I` is the Input type and `R` is the Result type.
 
-The Cognotik framework provides a comprehensive set of actor types for building AI-powered applications. Each actor type
-is designed for specific use cases and extends the base `BaseActor` class to provide specialized functionality for
-different types of AI interactions.
+---
 
-## Base Actor Architecture
+## 1. Core Abstraction: `BaseAgent`
+**File:** `BaseAgent.kt`
 
-All actors inherit from `BaseActor<I, R>`, which defines the core interface:
+All agents inherit from this class. It standardizes how inputs are converted into chat messages and how responses are returned.
 
-```kotlin
-abstract class BaseActor<I, R>(
-    val prompt: String,
-    val model: Model = GPT35Turbo,
-    val temperature: Double = 0.0
-) {
-    abstract fun answer(input: I, api: OpenAI): R
-}
-```
+*   **Generic Types:**
+    *   `I`: The input type (e.g., `List<String>`, `CodeRequest`).
+    *   `R`: The return type (e.g., `String`, `CodeResult`, `ParsedResponse<T>`).
+*   **Key Properties:**
+    *   `model`: The `ChatInterface` (the LLM provider, e.g., OpenAI, Anthropic).
+    *   `temperature`: Controls randomness (0.0 for deterministic, 1.0 for creative).
+    *   `prompt`: The system prompt/instructions.
 
-- **I**: Input type
-- **R**: Response type
-- **prompt**: System prompt that defines the actor's behavior
-- **model**: The AI model to use
-- **temperature**: Controls randomness in responses (0.0-1.0)
+---
 
-## Actor Types
+## 2. Text & Conversational Agents
 
-### 1. SimpleActor
+### `ChatAgent`
+**File:** `ChatAgent.kt`
+**Inheritance:** `BaseAgent<List<String>, String>`
 
-**Purpose**: Basic text-to-text interactions with straightforward prompting.
+The standard agent for conversational text generation. It takes a history of strings and returns a raw string response.
 
-**Input**: `List<String>` - List of user messages
-**Output**: `String` - AI response text
-
-**Use Cases**:
-
-- General Q&A
-- Text summarization
-- Content generation
-- Simple conversational interfaces
-
-**Example**:
+*   **Input:** `List<String>` (A list of user messages/questions).
+*   **Output:** `String` (The raw content of the LLM's response).
+*   **How it works:** It constructs a chat history starting with the system `prompt`, followed by the user's input list.
+*   **Best For:** Chatbots, summarization, creative writing, and general Q&A.
 
 ```kotlin
-val summarizer = SimpleActor(
-    prompt = "You are a helpful assistant that summarizes text concisely.",
-    model = GPT35Turbo,
-    temperature = 0.3
+val agent = ChatAgent(
+    prompt = "You are a helpful assistant.",
+    model = myChatModel,
+    temperature = 0.7
 )
-
-val result = summarizer.answer(listOf("Summarize this article: ..."), api)
+val response = agent.respond(listOf("Hello", "Tell me a joke"))
 ```
 
-**Key Features**:
+---
 
-- Minimal overhead
-- Direct text responses
-- Suitable for most basic AI interactions
+## 3. Structured Data Agents (JSON/POJO)
 
-### 2. ParsedActor<T>
+These agents are designed to force the LLM to output structured data (JSON) which is then automatically deserialized into Kotlin/Java objects.
 
-**Purpose**: Structured data extraction and parsing from AI responses.
+### `ParsedAgent<T>`
+**File:** `ParsedAgent.kt`
+**Inheritance:** `BaseAgent<List<String>, ParsedResponse<T>>`
 
-**Input**: `List<String>` - User messages
-**Output**: `ParsedResponse<T>` - Contains both raw text and parsed object
+Converts natural language input into a specific class instance (`T`).
 
-**Use Cases**:
+*   **Input:** `List<String>` (Instructions).
+*   **Output:** `ParsedResponse<T>` (Contains the raw text and the deserialized object `obj`).
+*   **Key Features:**
+    *   **Schema Generation:** Uses `TypeDescriber` (see [Type Describers](type_describers.md)) to generate a YAML schema of class `T` and injects it into the system prompt.
+    *   **Validation:** If `T` implements `ValidatedObject`, the agent runs validation logic.
+    *   **Retries:** If JSON parsing fails, it can retry with a higher temperature (`deserializerRetries`).
+    *   **Single vs. Two-Stage:** Can try to parse immediately (`singleStage = true`) or use a secondary "Parser" LLM call to clean up the output.
+*   **Best For:** Data extraction, converting unstructured text to structured data, API payload generation.
 
-- Data extraction from unstructured text
-- Form filling
-- Structured content generation
-- API response parsing
+### `ParsedImageAgent<T>`
+**File:** `ParsedImageAgent.kt`
+**Inheritance:** `BaseAgent<List<ImageAndText>, ParsedResponse<T>>`
 
-**Example**:
+Similar to `ParsedAgent`, but accepts images as input. It performs Visual Question Answering (VQA) where the answer is a structured object.
 
-```kotlin
-data class PersonInfo(
-    val name: String,
-    val age: Int,
-    val occupation: String
-)
+*   **Input:** `List<ImageAndText>` (Text prompts paired with `BufferedImage`).
+*   **Output:** `ParsedResponse<T>`.
+*   **Best For:** Extracting data from invoices, describing UI elements in JSON, categorizing visual content.
 
-val extractor = ParsedActor<PersonInfo>(
-    resultClass = PersonInfo::class.java,
-    prompt = "Extract person information from the given text.",
-    model = GPT4,
-    parsingModel = GPT35Turbo
-)
+### `ProxyAgent<T>`
+**File:** `ProxyAgent.kt`
+**Note:** Does *not* inherit `BaseAgent`.
 
-val result = extractor.answer(listOf("John is a 30-year-old engineer"), api)
-val person = result.obj // PersonInfo object
-```
+This is a "Magic" agent. It creates a dynamic Java Proxy for a given interface or class. When you call a method on the proxy, the arguments are serialized, sent to the LLM, and the LLM "executes" the logic, returning the result.
 
-**Key Features**:
+*   **Mechanism:** Acts as a "JSON-RPC Service" simulated by the LLM.
+*   **Usage:**
+    ```kotlin
+    interface SentimentAnalyzer {
+        fun analyze(text: String): SentimentResult
+    }
+    val proxy = ProxyAgent(SentimentAnalyzer::class.java, model).create()
+    val result = proxy.analyze("I love this library!") // LLM determines the return value
+    ```
+*   **Best For:** Rapid prototyping, implementing complex logic without writing code, semantic routing.
 
-- Automatic JSON parsing with retry logic
-- Type-safe object extraction
-- Configurable parsing model for cost optimization
-- YAML schema generation for better parsing accuracy
+### Schema Best Practices
 
-**Configuration Options**:
+To ensure reliable parsing and validation with `ParsedAgent` and `ParsedImageAgent`, follow these guidelines when defining your data classes:
+*   **Constructors:** All fields should have a default value to ensure a no-argument constructor exists.
+*   **Mutability:** Using `var` in data objects is recommended.
+*   **Nullability:** Nullable types are fully supported and handled well by Kotlin.
+*   **Validation:** Implement `ValidatedObject` to ensure validity.
+    *   **Do not be too strict.**
+    *   Use the validation logic to modify `var` properties for canonicalization (e.g., fixing formatting) rather than just rejecting data.
+*   **Documentation:** Use `@Description` to provide semantic guidance to the Parser LLM.
+*   **Naming:** Schema field names should conform to JSON property naming conventions (all lowercase, underscores for delimiters), rather than typical Java camelCase.
+    *   Example: `user_name` instead of `userName`.
+*   **Dynamic Types:** Using `Any` types is appropriate for dynamic schemas. These will be deserialized as Lists and Maps according to Jackson defaults.
 
-- `deserializerRetries`: Number of parsing attempts (default: 2)
-- `parsingModel`: Separate model for parsing (can be cheaper than main model)
-- `describer`: Custom type description for better parsing
+---
 
-### 3. CodingActor
+## 4. Action & Code Agents
 
-**Purpose**: Code generation, execution, and debugging with multiple programming languages.
+### `CodeAgent`
+**File:** `CodeAgent.kt`
+**Inheritance:** `BaseAgent<CodeRequest, CodeResult>`
 
-**Input**: `CodeRequest` - Contains messages, code prefix, and execution settings
-**Output**: `CodeResult` - Contains code, execution results, and status
+An autonomous agent capable of writing, executing, and fixing code.
 
-**Use Cases**:
+*   **Input:** `CodeRequest` (Messages, code prefix, auto-evaluation settings).
+*   **Output:** `CodeResult` (Contains generated code, execution output, and status).
+*   **Key Components:**
+    *   **`CodeRuntime`:** The environment where code runs (e.g., a Kotlin script engine).
+    *   **`symbols`:** A map of objects injected into the script context (allows the agent to control your application).
+    *   **Self-Correction Loop:** If `autoEvaluate` is true, the agent executes the code. If it throws an exception, the agent feeds the error back to the LLM to generate a fix (up to `fixIterations` times).
+*   **Prompt Strategy:** The prompt is dynamically generated to include the API description of the provided `symbols` using `TypeDescriber` (see [Type Describers](type_describers.md)).
+*   **Best For:** Data analysis, complex math, controlling external APIs via script, tasks requiring iterative logic.
 
-- Code generation from natural language
-- Script automation
-- Data analysis and visualization
-- API integration tasks
+---
 
-**Example**:
+## 5. Media Agents
 
-```kotlin
-val coder = CodingActor(
-    interpreterClass = KotlinInterpreter::class,
-    symbols = mapOf("api" to myApiClient),
-    model = GPT4,
-    fallbackModel = GPT35Turbo
-)
+### `ImageGenerationAgent`
+**File:** `ImageGenerationAgent.kt`
+**Inheritance:** `BaseAgent<List<String>, ImageAndText>`
 
-val request = CodingActor.CodeRequest(
-    messages = listOf("Create a function to calculate fibonacci numbers" to Role.user),
-    autoEvaluate = true,
-    fixIterations = 3
-)
+Generates images from text.
 
-val result = coder.answer(request, api)
-println(result.code) // Generated code
-println(result.result.resultValue) // Execution result
-```
+*   **Input:** `List<String>` (User instructions).
+*   **Output:** `ImageAndText` (The generated image and the refined prompt used).
+*   **Workflow:**
+    1.  **Refinement:** Uses a text LLM (`textModel`) to transform the user request into an optimized image generation prompt.
+    2.  **Generation:** Sends the refined prompt to an `ImageClientInterface` (e.g., DALL-E).
+*   **Best For:** Creating assets, visualizing concepts.
 
-**Key Features**:
+### `ImageProcessingAgent`
+**File:** `ImageProcessingAgent.kt`
+**Inheritance:** `BaseAgent<List<ImageAndText>, ImageAndText>`
 
-- Multi-language support (Kotlin, Python, JavaScript, etc.)
-- Automatic code execution and validation
-- Error correction with iterative fixing
-- Symbol injection for API access
-- Code formatting and import management
+Handles Vision tasks. It can analyze images or (depending on the backend model) edit them.
 
-**Configuration Options**:
+*   **Input:** `List<ImageAndText>`.
+*   **Output:** `ImageAndText`.
+*   **Mechanism:** Encodes images to Base64 and sends them alongside text to a vision-capable model (e.g., GPT-4-Vision).
+*   **Best For:** Image captioning, visual analysis, describing scenes.
 
-- `interpreterClass`: Programming language interpreter
-- `symbols`: Pre-defined variables and APIs
-- `fixIterations`: Number of error correction attempts
-- `autoEvaluate`: Whether to execute code automatically
-- `codeInterceptor`: Custom code transformation
+---
 
-**Code Execution Flow**:
+## Summary Table
 
-1. Generate initial code
-2. Validate syntax
-3. Execute if `autoEvaluate` is true
-4. Fix errors iteratively
-5. Return final result with status
-
-### 4. ImageActor
-
-**Purpose**: AI-powered image generation from text descriptions.
-
-**Input**: `List<String>` - Text descriptions for image generation
-**Output**: `ImageResponse` - Contains both prompt text and generated image
-
-**Use Cases**:
-
-- Content illustration
-- Creative image generation
-- Prototype mockups
-- Visual storytelling
-
-**Example**:
-
-```kotlin
-val imageGen = ImageActor(
-    prompt = "Create detailed image prompts that will generate high-quality images",
-    textModel = GPT4,
-    imageModel = ImageModels.DallE3,
-    width = 1024,
-    height = 1024
-)
-
-val result = imageGen.answer(listOf("A serene mountain landscape at sunset"), api)
-val image = result.image // BufferedImage
-val description = result.text // Enhanced prompt used for generation
-```
+| Agent Class                | Input Type           | Output Type         | Primary Use Case                          |
+|:---------------------------|:---------------------|:--------------------|:------------------------------------------|
+| **`ChatAgent`**            | `List<String>`       | `String`            | Conversation, Q&A.                        |
+| **`ParsedAgent`**          | `List<String>`       | `ParsedResponse<T>` | Text-to-Object, Data Extraction.          |
+| **`CodeAgent`**            | `CodeRequest`        | `CodeResult`        | Writing & Executing Code, Tool Use.       |
+| **`ImageGenerationAgent`** | `List<String>`       | `ImageAndText`      | Creating Images from text.                |
+| **`ImageProcessingAgent`** | `List<ImageAndText>` | `ImageAndText`      | Analyzing/Captioning Images.              |
+| **`ParsedImageAgent`**     | `List<ImageAndText>` | `ParsedResponse<T>` | Image-to-Object (Visual Data Extraction). |
+| **`ProxyAgent`**           | Method Args          | Method Return       | Implementing Interfaces via LLM.          |

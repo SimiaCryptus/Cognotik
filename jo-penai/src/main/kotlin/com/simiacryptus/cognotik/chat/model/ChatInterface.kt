@@ -3,9 +3,9 @@ package com.simiacryptus.cognotik.chat.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
-import com.simiacryptus.cognotik.models.LLMModel
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
@@ -27,6 +27,7 @@ class ChatInterface(
         require(base.isNotBlank()) { "Base URL must be provided" }
         require(temperature in 0.0..2.0) { "Temperature must be in range [0.0, 2.0]" }
     }
+
     fun chat(
         messages: List<ChatMessage>,
         streams: MutableList<BufferedOutputStream> = logStreams

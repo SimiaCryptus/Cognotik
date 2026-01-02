@@ -32,8 +32,6 @@ class GeneratePresentationTask(
         task_description: String? = null,
         @Description("Whether to generate images for key slides")
         val generate_images: Boolean = false,
-        @Description("Image generation model to use (e.g., 'DallE3', 'DallE2')")
-        val image_model: String = "DallE3",
         @Description("Width of generated images in pixels")
         val image_width: Int = 1024,
         @Description("Height of generated images in pixels")
@@ -126,12 +124,12 @@ class GeneratePresentationTask(
         val revealInitCode = this::class.java.getResource("/presentations/reveal_init.js")?.readText() ?: ""
         filesToWrite.add("reveal_init.js" to revealInitCode)
 
-        val newTask = task.ui.newTask(false)
+        val newTask = task.newTask()
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
         val api = defaultSmart
 
-        newTask.add(MarkdownUtil.renderMarkdown("## Creating Presentation: `$htmlFile`", ui = ui))
+        newTask.header("Creating Presentation: $htmlFile", level = 2)
 
         val contextFiles = getInputFileCode()
         val priorCode = getPriorCode(agent.executionState)
@@ -198,7 +196,7 @@ $TT
             model = api,
         )
 
-        newTask.add(MarkdownUtil.renderMarkdown("### Step 1: Generating Presentation Structure", ui = ui))
+        newTask.header("Step 1: Generating Presentation Structure", level = 3)
 
         val response = chatAgent.answer(listOf("Generate the presentation."))
         val slideContent = extractCodeFromResponse(response, "html")
@@ -210,7 +208,7 @@ $TT
         // Step 1.5: Generate images for key slides if enabled
         val imageMap = mutableMapOf<Int, String>()
         if (executionConfig?.generate_images != false) {
-            newTask.add(MarkdownUtil.renderMarkdown("### Step 1.5: Generating Images for Key Slides", ui = ui))
+            newTask.header("Step 1.5: Generating Images for Key Slides", level = 3)
             imageMap.putAll(generateSlideImages(slideContent, task, orchestrationConfig, newTask))
         }
 
@@ -299,7 +297,7 @@ ${TT}css
 $TT
         """.trimIndent()
 
-        newTask.add(MarkdownUtil.renderMarkdown("### Step 2: Generating Custom CSS", ui = ui))
+        newTask.header("Step 2: Generating Custom CSS", level = 3)
 
         val cssCode = extractCodeFromResponse(chatAgent.answer(toInput(cssPrompt)), "css")
 
@@ -308,7 +306,7 @@ $TT
             return
         }
 
-        newTask.add(MarkdownUtil.renderMarkdown("### Step 3: Generating Presentation JavaScript", ui = ui))
+        newTask.header("Step 3: Generating Presentation JavaScript", level = 3)
         filesToWrite.add(htmlFile to htmlStructure)
         filesToWrite.add("presentation.css" to (standardCss + "\n\n" + cssCode))
         // Generate transcript
@@ -317,10 +315,11 @@ $TT
 
 
         // Display preview
-        newTask.add(MarkdownUtil.renderMarkdown("### Generated Files Preview", ui = ui))
+        newTask.header("Generated Files Preview", level = 3)
         filesToWrite.forEach { (filename, content) ->
-            newTask.add(MarkdownUtil.renderMarkdown("#### $filename", ui = ui))
-            newTask.add(MarkdownUtil.renderMarkdown("$TT${getFileExtension(filename)}\n$content\n${TT}", ui = ui))
+            newTask.header(filename, level = 4)
+            val codeBlock = "$TT${getFileExtension(filename)}\n$content\n$TT"
+            newTask.expandable("View Content", MarkdownUtil.renderMarkdown(codeBlock, ui = ui))
         }
 
         try {
@@ -336,7 +335,7 @@ $TT
                 path.toFile().parentFile?.mkdirs()
                 path.toFile().writeText(content)
                 writtenFiles.add(filename)
-                task.add("""<a href="${task.linkTo(filename)}">${filename}</a> created""")
+                newTask.add("""<a href="${task.linkTo(filename)}">${filename}</a> created""")
             }
 
             val summary = "Successfully wrote ${writtenFiles.joinToString(", ")}"
@@ -391,12 +390,7 @@ $TT
             val sections = sectionRegex.findAll(slideContent).toList()
             val maxImages = executionConfig?.max_images?.coerceIn(1, 10) ?: 3
             val slideIndices = selectSlidesForImages(sections.size, maxImages)
-            newTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "Generating images for ${slideIndices.size} slides (indices: ${slideIndices.joinToString(", ")})",
-                    ui = task.ui
-                )
-            )
+            newTask.add("Generating images for ${slideIndices.size} slides (indices: ${slideIndices.joinToString(", ")})")
             slideIndices.forEachIndexed { idx, slideIndex ->
                 if (slideIndex >= sections.size) return@forEachIndexed
                 val section = sections[slideIndex]
@@ -414,12 +408,7 @@ $TT
                     .take(200)
                 val imageFilename = "slide_${slideIndex + 1}_image.png"
                 try {
-                    newTask.add(
-                        MarkdownUtil.renderMarkdown(
-                            "Generating image ${idx + 1}/${slideIndices.size}: $heading",
-                            ui = task.ui
-                        )
-                    )
+                    newTask.add("Generating image ${idx + 1}/${slideIndices.size}: <b>$heading</b>")
                     val imageAgent = ImageProcessingAgent(
                         prompt = "Create a professional, visually appealing image for a presentation slide",
                         model = orchestrationConfig.defaultImage,
@@ -437,35 +426,20 @@ Style: Clean, modern, professional presentation aesthetic
                     val imageFile = task.resolveUserFile(imageFilename)!!
                     ImageIO.write(image, "png", imageFile)
                     imageMap[slideIndex] = imageFilename
-                    newTask.add(
-                        MarkdownUtil.renderMarkdown(
-                            "✅ Generated image for slide ${slideIndex + 1}: [${imageFilename}](${
-                                task.linkTo(
-                                    imageFilename
-                                )
-                            })",
-                            ui = task.ui
-                        )
-                    )
+                    newTask.image(image!!)
+                    newTask.add("✅ Generated image for slide ${slideIndex + 1}: <a href='${task.linkTo(imageFilename)}' target='_blank'>$imageFilename</a>")
                     log.debug("Generated image for slide ${slideIndex + 1}: $imageFilename")
                 } catch (e: Exception) {
                     log.error("Failed to generate image for slide ${slideIndex + 1}", e)
                     newTask.add(
-                        MarkdownUtil.renderMarkdown(
-                            "⚠️ Failed to generate image for slide ${slideIndex + 1}: ${e.message}",
-                            ui = task.ui
-                        )
+                        "⚠️ Failed to generate image for slide ${slideIndex + 1}: ${e.message}",
+                        additionalClasses = "text-danger"
                     )
                 }
             }
         } catch (e: Exception) {
             log.error("Error during image generation", e)
-            newTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "⚠️ Image generation encountered errors: ${e.message}",
-                    ui = task.ui
-                )
-            )
+            newTask.add("⚠️ Image generation encountered errors: ${e.message}", additionalClasses = "text-danger")
         }
         return imageMap
     }
@@ -545,6 +519,7 @@ Style: Clean, modern, professional presentation aesthetic
         val GeneratePresentation = TaskType(
             "GeneratePresentation",
             "Writing",
+            GeneratePresentationTask::class.java,
             GeneratePresentationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create complete Reveal.js presentations with narration support",
@@ -560,7 +535,7 @@ Style: Clean, modern, professional presentation aesthetic
                 <li>Includes navigation and progress indicators</li>
                 <li>Optional audio narration support</li>
               </ul>
-            """
+            """,
         )
     }
 }

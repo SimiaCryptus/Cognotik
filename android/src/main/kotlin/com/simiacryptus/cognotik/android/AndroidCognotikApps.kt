@@ -43,8 +43,8 @@ class AndroidCognotikApps private constructor(
     publicName: String = "localhost",
     port: Int = 12891
 ) : ApplicationDirectory(
-    localName = localName, 
-    publicName = publicName, 
+    localName = localName,
+    publicName = publicName,
     port = port
 ) {
 
@@ -52,7 +52,7 @@ class AndroidCognotikApps private constructor(
         private val log = LoggerFactory.getLogger(AndroidCognotikApps::class.java.name)
         private const val MAX_PORT_ATTEMPTS = 10
         private val isInitialized = AtomicBoolean(false)
-        
+
         /**
          * Create a new instance with the given context and port
          */
@@ -71,6 +71,7 @@ class AndroidCognotikApps private constructor(
     override fun authenticatedWebsite() = object : OAuthBase("") {
         override fun configure(context: WebAppContext, addFilter: Boolean) = context
     }
+
     private fun createAndroidWelcomeResources(): Resource {
         try {
             // Create a temporary directory for welcome resources
@@ -130,7 +131,7 @@ class AndroidCognotikApps private constructor(
             return PathResource(emptyDir.toPath())
         }
     }
-    
+
     override val welcomeResources: Resource by lazy {
         try {
             log.debug("Initializing welcome resources for Android")
@@ -155,11 +156,11 @@ class AndroidCognotikApps private constructor(
             log.debug("Platform already initialized, skipping setup")
             return
         }
-        
+
         super.setupPlatform()
         log.debug("Creating mock authentication and authorization managers")
         log.debug("Created mock user: ${UserSettingsManager.Companion.defaultUser.email}")
-        
+
         ApplicationServices.authenticationManager = object : AuthenticationInterface {
             override fun getUser(accessToken: String?) = UserSettingsManager.Companion.defaultUser
             override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
@@ -179,7 +180,7 @@ class AndroidCognotikApps private constructor(
     private val describer = AbbrevWhitelistYamlDescriber(
         "com.cognotik", "com.simiacryptus"
     )
-    private val model : ApiChatModel = AnthropicModels.Claude35Haiku.let {
+    private val model: ApiChatModel = AnthropicModels.Claude35Haiku.let {
         ApiChatModel(
             model = it,
             provider = ApiData(
@@ -199,13 +200,13 @@ class AndroidCognotikApps private constructor(
             emptyList()
         }
     }
-    
+
     private fun createChildWebApps(): List<ChildWebApp> {
         val filesDir = androidContext.filesDir.absolutePath
         log.info("Using files directory: $filesDir")
         log.debug("Parsing model: ${model.javaClass.simpleName}")
         log.debug("Default model: ${model.javaClass.simpleName}")
-        
+
         val planSettings = object : PlanSettings(
             defaultModel = model.instance()!!,
             parsingModel = model.instance()!!,
@@ -217,7 +218,7 @@ class AndroidCognotikApps private constructor(
 
         }
         log.debug("Created plan settings with working directory: ${planSettings.workingDir}")
-        
+
         val webApps = listOf(
             ChildWebApp("/chat", BasicChatApp(File(filesDir), model.model!!, model.model!!)),
             ChildWebApp(
@@ -311,10 +312,10 @@ class AndroidCognotikApps private constructor(
     fun startServer(): Int {
         log.info("Starting Android Cognotik server...")
         log.debug("Current thread: ${Thread.currentThread().name}")
-        
-        
-        
-        
+
+
+
+
         try {
             // Ensure platform is set up before accessing childWebApps
             log.debug("Setting up platform...")
@@ -322,7 +323,7 @@ class AndroidCognotikApps private constructor(
             log.debug("Finding available port...")
             val actualPort = findAvailablePort(port)
             log.info("Server will use port: $actualPort")
-            
+
             // Create a new instance with the correct port
             log.debug("Creating server instance with port: $actualPort")
             val serverInstance = create(androidContext, actualPort)
@@ -335,7 +336,7 @@ class AndroidCognotikApps private constructor(
             log.debug("Pre-initializing child web apps...")
             val apps = serverInstance.childWebApps
             log.debug("Child web apps initialized: ${apps.size} apps")
-            
+
             log.debug("Starting server main process...")
             serverInstance._main() // Start the server
             log.info("Android Cognotik server started successfully on port $actualPort")

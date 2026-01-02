@@ -4,31 +4,26 @@ import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.MultiExeption
-import com.simiacryptus.cognotik.util.ValidatedObject
-import com.simiacryptus.cognotik.util.toContentList
-import com.simiacryptus.cognotik.util.toJson
+import com.simiacryptus.cognotik.util.*
 import java.util.function.Function
 
 open class ParsedAgent<T : Any>(
-  var resultClass: Class<T>? = null,
-  val exampleInstance: T? = resultClass?.getConstructor()?.newInstance(),
-  prompt: String = "",
-  name: String? = resultClass?.simpleName,
-  model: ChatInterface,
-  temperature: Double = 0.3,
-  val parsingChatter: ChatInterface,
-  val deserializerRetries: Int = 2,
-  val validation : Boolean = true,
-  open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
+    var resultClass: Class<T>? = null,
+    val exampleInstance: T? = resultClass?.getConstructor()?.newInstance(),
+    prompt: String = "",
+    name: String? = resultClass?.simpleName,
+    model: ChatInterface,
+    temperature: Double = 0.3,
+    val parsingChatter: ChatInterface,
+    val deserializerRetries: Int = 2,
+    val validation: Boolean = true,
+    open val describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
         "com.simiacryptus", "aicoder.actions"
     ) {
         override val includeMethods: Boolean get() = false
     },
-  var parserPrompt: String? = null,
-  val singleStage: Boolean = false,
+    var parserPrompt: String? = null,
+    val singleStage: Boolean = false,
 ) : BaseAgent<List<String>, ParsedResponse<T>>(
     prompt = prompt,
     name = name,
@@ -106,16 +101,18 @@ open class ParsedAgent<T : Any>(
         val exceptions = mutableListOf<Exception>()
         val prompt = "Parse the user's message into a json object described by:\n\n```yaml\n${
             describe.replace(
-                "\n",   
+                "\n",
                 "\n  "
             )
         }\n```\n\nThis is an example output:\n```json\n${JsonUtil.toJson(exampleInstance!!)}\n```${promptSuffix?.let { "\n$it" } ?: ""}"
         for (i in 0 until deserializerRetries) {
             try {
-                val content = parsingChatter.copy(temperature = when(i) {
-                    0 -> 0.0
-                    else -> 0.1 + i * 0.05 // increase temperature on retries
-                }).chat(
+                val content = parsingChatter.copy(
+                    temperature = when (i) {
+                        0 -> 0.0
+                        else -> 0.1 + i * 0.05 // increase temperature on retries
+                    }
+                ).chat(
                     listOf(
                         ModelSchema.ChatMessage(role = ModelSchema.Role.system, content = prompt.toContentList()),
                         ModelSchema.ChatMessage(
@@ -124,8 +121,6 @@ open class ParsedAgent<T : Any>(
                         ),
                     )
                 ).choices.first().message?.content
-
-
 
 
                 val contentUnwrapped = content?.trim() ?: throw RuntimeException("No response")
@@ -137,6 +132,7 @@ open class ParsedAgent<T : Any>(
         }
         throw MultiExeption(exceptions)
     }
+
     private fun parse(content: String): T {
         var contentUnwrapped = content.trim()
         if (!contentUnwrapped.startsWith("{") && !contentUnwrapped.startsWith("```")) {
@@ -187,6 +183,7 @@ open class ParsedAgent<T : Any>(
                                             else -> it
                                         }
                                     }
+
                                     else -> "  " + it
                                 }
                             }
@@ -228,15 +225,15 @@ open class ParsedAgent<T : Any>(
 
 
 inline fun <reified T : Any> Any.parserCast(
-  model: ChatInterface, describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
-    "com.simiacryptus", "aicoder.actions"
-  ) {
-    override val includeMethods: Boolean get() = false
-  }
-) : T = ParsedAgent(
-  prompt = "",
-  resultClass = T::class.java,
-  model = model,
-  parsingChatter = model,
-  describer = describer
+    model: ChatInterface, describer: TypeDescriber = object : AbbrevWhitelistYamlDescriber(
+        "com.simiacryptus", "aicoder.actions"
+    ) {
+        override val includeMethods: Boolean get() = false
+    }
+): T = ParsedAgent(
+    prompt = "",
+    resultClass = T::class.java,
+    model = model,
+    parsingChatter = model,
+    describer = describer
 ).getParser().apply(this.toJson())

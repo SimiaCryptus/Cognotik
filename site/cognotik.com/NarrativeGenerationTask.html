@@ -829,7 +829,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
                 <div class="feature-card">
                     <i class="fas fa-image feature-icon"></i>
                     <h3>Multi-Modal Output</h3>
-                    <p>Automatically generate cover art, character portraits, and scene illustrations that match the narrative's visual descriptions and atmosphere.</p>
+                    <p>Generates a visual suite: Cover art, character portraits, setting references, and cinematic scene illustrations, all stylistically coherent.</p>
                 </div>
                 <div class="feature-card">
                     <i class="fas fa-user-edit feature-icon"></i>
@@ -881,22 +881,21 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
 
             <div id="step-2" class="step-content">
                 <h3>Phase 2: Structural Outlining</h3>
-                <p>A high-level architect agent creates a detailed blueprint. This includes character profiles, setting descriptions, and a scene-by-scene breakdown for every act.</p>
+                <p>A high-level architect agent creates a detailed blueprint. It generates character profiles, setting descriptions, and expands acts into specific scenes.</p>
                 <ul style="margin-top: 1rem; list-style-position: inside; color: var(--text-secondary);">
                     <li>Character & Setting generation</li>
-                    <li>Act structure definition</li>
-                    <li>Scene estimation and purpose definition</li>
-                    <li>Visual seed generation (Cover Art)</li>
+                    <li>High-level act structure & Scene expansion</li>
+                    <li>Visual Reference Generation (Cover, Characters, Settings)</li>
                 </ul>
             </div>
 
             <div id="step-3" class="step-content">
                 <h3>Phase 3: Iterative Drafting</h3>
-                <p>The system writes the story one scene at a time. The output of Scene 1 becomes the context for Scene 2, ensuring the plot flows logically. Optional revision passes polish the prose.</p>
+                <p>The system writes the story one scene at a time using context from previous events. Optional revision passes refine prose, flow, and voice before final assembly.</p>
                 <ul style="margin-top: 1rem; list-style-position: inside; color: var(--text-secondary);">
                     <li>Context injection from previous scenes</li>
-                    <li>Scene-specific image generation</li>
-                    <li>Automated revision passes</li>
+                    <li>Automated revision passes (Editor Agent)</li>
+                    <li>Cinematic scene illustration generation</li>
                     <li>Final manuscript assembly</li>
                 </ul>
             </div>
@@ -948,6 +947,30 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
                             <option>Conversational</option>
                         </select>
                     </div>
+                    <div class="grid grid-2" style="gap: 1rem;">
+                        <div class="form-group">
+                            <label>Point of View</label>
+                            <select class="form-control">
+                                <option>First Person</option>
+                                <option selected>Third Person Limited</option>
+                                <option>Third Person Omniscient</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tone</label>
+                            <select class="form-control">
+                                <option selected>Dramatic</option>
+                                <option>Humorous</option>
+                                <option>Suspenseful</option>
+                                <option>Reflective</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Revision Passes: <span id="revisionDisplay" style="color: var(--accent-gold);">2</span></label>
+                        <input type="range" min="0" max="3" step="1" value="2" id="revisionSlider">
+                    </div>
+
 
                     <div class="toggle-group">
                         <div class="toggle-item active" onclick="toggleOption(this)">
@@ -961,6 +984,10 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
                         <div class="toggle-item active" onclick="toggleOption(this)">
                             <div class="toggle-checkbox"></div>
                             <span>Internal Thoughts</span>
+                        </div>
+                        <div class="toggle-item active" onclick="toggleOption(this)">
+                            <div class="toggle-checkbox"></div>
+                            <span>Include Dialogue</span>
                         </div>
                     </div>
                 </div>
@@ -1110,6 +1137,8 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         // Configuration Demo Logic
         const wordCountSlider = document.getElementById('wordCountSlider');
         const wordCountDisplay = document.getElementById('wordCountDisplay');
+        const revisionSlider = document.getElementById('revisionSlider');
+        const revisionDisplay = document.getElementById('revisionDisplay');
         const actsSelect = document.getElementById('actsSelect');
         const scenesSelect = document.getElementById('scenesSelect');
         
@@ -1121,6 +1150,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
 
         function updateStats() {
             const words = parseInt(wordCountSlider.value);
+            const revisions = parseInt(revisionSlider.value);
             const acts = parseInt(actsSelect.value);
             const scenesPerAct = parseInt(scenesSelect.value);
             
@@ -1128,10 +1158,12 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             const wordsPerScene = Math.round(words / totalScenes);
             // 1 cover + 1 per scene + approx 3 chars + 3 settings
             const images = 1 + totalScenes + 6; 
-            // Rough estimate: 0.5 min per scene
-            const time = (totalScenes * 0.5).toFixed(1);
+            // Rough estimate: 0.5 min base + 0.2 min per revision pass per scene
+            const timePerScene = 0.5 + (revisions * 0.2);
+            const time = (totalScenes * timePerScene).toFixed(1);
 
             wordCountDisplay.textContent = words;
+            revisionDisplay.textContent = revisions;
             totalScenesEl.textContent = totalScenes;
             wordsPerSceneEl.textContent = wordsPerScene;
             imageCountEl.textContent = images;
@@ -1139,6 +1171,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         }
 
         wordCountSlider.addEventListener('input', updateStats);
+        revisionSlider.addEventListener('input', updateStats);
         actsSelect.addEventListener('change', updateStats);
         scenesSelect.addEventListener('change', updateStats);
 
@@ -1217,6 +1250,8 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             const elements = {
                 slider: document.getElementById('wordCountSlider'),
                 display: document.getElementById('wordCountDisplay'),
+                revSlider: document.getElementById('revisionSlider'),
+                revDisplay: document.getElementById('revisionDisplay'),
                 acts: document.getElementById('actsSelect'),
                 scenes: document.getElementById('scenesSelect'),
                 outputs: {
@@ -1230,11 +1265,13 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             function updateStats() {
                 // Get current values
                 const totalWords = parseInt(elements.slider.value);
+                const revisions = parseInt(elements.revSlider.value);
                 const numActs = parseInt(elements.acts.value);
                 const scenesPerAct = parseInt(elements.scenes.value);
         
                 // Update Word Count Display
                 elements.display.textContent = totalWords.toLocaleString();
+                if(elements.revDisplay) elements.revDisplay.textContent = revisions;
         
                 // Calculate Derived Stats
                 const totalScenes = numActs * scenesPerAct;
@@ -1243,8 +1280,9 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
                 // Estimate Images: 1 Cover + 1 per Scene + ~6 for Characters/Settings
                 const imageCount = 1 + totalScenes + 6;
         
-                // Estimate Time: Rough heuristic of 0.5 minutes per scene generation
-                const timeEstimate = (totalScenes * 0.5).toFixed(1);
+                // Estimate Time: Rough heuristic of 0.5 minutes per scene generation + revision overhead
+                const timePerScene = 0.5 + (revisions * 0.2);
+                const timeEstimate = (totalScenes * timePerScene).toFixed(1);
         
                 // Update DOM
                 elements.outputs.totalScenes.textContent = totalScenes;
@@ -1256,6 +1294,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             // Attach listeners to inputs
             if (elements.slider && elements.acts && elements.scenes) {
                 elements.slider.addEventListener('input', updateStats);
+                if(elements.revSlider) elements.revSlider.addEventListener('input', updateStats);
                 elements.acts.addEventListener('change', updateStats);
                 elements.scenes.addEventListener('change', updateStats);
         

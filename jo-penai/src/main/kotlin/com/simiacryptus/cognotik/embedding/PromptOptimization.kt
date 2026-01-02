@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.embedding
 import com.simiacryptus.cognotik.agents.ProxyAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.toContentList
 import org.slf4j.LoggerFactory
@@ -239,94 +238,6 @@ open class PromptOptimization(
 abstract class Expectation {
     companion object {
         private val log = LoggerFactory.getLogger(Expectation::class.java)
-    }
-
-    open class VectorMatch(
-        val example: String,
-        private val metric: DistanceType = DistanceType.Cosine,
-    ) :
-        Expectation() {
-        override fun matches(
-            embeddingModel: EmbeddingModel,
-            embeddingClient: EmbeddingClientInterface,
-            response: ChatResponse
-        ): Boolean {
-            return true
-        }
-
-        override fun score(
-            embeddingModel: EmbeddingModel,
-            embeddingClient: EmbeddingClientInterface,
-            response: ChatResponse
-        ): Double {
-            val promptStr = response.choices.first().message?.content ?: ""
-            val contentEmbedding = createEmbedding(
-                embeddingModel,
-                embeddingClient,
-                example
-            )
-            val promptEmbedding = createEmbedding(
-                embeddingModel,
-                embeddingClient,
-                promptStr
-            )
-            val distance = metric.distance(contentEmbedding, promptEmbedding)
-            log.info(
-                "Distance = $distance\n   from \"${example.replace("\n", "\\n")}\" \n   to \"${
-                    promptStr.replace(
-                        "\n",
-                        "\\n"
-                    )
-                }\""
-            )
-            return -distance
-        }
-
-        private fun createEmbedding(
-            embeddingModel: EmbeddingModel,
-            embeddingClient: EmbeddingClientInterface,
-            str: String
-        ) = embeddingClient.createEmbedding(
-            ModelSchema.EmbeddingRequest(
-                model = embeddingModel.modelName, input = str
-            ),
-            embeddingModel
-        ).data.first().embedding!!
-    }
-
-    open class ContainsMatch(
-        val pattern: Regex,
-        val critical: Boolean = true
-    ) : Expectation() {
-        override fun matches(
-            embeddingModel: EmbeddingModel,
-            embeddingClient: EmbeddingClientInterface,
-            response: ChatResponse
-        ): Boolean {
-            if (!critical) return true
-            return _matches(response)
-        }
-
-        override fun score(
-            embeddingModel: EmbeddingModel,
-            embeddingClient: EmbeddingClientInterface,
-            response: ChatResponse
-        ): Double {
-            return if (_matches(response)) 1.0 else 0.0
-        }
-
-        private fun _matches(response: ChatResponse): Boolean {
-            if (pattern.containsMatchIn(response.choices.first().message?.content ?: "")) return true
-            log.error(
-                """Failed to match ${
-                    pattern.pattern.replace("\n", "\\n")
-                } in ${
-                    response.choices.first().message?.content?.replace("\n", "\\n") ?: ""
-                }"""
-            )
-            return false
-        }
-
     }
 
     abstract fun matches(

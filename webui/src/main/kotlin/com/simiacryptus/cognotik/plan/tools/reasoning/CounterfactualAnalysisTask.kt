@@ -111,8 +111,7 @@ CounterfactualAnalysis - Explore "what-if" scenarios to understand causal relati
 
         try {
             val tabs = TabbedDisplay(task)
-            val overviewTask = task.ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
+            val overviewTask = tabs.newTask("Overview")
 
             overviewTask.add(
                 MarkdownUtil.renderMarkdown(
@@ -422,6 +421,7 @@ $priorCode
         val CounterfactualAnalysis = TaskType(
             "CounterfactualAnalysis",
             "Reasoning",
+            CounterfactualAnalysisTask::class.java,
             CounterfactualAnalysisTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Explore what-if scenarios to understand causal relationships and decision impacts",
@@ -435,9 +435,7 @@ $priorCode
                 <li>Provides insights for risk analysis and decision validation</li>
                 <li>Useful for retrospective analysis and strategic planning</li>
               </ul>
-            """
+            """,
         )
     }
 }
-
-

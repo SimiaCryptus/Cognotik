@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.FailedToImplementException
 import com.simiacryptus.cognotik.util.toContentList
-import java.util.*
 import javax.script.ScriptException
 import kotlin.reflect.KClass
 
@@ -226,7 +225,7 @@ ${details ?: ""}
                 else -> throw e
             }
         }
-        log.debug("Result: {}",result)
+        log.debug("Result: {}", result)
 
         val executionResult = ExecutionResult(result.toString(), OutputInterceptor.getThreadOutput())
         OutputInterceptor.clearThreadOutput()
@@ -523,10 +522,6 @@ Correct the code and try again.
                 .joinToString("\n") + "\n\n" + bodyWrapper(otherCode.joinToString("\n"))
         }
 
-        fun String.imports(): List<String> {
-            return this.split("\n").filter { it.trim().startsWith("import ") }.distinct().sorted()
-        }
-
         fun errorMessage(ex: ScriptException, code: String) = try {
             "${TT}text\n${ex.message ?: ""} at line ${ex.lineNumber} column ${ex.columnNumber}\n  ${
                 if (ex.lineNumber > 0) code.split(
@@ -542,13 +537,4 @@ Correct the code and try again.
         }
     }
 
-}
-
-private fun String.htmlEscape(): String {
-    return this.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
-        .replace("`", "&#96;")
-        .replace("'", "&#39;")
 }

@@ -48,11 +48,6 @@ class AbductiveReasoningTask(
 
     protected val codeFiles = mutableMapOf<Path, String>()
 
-    data class LinkInfo(
-        val link: String,
-        val file: File?
-    )
-
 
     data class HypothesesResponse(
         val hypotheses: List<Hypothesis> = emptyList(),
@@ -136,12 +131,10 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
 
         val api = defaultSmart ?: return
 
-        val ui = task.ui
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val maxHypotheses = executionConfig.max_hypotheses.coerceIn(1, 10)
         val evaluateCriteria = executionConfig.evaluate_criteria ?: listOf(
@@ -185,12 +178,10 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                 appendLine("*Analyzing observations...*")
             }.renderMarkdown
         )
-        task.update()
 
         try {
             // Observations tab
-            val observationsTask = ui.newTask(false)
-            tabs["Observations"] = observationsTask.placeholder
+            val observationsTask = tabs.newTask("Observations")
             observationsTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -207,15 +198,14 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     appendLine("**Status:** ✅ Observations documented")
                 }.renderMarkdown
             )
-            task.update()
+            observationsTask.complete()
 
             // Gather context
             val priorContext = getPriorCode(agent?.executionState)
             val combinedContext = (priorContext + "\n\n" + inputContext.joinToString("\n\n")).trim()
             if (priorContext.isNotBlank()) {
                 log.debug("Found prior context: ${priorContext.length} characters")
-                val contextTask = ui.newTask(false)
-                tabs["Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Context")
                 contextTask.add(
                     buildString {
                         writeToTranscript(transcript, this)
@@ -224,7 +214,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                         appendLine(priorContext.truncateForDisplay())
                     }.renderMarkdown
                 )
-                task.update()
+                contextTask.complete()
             }
 
             // Update overview
@@ -237,11 +227,9 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     appendLine("*Generating hypotheses...*")
                 }.renderMarkdown
             )
-            task.update()
 
             // Generate or use existing hypotheses
-            val hypothesesTask = ui.newTask(false)
-            tabs["Hypotheses"] = hypothesesTask.placeholder
+            val hypothesesTask = tabs.newTask("Hypotheses")
             hypothesesTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -250,7 +238,6 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     appendLine("**Status:** 🔄 Generating hypotheses...")
                 }.renderMarkdown
             )
-            task.update()
 
             val hypotheses = if (executionConfig.generate_hypotheses) {
                 log.debug("Generating hypotheses using LLM")
@@ -326,7 +313,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     appendLine("**Status:** ✅ Hypotheses generated and evaluated")
                 }.renderMarkdown
             )
-            task.update()
+            hypothesesTask.complete()
 
             // Update overview
             overviewTask.add(
@@ -338,11 +325,9 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     appendLine("*Performing comparative analysis...*")
                 }.renderMarkdown
             )
-            task.update()
 
             // Comparative analysis
-            val analysisTask = ui.newTask(false)
-            tabs["Analysis"] = analysisTask.placeholder
+            val analysisTask = tabs.newTask("Analysis")
             analysisTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -351,7 +336,6 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     appendLine("**Status:** 🔄 Analyzing hypotheses...")
                 }.renderMarkdown
             )
-            task.update()
 
             val analysis = performComparativeAnalysis(
                 observations,
@@ -377,7 +361,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     appendLine("**Status:** ✅ Analysis complete")
                 }.renderMarkdown
             )
-            task.update()
+            analysisTask.complete()
 
             // Update overview
             overviewTask.add(
@@ -391,13 +375,11 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     }
                 }.renderMarkdown
             )
-            task.update()
 
             // Generate validation tests if requested
             var testSuggestions: String
             if (suggestTests) {
-                val testsTask = ui.newTask(false)
-                tabs["Validation Tests"] = testsTask.placeholder
+                val testsTask = tabs.newTask("Validation Tests")
                 testsTask.add(
                     buildString {
                         writeToTranscript(transcript, this)
@@ -406,7 +388,6 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                         appendLine("**Status:** 🔄 Generating test suggestions...")
                     }.renderMarkdown
                 )
-                task.update()
 
                 testSuggestions = generateValidationTests(
                     observations,
@@ -432,7 +413,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                         appendLine("**Status:** ✅ Test suggestions complete")
                     }.renderMarkdown
                 )
-                task.update()
+                testsTask.complete()
 
                 overviewTask.add(
                     buildString {
@@ -441,13 +422,11 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                         appendLine("✅ Validation tests generated (${testsTime}s)")
                     }.renderMarkdown
                 )
-                task.update()
             }
 
             // Best explanation summary
             val bestHypothesis = hypotheses.maxByOrNull { it.overall_score }
-            val summaryTask = ui.newTask(false)
-            tabs["Best Explanation"] = summaryTask.placeholder
+            val summaryTask = tabs.newTask("Best Explanation")
             summaryTask.add(
                 buildString {
                     writeToTranscript(transcript, this)
@@ -513,11 +492,12 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     appendLine("**Status:** ✅ Best explanation identified")
                 }.renderMarkdown
             )
-            task.update()
+            summaryTask.complete()
             // Final summary
             val totalTime = System.currentTimeMillis() - startTime
 
-            val transcriptFile = "abductive_reasoning_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+            val transcriptFile =
+                "abductive_reasoning_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
 
             val (summaryLink, summaryFile) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
             val finalSummary = buildString {
@@ -580,7 +560,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     )
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.complete()
             transcript?.close()
 
             task.safeComplete(
@@ -607,7 +587,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.complete()
 
             val errorOutput = buildString {
                 appendLine("# Error in Abductive Reasoning")
@@ -919,20 +899,6 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         else -> "Unlikely - requires unusual circumstances"
     }
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "abductive_reasoning_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
-    }
-
     private fun writeToTranscript(transcript: FileOutputStream?, content: StringBuilder) {
         transcript?.write(content.toString().toByteArray())
         transcript?.write("\n\n".toByteArray())
@@ -944,6 +910,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         val AbductiveReasoning = TaskType(
             "AbductiveReasoning",
             "Reasoning",
+            AbductiveReasoningTask::class.java,
             AbductiveReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate and evaluate explanatory hypotheses",
@@ -957,7 +924,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
                 <li>Suggests validation tests for top hypotheses</li>
                 <li>Useful for root cause analysis, bug investigation, and scientific reasoning</li>
               </ul>
-            """
+            """,
         )
     }
 }

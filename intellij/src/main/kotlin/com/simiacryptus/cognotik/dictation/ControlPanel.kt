@@ -4,10 +4,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
+import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.SpeechToTextWidget.Companion.toggleRecording
-import com.simiacryptus.cognotik.audio.DictationManager
-import com.simiacryptus.cognotik.audio.AudioModels
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.event.MouseAdapter
@@ -19,7 +19,7 @@ import javax.swing.JProgressBar
 class ControlPanel(
     val project: Project,
     val settings: DictationState = DictationState,
-    val dictationManager : DictationManager = DictationWidgetFactory.dictationManager
+    val dictationManager: DictationManager = DictationWidgetFactory.dictationManager
 ) : JPanel(), AutoCloseable {
     companion object {
     }
@@ -53,7 +53,6 @@ class ControlPanel(
 
     private val maxTalkTimeDisplayMs = 10000
     private val talkTimeProgressBar = JProgressBar(0, maxTalkTimeDisplayMs).apply {
-
 
 
         toolTipText = "Current consecutive talk duration"

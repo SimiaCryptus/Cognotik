@@ -1,28 +1,28 @@
 package cognotik.actions.plan
 
- import cognotik.actions.BaseAction
- import cognotik.actions.agent.toFile
- import com.intellij.openapi.actionSystem.ActionUpdateThread
- import com.intellij.openapi.actionSystem.AnActionEvent
- import com.intellij.openapi.progress.ProgressIndicator
- import com.intellij.openapi.project.Project
- import com.simiacryptus.cognotik.CognotikAppServer
- import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
- import com.simiacryptus.cognotik.config.AppSettingsState
- import com.simiacryptus.cognotik.config.instance
- import com.simiacryptus.cognotik.plan.OrchestrationConfig
- import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
- import com.simiacryptus.cognotik.platform.Session
- import com.simiacryptus.cognotik.platform.file.DataStorage
- import com.simiacryptus.cognotik.platform.file.UserSettingsManager
- import com.simiacryptus.cognotik.platform.model.ApiChatModel
- import com.simiacryptus.cognotik.util.*
- import com.simiacryptus.cognotik.util.BrowseUtil.browse
- import com.simiacryptus.cognotik.webui.application.AppInfoData
- import com.simiacryptus.cognotik.webui.application.ApplicationServer
- import java.io.File
- import java.text.SimpleDateFormat
- import java.util.*
+import cognotik.actions.BaseAction
+import cognotik.actions.agent.toFile
+import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.project.Project
+import com.simiacryptus.cognotik.CognotikAppServer
+import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
+import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.instance
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import com.simiacryptus.cognotik.webui.application.AppInfoData
+import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 open class UnifiedPlanAction(
     private val useProjectRoot: Boolean = true
@@ -31,12 +31,13 @@ open class UnifiedPlanAction(
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun handle(e: AnActionEvent) {
-      val root: File = if (useProjectRoot) {
-          getProjectRoot(e) ?: createTemporaryDirectory(e.project)
-      } else {
-          createTemporaryDirectory(e.project)
-      }
-        OrchestrationConfig.instanceFn = { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+        val root: File = if (useProjectRoot) {
+            getProjectRoot(e) ?: createTemporaryDirectory(e.project)
+        } else {
+            createTemporaryDirectory(e.project)
+        }
+        OrchestrationConfig.instanceFn =
+            { model -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         val dialog = PlanConfigDialog(
             e.project,
             OrchestrationConfig(
@@ -50,7 +51,7 @@ open class UnifiedPlanAction(
                 ),
                 temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
                 env = mapOf(),
-              workingDir = root.absolutePath,
+                workingDir = root.absolutePath,
             ),
         )
 
@@ -74,7 +75,7 @@ open class UnifiedPlanAction(
     ) {
         progress.text = "Setting up session..."
         val session = Session.newGlobalID()
-      val root = File(orchestrationConfig.workingDir)
+        val root = File(orchestrationConfig.workingDir)
         progress.text = "Processing files..."
         setupChatSession(
             session,
@@ -102,28 +103,30 @@ open class UnifiedPlanAction(
             getModuleRootForFile(file)
         }
     }
-  private fun createTemporaryDirectory(project: Project?): File {
-    val timestamp = SimpleDateFormat("yyyyMMddHHmmss").format(Date())
-    val scratchesDir = getScratchesDirectory()
-    val tempDir = File(scratchesDir, "cognotik/$timestamp")
-    tempDir.mkdirs()
-    log.info("Created temporary directory: ${tempDir.absolutePath}")
-    return tempDir
-  }
-  private fun getScratchesDirectory(): File {
-    val useSystemPath = AppSettingsState.instance.useScratchesSystemPath
-    val basePath = if (useSystemPath) {
-      System.getProperty("idea.system.path")
-    } else {
-      System.getProperty("idea.config.path")
+
+    private fun createTemporaryDirectory(project: Project?): File {
+        val timestamp = SimpleDateFormat("yyyyMMddHHmmss").format(Date())
+        val scratchesDir = getScratchesDirectory()
+        val tempDir = File(scratchesDir, "cognotik/$timestamp")
+        tempDir.mkdirs()
+        log.info("Created temporary directory: ${tempDir.absolutePath}")
+        return tempDir
     }
-    return if (basePath != null) {
-      File(basePath, "scratches")
-    } else {
-      // Fallback to user home if properties are not set
-      File(System.getProperty("user.home"), ".cognotik/scratches")
+
+    private fun getScratchesDirectory(): File {
+        val useSystemPath = AppSettingsState.instance.useScratchesSystemPath
+        val basePath = if (useSystemPath) {
+            System.getProperty("idea.system.path")
+        } else {
+            System.getProperty("idea.config.path")
+        }
+        return if (basePath != null) {
+            File(basePath, "scratches")
+        } else {
+            // Fallback to user home if properties are not set
+            File(System.getProperty("user.home"), ".cognotik/scratches")
+        }
     }
-  }
 
 
     private fun setupChatSession(
@@ -144,9 +147,9 @@ open class UnifiedPlanAction(
         SessionProxyServer.chats[session] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Cognotik",
-            inputCnt = when(orchestrationConfig.cognitiveMode) {
+            inputCnt = when (orchestrationConfig.cognitiveMode) {
                 CognitiveModeType.Chat -> 0
-              else -> 4
+                else -> 4
             },
             stickyInput = app.stickyInput,
             showMenubar = app.showMenubar

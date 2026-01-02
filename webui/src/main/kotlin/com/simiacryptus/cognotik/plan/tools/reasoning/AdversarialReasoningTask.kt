@@ -161,12 +161,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                     "exploits=$generateExploits, mitigations=$suggestMitigations"
         )
 
-        val ui = task.ui
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
         transcriptStream?.let {
             it.write("# 🔴 Adversarial Reasoning / Red Team Analysis\n\n".toByteArray())
             it.write("**Target System:** $targetSystem\n\n".toByteArray())
@@ -184,35 +182,21 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
         }
 
 
-        val overviewContent = buildString {
-            appendLine("# 🔴 Adversarial Reasoning / Red Team Analysis")
-            appendLine()
-            appendLine("**Target System:** $targetSystem")
-            appendLine()
-            appendLine("**Attack Vectors:** ${attackVectors.joinToString(", ")}")
-            appendLine()
-            appendLine("**Adversary Capability:** $adversaryCapability")
-            appendLine()
-            appendLine("**Generate Exploits:** ${if (generateExploits) "⚠️ Yes" else "No"}")
-            appendLine()
-            appendLine("**Suggest Mitigations:** ${if (suggestMitigations) "Yes" else "No"}")
-            appendLine()
-            if (!relatedFiles.isNullOrEmpty()) {
-                appendLine("**Related Files:** ${relatedFiles.size} patterns")
-            }
-            if (!challengeAssumptions.isNullOrEmpty()) {
-                appendLine("**Assumptions to Challenge:** ${challengeAssumptions.size}")
-            }
-            appendLine()
-            appendLine("**Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}")
-            appendLine()
-            appendLine("---")
-            appendLine()
-            appendLine("## Progress")
-            appendLine()
-            appendLine("*Initializing adversarial analysis...*")
-        }
-        overviewTask.add(overviewContent.renderMarkdown)
+        overviewTask.header("🔴 Adversarial Reasoning / Red Team Analysis")
+        overviewTask.add(
+            """
+            **Target System:** $targetSystem
+            **Attack Vectors:** ${attackVectors.joinToString(", ")}
+            **Adversary Capability:** $adversaryCapability
+            **Generate Exploits:** ${if (generateExploits) "⚠️ Yes" else "No"}
+            **Suggest Mitigations:** ${if (suggestMitigations) "Yes" else "No"}
+            ${if (!relatedFiles.isNullOrEmpty()) "**Related Files:** ${relatedFiles.size} patterns" else ""}
+            ${if (!challengeAssumptions.isNullOrEmpty()) "**Assumptions to Challenge:** ${challengeAssumptions.size}" else ""}
+            **Started:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
+            """.trimIndent().renderMarkdown
+        )
+        overviewTask.header("Progress", 2)
+        overviewTask.add("*Initializing adversarial analysis...*".renderMarkdown)
         task.update()
 
         // Gather context
@@ -228,8 +212,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
         val inputFileContent = getInputFileCode()
         if (priorContext.isNotBlank() || fileContext.isNotBlank() || inputFileContent.isNotBlank()) {
-            val contextTask = ui.newTask(false)
-            tabs["Context"] = contextTask.placeholder
+            val contextTask = tabs.newTask("Context")
             transcriptStream?.let {
                 it.write("## Context for Analysis\n\n".toByteArray())
                 if (priorContext.isNotBlank()) {
@@ -237,27 +220,16 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                     it.write("${priorContext.truncateForDisplay()}\n\n".toByteArray())
                 }
             }
-            contextTask.add(
-                buildString {
-                    appendLine("# Context for Analysis")
-                    appendLine()
-                    if (priorContext.isNotBlank()) {
-                        appendLine("## Prior Task Results")
-                        appendLine()
-                        appendLine(priorContext.truncateForDisplay())
-                        appendLine()
-                    }
-                    if (inputFileContent.isNotBlank()) {
-                        appendLine("## Input Files")
-                        appendLine()
-                        appendLine(inputFileContent)
-                        appendLine()
-                    }
-                    if (fileContext.isNotBlank()) {
-                        appendLine(fileContext)
-                    }
-                }.renderMarkdown
-            )
+            contextTask.header("Context for Analysis")
+            if (priorContext.isNotBlank()) {
+                contextTask.expandable("Prior Task Results", priorContext.truncateForDisplay().renderMarkdown)
+            }
+            if (inputFileContent.isNotBlank()) {
+                contextTask.expandable("Input Files", inputFileContent.renderMarkdown)
+            }
+            if (fileContext.isNotBlank()) {
+                contextTask.add(fileContext.renderMarkdown)
+            }
             contextTask.complete()
             task.update()
         }
@@ -283,8 +255,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                 val vectorStartTime = System.currentTimeMillis()
                 log.info("Analyzing attack vector ${index + 1}/${attackVectors.size}: $vector")
 
-                val vectorTask = ui.newTask(false)
-                tabs["Vector: ${vector.capitalize()}"] = vectorTask.placeholder
+                val vectorTask = tabs.newTask("Vector: ${vector.capitalize()}")
                 transcriptStream?.let {
                     it.write("## Attack Vector: ${vector.capitalize()}\n\n".toByteArray())
                     it.write("**Adversary Capability:** $adversaryCapability\n\n".toByteArray())
@@ -293,17 +264,12 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                 }
 
 
+                vectorTask.header("Attack Vector: ${vector.capitalize()}")
                 vectorTask.add(
-                    buildString {
-                        appendLine("# Attack Vector: ${vector.capitalize()}")
-                        appendLine()
-                        appendLine("**Status:** Analyzing...")
-                        appendLine()
-                        appendLine("**Adversary Capability:** $adversaryCapability")
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                    }.renderMarkdown
+                    """
+                    **Status:** Analyzing...
+                    **Adversary Capability:** $adversaryCapability
+                    """.trimIndent().renderMarkdown
                 )
                 task.update()
 
@@ -326,14 +292,8 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                     generateExploits = generateExploits
                 )
 
-                vectorTask.add(
-                    buildString {
-                        appendLine("## Analysis in Progress")
-                        appendLine()
-                        appendLine("*Identifying vulnerabilities and weaknesses...*")
-                        appendLine()
-                    }.renderMarkdown
-                )
+                vectorTask.header("Analysis in Progress", 2)
+                vectorTask.add("*Identifying vulnerabilities and weaknesses...*".renderMarkdown)
                 task.update()
 
                 // Perform analysis
@@ -345,14 +305,8 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                 }
 
 
-                vectorTask.add(
-                    buildString {
-                        appendLine("## Analysis Results")
-                        appendLine()
-                        appendLine(analysisResult)
-                        appendLine()
-                    }.renderMarkdown
-                )
+                vectorTask.header("Analysis Results", 2)
+                vectorTask.add(analysisResult.renderMarkdown)
                 task.update()
 
                 // Parse structured vulnerabilities if possible
@@ -408,17 +362,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             // Generate mitigations if requested
             if (suggestMitigations && allVulnerabilities.isNotEmpty()) {
                 log.info("Generating mitigation strategies")
-                val mitigationTask = ui.newTask(false)
-                tabs["Mitigations"] = mitigationTask.placeholder
+                val mitigationTask = tabs.newTask("Mitigations")
 
-                mitigationTask.add(
-                    buildString {
-                        appendLine("# 🛡️ Mitigation Strategies")
-                        appendLine()
-                        appendLine("**Status:** Generating recommendations...")
-                        appendLine()
-                    }.renderMarkdown
-                )
+                mitigationTask.header("🛡️ Mitigation Strategies")
+                mitigationTask.add("**Status:** Generating recommendations...".renderMarkdown)
                 task.update()
                 transcriptStream?.let {
                     it.write("## 🛡️ Mitigation Strategies\n\n".toByteArray())
@@ -439,17 +386,9 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
                 }
 
 
-                mitigationTask.add(
-                    buildString {
-                        appendLine("## Recommended Mitigations")
-                        appendLine()
-                        appendLine(mitigations)
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("**Status:** ✅ Complete")
-                    }.renderMarkdown
-                )
+                mitigationTask.header("Recommended Mitigations", 2)
+                mitigationTask.add(mitigations.renderMarkdown)
+                mitigationTask.add("**Status:** ✅ Complete".renderMarkdown)
                 mitigationTask.complete()
                 task.update()
 
@@ -464,17 +403,10 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
 
             // Generate executive summary
             log.info("Generating executive summary")
-            val summaryTask = ui.newTask(false)
-            tabs["Executive Summary"] = summaryTask.placeholder
+            val summaryTask = tabs.newTask("Executive Summary")
 
-            summaryTask.add(
-                buildString {
-                    appendLine("# 📊 Executive Summary")
-                    appendLine()
-                    appendLine("**Status:** Generating summary...")
-                    appendLine()
-                }.renderMarkdown
-            )
+            summaryTask.header("📊 Executive Summary")
+            summaryTask.add("**Status:** Generating summary...".renderMarkdown)
             task.update()
 
             val summary = generateExecutiveSummary(
@@ -493,17 +425,9 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             }
 
 
-            summaryTask.add(
-                buildString {
-                    appendLine("## Summary")
-                    appendLine()
-                    appendLine(summary)
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("**Status:** ✅ Complete")
-                }.renderMarkdown
-            )
+            summaryTask.header("Summary", 2)
+            summaryTask.add(summary.renderMarkdown)
+            summaryTask.add("**Status:** ✅ Complete".renderMarkdown)
             summaryTask.complete()
             task.update()
 
@@ -656,7 +580,7 @@ AdversarialReasoning - Red team analysis to identify vulnerabilities and weaknes
             val transcriptFile = "adversarial_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
             val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
             val transcriptStream = file?.outputStream()
-            task.complete(
+            task.add(
                 "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
                         "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
                         "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
@@ -870,15 +794,16 @@ Consider both immediate fixes and long-term architectural improvements.
             appendLine()
             appendLine("Identify up to $maxVulnerabilities vulnerabilities in the '$vector' category.")
             appendLine()
-            appendLine("For each vulnerability, provide:")
-            appendLine("1. **Category/Type**: Specific vulnerability classification")
-            appendLine("2. **Severity**: critical, high, medium, or low")
-            appendLine("3. **Description**: Clear explanation of the weakness")
-            appendLine("4. **Attack Scenario**: How an attacker would exploit this")
-            appendLine("5. **Potential Impact**: What damage could be done")
+            appendLine("For each vulnerability, use the following format:")
+            appendLine("### [Vulnerability Name]")
+            appendLine("* **Category**: [Specific vulnerability classification]")
+            appendLine("* **Severity**: [Critical/High/Medium/Low]")
+            appendLine("* **Description**: [Clear explanation of the weakness]")
+            appendLine("* **Attack Scenario**: [How an attacker would exploit this]")
+            appendLine("* **Potential Impact**: [What damage could be done]")
 
             if (generateExploits) {
-                appendLine("6. **Exploit Steps**: Detailed technical steps to exploit")
+                appendLine("* **Exploit Steps**: [Detailed technical steps to exploit]")
             }
 
             appendLine()
@@ -944,77 +869,110 @@ Consider both immediate fixes and long-term architectural improvements.
     private fun parseVulnerabilities(analysisResult: String, vector: String): List<VulnerabilityReport> {
         val vulnerabilities = mutableListOf<VulnerabilityReport>()
 
-        // Simple parsing - look for severity indicators and structure
         val lines = analysisResult.lines()
-        var currentVuln: MutableMap<String, String>? = null
-        var currentSection = ""
+        
+        var currentCategory = ""
+        var currentSeverity = ""
+        var currentDescription = StringBuilder()
+        var currentScenario = StringBuilder()
+        var currentImpact = StringBuilder()
+        
+        var isParsingVuln = false
+        var currentSection = "" // description, scenario, impact
+
+        fun saveCurrent() {
+            if (isParsingVuln) {
+                if (currentCategory.isNotBlank() || currentDescription.isNotEmpty()) {
+                    vulnerabilities.add(
+                        VulnerabilityReport(
+                            category = currentCategory.ifBlank { "Uncategorized ($vector)" },
+                            severity = currentSeverity.ifBlank { "medium" },
+                            description = currentDescription.toString().trim(),
+                            attack_scenario = currentScenario.toString().trim(),
+                            potential_impact = currentImpact.toString().trim()
+                        )
+                    )
+                }
+            }
+            currentCategory = ""
+            currentSeverity = ""
+            currentDescription = StringBuilder()
+            currentScenario = StringBuilder()
+            currentImpact = StringBuilder()
+            isParsingVuln = false
+            currentSection = ""
+        }
+
+        // Regex to detect headers like "### 1. SQL Injection" or "#### Vulnerability 1: XSS"
+        val headerRegex = Regex("^(#{3,})\\s*(?:\\d+\\.|Vulnerability\\s*\\d+:?)?\\s*(.*)", RegexOption.IGNORE_CASE)
+        
+        // Regex for fields
+        val fieldRegex = Regex("^\\s*[\\*\\-]*\\s*\\*\\*([a-zA-Z\\s/]+)\\*\\*\\s*[:\\-](.*)", RegexOption.IGNORE_CASE)
 
         lines.forEach { line ->
             val trimmed = line.trim()
+            if (trimmed.isBlank()) return@forEach
 
-            // Detect severity markers
-            when {
-                trimmed.matches(Regex(".*\\b(critical|high|medium|low)\\b.*", RegexOption.IGNORE_CASE)) -> {
-                    // Save previous vulnerability
-                    currentVuln?.let { vuln ->
-                        vulnerabilities.add(
-                            VulnerabilityReport(
-                                category = vuln["category"] ?: vector,
-                                severity = vuln["severity"] ?: "medium",
-                                description = vuln["description"] ?: "",
-                                attack_scenario = vuln["attack_scenario"] ?: "",
-                                potential_impact = vuln["impact"] ?: ""
-                            )
-                        )
+
+
+
+
+            val headerMatch = headerRegex.find(line)
+            if (headerMatch != null) {
+                val headerTitle = headerMatch.groupValues[2].trim()
+                // Skip non-vulnerability headers
+                if (headerTitle.contains("Analysis Results", ignoreCase = true) || 
+                    headerTitle.contains("Edge Cases", ignoreCase = true) ||
+                    headerTitle.contains("Failure Modes", ignoreCase = true)) {
+                    saveCurrent()
+                    return@forEach
+                }
+
+                saveCurrent()
+                isParsingVuln = true
+                currentCategory = headerTitle
+                return@forEach
+            }
+
+            if (!isParsingVuln) return@forEach
+
+            val fieldMatch = fieldRegex.find(line)
+            if (fieldMatch != null) {
+                val key = fieldMatch.groupValues[1].lowercase()
+                val value = fieldMatch.groupValues[2].trim()
+
+                when {
+                    key.contains("category") || key.contains("type") -> {
+                        currentCategory = value
+                        currentSection = ""
                     }
-
-                    // Start new vulnerability
-                    currentVuln = mutableMapOf()
-                    val severityMatch = Regex("\\b(critical|high|medium|low)\\b", RegexOption.IGNORE_CASE)
-                        .find(trimmed)
-                    currentVuln["severity"] = severityMatch?.value?.lowercase() ?: "medium"
-                    currentVuln["category"] = trimmed.replace(
-                        Regex(
-                            "\\*+|#+|severity:?|\\b(critical|high|medium|low)\\b",
-                            RegexOption.IGNORE_CASE
-                        ), ""
-                    ).trim()
-                }
-
-                trimmed.matches(
-                    Regex(
-                        "\\*\\*?(description|attack|scenario|impact|exploit).*",
-                        RegexOption.IGNORE_CASE
-                    )
-                ) -> {
-                    currentSection = Regex("(description|attack|scenario|impact|exploit)", RegexOption.IGNORE_CASE)
-                        .find(trimmed)?.value?.lowercase() ?: ""
-                }
-
-                currentVuln != null && trimmed.isNotEmpty() && !trimmed.startsWith("#") && !trimmed.startsWith("*") -> {
-                    when (currentSection) {
-                        "description" -> currentVuln["description"] = (currentVuln["description"] ?: "") + " " + trimmed
-                        "attack", "scenario" -> currentVuln["attack_scenario"] =
-                            (currentVuln["attack_scenario"] ?: "") + " " + trimmed
-
-                        "impact" -> currentVuln["impact"] = (currentVuln["impact"] ?: "") + " " + trimmed
+                    key.contains("severity") -> {
+                        val severityMatch = Regex("(critical|high|medium|low)", RegexOption.IGNORE_CASE).find(value)
+                        currentSeverity = severityMatch?.value?.lowercase() ?: value.lowercase()
+                        currentSection = ""
                     }
+                    key.contains("description") -> {
+                        currentDescription.append(value)
+                        currentSection = "description"
+                    }
+                    key.contains("attack") || key.contains("scenario") -> {
+                        currentScenario.append(value)
+                        currentSection = "scenario"
+                    }
+                    key.contains("impact") -> {
+                        currentImpact.append(value)
+                        currentSection = "impact"
+                    }
+                    else -> currentSection = ""
                 }
+            } else {
+                // Continuation of previous section
+                if (currentSection == "description") currentDescription.append(" ").append(trimmed)
+                if (currentSection == "scenario") currentScenario.append(" ").append(trimmed)
+                if (currentSection == "impact") currentImpact.append(" ").append(trimmed)
             }
         }
-
-        // Save last vulnerability
-        currentVuln?.let { vuln ->
-            vulnerabilities.add(
-                VulnerabilityReport(
-                    category = vuln["category"] ?: vector,
-                    severity = vuln["severity"] ?: "medium",
-                    description = vuln["description"] ?: "",
-                    attack_scenario = vuln["attack_scenario"] ?: "",
-                    potential_impact = vuln["impact"] ?: ""
-                )
-            )
-        }
+        saveCurrent()
 
         return vulnerabilities
     }
@@ -1166,7 +1124,7 @@ Consider both immediate fixes and long-term architectural improvements.
     }
 
     private fun severityToInt(severity: String): Int {
-        return when (severity.lowercase()) {
+        return when (severity.trim().lowercase()) {
             "critical" -> 4
             "high" -> 3
             "medium" -> 2
@@ -1180,6 +1138,7 @@ Consider both immediate fixes and long-term architectural improvements.
         val AdversarialReasoning = TaskType(
             "AdversarialReasoning",
             "Reasoning",
+            AdversarialReasoningTask::class.java,
             AdversarialReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Red team analysis to identify vulnerabilities and weaknesses",
@@ -1195,7 +1154,7 @@ Consider both immediate fixes and long-term architectural improvements.
                 <li>Optionally provides exploit scenarios and mitigation strategies</li>
                 <li>Supports multiple attack vectors: security, performance, logic, business, privacy, compliance</li>
               </ul>
-            """
+            """,
         )
     }
 }

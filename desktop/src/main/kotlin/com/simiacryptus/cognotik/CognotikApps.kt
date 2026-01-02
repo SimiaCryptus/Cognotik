@@ -3,11 +3,11 @@ package com.simiacryptus.cognotik
 import com.simiacryptus.cognotik.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.apps.general.UnifiedPlanApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
-import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
@@ -54,6 +54,7 @@ open class CognotikApps(
             try {
                 require(TaskType.values().isNotEmpty())
                 require(ToolProvider.values().isNotEmpty())
+                require(CognitiveModeType.values().isNotEmpty())
                 if (args.isEmpty()) {
                     log.info("No arguments provided - defaulting to server mode with default options")
                     handleServer()
@@ -104,8 +105,10 @@ open class CognotikApps(
                 log.info("Using alternative port $actualPort")
                 println("Using alternative port $actualPort")
             }
-            scheduledExecutorService.scheduleAtFixedRate({ checkUpdate() },
-                0, 7 * 24, TimeUnit.HOURS)
+            scheduledExecutorService.scheduleAtFixedRate(
+                { checkUpdate() },
+                0, 7 * 24, TimeUnit.HOURS
+            )
             server = CognotikApps(
                 localName = options.host,
                 publicName = options.publicName,
@@ -244,7 +247,8 @@ open class CognotikApps(
     }
 
     override val childWebApps by lazy {
-        OrchestrationConfig.instanceFn = { m -> m.instance() ?: throw IllegalStateException("Model or provider not set") }
+        OrchestrationConfig.instanceFn =
+            { m -> m.instance() ?: throw IllegalStateException("Model or provider not set") }
         listOf(
             ChildWebApp("/chat", BasicChatApp(File("."), model, model)),
             ChildWebApp(
@@ -385,7 +389,7 @@ fun ApiChatModel.instance(
     service: ExecutorService = ApplicationServices.threadPoolManager.getPool(session, user),
     temperature: Double = 0.1
 ) = model?.instance(
-    key = when(provider?.key){
+    key = when (provider?.key) {
         null -> null
         "NONE" -> null
         else -> provider?.key
@@ -395,7 +399,7 @@ fun ApiChatModel.instance(
             ?: throw IllegalStateException("No API key configured for model $model")
     },
     base = provider?.provider?.base ?: model?.provider?.base
-        ?: throw IllegalStateException("No API base configured for model $model"),
+    ?: throw IllegalStateException("No API base configured for model $model"),
     workPool = service,
     temperature = temperature,
     scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(session, user),
@@ -406,19 +410,3 @@ fun ApiChatModel.instance(
         )
     }
 )
-
-private fun ChatModel.toApiChatModel(
-    user: User = defaultUser
-): ApiChatModel {
-    val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user = user)
-    val apiData = userSettings.apis.firstOrNull { it.provider == this.provider }
-    return ApiChatModel(
-        model = this,
-        provider = ApiData(
-            provider = this.provider,
-            key = apiData?.key ?: "NONE",
-            baseUrl = apiData?.baseUrl ?: this.provider?.base
-            ?: throw IllegalStateException("No API base configured for model $model"),
-        ).validate()
-    )
-}

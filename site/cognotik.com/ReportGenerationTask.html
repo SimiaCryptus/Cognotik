@@ -233,7 +233,7 @@
     <header class="hero container">
         <div class="hero-content">
             <h1>Report Generation Task</h1>
-            <p>Generate comprehensive business reports with data analysis, visualizations, and actionable recommendations.</p>
+            <p>Generate comprehensive business reports with data analysis, risk assessments, actionable recommendations, and iterative refinement.</p>
             <a href="#demo" class="btn btn-primary">Try the Simulator</a>
         </div>
         <div class="hero-visual">
@@ -264,8 +264,15 @@
                     <div class="feature-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     </div>
-                    <h3>Actionable Recommendations</h3>
-                    <p>Generates strategic recommendations and risk assessments based on findings.</p>
+                    <h3>Strategic Insight</h3>
+                    <p>Includes risk assessments, comparative analysis, and prioritized recommendations based on findings.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                    <h3>Iterative Refinement</h3>
+                    <p>Performs automated revision passes to improve clarity, tone, and flow before final delivery.</p>
                 </div>
             </div>
         </div>
@@ -278,28 +285,69 @@
                 <!-- Inputs -->
                 <div class="sim-panel sim-left">
                     <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
-                    <div class="form-group">
-                        <label>Report Topic</label>
-                        <input type="text" id="report_topic" class="form-control" value="Q3 Marketing Performance">
+                    <div style="overflow-y: auto; padding-right: 10px; flex: 1;">
+                        <div class="form-group">
+                            <label>Report Topic</label>
+                            <input type="text" id="report_topic" class="form-control" value="Q3 Marketing Performance">
+                        </div>
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label>Report Type</label>
+                                <select id="report_type" class="form-control">
+                                    <option value="status_update">Status Update</option>
+                                    <option value="quarterly_review" selected>Quarterly Review</option>
+                                    <option value="incident_report">Incident Report</option>
+                                    <option value="performance_analysis">Performance Analysis</option>
+                                    <option value="market_research">Market Research</option>
+                                    <option value="post_mortem">Post Mortem</option>
+                                    <option value="financial_report">Financial Report</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Tone</label>
+                                <select id="tone" class="form-control">
+                                    <option value="professional" selected>Professional</option>
+                                    <option value="formal">Formal</option>
+                                    <option value="analytical">Analytical</option>
+                                    <option value="conversational">Conversational</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label>Target Audience</label>
+                                <input type="text" id="target_audience" class="form-control" value="Executive Team">
+                            </div>
+                            <div>
+                                <label>Time Period</label>
+                                <input type="text" id="time_period" class="form-control" value="Q3 2024">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Key Metrics (Comma separated)</label>
+                            <textarea id="key_metrics" class="form-control" style="min-height: 60px;">Conversion Rate, Customer Acquisition Cost, ROI, Traffic Growth</textarea>
+                        </div>
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label>Word Count</label>
+                                <input type="number" id="target_word_count" class="form-control" value="1500">
+                            </div>
+                            <div>
+                                <label>Revisions</label>
+                                <input type="number" id="revision_passes" class="form-control" value="1" min="0" max="5">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Inclusions</label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+                                <label style="display: flex; align-items: center; margin: 0;"><input type="checkbox" id="inc_trend" checked style="margin-right: 8px;"> Trend Analysis</label>
+                                <label style="display: flex; align-items: center; margin: 0;"><input type="checkbox" id="inc_risk" checked style="margin-right: 8px;"> Risk Assessment</label>
+                                <label style="display: flex; align-items: center; margin: 0;"><input type="checkbox" id="inc_recs" checked style="margin-right: 8px;"> Recommendations</label>
+                                <label style="display: flex; align-items: center; margin: 0;"><input type="checkbox" id="inc_comp" checked style="margin-right: 8px;"> Comparative Analysis</label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Report Type</label>
-                        <select id="report_type" class="form-control">
-                            <option value="status_update">Status Update</option>
-                            <option value="quarterly_review" selected>Quarterly Review</option>
-                            <option value="incident_report">Incident Report</option>
-                            <option value="performance_analysis">Performance Analysis</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Target Audience</label>
-                        <input type="text" id="target_audience" class="form-control" value="Executive Team">
-                    </div>
-                    <div class="form-group">
-                        <label>Key Metrics (Comma separated)</label>
-                        <textarea id="key_metrics" class="form-control">Conversion Rate, Customer Acquisition Cost, ROI, Traffic Growth</textarea>
-                    </div>
-                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: auto;">Generate Report</button>
+                    <button class="btn btn-primary" onclick="runSimulation()" style="margin-top: 1rem;">Generate Report</button>
                 </div>
                 <!-- Outputs -->
                 <div class="sim-panel sim-right">
@@ -352,8 +400,14 @@
         function runSimulation() {
             const topic = document.getElementById('report_topic').value;
             const type = document.getElementById('report_type').value;
+            const tone = document.getElementById('tone').value;
             const audience = document.getElementById('target_audience').value;
+            const period = document.getElementById('time_period').value;
             const metrics = document.getElementById('key_metrics').value.split(',');
+            const revisions = parseInt(document.getElementById('revision_passes').value);
+            const includeRisk = document.getElementById('inc_risk').checked;
+            const includeRecs = document.getElementById('inc_recs').checked;
+
             const reportEl = document.getElementById('output-report');
             const logsEl = document.getElementById('output-logs');
             
@@ -361,15 +415,32 @@
             logsEl.innerHTML = '';
             
             const logs = [
-                `[INFO] Initializing ReportGenerationTask...`,
-                `[INFO] Topic: ${topic}`,
-                `[INFO] Type: ${type}`,
-                `[INFO] Analyzing metrics: ${metrics.length} items...`,
-                `[INFO] Generating executive summary...`,
-                `[INFO] Creating data visualizations...`,
-                `[INFO] Formulating recommendations...`,
-                `[SUCCESS] Report generation complete.`
+                `[INFO] Starting ReportGenerationTask for topic: '${topic}'`,
+                `[INFO] Phase 1: Analyzing data and metrics (${metrics.length} items)...`,
+                `[INFO] Analyzed ${metrics.length} metrics.`,
+                `[INFO] Phase 2: Creating report outline...`,
+                `[INFO] Created outline with 5 sections.`,
+                `[INFO] Phase 3: Generating report sections...`,
+                `[INFO] Generating section 1/5: Executive Summary`,
+                `[INFO] Generating section 2/5: Performance Analysis`,
+                `[INFO] Generating section 3/5: Trend Review`,
+                `[INFO] Generating section 4/5: Comparative Analysis`,
+                `[INFO] Generating section 5/5: Conclusion`,
             ];
+            if (includeRecs) {
+                logs.push(`[INFO] Phase 4: Generating recommendations...`);
+                logs.push(`[INFO] Generated 3 prioritized recommendations.`);
+            }
+            if (includeRisk) {
+                logs.push(`[INFO] Phase 5: Generating risk assessment...`);
+                logs.push(`[INFO] Identified 3 key risks.`);
+            }
+            if (revisions > 0) {
+                logs.push(`[INFO] Phase 6: Performing ${revisions} revision pass(es)...`);
+                logs.push(`[INFO] Revision pass 1 complete.`);
+            }
+            logs.push(`[INFO] Phase 7: Assembling final report...`);
+            logs.push(`[SUCCESS] Report generation complete.`);
             
             let logIndex = 0;
             const logInterval = setInterval(() => {
@@ -384,24 +455,25 @@
                     logIndex++;
                 } else {
                     clearInterval(logInterval);
-                    renderReport(topic, type, audience, metrics);
+                    renderReport(topic, type, audience, metrics, period, tone, includeRisk, includeRecs);
                 }
-            }, 400);
+            }, 300);
         }
-        function renderReport(topic, type, audience, metrics) {
+        function renderReport(topic, type, audience, metrics, period, tone, includeRisk, includeRecs) {
             const reportEl = document.getElementById('output-report');
             const markdown = `
 <h1>${topic}</h1>
 <p><strong>Type:</strong> ${type.replace('_', ' ').toUpperCase()}<br>
+<strong>Period:</strong> ${period}<br>
 <strong>Prepared for:</strong> ${audience}<br>
 <strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
 
 <h2>Executive Summary</h2>
-<p>This report provides a comprehensive analysis of ${topic}. Key performance indicators show positive trends in customer acquisition, though retention metrics require attention. Overall, the strategic initiatives implemented in Q3 have yielded a 15% increase in ROI.</p>
+<p>This report provides a comprehensive analysis of ${topic} for ${period}. Key performance indicators show positive trends in customer acquisition, though retention metrics require attention. Overall, the strategic initiatives implemented have yielded a 15% increase in ROI.</p>
 
 <h2>Key Metrics Analysis</h2>
 <ul>
-    ${metrics.map(m => `<li><strong>${m.trim()}:</strong> Showing steady improvement. Current value exceeds target by 5%.</li>`).join('')}
+    ${metrics.map(m => `<li><strong>${m.trim()}:</strong> 🔵 Notable. Showing steady improvement. Current value exceeds target by 5%.</li>`).join('')}
 </ul>
 
 <h2>Trend Analysis</h2>
@@ -410,16 +482,22 @@
     <li><strong>Upward Trend:</strong> Traffic growth has accelerated by 20% month-over-month.</li>
     <li><strong>Stable:</strong> Conversion rates remain consistent at 3.5%.</li>
 </ul>
+${includeRecs ? `
 
 <h2>Recommendations</h2>
-<ol>
-    <li><strong>Optimize Ad Spend:</strong> Reallocate budget to high-performing channels identified in the analysis.</li>
-    <li><strong>Enhance Onboarding:</strong> Address the drop-off in user activation by simplifying the signup flow.</li>
-    <li><strong>Expand Content Strategy:</strong> Leverage the high engagement on blog posts to drive more organic traffic.</li>
-</ol>
-
+<h3>🔴 Optimize Ad Spend</h3>
+<p><strong>Priority:</strong> High | <strong>Timeline:</strong> Immediate</p>
+<p>Reallocate budget to high-performing channels identified in the analysis to maximize ROI.</p>
+<h3>🟡 Enhance Onboarding</h3>
+<p><strong>Priority:</strong> Medium | <strong>Timeline:</strong> Q4 2024</p>
+<p>Address the drop-off in user activation by simplifying the signup flow.</p>
+` : ''}
+${includeRisk ? `
 <h2>Risk Assessment</h2>
-<p><strong>Market Volatility:</strong> Moderate risk due to changing competitor landscape. Mitigation: Diversify marketing channels.</p>
+<h3>🟡 Significant - Market Volatility</h3>
+<p><strong>Likelihood:</strong> Medium | <strong>Impact:</strong> High</p>
+<p>Moderate risk due to changing competitor landscape. <strong>Mitigation:</strong> Diversify marketing channels and lock in long-term contracts.</p>
+` : ''}
             `;
             reportEl.innerHTML = markdown;
         }

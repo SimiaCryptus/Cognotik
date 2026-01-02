@@ -291,8 +291,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Report Generation")
@@ -338,28 +337,26 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Data Sources"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Data Sources")
+
+                contextTask.add("# Data Sources & Context".renderMarkdown)
+                if (fullContext.isNotBlank()) {
+                    contextTask.expandable("Input Context", fullContext.truncateForDisplay(3000).renderMarkdown)
+                }
+                if (priorContext.isNotBlank()) {
+                    contextTask.expandable("Prior Context", priorContext.truncateForDisplay(2000).renderMarkdown)
+                }
+                if (contextFiles.isNotBlank()) {
+                    contextTask.expandable("Related Files", contextFiles.truncateForDisplay(2000).renderMarkdown)
+                }
+                contextTask.complete()
+
                 val contextContent = buildString {
                     appendLine("# Data Sources & Context")
-                    appendLine()
-                    if (fullContext.isNotBlank()) {
-                        appendLine("## Input Context")
-                        appendLine(fullContext.truncateForDisplay(3000))
-                        appendLine()
-                    }
-                    if (priorContext.isNotBlank()) {
-                        appendLine("## Prior Context")
-                        appendLine(priorContext.truncateForDisplay(2000))
-                        appendLine()
-                    }
-                    if (contextFiles.isNotBlank()) {
-                        appendLine("## Related Files")
-                        appendLine(contextFiles.truncateForDisplay(2000))
-                    }
+                    if (fullContext.isNotBlank()) appendLine("## Input Context\n${fullContext.truncateForDisplay(3000)}\n")
+                    if (priorContext.isNotBlank()) appendLine("## Prior Context\n${priorContext.truncateForDisplay(2000)}\n")
+                    if (contextFiles.isNotBlank()) appendLine("## Related Files\n${contextFiles.truncateForDisplay(2000)}")
                 }
-                contextTask.add(contextContent.renderMarkdown)
-
                 markdownTranscript?.write(contextContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
 
                 task.update()
@@ -367,8 +364,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
 
             // Phase 1: Data Analysis
             log.info("Phase 1: Analyzing data and metrics")
-            val dataAnalysisTask = task.ui.newTask(false)
-            tabs["Data Analysis"] = dataAnalysisTask.placeholder
+            val dataAnalysisTask = tabs.newTask("Data Analysis")
 
             dataAnalysisTask.add(
                 buildString {
@@ -464,6 +460,7 @@ Be specific with numbers and percentages where available.
             }
             markdownTranscript?.write(dataAnalysisContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             dataAnalysisTask.add(dataAnalysisContent.renderMarkdown)
+            dataAnalysisTask.complete()
             task.update()
 
             overviewTask.add("✅ Phase 1 Complete: ${dataAnalyses.size} metrics analyzed\n".renderMarkdown)
@@ -472,8 +469,7 @@ Be specific with numbers and percentages where available.
 
             // Phase 2: Create Report Outline
             log.info("Phase 2: Creating report outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
                 buildString {
@@ -582,6 +578,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
             }
             markdownTranscript?.write(outlineContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             outlineTask.add(outlineContent.renderMarkdown)
+            outlineTask.complete()
             task.update()
 
             overviewTask.add("✅ Phase 2 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown)
@@ -599,8 +596,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
                 overviewTask.add("- Section ${sectionOutline.section_number}: ${sectionOutline.title} ".renderMarkdown)
                 task.update()
 
-                val sectionTask = task.ui.newTask(false)
-                tabs["Section ${sectionOutline.section_number}"] = sectionTask.placeholder
+                val sectionTask = tabs.newTask("Section ${sectionOutline.section_number}")
 
                 sectionTask.add(
                     buildString {
@@ -710,6 +706,7 @@ Be specific, data-driven, and actionable.
                     }.renderMarkdown
                 )
                 markdownTranscript?.write(sectionTask.toString().toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                sectionTask.complete()
                 task.update()
 
                 resultBuilder.append("## ${sectionOutline.title}\n\n")
@@ -728,8 +725,7 @@ Be specific, data-driven, and actionable.
                 task.update()
 
                 log.info("Phase 4: Generating recommendations")
-                val recommendationsTask = task.ui.newTask(false)
-                tabs["Recommendations"] = recommendationsTask.placeholder
+                val recommendationsTask = tabs.newTask("Recommendations")
 
                 recommendationsTask.add(
                     buildString {
@@ -824,6 +820,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
                 }
                 recommendationsTask.add(recommendationsContent.renderMarkdown)
                 markdownTranscript?.write(recommendationsContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                recommendationsTask.complete()
                 task.update()
 
                 resultBuilder.append("## Recommendations\n\n")
@@ -843,8 +840,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
                 task.update()
 
                 log.info("Phase 5: Generating risk assessment")
-                val riskTask = task.ui.newTask(false)
-                tabs["Risk Assessment"] = riskTask.placeholder
+                val riskTask = tabs.newTask("Risk Assessment")
 
                 riskTask.add(
                     buildString {
@@ -932,6 +928,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
                 }
                 riskTask.add(riskContent.renderMarkdown)
                 markdownTranscript?.write(riskContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                riskTask.complete()
                 task.update()
 
                 resultBuilder.append("## Risk Assessment\n\n")
@@ -950,8 +947,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
                 task.update()
 
                 log.info("Phase 6: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask(false)
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -1011,6 +1007,7 @@ Provide the complete revised report.
                     markdownTranscript?.write("## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
                     task.update()
                 }
+                revisionTask.complete()
 
                 overviewTask.add("✅ Phase 6 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
             }
@@ -1020,8 +1017,7 @@ Provide the complete revised report.
             task.update()
 
             log.info("Phase 7: Assembling final report")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Report"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Report")
 
             val finalReport = buildString {
                 appendLine("# ${outline.title}")
@@ -1063,6 +1059,11 @@ Provide the complete revised report.
             }
 
             finalTask.add(finalReport.renderMarkdown)
+            // Save report to file and provide download link
+            val reportFileName = "report_${System.currentTimeMillis()}.md"
+            val reportUrl = task.saveFile("reports/$reportFileName", finalReport.toByteArray())
+            finalTask.add("<div class='mt-3'><a href='$reportUrl' class='btn btn-primary' target='_blank'>Download Report (Markdown)</a></div>")
+            finalTask.complete()
             markdownTranscript?.write(finalReport.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             task.update()
 
@@ -1096,6 +1097,7 @@ Provide the complete revised report.
                 }.renderMarkdown
             )
             markdownTranscript?.write(overviewTask.toString().toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            overviewTask.complete()
             task.update()
 
             // Concise summary for resultFn
@@ -1260,6 +1262,7 @@ Provide the complete revised report.
         val ReportGeneration = TaskType(
             "ReportGeneration",
             "Writing",
+            ReportGenerationTask::class.java,
             ReportGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate comprehensive business reports with data analysis and recommendations",
@@ -1278,7 +1281,7 @@ Provide the complete revised report.
                 <li>Optional revision passes for quality improvement</li>
                 <li>Ideal for business reporting, performance analysis, project summaries</li>
               </ul>
-            """
+            """,
         )
     }
 }

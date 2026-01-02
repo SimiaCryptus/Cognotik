@@ -1,16 +1,14 @@
 package com.simiacryptus.cognotik.chat
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.LLMModel
+import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.simiacryptus.cognotik.models.ModelSchema.ChatChoice
-import com.simiacryptus.cognotik.models.ModelSchema.ChatMessageResponse
-import com.simiacryptus.cognotik.models.ModelSchema.Role
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -32,7 +30,7 @@ class OllamaChatClient(
     logLevel = logLevel,
     logStreams = logStreams
 ) {
-    
+
     override fun authorize(
         request: HttpRequest,
         apiProvider: APIProvider
@@ -52,26 +50,27 @@ class OllamaChatClient(
         return withReliability {
             withPerformanceLogging {
                 // Convert OpenAI format to Ollama format
-            // Ollama expects content as a string, not an array
-            val ollamaMessages = chatRequest.messages.map { message ->
-                OllamaMessage(
-                    role = message.role.toString(),
-                    content = when (val content = message.content) {
-                        is String -> content
-                        is List<*> -> content.joinToString("\n") { 
-                            when (it) {
-                                is ModelSchema.ContentPart -> it.text ?: ""
-                                else -> it.toString()
+                // Ollama expects content as a string, not an array
+                val ollamaMessages = chatRequest.messages.map { message ->
+                    OllamaMessage(
+                        role = message.role.toString(),
+                        content = when (val content = message.content) {
+                            is String -> content
+                            is List<*> -> content.joinToString("\n") {
+                                when (it) {
+                                    is ModelSchema.ContentPart -> it.text ?: ""
+                                    else -> it.toString()
+                                }
                             }
+
+                            else -> ""
                         }
-                        else -> ""
-                    }
-                )
-            }
-            
+                    )
+                }
+
                 val ollamaRequest = OllamaChatRequest(
                     model = chatRequest.model ?: model.modelName!!,
-                messages = ollamaMessages,
+                    messages = ollamaMessages,
                     stream = false,
                     options = OllamaOptions(
                         temperature = chatRequest.temperature,
@@ -84,27 +83,28 @@ class OllamaChatClient(
                     .writeValueAsString(ollamaRequest)
 
                 val rawResponse = post("${apiBase}/api/chat", json, APIProvider.Ollama)
-               
-               // Check if response is an error by trying to parse it as JSON
-               // Ollama returns plain text errors or JSON responses
-               try {
-                   val jsonResponse = JsonUtil.objectMapper().readTree(rawResponse)
-                   if (jsonResponse.has("error")) {
-                       throw RuntimeException("Ollama API error: ${jsonResponse.get("error").asText()}")
-                   }
-               } catch (e: com.fasterxml.jackson.core.JsonParseException) {
-                   // If it's not valid JSON, treat it as an error message
-                   if (rawResponse.contains("error", ignoreCase = true) || 
-                       rawResponse.contains("not found", ignoreCase = true) ||
-                       rawResponse.contains("invalid", ignoreCase = true)) {
-                       throw RuntimeException("Ollama API error: $rawResponse")
-                   }
-                   // If it's not JSON and doesn't look like an error, re-throw the parse exception
-                   throw RuntimeException("Invalid JSON response from Ollama: $rawResponse", e)
-               }
+
+                // Check if response is an error by trying to parse it as JSON
+                // Ollama returns plain text errors or JSON responses
+                try {
+                    val jsonResponse = JsonUtil.objectMapper().readTree(rawResponse)
+                    if (jsonResponse.has("error")) {
+                        throw RuntimeException("Ollama API error: ${jsonResponse.get("error").asText()}")
+                    }
+                } catch (e: com.fasterxml.jackson.core.JsonParseException) {
+                    // If it's not valid JSON, treat it as an error message
+                    if (rawResponse.contains("error", ignoreCase = true) ||
+                        rawResponse.contains("not found", ignoreCase = true) ||
+                        rawResponse.contains("invalid", ignoreCase = true)
+                    ) {
+                        throw RuntimeException("Ollama API error: $rawResponse")
+                    }
+                    // If it's not JSON and doesn't look like an error, re-throw the parse exception
+                    throw RuntimeException("Invalid JSON response from Ollama: $rawResponse", e)
+                }
 
                 val ollamaResponse = JsonUtil.objectMapper().readValue(rawResponse, OllamaChatResponse::class.java)
-                
+
                 // Convert Ollama response to OpenAI format
                 val response = ModelSchema.ChatResponse(
                     id = "ollama-${System.currentTimeMillis()}",
@@ -116,8 +116,8 @@ class OllamaChatClient(
                             index = 0,
                             message = ollamaResponse.message.let { message ->
                                 ChatMessageResponse(
-                                  role = message.role.let { Role.valueOf(it) },
-                                  content = message.content,
+                                    role = message.role.let { Role.valueOf(it) },
+                                    content = message.content,
                                 )
                             },
                             finish_reason = if (ollamaResponse.done) "stop" else "length"
@@ -126,7 +126,8 @@ class OllamaChatClient(
                     usage = ModelSchema.Usage(
                         prompt_tokens = ollamaResponse.prompt_eval_count?.toLong() ?: 0L,
                         completion_tokens = ollamaResponse.eval_count?.toLong() ?: 0L,
-                        total_tokens = ((ollamaResponse.prompt_eval_count ?: 0) + (ollamaResponse.eval_count ?: 0)).toLong()
+                        total_tokens = ((ollamaResponse.prompt_eval_count ?: 0) + (ollamaResponse.eval_count
+                            ?: 0)).toLong()
                     )
                 )
 
@@ -143,7 +144,7 @@ class OllamaChatClient(
         return try {
             val rawResponse = get("${apiBase}/api/tags")
             val modelsResponse = JsonUtil.objectMapper().readValue(rawResponse, OllamaModelsResponse::class.java)
-            
+
             modelsResponse.models.map { ollamaModel ->
                 ChatModel(
                     name = ollamaModel.name,
@@ -174,6 +175,7 @@ class OllamaChatClient(
         val stream: Boolean = false,
         val options: OllamaOptions? = null
     )
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class OllamaMessage(
         val role: String,

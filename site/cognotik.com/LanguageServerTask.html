@@ -116,6 +116,32 @@
             </div>
         </div>
     </section>
+    <section class="container" style="padding: 2rem 0;">
+        <h3 style="text-align: center; margin-bottom: 2rem;">Supported Languages</h3>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;">
+            <span class="badge">Python (.py)</span>
+            <span class="badge">JavaScript/TypeScript (.js, .ts)</span>
+            <span class="badge">Kotlin (.kt)</span>
+            <span class="badge">Java (.java)</span>
+            <span class="badge">C/C++ (.c, .cpp)</span>
+            <span class="badge">Go (.go)</span>
+            <span class="badge">Rust (.rs)</span>
+            <span class="badge">Bash (.sh)</span>
+            <span class="badge">LaTeX (.tex)</span>
+            <span class="badge">YAML (.yaml)</span>
+            <span class="badge">Dockerfile</span>
+        </div>
+        <style>
+            .badge {
+                background: rgba(255,255,255,0.1);
+                padding: 0.5rem 1rem;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                border: 1px solid var(--border-color);
+            }
+        </style>
+    </section>
+
 
     <section id="demo" class="simulator">
         <div class="container">
@@ -182,13 +208,16 @@
             const line = document.getElementById('line').value;
             const char = document.getElementById('character').value;
             const logsEl = document.getElementById('output-logs');
+            const ext = file.split('.').pop();
             
             logsEl.innerHTML = '';
             const steps = [
-                `[INFO] Initializing Language Server for ${file.split('.').pop()}...`,
-                `[INFO] Opening document: ${file}`,
-                `[INFO] Sending '${action}' request at ${line}:${char}...`,
-                `[SUCCESS] Response received.`
+                `Starting LSP for .${ext}...`,
+                `Initializing Server (processId: 1234)...`,
+                `Opening Document: ${file}`,
+                `Executing ${action}...`,
+                `Shutting down...`,
+                `LSP Action '${action}' completed.`
             ];
             
             let i = 0;
@@ -197,7 +226,7 @@
                     const lineEl = document.createElement('div');
                     lineEl.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
                     lineEl.style.marginBottom = '4px';
-                    if (steps[i].includes('SUCCESS')) lineEl.style.color = '#4ade80';
+                    if (steps[i].includes('completed')) lineEl.style.color = '#4ade80';
                     else lineEl.style.color = '#fb923c';
                     logsEl.appendChild(lineEl);
                     i++;
@@ -206,14 +235,7 @@
                     let resultText = "";
                     
                     if (action === 'diagnostics') {
-                        resultText = `[
-  {
-    "range": { "start": { "line": 10, "character": 4 }, "end": { "line": 10, "character": 12 } },
-    "severity": 1,
-    "message": "Undefined variable 'myVar'",
-    "source": "pylsp"
-  }
-]`;
+                        resultText = `Diagnostics are pushed asynchronously. Check transcript for 'textDocument/publishDiagnostics'.`;
                     } else if (action === 'definition') {
                         resultText = `- src/utils.py:45:8`;
                     } else if (action === 'references') {

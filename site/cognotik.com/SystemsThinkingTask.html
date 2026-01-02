@@ -206,6 +206,23 @@
                                 <label>System Description</label>
                                 <textarea id="systemDesc">Software Engineering Team Burnout: High feature demand leads to overtime, which increases fatigue and error rates, leading to more rework and even less time for new features.</textarea>
                             </div>
+                            <div class="control-group">
+                                <label>Input Files (Glob patterns)</label>
+                                <textarea id="inputFiles" placeholder="src/**/*.kt" style="min-height: 50px;"></textarea>
+                            </div>
+                            <div class="control-group">
+                                <label>Related Files (Context)</label>
+                                <textarea id="relatedFiles" placeholder="docs/*.md" style="min-height: 50px;"></textarea>
+                            </div>
+                            <div class="control-group">
+                                <label>Focus Areas (One per line)</label>
+                                <textarea id="focusAreas" placeholder="QA Process&#10;Onboarding" style="min-height: 60px;"></textarea>
+                            </div>
+                            <div class="control-group">
+                                <label>Specific Questions (One per line)</label>
+                                <textarea id="analysisQuestions" placeholder="How does technical debt affect velocity?" style="min-height: 60px;"></textarea>
+                            </div>
+
 
                             <div class="control-group">
                                 <label>Time Horizon</label>
@@ -326,6 +343,10 @@ Hire more QA engineers</textarea>
 
         function renderOutput() {
             const systemDesc = document.getElementById('systemDesc').value;
+            const inputFiles = document.getElementById('inputFiles').value;
+            const relatedFiles = document.getElementById('relatedFiles').value;
+            const focusAreas = document.getElementById('focusAreas').value.split('\n').filter(i => i.trim());
+            const analysisQuestions = document.getElementById('analysisQuestions').value.split('\n').filter(i => i.trim());
             const timeHorizon = document.getElementById('timeHorizon').value;
             const hasLoops = document.getElementById('checkLoops').checked;
             const hasDelays = document.getElementById('checkDelays').checked;
@@ -342,6 +363,16 @@ Hire more QA engineers</textarea>
                         <h1>Systems Analysis Report</h1>
                         <p><strong>System:</strong> ${systemDesc.substring(0, 60)}...</p>
                         <p><strong>Time Horizon:</strong> ${timeHorizon}</p>
+                        ${focusAreas.length > 0 ? `
+                        <p><strong>Focus Areas:</strong></p>
+                        <ul>${focusAreas.map(f => `<li>${f}</li>`).join('')}</ul>
+                        ` : ''}
+                        ${analysisQuestions.length > 0 ? `
+                        <p><strong>Analysis Questions:</strong></p>
+                        <ul>${analysisQuestions.map(q => `<li>${q}</li>`).join('')}</ul>
+                        ` : ''}
+                        ${(inputFiles || relatedFiles) ? `<p><em>Context loaded from specified files.</em></p>` : ''}
+
 
                         ${hasArchetypes ? `
                         <h2>Detected Archetype: "Fixes that Fail"</h2>

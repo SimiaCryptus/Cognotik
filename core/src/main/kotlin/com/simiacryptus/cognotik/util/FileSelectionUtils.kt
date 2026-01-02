@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.util
 
 import com.simiacryptus.cognotik.input.isDocumentFile
-import org.apache.commons.text.similarity.LevenshteinDistance
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
@@ -435,84 +434,6 @@ object FileSelectionUtils {
             }
         } catch (e: Throwable) {
             log.debug("Error searching for file '{}' recursively: {}", returnValue, e.message)
-        }
-        if (root.resolve(returnValue).toFile().exists()) return returnValue
-
-        return null
-    }
-
-    fun fuzzyResolveToRelativePath(root: Path, filename: String): String? {
-        log.debug("Resolving filename '{}' relative to root '{}'", filename, root)
-        if (!root.toFile().exists() || !root.toFile().isDirectory) {
-            log.debug("Root path does not exist or is not a directory: {}", root)
-            return null
-        }
-
-        var returnValue = prefilterFilename(filename) ?: return null
-        if (root.resolve(returnValue).toFile().exists()) return returnValue
-
-        // Handle absolute paths
-        try {
-            val path = File(returnValue).toPath()
-            if (path.startsWith(root)) {
-                returnValue = path.toString().relativizeFrom(root)
-                log.debug("Relativized path to: {}", returnValue)
-            }
-        } catch (e: Throwable) {
-            log.debug("Error resolving filename '{}': {}", returnValue, e.message)
-        }
-        if (root.resolve(returnValue).toFile().exists()) return returnValue
-
-        // Recursive search with better performance
-        try {
-            val resolvedPath = root.resolve(returnValue)
-            if (!resolvedPath.toFile().exists() || !resolvedPath.toFile().isFile) {
-                log.debug("File not found directly under root, searching recursively")
-                val targetFileName = File(returnValue).name
-                val foundFile = root.toFile().listFilesRecursively()
-                    .asSequence()
-                    .filter { it.isFile }
-                    .find {
-                        val normalizedPath = it.toString().replace("\\", "/")
-                        val normalizedTarget = returnValue.replace("\\", "/")
-                        normalizedPath.endsWith(normalizedTarget) ||
-                                it.name.equals(targetFileName, ignoreCase = true)
-                    }
-                if (foundFile != null) {
-                    returnValue = foundFile.toString().relativizeFrom(root)
-                    log.debug("Found file recursively at: {}", returnValue)
-                }
-            }
-        } catch (e: Throwable) {
-            log.debug("Error searching for file '{}' recursively: {}", returnValue, e.message)
-        }
-        if (root.resolve(returnValue).toFile().exists()) return returnValue
-
-        // Fuzzy matching with improved algorithm
-        try {
-            if (!root.resolve(returnValue).toFile().exists()) {
-                log.debug("File not found, attempting fuzzy match")
-                val levenshtein = LevenshteinDistance()
-                val targetName = File(returnValue).name
-                val maxDistance = maxOf(2, targetName.length / 4) // More conservative threshold
-
-                val closest = root.toFile().listFilesRecursively()
-                    .asSequence()
-                    .filter { it.isFile }
-                    .map { file ->
-                        val distance = levenshtein.apply(file.name.lowercase(), targetName.lowercase())
-                        file to distance
-                    }
-                    .filter { it.second <= maxDistance }
-                    .minByOrNull { it.second }?.first
-
-                if (closest != null) {
-                    returnValue = closest.toString().relativizeFrom(root)
-                    log.debug("Found closest match: {}", returnValue)
-                }
-            }
-        } catch (e: Throwable) {
-            log.debug("Error finding fuzzy match for '{}': {}", returnValue, e.message)
         }
         if (root.resolve(returnValue).toFile().exists()) return returnValue
 

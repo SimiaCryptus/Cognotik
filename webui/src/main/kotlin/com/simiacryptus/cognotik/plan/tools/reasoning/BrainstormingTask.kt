@@ -29,7 +29,6 @@ class BrainstormingTask(
     planTask
 ) {
 
-    val maxSummaryLength: Int = 10000
     private var transcriptStream: FileOutputStream? = null
     protected val codeFiles = mutableMapOf<Path, String>()
 
@@ -176,8 +175,7 @@ Brainstorming - Generate and analyze multiple solution options
             val tabs = TabbedDisplay(task)
 
             // Overview tab
-            val overviewTask = task.ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
+            val overviewTask = tabs.newTask("Overview")
 
             val overviewContent = buildString {
                 appendLine("# Brainstorming Session")
@@ -220,9 +218,9 @@ Brainstorming - Generate and analyze multiple solution options
             val inputFileContent = getInputFileCode()
             if (inputFileContent.isNotBlank()) {
                 log.debug("Found input file content: ${inputFileContent.length} characters")
-                val inputFilesTask = task.ui.newTask(false)
-                tabs["Input Files"] = inputFilesTask.placeholder
+                val inputFilesTask = tabs.newTask("Input Files")
                 inputFilesTask.add(MarkdownUtil.renderMarkdown(inputFileContent, ui = ui))
+                inputFilesTask.complete()
                 task.update()
                 transcriptStream?.write("\n## Input Files\n\n$inputFileContent\n\n".toByteArray())
             }
@@ -232,8 +230,7 @@ Brainstorming - Generate and analyze multiple solution options
             val priorContext = getPriorCode(agent.executionState)
             if (priorContext.isNotBlank()) {
                 log.debug("Found prior context: ${priorContext.length} characters")
-                val contextTask = task.ui.newTask(false)
-                tabs["Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Context")
                 contextTask.add(
                     MarkdownUtil.renderMarkdown(
                         """
@@ -243,14 +240,19 @@ Brainstorming - Generate and analyze multiple solution options
             """.trimMargin(), ui = ui
                     )
                 )
+                contextTask.complete()
                 task.update()
             }
 
             // Step 1: Generate options using ParsedActor for structured output
             log.info("Generating $targetCount options")
-            val optionsTask = task.ui.newTask(false)
-            tabs["Generated Options"] = optionsTask.placeholder
-            optionsTask.add(MarkdownUtil.renderMarkdown("## Generated Options\n\n🔄 Brainstorming options...", ui = ui))
+            val optionsTask = tabs.newTask("Generated Options")
+            val optionsStatus = optionsTask.add(
+                MarkdownUtil.renderMarkdown(
+                    "## Generated Options\n\n🔄 Brainstorming options...",
+                    ui = ui
+                )
+            )
             task.update()
 
             val brainstormPrompt = buildBrainstormPrompt(
@@ -289,6 +291,7 @@ Brainstorming - Generate and analyze multiple solution options
             }
 
             // Display generated options
+            optionsStatus?.setLength(0)
             optionsTask.add(
                 MarkdownUtil.renderMarkdown(
                     buildString {
@@ -308,6 +311,7 @@ Brainstorming - Generate and analyze multiple solution options
                     }, ui = ui
                 )
             )
+            optionsTask.complete()
             task.update()
 
             // Update overview
@@ -338,9 +342,8 @@ Brainstorming - Generate and analyze multiple solution options
                 val optionNumber = index + 1
                 log.debug("Analyzing option $optionNumber: ${option.title}")
 
-                val analysisTask = task.ui.newTask(false)
-                tabs["Option $optionNumber Analysis"] = analysisTask.placeholder
-                analysisTask.add(
+                val analysisTask = tabs.newTask("Option $optionNumber Analysis")
+                val analysisStatus = analysisTask.add(
                     MarkdownUtil.renderMarkdown(
                         """
             |# Option $optionNumber: ${option.title}
@@ -376,6 +379,7 @@ Brainstorming - Generate and analyze multiple solution options
 
 
                 // Display analysis
+                analysisStatus?.setLength(0)
                 analysisTask.add(
                     MarkdownUtil.renderMarkdown(
                         buildString {
@@ -414,6 +418,7 @@ Brainstorming - Generate and analyze multiple solution options
                         }, ui = ui
                     )
                 )
+                analysisTask.complete()
                 task.update()
 
                 // Update overview
@@ -430,9 +435,8 @@ Brainstorming - Generate and analyze multiple solution options
 
             // Step 3: Generate comparative summary
             log.info("Generating comparative summary")
-            val summaryTask = task.ui.newTask(false)
-            tabs["Summary & Recommendations"] = summaryTask.placeholder
-            summaryTask.add(
+            val summaryTask = tabs.newTask("Summary & Recommendations")
+            val summaryStatus = summaryTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## Summary & Recommendations\n\n🔄 Synthesizing findings...",
                     ui = ui
@@ -453,6 +457,7 @@ Brainstorming - Generate and analyze multiple solution options
             )
 
             val summary = summaryAgent.answer(listOf(summaryPrompt))
+            summaryStatus?.setLength(0)
 
             summaryTask.add(
                 MarkdownUtil.renderMarkdown(
@@ -465,6 +470,7 @@ Brainstorming - Generate and analyze multiple solution options
                     }, ui = ui
                 )
             )
+            summaryTask.complete()
             task.update()
 
             val totalTime = System.currentTimeMillis() - startTime
@@ -893,6 +899,7 @@ Provide a well-structured, actionable summary now.
         val Brainstorming = TaskType(
             "Brainstorming",
             "Reasoning",
+            BrainstormingTask::class.java,
             BrainstormingTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate and analyze multiple solution options",
@@ -907,7 +914,7 @@ Provide a well-structured, actionable summary now.
                 <li>Identifies hybrid approaches and synergies</li>
                 <li>Useful for decision making, strategic planning, and problem solving</li>
               </ul>
-            """
+            """,
         )
     }
 }

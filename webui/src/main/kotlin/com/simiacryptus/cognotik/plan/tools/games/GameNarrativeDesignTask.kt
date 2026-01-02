@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
@@ -67,6 +68,9 @@ class GameNarrativeDesignTask(
 
         @Description("Whether to include side quest narratives")
         val include_side_quests: Boolean = true,
+        @Description("Whether to include game mechanics design")
+        val include_game_mechanics: Boolean = true,
+
 
         @Description("Overall tone (e.g., 'dark', 'heroic', 'comedic', 'mysterious')")
         tone: String = "heroic",
@@ -201,6 +205,7 @@ class GameNarrativeDesignTask(
             }
         }
     }
+
     data class NarrativeAct(
         val act_number: Int = 1,
         val title: String = "",
@@ -365,6 +370,21 @@ class GameNarrativeDesignTask(
     data class SideQuests(
         val quests: List<SideQuest> = emptyList()
     ) : ValidatedObject
+    data class GameMechanics(
+        val core_loop: String = "",
+        val key_systems: List<String> = emptyList(),
+        val progression_system: String = "",
+        val unique_mechanics: List<String> = emptyList(),
+        val ludonarrative_harmony: String = ""
+    ) : ValidatedObject
+    data class GameDesignData(
+        val narrative: GameNarrative? = null,
+        val mechanics: GameMechanics? = null,
+        val dialogue_trees: List<DialogueTree>? = null,
+        val side_quests: List<SideQuest>? = null,
+        val player_agency_analysis: String? = null
+    )
+
 
     override fun promptSegment(): String {
         return """
@@ -372,6 +392,7 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
   ** Extends NarrativeGeneration with game-specific features
   ** Specify game title, genre, and narrative style
   ** Define player agency level and role
+  ** Design core game mechanics and systems
   ** Configure branching points and multiple endings
   ** Include dialogue trees with emotional beats
   ** Character arcs that respond to player choices
@@ -417,9 +438,11 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
             gameDir.mkdirs()
             log.debug("Created game narrative design directory: ${gameDir.absolutePath}")
         }
+        var gameDesignData = GameDesignData()
+
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
+        val overviewTask = task.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         val overviewContent = buildString {
@@ -475,7 +498,7 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
 
             // Phase 2: Generate game-specific structure
             log.info("Phase 2: Generating game structure")
-            val gameStructureTask = task.ui.newTask(false)
+            val gameStructureTask = task.newTask()
             tabs["Game Structure"] = gameStructureTask.placeholder
 
             gameStructureTask.add(
@@ -539,6 +562,8 @@ Ensure the structure supports ${gameConfig.player_agency_level} player agency wi
 
             val gameNarrative = gameStructureAgent.answer(listOf("Generate game structure")).obj
             log.info("Generated game structure: ${gameNarrative.characters.size} characters, ${gameNarrative.branching_points.size} branching points, ${gameNarrative.endings.size} endings")
+            gameDesignData = gameDesignData.copy(narrative = gameNarrative)
+
 
             val gameStructureContent = buildString {
                 appendLine("## ${gameNarrative.title}")
@@ -610,6 +635,74 @@ Ensure the structure supports ${gameConfig.player_agency_level} player agency wi
 
             overviewTask.add("✅ Phase 2 Complete: Game structure defined\n".renderMarkdown)
             task.update()
+            // Phase 2.5: Game Mechanics
+            if (gameConfig.include_game_mechanics) {
+                log.info("Phase 2.5: Designing game mechanics")
+                overviewTask.add("\n### Phase 2.5: Game Mechanics\n*Designing gameplay systems...*\n".renderMarkdown)
+                task.update()
+                val mechanicsTask = task.newTask()
+                tabs["Mechanics"] = mechanicsTask.placeholder
+                mechanicsTask.add(
+                    buildString {
+                        appendLine("# Game Mechanics")
+                        appendLine()
+                        appendLine("**Status:** Designing systems to support the narrative...")
+                        appendLine()
+                    }.renderMarkdown
+                )
+                task.update()
+                val mechanicsAgent = ParsedAgent(
+                    resultClass = GameMechanics::class.java,
+                    prompt = """
+You are a lead game designer. Design the core mechanics for this game based on the narrative.
+Game: $gameTitle
+Genre: ${gameConfig.genre}
+Narrative Style: ${gameConfig.narrative_style}
+Narrative Premise: ${gameNarrative.premise}
+Themes: ${gameNarrative.themes.joinToString(", ")}
+Design the following:
+1. **Core Loop**: What is the player doing moment-to-moment?
+2. **Key Systems**: Major gameplay systems (combat, crafting, dialogue, etc.)
+3. **Progression**: How does the player grow (stats, skills, equipment)?
+4. **Unique Mechanics**: Specific mechanics that reinforce the narrative themes.
+5. **Ludonarrative Harmony**: How gameplay reinforces the story.
+Ensure mechanics fit the '${gameConfig.genre}' genre and '${gameConfig.tone}' tone.
+          """.trimIndent(),
+                    model = api,
+                    temperature = 0.7,
+                    parsingChatter = defaultFast
+                )
+                val mechanics = mechanicsAgent.answer(listOf("Design game mechanics")).obj
+                gameDesignData = gameDesignData.copy(mechanics = mechanics)
+                val mechanicsContent = buildString {
+                    appendLine("## Gameplay Mechanics")
+                    appendLine()
+                    appendLine("### Core Loop")
+                    appendLine(mechanics.core_loop)
+                    appendLine()
+                    appendLine("### Key Systems")
+                    mechanics.key_systems.forEach { sys -> appendLine("- $sys") }
+                    appendLine()
+                    appendLine("### Progression")
+                    appendLine(mechanics.progression_system)
+                    appendLine()
+                    appendLine("### Unique Mechanics")
+                    mechanics.unique_mechanics.forEach { mech -> appendLine("- $mech") }
+                    appendLine()
+                    appendLine("### Ludonarrative Harmony")
+                    appendLine(mechanics.ludonarrative_harmony)
+                }
+                mechanicsTask.add(mechanicsContent.renderMarkdown)
+                transcript?.write("\n## Game Mechanics\n\n$mechanicsContent\n\n")
+                transcript?.flush()
+                task.update()
+                saveAnalysisToFile(gameDir, "01b_game_mechanics.md", mechanicsContent)
+                resultBuilder.append("## Game Mechanics\n\n")
+                resultBuilder.append(mechanics.core_loop.truncateForDisplay(200) + "\n\n")
+                overviewTask.add("✅ Phase 2.5 Complete: Mechanics designed\n".renderMarkdown)
+                task.update()
+            }
+
 
             // Generate character portraits if enabled
             if (gameConfig.generate_character_portraits) {
@@ -631,7 +724,7 @@ Ensure the structure supports ${gameConfig.player_agency_level} player agency wi
             overviewTask.add("\n### Phase 3: Branching Narrative Map\n*Creating decision tree...*\n".renderMarkdown)
             task.update()
 
-            val branchingMapTask = task.ui.newTask(false)
+            val branchingMapTask = task.newTask()
             tabs["Branching Map"] = branchingMapTask.placeholder
 
             branchingMapTask.add(
@@ -710,7 +803,7 @@ Ensure the structure supports ${gameConfig.player_agency_level} player agency wi
                 overviewTask.add("\n### Phase 4: Dialogue Trees\n*Creating interactive conversations...*\n".renderMarkdown)
                 task.update()
 
-                val dialogueTask = task.ui.newTask(false)
+                val dialogueTask = task.newTask()
                 tabs["Dialogue Trees"] = dialogueTask.placeholder
 
                 dialogueTask.add(
@@ -764,6 +857,8 @@ Ensure each character's dialogue matches their established style.
 
                 val dialogueTrees = dialogueAgent.answer(listOf("Generate dialogue trees")).obj.trees
                 log.info("Generated ${dialogueTrees.size} dialogue trees")
+                gameDesignData = gameDesignData.copy(dialogue_trees = dialogueTrees)
+
 
                 val dialogueContent = buildString {
                     appendLine("## Interactive Conversations")
@@ -828,7 +923,7 @@ Ensure each character's dialogue matches their established style.
             overviewTask.add("\n### Phase 5: Multiple Endings\n*Creating ending variations...*\n".renderMarkdown)
             task.update()
 
-            val endingsTask = task.ui.newTask(false)
+            val endingsTask = task.newTask()
             tabs["Endings"] = endingsTask.placeholder
 
             endingsTask.add(
@@ -894,7 +989,7 @@ Ensure each character's dialogue matches their established style.
                 overviewTask.add("\n### Phase 6: Side Quests\n*Creating optional content...*\n".renderMarkdown)
                 task.update()
 
-                val sideQuestsTask = task.ui.newTask(false)
+                val sideQuestsTask = task.newTask()
                 tabs["Side Quests"] = sideQuestsTask.placeholder
 
                 sideQuestsTask.add(
@@ -943,6 +1038,8 @@ Make quests feel meaningful, not just filler content.
 
                 val sideQuests = sideQuestAgent.answer(listOf("Generate side quests")).obj.quests
                 log.info("Generated ${sideQuests.size} side quests")
+                gameDesignData = gameDesignData.copy(side_quests = sideQuests)
+
 
                 val sideQuestsContent = buildString {
                     appendLine("## Optional Narrative Content")
@@ -995,7 +1092,7 @@ Make quests feel meaningful, not just filler content.
             overviewTask.add("\n### Phase 7: Player Agency Analysis\n*Evaluating meaningful choices...*\n".renderMarkdown)
             task.update()
 
-            val agencyTask = task.ui.newTask(false)
+            val agencyTask = task.newTask()
             tabs["Player Agency"] = agencyTask.placeholder
 
             agencyTask.add(
@@ -1037,6 +1134,8 @@ Provide specific examples and recommendations for improvement.
 
             val agencyAnalysis = agencyAgent.answer(listOf("Analyze player agency"))
             log.info("Player agency analysis complete: ${agencyAnalysis.length} characters")
+            gameDesignData = gameDesignData.copy(player_agency_analysis = agencyAnalysis)
+
 
             val agencyContent = buildString {
                 appendLine("## Player Agency Evaluation")
@@ -1065,7 +1164,7 @@ Provide specific examples and recommendations for improvement.
             overviewTask.add("\n### Phase 8: Final Design Document\n*Compiling complete documentation...*\n".renderMarkdown)
             task.update()
 
-            val designDocTask = task.ui.newTask(false)
+            val designDocTask = task.newTask()
             tabs["Design Document"] = designDocTask.placeholder
 
             val designDocument = buildString {
@@ -1091,16 +1190,18 @@ Provide specific examples and recommendations for improvement.
                 appendLine("1. Story Overview")
                 appendLine("2. Three-Act Structure")
                 appendLine("3. Main Characters")
-                appendLine("4. Branching Narrative Map")
-                if (gameConfig.include_dialogue_trees) appendLine("5. Dialogue Trees")
-                appendLine("${if (gameConfig.include_dialogue_trees) "6" else "5"}. Multiple Endings")
-                if (gameConfig.include_side_quests) appendLine("${if (gameConfig.include_dialogue_trees) "7" else "6"}. Side Quests")
-                appendLine("${if (gameConfig.include_dialogue_trees && gameConfig.include_side_quests) "8" else if (gameConfig.include_dialogue_trees || gameConfig.include_side_quests) "7" else "6"}. Player Agency Analysis")
+                if (gameConfig.include_game_mechanics) appendLine("4. Game Mechanics")
+                appendLine("... (see full document for details)")
                 appendLine()
                 appendLine("---")
                 appendLine()
                 appendLine(gameStructureContent)
                 appendLine()
+                if (gameConfig.include_game_mechanics) {
+                    appendLine(gameDesignData.mechanics?.let { 
+                        "## Game Mechanics\n\n${it.core_loop}\n\n" 
+                    } ?: "")
+                }
                 appendLine(branchingMapContent)
                 appendLine()
                 appendLine(endingsContent)
@@ -1137,6 +1238,15 @@ Provide specific examples and recommendations for improvement.
             task.update()
 
             saveAnalysisToFile(gameDir, "00_complete_design_document.md", designDocument)
+            // Save structured JSON data
+            try {
+                val jsonFile = File(gameDir, "game_design_data.json")
+                jsonFile.writeText(JsonUtil.toJson(gameDesignData))
+                log.debug("Saved structured game design data to: ${jsonFile.absolutePath}")
+            } catch (e: Exception) {
+                log.error("Failed to save game design JSON", e)
+            }
+
 
             // Final statistics
             val totalTime = System.currentTimeMillis() - startTime
@@ -1156,8 +1266,10 @@ Provide specific examples and recommendations for improvement.
                     appendLine()
                     appendLine("**Files Generated:**")
                     appendLine("- Complete Design Document")
+                    appendLine("- Structured Game Design Data (JSON)")
                     appendLine("- Game Structure")
                     appendLine("- Branching Map")
+                    if (gameConfig.include_game_mechanics) appendLine("- Game Mechanics")
                     if (gameConfig.include_dialogue_trees) appendLine("- Dialogue Trees")
                     appendLine("- Endings")
                     if (gameConfig.include_side_quests) appendLine("- Side Quests")
@@ -1189,7 +1301,9 @@ Provide specific examples and recommendations for improvement.
                 appendLine("## Documentation")
                 appendLine("Complete design documentation is available in the `.game_narrative_design` directory:")
                 appendLine("- Complete Design Document")
+                appendLine("- Structured Game Design Data (JSON)")
                 appendLine("- Game Structure & Characters")
+                if (gameConfig.include_game_mechanics) appendLine("- Game Mechanics & Systems")
                 appendLine("- Branching Narrative Map")
                 if (gameConfig.include_dialogue_trees) appendLine("- Interactive Dialogue Trees")
                 appendLine("- Multiple Ending Variations")
@@ -1249,7 +1363,7 @@ Provide specific examples and recommendations for improvement.
         val transcriptFile = "game_narrative_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val file = task.resolveUserFile(transcriptFile)
         val link = task.linkTo(transcriptFile)
-        task.complete(
+        task.add(
             "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(
                     ".md"
@@ -1280,7 +1394,7 @@ Provide specific examples and recommendations for improvement.
     ) {
         try {
             log.info("Generating portrait for character: ${character.name}")
-            val portraitTask = task.ui.newTask(false)
+            val portraitTask = task.newTask()
             tabs["Portrait: ${character.name}"] = portraitTask.placeholder
 
             portraitTask.add(
@@ -1353,6 +1467,7 @@ Provide specific examples and recommendations for improvement.
         val GameNarrativeDesign = TaskType(
             "GameNarrativeDesign",
             "Games",
+            GameNarrativeDesignTask::class.java,
             GameNarrativeDesignConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create interactive game narratives with branching storylines",
@@ -1370,7 +1485,7 @@ Provide specific examples and recommendations for improvement.
                 <li>Complete design documentation for implementation</li>
                 <li>Ideal for RPGs, adventure games, visual novels, interactive fiction</li>
               </ul>
-            """
+            """,
         )
     }
 }

@@ -82,11 +82,13 @@ class LLMPollSimulationTask(
                             return "Question '${question.id}' of type ${question.type} must have options"
                         }
                     }
+
                     QuestionType.LIKERT_SCALE, QuestionType.RATING -> {
                         if (question.min == null || question.max == null) {
                             return "Question '${question.id}' of type ${question.type} must have min and max validation"
                         }
                     }
+
                     else -> {}
                 }
             }
@@ -121,8 +123,6 @@ class LLMPollSimulationTask(
         OPEN_ENDED,
         YES_NO,
         RANKING,
-        MATRIX,
-        DEMOGRAPHIC
     }
 
     data class RespondentProfile(
@@ -153,10 +153,11 @@ class LLMPollSimulationTask(
         val reasoning: Map<String, String>? = null
     )
 
-data class ParsedResponse(
+    data class ParsedResponse(
         val answer: Any? = null,
         val reasoning: String? = null
     )
+
     data class QuestionResponse(
         @Description("The answer to the question")
         val answer: Any? = null,
@@ -227,8 +228,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         overviewTask.add(
             buildString {
@@ -247,7 +247,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                 appendLine("*Generating respondent personas...*")
             }.renderMarkdown()
         )
-        task.update()
 
         try {
             // Generate respondents
@@ -262,7 +261,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("*Conducting survey...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             transcriptWriter?.apply {
                 write("## Respondent Profiles\n\n")
@@ -279,8 +277,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
             }
 
             // Progress tab
-            val progressTask = task.ui.newTask(false)
-            tabs["Progress"] = progressTask.placeholder
+            val progressTask = tabs.newTask("Progress")
 
             // Conduct survey
             val responses = ConcurrentHashMap<String, SurveyResponse>()
@@ -297,7 +294,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("*Collecting responses...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             // Submit all surveys to thread pool
             val futures = respondents.map { respondent ->
@@ -314,7 +310,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                                     appendLine("**Progress:** $completed / $totalRespondents (${(completed * 100 / totalRespondents)}%)")
                                 }.renderMarkdown()
                             )
-                            task.update()
                         }
 
                         log.debug("Survey completed for respondent ${respondent.id}")
@@ -342,7 +337,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("**Failed Responses:** ${failedCount.get()}")
                 }.renderMarkdown()
             )
-            task.update()
 
             overviewTask.add(
                 buildString {
@@ -352,7 +346,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("*Analyzing results...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             // Write responses to transcript
             transcriptWriter?.apply {
@@ -373,8 +366,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
             }
 
             // Generate descriptive statistics
-            val statsTask = task.ui.newTask(false)
-            tabs["Statistics"] = statsTask.placeholder
+            val statsTask = tabs.newTask("Statistics")
 
             statsTask.add(
                 buildString {
@@ -383,7 +375,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("*Computing statistics...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             val statistics = generateDescriptiveStatistics(successfulResponses, questions)
 
@@ -400,12 +391,10 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine(statistics)
                 }.renderMarkdown()
             )
-            task.update()
 
             // Cross-tabulation analysis
             if (executionConfig?.cross_tabulation == true && executionConfig.include_demographics) {
-                val crossTabTask = task.ui.newTask(false)
-                tabs["Cross-Tabulation"] = crossTabTask.placeholder
+                val crossTabTask = tabs.newTask("Cross-Tabulation")
 
                 crossTabTask.add(
                     buildString {
@@ -414,7 +403,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine("*Generating cross-tabs...*")
                     }.renderMarkdown()
                 )
-                task.update()
 
                 val crossTabs = generateCrossTabs(
                     successfulResponses,
@@ -435,13 +423,11 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine(crossTabs)
                     }.renderMarkdown()
                 )
-                task.update()
             }
 
             // Sentiment analysis
             if (executionConfig?.sentiment_analysis == true) {
-                val sentimentTask = task.ui.newTask(false)
-                tabs["Sentiment"] = sentimentTask.placeholder
+                val sentimentTask = tabs.newTask("Sentiment")
 
                 sentimentTask.add(
                     buildString {
@@ -450,7 +436,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine("*Analyzing sentiment...*")
                     }.renderMarkdown()
                 )
-                task.update()
 
                 val sentiment = performSentimentAnalysis(successfulResponses, questions, api)
 
@@ -467,13 +452,11 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine(sentiment)
                     }.renderMarkdown()
                 )
-                task.update()
             }
 
             // Bias detection
             if (executionConfig?.bias_detection == true) {
-                val biasTask = task.ui.newTask(false)
-                tabs["Bias Detection"] = biasTask.placeholder
+                val biasTask = tabs.newTask("Bias Detection")
 
                 biasTask.add(
                     buildString {
@@ -482,7 +465,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine("*Detecting biases...*")
                     }.renderMarkdown()
                 )
-                task.update()
 
                 val biases = detectBiases(successfulResponses, questions, api)
 
@@ -499,13 +481,11 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                         appendLine(biases)
                     }.renderMarkdown()
                 )
-                task.update()
             }
 
             // Generate insights
             log.info("Generating insights from poll results")
-            val insightsTask = task.ui.newTask(false)
-            tabs["Insights"] = insightsTask.placeholder
+            val insightsTask = tabs.newTask("Insights")
 
             insightsTask.add(
                 buildString {
@@ -514,7 +494,6 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
                     appendLine("*Generating insights...*")
                 }.renderMarkdown()
             )
-            task.update()
 
             val insightsAgent = ChatAgent(
                 prompt = """
@@ -545,7 +524,11 @@ Be specific and reference the data provided.
                 appendLine("Sample Responses:")
                 successfulResponses.take(3).forEach { response ->
                     appendLine("- Demographics: ${response.demographics}")
-                    appendLine("  Answers: ${response.answers.entries.take(3).joinToString(", ") { "${it.key}: ${it.value}" }}")
+                    appendLine(
+                        "  Answers: ${
+                            response.answers.entries.take(3).joinToString(", ") { "${it.key}: ${it.value}" }
+                        }"
+                    )
                 }
             }
 
@@ -564,7 +547,6 @@ Be specific and reference the data provided.
                     appendLine(insights)
                 }.renderMarkdown()
             )
-            task.update()
 
             // Final summary
             val totalTime = System.currentTimeMillis() - startTime
@@ -577,7 +559,14 @@ Be specific and reference the data provided.
                 appendLine()
                 appendLine("- **Total Respondents:** $totalRespondents")
                 appendLine("- **Successful Responses:** ${successfulResponses.size}")
-                appendLine("- **Response Rate:** ${String.format("%.1f", successfulResponses.size * 100.0 / totalRespondents)}%")
+                appendLine(
+                    "- **Response Rate:** ${
+                        String.format(
+                            "%.1f",
+                            successfulResponses.size * 100.0 / totalRespondents
+                        )
+                    }%"
+                )
                 appendLine("- **Total Time:** ${totalTime / 1000.0}s")
                 appendLine("- **Avg Response Time:** ${avgResponseTime / 1000.0}s")
                 appendLine()
@@ -593,7 +582,11 @@ Be specific and reference the data provided.
 
             transcriptWriter?.apply {
                 write("---\n\n")
-                write("**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}\n\n")
+                write(
+                    "**Completed:** ${
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                    }\n\n"
+                )
                 write("**Total Time:** ${totalTime / 1000.0}s | **Responses:** ${successfulResponses.size}/$totalRespondents\n")
                 flush()
                 close()
@@ -610,10 +603,16 @@ Be specific and reference the data provided.
                     appendLine()
                     appendLine("**Responses:** ${successfulResponses.size}/$totalRespondents")
                     appendLine()
-                    appendLine("**Response Rate:** ${String.format("%.1f", successfulResponses.size * 100.0 / totalRespondents)}%")
+                    appendLine(
+                        "**Response Rate:** ${
+                            String.format(
+                                "%.1f",
+                                successfulResponses.size * 100.0 / totalRespondents
+                            )
+                        }%"
+                    )
                 }.renderMarkdown()
             )
-            task.update()
 
             log.info("LLMPollSimulationTask completed: responses=${successfulResponses.size}/$totalRespondents, time=${totalTime}ms")
 
@@ -624,7 +623,13 @@ Be specific and reference the data provided.
                 appendLine()
                 appendLine("---")
                 appendLine()
-                appendLine("Full poll report: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${transcriptLink.removeSuffix(".md")}.html' target='_blank'>html</a>")
+                appendLine(
+                    "Full poll report: <a href='$transcriptLink' target='_blank'>$transcriptLink</a> <a href='${
+                        transcriptLink.removeSuffix(
+                            ".md"
+                        )
+                    }.html' target='_blank'>html</a>"
+                )
             }
             resultFn(finalMessage)
 
@@ -649,7 +654,6 @@ Be specific and reference the data provided.
                     appendLine("**Error:** ${e.message}")
                 }.renderMarkdown()
             )
-            task.update()
 
             resultFn("Error in poll simulation: ${e.message}")
         }
@@ -671,9 +675,11 @@ Be specific and reference the data provided.
                 } else {
                     generateRealisticDemographics()
                 }
+                val contextVariation = contextVariations[Random().nextInt(contextVariations.size)]
+
 
                 // Build persona prompt
-                val personaPrompt = buildPersonaPrompt(profile, demographics)
+                val personaPrompt = buildPersonaPrompt(profile, demographics, contextVariation)
 
                 respondents.add(
                     SimulatedRespondent(
@@ -712,7 +718,11 @@ Be specific and reference the data provided.
         return demographics
     }
 
-    private fun buildPersonaPrompt(profile: RespondentProfile, demographics: Map<String, String>): String {
+    private fun buildPersonaPrompt(
+        profile: RespondentProfile,
+        demographics: Map<String, String>,
+        contextVariation: String
+    ): String {
         return """
 You are participating in a survey. Please respond authentically based on your profile:
 
@@ -723,6 +733,7 @@ ${demographics.entries.joinToString("\n") { "- ${it.key}: ${it.value}" }}
 
 ${if (profile.background_context != null) "Background:\n${profile.background_context}\n\n" else ""}
 ${if (!profile.characteristics.isNullOrEmpty()) "Characteristics:\n${profile.characteristics.joinToString("\n") { "- $it" }}\n\n" else ""}
+Context: $contextVariation
 
 Instructions:
 - Answer each question honestly from your perspective
@@ -733,7 +744,7 @@ Instructions:
         """.trimIndent()
     }
 
-private fun conductSurvey(
+    private fun conductSurvey(
         respondent: SimulatedRespondent,
         questions: List<SurveyQuestion>,
         api: ChatInterface,
@@ -833,6 +844,7 @@ For the answer field, return the appropriate type based on the question:
                     appendLine()
                     appendLine("Provide your answer as a comma-separated list of numbers (e.g., '1, 3, 4')")
                 }
+
                 QuestionType.SINGLE_CHOICE -> {
                     appendLine("Select one:")
                     question.options?.forEachIndexed { idx, option ->
@@ -841,6 +853,7 @@ For the answer field, return the appropriate type based on the question:
                     appendLine()
                     appendLine("Provide your answer as a single number (e.g., '2')")
                 }
+
                 QuestionType.LIKERT_SCALE -> {
                     val min = question.min as? Int ?: 1
                     val max = question.max as? Int ?: 5
@@ -849,6 +862,7 @@ For the answer field, return the appropriate type based on the question:
                     appendLine()
                     appendLine("Provide your answer as a single number")
                 }
+
                 QuestionType.RATING -> {
                     val min = question.min as? Int ?: 1
                     val max = question.max as? Int ?: 10
@@ -856,9 +870,11 @@ For the answer field, return the appropriate type based on the question:
                     appendLine()
                     appendLine("Provide your answer as a single number")
                 }
+
                 QuestionType.YES_NO -> {
                     appendLine("Answer Yes or No")
                 }
+
                 QuestionType.RANKING -> {
                     appendLine("Rank the following options in order of preference (1 = most preferred):")
                     question.options?.forEachIndexed { idx, option ->
@@ -867,9 +883,11 @@ For the answer field, return the appropriate type based on the question:
                     appendLine()
                     appendLine("Provide your ranking as a comma-separated list (e.g., '3, 1, 2, 4')")
                 }
+
                 QuestionType.OPEN_ENDED -> {
                     appendLine("Please provide your answer in your own words.")
                 }
+
                 else -> {}
             }
 
@@ -879,7 +897,6 @@ For the answer field, return the appropriate type based on the question:
             }
         }
     }
-
 
 
     private fun generateDescriptiveStatistics(
@@ -915,6 +932,7 @@ For the answer field, return the appropriate type based on the question:
                     }
                     stats.appendLine()
                 }
+
                 QuestionType.LIKERT_SCALE, QuestionType.RATING -> {
                     val numericAnswers = answers.mapNotNull { (it as? Number)?.toDouble() }
                     if (numericAnswers.isNotEmpty()) {
@@ -931,6 +949,7 @@ For the answer field, return the appropriate type based on the question:
                         stats.appendLine()
                     }
                 }
+
                 QuestionType.YES_NO -> {
                     val yesCount = answers.count { it.toString().equals("Yes", ignoreCase = true) }
                     val noCount = answers.count { it.toString().equals("No", ignoreCase = true) }
@@ -939,6 +958,7 @@ For the answer field, return the appropriate type based on the question:
                     stats.appendLine("- No: $noCount (${String.format("%.1f", noCount * 100.0 / responses.size)}%)")
                     stats.appendLine()
                 }
+
                 QuestionType.OPEN_ENDED -> {
                     val avgLength = answers.map { it.toString().length }.average()
                     stats.appendLine("**Text Analysis:**\n")
@@ -952,6 +972,7 @@ For the answer field, return the appropriate type based on the question:
                     }
                     stats.appendLine()
                 }
+
                 else -> {}
             }
         }
@@ -975,7 +996,12 @@ For the answer field, return the appropriate type based on the question:
             val dimensionValues = responses.mapNotNull { it.demographics[dimension] }.distinct().sorted()
 
             questions.forEach { question ->
-                if (question.type in listOf(QuestionType.SINGLE_CHOICE, QuestionType.YES_NO, QuestionType.LIKERT_SCALE)) {
+                if (question.type in listOf(
+                        QuestionType.SINGLE_CHOICE,
+                        QuestionType.YES_NO,
+                        QuestionType.LIKERT_SCALE
+                    )
+                ) {
                     crossTabs.appendLine("**${question.id}**\n")
 
                     // Create cross-tab table
@@ -991,9 +1017,17 @@ For the answer field, return the appropriate type based on the question:
                                 val frequency = answers.groupingBy { it.toString() }.eachCount()
                                 frequency.forEach { (answer, count) ->
                                     val percentage = if (subset.isNotEmpty()) count * 100.0 / subset.size else 0.0
-                                    crossTabs.appendLine("| $dimValue | $answer | $count | ${String.format("%.1f", percentage)}% |")
+                                    crossTabs.appendLine(
+                                        "| $dimValue | $answer | $count | ${
+                                            String.format(
+                                                "%.1f",
+                                                percentage
+                                            )
+                                        }% |"
+                                    )
                                 }
                             }
+
                             QuestionType.LIKERT_SCALE -> {
                                 val numericAnswers = answers.mapNotNull { (it as? Number)?.toDouble() }
                                 if (numericAnswers.isNotEmpty()) {
@@ -1001,6 +1035,7 @@ For the answer field, return the appropriate type based on the question:
                                     crossTabs.appendLine("| $dimValue | Mean | ${String.format("%.2f", mean)} | - |")
                                 }
                             }
+
                             else -> {}
                         }
                     }
@@ -1077,7 +1112,14 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                 val overallCounts = sentiments.groupingBy { it.overall }.eachCount()
                 sentiment.appendLine("**Overall Classification:**\n")
                 overallCounts.forEach { (classification, count) ->
-                    sentiment.appendLine("- $classification: $count (${String.format("%.1f", count * 100.0 / sentiments.size)}%)")
+                    sentiment.appendLine(
+                        "- $classification: $count (${
+                            String.format(
+                                "%.1f",
+                                count * 100.0 / sentiments.size
+                            )
+                        }%)"
+                    )
                 }
                 sentiment.appendLine()
             }
@@ -1094,9 +1136,10 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
         val biases = StringBuilder()
 
         biases.appendLine("### Bias Detection Analysis\n")
-
         // Response pattern analysis
         biases.appendLine("#### Response Patterns\n")
+        val patternBiases = StringBuilder()
+
 
         questions.forEach { question ->
             when (question.type) {
@@ -1112,15 +1155,30 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                         val midpoint = (min + max) / 2.0
 
                         if (abs(mean - midpoint) < 0.5) {
-                            biases.appendLine("⚠️ **${question.id}**: Possible central tendency bias (mean=${String.format("%.2f", mean)}, midpoint=$midpoint)")
+                            patternBiases.appendLine(
+                                "⚠️ **${question.id}**: Possible central tendency bias (mean=${
+                                    String.format(
+                                        "%.2f",
+                                        mean
+                                    )
+                                }, midpoint=$midpoint)"
+                            )
                         }
 
                         // Check for low variance (acquiescence bias)
                         if (stdDev < 0.5) {
-                            biases.appendLine("⚠️ **${question.id}**: Low variance detected (sd=${String.format("%.2f", stdDev)}), possible acquiescence bias")
+                            patternBiases.appendLine(
+                                "⚠️ **${question.id}**: Low variance detected (sd=${
+                                    String.format(
+                                        "%.2f",
+                                        stdDev
+                                    )
+                                }), possible acquiescence bias"
+                            )
                         }
                     }
                 }
+
                 QuestionType.MULTIPLE_CHOICE -> {
                     // Check for primacy/recency effects
                     val selections = mutableMapOf<Int, Int>()
@@ -1143,21 +1201,42 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                             .values.average()
 
                         if (firstOption > avgMiddle * 1.5) {
-                            biases.appendLine("⚠️ **${question.id}**: Possible primacy effect (first option selected ${String.format("%.1f", firstOption * 100.0 / responses.size)}% of time)")
+                            patternBiases.appendLine(
+                                "⚠️ **${question.id}**: Possible primacy effect (first option selected ${
+                                    String.format(
+                                        "%.1f",
+                                        firstOption * 100.0 / responses.size
+                                    )
+                                }% of time)"
+                            )
                         }
                         if (lastOption > avgMiddle * 1.5) {
-                            biases.appendLine("⚠️ **${question.id}**: Possible recency effect (last option selected ${String.format("%.1f", lastOption * 100.0 / responses.size)}% of time)")
+                            patternBiases.appendLine(
+                                "⚠️ **${question.id}**: Possible recency effect (last option selected ${
+                                    String.format(
+                                        "%.1f",
+                                        lastOption * 100.0 / responses.size
+                                    )
+                                }% of time)"
+                            )
                         }
                     }
                 }
+
                 else -> {}
             }
+        }
+        if (patternBiases.isNotEmpty()) {
+            biases.append(patternBiases)
+        } else {
+            biases.appendLine("*No significant response pattern biases detected.*")
         }
 
         biases.appendLine()
 
-        // Demographic bias analysis
+       // Demographic Bias analysis
         biases.appendLine("#### Demographic Bias Analysis\n")
+        val demoBiases = StringBuilder()
 
         val demographicDimensions = responses.flatMap { it.demographics.keys }.distinct()
 
@@ -1176,25 +1255,50 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                         val maxDiff = groupMeans.values.maxOrNull()!! - groupMeans.values.minOrNull()!!
 
                         if (maxDiff > 1.0) {
-                            biases.appendLine("⚠️ **${question.id}** by $dimension: Significant difference detected (max diff=${String.format("%.2f", maxDiff)})")
+                            demoBiases.appendLine(
+                                "⚠️ **${question.id}** by $dimension: Significant difference detected (max diff=${
+                                    String.format(
+                                        "%.2f",
+                                        maxDiff
+                                    )
+                                })"
+                            )
                             groupMeans.forEach { (value, mean) ->
-                                biases.appendLine("  - $value: ${String.format("%.2f", mean)}")
+                                demoBiases.appendLine("  - $value: ${String.format("%.2f", mean)}")
                             }
                         }
                     }
             }
+        }
+        if (demoBiases.isNotEmpty()) {
+            biases.append(demoBiases)
+        } else {
+            biases.appendLine("*No significant demographic biases detected.*")
         }
 
         biases.appendLine()
 
         // Response quality indicators
         biases.appendLine("#### Response Quality\n")
+        val qualityIssues = StringBuilder()
 
         val avgResponseTime = responses.map { it.response_time }.average()
         val fastResponses = responses.count { it.response_time < avgResponseTime * 0.5 }
 
         if (fastResponses > responses.size * 0.2) {
-            biases.appendLine("⚠️ **Fast Responses**: ${String.format("%.1f", fastResponses * 100.0 / responses.size)}% of responses were unusually fast, possible satisficing behavior")
+            qualityIssues.appendLine(
+                "⚠️ **Fast Responses**: ${
+                    String.format(
+                        "%.1f",
+                        fastResponses * 100.0 / responses.size
+                    )
+                }% of responses were unusually fast, possible satisficing behavior"
+            )
+        }
+        if (qualityIssues.isNotEmpty()) {
+            biases.append(qualityIssues)
+        } else {
+            biases.appendLine("*No significant response quality issues detected.*")
         }
 
         biases.appendLine()
@@ -1213,17 +1317,29 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
         val transcriptFile = "poll_simulation_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
+        task.add(
             "Writing poll report to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a>"
         )
         return Pair(link, markdownTranscript)
     }
+    private val contextVariations = listOf(
+        "You are taking this survey quickly during a short break.",
+        "You are thoughtful and taking your time to answer carefully.",
+        "You are slightly skeptical about the survey's purpose.",
+        "You are enthusiastic about the topic.",
+        "You are tired after a long day.",
+        "You are distracted by your environment but trying to focus.",
+        "You are very opinionated on this subject.",
+        "You are neutral and trying to be objective."
+    )
+
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LLMPollSimulationTask::class.java)
         val LLMPollSimulation = TaskType(
             "LLMPollSimulation",
             "Social",
+            LLMPollSimulationTask::class.java,
             LLMPollSimulationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Simulate polls and surveys with AI personas",
@@ -1241,7 +1357,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
                 <li>Comprehensive reports with visualizations</li>
               </ul>
               <p><strong>Use cases:</strong> Survey instrument testing, response pattern exploration, demographic analysis, bias detection</p>
-            """
+            """,
         )
     }
 }

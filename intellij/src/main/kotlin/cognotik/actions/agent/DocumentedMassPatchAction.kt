@@ -21,13 +21,13 @@ import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
- import java.awt.BorderLayout
- import java.awt.Dimension
+import java.awt.BorderLayout
+import java.awt.Dimension
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
- import java.io.File
- import java.nio.file.Files
- import java.nio.file.Path
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import java.text.SimpleDateFormat
 import javax.swing.*
 
@@ -153,39 +153,39 @@ class DocumentedMassPatchAction : BaseAction() {
                         add(JLabel("Documentation Files"), BorderLayout.NORTH)
                         add(JBScrollPane(settingsUI.documentationFiles), BorderLayout.CENTER)
                     }
-                    
+
                     val codePanel = JPanel(BorderLayout()).apply {
                         add(JLabel("Code Files"), BorderLayout.NORTH)
                         add(JBScrollPane(settingsUI.codeFiles), BorderLayout.CENTER)
                     }
-                    
+
                     val buttonPanel = JPanel().apply {
                         layout = BoxLayout(this, BoxLayout.X_AXIS)
                         border = JBUI.Borders.empty(10)
-                        
+
                         add(Box.createHorizontalGlue())
-                        
+
                         val moveDownButton = JButton("↓").apply {
                             toolTipText = "Move selected documentation file to code files"
                             addActionListener {
-                               moveSelectedItems(settingsUI.documentationFiles, settingsUI.codeFiles)
+                                moveSelectedItems(settingsUI.documentationFiles, settingsUI.codeFiles)
                             }
                         }
                         add(moveDownButton)
-                        
+
                         add(Box.createHorizontalStrut(10))
-                        
+
                         val moveUpButton = JButton("↑").apply {
                             toolTipText = "Move selected code file to documentation files"
                             addActionListener {
-                               moveSelectedItems(settingsUI.codeFiles, settingsUI.documentationFiles)
+                                moveSelectedItems(settingsUI.codeFiles, settingsUI.documentationFiles)
                             }
                         }
                         add(moveUpButton)
-                        
+
                         add(Box.createHorizontalGlue())
                     }
-                    
+
                     val centerPanel = JPanel(GridBagLayout()).apply {
                         val c = GridBagConstraints()
                         c.gridx = 0
@@ -206,7 +206,7 @@ class DocumentedMassPatchAction : BaseAction() {
                         c.fill = GridBagConstraints.BOTH
                         add(codePanel, c)
                     }
-                    
+
                     add(centerPanel, BorderLayout.CENTER)
                     preferredSize = Dimension(500, 600)
                 }
@@ -221,22 +221,23 @@ class DocumentedMassPatchAction : BaseAction() {
                 }, BorderLayout.SOUTH)
             }
         }
-       private fun moveSelectedItems(sourceList: CheckBoxList<Path>, targetList: CheckBoxList<Path>) {
-           val selectedIndices = sourceList.selectedIndices
-           if (selectedIndices.isEmpty()) return
-           
-           val selectedItems = selectedIndices.map { sourceList.items[it] }
-            
+
+        private fun moveSelectedItems(sourceList: CheckBoxList<Path>, targetList: CheckBoxList<Path>) {
+            val selectedIndices = sourceList.selectedIndices
+            if (selectedIndices.isEmpty()) return
+
+            val selectedItems = selectedIndices.map { sourceList.items[it] }
+
             // Remove from source list
             val sourceItems = sourceList.items.toMutableList()
-           selectedItems.forEach { sourceItems.remove(it) }
-            
+            selectedItems.forEach { sourceItems.remove(it) }
+
             // Add to target list
             val targetItems = targetList.items.toMutableList()
-           targetItems.addAll(selectedItems)
-            
+            targetItems.addAll(selectedItems)
+
             // Update both lists
-            val root = userSettings.documentationFiles.firstOrNull()?.parent 
+            val root = userSettings.documentationFiles.firstOrNull()?.parent
                 ?: userSettings.codeFilePaths.firstOrNull()?.parent
             sourceList.setItems(sourceItems) { path ->
                 root?.relativize(path)?.toString() ?: path.toString()
@@ -244,14 +245,14 @@ class DocumentedMassPatchAction : BaseAction() {
             targetList.setItems(targetItems) { path ->
                 root?.relativize(path)?.toString() ?: path.toString()
             }
-            
-           // Select the moved items in target list
-           val newIndices = selectedItems.mapNotNull { item ->
-               val index = targetItems.indexOf(item)
-               if (index >= 0) index else null
-           }.toIntArray()
-           if (newIndices.isNotEmpty()) {
-               targetList.selectedIndices = newIndices
+
+            // Select the moved items in target list
+            val newIndices = selectedItems.mapNotNull { item ->
+                val index = targetItems.indexOf(item)
+                if (index >= 0) index else null
+            }.toIntArray()
+            if (newIndices.isNotEmpty()) {
+                targetList.selectedIndices = newIndices
             }
         }
 

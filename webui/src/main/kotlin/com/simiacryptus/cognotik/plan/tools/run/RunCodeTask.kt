@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
-import com.simiacryptus.cognotik.plan.tools.run.CodingTask
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
@@ -9,6 +8,7 @@ import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -74,10 +74,7 @@ class RunCodeTask(
         val model = (typeConfig.model?.let { orchestrationConfig.instance(it) }
             ?: defaultSmart).getChildClient(task)
 
-//        val taskSettings = this.orchestrationConfig.getTaskSettings(TaskType.RunCodeTask)
-        val taskSettings = typeConfig as? RunCodeTaskTypeConfig
-        val runtime =
-            taskSettings?.codeRuntime ?: CodeRuntimes.GroovyRuntime // Kotlin has issues running within IntelliJ
+        val runtime = typeConfig.codeRuntime ?: CodeRuntimes.GroovyRuntime // Kotlin has issues running within IntelliJ
         val defs = mapOf(
             "env" to (orchestrationConfig.env ?: emptyMap()),
             "workingDir" to (
@@ -125,33 +122,62 @@ class RunCodeTask(
                 transcript?.write("## Execution Result\n".toByteArray())
                 transcript?.write("**Result Value:**\n```\n${response.result.resultValue}\n```\n\n".toByteArray())
                 transcript?.write("**Output:**\n```\n${response.result.resultOutput}\n```\n\n".toByteArray())
-                var formHandle: StringBuilder? = null
-                if (!orchestrationConfig.autoFix) formHandle = task.add(
-                    "<div>\n${
-                        if (!super.canPlay) "" else super.playButton(task, request, response, formText) { formHandle!! }
-                    }\n${
-                        ui.hrefLink("Continue", "href-link play-button") {
-                            response.let {
-                                transcript?.write("## User Action: Continue\n\n".toByteArray())
-                                "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
-                            }.apply { resultFn(this) }
-                            semaphore.release()
+                val markdown = """
+                    ### Code
+                    $TRIPLE_TILDE${runtime.name.lowercase().replace("runtime", "")}
+                    ${request.messages}
+                    $TRIPLE_TILDE
+                    ### Result
+                    $TRIPLE_TILDE
+                    ${response.result.resultValue}
+                    $TRIPLE_TILDE
+                    ### Output
+                    $TRIPLE_TILDE
+                    ${response.result.resultOutput}
+                    $TRIPLE_TILDE
+                """.trimIndent()
+                task.expandable("Execution Details", MarkdownUtil.renderMarkdown(markdown, ui = task.ui))
+
+
+                if (orchestrationConfig.autoFix) {
+                    if (autoRunCounter.incrementAndGet() <= 1) {
+                        // Auto-fix: Execute immediately
+                        responseAction(task, "Running...", null, formText) {
+                            execute(task, response, request)
                         }
-                    }\n</div>\n${
-                        super.ui.textInput(oneAtATime { feedback: String ->
-                            super.responseAction(task, "Revising...", formHandle!!, formText) {
-                                transcript?.write("## User Feedback\n$feedback\n\n".toByteArray())
-                                super.feedback(task, feedback, request, response)
-                            }
-                        })
-                    }", additionalClasses = "reply-message"
-                ) else if (autoRunCounter.incrementAndGet() <= 1) {
-                    responseAction(task, "Running...", formHandle, formText) {
-                        execute(task, response, request)
                     }
+                    task.complete()
+                    return
                 }
+                // Interactive Mode
+                var formHandle: StringBuilder? = null
+                val buttonsHtml = StringBuilder()
+                if (super.canPlay) {
+                    buttonsHtml.append(super.playButton(task, request, response, formText) { formHandle!! })
+                }
+                buttonsHtml.append(ui.hrefLink("Continue", "href-link play-button") {
+                    transcript?.write("## User Action: Continue\n\n".toByteArray())
+                    val finalOutput =
+                        "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
+                    resultFn(finalOutput)
+                    semaphore.release()
+                })
+                val feedbackHtml = ui.textInput(oneAtATime { feedback: String ->
+                    transcript?.write("## User Feedback\n$feedback\n\n".toByteArray())
+                    super.responseAction(task, "Revising...", formHandle, formText) {
+                        super.feedback(task, feedback, request, response)
+                    }
+                })
+                val html = """
+                    <div class="d-flex flex-row gap-2">
+                        $buttonsHtml
+                    </div>
+                    <div class="mt-2">
+                        $feedbackHtml
+                    </div>
+                """.trimIndent()
+                formHandle = task.add(html, additionalClasses = "reply-message")
                 formText.append(formHandle.toString())
-                formHandle.toString()
                 task.complete()
             }
 
@@ -180,11 +206,13 @@ class RunCodeTask(
         try {
             semaphore.acquire()
         } catch (e: Throwable) {
+            task.error(e)
             transcript?.write("## Error\n```\n${e.message}\n${e.stackTraceToString()}\n```\n\n".toByteArray())
             log.warn("Error", e)
         } finally {
             transcript?.write("\n## Task Completed\n".toByteArray())
             transcript?.close()
+            task.complete()
         }
     }
 
@@ -193,6 +221,7 @@ class RunCodeTask(
         val RunCode = TaskType(
             "RunCode",
             "Execution & Automation",
+            RunCodeTask::class.java,
             RunCodeTaskExecutionConfigData::class.java,
             RunCodeTaskTypeConfig::class.java,
             "Execute code snippets with oversight",
@@ -205,7 +234,7 @@ class RunCodeTask(
             <li>Error handling and reporting</li>
             <li>Interactive result review</li>
           </ul>
-        """
+        """,
         )
 
     }

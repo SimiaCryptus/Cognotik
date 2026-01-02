@@ -182,7 +182,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
 
 
             // Create overview tab
-            val overviewTask = task.ui.newTask(false)
+            val overviewTask = task.newTask()
             tabs["Overview"] = overviewTask.placeholder
             val overviewContent = buildString {
                 appendLine("# Analogical Reasoning Task")
@@ -207,7 +207,6 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
                 appendLine("- ⏳ Gathering context...")
             }
             overviewTask.add(overviewContent.renderMarkdown)
-            task.update()
 
             log.debug("Gathering prior context and related files")
             val priorContext = getPriorCode(agent.executionState)
@@ -224,11 +223,13 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
                 appendLine("- ✓ Context gathered")
                 appendLine("- ⏳ Generating analogies...")
             }.renderMarkdown)
-            task.update()
+            if (inputFileContent.isNotBlank()) {
+                overviewTask.expandable("Input Files Context", "<pre>${inputFileContent.replace("<", "&lt;")}</pre>")
+            }
 
             // Step 1: Generate analogies
             log.info("Starting analogy generation phase")
-            val analogiesTask = task.ui.newTask(false)
+            val analogiesTask = task.newTask()
             tabs["Analogy Generation"] = analogiesTask.placeholder
             analogiesTask.add(buildString {
                 appendLine("# Generating Analogies")
@@ -237,7 +238,6 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
                 appendLine()
                 appendLine("Generating $numAnalogies analogies from the source domain...")
             }.renderMarkdown)
-            task.update()
 
             val analogiesPrompt = """
  You are an expert in analogical reasoning and creative problem-solving.
@@ -306,7 +306,6 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
                     writeToTranscript(stream, "## Error\n\nFailed to generate analogies\n\n")
                 }
                 task.safeComplete("Failed to generate analogies", log)
-                task.update()
                 resultFn("ERROR: Failed to generate analogies")
                 return
             }
@@ -351,7 +350,7 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
                     appendLine()
                 }
             }.renderMarkdown)
-            task.update()
+            analogiesTask.complete()
             transcriptStream?.let { stream ->
                 writeToTranscript(stream, "## Generated Analogies\n\n${result.analogies.size} analogies generated\n\n")
             }
@@ -364,12 +363,11 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
                     appendLine("- ⏳ Validating mappings...")
                 }
             }.renderMarkdown)
-            task.update()
 
             // Step 2: Validate mappings if requested
             if (validateMappings) {
                 log.info("Starting mapping validation phase")
-                val validationTask = task.ui.newTask(false)
+                val validationTask = task.newTask()
                 tabs["Validation"] = validationTask.placeholder
                 validationTask.add(buildString {
                     appendLine("# Mapping Validation")
@@ -385,7 +383,6 @@ AnalogicalReasoning - Solve problems by finding and applying analogies from diff
                     appendLine("3. ✓ Logical derivation of insights")
                     appendLine("4. ✓ Absence of logical fallacies")
                 }.renderMarkdown)
-                task.update()
 
                 val validationPrompt = """
 Review the following analogies and validate their structural coherence.
@@ -433,7 +430,7 @@ Provide a brief validation assessment.
                     appendLine()
                     appendLine(validationResult.truncateForDisplay())
                 }.renderMarkdown)
-                task.update()
+                validationTask.complete()
                 transcriptStream?.let { stream ->
                     writeToTranscript(stream, "## Validation Results\n\n$validationResult\n\n")
                 }
@@ -444,19 +441,18 @@ Provide a brief validation assessment.
                     appendLine("- ✓ Validation completed")
                     appendLine("- ⏳ Synthesizing results...")
                 }.renderMarkdown)
-                task.update()
             }
 
             // Step 3: Format and display results
             log.info("Formatting and displaying final results")
 
             log.info("Formatting and displaying final results")
-            val synthesisTask = task.ui.newTask(false)
+            val synthesisTask = task.newTask()
             tabs["Synthesis & Recommendations"] = synthesisTask.placeholder
 
             val formattedResult = formatAnalogicalReasoningResult(result)
             synthesisTask.add(formattedResult.renderMarkdown)
-            task.update()
+            synthesisTask.complete()
 
             val resultText = buildString {
                 appendLine("# Analogical Reasoning Results")
@@ -533,7 +529,7 @@ Provide a brief validation assessment.
                 appendLine()
                 appendLine("**Status:** ✓ Complete")
             }.renderMarkdown)
-            task.update()
+            overviewTask.complete()
             transcriptStream?.let { stream ->
                 writeTranscriptFooter(stream, totalTime, result.analogies.size)
             }
@@ -556,8 +552,7 @@ Provide a brief validation assessment.
                 writeToTranscript(stream, "## Error\n\n${e.message}\n\n")
             }
             task.error(e)
-            val errorTask = task.ui.newTask(false)
-            errorTask.add(buildString {
+            task.add(buildString {
                 appendLine("# ❌ Error")
                 appendLine()
                 appendLine("An error occurred during analogical reasoning:")
@@ -755,6 +750,7 @@ Provide a brief validation assessment.
         val AnalogicalReasoning = TaskType(
             "AnalogicalReasoning",
             "Reasoning",
+            AnalogicalReasoningTask::class.java,
             AnalogicalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Solve problems by finding and applying analogies from different domains",
@@ -769,7 +765,7 @@ Provide a brief validation assessment.
                 <li>Suggests concrete solutions based on analogies</li>
                 <li>Useful for design thinking and novel approaches</li>
               </ul>
-            """
+            """,
         )
     }
 }

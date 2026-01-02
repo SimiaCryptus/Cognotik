@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
@@ -119,7 +118,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
             return
         }
 
-        val newTask = task.ui.newTask(false)
+        val newTask = task.newTask()
         val transcriptStream = newTask.transcript("html_generation_${htmlFile.substringBeforeLast(".")}")
         val transcriptWriter = transcriptStream?.bufferedWriter()
 
@@ -127,7 +126,7 @@ WriteHtml - Create a complete HTML file with embedded CSS and JavaScript
         val ui = task.ui
         val api = defaultSmart.getChildClient(task)
 
-        newTask.add(MarkdownUtil.renderMarkdown("## Creating HTML File: `$htmlFile`", ui = ui))
+        newTask.header("Creating HTML File: $htmlFile", level = 2)
 
         val contextFiles = getInputFileCode()
         transcriptWriter?.write("# HTML Generation Transcript\n\n")
@@ -183,7 +182,7 @@ Provide the HTML structure within a code block:
             model = api,
         )
 
-        newTask.add(MarkdownUtil.renderMarkdown("### Step 1: Generating HTML Structure", ui = ui))
+        newTask.header("Step 1: Generating HTML Structure", level = 3)
         transcriptWriter?.write("### Step 1: Generating HTML Structure\n\n")
         transcriptWriter?.write("**Prompt:**\n```\n$htmlPrompt\n```\n\n")
 
@@ -200,7 +199,7 @@ Provide the HTML structure within a code block:
         // Step 1.5: Generate images if enabled
         val generatedImages = mutableListOf<Pair<String, String>>() // filename to description
         if (executionConfig?.generate_images == true && executionConfig.image_count > 0 && imageDir != null) {
-            newTask.add(MarkdownUtil.renderMarkdown("### Step 1.5: Generating Images", ui = ui))
+            newTask.header("Step 1.5: Generating Images", level = 3)
             transcriptWriter?.write("### Step 1.5: Generating Images\n\n")
             val imagePrompt = """
 Based on the following HTML page description and structure, identify ${executionConfig.image_count} key images that should be generated.
@@ -227,15 +226,15 @@ DESCRIPTION: another detailed description
             transcriptWriter?.write("**Response:**\n$imageSpecResponse\n\n")
             // Parse image specifications
             val imageSpecs = parseImageSpecs(imageSpecResponse)
-          val imageChat = orchestrationConfig.defaultImage.getChildClient(task)
+            val imageChat = orchestrationConfig.defaultImage.getChildClient(task)
             // Generate each image
             imageSpecs.take(executionConfig.image_count).forEach { (filename, description) ->
                 val filename = filename
                 try {
-                    newTask.add(MarkdownUtil.renderMarkdown("Generating image: `$filename`...", ui = ui))
-                  val imageAgent = ImageProcessingAgent(
+                    newTask.add("Generating image: <b>$filename</b>...", additionalClasses = "text-info")
+                    val imageAgent = ImageProcessingAgent(
                         prompt = "Create a high-quality image for a web page based on the description",
-                    model = imageChat,
+                        model = imageChat,
                         temperature = 0.7,
                     )
                     val result = imageAgent.answer(
@@ -255,8 +254,9 @@ Output format: PNG image
                     ImageIO.write(image, "png", imageFile)
                     generatedImages.add(filename to description)
                     val imageLink = task.linkTo(filename)
-                    val markdown = "✅ Generated: [$filename]($imageLink)\n\n![${description}]($imageLink)"
-                    newTask.add(markdown.renderMarkdown)
+                    val markdown = "✅ Generated: [$filename]($imageLink)"
+                    newTask.add(MarkdownUtil.renderMarkdown(markdown, ui = ui))
+                    newTask.image(image!!)
 
                     transcriptWriter?.write("**Generated Image:** $filename\n")
                     transcriptWriter?.write("**Description:** $description\n")
@@ -264,12 +264,7 @@ Output format: PNG image
                     log.debug("Generated image: $filename")
                 } catch (e: Exception) {
                     log.error("Failed to generate image: $filename", e)
-                    newTask.add(
-                        MarkdownUtil.renderMarkdown(
-                            "⚠️ Failed to generate: `$filename` - ${e.message}",
-                            ui = ui
-                        )
-                    )
+                    newTask.error(e)
                     transcriptWriter?.write("**Error generating $filename:** ${e.message}\n\n")
                 }
             }
@@ -302,7 +297,7 @@ Provide only the JavaScript code within a code block:
 ```
         """.trimIndent()
 
-        newTask.add(MarkdownUtil.renderMarkdown("### Step 2: Generating JavaScript", ui = ui))
+        newTask.header("Step 2: Generating JavaScript", level = 3)
         transcriptWriter?.write("### Step 2: Generating JavaScript\n\n")
         transcriptWriter?.write("**Prompt:**\n```\n$jsPrompt\n```\n\n")
 
@@ -339,7 +334,7 @@ Provide only the CSS code within a code block:
 ```
         """.trimIndent()
 
-        newTask.add(MarkdownUtil.renderMarkdown("### Step 3: Generating CSS", ui = ui))
+        newTask.header("Step 3: Generating CSS", level = 3)
 
         transcriptWriter?.write("### Step 3: Generating CSS\n\n")
         transcriptWriter?.write("**Prompt:**\n```\n$cssPrompt\n```\n\n")
@@ -483,7 +478,7 @@ ${generatedImages.joinToString("\n") { (filename, desc) -> "         - $filename
         if (generatedImages.isEmpty()) {
             return htmlStructure
         }
-        newTask.add(MarkdownUtil.renderMarkdown("### Step 3.5: Inserting Image References", ui = ui))
+        newTask.header("Step 3.5: Inserting Image References", level = 3)
         transcriptWriter?.write("### Step 3.5: Inserting Image References\n\n")
         val imageList = generatedImages.joinToString("\n") { (filename, description) ->
             "- $filename: $description"
@@ -516,20 +511,13 @@ Provide the complete updated HTML structure within a code block:
         transcriptWriter?.write("**Response:**\n$imageInsertResponse\n\n")
         val updatedHtml = extractCodeFromResponse(imageInsertResponse, "html")
         return if (updatedHtml.isNotEmpty()) {
-            newTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "✅ Successfully inserted ${generatedImages.size} image reference(s)",
-                    ui = ui
-                )
-            )
+            newTask.add("✅ Successfully inserted ${generatedImages.size} image reference(s)")
             updatedHtml
         } else {
             log.warn("Failed to insert image references, using original HTML structure")
             newTask.add(
-                MarkdownUtil.renderMarkdown(
-                    "⚠️ Failed to insert image references, using original structure",
-                    ui = ui
-                )
+                "⚠️ Failed to insert image references, using original structure",
+                additionalClasses = "text-warning"
             )
             htmlStructure
         }
@@ -553,6 +541,7 @@ Provide the complete updated HTML structure within a code block:
         val WriteHtml = TaskType(
             "WriteHtml",
             "Writing",
+            WriteHtmlTask::class.java,
             WriteHtmlTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create complete HTML files with embedded CSS and JavaScript",
@@ -568,7 +557,7 @@ Provide the complete updated HTML structure within a code block:
                 <li>Interactive approval or auto-apply mode</li>
                 <li>Proper HTML structure and formatting</li>
               </ul>
-            """
+            """,
         )
     }
 }

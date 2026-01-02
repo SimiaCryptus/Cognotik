@@ -142,24 +142,16 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
 
         val tabbedDisplay = TabbedDisplay(task)
-        val overviewTask = task.ui.newTask()
-        tabbedDisplay["Overview"] = overviewTask.placeholder
+        val overviewTask = tabbedDisplay.newTask("Overview")
 
-        overviewTask.add(
-            MarkdownUtil.renderMarkdown(
-                "## Meta-Cognitive Reflection on Task: `$subjectTaskId`",
-                ui = overviewTask.ui
-            )
-        )
+        overviewTask.header("Meta-Cognitive Reflection on Task: $subjectTaskId", level = 2)
         val priorContext = getPriorCode(agent.executionState)
         if (priorContext.isNotBlank()) {
-            val contextTask = task.ui.newTask()
-            tabbedDisplay["Context"] = contextTask.placeholder
+            val contextTask = tabbedDisplay.newTask("Context")
+            contextTask.header("Prior Context", level = 3)
             contextTask.safeComplete(
                 MarkdownUtil.renderMarkdown(
                     """
-          |### Prior Context
-          |
           |```
           |${priorContext.truncateForDisplay()}
           |```
@@ -206,11 +198,10 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             evaluateConfidence = executionConfig?.evaluate_confidence ?: true
         )
 
+        overviewTask.header("Reflection Parameters", level = 3)
         overviewTask.add(
             MarkdownUtil.renderMarkdown(
                 """
-                |### Reflection Parameters
-                |
                 |**Subject Task**: `$subjectTaskId`
                 |
                 |**Reflection Aspects**: $aspectsText
@@ -244,11 +235,8 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
 
         overviewTask.safeComplete("", log)
         // Step 4: Create agent and perform reflection
-        val reflectionTask = task.ui.newTask()
-        tabbedDisplay["Reflection Analysis"] = reflectionTask.placeholder
-        reflectionTask.add(
-            MarkdownUtil.renderMarkdown("### Analyzing reasoning process...", ui = reflectionTask.ui)
-        )
+        val reflectionTask = tabbedDisplay.newTask("Reflection Analysis")
+        reflectionTask.header("Analyzing reasoning process...", level = 3)
 
 
         val chatAgent = ChatAgent(
@@ -265,20 +253,16 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             }
 
 
+            reflectionTask.header("Reflection Analysis", level = 3)
             reflectionTask.add(
                 MarkdownUtil.renderMarkdown(
-                    """
-                    |### Reflection Analysis
-                    |
-                    |${reflectionResult.truncateForDisplay()}
-                    """.trimMargin(),
+                    reflectionResult.truncateForDisplay(),
                     ui = reflectionTask.ui
                 )
             )
             reflectionTask.safeComplete("✅ Reflection analysis complete", log)
             // Step 5: Generate and display summary
-            val summaryTask = task.ui.newTask()
-            tabbedDisplay["Summary"] = summaryTask.placeholder
+            val summaryTask = tabbedDisplay.newTask("Summary")
 
 
             val summary = generateReflectionSummary(reflectionResult)
@@ -291,13 +275,11 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
             }
 
 
+            summaryTask.header("Summary", level = 3)
+            summaryTask.add(MarkdownUtil.renderMarkdown(summary, ui = summaryTask.ui))
             summaryTask.safeComplete(
                 MarkdownUtil.renderMarkdown(
                     """
-                    |### Summary
-                    |
-                    |$summary
-                    |
                     |---
                     |
                     |**Meta-cognitive reflection completed successfully.**
@@ -593,6 +575,7 @@ Begin your meta-cognitive reflection now:
         val MetaCognitiveReflection = TaskType(
             "MetaCognitiveReflection",
             "Reasoning",
+            MetaCognitiveReflectionTask::class.java,
             MetaCognitiveReflectionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Reflect on and critique reasoning processes",
@@ -606,7 +589,7 @@ Begin your meta-cognitive reflection now:
                 <li>Suggests improvements to reasoning quality</li>
                 <li>Checks logical consistency and completeness</li>
               </ul>
-            """
+            """,
         )
     }
 }

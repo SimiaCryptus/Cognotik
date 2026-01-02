@@ -66,6 +66,7 @@ class TaskConfigDialog(
         title = "Edit ${taskType.name} Configuration"
         isResizable = true
     }
+
     override fun getDimensionServiceKey(): String = "TaskConfigEditDialog"
 
 
@@ -363,7 +364,6 @@ class TaskConfigDialog(
             subTaskConfigListModel.removeElement(entry)
         }
     }
-
 
 
     override fun doOKAction() {
@@ -692,7 +692,6 @@ class TaskConfigDialog(
         val selectedModel = availableModels.find { it.modelName == selectedModelName }
         val subPlanConfig = config as SubPlanTask.SubPlanTaskTypeConfig
         return SubPlanTask.SubPlanTaskTypeConfig(
-            task_type = config.task_type!!,
             name = configNameField.text.trim(),
             model = selectedModel?.toApiChatModel(),
             purpose = (configFields["purpose"] as? JBTextArea)?.text?.trim() ?: "",

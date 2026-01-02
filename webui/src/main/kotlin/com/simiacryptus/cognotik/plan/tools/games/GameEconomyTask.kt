@@ -9,12 +9,9 @@ import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
 import java.nio.file.FileSystems
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 class GameEconomyTask(
     orchestrationConfig: OrchestrationConfig,
@@ -30,6 +27,7 @@ class GameEconomyTask(
         val GameEconomy = TaskType(
             "GameEconomy",
             "Games",
+            GameEconomyTask::class.java,
             GameEconomyTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Design complete game economic systems with progression and monetization",
@@ -46,7 +44,7 @@ class GameEconomyTask(
                 <li>Provides balance recommendations and adjustment strategies</li>
                 <li>Useful for game design, economy balancing, and monetization planning</li>
               </ul>
-            """
+            """,
         )
     }
 
@@ -270,7 +268,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
+        val overviewTask = task.newTask()
         tabs["Overview"] = overviewTask.placeholder
 
         try {
@@ -281,7 +279,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
                 }\n".toByteArray()
             )
 
-            var overviewTaskStatus = overviewTask.add(
+            val overviewBuffer = overviewTask.add(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Game Economy Design
@@ -308,7 +306,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
         |
         |""".trimMargin().toByteArray()
             )
-            task.update()
+            overviewTask.update()
 
             log.debug("Retrieving prior context from execution state")
             val priorContext = getPriorCode(agent.executionState)
@@ -320,7 +318,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
                 contextBuilder.append(priorContext)
                 contextBuilder.append("\n\n")
 
-                val contextTask = task.ui.newTask(false)
+                val contextTask = task.newTask()
                 tabs["Context"] = contextTask.placeholder
                 contextTask.add(
                     MarkdownUtil.renderMarkdown(
@@ -349,8 +347,8 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             }
 
             // Update overview
-            overviewTaskStatus?.clear()
-            overviewTaskStatus = overviewTask.add(
+            overviewBuffer?.setLength(0)
+            overviewBuffer?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Game Economy Design
@@ -365,17 +363,16 @@ GameEconomy - Design complete game economic systems with progression and monetiz
         """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            overviewTask.update()
 
             // Step 1: Design resource system
             var stepStartTime = System.currentTimeMillis()
             log.debug("Designing resource system")
-            val resourceTask = task.ui.newTask(false)
+            val resourceTask = task.newTask()
             tabs["Resources"] = resourceTask.placeholder
-            val resourceLoading = resourceTask.add(
+            val resourceBuffer = resourceTask.add(
                 MarkdownUtil.renderMarkdown("## Resource System\n\n🔄 Designing resource types and flows...", ui = ui)
             )
-            task.update()
 
             val resourcePrompt = buildResourcePrompt(gameTitle, contextBuilder.toString())
             val chatAgent = ChatAgent(
@@ -395,8 +392,8 @@ GameEconomy - Design complete game economic systems with progression and monetiz
         |""".trimMargin().toByteArray()
             )
 
-            resourceLoading?.clear()
-            resourceTask.add(
+            resourceBuffer?.setLength(0)
+            resourceBuffer?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Resource System Design
@@ -407,17 +404,17 @@ GameEconomy - Design complete game economic systems with progression and monetiz
             """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            resourceTask.complete()
+            resourceTask.update()
 
             // Step 2: Design progression system
             stepStartTime = System.currentTimeMillis()
             log.debug("Designing progression system")
-            val progressionTask = task.ui.newTask(false)
+            val progressionTask = task.newTask()
             tabs["Progression"] = progressionTask.placeholder
-            val progressionLoading = progressionTask.add(
+            val progressionBuffer = progressionTask.add(
                 MarkdownUtil.renderMarkdown("## Progression System\n\n🔄 Designing level curves and unlocks...", ui = ui)
             )
-            task.update()
 
             val progressionPrompt = """
 Based on the resource system above, design a comprehensive progression system for $gameTitle.
@@ -456,8 +453,8 @@ Generate the progression system design now:
         |""".trimMargin().toByteArray()
             )
 
-            progressionLoading?.clear()
-            progressionTask.add(
+            progressionBuffer?.setLength(0)
+            progressionBuffer?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Progression System Design
@@ -468,20 +465,20 @@ Generate the progression system design now:
             """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            progressionTask.complete()
+            progressionTask.update()
 
             // Step 3: Design loot and reward system
             stepStartTime = System.currentTimeMillis()
             log.debug("Designing loot system")
-            val lootTask = task.ui.newTask(false)
+            val lootTask = task.newTask()
             tabs["Loot & Rewards"] = lootTask.placeholder
-            val lootLoading = lootTask.add(
+            val lootBuffer = lootTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## Loot & Reward System\n\n🔄 Designing loot tables and drop rates...",
                     ui = ui
                 )
             )
-            task.update()
 
             val lootPrompt = """
 Based on the resource and progression systems above, design a loot and reward system for $gameTitle.
@@ -525,8 +522,8 @@ Generate the loot and reward system design now:
         |""".trimMargin().toByteArray()
             )
 
-            lootLoading?.clear()
-            lootTask.add(
+            lootBuffer?.setLength(0)
+            lootBuffer?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Loot & Reward System Design
@@ -537,17 +534,17 @@ Generate the loot and reward system design now:
             """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            lootTask.complete()
+            lootTask.update()
 
             // Step 4: Design monetization strategy
             stepStartTime = System.currentTimeMillis()
             log.debug("Designing monetization strategy")
-            val monetizationTask = task.ui.newTask(false)
+            val monetizationTask = task.newTask()
             tabs["Monetization"] = monetizationTask.placeholder
-            val monetizationLoading = monetizationTask.add(
+            val monetizationBuffer = monetizationTask.add(
                 MarkdownUtil.renderMarkdown("## Monetization Strategy\n\n🔄 Designing monetization approach...", ui = ui)
             )
-            task.update()
 
             val monetizationPrompt = """
 Based on the complete economy design above, create a monetization strategy for $gameTitle.
@@ -599,8 +596,8 @@ Generate the monetization strategy now:
         |""".trimMargin().toByteArray()
             )
 
-            monetizationLoading?.clear()
-            monetizationTask.add(
+            monetizationBuffer?.setLength(0)
+            monetizationBuffer?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Monetization Strategy Design
@@ -611,17 +608,17 @@ Generate the monetization strategy now:
             """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            monetizationTask.complete()
+            monetizationTask.update()
 
             // Step 5: Design engagement systems
             stepStartTime = System.currentTimeMillis()
             log.debug("Designing engagement systems")
-            val engagementTask = task.ui.newTask(false)
+            val engagementTask = task.newTask()
             tabs["Engagement"] = engagementTask.placeholder
-            val engagementLoading = engagementTask.add(
+            val engagementBuffer = engagementTask.add(
                 MarkdownUtil.renderMarkdown("## Engagement Systems\n\n🔄 Designing retention mechanics...", ui = ui)
             )
-            task.update()
 
             val engagementPrompt = """
 Based on the complete economy design above, create engagement systems for $gameTitle.
@@ -672,8 +669,8 @@ Generate the engagement systems design now:
         |""".trimMargin().toByteArray()
             )
 
-            engagementLoading?.clear()
-            engagementTask.add(
+            engagementBuffer?.setLength(0)
+            engagementBuffer?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Engagement Systems Design
@@ -684,17 +681,17 @@ Generate the engagement systems design now:
             """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            engagementTask.complete()
+            engagementTask.update()
 
             // Step 6: Generate economy forecast
             stepStartTime = System.currentTimeMillis()
             log.debug("Generating economy forecast")
-            val forecastTask = task.ui.newTask(false)
+            val forecastTask = task.newTask()
             tabs["Forecast"] = forecastTask.placeholder
-            val forecastLoading = forecastTask.add(
+            val forecastBuffer = forecastTask.add(
                 MarkdownUtil.renderMarkdown("## Economy Forecast\n\n🔄 Projecting economy health...", ui = ui)
             )
-            task.update()
 
             val forecastPrompt = """
 Based on the complete economy design above, generate a ${executionConfig.forecast_months}-month forecast for $gameTitle.
@@ -741,8 +738,8 @@ Generate the ${executionConfig.forecast_months}-month economy forecast now:
         |""".trimMargin().toByteArray()
             )
 
-            forecastLoading?.clear()
-            forecastTask.add(
+            forecastBuffer?.setLength(0)
+            forecastBuffer?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Economy Forecast (${executionConfig.forecast_months} months)
@@ -753,19 +750,19 @@ Generate the ${executionConfig.forecast_months}-month economy forecast now:
             """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            forecastTask.complete()
+            forecastTask.update()
 
             // Step 7: Generate balance report (if enabled)
             var balanceReport = ""
             if (executionConfig.generate_balance_report) {
                 stepStartTime = System.currentTimeMillis()
                 log.debug("Generating balance report")
-                val balanceTask = task.ui.newTask(false)
+                val balanceTask = task.newTask()
                 tabs["Balance Report"] = balanceTask.placeholder
-                val balanceLoading = balanceTask.add(
+                val balanceBuffer = balanceTask.add(
                     MarkdownUtil.renderMarkdown("## Balance Report\n\n🔄 Analyzing economy balance...", ui = ui)
                 )
-                task.update()
 
                 val balancePrompt = """
 Based on the complete economy design and forecast above, generate a comprehensive balance report for $gameTitle.
@@ -821,8 +818,8 @@ Generate the comprehensive balance report now:
           |""".trimMargin().toByteArray()
                 )
 
-                balanceLoading?.clear()
-                balanceTask.add(
+                balanceBuffer?.setLength(0)
+                balanceBuffer?.append(
                     MarkdownUtil.renderMarkdown(
                         """
               |## Balance Report
@@ -833,18 +830,18 @@ Generate the comprehensive balance report now:
               """.trimMargin(), ui = ui
                     )
                 )
-                task.update()
+                balanceTask.complete()
+                balanceTask.update()
             }
 
             // Step 8: Generate structured summary using ParsedAgent
             stepStartTime = System.currentTimeMillis()
             log.debug("Generating structured summary")
-            val summaryTask = task.ui.newTask(false)
+            val summaryTask = task.newTask()
             tabs["Summary"] = summaryTask.placeholder
-            val summaryLoading = summaryTask.add(
+            val summaryBuffer = summaryTask.add(
                 MarkdownUtil.renderMarkdown("## Summary\n\n🔄 Generating comprehensive summary...", ui = ui)
             )
-            task.update()
 
             val summaryPrompt = """
 Based on all the analysis above, provide a structured summary of the game economy design.
@@ -896,8 +893,8 @@ Provide this in a clear, structured format suitable for game designers and stake
         |""".trimMargin().toByteArray()
             )
 
-            summaryLoading?.clear()
-            summaryTask.add(
+            summaryBuffer?.setLength(0)
+            summaryBuffer?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Game Economy Design Summary
@@ -924,11 +921,12 @@ Provide this in a clear, structured format suitable for game designers and stake
             """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            summaryTask.complete()
+            summaryTask.update()
 
             // Update overview with completion
-            overviewTaskStatus?.clear()
-            overviewTask.add(
+            overviewBuffer?.setLength(0)
+            overviewBuffer?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Game Economy Design
@@ -945,7 +943,8 @@ Provide this in a clear, structured format suitable for game designers and stake
         """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            overviewTask.complete()
+            overviewTask.update()
 
             // Build final result
             val finalResult = buildString {
@@ -1033,7 +1032,7 @@ Provide this in a clear, structured format suitable for game designers and stake
             """.trimMargin(), ui = ui
                 )
             )
-            task.update()
+            overviewTask.update()
             transcript?.write("\n---\n**ERROR:** ${e.message}\n".toByteArray())
             transcript?.close()
             task.error(e)
@@ -1135,17 +1134,5 @@ Ensure the resource system:
 
 Generate the complete resource system design now:
         """.trimIndent()
-    }
-
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> " +
-                    "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
-                    "<a href='${link.removeSuffix(".md")}.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
     }
 }

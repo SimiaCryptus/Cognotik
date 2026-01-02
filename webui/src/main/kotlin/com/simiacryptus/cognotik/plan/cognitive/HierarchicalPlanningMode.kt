@@ -2,37 +2,35 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.set
-import com.simiacryptus.cognotik.util.toJson
+import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
+import com.simiacryptus.cognotik.webui.session.newLogStream
 import java.io.File
-import java.io.FileOutputStream
+import java.io.OutputStream
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 open class HierarchicalPlanningMode(
-    task: SessionTask,
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User = defaultUser,
-    maxConcurrency: Int = 4,
+    val maxConcurrency: Int = 4,
     private val maxIterations: Int = 200,
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 ) : CognitiveMode<CognitiveModeConfig>(
-    task,
     orchestrationConfig,
     session,
     user
@@ -46,24 +44,23 @@ open class HierarchicalPlanningMode(
     private val goalTasks = ConcurrentHashMap<String, SessionTask>()
     private val taskTasks = ConcurrentHashMap<String, SessionTask>()
     private var updateGoalTreeUI: () -> Unit = {}
+    private var updateLogUI: () -> Unit = {}
     private var debouncedUpdateGoalTreeUI: () -> Unit = {}
     private var periodicUpdateFuture: ScheduledFuture<*>? = null
     private val sessionLog = StringBuilder()
-    private var sessionLogTask: SessionTask? = null
-    private var transcriptStream: FileOutputStream? = null
-    private var transcriptTask: SessionTask? = null
+    private var transcriptStream: OutputStream? = null
 
     fun logToSession(message: String) {
         log.info(message)
         sessionLog.append(message).append("\n")
-        sessionLogTask?.complete(message.renderMarkdown())
+        updateLogUI()
         transcriptStream?.write("$message\n".toByteArray())
         transcriptStream?.flush()
     }
 
-    val processor: FixedConcurrencyProcessor = FixedConcurrencyProcessor(task.ui.pool, maxConcurrency)
+    lateinit var processor: FixedConcurrencyProcessor
 
-    override fun initialize() {
+    override fun initialize(task : SessionTask) {
         log.debug("Initializing GoalOrientedMode")
         goalTree.clear()
         taskMap.clear()
@@ -72,13 +69,13 @@ open class HierarchicalPlanningMode(
         stopRequested.set(false)
         transcriptStream?.close()
         transcriptStream = null
-        transcriptTask = null
     }
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
+        processor = FixedConcurrencyProcessor(task.ui.pool, maxConcurrency)
         log.debug("Handling user message: $userMessage")
         if (isRunning.getAndSet(true)) {
-            task.add("Goal-Oriented Mode is already running. Please wait for the current session to complete or stop it.".renderMarkdown())
+            task.add(MarkdownUtil.renderMarkdown("Goal-Oriented Mode is already running. Please wait for the current session to complete or stop it."))
             return
         }
         stopRequested.set(false)
@@ -93,30 +90,37 @@ open class HierarchicalPlanningMode(
     }
 
     private fun startGoalOrientedSession(userMessage: String, task: SessionTask) {
-        task.echo("User: $userMessage".renderMarkdown())
+        task.echo(MarkdownUtil.renderMarkdown("User: $userMessage"))
         // Initialize transcript
-        transcriptTask = task.linkedTask("Transcript")
-        transcriptStream = transcriptTask!!.transcript()
+        transcriptStream = task.newLogStream("Transcript")
         logToSession("# Goal-Oriented Planning Session Transcript\n")
         logToSession("**User Request:** $userMessage\n")
         logToSession("**Started:** ${java.time.LocalDateTime.now()}\n\n")
 
 
         val stopLinkRef = AtomicReference<StringBuilder>()
-        val stopLink = task.add(this.task.ui.hrefLink("Stop Goal-Oriented Processing") {
+        val stopLink = task.add(task.ui.hrefLink("Stop Goal-Oriented Processing") {
             log.info("Stop requested by user.")
             stopRequested.set(true)
             stopLinkRef.get()?.set("Stop signal sent. Waiting for current iteration to finish...")
         })
         stopLinkRef.set(stopLink)
 
-        val goalTreeTask = task.linkedTask("Goal Tree")
-        val goalTreeElement = goalTreeTask.add("Loading...".renderMarkdown())
+        val tabs = TabbedDisplay(task)
+        tabs["Goal Tree"] = MarkdownUtil.renderMarkdown("Loading...")
+        tabs["Goals"] = MarkdownUtil.renderMarkdown("No goals yet.")
+        tabs["Tasks"] = MarkdownUtil.renderMarkdown("No tasks yet.")
+        tabs["Session Log"] = MarkdownUtil.renderMarkdown("Session started...")
 
         updateGoalTreeUI = {
-            goalTreeElement?.set(renderGoalTreeText(goalTree.values.toList()).renderMarkdown())
-            goalTreeTask.update()
+            tabs["Goal Tree"] = MarkdownUtil.renderMarkdown(renderGoalTreeText(goalTree.values.toList()))
+            tabs["Goals"] = MarkdownUtil.renderMarkdown(goalSummary())
+            tabs["Tasks"] = MarkdownUtil.renderMarkdown(taskSummary())
         }
+        updateLogUI = {
+            tabs["Session Log"] = MarkdownUtil.renderMarkdown(sessionLog.toString())
+        }
+
         val scheduledExecutorService = ApplicationServices.threadPoolManager.getScheduledPool(
             session = session,
             user = user
@@ -128,32 +132,41 @@ open class HierarchicalPlanningMode(
             }
         }, 15, 15, TimeUnit.SECONDS)
 
-        val goalsTask = task.linkedTask("Goals")
-        val tasksTask = task.linkedTask("Tasks")
 
-        sessionLogTask = task.linkedTask("Session Log")
         logToSession("Starting Goal-Oriented session for: $userMessage")
         val coordinator = TaskOrchestrator(
             user = user,
             session = session,
-            dataStorage = this.task.ui.dataStorage
+            dataStorage = task.ui.dataStorage
                 ?: throw IllegalStateException("SocketManager or its dataStorage is null"),
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                ?: this.task.ui.dataStorage?.getSessionDir(
+                ?: task.ui.dataStorage?.getSessionDir(
                     user,
                     session
                 )?.toPath() ?: File(".").toPath())
         val planningChatter = orchestrationConfig.defaultSmart.getChildClient(task)
 
         try {
-            val initialGoals = parseInitialGoals(userMessage, planningChatter)
-            if (initialGoals.isEmpty()) {
-                logToSession("No initial goals parsed. Aborting.")
-                task.complete("Could not determine initial goals from your request.".renderMarkdown())
-                throw IllegalStateException("No initial goals parsed")
+            var loaded = false
+            if (userMessage.trim().equals("resume", ignoreCase = true)) {
+                loaded = loadState(task)
+                if (loaded) {
+                    logToSession("Resumed previous session state.")
+                } else {
+                    logToSession("No saved state found to resume. Starting new session.")
+                }
             }
-            initialGoals.forEach { goal -> goalTree[goal.id] = goal }
-            logToSession("Parsed ${initialGoals.size} initial goal(s).")
+
+            if (!loaded) {
+                val initialGoals = parseInitialGoals(userMessage, planningChatter)
+                if (initialGoals.isEmpty()) {
+                    logToSession("No initial goals parsed. Aborting.")
+                    task.complete(MarkdownUtil.renderMarkdown("Could not determine initial goals from your request."))
+                    throw IllegalStateException("No initial goals parsed")
+                }
+                initialGoals.forEach { goal -> goalTree[goal.id] = goal }
+                logToSession("Parsed ${initialGoals.size} initial goal(s).")
+            }
         } catch (e: Exception) {
             log.error("Failed to parse initial goals", e)
             logToSession("Error parsing initial goals: ${e.message}")
@@ -166,7 +179,8 @@ open class HierarchicalPlanningMode(
         while (iteration < maxIterations && !stopRequested.get()) {
             if (stopRequested.get()) break
             iteration++
-            if (nextIteration(iteration, coordinator, planningChatter, goalsTask, tasksTask)) break
+            if (nextIteration(task, iteration, coordinator, planningChatter)) break
+            saveState(task)
         }
 
         // Cancel periodic updates and do final update
@@ -174,16 +188,8 @@ open class HierarchicalPlanningMode(
         periodicUpdateFuture = null
         updateGoalTreeUI() // Final update without debouncing
 
-        // Update the Goals tab with final status of all goals
-        val goalsSummaryTask = goalsTask.linkedTask("Summary")
-        goalsSummaryTask.add("# Goals Summary\n\n".renderMarkdown())
-        goalsSummaryTask.add(goalSummary(goalsTask, tasksTask).renderMarkdown())
-        // Update the Tasks tab with final status of all tasks
-        val tasksSummaryTask = tasksTask.linkedTask("Summary")
-        tasksSummaryTask.add("# Tasks Summary\n\n".renderMarkdown())
-        tasksSummaryTask.add(taskSummary(tasksTask).renderMarkdown())
         handleStop(iteration, task, stopLink)
-        sessionLogTask?.complete(sessionLog.toString().renderMarkdown())
+        updateLogUI()
         // Finalize transcript
         logToSession("\n---\n")
         logToSession("**Completed:** ${java.time.LocalDateTime.now()}")
@@ -196,11 +202,10 @@ open class HierarchicalPlanningMode(
     }
 
     private fun nextIteration(
+        task : SessionTask,
         iteration: Int,
         coordinator: TaskOrchestrator,
-        planningChatInterface: ChatInterface,
-        goalsTask: SessionTask,
-        tasksTask: SessionTask
+        planningChatInterface: ChatInterface
     ): Boolean {
         logToSession("\n## Iteration $iteration / $maxIterations")
         updateGoalTreeUI()
@@ -216,7 +221,7 @@ open class HierarchicalPlanningMode(
 
         for (goal in decomposableGoals) {
             if (stopRequested.get()) break
-            expandGoal(goal, coordinator, planningChatInterface, goalsTask.linkedTask("Goal ID ${goal.id}"))
+            expandGoal(task, goal, coordinator, planningChatInterface)
             updateGoalTreeUI()
         }
 
@@ -239,7 +244,7 @@ open class HierarchicalPlanningMode(
                 debouncedUpdateGoalTreeUI() // Update UI when task starts running
 
                 log.info("Submitting Task ID ${t.id} (${t.description}) to processor.")
-                val executionUiTask = tasksTask.linkedTask("Task ID ${t.id}")
+                val executionUiTask = task.newTask()
                 taskTasks[t.id] = executionUiTask
                 val future = processor.submit {
                     executeTask(
@@ -277,16 +282,17 @@ open class HierarchicalPlanningMode(
     }
 
     private fun expandGoal(
+        task : SessionTask,
         goal: Goal,
         coordinator: TaskOrchestrator,
-        planningChatInterface: ChatInterface,
-        task: SessionTask
+        planningChatInterface: ChatInterface
     ) {
         logToSession("Decomposing goal: ${goal.description} (ID: ${goal.id})")
         logToSession("\n### Goal Decomposition: ${goal.id}\n")
         // Create a goal tab for this goal
+        val task = task.newTask()
         goalTasks[goal.id] = task
-        task.add("# Goal: ${goal.description}\n\nID: ${goal.id}".renderMarkdown())
+        task.add(MarkdownUtil.renderMarkdown("# Goal: ${goal.description}\n\nID: ${goal.id}"))
 
         try {
             val inputMessages = mutableListOf(goal.description ?: "")
@@ -319,7 +325,7 @@ open class HierarchicalPlanningMode(
             goal.decompositionAttempted = true
             if (subgoals.isEmpty() && tasksForGoal.isEmpty()) {
                 logToSession("Goal ID ${goal.id} (${goal.description}) decomposed into no subgoals or tasks.")
-                task.add("No subgoals or tasks were generated for this goal.".renderMarkdown())
+                task.add(MarkdownUtil.renderMarkdown("No subgoals or tasks were generated for this goal."))
                 // Mark the goal as complete if it was decomposed but produced no new work
                 goal.status = GoalStatus.COMPLETED
                 goal.result = "Goal decomposition complete - no further actions needed."
@@ -386,16 +392,16 @@ open class HierarchicalPlanningMode(
                 }
 
                 if (subgoals.isNotEmpty()) {
-                    task.add(subgoalsList.toString().renderMarkdown())
+                    task.add(MarkdownUtil.renderMarkdown(subgoalsList.toString()))
                 }
                 if (tasksForGoal.isNotEmpty()) {
-                    task.add(tasksList.toString().renderMarkdown())
+                    task.add(MarkdownUtil.renderMarkdown(tasksList.toString()))
                 }
             }
         } catch (e: Exception) {
             log.error("Error decomposing goal ${goal.id}", e)
             logToSession("Error decomposing goal ${goal.id}: ${e.message}. Marking as BLOCKED.")
-            task.add("**ERROR:** Failed to decompose goal: ${e.message}".renderMarkdown())
+            task.add(MarkdownUtil.renderMarkdown("**ERROR:** Failed to decompose goal: ${e.message}"))
             goal.status = GoalStatus.BLOCKED
             goal.result = "Failed to decompose: ${e.message}"
             debouncedUpdateGoalTreeUI()
@@ -403,8 +409,6 @@ open class HierarchicalPlanningMode(
     }
 
     private fun goalSummary(
-        goalsTask: SessionTask,
-        tasksTask: SessionTask
     ): String {
         val goalsSummary = StringBuilder()
         goalTree.values.sortedBy { it.id }.forEach { goal ->
@@ -413,30 +417,31 @@ open class HierarchicalPlanningMode(
                 GoalStatus.BLOCKED -> "🧱"
                 GoalStatus.COMPLETED -> "✅"
                 GoalStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳"
+                GoalStatus.SKIPPED -> "⏭️"
                 null -> "❓"
             }
-            val goalLink = goalsTask.ui.linkToSession(goal.id)
+            val goalLink = goalTasks[goal.id]?.ui?.linkToSession(goal.id) ?: goal.id
             goalsSummary.append("$statusEmoji **$goalLink**: ${goal.description}\n")
             if (goal.parentGoalId != null) {
                 val parentGoal = goalTree[goal.parentGoalId]
-                val parentLink = goalsTask.ui.linkToSession(goal.parentGoalId)
+                val parentLink = goalTasks[goal.parentGoalId]?.ui?.linkToSession(goal.parentGoalId) ?: goal.parentGoalId
                 goalsSummary.append("  - Parent: $parentLink - ${parentGoal?.description ?: "Unknown"}\n")
             }
             if (!goal.subgoals.isNullOrEmpty()) {
                 val subgoalLinks = goal.subgoals.joinToString(", ") { subgoalId ->
-                    goalsTask.ui.linkToSession(subgoalId.id)
+                    goalTasks[subgoalId.id]?.ui?.linkToSession(subgoalId.id) ?: subgoalId.id
                 }
                 goalsSummary.append("  - Subgoals: $subgoalLinks\n")
             }
             if (!goal.tasks.isNullOrEmpty()) {
                 val taskLinks = goal.tasks.joinToString(", ") { taskId ->
-                    tasksTask.ui.linkToSession(taskId.id)
+                    taskTasks[taskId.id]?.ui?.linkToSession(taskId.id) ?: taskId.id
                 }
                 goalsSummary.append("  - Tasks: $taskLinks\n")
             }
             if (!goal.dependencies.isNullOrEmpty()) {
                 val depLinks = goal.dependencies.joinToString(", ") { depId ->
-                    goalsTask.ui.linkToSession(depId)
+                    goalTasks[depId]?.ui?.linkToSession(depId) ?: depId
                 }
                 goalsSummary.append("  - Dependencies: $depLinks\n")
             }
@@ -449,7 +454,6 @@ open class HierarchicalPlanningMode(
     }
 
     private fun taskSummary(
-        tasksTask: SessionTask
     ): String {
         val tasksSummary = StringBuilder()
         taskMap.values.sortedBy { it.id }.forEach { task ->
@@ -459,9 +463,10 @@ open class HierarchicalPlanningMode(
                 TaskStatus.COMPLETED -> "✔️"
                 TaskStatus.FAILED -> "❌"
                 TaskStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳"
+                TaskStatus.SKIPPED -> "⏭️"
                 null -> "❓"
             }
-            val taskLink = tasksTask.ui.linkToSession(task.id)
+            val taskLink = taskTasks[task.id]?.ui?.linkToSession(task.id) ?: task.id
             tasksSummary.append("$statusEmoji **$taskLink**: ${task.description}\n")
             if (task.parentGoalId != null) {
                 val parentGoal = goalTree[task.parentGoalId]
@@ -476,7 +481,7 @@ open class HierarchicalPlanningMode(
                         depGoal != null -> goalTasks[task.parentGoalId]?.ui?.linkToSession(depId)
                             ?: "Unknown ${depId}"
 
-                        depTask != null -> tasksTask.ui.linkToSession(depId)
+                        depTask != null -> taskTasks[depId]?.ui?.linkToSession(depId) ?: depId
                         else -> "Unknown ${depId}"
                     }
                 }
@@ -496,16 +501,16 @@ open class HierarchicalPlanningMode(
     ) {
         if (stopRequested.get()) {
             logToSession("Goal-Oriented session stopped by user request at iteration $iteration.")
-            task.complete("Session stopped by user.".renderMarkdown())
+            task.complete(MarkdownUtil.renderMarkdown("Session stopped by user."))
             stopLink?.set("Stopped")
         } else if (iteration >= maxIterations) {
             logToSession("Goal-Oriented session reached max iterations ($maxIterations).")
-            task.complete("Session reached max iterations.".renderMarkdown())
+            task.complete(MarkdownUtil.renderMarkdown("Session reached max iterations."))
             stopLink?.set("Max Iterations Reached")
         } else {
             val finalStatusSummary = goalTree.values.groupBy { it.status }.mapValues { it.value.size }.toString()
             logToSession("Goal-Oriented session completed. Final status: $finalStatusSummary")
-            task.complete("Session completed. Final Status: $finalStatusSummary".renderMarkdown())
+            task.complete(MarkdownUtil.renderMarkdown("Session completed. Final Status: $finalStatusSummary"))
             stopLink?.set("Completed")
         }
     }
@@ -518,8 +523,8 @@ open class HierarchicalPlanningMode(
             logToSession("\n### Task Execution: ${t.id}\n")
             logToSession("**Description:** ${t.description}")
             logToSession("**Status:** ${t.status}")
-            task.add("Starting execution of task: ${t.description}".renderMarkdown())
-            task.verbose("Task Details:\n```json\n${t.toJson()}\n```\n".renderMarkdown())
+            task.add(MarkdownUtil.renderMarkdown("Starting execution of task: ${t.description}"))
+            task.verbose(MarkdownUtil.renderMarkdown("Task Details:\n```json\n${t.toJson()}\n```\n"))
             val answer = actor.answer(
                 listOf(t.description ?: "") + contextData(
                     t.parentGoalId, t.id
@@ -531,7 +536,7 @@ open class HierarchicalPlanningMode(
                 logToSession("No task implementation generated for Task ID ${t.id}")
                 t.status = TaskStatus.FAILED
                 t.result = "Failed to generate task implementation"
-                task.add("Failed to generate task implementation".renderMarkdown())
+                task.add(MarkdownUtil.renderMarkdown("Failed to generate task implementation"))
                 return t.result
             }
             val semaphore = Semaphore(0)
@@ -555,7 +560,7 @@ open class HierarchicalPlanningMode(
                 logToSession("**Result:** TIMEOUT")
                 t.status = TaskStatus.FAILED
                 t.result = "Task execution timed out"
-                task.add("Task execution timed out after 5 minutes".renderMarkdown())
+                task.add(MarkdownUtil.renderMarkdown("Task execution timed out after 5 minutes"))
             }
             logToSession("Task ID ${t.id} complete")
             val result = t.result
@@ -575,7 +580,7 @@ open class HierarchicalPlanningMode(
                 status = TaskStatus.FAILED
                 result = "Execution Error: ${e.message}"
             }
-            task.add("Task execution failed: ${e.message}".renderMarkdown())
+            task.add(MarkdownUtil.renderMarkdown("Task execution failed: ${e.message}"))
             "Task execution failed: ${e.message}"
         }
     }
@@ -803,25 +808,25 @@ open class HierarchicalPlanningMode(
         var changed: Boolean = false
         val circularDependencies = detectCircularDependencies()
         if (circularDependencies.isNotEmpty()) {
-            logToSession("Circular dependencies detected. Marking affected items as completed to break deadlock.")
+            logToSession("Circular dependencies detected. Marking affected items as SKIPPED to break deadlock.")
             circularDependencies.forEach { id ->
                 when {
                     goalTree.containsKey(id) -> {
                         val goal = goalTree[id]!!
-                        if (goal.status != GoalStatus.COMPLETED && goal.status != GoalStatus.BLOCKED) {
-                            goal.status = GoalStatus.COMPLETED
-                            goal.result = "Marked as completed due to circular dependency deadlock"
-                            logToSession("Goal ${goal.id} (${goal.description}) marked as completed due to circular dependency")
+                        if (goal.status != GoalStatus.COMPLETED && goal.status != GoalStatus.BLOCKED && goal.status != GoalStatus.SKIPPED) {
+                            goal.status = GoalStatus.SKIPPED
+                            goal.result = "Skipped due to circular dependency deadlock"
+                            logToSession("Goal ${goal.id} (${goal.description}) marked as SKIPPED due to circular dependency")
                             changed = true
                         }
                     }
 
                     taskMap.containsKey(id) -> {
                         val task = taskMap[id]!!
-                        if (task.status != TaskStatus.COMPLETED && task.status != TaskStatus.FAILED) {
-                            task.status = TaskStatus.COMPLETED
-                            task.result = "Marked as completed due to circular dependency deadlock"
-                            logToSession("Task ${task.id} (${task.description}) marked as completed due to circular dependency")
+                        if (task.status != TaskStatus.COMPLETED && task.status != TaskStatus.FAILED && task.status != TaskStatus.SKIPPED) {
+                            task.status = TaskStatus.SKIPPED
+                            task.result = "Skipped due to circular dependency deadlock"
+                            logToSession("Task ${task.id} (${task.description}) marked as SKIPPED due to circular dependency")
                             changed = true
                         }
                     }
@@ -838,7 +843,7 @@ open class HierarchicalPlanningMode(
             changed = false
             taskMap.values.forEach { task ->
                 val status = task.status
-                if (status != TaskStatus.COMPLETED && status != TaskStatus.FAILED && status != TaskStatus.RUNNING) {
+                if (status != TaskStatus.COMPLETED && status != TaskStatus.FAILED && status != TaskStatus.RUNNING && status != TaskStatus.SKIPPED) {
                     val newStatus = if (areDependenciesMet(task)) {
                         TaskStatus.PENDING // Dependencies met, ready to run
                     } else {
@@ -855,7 +860,7 @@ open class HierarchicalPlanningMode(
             goalTree.values.forEach { goal ->
                 var newStatus = goal.status
 
-                if (goal.status != GoalStatus.COMPLETED && goal.status != GoalStatus.BLOCKED) {
+                if (goal.status != GoalStatus.COMPLETED && goal.status != GoalStatus.BLOCKED && goal.status != GoalStatus.SKIPPED) {
                     val dependenciesMet = areDependenciesMet(goal)
                     val subGoals = goal.subgoals?.mapNotNull { goalTree[it.id] }
                     val directTasks = goal.tasks?.mapNotNull { taskMap[it.id] }
@@ -875,7 +880,7 @@ open class HierarchicalPlanningMode(
                         }
                     }
 
-                    if (newStatus != GoalStatus.BLOCKED && dependenciesMet && (goal.decompositionAttempted == true || subGoals?.isNotEmpty() == true || directTasks?.isNotEmpty() == true) && (subGoals?.isEmpty() != false || subGoals.all { it.status == GoalStatus.COMPLETED }) && (directTasks?.isEmpty() != false || directTasks.all { it.status == TaskStatus.COMPLETED })) {
+                    if (newStatus != GoalStatus.BLOCKED && dependenciesMet && (goal.decompositionAttempted == true || subGoals?.isNotEmpty() == true || directTasks?.isNotEmpty() == true) && (subGoals?.isEmpty() != false || subGoals.all { it.status == GoalStatus.COMPLETED || it.status == GoalStatus.SKIPPED }) && (directTasks?.isEmpty() != false || directTasks.all { it.status == TaskStatus.COMPLETED || it.status == TaskStatus.SKIPPED })) {
                         newStatus = GoalStatus.COMPLETED
                         goal.result = goal.result ?: when {
                             subGoals?.isNotEmpty() == true && directTasks?.isNotEmpty() == true -> "All sub-goals and tasks completed."
@@ -883,9 +888,9 @@ open class HierarchicalPlanningMode(
                             directTasks?.isNotEmpty() == true -> "All tasks completed."
                             else -> "Goal achieved."
                         }
-                    } else if (newStatus != GoalStatus.BLOCKED && newStatus != GoalStatus.COMPLETED && !dependenciesMet) { // Still waiting for external dependencies
+                    } else if (newStatus != GoalStatus.BLOCKED && newStatus != GoalStatus.COMPLETED && newStatus != GoalStatus.SKIPPED && !dependenciesMet) { // Still waiting for external dependencies
                         newStatus = GoalStatus.ACTIVE_DEPENDENCY_WAIT
-                    } else if (newStatus != GoalStatus.BLOCKED && newStatus != GoalStatus.COMPLETED) { // Dependencies met, not blocked, not completed
+                    } else if (newStatus != GoalStatus.BLOCKED && newStatus != GoalStatus.COMPLETED && newStatus != GoalStatus.SKIPPED) { // Dependencies met, not blocked, not completed
                         newStatus = GoalStatus.ACTIVE
                     }
 
@@ -908,14 +913,17 @@ open class HierarchicalPlanningMode(
     private fun areDependenciesMet(item: Goal): Boolean {
         if (item.dependencies?.isEmpty() != false) return true
         return item.dependencies.all { depId ->
-            goalTree[depId]?.status == GoalStatus.COMPLETED
+            val s = goalTree[depId]?.status
+            s == GoalStatus.COMPLETED || s == GoalStatus.SKIPPED
         }
     }
 
     private fun areDependenciesMet(item: Task): Boolean {
         if (item.dependencies?.isEmpty() != false) return true
         return item.dependencies.all { depId ->
-            (goalTree[depId]?.status == GoalStatus.COMPLETED) || (taskMap[depId]?.status == TaskStatus.COMPLETED) // Dependency can be a Goal or a Task
+            val gs = goalTree[depId]?.status
+            val ts = taskMap[depId]?.status
+            (gs == GoalStatus.COMPLETED || gs == GoalStatus.SKIPPED) || (ts == TaskStatus.COMPLETED || ts == TaskStatus.SKIPPED)
         }
     }
 
@@ -971,6 +979,7 @@ open class HierarchicalPlanningMode(
                 GoalStatus.BLOCKED -> "🧱 Blocked"
                 GoalStatus.COMPLETED -> "✅ Completed"
                 GoalStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
+                GoalStatus.SKIPPED -> "⏭️ Skipped"
                 null -> "❓ Unknown"
             }
             val depsString =
@@ -993,6 +1002,7 @@ open class HierarchicalPlanningMode(
                     TaskStatus.COMPLETED -> "✔️ Completed"
                     TaskStatus.FAILED -> "❌ Failed"
                     TaskStatus.ACTIVE_DEPENDENCY_WAIT -> "⏳ Waiting (Deps)"
+                    TaskStatus.SKIPPED -> "⏭️ Skipped"
                     null -> "❓ Unknown"
                 }
                 val string =
@@ -1187,7 +1197,10 @@ open class HierarchicalPlanningMode(
         COMPLETED,
 
         @Description("Goal is waiting for its declared dependencies (other goals) to be completed.")
-        ACTIVE_DEPENDENCY_WAIT
+        ACTIVE_DEPENDENCY_WAIT,
+
+        @Description("Goal was skipped, possibly to resolve a deadlock.")
+        SKIPPED
     }
 
     @Description("Status of a task.")
@@ -1205,7 +1218,10 @@ open class HierarchicalPlanningMode(
         FAILED,
 
         @Description("Task is waiting for its declared dependencies (other goals or tasks) to be completed.")
-        ACTIVE_DEPENDENCY_WAIT
+        ACTIVE_DEPENDENCY_WAIT,
+
+        @Description("Task was skipped, possibly to resolve a deadlock.")
+        SKIPPED
     }
 
     @Description("A list of goals (for LLM parsing).")
@@ -1217,6 +1233,63 @@ open class HierarchicalPlanningMode(
     data class GoalDecomposition(
         val subgoals: List<Goal>? = null, val tasks: List<Task>? = null
     )
+
+    data class PlanningState(
+        val goalIdCounter: Int = 1,
+        val taskIdCounter: Int = 1,
+        val goals: List<Goal> = emptyList(),
+        val tasks: List<Task> = emptyList()
+    )
+
+    private fun getStateFile(task : SessionTask): File {
+        val dir = task.ui.dataStorage?.getSessionDir(user, session) ?: File(".")
+        return File(dir, "planning_state.json")
+    }
+
+    private fun saveState(task : SessionTask) {
+        try {
+            val state = PlanningState(
+                goalIdCounter = goalIdCounter.get(),
+                taskIdCounter = taskIdCounter.get(),
+                goals = goalTree.values.toList(),
+                tasks = taskMap.values.toList()
+            )
+            getStateFile(task).writeText(state.toJson())
+        } catch (e: Exception) {
+            log.error("Failed to save state", e)
+        }
+    }
+
+    private fun loadState(task : SessionTask): Boolean {
+        val file = getStateFile(task)
+        if (!file.exists()) return false
+        try {
+            val state = JsonUtil.fromJson<PlanningState>(file.readText(), PlanningState::class.java)
+            goalIdCounter.set(state.goalIdCounter)
+            taskIdCounter.set(state.taskIdCounter)
+            goalTree.clear()
+            taskMap.clear()
+            state.goals.forEach { goalTree[it.id] = it }
+            state.tasks.forEach { taskMap[it.id] = it }
+            // Reconstruct UI mappings
+            goalTree.values.forEach { goal ->
+                val t = task.newTask()
+                goalTasks[goal.id] = t
+                t.add(MarkdownUtil.renderMarkdown("# Goal: ${goal.description}\n\nID: ${goal.id}"))
+            }
+            taskMap.values.forEach { v ->
+                val t = task.newTask()
+                taskTasks[v.id] = t
+                t.add(MarkdownUtil.renderMarkdown("# Task: ${v.description}\n\nID: ${v.id}"))
+            }
+            updateGoalTreeUI()
+            return true
+        } catch (e: Exception) {
+            log.error("Failed to load state", e)
+            return false
+        }
+    }
+
 
     companion object {
         val inputCnt = 1

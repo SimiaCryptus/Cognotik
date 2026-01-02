@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.io.OutputStream
 import java.io.PrintWriter
 import java.util.concurrent.ConcurrentHashMap
 
@@ -18,7 +17,7 @@ class CommandSessionTask(
     orchestrationConfig,
     planTask
 ) {
-    class SessionState(val process: Process, var transcript: OutputStream? = null) {
+    class SessionState(val process: Process) {
         val outputBuffer = StringBuffer()
         val monitorThread = Thread {
             try {
@@ -28,15 +27,8 @@ class CommandSessionTask(
                     if (reader.ready()) {
                         val read = reader.read(buffer)
                         if (read > 0) {
-                            val text = String(buffer, 0, read)
                             synchronized(outputBuffer) {
                                 outputBuffer.append(buffer, 0, read)
-                            }
-                            try {
-                                transcript?.write(text.toByteArray())
-                                transcript?.flush()
-                            } catch (_: Exception) {
-                                // Ignore
                             }
                         }
                     } else {
@@ -48,7 +40,6 @@ class CommandSessionTask(
             } catch (e: Exception) {
                 log.warn("Error monitoring session output", e)
             } finally {
-                transcript?.close()
                 if (process.isAlive) {
                     process.destroyForcibly()
                 }
@@ -93,7 +84,7 @@ class CommandSessionTask(
         @Description("Commands to send to the interactive session") val inputs: List<String> = listOf(),
         @Description("Session ID for reusing existing sessions") val sessionId: String? = null,
         @Description("Timeout in milliseconds for commands to finish") val timeout: Long = TIMEOUT_MS,
-        @Description("Timeout in milliseconds for output to finish") val idle_timeout: Long = TIMEOUT_MS,
+        @Description("Timeout in milliseconds for output to finish") val idle_timeout: Long = 2000,
         @Description("Whether to use a pseudo-terminal (requires pty4j)") val tty: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
@@ -106,8 +97,9 @@ class CommandSessionTask(
     )
 
     override fun promptSegment(): String {
-        val executables : List<String>? = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
-            .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
+        val executables: List<String>? =
+            ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings()
+                .tools.flatMap { it.component1()?.getExecutables() ?: emptyList() }.distinct().sorted()
         val activeSessionsInfo = activeSessions.entries.joinToString("\n") { (id, state) ->
             val pendingBytes = state.outputBuffer.length
             val alive = state.process.isAlive
@@ -136,104 +128,132 @@ class CommandSessionTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         executionConfig ?: throw IllegalStateException("Execution config is null")
-        task.ui.pool.submit {
-            val initialText = buildString {
-                appendLine("## Command Session Results")
-                appendLine("Command: `${executionConfig.command.joinToString(" ")}`")
-                appendLine("Session ID: `${executionConfig.sessionId ?: "new"}`")
-                appendLine("Timeout per command: ${executionConfig.timeout}ms")
-            }
-            val uiOutput = task.add(initialText.renderMarkdown())!!
-            val resultBuffer = StringBuilder(initialText)
-            task.update()
-            val transcript = task.transcript()
-            var sessionState: SessionState? = null
-            try {
-                cleanupInactiveSessions()
-                if (activeSessions.size >= MAX_SESSIONS && executionConfig.sessionId == null) {
-                    throw IllegalStateException("Maximum number of concurrent sessions ($MAX_SESSIONS) reached")
-                }
 
-                sessionState = executionConfig.sessionId?.let { id -> activeSessions[id] } ?: run {
-                    val command = executionConfig!!.command
-                    val executable = command.firstOrNull()
-                    val resolvedCommand = if (executable != null) {
-                        val tools = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
-                        val resolvedExecutable = tools.find { it.provider?.getExecutables()?.contains(executable) == true }
-                            ?.resolve(executable)
-                        if (resolvedExecutable != null) {
-                            listOf(resolvedExecutable) + command.drop(1)
+
+        val resultBuffer = StringBuffer()
+        val execute: (Boolean) -> Unit = { shouldComplete ->
+            task.ui.pool.submit {
+                task.header("Command Session Results")
+                val initialText = buildString {
+                    appendLine("Command: `${executionConfig.command.joinToString(" ")}`")
+                    appendLine("Session ID: `${executionConfig.sessionId ?: "new"}`")
+                    appendLine("Timeout per command: ${executionConfig.timeout}ms")
+                }
+                task.add(initialText.renderMarkdown())
+                resultBuffer.append("## Command Session Results\n$initialText")
+                val transcript = task.transcript()
+                var sessionState: SessionState? = null
+                try {
+                    cleanupInactiveSessions()
+                    if (activeSessions.size >= MAX_SESSIONS && executionConfig.sessionId == null) {
+                        throw IllegalStateException("Maximum number of concurrent sessions ($MAX_SESSIONS) reached")
+                    }
+
+                    sessionState = executionConfig.sessionId?.let { id -> activeSessions[id] } ?: run {
+                        val command = executionConfig!!.command
+                        val executable = command.firstOrNull()
+                        val resolvedCommand = if (executable != null) {
+                            val tools =
+                                ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().tools
+                            val resolvedExecutable =
+                                tools.find { it.provider?.getExecutables()?.contains(executable) == true }
+                                    ?.resolve(executable)
+                            if (resolvedExecutable != null) {
+                                listOf(resolvedExecutable) + command.drop(1)
+                            } else {
+                                command
+                            }
                         } else {
                             command
                         }
-                    } else {
-                        command
-                    }
-                    val process = if (executionConfig.tty) {
-                        try {
-                            com.pty4j.PtyProcessBuilder()
-                                .setCommand(resolvedCommand.toTypedArray())
-                                .setEnvironment(System.getenv())
-                                .setDirectory(task.resolveUserFile(".")?.absolutePath)
-                                .start()
-                        } catch (e: Throwable) {
-                            log.warn("Failed to start PTY process, falling back to ProcessBuilder", e)
-                            ProcessBuilder(resolvedCommand).directory(task.resolveUserFile(".")).redirectErrorStream(true).start()
+                        val process = if (executionConfig.tty) {
+                            try {
+                                com.pty4j.PtyProcessBuilder()
+                                    .setCommand(resolvedCommand.toTypedArray())
+                                    .setEnvironment(System.getenv())
+                                    .setDirectory(task.resolveUserFile(".")?.absolutePath)
+                                    .start()
+                            } catch (e: Throwable) {
+                                log.warn("Failed to start PTY process, falling back to ProcessBuilder", e)
+                                ProcessBuilder(resolvedCommand).directory(task.resolveUserFile("."))
+                                    .redirectErrorStream(true).start()
+                            }
+                        } else {
+                            ProcessBuilder(resolvedCommand).directory(task.resolveUserFile("."))
+                                .redirectErrorStream(true).start()
                         }
+
+                        log.info("Started new process for command: ${resolvedCommand.joinToString(" ")}")
+                        val state = SessionState(process)
+                        executionConfig.sessionId?.let { id -> activeSessions[id] = state }
+                        state
+                    }
+
+                    val writer = PrintWriter(sessionState.process.outputStream, true)
+
+                    executionConfig.inputs.forEachIndexed { index, input ->
+                        val inputHeader = "\n### Input ${index + 1}"
+                        val inputBlock = "```\n$input\n```"
+                        val text = "$inputHeader\n$inputBlock"
+                        transcript?.write(text.toByteArray())
+                        task.add(text.renderMarkdown())
+                        resultBuffer.appendLine(text)
+                        val output = try {
+                            writer.println(input)
+                            writer.flush()
+                            sessionState.read(executionConfig)
+                        } catch (e: Exception) {
+                            log.error("Error executing command: $input", e)
+                            "Error: ${e.message}"
+                        } finally {
+                            log.info("Completed input: $input")
+                        }
+                        val outputHeader = "Output:"
+                        val outputContent = output.take(10000)
+                        val outputBlock = "```\n$outputContent\n```"
+                        val value = "\n\n$outputHeader\n$outputBlock"
+                        transcript?.write(value.toByteArray())
+                        task.add(value.renderMarkdown())
+                        resultBuffer.appendLine(value)
+                    }
+                    if (shouldComplete) {
+                        task.complete("Command session finished successfully.")
+                        resultFn(resultBuffer.toString())
                     } else {
-                        ProcessBuilder(resolvedCommand).directory(task.resolveUserFile(".")).redirectErrorStream(true).start()
+                        task.add("Execution Complete.")
                     }
-
-                    log.info("Started new process for command: ${resolvedCommand.joinToString(" ")}")
-                    val state = SessionState(process, transcript)
-                    executionConfig.sessionId?.let { id -> activeSessions[id] = state }
-                    state
+                } catch (e: Exception) {
+                    val errorResult = "Error in CommandSessionTask: ${e.message}"
+                    resultBuffer.appendLine(errorResult)
+                    log.error("Error in CommandSessionTask", e)
+                    task.error(e)
+                    if (shouldComplete) {
+                        resultFn(resultBuffer.toString())
+                    }
                 }
-                sessionState.transcript = transcript
-
-                val writer = PrintWriter(sessionState.process.outputStream, true)
-
-                executionConfig.inputs.forEachIndexed { index, input ->
-                    val text = buildString {
-                        appendLine("\n### Input ${index + 1}")
-                        appendLine("```")
-                        appendLine(input)
-                        appendLine("```")
-                    }
-                    transcript?.write(text.toByteArray())
-                    uiOutput.appendLine(text.renderMarkdown())
-                    resultBuffer.appendLine(text)
-                    task.update()
-                    val output = try {
-                        writer.println(input)
-                        writer.flush()
-                        sessionState.read(executionConfig)
-                    } catch (e: Exception) {
-                        log.error("Error executing command: $input", e)
-                        "Error: ${e.message}"
-                    } finally {
-                        log.info("Completed input: $input")
-                    }
-                    val value = buildString {
-                        appendLine("Output:")
-                        appendLine("```")
-                        appendLine(output.take(10000))
-                        appendLine("```")
-                    }
-                    transcript?.write(value.toByteArray())
-                    uiOutput.appendLine(value.renderMarkdown())
-                    resultBuffer.appendLine(value)
-                    task.update()
-                }
-                task.complete("Command session finished successfully.")
-                resultFn(resultBuffer.toString())
-            } catch (e: Exception) {
-                val errorResult = "Error in CommandSessionTask: ${e.message}"
-                resultBuffer.appendLine(errorResult)
-                resultFn(resultBuffer.toString())
-                log.error("Error in CommandSessionTask", e)
-                task.error(e)
             }
+        }
+
+        if (orchestrationConfig.autoFix) {
+            execute(true)
+        } else {
+            task.header("Command Session Plan")
+            val plan = buildString {
+                appendLine("Command: `${executionConfig.command.joinToString(" ")}`")
+                if (executionConfig.sessionId != null) appendLine("Session ID: `${executionConfig.sessionId}`")
+                appendLine("Inputs:")
+                executionConfig.inputs.forEach { appendLine("- `$it`") }
+            }
+            task.add(plan.renderMarkdown())
+
+            task.add(task.ui.hrefLink("Run Commands", "btn btn-primary") {
+                execute(false)
+            })
+
+            task.add(acceptButtonFooter(task.ui) {
+                task.complete()
+                resultFn(resultBuffer.toString())
+            })
         }
     }
 
@@ -241,6 +261,7 @@ class CommandSessionTask(
         val CommandSession = TaskType(
             "CommandSession",
             "Session",
+            CommandSessionTask::class.java,
             CommandSessionTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Execute commands in a stateful, interactive session",
@@ -254,7 +275,7 @@ class CommandSessionTask(
                     <li><b>Manage Session Lifecycle:</b> Sessions can be explicitly closed or will be cleaned up automatically.</li>
                     <li><b>TTY Support:</b> Set `tty` to true to allocate a pseudo-terminal (requires pty4j), enabling UI applications and TTY-dependent tools.</li>
                 </ul>
-            """
+            """,
         )
         private val log = LoggerFactory.getLogger(CommandSessionTask::class.java)
         private val _activeSessions = ConcurrentHashMap<String, ConcurrentHashMap<String, SessionState>>()

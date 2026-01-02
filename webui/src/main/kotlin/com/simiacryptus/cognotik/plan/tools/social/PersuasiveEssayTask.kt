@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.webui.chat.transcriptFilter
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
+import java.io.ByteArrayOutputStream
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
@@ -38,6 +39,7 @@ class PersuasiveEssayTask(
         task_type = PersuasiveEssay.name,
         name = "Persuasive Essay Task"
     )
+
     class PersuasiveEssayTaskExecutionConfigData(
         @Description("The specific files (or file patterns, e.g. **/*.kt) to be used as input for the task")
         val input_files: List<String>? = null,
@@ -251,8 +253,7 @@ class PersuasiveEssayTask(
         }
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Persuasive Essay Generation")
@@ -280,7 +281,7 @@ class PersuasiveEssayTask(
             appendLine("*Analyzing thesis and creating essay structure...*")
         }
         overviewTask.add(overviewContent.renderMarkdown)
-        task.update()
+        overviewTask.update()
         transcript?.let { stream ->
             stream.write("## Configuration\n\n")
             stream.write(overviewContent)
@@ -300,8 +301,7 @@ class PersuasiveEssayTask(
 
             if (priorContext.isNotBlank() || inputFileContent.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Research Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Research Context")
                 contextTask.add(
                     buildString {
                         appendLine("# Research Context")
@@ -322,13 +322,12 @@ class PersuasiveEssayTask(
                         }
                     }.renderMarkdown
                 )
-                task.update()
+                contextTask.complete()
             }
 
             // Phase 1: Create outline
             log.info("Phase 1: Creating essay outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
                 buildString {
@@ -338,7 +337,7 @@ class PersuasiveEssayTask(
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
+            outlineTask.update()
 
             val wordsPerArgument = (executionConfig.target_word_count * 0.6).toInt() / executionConfig.num_arguments
             val counterargumentWords = if (executionConfig.include_counterarguments) {
@@ -453,7 +452,7 @@ Ensure the outline:
                 appendLine("**Status:** ✅ Complete")
             }
             outlineTask.add(outlineContent.renderMarkdown)
-            task.update()
+            outlineTask.complete()
             transcript?.let { stream ->
                 stream.write("## Essay Outline\n\n")
                 stream.write(outlineContent)
@@ -463,7 +462,7 @@ Ensure the outline:
 
             overviewTask.add("✅ Phase 1 Complete: Outline created\n".renderMarkdown)
             overviewTask.add("\n### Phase 2: Introduction\n*Writing compelling introduction...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
             // Generate outline visualization image if enabled
             if (typeConfig!!.generate_images) {
                 generateOutlineImage(
@@ -478,8 +477,7 @@ Ensure the outline:
 
             // Phase 2: Write Introduction
             log.info("Phase 2: Writing introduction")
-            val introTask = task.ui.newTask(false)
-            tabs["Introduction"] = introTask.placeholder
+            val introTask = tabs.newTask("Introduction")
 
             introTask.add(
                 buildString {
@@ -489,7 +487,7 @@ Ensure the outline:
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
+            introTask.update()
 
             val introAgent = ParsedAgent(
                 resultClass = EssaySection::class.java,
@@ -540,7 +538,7 @@ Speak directly to the ${executionConfig.target_audience}.
                     appendLine("**Status:** ✅ Complete")
                 }.renderMarkdown
             )
-            task.update()
+            introTask.complete()
             transcript?.let { stream ->
                 stream.write("## Introduction\n\n")
                 stream.write(introduction.content)
@@ -554,7 +552,7 @@ Speak directly to the ${executionConfig.target_audience}.
 
             overviewTask.add("✅ Phase 2 Complete: Introduction written (${introduction.word_count} words)\n".renderMarkdown)
             overviewTask.add("\n### Phase 3: Body Arguments\n*Developing main arguments...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
 
             // Phase 3: Write each argument
             log.info("Phase 3: Writing body arguments")
@@ -565,10 +563,9 @@ Speak directly to the ${executionConfig.target_audience}.
                 log.info("Writing argument ${index + 1}/${outline.arguments.size}: ${argOutline.claim}")
 
                 overviewTask.add("- Argument ${index + 1}: ${argOutline.claim.truncateForDisplay(50)} ".renderMarkdown)
-                task.update()
+                overviewTask.update()
 
-                val argTask = task.ui.newTask(false)
-                tabs["Argument ${index + 1}"] = argTask.placeholder
+                val argTask = tabs.newTask("Argument ${index + 1}")
 
                 argTask.add(
                     buildString {
@@ -578,7 +575,7 @@ Speak directly to the ${executionConfig.target_audience}.
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
+                argTask.update()
 
                 // Build context from previous arguments
                 val previousContext = if (argumentSections.isNotEmpty()) {
@@ -654,7 +651,7 @@ Aim for approximately ${argOutline.estimated_word_count} words.
                         appendLine("**Status:** ✅ Complete")
                     }.renderMarkdown
                 )
-                task.update()
+                argTask.complete()
                 transcript?.let { stream ->
                     stream.write("## Argument ${index + 1}: ${argOutline.claim}\n\n")
                     stream.write(argumentSection.content)
@@ -679,7 +676,7 @@ Aim for approximately ${argOutline.estimated_word_count} words.
                 }
 
                 overviewTask.add("✅ (${argumentSection.word_count} words)\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
             }
 
             overviewTask.add("✅ Phase 3 Complete: All arguments written\n".renderMarkdown)
@@ -687,11 +684,10 @@ Aim for approximately ${argOutline.estimated_word_count} words.
             // Phase 4: Counterarguments (if enabled)
             if (executionConfig.include_counterarguments && outline.counterarguments.isNotEmpty()) {
                 overviewTask.add("\n### Phase 4: Counterarguments\n*Addressing opposing views...*\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
 
                 log.info("Phase 4: Writing counterarguments and rebuttals")
-                val counterTask = task.ui.newTask(false)
-                tabs["Counterarguments"] = counterTask.placeholder
+                val counterTask = tabs.newTask("Counterarguments")
 
                 counterTask.add(
                     buildString {
@@ -701,7 +697,7 @@ Aim for approximately ${argOutline.estimated_word_count} words.
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
+                counterTask.update()
 
                 val counterAgent = ParsedAgent(
                     resultClass = EssaySection::class.java,
@@ -747,7 +743,7 @@ Aim for approximately $counterargumentWords words.
                         appendLine("**Status:** ✅ Complete")
                     }.renderMarkdown
                 )
-                task.update()
+                counterTask.complete()
                 transcript?.let { stream ->
                     stream.write("## Counterarguments & Rebuttals\n\n")
                     stream.write(counterSection.content)
@@ -773,11 +769,10 @@ Aim for approximately $counterargumentWords words.
 
             // Phase 5: Conclusion
             overviewTask.add("\n### Phase 5: Conclusion\n*Writing powerful conclusion...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
 
             log.info("Phase 5: Writing conclusion")
-            val conclusionTask = task.ui.newTask(false)
-            tabs["Conclusion"] = conclusionTask.placeholder
+            val conclusionTask = tabs.newTask("Conclusion")
 
             conclusionTask.add(
                 buildString {
@@ -787,7 +782,7 @@ Aim for approximately $counterargumentWords words.
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
+            conclusionTask.update()
 
             val conclusionAgent = ParsedAgent(
                 resultClass = EssaySection::class.java,
@@ -855,7 +850,7 @@ End on a strong note that reinforces your position.
                     appendLine("**Status:** ✅ Complete")
                 }.renderMarkdown
             )
-            task.update()
+            conclusionTask.complete()
             transcript?.let { stream ->
                 stream.write("## Conclusion\n\n")
                 stream.write(conclusion.content)
@@ -872,11 +867,10 @@ End on a strong note that reinforces your position.
             // Phase 6: Revision (if enabled)
             if (executionConfig.revision_passes > 0) {
                 overviewTask.add("\n### Phase 6: Revision\n*Refining and polishing...*\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
 
                 log.info("Phase 6: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask(false)
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -886,7 +880,7 @@ End on a strong note that reinforces your position.
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
+                revisionTask.update()
 
                 val fullEssay = resultBuilder.toString()
 
@@ -933,24 +927,24 @@ Provide the complete revised essay.
                             appendLine()
                         }.renderMarkdown
                     )
-                    task.update()
+                    revisionTask.update()
                     transcript?.let { stream ->
                         stream.write("### Revision Pass ${passNum + 1}\n\n")
                         stream.write("Completed revision pass ${passNum + 1} of ${executionConfig.revision_passes}\n\n")
                         stream.flush()
                     }
                 }
+                revisionTask.complete()
 
                 overviewTask.add("✅ Phase 6 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
             }
 
             // Phase 7: Final Assembly
             overviewTask.add("\n### Phase 7: Final Assembly\n*Compiling complete essay...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
 
             log.info("Phase 7: Assembling final essay")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Essay"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Essay")
 
             val finalEssay = buildString {
                 appendLine("# ${outline.title}")
@@ -966,13 +960,12 @@ Provide the complete revised essay.
                 appendLine("**Completion:** ${(cumulativeWordCount.toFloat() / executionConfig.target_word_count * 100).toInt()}%")
             }
             // Save complete essay to file
-            val (essayLink, essayFile) = task.createFile("persuasive_essay.md")
-            essayFile?.writeText(finalEssay, StandardCharsets.UTF_8)
+            val essayLink = task.saveFile("persuasive_essay.md", finalEssay.toByteArray(StandardCharsets.UTF_8))
             log.info("Saved complete essay to: $essayLink")
 
 
             finalTask.add(finalEssay.renderMarkdown)
-            task.update()
+            finalTask.complete()
             // Update transcript with final essay
             transcript?.let { stream ->
                 stream.write("## Complete Essay\n\n")
@@ -1008,7 +1001,7 @@ Provide the complete revised essay.
                     )
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.complete()
             transcript?.let { stream ->
                 stream.write("---\n\n")
                 stream.write("## Generation Complete\n\n")
@@ -1078,7 +1071,7 @@ Provide the complete revised essay.
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.complete()
             transcript?.let { stream ->
                 stream.write("---\n\n")
                 stream.write("## Error Occurred\n\n")
@@ -1117,8 +1110,7 @@ Provide the complete revised essay.
     ) {
         try {
             log.info("Generating cover image for: $title")
-            val imageTask = task.ui.newTask(false)
-            tabs["Cover Image"] = imageTask.placeholder
+            val imageTask = tabs.newTask("Cover Image")
             imageTask.add(
                 buildString {
                     appendLine("# Cover Image")
@@ -1127,7 +1119,7 @@ Provide the complete revised essay.
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
+            imageTask.update()
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a professional, compelling cover image for a persuasive essay",
@@ -1140,12 +1132,12 @@ Provide the complete revised essay.
             val image = result.image
 
             // Save image
-            val imageFile = task.resolveUserFile("00_cover_image.png")!!
-            ImageIO.write(image, "png", imageFile)
-            log.debug("Saved cover image to: ${imageFile.absolutePath}")
+            val baos = ByteArrayOutputStream()
+            ImageIO.write(image, "png", baos)
+            val link = task.saveFile("00_cover_image.png", baos.toByteArray())
+            log.debug("Saved cover image to: $link")
 
             // Create display link
-            val link = task.linkTo("00_cover_image.png")
             val imageHtml = """
         <div class='cover-image'>
           <h3>$title</h3>
@@ -1157,7 +1149,7 @@ Provide the complete revised essay.
         </div>
       """.trimIndent()
             imageTask.add(imageHtml.renderMarkdown)
-            task.update()
+            imageTask.update()
 
             transcriptWriter?.appendLine("## Cover Image")
             transcriptWriter?.appendLine()
@@ -1168,7 +1160,7 @@ Provide the complete revised essay.
             transcriptWriter?.flush()
 
             imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
-            task.update()
+            imageTask.complete()
         } catch (e: Exception) {
             log.error("Failed to generate cover image", e)
             transcriptWriter?.appendLine("**Cover Image Generation Failed:** ${e.message}")
@@ -1186,8 +1178,7 @@ Provide the complete revised essay.
     ) {
         try {
             log.info("Generating outline visualization image")
-            val imageTask = task.ui.newTask(false)
-            tabs["Outline Visualization"] = imageTask.placeholder
+            val imageTask = tabs.newTask("Outline Visualization")
             imageTask.add(
                 buildString {
                     appendLine("# Outline Visualization")
@@ -1196,7 +1187,7 @@ Provide the complete revised essay.
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
+            imageTask.update()
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create an infographic-style visualization of the essay outline and argument structure",
@@ -1217,12 +1208,12 @@ Provide the complete revised essay.
             val image = result.image
 
             // Save image
-            val imageFile = task.resolveUserFile("01_outline_visualization.png")!!
-            ImageIO.write(image, "png", imageFile)
-            log.debug("Saved outline visualization to: ${imageFile.absolutePath}")
+            val baos = ByteArrayOutputStream()
+            ImageIO.write(image, "png", baos)
+            val link = task.saveFile("01_outline_visualization.png", baos.toByteArray())
+            log.debug("Saved outline visualization to: $link")
 
             // Create display link
-            val link = task.linkTo("01_outline_visualization.png")
             val imageHtml = """
         <div class='outline-image'>
           <h4>Argument Structure</h4>
@@ -1233,7 +1224,7 @@ Provide the complete revised essay.
         </div>
       """.trimIndent()
             imageTask.add(imageHtml.renderMarkdown)
-            task.update()
+            imageTask.update()
 
             transcriptWriter?.appendLine("## Outline Visualization")
             transcriptWriter?.appendLine()
@@ -1244,7 +1235,7 @@ Provide the complete revised essay.
             transcriptWriter?.flush()
 
             imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
-            task.update()
+            imageTask.complete()
         } catch (e: Exception) {
             log.error("Failed to generate outline visualization", e)
             transcriptWriter?.appendLine("**Outline Image Generation Failed:** ${e.message}")
@@ -1263,8 +1254,7 @@ Provide the complete revised essay.
     ) {
         try {
             log.info("Generating image for argument $argumentNumber")
-            val imageTask = task.ui.newTask(false)
-            tabs["Argument $argumentNumber Image"] = imageTask.placeholder
+            val imageTask = tabs.newTask("Argument $argumentNumber Image")
             imageTask.add(
                 buildString {
                     appendLine("# Argument $argumentNumber Visualization")
@@ -1273,7 +1263,7 @@ Provide the complete revised essay.
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
+            imageTask.update()
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a visual representation that illustrates this persuasive argument",
@@ -1290,12 +1280,12 @@ Provide the complete revised essay.
             val image = result.image
 
             // Save image
-            val imageFile = task.resolveUserFile("argument_${argumentNumber}_image.png")!!
-            ImageIO.write(image, "png", imageFile)
-            log.debug("Saved argument $argumentNumber image to: ${imageFile.absolutePath}")
+            val baos = ByteArrayOutputStream()
+            ImageIO.write(image, "png", baos)
+            val link = task.saveFile("argument_${argumentNumber}_image.png", baos.toByteArray())
+            log.debug("Saved argument $argumentNumber image to: $link")
 
             // Create display link
-            val link = task.linkTo("argument_${argumentNumber}_image.png")
             val imageHtml = """
         <div class='argument-image'>
           <h4>Argument $argumentNumber: ${claim.take(60)}</h4>
@@ -1306,7 +1296,7 @@ Provide the complete revised essay.
         </div>
       """.trimIndent()
             imageTask.add(imageHtml.renderMarkdown)
-            task.update()
+            imageTask.update()
 
             transcriptWriter?.appendLine("#### Argument $argumentNumber Image")
             transcriptWriter?.appendLine()
@@ -1317,7 +1307,7 @@ Provide the complete revised essay.
             transcriptWriter?.flush()
 
             imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
-            task.update()
+            imageTask.complete()
         } catch (e: Exception) {
             log.error("Failed to generate argument $argumentNumber image", e)
             transcriptWriter?.appendLine("**Argument $argumentNumber Image Generation Failed:** ${e.message}")
@@ -1334,8 +1324,7 @@ Provide the complete revised essay.
     ) {
         try {
             log.info("Generating counterargument visualization image")
-            val imageTask = task.ui.newTask(false)
-            tabs["Counterargument Image"] = imageTask.placeholder
+            val imageTask = tabs.newTask("Counterargument Image")
             imageTask.add(
                 buildString {
                     appendLine("# Counterargument Visualization")
@@ -1344,7 +1333,7 @@ Provide the complete revised essay.
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
+            imageTask.update()
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Create a balanced visual representation showing counterarguments and rebuttals",
@@ -1361,12 +1350,12 @@ Provide the complete revised essay.
             val image = result.image
 
             // Save image
-            val imageFile = task.resolveUserFile("counterargument_image.png")!!
-            ImageIO.write(image, "png", imageFile)
-            log.debug("Saved counterargument image to: ${imageFile.absolutePath}")
+            val baos = ByteArrayOutputStream()
+            ImageIO.write(image, "png", baos)
+            val link = task.saveFile("counterargument_image.png", baos.toByteArray())
+            log.debug("Saved counterargument image to: $link")
 
             // Create display link
-            val link = task.linkTo("counterargument_image.png")
             val imageHtml = """
         <div class='counterargument-image'>
           <h4>Counterarguments & Rebuttals</h4>
@@ -1377,7 +1366,7 @@ Provide the complete revised essay.
         </div>
       """.trimIndent()
             imageTask.add(imageHtml.renderMarkdown)
-            task.update()
+            imageTask.update()
 
             transcriptWriter?.appendLine("## Counterargument Visualization")
             transcriptWriter?.appendLine()
@@ -1388,7 +1377,7 @@ Provide the complete revised essay.
             transcriptWriter?.flush()
 
             imageTask.add("\n**Status:** ✅ Complete\n".renderMarkdown)
-            task.update()
+            imageTask.complete()
         } catch (e: Exception) {
             log.error("Failed to generate counterargument image", e)
             transcriptWriter?.appendLine("**Counterargument Image Generation Failed:** ${e.message}")
@@ -1431,6 +1420,7 @@ Provide the complete revised essay.
         val PersuasiveEssay = TaskType(
             "PersuasiveEssay",
             "Writing",
+            PersuasiveEssayTask::class.java,
             PersuasiveEssayTaskExecutionConfigData::class.java,
             PersuasiveEssayTaskTypeConfig::class.java,
             "Generate compelling persuasive essays with structured arguments",
@@ -1447,7 +1437,7 @@ Provide the complete revised essay.
                 <li>Uses ethos, pathos, and logos for persuasive impact</li>
                 <li>Ideal for opinion pieces, proposals, advocacy, and academic arguments</li>
               </ul>
-            """
+            """,
         )
     }
 }

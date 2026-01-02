@@ -69,10 +69,11 @@ class ReadDocumentsTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         val transcript = task.transcript("transcript")
+        val fileContext = getInputFileCode()
 
         val toInput = { it: String ->
             messages + listOf(
-                getInputFileCode(),
+                fileContext,
                 it,
             ).filter { it.isNotBlank() }
         }
@@ -92,19 +93,29 @@ class ReadDocumentsTask(
                 ?: defaultSmart).getChildClient(task),
             temperature = this.orchestrationConfig.temperature,
         )
-        val inquiryResult = run {
-            val input = toInput(
+        val inquiryResult = Discussable(
+            task = task,
+            heading = "Read Documents",
+            userMessage = {
                 "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
-                    taskConfig?.inquiry_questions?.joinToString(
-                        "\n"
-                    )
+                    taskConfig?.inquiry_questions?.joinToString("\n")
                 }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
-            )
-            transcript?.write("# Analysis Request\n\n${input.joinToString("\n\n")}\n\n".toByteArray())
-            insightActor.answer(input)
-        }
+            },
+            initialResponse = { prompt ->
+                val input = toInput(prompt)
+                transcript?.write("# Analysis Request\n\n${input.joinToString("\n\n")}\n\n".toByteArray())
+                insightActor.answer(input)
+            },
+            outputFn = { MarkdownUtil.renderMarkdown(it, ui = task.ui) },
+            reviseResponse = { history ->
+                val contextMessages = (messages + listOf(fileContext))
+                    .filter { it.isNotBlank() }
+                    .map { it to Role.user }
+                insightActor.answer((contextMessages + history).map { it.first }.toList())
+            }
+        ).call()
         transcript?.close()
-        resultFn(inquiryResult)
+        resultFn(inquiryResult!!)
     }
 
 
@@ -145,6 +156,7 @@ class ReadDocumentsTask(
         val ReadDocuments = TaskType(
             "ReadDocuments",
             "File",
+            ReadDocumentsTask::class.java,
             ReadDocumentsTaskExecutionConfigData::class.java,
             ReadDocumentsTaskTypeConfig::class.java,
             "Directly answer questions or provide insights using the LLM, optionally referencing files.",
@@ -159,7 +171,7 @@ class ReadDocumentsTask(
               <li>Supports both one-shot and interactive discussion modes</li>
               <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
             </ul>
-            """
+            """,
         )
 
         fun getAvailableFiles(

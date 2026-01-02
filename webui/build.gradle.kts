@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.commons.codec)
     implementation(libs.slf4j.api)
     implementation(libs.tinkerpop)
+    implementation(libs.hsqldb)
     implementation(libs.httpclient5) {
         exclude(group = "org.slf4j", module = "slf4j-api")
     }
@@ -101,6 +102,7 @@ dependencies {
     testImplementation(kotlin("scripting-compiler-embeddable"))
     testImplementation(kotlin("compiler-embeddable"))
     testImplementation(kotlin("script-runtime"))
+    testImplementation(kotlin("test"))
 }
 
 node {

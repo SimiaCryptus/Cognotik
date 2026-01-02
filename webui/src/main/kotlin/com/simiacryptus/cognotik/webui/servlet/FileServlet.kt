@@ -5,12 +5,8 @@ import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.google.common.cache.RemovalListener
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.markdownToHtml
-import com.vladsch.flexmark.html.HtmlRenderer
-import com.vladsch.flexmark.parser.Parser
-import com.vladsch.flexmark.util.data.MutableDataSet
 import jakarta.servlet.WriteListener
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServlet
@@ -56,7 +52,7 @@ abstract class FileServlet : HttpServlet() {
                         val mdFile = File(file.parentFile, fileName.substringBeforeLast(".") + ".md")
                         if (mdFile.exists() && mdFile.isFile) {
                             log.info("Found markdown file, rendering: ${mdFile.absolutePath}")
-                            if(extension == "txt") {
+                            if (extension == "txt") {
                                 resp.contentType = "text/plain"
                                 resp.characterEncoding = "UTF-8"
                                 resp.status = HttpServletResponse.SC_OK

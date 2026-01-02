@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import java.io.FileOutputStream
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -78,48 +77,56 @@ class GitHubSearchTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         executionConfig?.validate()?.let { error ->
-            throw ValidatedObject.ValidationError(error, executionConfig!!)
-        }
-        val transcript = transcript(task)
-        transcript?.let { out ->
-            out.write("# GitHub Search Task\n\n".toByteArray())
-            out.write("## Configuration\n\n".toByteArray())
-            out.write("- **Query**: ${executionConfig?.search_query}\n".toByteArray())
-            out.write("- **Search Type**: ${executionConfig?.search_type}\n".toByteArray())
-            out.write("- **Results Per Page**: ${executionConfig?.per_page}\n".toByteArray())
-            executionConfig?.sort?.let { out.write("- **Sort**: $it\n".toByteArray()) }
-            executionConfig?.order?.let { out.write("- **Order**: $it\n\n".toByteArray()) }
-            out.write("\n## Search Results\n\n".toByteArray())
+            task.error(ValidatedObject.ValidationError(error, executionConfig!!))
+            return
         }
 
-        val searchResults = performGitHubSearch(
-            agent.user
-                ?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
-                ?.apis?.firstOrNull { it.provider == APIProvider.Github }?.key?.trim()
-                ?: throw RuntimeException("GitHub API token is required")
-        )
-        val actorAnswerText = formatSearchResults(searchResults)
-        transcript?.let { out ->
-            out.write(actorAnswerText.toByteArray())
-        }
+        task.header("GitHub Search: ${executionConfig?.search_query}")
 
-        task.add(MarkdownUtil.renderMarkdown(actorAnswerText, ui = task.ui))
-        resultFn(actorAnswerText)
-    }
-
-    private fun transcript(task: SessionTask): FileOutputStream? {
         val transcriptFile = "full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(
-                    ".md"
-                )
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
+        val transcriptStream = file?.outputStream()
+
+        val configDesc = buildString {
+            appendLine("- **Query**: ${executionConfig?.search_query}")
+            appendLine("- **Search Type**: ${executionConfig?.search_type}")
+            appendLine("- **Results Per Page**: ${executionConfig?.per_page}")
+            executionConfig?.sort?.let { appendLine("- **Sort**: $it") }
+            executionConfig?.order?.let { appendLine("- **Order**: $it") }
+        }
+
+        task.expandable("Search Configuration", MarkdownUtil.renderMarkdown(configDesc, ui = task.ui))
+        transcriptStream?.write("# GitHub Search Task\n\n## Configuration\n\n$configDesc\n\n## Search Results\n\n".toByteArray())
+
+        try {
+            val searchResults = performGitHubSearch(
+                agent.user
+                    ?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
+                    ?.apis?.firstOrNull { it.provider == APIProvider.Github }?.key?.trim()
+                    ?: throw RuntimeException("GitHub API token is required")
+            )
+            val actorAnswerText = formatSearchResults(searchResults)
+            transcriptStream?.write(actorAnswerText.toByteArray())
+
+            task.add(MarkdownUtil.renderMarkdown(actorAnswerText, ui = task.ui))
+
+            val transcriptLinks =
+                "Transcript: <a href='$link' target='_blank'>Markdown</a> | <a href='${link.removeSuffix(".md")}.html' target='_blank'>HTML</a> | <a href='${
+                    link.removeSuffix(".md")
+                }.pdf' target='_blank'>PDF</a>"
+            task.add(transcriptLinks)
+
+            resultFn(actorAnswerText)
+            task.complete()
+        } catch (e: Exception) {
+            task.error(e)
+            transcriptStream?.write("\n\nError: ${e.message}\n".toByteArray())
+        } finally {
+            transcriptStream?.close()
+        }
+
     }
+
 
     private fun performGitHubSearch(githubToken: String): String {
         val queryParams = mutableListOf<String>()
@@ -226,6 +233,7 @@ class GitHubSearchTask(
         val GitHubSearch = TaskType(
             "GitHubSearch",
             "Online & Search",
+            GitHubSearchTask::class.java,
             GitHubSearchTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Search GitHub repositories, code, issues and users",
@@ -238,7 +246,7 @@ class GitHubSearchTask(
             <li>Formats results with relevant details</li>
             <li>Handles API rate limiting</li>
           </ul>
-        """
+        """,
         )
 
     }

@@ -153,9 +153,8 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             val tabs = TabbedDisplay(task)
 
             // Overview tab
-            val overviewTask = ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
-            var overviewStatus = overviewTask.add(
+            val overviewTask = tabs.newTask("Overview")
+            val overviewStatus = overviewTask.add(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Temporal Reasoning Analysis
@@ -192,8 +191,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
 
             // Gather temporal data from files
             log.debug("Gathering temporal data from ${executionConfig?.related_files?.size ?: 0} file patterns")
-            val dataTask = ui.newTask(false)
-            tabs["Temporal Data"] = dataTask.placeholder
+            val dataTask = tabs.newTask("Temporal Data")
             val dataLoading = dataTask.add(
                 MarkdownUtil.renderMarkdown("## Temporal Data Sources\n\n🔄 Loading temporal data...", ui = ui)
             )
@@ -225,16 +223,16 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             |**Time Range:** $timeRange
             |
             |**Granularity:** ${executionConfig.granularity}
-            |
-            |<details>
-            |<summary>Temporal Data Context:</summary>
-            |
-            |```
-            |${temporalData.truncateForDisplay(maxOutputLength)}
-            |```
-            |
-            |</details>
         """.trimMargin(), ui = ui
+                )
+            )
+            dataTask.expandable(
+                "Temporal Data Context", MarkdownUtil.renderMarkdown(
+                    """
+                |```
+                |${temporalData.truncateForDisplay(maxOutputLength)}
+                |```
+                """.trimMargin(), ui = ui
                 )
             )
             task.update()
@@ -244,8 +242,8 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             val priorContext = getPriorCode(agent.executionState)
 
             // Update overview
-            overviewStatus?.clear()
-            overviewStatus = overviewTask.add(
+            overviewStatus?.setLength(0)
+            overviewStatus?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Temporal Reasoning Analysis
@@ -264,8 +262,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
 
             // Step 1: Construct timeline
             log.debug("Constructing timeline of events")
-            val timelineTask = ui.newTask(false)
-            tabs["Timeline"] = timelineTask.placeholder
+            val timelineTask = tabs.newTask("Timeline")
             val timelineLoading = timelineTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## Timeline Construction\n\n🔄 Analyzing temporal data and constructing timeline...",
@@ -315,7 +312,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             // Step 2: Pattern identification (if enabled)
             if (executionConfig.identify_patterns && !timelineAnalysis.patterns.isNullOrEmpty()) {
                 log.debug("Analyzing temporal patterns")
-                val patternsTask = ui.newTask(false)
+                val patternsTask = tabs.newTask("Patterns")
                 transcript?.write(
                     """
             |
@@ -326,7 +323,6 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             |${formatPatterns(timelineAnalysis.patterns)}
         """.trimMargin().toByteArray()
                 )
-                tabs["Patterns"] = patternsTask.placeholder
                 patternsTask.add(
                     MarkdownUtil.renderMarkdown(
                         """
@@ -346,7 +342,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             // Step 3: Rate of change analysis (if enabled)
             if (executionConfig.analyze_rate_of_change && !timelineAnalysis.rate_of_change_analysis.isNullOrBlank()) {
                 log.debug("Analyzing rate of change")
-                val rateTask = ui.newTask(false)
+                val rateTask = tabs.newTask("Rate of Change")
                 transcript?.write(
                     """
             |
@@ -356,7 +352,6 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             |
         """.trimMargin().toByteArray()
                 )
-                tabs["Rate of Change"] = rateTask.placeholder
                 rateTask.add(
                     MarkdownUtil.renderMarkdown(
                         """
@@ -374,7 +369,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             // Step 4: Transition points (if enabled)
             if (executionConfig.identify_transitions && !timelineAnalysis.transition_points.isNullOrEmpty()) {
                 log.debug("Identifying critical transition points")
-                val transitionsTask = ui.newTask(false)
+                val transitionsTask = tabs.newTask("Transition Points")
                 transcript?.write(
                     """
             |
@@ -383,7 +378,6 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             |${formatTransitions(timelineAnalysis.transition_points)}
         """.trimMargin().toByteArray()
                 )
-                tabs["Transition Points"] = transitionsTask.placeholder
                 transitionsTask.add(
                     MarkdownUtil.renderMarkdown(
                         """
@@ -403,7 +397,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             // Step 5: Future predictions (if enabled)
             if (executionConfig.predict_future && !timelineAnalysis.future_predictions.isNullOrEmpty()) {
                 log.debug("Generating future predictions")
-                val predictionsTask = ui.newTask(false)
+                val predictionsTask = tabs.newTask("Future Predictions")
                 transcript?.write(
                     """
             |
@@ -412,7 +406,6 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             |${formatPredictions(timelineAnalysis.future_predictions)}
         """.trimMargin().toByteArray()
                 )
-                tabs["Future Predictions"] = predictionsTask.placeholder
                 predictionsTask.add(
                     MarkdownUtil.renderMarkdown(
                         """
@@ -431,8 +424,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
 
             // Step 6: Generate visualization
             log.debug("Generating timeline visualization")
-            val vizTask = ui.newTask(false)
-            tabs["Visualization"] = vizTask.placeholder
+            val vizTask = tabs.newTask("Visualization")
             val vizLoading = vizTask.add(
                 MarkdownUtil.renderMarkdown("## Timeline Visualization\n\n🔄 Generating Mermaid diagram...", ui = ui)
             )
@@ -504,8 +496,8 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             )
 
             // Update overview with completion
-            overviewStatus?.clear()
-            overviewTask.add(
+            overviewStatus?.setLength(0)
+            overviewStatus?.append(
                 MarkdownUtil.renderMarkdown(
                     """
             |## Temporal Reasoning Analysis
@@ -542,7 +534,7 @@ TemporalReasoning - Analyze how systems evolve over time and predict future stat
             transcript?.close()
             task.error(e)
 
-            val errorTask = ui.newTask(false)
+            val errorTask = task.newTask()
             errorTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## ❌ Error\n\nAn error occurred during temporal reasoning analysis:\n\n```\n${e.message}\n```",
@@ -685,30 +677,6 @@ Generate the Mermaid timeline diagram now:
         }.joinToString("\n\n")
     }
 
-    private fun getInputFileCode(): String {
-        val patterns = (executionConfig?.input_files ?: listOf())
-        if (patterns.isEmpty()) {
-            return ""
-        }
-        return patterns.flatMap { pattern ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            root.toFile().walkTopDown()
-                .filter { file -> file.isFile && matcher.matches(root.relativize(file.toPath())) }
-                .map { it.toPath() }
-                .toList()
-        }.distinct().sortedBy { it }
-            .joinToString("\n\n") { relativePath ->
-                val file = root.toFile().resolve(relativePath.toString())
-                try {
-                    val content = file.readText()
-                    "# $relativePath\n\n```\n$content\n```"
-                } catch (e: Throwable) {
-                    log.warn("Error reading file: $relativePath", e)
-                    ""
-                }
-            }
-    }
-
     private fun formatTimeline(events: List<TimelineEvent>): String {
         return buildString {
             appendLine()
@@ -822,6 +790,7 @@ Generate the Mermaid timeline diagram now:
         val TemporalReasoning = TaskType(
             "TemporalReasoning",
             "Reasoning",
+            TemporalReasoningTask::class.java,
             TemporalReasoningTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze how systems evolve over time and predict future states",
@@ -835,7 +804,7 @@ Generate the Mermaid timeline diagram now:
                 <li>Predicts future states based on historical trends</li>
                 <li>Useful for technical debt analysis, performance degradation, and system evolution</li>
               </ul>
-            """
+            """,
         )
     }
 }

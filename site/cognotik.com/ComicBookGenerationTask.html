@@ -377,18 +377,21 @@
                     <div id="tab-script" class="tab-content">
                         <div class="script-view" id="script-display">
                             <!-- Script content will be injected here -->
+                            <p class="text-muted">Waiting for generation...</p>
                         </div>
                     </div>
 
                     <div id="tab-characters" class="tab-content">
                         <div class="char-grid" id="char-display">
                             <!-- Character cards injected here -->
+                            <p class="text-muted" style="grid-column: 1/-1;">Waiting for script analysis...</p>
                         </div>
                     </div>
 
                     <div id="tab-visuals" class="tab-content">
                         <div id="visuals-display">
                             <!-- Images injected here -->
+                            <p class="text-muted">Waiting for character designs...</p>
                         </div>
                     </div>
 
@@ -679,14 +682,14 @@
             runBtn.innerHTML = `<span class="spinner"></span> Processing...`; // Assumes CSS spinner or just text
         
             // Clear previous outputs
-            document.getElementById('script-display').innerHTML = '';
-            document.getElementById('char-display').innerHTML = '';
-            document.getElementById('visuals-display').innerHTML = '';
+            document.getElementById('script-display').innerHTML = '<p class="text-muted">Generating script structure...</p>';
+            document.getElementById('char-display').innerHTML = '<p class="text-muted">Waiting for script...</p>';
+            document.getElementById('visuals-display').innerHTML = '<p class="text-muted">Waiting for characters...</p>';
         
             // Switch to Logs tab to show progress
             window.switchTab('logs');
             const logDisplay = document.getElementById('log-display');
-            logDisplay.innerHTML = '<div style="color: #64748b;">// Initializing ComicBookGenerationTask...</div>';
+            logDisplay.innerHTML = '<div style="color: #64748b;">// Starting ComicBookGenerationTask...</div>';
         
             // Helper to append logs
             const log = (msg, type = 'info') => {
@@ -699,77 +702,85 @@
             try {
                 // --- STEP 1: Initialization ---
                 await delay(600);
-                log(`Configuration loaded: ${pages} pages, Style: "${style}"`);
-                log(`Analyzing subject: "${subject.substring(0, 30)}..."`);
+                log(`Subject: '${subject}'`);
+                log(`Config: ${pages} pages, Style: '${style}'`);
         
                 // --- STEP 2: Script Generation ---
                 await delay(1200);
-                log("Agent: Writing script structure (Page/Row/Panel)...");
+                log("Generating script structure (Page/Row/Frame)...");
         
                 // Generate Mock Script based on style
-                const mockScript = generateMockScript(subject, style);
-                document.getElementById('script-display').innerHTML = mockScript; // Using innerHTML to render HTML tags in script
+                const scriptData = generateMockScriptData(subject, style, pages);
+                const scriptHtml = renderScriptToHtml(scriptData);
+                document.getElementById('script-display').innerHTML = scriptHtml;
         
                 await delay(800);
                 log("✅ Script generation complete.", "success");
         
                 // --- STEP 3: Character Extraction ---
                 await delay(1000);
-                log("Agent: Extracting character profiles and visual traits...");
+                log("Designing Character Profiles...");
         
-                const characters = generateMockCharacters(style);
+                const characters = scriptData.characters;
                 const charContainer = document.getElementById('char-display');
+                charContainer.innerHTML = ""; // Clear placeholder
         
                 characters.forEach(char => {
                     const charCard = `
                         <div class="char-card">
                             <div class="char-img-placeholder" style="background: linear-gradient(135deg, #334155, #1e293b); display:flex; align-items:center; justify-content:center; color:#64748b; font-size:0.8rem;">
-                                [Ref: ${char.name}]
+                                [Img: ${char.name}]
                             </div>
                             <h4 style="margin-top:0.5rem; color:var(--accent-secondary)">${char.name}</h4>
-                            <small style="color:var(--text-muted)">${char.desc}</small>
+                            <small style="color:var(--text-muted)">${char.description}</small>
                         </div>
                     `;
                     charContainer.innerHTML += charCard;
+                    log(`Generated reference for: ${char.name}`);
                 });
         
-                log(`✅ Identified ${characters.length} primary characters.`, "success");
+                log(`✅ ${characters.length} Characters Defined.`, "success");
         
                 // --- STEP 4: Visual Generation (Optional) ---
                 if (shouldGenImages) {
-                    log("Agent: Initializing ImageProcessingAgent for panel rendering...");
+                    log("Initializing ImageProcessingAgent for row rendering...");
                     const visualsContainer = document.getElementById('visuals-display');
+                    visualsContainer.innerHTML = ""; // Clear placeholder
             
                     // Simulate rendering loop
-                    const totalPanels = 2; // Mocking just 2 panels for the demo
-                    for (let i = 1; i <= totalPanels; i++) {
-                        await delay(1500); // Simulate generation time
-                        log(`Rendering Page 1, Row ${i}...`);
                 
+                    // We will just render the first page's rows to save time in simulation
+                    const pageToRender = scriptData.pages[0];
+                    
+                    for (const row of pageToRender.rows) {
+                        await delay(1200); // Simulate generation time
+                        log(`Rendering Page ${pageToRender.page_number}, Row ${row.row_number}...`);
+
                         const imgPlaceholder = `
                             <div style="margin-bottom: 2rem;">
+                                <h4 style="color: var(--accent-secondary); margin-bottom: 0.5rem;">Page ${pageToRender.page_number}, Row ${row.row_number}</h4>
                                 <div style="background: #020617; border: 1px solid #334155; border-radius: 8px; padding: 1rem; text-align: center;">
-                                    <div style="height: 200px; background: radial-gradient(circle, #1e293b, #0f172a); display: flex; align-items: center; justify-content: center; border-radius: 4px; margin-bottom: 0.5rem;">
-                                        <span style="color: var(--accent-primary); font-family: var(--font-display);">
-                                            [Generated Image: Page 1 / Row ${i}]
+                                    <div style="height: 180px; background: radial-gradient(circle, #1e293b, #0f172a); display: flex; align-items: center; justify-content: center; border-radius: 4px; margin-bottom: 0.5rem;">
+                                        <span style="color: var(--accent-primary); font-family: var(--font-display); font-size: 0.9rem;">
+                                            [Generated Strip: ${row.visual_description.substring(0, 30)}...]
                                         </span>
                                     </div>
                                     <p style="font-size: 0.9rem; color: var(--text-muted);">
-                                        <em>Visual context: ${i === 1 ? 'Establishing shot, atmospheric lighting' : 'Character interaction, close-up'}</em>
+                                        <em>${row.frames.length} Panels rendered.</em>
                                     </p>
                                 </div>
                             </div>
                         `;
                         visualsContainer.innerHTML += imgPlaceholder;
                     }
-                    log("✅ Visual rendering complete.", "success");
+                    log("✅ Images Generated.", "success");
                 } else {
                     log("Skipping visual generation (User preference).");
                 }
         
                 // --- STEP 5: Finalization ---
                 await delay(500);
-                log("Task completed successfully.", "success");
+                log("Comic Book Generation Complete", "success");
         
                 // Reset Button
                 runBtn.disabled = false;
@@ -791,72 +802,109 @@
         }
         
         /**
-         * Generates a mock script string based on the selected style.
+         * Generates a structured mock script object (mimicking Kotlin data classes).
          */
-        function generateMockScript(subject, style) {
+        function generateMockScriptData(subject, style, pageCount) {
             const title = subject.split(' ').slice(0, 3).join(' ').toUpperCase() || "UNTITLED STORY";
         
-            // Adjust tone based on style
-            let tone = "Standard";
-            if (style === 'noir') tone = "Dark, high contrast, rainy";
-            if (style === 'manga') tone = "Dynamic action lines, emotional close-ups";
-            if (style === 'western superhero') tone = "Bold colors, heroic angles";
         
-            return `
-        <h2 style="font-family: var(--font-display); color: var(--accent-secondary);">${title}</h2>
-        <p><em><strong>Premise:</strong> ${subject}</em></p>
-        <p><em><strong>Visual Style:</strong> ${tone}</em></p>
-        <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
         
-        <h3>Page 1</h3>
         
-        <div style="margin-left: 1rem; border-left: 2px solid var(--accent-primary); padding-left: 1rem;">
-            <strong>Row 1</strong>
-            <ul style="list-style: none; padding: 0; margin-top: 0.5rem;">
-                <li style="margin-bottom: 1rem;">
-                    <span style="color: var(--accent-primary);">Panel 1 (Wide):</span> Establishing shot. The environment reflects the mood of the subject.
-                    <br><span style="color: #94a3b8;">CAPTION: "It started like any other day..."</span>
-                </li>
-                <li style="margin-bottom: 1rem;">
-                    <span style="color: var(--accent-primary);">Panel 2 (Medium):</span> The protagonist enters the frame. Lighting highlights their silhouette.
-                    <br><span style="color: #94a3b8;">SFX: *CLICK*</span>
-                </li>
-            </ul>
-        </div>
         
-        <div style="margin-left: 1rem; border-left: 2px solid var(--accent-primary); padding-left: 1rem; margin-top: 1.5rem;">
-            <strong>Row 2</strong>
-            <ul style="list-style: none; padding: 0; margin-top: 0.5rem;">
-                <li style="margin-bottom: 1rem;">
-                    <span style="color: var(--accent-primary);">Panel 3 (Close-up):</span> Focus on the eyes. A realization occurs.
-                    <br><span style="color: #94a3b8;">HERO: "I knew I shouldn't have come here."</span>
-                </li>
-            </ul>
-        </div>
-            `;
+            
+            // Mock Characters
+            let characters = [];
+            if (style === 'manga') {
+                characters = [
+                    { name: "Hiro", description: "Spiky hair, determined expression", visual_traits: "School uniform, katana" },
+                    { name: "Kenji", description: "Sharp eyes, cool demeanor", visual_traits: "Dark cloak, glasses" }
+                ];
+            } else if (style === 'noir') {
+                characters = [
+                    { name: "Det. Vance", description: "Worn trenchcoat, fedora", visual_traits: "Smoking, stubble, shadow" },
+                    { name: "The Dame", description: "Elegant evening gown", visual_traits: "Red lipstick, mysterious" }
+                ];
+            } else {
+                characters = [
+                    { name: "Captain Solar", description: "Muscular build, glowing emblem", visual_traits: "Gold and white suit, cape" },
+                    { name: "Dr. Void", description: "Lab coat, cybernetic enhancements", visual_traits: "Green energy aura" }
+                ];
+            }
+
+            // Mock Pages
+            const pages = [];
+            for(let i=1; i<=Math.min(pageCount, 3); i++) { // Limit to 3 pages for mock
+                pages.push({
+                    page_number: i,
+                    rows: [
+                        {
+                            row_number: 1,
+                            visual_description: "Establishing shot of the environment.",
+                            frames: [
+                                { frame_number: 1, description: "Wide shot of the city.", dialog: [], caption: "The city never sleeps." },
+                                { frame_number: 2, description: `${characters[0].name} steps into view.`, dialog: [{character: characters[0].name, text: "Here we go again."}], caption: null }
+                            ]
+                        },
+                        {
+                            row_number: 2,
+                            visual_description: "Action sequence initiates.",
+                            frames: [
+                                { frame_number: 3, description: "Close up on eyes.", dialog: [], caption: null },
+                                { frame_number: 4, description: "Dynamic pose.", dialog: [{character: characters[0].name, text: "HAA!"}], caption: "SFX: BOOM" }
+                            ]
+                        }
+                    ]
+                });
+            }
+
+            return {
+                title: title,
+                premise: subject,
+                characters: characters,
+                pages: pages
+            };
         }
         
         /**
-         * Generates mock character data based on style.
+         * Renders the script object to HTML.
          */
-        function generateMockCharacters(style) {
-            if (style === 'manga') {
-                return [
-                    { name: "Protagonist (Hiro)", desc: "Spiky hair, determined expression, school uniform or armor." },
-                    { name: "Rival (Kenji)", desc: "Sharp eyes, cool demeanor, dark clothing." }
-                ];
-            } else if (style === 'noir') {
-                return [
-                    { name: "Detective Vance", desc: "Worn trenchcoat, fedora, smoking a cigarette." },
-                    { name: "The Femme Fatale", desc: "Elegant evening gown, mysterious shadow across face." }
-                ];
-            } else {
-                // Default / Superhero
-                return [
-                    { name: "Captain Solar", desc: "Muscular build, glowing emblem on chest, cape." },
-                    { name: "Dr. Void", desc: "Lab coat, cybernetic enhancements, green energy aura." }
-                ];
-            }
+        function renderScriptToHtml(script) {
+            let html = `
+                <h2 style="font-family: var(--font-display); color: var(--accent-secondary);">${script.title}</h2>
+                <p><em><strong>Premise:</strong> ${script.premise}</em></p>
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
+                <h3>Characters</h3>
+                <ul>
+                    ${script.characters.map(c => `<li><strong>${c.name}</strong>: ${c.description} (${c.visual_traits})</li>`).join('')}
+                </ul>
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
+            `;
+
+            script.pages.forEach(page => {
+                html += `<h3>Page ${page.page_number}</h3>`;
+                page.rows.forEach(row => {
+                    html += `
+                        <div style="margin-left: 1rem; border-left: 2px solid var(--accent-primary); padding-left: 1rem; margin-bottom: 1.5rem;">
+                            <strong>Row ${row.row_number}</strong>
+                            <ul style="list-style: none; padding: 0; margin-top: 0.5rem;">
+                    `;
+                    row.frames.forEach(frame => {
+                        html += `
+                            <li style="margin-bottom: 1rem;">
+                                <span style="color: var(--accent-primary);">Panel ${frame.frame_number}:</span> ${frame.description}
+                        `;
+                        if(frame.caption) {
+                            html += `<br><span style="color: #94a3b8;">CAPTION: "${frame.caption}"</span>`;
+                        }
+                        frame.dialog.forEach(d => {
+                            html += `<br><span style="color: #e2e8f0;"><strong>${d.character}</strong>: "${d.text}"</span>`;
+                        });
+                        html += `</li>`;
+                    });
+                    html += `</ul></div>`;
+                });
+            });
+            return html;
         }
     </script>
 </body>

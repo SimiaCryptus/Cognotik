@@ -284,8 +284,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
         transcript?.write("# Tutorial Generation Transcript\n\n".toByteArray())
         transcript?.write("**Goal:** $goal\n\n".toByteArray())
         transcript?.write(
@@ -323,7 +322,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
             appendLine("*Creating tutorial structure...*")
         }
         overviewTask.add(overviewContent.renderMarkdown)
-        task.update()
+        overviewTask.update()
 
         val resultBuilder = StringBuilder()
         resultBuilder.append("# Tutorial: $goal\n\n")
@@ -341,8 +340,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Context"] = contextTask.placeholder
+                val contextTask = tabs.newTask("Context")
                 contextTask.add(
                     buildString {
                         appendLine("# Context & Resources")
@@ -363,13 +361,13 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
                         }
                     }.renderMarkdown
                 )
-                task.update()
+                contextTask.update()
+                contextTask.complete()
             }
 
             // Phase 1: Create outline
             log.info("Phase 1: Creating tutorial outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Outline")
             transcript?.write("## Phase 1: Planning & Outline\n\n".toByteArray())
             transcript?.write("Creating tutorial structure...\n\n".toByteArray())
             transcript?.write("**Configuration:**\n".toByteArray())
@@ -384,7 +382,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
+            outlineTask.update()
 
             val outlineAgent = ParsedAgent(
                 resultClass = TutorialOutline::class.java,
@@ -540,11 +538,12 @@ Ensure the outline:
                 appendLine("**Status:** ✅ Complete")
             }
             outlineTask.add(outlineContent.renderMarkdown)
-            task.update()
+            outlineTask.update()
+            outlineTask.complete()
 
             overviewTask.add("✅ Phase 1 Complete: Outline created (${outline.steps.size} steps)\n".renderMarkdown)
             overviewTask.add("\n### Phase 2: Writing Steps\n*Developing detailed step-by-step instructions...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
             transcript?.write("## Phase 2: Writing Steps\n\n".toByteArray())
             transcript?.write("Input Context:\n".toByteArray())
             if (messages.isNotEmpty()) {
@@ -568,13 +567,12 @@ Ensure the outline:
                 log.info("Writing step ${index + 1}/${outline.steps.size}: ${stepOutline.title}")
 
                 overviewTask.add("- Step ${index + 1}: ${stepOutline.title.truncateForDisplay(50)} ".renderMarkdown)
-                task.update()
+                overviewTask.update()
                 transcript?.write("### Step ${index + 1}: ${stepOutline.title}\n\n".toByteArray())
                 transcript?.write("Writing detailed instructions...\n\n".toByteArray())
 
 
-                val stepTask = task.ui.newTask(false)
-                tabs["Step ${index + 1}"] = stepTask.placeholder
+                val stepTask = tabs.newTask("Step ${index + 1}")
 
                 stepTask.add(
                     buildString {
@@ -584,7 +582,7 @@ Ensure the outline:
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
+                stepTask.update()
 
                 // Build context from previous steps
                 val previousStepsContext = if (tutorialSteps.isNotEmpty()) {
@@ -706,10 +704,11 @@ Guidelines:
                     appendLine("**Status:** ✅ Complete")
                 }
                 stepTask.add(stepContent.renderMarkdown)
-                task.update()
+                stepTask.update()
+                stepTask.complete()
 
                 overviewTask.add("✅\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
             }
 
             overviewTask.add("✅ Phase 2 Complete: All steps written\n".renderMarkdown)
@@ -718,14 +717,13 @@ Guidelines:
             var troubleshootingSection: TroubleshootingSection? = null
             if (executionConfig.include_troubleshooting) {
                 overviewTask.add("\n### Phase 3: Troubleshooting\n*Compiling common issues and solutions...*\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
                 transcript?.write("## Phase 3: Troubleshooting\n\n".toByteArray())
                 transcript?.write("Compiling common issues and solutions...\n\n".toByteArray())
 
 
                 log.info("Phase 3: Creating troubleshooting section")
-                val troubleshootingTask = task.ui.newTask(false)
-                tabs["Troubleshooting"] = troubleshootingTask.placeholder
+                val troubleshootingTask = tabs.newTask("Troubleshooting")
 
                 troubleshootingTask.add(
                     buildString {
@@ -735,7 +733,7 @@ Guidelines:
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
+                troubleshootingTask.update()
 
                 val troubleshootingAgent = ParsedAgent(
                     resultClass = TroubleshootingSection::class.java,
@@ -820,7 +818,8 @@ Focus on issues that:
                     appendLine("**Status:** ✅ Complete")
                 }
                 troubleshootingTask.add(troubleshootingContent.renderMarkdown)
-                task.update()
+                troubleshootingTask.update()
+                troubleshootingTask.complete()
 
                 overviewTask.add("✅ Phase 3 Complete: Troubleshooting section added\n".renderMarkdown)
             }
@@ -829,14 +828,13 @@ Focus on issues that:
             var nextSteps: NextSteps? = null
             if (executionConfig.include_next_steps) {
                 overviewTask.add("\n### Phase 4: Next Steps\n*Suggesting further learning paths...*\n".renderMarkdown)
-                task.update()
+                overviewTask.update()
                 transcript?.write("## Phase 4: Next Steps\n\n".toByteArray())
                 transcript?.write("Suggesting further learning paths...\n\n".toByteArray())
 
 
                 log.info("Phase 4: Creating next steps section")
-                val nextStepsTask = task.ui.newTask(false)
-                tabs["Next Steps"] = nextStepsTask.placeholder
+                val nextStepsTask = tabs.newTask("Next Steps")
 
                 nextStepsTask.add(
                     buildString {
@@ -846,7 +844,7 @@ Focus on issues that:
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
+                nextStepsTask.update()
 
                 val nextStepsAgent = ParsedAgent(
                     resultClass = NextSteps::class.java,
@@ -908,21 +906,21 @@ Make suggestions:
                     appendLine("**Status:** ✅ Complete")
                 }
                 nextStepsTask.add(nextStepsContent.renderMarkdown)
-                task.update()
+                nextStepsTask.update()
+                nextStepsTask.complete()
 
                 overviewTask.add("✅ Phase 4 Complete: Next steps added\n".renderMarkdown)
             }
 
             // Phase 5: Final Assembly
             overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete tutorial...*\n".renderMarkdown)
-            task.update()
+            overviewTask.update()
             transcript?.write("## Phase 5: Final Assembly\n\n".toByteArray())
             transcript?.write("Compiling complete tutorial...\n\n".toByteArray())
 
 
             log.info("Phase 5: Assembling final tutorial")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Tutorial"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Tutorial")
 
             val finalTutorial = buildString {
                 appendLine("# ${outline.title}")
@@ -1097,7 +1095,8 @@ Make suggestions:
 
             finalTask.add(finalTutorial.renderMarkdown)
             tutorialOutputFile?.write(finalTutorial.toByteArray(Charsets.UTF_8))
-            task.update()
+            finalTask.update()
+            finalTask.complete()
 
             // Final statistics
             val totalTime = System.currentTimeMillis() - startTime
@@ -1147,7 +1146,8 @@ Make suggestions:
                     )
                 }.renderMarkdown
             )
-            task.update()
+            overviewTask.update()
+            overviewTask.complete()
 
             // Write final tutorial to file
             tutorialOutputFile?.flush()
@@ -1208,6 +1208,7 @@ Make suggestions:
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
+            overviewTask.update()
             task.update()
             tutorialOutputFile?.close()
 
@@ -1300,6 +1301,7 @@ Make suggestions:
         val TutorialGeneration = TaskType(
             "TutorialGeneration",
             "Writing",
+            TutorialGenerationTask::class.java,
             TutorialGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Create complete, step-by-step tutorials for processes and projects",
@@ -1317,7 +1319,7 @@ Make suggestions:
                 <li>Platform-specific instructions and requirements</li>
                 <li>Ideal for how-to guides, educational content, and project-based learning</li>
               </ul>
-            """
+            """,
         )
     }
 }

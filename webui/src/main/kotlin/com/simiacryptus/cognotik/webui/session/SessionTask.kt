@@ -29,7 +29,7 @@ open class SessionTask(
 
     fun append(
         htmlToAppend: String,
-        showSpinner: Boolean
+        showSpinner: Boolean = true
     ): StringBuilder? {
         val stringBuilder: StringBuilder?
         if (htmlToAppend.isNotBlank()) {
@@ -107,7 +107,7 @@ open class SessionTask(
     ): StringBuilder? {
         var windowBuffer: StringBuilder? = null
         val closeButton = """<span class="close">${
-          ui.hrefLink(
+            ui.hrefLink(
                 "&times;",
                 "close-button href-link",
                 null,
@@ -341,6 +341,12 @@ Stack Trace:
                 else -> ""
             }
         }>$linkText</a>"""
+    }
+
+    fun newTask(showSpinner: Boolean = true): SessionTask {
+        val newTask = ui.newTask(false)
+        add(newTask.placeholder, showSpinner = showSpinner)
+        return newTask
     }
 }
 

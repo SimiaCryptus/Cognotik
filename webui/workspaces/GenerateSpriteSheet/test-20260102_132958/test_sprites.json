@@ -1,0 +1,58 @@
+{
+  "sprites" : [ {
+    "name" : "flying_supercat",
+    "x" : 28,
+    "y" : 58,
+    "width" : 292,
+    "height" : 226
+  }, {
+    "name" : "standing_supercat_front",
+    "x" : 414,
+    "y" : 54,
+    "width" : 184,
+    "height" : 232
+  }, {
+    "name" : "standing_batcat_side",
+    "x" : 712,
+    "y" : 64,
+    "width" : 258,
+    "height" : 223
+  }, {
+    "name" : "standing_supercat_side",
+    "x" : 30,
+    "y" : 387,
+    "width" : 228,
+    "height" : 258
+  }, {
+    "name" : "heroic_pose_supercat",
+    "x" : 416,
+    "y" : 379,
+    "width" : 187,
+    "height" : 274
+  }, {
+    "name" : "walking_supercat",
+    "x" : 733,
+    "y" : 391,
+    "width" : 275,
+    "height" : 253
+  }, {
+    "name" : "heroic_pose_batcat",
+    "x" : 53,
+    "y" : 744,
+    "width" : 254,
+    "height" : 226
+  }, {
+    "name" : "sitting_supercat",
+    "x" : 391,
+    "y" : 743,
+    "width" : 226,
+    "height" : 226
+  }, {
+    "name" : "pouncing_supercat",
+    "x" : 724,
+    "y" : 774,
+    "width" : 262,
+    "height" : 173
+  } ],
+  "description" : "A collection of superhero-themed cats in various poses, including flying, standing, and pouncing, all set against a solid green background."
+}

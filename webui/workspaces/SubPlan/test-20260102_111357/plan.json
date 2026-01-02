@@ -1,0 +1,18 @@
+{
+  "prompt" : "Create a file named 'subplan_test.txt' containing the text 'This was generated via a sub-plan.'Purpose: Testing recursive sub-planning capabilities\n\nContext:\nThe environment is a standard Kotlin/JVM test environment.\nExecute task",
+  "plan" : {
+    "1" : {
+      "task_type" : "FileModification",
+      "files" : [ "subplan_test.txt" ],
+      "related_files" : [ ],
+      "extractContent" : false,
+      "modifications" : "Create a new file named subplan_test.txt containing the text \"This was generated via a sub-plan.\"",
+      "includeGitDiff" : false,
+      "task_description" : "Create subplan_test.txt",
+      "task_dependencies" : [ ],
+      "state" : "Pending",
+      "task_type" : "FileModification"
+    }
+  },
+  "planText" : "### Task 1: Create subplan_test.txt\n\n**Type:** FileModification\n**File Path:** `subplan_test.txt`\n**Goal:** Create a new file named `subplan_test.txt` containing the text \"This was generated via a sub-plan.\"\n**Input Files/Tasks:** None\n**Description:** This task creates a simple text file to verify the execution of the sub-plan. It serves as a marker for testing recursive sub-planning capabilities within the Kotlin/JVM environment."
+}

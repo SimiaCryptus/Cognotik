@@ -5,7 +5,10 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
@@ -120,36 +123,29 @@ class MultiPerspectiveAnalysisTask(
             return
         }
 
-        try {
-            val tabs = TabbedDisplay(task)
-            val overviewTask = task.ui.newTask(false)
-            tabs["Overview"] = overviewTask.placeholder
 
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
-                    |## Multi-Perspective Analysis
-                    |**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}
-                    |
-                    |**Perspectives:** ${perspectives.joinToString(", ")}
-                    |
-                    |**Status:** 🔄 Starting analysis...
-                    """.trimMargin(),
-                    ui = task.ui
-                )
+        val tabs = TabbedDisplay(task)
+        val overviewTask = tabs.newTask("Overview")
+
+        overviewTask.add(
+            MarkdownUtil.renderMarkdown(
+                """
+                |## Multi-Perspective Analysis
+                |**Subject:** ${subject.truncateForDisplay(maxDescriptionLength)}
+                |
+                |**Perspectives:** ${perspectives.joinToString(", ")}
+                |
+                |**Status:** 🔄 Starting analysis...
+                """.trimMargin(),
+                ui = task.ui
             )
-            task.update()
-        } catch (e: Exception) {
-            log.warn("Failed to create tabbed display", e)
-        }
+        )
         var transcriptStream: FileOutputStream? = null
 
 
         val contextFiles = getContextFiles()
         val priorCode = getPriorCode(agent.executionState)
 
-        // Create tabs for each perspective
-        val tabs = TabbedDisplay(task)
         val perspectiveResults = mutableMapOf<String, String>()
 
         try {
@@ -168,9 +164,7 @@ class MultiPerspectiveAnalysisTask(
 
         // Analyze from each perspective
         perspectives.forEach { perspective ->
-            val perspectiveTask = task.ui.newTask(false).apply {
-                tabs[perspective] = placeholder
-            }
+            val perspectiveTask = tabs.newTask(perspective)
 
             val prompt = """
 You are analyzing the following subject from the **$perspective perspective**.
@@ -224,9 +218,7 @@ Provide a thorough analysis from the $perspective viewpoint.
 
         // Synthesize if requested
         val finalResult = if (executionConfig.synthesize) {
-            val synthesisTask = task.ui.newTask(false).apply {
-                tabs["Synthesis"] = placeholder
-            }
+            val synthesisTask = tabs.newTask("Synthesis")
             synthesisTask.add(
                 MarkdownUtil.renderMarkdown(
                     "## Synthesizing Perspectives...",
@@ -333,24 +325,6 @@ Provide a comprehensive synthesis that integrates all perspectives.
         }
     }
 
-    private fun getInputFileCode(): String = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            }
-        }.filter { it.isFile && it.exists() }
-        .distinct()
-        .sortedBy { it }
-        .joinToString("\n\n") { file ->
-            "# ${root.relativize(file.toPath())}\n\n```\n${file.readText()}\n```"
-        }
-
 
     private fun getContextFiles(): String {
         val relatedFiles = executionConfig?.related_files ?: return ""
@@ -379,6 +353,7 @@ Provide a comprehensive synthesis that integrates all perspectives.
         val MultiPerspectiveAnalysis = TaskType(
             "MultiPerspectiveAnalysis",
             "Social",
+            MultiPerspectiveAnalysisTask::class.java,
             MultiPerspectiveAnalysisTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Analyze problems from multiple viewpoints with synthesis",
@@ -393,7 +368,7 @@ Provide a comprehensive synthesis that integrates all perspectives.
                 <li>Useful for architectural decisions and code reviews</li>
                 <li>Supports context from related files</li>
               </ul>
-            """
+            """,
         )
     }
 }

@@ -26,8 +26,12 @@
                 <p>Surfaces implicit assumptions and evaluates their validity and impact on conclusions.</p>
             </div>
             <div class="feature-card">
-                <h3>Quality Improvement</h3>
-                <p>Provides actionable suggestions to enhance logical consistency, completeness, and confidence.</p>
+                <h3>Logical Consistency</h3>
+                <p>Verifies that conclusions follow soundly from premises and identifies potential logical fallacies.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Confidence Assessment</h3>
+                <p>Evaluates the reliability of conclusions and highlights areas of uncertainty or missing evidence.</p>
             </div>
         </div>
     </section>
@@ -45,6 +49,17 @@
                         <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Assumptions</label>
                         <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Biases</label>
                         <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Alternatives</label>
+                        <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Confidence</label>
+                        <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Completeness</label>
+                        <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Logic</label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Configuration</label>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:0.5rem;">
+                        <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Suggest Improvements</label>
+                        <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Identify Gaps</label>
+                        <label style="display:inline-flex; align-items:center; color:var(--text-color); text-transform:none; letter-spacing:0;"><input type="checkbox" checked style="width:auto; margin-right:0.5rem;"> Evaluate Confidence</label>
                     </div>
                 </div>
                 <button class="run-button">Reflect</button>
@@ -53,19 +68,27 @@
                 <div style="padding: 2rem; white-space: pre-wrap; font-family: monospace; color: var(--text-muted);">
 # Reflection Analysis
 
-## Underlying Assumptions
 - **Implicit:** Assumed that user data is always available in JSON format.
 - **Critique:** This may not hold for legacy systems using XML.
+### 1. Underlying Assumptions
 
-## Cognitive Biases
 - **Confirmation Bias:** The analysis focused heavily on evidence supporting the initial hypothesis while glossing over the outlier data points in Q3.
+### 2. Cognitive Biases
 
-## Alternative Approaches
 - Instead of a linear regression, a random forest model might capture the non-linear relationships observed in the dataset.
+### 3. Alternative Approaches
 
-## Recommendations
-1. Verify data format assumptions with the engineering team.
-2. Re-evaluate the outlier data to ensure it isn't a signal of a different trend.
+### 4. Confidence and Certainty
+- **Level:** Medium
+- **Factor:** High uncertainty regarding the Q3 outlier data reduces overall confidence in the trend projection.
+
+## Improvement Suggestions
+- Verify data format assumptions with the engineering team immediately.
+- Re-evaluate the outlier data to ensure it isn't a signal of a different trend.
+
+## Knowledge Gaps
+- Missing documentation on legacy XML system constraints.
+- Unverified impact of recent API rate limit changes.
                 </div>
             </div>
         </div>

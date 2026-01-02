@@ -7,18 +7,14 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
-import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.nio.file.FileSystems
-import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 class EmailCampaignTask(
     orchestrationConfig: OrchestrationConfig,
@@ -285,8 +281,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
         val tabs = TabbedDisplay(task)
 
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
         val overviewContent = buildString {
             appendLine("# Email Campaign Generation")
@@ -333,7 +328,6 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
         }
         overviewTask.add(overviewContent.renderMarkdown)
         transcript?.write(overviewContent.toByteArray(Charsets.UTF_8))
-        task.update()
 
         val resultBuilder = StringBuilder()
         resultBuilder.append("# Email Campaign: $campaignGoal\n\n")
@@ -345,31 +339,26 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
 
             if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
                 log.debug("Found context: priorContext=${priorContext.length} chars, contextFiles=${contextFiles.length} chars")
-                val contextTask = task.ui.newTask(false)
-                tabs["Brand Context"] = contextTask.placeholder
-                contextTask.add(
-                    buildString {
-                        appendLine("# Brand & Campaign Context")
-                        appendLine()
-                        if (priorContext.isNotBlank()) {
-                            appendLine("## Prior Context")
-                            appendLine(priorContext.truncateForDisplay(2000))
-                            appendLine()
-                        }
-                        if (contextFiles.isNotBlank()) {
-                            appendLine("## Brand Guidelines")
-                            appendLine(contextFiles.truncateForDisplay(2000))
-                        }
-                    }.renderMarkdown
-                )
-                transcript?.write(contextTask.placeholder.toString().toByteArray(Charsets.UTF_8))
-                task.update()
+                val contextTask = tabs.newTask("Brand Context")
+
+                contextTask.add("# Brand & Campaign Context\n".renderMarkdown)
+                if (priorContext.isNotBlank()) {
+                    contextTask.expandable("Prior Context", MarkdownUtil.renderMarkdown(priorContext, ui = task.ui))
+                }
+                if (contextFiles.isNotBlank()) {
+                    contextTask.expandable("Brand Guidelines", MarkdownUtil.renderMarkdown(contextFiles, ui = task.ui))
+                }
+
+                transcript?.write(buildString {
+                    appendLine("# Brand & Campaign Context")
+                    if (priorContext.isNotBlank()) appendLine("## Prior Context\n$priorContext")
+                    if (contextFiles.isNotBlank()) appendLine("## Brand Guidelines\n$contextFiles")
+                }.toByteArray(Charsets.UTF_8))
             }
 
             // Phase 1: Develop campaign strategy
             log.info("Phase 1: Developing campaign strategy")
-            val strategyTask = task.ui.newTask(false)
-            tabs["Strategy"] = strategyTask.placeholder
+            val strategyTask = tabs.newTask("Strategy")
 
             strategyTask.add(
                 buildString {
@@ -381,7 +370,6 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
 
             val targetWordCount = when (executionConfig.body_length.lowercase()) {
                 "short" -> 125
@@ -465,16 +453,13 @@ Consider:
             }
             strategyTask.add(strategyContent.renderMarkdown)
             transcript?.write(("\n\n" + strategyContent).toByteArray(Charsets.UTF_8))
-            task.update()
 
             overviewTask.add("✅ Phase 1 Complete: Strategy developed\n".renderMarkdown)
             overviewTask.add("\n### Phase 2: Email Sequence Outline\n*Creating detailed outline for each email...*\n".renderMarkdown)
-            task.update()
 
             // Phase 2: Create email outlines
             log.info("Phase 2: Creating email sequence outline")
-            val outlineTask = task.ui.newTask(false)
-            tabs["Sequence Outline"] = outlineTask.placeholder
+            val outlineTask = tabs.newTask("Sequence Outline")
 
             outlineTask.add(
                 buildString {
@@ -486,7 +471,6 @@ Consider:
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
 
             val outlines = mutableListOf<EmailOutline>()
             for (emailNum in 1..executionConfig.num_emails) {
@@ -573,11 +557,9 @@ Maintain ${executionConfig.brand_voice} voice and address ${executionConfig.targ
             }
             outlineTask.add(outlineContent.renderMarkdown)
             transcript?.write(("\n\n" + outlineContent).toByteArray(Charsets.UTF_8))
-            task.update()
 
             overviewTask.add("✅ Phase 2 Complete: ${outlines.size} emails outlined\n".renderMarkdown)
             overviewTask.add("\n### Phase 3: Email Generation\n*Writing emails with subject lines...*\n".renderMarkdown)
-            task.update()
 
             // Phase 3: Generate each email
             log.info("Phase 3: Generating emails")
@@ -588,10 +570,8 @@ Maintain ${executionConfig.brand_voice} voice and address ${executionConfig.targ
                 log.info("Generating email ${outline.email_number}/${executionConfig.num_emails}")
 
                 overviewTask.add("- Email ${outline.email_number}: ${outline.main_message.truncateForDisplay(50)} ".renderMarkdown)
-                task.update()
 
-                val emailTask = task.ui.newTask(false)
-                tabs["Email ${outline.email_number}"] = emailTask.placeholder
+                val emailTask = tabs.newTask("Email ${outline.email_number}")
 
                 emailTask.add(
                     buildString {
@@ -603,7 +583,6 @@ Maintain ${executionConfig.brand_voice} voice and address ${executionConfig.targ
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
 
                 // Generate subject line variants
                 val subjectVariants = if (executionConfig.generate_subject_variants) {
@@ -810,10 +789,8 @@ ${if (executionConfig.include_ps) "- PS section" else ""}
                 }
                 emailTask.add(emailDisplay.renderMarkdown)
                 transcript?.write(("\n\n" + emailDisplay).toByteArray(Charsets.UTF_8))
-                task.update()
 
                 overviewTask.add("✅ (${emailContent.word_count} words)\n".renderMarkdown)
-                task.update()
             }
 
             overviewTask.add("✅ Phase 3 Complete: All emails generated\n".renderMarkdown)
@@ -821,11 +798,9 @@ ${if (executionConfig.include_ps) "- PS section" else ""}
             // Phase 4: Revision (if enabled)
             if (executionConfig.revision_passes > 0) {
                 overviewTask.add("\n### Phase 4: Revision\n*Refining email sequence...*\n".renderMarkdown)
-                task.update()
 
                 log.info("Phase 4: Performing ${executionConfig.revision_passes} revision pass(es)")
-                val revisionTask = task.ui.newTask(false)
-                tabs["Revision"] = revisionTask.placeholder
+                val revisionTask = tabs.newTask("Revision")
 
                 revisionTask.add(
                     buildString {
@@ -837,7 +812,6 @@ ${if (executionConfig.include_ps) "- PS section" else ""}
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
 
                 repeat(executionConfig.revision_passes) { passNum ->
                     log.debug("Revision pass ${passNum + 1}/${executionConfig.revision_passes}")
@@ -896,7 +870,6 @@ Provide the complete revised email body only.
                             appendLine()
                         }.renderMarkdown
                     )
-                    task.update()
                 }
 
                 overviewTask.add("✅ Phase 4 Complete: ${executionConfig.revision_passes} revision pass(es) completed\n".renderMarkdown)
@@ -904,11 +877,9 @@ Provide the complete revised email body only.
 
             // Phase 5: Final Assembly
             overviewTask.add("\n### Phase 5: Final Assembly\n*Compiling complete campaign...*\n".renderMarkdown)
-            task.update()
 
             log.info("Phase 5: Assembling final campaign")
-            val finalTask = task.ui.newTask(false)
-            tabs["Complete Campaign"] = finalTask.placeholder
+            val finalTask = tabs.newTask("Complete Campaign")
 
             val finalCampaign = buildString {
                 appendLine("# Email Campaign: $campaignGoal")
@@ -1000,7 +971,6 @@ Provide the complete revised email body only.
 
             finalTask.add(finalCampaign.renderMarkdown)
             transcript?.write(("\n\n" + finalCampaign).toByteArray(Charsets.UTF_8))
-            task.update()
 
             // Final statistics
             val totalTime = System.currentTimeMillis() - startTime
@@ -1033,7 +1003,6 @@ Provide the complete revised email body only.
                     Charsets.UTF_8
                 )
             )
-            task.update()
 
             // Concise summary for resultFn
             val finalResult = buildString {
@@ -1081,7 +1050,6 @@ Provide the complete revised email body only.
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            task.update()
             transcript?.close()
 
             val errorOutput = buildString {
@@ -1100,32 +1068,6 @@ Provide the complete revised email body only.
             resultFn(errorOutput)
         }
     }
-
-    private fun getInputFileCode(): String = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            (FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            })
-        }.filter { file ->
-            file.isFile && file.exists()
-        }
-        .distinct()
-        .sortedBy { it }
-        .joinToString("\n\n") { relativePath ->
-            val file = root.toFile().resolve(relativePath)
-            try {
-                "# $relativePath\n\n```\n${file.readText()}\n```"
-            } catch (e: Throwable) {
-                log.warn("Error reading file: $relativePath", e)
-                ""
-            }
-        }
 
     private fun getContextFiles(): String {
         val relatedFiles = executionConfig?.related_files ?: return ""
@@ -1155,24 +1097,12 @@ Provide the complete revised email body only.
         }
     }
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.complete(
-            "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
-                link.removeSuffix(".md")
-            }.pdf' target='_blank'>pdf</a>"
-        )
-        return markdownTranscript
-    }
-
-
     companion object {
         private val log: Logger = LoggerFactory.getLogger(EmailCampaignTask::class.java)
         val EmailCampaign = TaskType(
             "EmailCampaign",
             "Writing",
+            EmailCampaignTask::class.java,
             EmailCampaignTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate complete email sequences for marketing, sales, or outreach",
@@ -1190,8 +1120,7 @@ Provide the complete revised email body only.
                 <li>Provides implementation notes and best practices</li>
                 <li>Ideal for marketing automation, sales outreach, and customer engagement</li>
               </ul>
-            """
+            """,
         )
     }
 }
-

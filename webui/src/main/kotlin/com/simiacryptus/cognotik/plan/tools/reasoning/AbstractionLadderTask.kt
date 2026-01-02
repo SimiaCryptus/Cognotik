@@ -140,12 +140,13 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         val tabbedDisplay = TabbedDisplay(task)
 
         // Overview tab with input context
-        val overviewTask = task.ui.newTask(false).apply {
+        val overviewTask = task.newTask().apply {
             tabbedDisplay["Overview"] = placeholder
+            header("Abstraction Ladder Analysis: $concept", 2)
             add(
                 MarkdownUtil.renderMarkdown(
                     """
-          ## Abstraction Ladder Analysis: `$concept`
+          
           
           **Direction:** $direction | **Levels:** $levels | **Pattern Analysis:** ${if (identifyPatterns) "Enabled" else "Disabled"}
           
@@ -166,7 +167,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         try {
             if (direction == "up" || direction == "both") {
                 log.info("Performing upward abstraction analysis")
-                val upwardTab = task.ui.newTask(false)
+                val upwardTab = task.newTask()
                 tabbedDisplay["Upward Analysis"] = upwardTab.placeholder
                 val upwardAnalysis = analyzeUpward(
                     concept = concept,
@@ -183,13 +184,13 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
                 detailedOutputFile?.write("\n## Upward Abstraction (Generalizations)\n\n".toByteArray())
                 detailedOutputFile?.write(upwardAnalysis.toByteArray())
                 result.append("\n\n")
-                upwardTab.add(MarkdownUtil.renderMarkdown("✅ Upward analysis complete", ui = task.ui))
+                upwardTab.add("✅ Upward analysis complete", additionalClasses = "text-success")
                 upwardTab.complete()
             }
 
             if (direction == "down" || direction == "both") {
                 log.info("Performing downward concretization analysis")
-                val downwardTab = task.ui.newTask(false)
+                val downwardTab = task.newTask()
                 tabbedDisplay["Downward Analysis"] = downwardTab.placeholder
                 val downwardAnalysis = analyzeDownward(
                     concept = concept,
@@ -206,13 +207,13 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
                 detailedOutputFile?.write("\n\n## Downward Concretization (Specific Implementations)\n\n".toByteArray())
                 detailedOutputFile?.write(downwardAnalysis.toByteArray())
                 result.append("\n\n")
-                downwardTab.add(MarkdownUtil.renderMarkdown("✅ Downward analysis complete", ui = task.ui))
+                downwardTab.add("✅ Downward analysis complete", additionalClasses = "text-success")
                 downwardTab.complete()
             }
 
             if (identifyPatterns) {
                 log.info("Generating pattern summary and recommendations")
-                val patternTab = task.ui.newTask(false)
+                val patternTab = task.newTask()
                 tabbedDisplay["Pattern Analysis"] = patternTab.placeholder
                 val patternSummary = generatePatternSummary(
                     concept = concept,
@@ -225,18 +226,18 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
                 result.append(patternSummary)
                 detailedOutputFile?.write("\n\n## Pattern Analysis & Recommendations\n\n".toByteArray())
                 detailedOutputFile?.write(patternSummary.toByteArray())
-                patternTab.add(MarkdownUtil.renderMarkdown("✅ Pattern analysis complete", ui = task.ui))
+                patternTab.add("✅ Pattern analysis complete", additionalClasses = "text-success")
                 patternTab.complete()
             }
 
             // Update overview with completion status
+            overviewTask.append("<hr/>")
+            overviewTask.header("✅ Analysis Complete", 2)
             overviewTask.add(
                 MarkdownUtil.renderMarkdown(
                     """
           
-          ---
           
-          ## ✅ Analysis Complete
           
           **Total Levels Analyzed:** $levels  
           **Directions Covered:** $direction  
@@ -246,6 +247,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
           """.trimIndent(), ui = task.ui
                 )
             )
+            overviewTask.complete()
 
             val duration = System.currentTimeMillis() - startTime
             log.info("Abstraction Ladder Analysis completed successfully - Concept: ${concept.truncateForDisplay(100)}, Levels: $levels")
@@ -341,7 +343,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
       """.trimIndent(),
             model = api,
         )
-        task.add(MarkdownUtil.renderMarkdown("Analyzing upward abstractions...", ui = task.ui))
+        task.add("Analyzing upward abstractions...", additionalClasses = "text-info")
 
         return chatAgent.answer(listOf(prompt)).apply {
             task.add(this.renderMarkdown)
@@ -405,7 +407,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
       """.trimIndent(),
             model = api,
         )
-        task.add(MarkdownUtil.renderMarkdown("Analyzing downward concretizations...", ui = task.ui))
+        task.add("Analyzing downward concretizations...", additionalClasses = "text-info")
 
         return chatAgent.answer(listOf(prompt)).apply {
             task.add(this.renderMarkdown)
@@ -449,7 +451,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
       """.trimIndent(),
             model = api,
         )
-        task.add(MarkdownUtil.renderMarkdown("Generating pattern summary and recommendations...", ui = task.ui))
+        task.add("Generating pattern summary and recommendations...", additionalClasses = "text-info")
         return chatAgent.answer(listOf(prompt)).apply {
             task.add(this.renderMarkdown)
         }
@@ -514,6 +516,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
         val AbstractionLadder = TaskType(
             "AbstractionLadder",
             "Reasoning",
+            AbstractionLadderTask::class.java,
             AbstractionLadderTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Traverse abstraction levels to identify patterns and design insights",
@@ -528,7 +531,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
                 <li>Find code smells and anti-patterns</li>
                 <li>Generate actionable recommendations</li>
               </ul>
-            """
+            """,
         )
     }
 }

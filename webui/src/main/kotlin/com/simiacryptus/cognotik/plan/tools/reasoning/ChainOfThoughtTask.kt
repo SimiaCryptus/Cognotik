@@ -125,10 +125,9 @@ class ChainOfThoughtTask(
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
-        var overviewContent = buildString {
+        val overviewContent = buildString {
             appendLine("# Chain of Thought Reasoning")
             appendLine()
             appendLine("**Problem Statement:** $problemStatement")
@@ -137,32 +136,35 @@ class ChainOfThoughtTask(
             appendLine()
             appendLine("**Validate Steps:** ${if (validateSteps) "Yes" else "No"}")
             appendLine()
-        }
-        if (inputFileContent.isNotBlank()) {
-            overviewContent += "\n## Input Files\n\n$inputFileContent\n\n"
+            if (inputFileContent.isNotBlank()) {
+                appendLine("## Input Files")
+                appendLine()
+                appendLine(inputFileContent)
+                appendLine()
+            }
         }
 
-        // Write to transcript
         transcript?.write(overviewContent.toByteArray())
         transcript?.flush()
+
+        overviewTask.header("Chain of Thought Reasoning")
+        overviewTask.add("<b>Problem Statement:</b> $problemStatement")
+        overviewTask.add("<b>Max Steps:</b> $maxSteps")
+        overviewTask.add("<b>Validate Steps:</b> ${if (validateSteps) "Yes" else "No"}")
+
+        if (inputFileContent.isNotBlank()) {
+            overviewTask.expandable("Input Files", MarkdownUtil.renderMarkdown(inputFileContent, ui = ui))
+        }
+
         overviewTask.add(
-            MarkdownUtil.renderMarkdown(
-                overviewContent + buildString {
-                    appendLine()
-                    appendLine(
-                        "**Started:** ${
-                            java.time.LocalDateTime.now()
-                                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        }"
-                    )
-                    appendLine()
-                    appendLine("---")
-                    appendLine()
-                    appendLine("## Progress")
-                    appendLine()
-                    appendLine("*Initializing reasoning process...*")
-                })
+            "<b>Started:</b> ${
+                java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            }"
         )
+        overviewTask.append("<hr/>")
+        overviewTask.header("Progress", level = 2)
+        overviewTask.add("<i>Initializing reasoning process...</i>")
         task.update()
 
         val priorContext = getPriorCode(agent.executionState)
@@ -176,25 +178,15 @@ class ChainOfThoughtTask(
         }
 
         if (priorContext.isNotBlank() || contextFiles.isNotBlank()) {
-            val contextTask = task.ui.newTask(false)
-            tabs["Context"] = contextTask.placeholder
-            contextTask.add(
-                buildString {
-                    appendLine("# Context")
-                    appendLine()
-                    if (priorContext.isNotBlank()) {
-                        appendLine("## Previous Tasks")
-                        appendLine()
-                        appendLine(priorContext)
-                        appendLine()
-                    }
-                    if (contextFiles.isNotBlank()) {
-                        appendLine("## Related Files")
-                        appendLine()
-                        appendLine(contextFiles)
-                    }
-                }.let { MarkdownUtil.renderMarkdown(it, ui = ui) }
-            )
+            val contextTask = tabs.newTask("Context")
+            contextTask.header("Context")
+            if (priorContext.isNotBlank()) {
+                contextTask.expandable("Previous Tasks", MarkdownUtil.renderMarkdown(priorContext, ui = ui))
+            }
+            if (contextFiles.isNotBlank()) {
+                contextTask.expandable("Related Files", MarkdownUtil.renderMarkdown(contextFiles, ui = ui))
+            }
+
             // Write context to transcript
             transcript?.write("\n\n# Context\n\n".toByteArray())
             if (priorContext.isNotBlank()) transcript?.write("## Previous Tasks\n\n$priorContext\n\n".toByteArray())
@@ -204,17 +196,7 @@ class ChainOfThoughtTask(
         }
 
         // Update overview with initialization complete
-        overviewTask.add(
-            MarkdownUtil.renderMarkdown(
-                buildString {
-                    appendLine()
-                    appendLine("✅ Initialization complete")
-                    appendLine()
-                    appendLine("*Starting reasoning steps...*")
-                },
-                ui = ui
-            )
-        )
+        overviewTask.add("✅ Initialization complete<br/><i>Starting reasoning steps...</i>")
         task.update()
 
         val reasoningChain = mutableListOf<ReasoningStep>()
@@ -227,23 +209,11 @@ class ChainOfThoughtTask(
                 val stepStartTime = System.currentTimeMillis()
                 log.info("Starting reasoning step $stepNumber of $maxSteps")
 
-                val stepTask = ui.newTask(false)
-                tabs["Step $stepNumber"] = stepTask.placeholder
-                stepTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        buildString {
-                            appendLine("# Step $stepNumber of $maxSteps")
-                            appendLine()
-                            appendLine("**Status:** Processing...")
-                            appendLine()
-                            appendLine("**Question:** $currentQuestion")
-                            appendLine()
-                            appendLine("---")
-                            appendLine()
-                        },
-                        ui = ui
-                    )
-                )
+                val stepTask = tabs.newTask("Step $stepNumber")
+                stepTask.header("Step $stepNumber of $maxSteps")
+                stepTask.add("<b>Status:</b> Processing...")
+                stepTask.add("<b>Question:</b> $currentQuestion")
+                stepTask.append("<hr/>")
                 task.update()
                 // Write step header to transcript
                 transcript?.write("\n\n# Step $stepNumber of $maxSteps\n\n".toByteArray())
@@ -263,15 +233,7 @@ class ChainOfThoughtTask(
                 log.debug("Generated reasoning step $stepNumber: confidence=${step.confidence}")
 
                 if (validateSteps) {
-                    stepTask.add(
-                        MarkdownUtil.renderMarkdown(
-                            buildString {
-                                appendLine("*Validating step...*")
-                                appendLine()
-                            },
-                            ui = ui
-                        )
-                    )
+                    stepTask.add("<i>Validating step...</i>")
                     task.update()
 
                     val validation = validateStep(stepTask, step, reasoningChain, api)
@@ -280,19 +242,14 @@ class ChainOfThoughtTask(
                     if (!validation.is_valid) {
                         log.warn("Step $stepNumber failed validation, attempting to regenerate")
                         stepTask.add(
-                            MarkdownUtil.renderMarkdown(
-                                """
-                                |### ⚠️ Validation Failed
-                                |
-                                |**Issues**:
-                                |${validation.issues?.joinToString("\n") { "- $it" } ?: "Unknown issues"}
-                                |
-                                |**Suggestions**: ${validation.suggestions ?: "None"}
-                                |
-                                |*Regenerating step with feedback...*
-                                """.trimMargin(),
-                                ui = ui
-                            )
+                            """
+                            <b>⚠️ Validation Failed</b><br/>
+                            <b>Issues:</b>
+                            <ul>${validation.issues?.joinToString("") { "<li>$it</li>" } ?: "<li>Unknown issues</li>"}</ul>
+                            <b>Suggestions:</b> ${validation.suggestions ?: "None"}<br/>
+                            <i>Regenerating step with feedback...</i>
+                            """.trimIndent(),
+                            additionalClasses = "alert alert-warning"
                         )
                         // Write validation failure to transcript
                         transcript?.write("### ⚠️ Validation Failed\n\n".toByteArray())
@@ -340,37 +297,22 @@ class ChainOfThoughtTask(
                 }
                 transcript?.flush()
                 // Mark step as complete
+                stepTask.append("<hr/>")
                 stepTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        buildString {
-                            appendLine("---")
-                            appendLine()
-                            appendLine("**Status:** ✅ Complete")
-                            appendLine()
-                            appendLine("**Processing Time:** ${stepTime / 1000.0}s")
-                        },
-                        ui = ui
-                    )
+                    "<b>Status:</b> ✅ Complete<br/><b>Processing Time:</b> ${stepTime / 1000.0}s",
+                    additionalClasses = "alert alert-success"
                 )
                 stepTask.complete()
                 task.update()
                 // Update overview with progress
-                overviewTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        buildString {
-                            appendLine()
-                            appendLine("✅ Step $stepNumber complete (${stepTime / 1000.0}s)")
-                            if (lastStep.next_question.isNullOrBlank() || lastStep.confidence >= 0.9) {
-                                appendLine()
-                                appendLine("*Reasoning complete, generating summary...*")
-                            } else if (stepNumber < maxSteps) {
-                                appendLine()
-                                appendLine("*Processing step ${stepNumber + 1}...*")
-                            }
-                        },
-                        ui = ui
-                    )
-                )
+                val nextAction = if (lastStep.next_question.isNullOrBlank() || lastStep.confidence >= 0.9) {
+                    "<i>Reasoning complete, generating summary...</i>"
+                } else if (stepNumber < maxSteps) {
+                    "<i>Processing step ${stepNumber + 1}...</i>"
+                } else {
+                    ""
+                }
+                overviewTask.add("✅ Step $stepNumber complete (${stepTime / 1000.0}s)<br/>$nextAction")
                 task.update()
                 log.info("Step $stepNumber completed in ${stepTime}ms")
 
@@ -399,39 +341,20 @@ class ChainOfThoughtTask(
 
             // Generate final summary
             log.info("Generating summary of reasoning chain")
-            val summaryTask = task.ui.newTask(false)
-            tabs["Summary"] = summaryTask.placeholder
+            val summaryTask = tabs.newTask("Summary")
 
-            summaryTask.add(
-                MarkdownUtil.renderMarkdown(
-                    buildString {
-                        appendLine("# Summary")
-                        appendLine()
-                        appendLine("**Status:** Generating comprehensive summary...")
-                        appendLine()
-                    },
-                    ui = ui
-                )
-            )
+            summaryTask.header("Summary")
+            summaryTask.add("<b>Status:</b> Generating comprehensive summary...")
             task.update()
 
             val summary = generateSummary(summaryTask, reasoningChain, problemStatement, api)
             log.debug("Summary generated: ${summary.length} characters")
 
-            summaryTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
-                    |## Final Summary
-                    |
-                    |$summary
-                    |
-                    |---
-                    |
-                    |**Status:** ✅ Complete
-                    """.trimMargin(),
-                    ui = ui
-                )
-            )
+            summaryTask.header("Final Summary", level = 2)
+            summaryTask.add(MarkdownUtil.renderMarkdown(summary, ui = ui))
+            summaryTask.append("<hr/>")
+            summaryTask.add("<b>Status:</b> ✅ Complete", additionalClasses = "alert alert-success")
+
             // Write summary to transcript
             transcript?.write("\n\n# Final Summary\n\n$summary\n\n".toByteArray())
             transcript?.flush()
@@ -444,38 +367,24 @@ class ChainOfThoughtTask(
             log.info("ChainOfThoughtTask completed: total_time=${totalTime}ms, steps=${reasoningChain.size}, avg_step_time=${avgStepTime}ms, output_size=${finalResult.length} chars")
 
             // Update overview with completion stats
+            overviewTask.append("<hr/>")
+            overviewTask.header("✅ Reasoning Complete", level = 2)
             overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    buildString {
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("## ✅ Reasoning Complete")
-                        appendLine()
-                        appendLine("**Total Time:** ${totalTime / 1000.0}s")
-                        appendLine()
-                        appendLine("**Steps Completed:** ${reasoningChain.size}")
-                        appendLine()
-                        appendLine("**Average Step Time:** ${avgStepTime / 1000.0}s")
-                        appendLine()
-                        appendLine(
-                            "**Final Confidence:** ${
-                                String.format(
-                                    "%.1f%%",
-                                    reasoningChain.lastOrNull()?.confidence?.times(100) ?: 0.0
-                                )
-                            }"
-                        )
-                        appendLine()
-                        appendLine(
-                            "**Completed:** ${
-                                java.time.LocalDateTime.now()
-                                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                            }"
-                        )
-                    },
-                    ui = ui
-                )
+                """
+                <b>Total Time:</b> ${totalTime / 1000.0}s<br/>
+                <b>Steps Completed:</b> ${reasoningChain.size}<br/>
+                <b>Average Step Time:</b> ${avgStepTime / 1000.0}s<br/>
+                <b>Final Confidence:</b> ${
+                    String.format(
+                        "%.1f%%",
+                        reasoningChain.lastOrNull()?.confidence?.times(100) ?: 0.0
+                    )
+                }<br/>
+                <b>Completed:</b> ${
+                    java.time.LocalDateTime.now()
+                        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                }
+            """.trimIndent()
             )
             task.update()
             transcript?.close()
@@ -489,22 +398,14 @@ class ChainOfThoughtTask(
             task.error(e)
 
             // Update overview with error
+            overviewTask.append("<hr/>")
+            overviewTask.header("❌ Error Occurred", level = 2)
             overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    buildString {
-                        appendLine()
-                        appendLine("---")
-                        appendLine()
-                        appendLine("## ❌ Error Occurred")
-                        appendLine()
-                        appendLine("**Error:** ${e.message}")
-                        appendLine()
-                        appendLine("**Type:** ${e.javaClass.simpleName}")
-                        appendLine()
-                        appendLine("**Steps Completed:** ${reasoningChain.size} of $maxSteps")
-                    },
-                    ui = ui
-                )
+                """
+                <b>Error:</b> ${e.message}<br/>
+                <b>Type:</b> ${e.javaClass.simpleName}<br/>
+                <b>Steps Completed:</b> ${reasoningChain.size} of $maxSteps
+            """.trimIndent(), additionalClasses = "alert alert-danger"
             )
             task.update()
 
@@ -765,6 +666,7 @@ class ChainOfThoughtTask(
         val ChainOfThought = TaskType(
             "ChainOfThought",
             "Reasoning",
+            ChainOfThoughtTask::class.java,
             ChainOfThoughtTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Break down complex problems into explicit reasoning steps",
@@ -777,7 +679,7 @@ class ChainOfThoughtTask(
                 <li>Can backtrack if validation fails</li>
                 <li>Generates comprehensive reasoning chains</li>
               </ul>
-            """
+            """,
         )
     }
 }

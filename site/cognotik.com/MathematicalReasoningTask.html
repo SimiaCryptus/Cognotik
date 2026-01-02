@@ -883,8 +883,8 @@
                     <p>Assist in validating mathematical hypotheses by exploring logical consequences of axioms.</p>
                 </div>
                 <div class="use-case-item">
-                    <h3><i data-lucide="code-2"></i> Algorithm Verification</h3>
-                    <p>Formally prove the correctness of mathematical logic used within software algorithms.</p>
+                    <h3><i data-lucide="calculator"></i> Complex Simplification</h3>
+                    <p>Simplify intricate algebraic expressions or geometric proofs by breaking them down into atomic, verifiable transformations.</p>
                 </div>
             </div>
         </section>
@@ -1056,7 +1056,9 @@
             await delay(800);
             addLog(`Goal identified: ${config.goal}`);
             await delay(600);
-            addLog(`Initializing search (Max Depth: ${config.depth})...`, 'dim');
+            addLog(`Analyzing initial state (S0)...`, 'dim');
+            await delay(400);
+            addLog(`Initializing path search (Max Depth: ${config.depth}, Alternatives: ${config.alternatives})...`, 'dim');
         
             // Simulate path exploration
             for (let i = 1; i <= Math.min(3, config.alternatives); i++) {
@@ -1064,15 +1066,19 @@
                 addLog(`Exploring Path ${i}...`);
                 await delay(300);
                 if (i < 2) {
-                    addLog(`Path ${i} hit dead end. Backtracking.`, 'warn');
+                    addLog(`Path ${i} verification failed at step S2. Backtracking.`, 'warn');
                 } else {
-                    addLog(`Path ${i} looks promising. Verifying steps...`);
+                    addLog(`Path ${i} steps generated. Verifying atomic steps...`);
+                    await delay(300);
+                    addLog(`Step S1 verified (Confidence: 100%)`);
+                    await delay(200);
+                    addLog(`Step S2 verified (Confidence: 98%)`);
+                    await delay(200);
+                    addLog(`Goal check: Reached.`, 'info');
                 }
             }
         
             await delay(800);
-            addLog(`Validating atomic steps...`);
-            await delay(400);
             addLog(`Generating formal proof (Detail: ${config.detail})...`);
             await delay(200);
             addLog(`Success. Solution found.`, 'info');
@@ -1115,25 +1121,25 @@
             // Mock content generation based on domain
             if (config.domain === 'calculus') {
                 steps = [
-                    { id: 'S0', type: 'Initial', text: 'Define the integral.', latex: '\\int x^2 dx' },
-                    { id: 'S1', type: 'Rule Application', text: 'Apply the power rule for integration.', latex: '\\int x^n dx = \\frac{x^{n+1}}{n+1} + C' },
-                    { id: 'S2', type: 'Substitution', text: 'Substitute n = 2.', latex: '\\frac{x^{2+1}}{2+1} + C' },
-                    { id: 'S3', type: 'Simplification', text: 'Simplify the fraction.', latex: '\\frac{x^3}{3} + C' }
+                    { id: 'S0', type: 'Initial', text: 'Define the integral.', latex: '\\int x^2 dx', justification: 'Given problem statement', confidence: 100 },
+                    { id: 'S1', type: 'Rule Application', text: 'Apply the power rule for integration.', latex: '\\int x^n dx = \\frac{x^{n+1}}{n+1} + C', justification: 'Power Rule of Integration', confidence: 100 },
+                    { id: 'S2', type: 'Substitution', text: 'Substitute n = 2.', latex: '\\frac{x^{2+1}}{2+1} + C', justification: 'Substitution', confidence: 100 },
+                    { id: 'S3', type: 'Simplification', text: 'Simplify the fraction.', latex: '\\frac{x^3}{3} + C', justification: 'Arithmetic simplification', confidence: 100 }
                 ];
             } else if (config.domain === 'algebra') {
                 steps = [
-                    { id: 'S0', type: 'Initial', text: 'State the equation.', latex: '2x + 5 = 15' },
-                    { id: 'S1', type: 'Operation', text: 'Subtract 5 from both sides.', latex: '2x = 10' },
-                    { id: 'S2', type: 'Operation', text: 'Divide by 2.', latex: 'x = 5' },
-                    { id: 'S3', type: 'Verification', text: 'Substitute back to verify.', latex: '2(5) + 5 = 15 \\implies 15 = 15' }
+                    { id: 'S0', type: 'Initial', text: 'State the equation.', latex: '2x + 5 = 15', justification: 'Given problem statement', confidence: 100 },
+                    { id: 'S1', type: 'Operation', text: 'Subtract 5 from both sides.', latex: '2x = 10', justification: 'Subtraction Property of Equality', confidence: 100 },
+                    { id: 'S2', type: 'Operation', text: 'Divide by 2.', latex: 'x = 5', justification: 'Division Property of Equality', confidence: 100 },
+                    { id: 'S3', type: 'Verification', text: 'Substitute back to verify.', latex: '2(5) + 5 = 15 \\implies 15 = 15', justification: 'Substitution check', confidence: 100 }
                 ];
             } else {
                 // General/Logic fallback
                 steps = [
-                    { id: 'S0', type: 'Assumption', text: 'Assume the negation of the conclusion.', latex: '\\neg P' },
-                    { id: 'S1', type: 'Inference', text: 'Derive implication from given axioms.', latex: '\\neg P \\implies Q' },
-                    { id: 'S2', type: 'Contradiction', text: 'Show that Q contradicts known fact R.', latex: 'Q \\land \\neg Q' },
-                    { id: 'S3', type: 'Conclusion', text: 'Therefore, the original premise must be true.', latex: '\\therefore P' }
+                    { id: 'S0', type: 'Assumption', text: 'Assume the negation of the conclusion.', latex: '\\neg P', justification: 'Proof by Contradiction strategy', confidence: 100 },
+                    { id: 'S1', type: 'Inference', text: 'Derive implication from given axioms.', latex: '\\neg P \\implies Q', justification: 'Modus Ponens', confidence: 95 },
+                    { id: 'S2', type: 'Contradiction', text: 'Show that Q contradicts known fact R.', latex: 'Q \\land \\neg Q', justification: 'Logical Contradiction', confidence: 100 },
+                    { id: 'S3', type: 'Conclusion', text: 'Therefore, the original premise must be true.', latex: '\\therefore P', justification: 'Reductio ad absurdum', confidence: 100 }
                 ];
             }
         
@@ -1144,10 +1150,12 @@
                         <div class="step-header">
                             <span class="step-id">${step.id}</span>
                             <span class="step-type">${step.type}</span>
+                            <span style="margin-left: auto; font-size: 0.8rem; color: var(--text-muted);">Conf: ${step.confidence}%</span>
                         </div>
                         <div class="step-content">
                             <p>${step.text}</p>
                             <div class="math-block">$$${step.latex}$$</div>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;"><em>Justification: ${step.justification}</em></p>
                         </div>
                     </div>
                 `;
@@ -1165,22 +1173,30 @@
             // Simple mock proof text
             const proofContent = `
                 <h3>Formal Proof</h3>
-                <p><strong>Theorem:</strong> The derived solution satisfies the given constraints.</p>
+                <p><strong>Problem Statement:</strong> ${config.problem}</p>
+                <p><strong>Goal:</strong> ${config.goal}</p>
                 <hr style="border-color: var(--bg-input); margin: 1rem 0;">
         
                 <p><strong>Proof:</strong></p>
-                <p>Let $S$ be the set of statements defined in the problem.</p>
         
-                <p>1. We begin with the initial state:</p>
+                <p><strong>Given:</strong></p>
+                <p>We begin with the initial state defined by the problem constraints.</p>
                 <p>$$ \\text{State}_0 = \\{ \\text{Given Information} \\} $$</p>
         
-                <p>2. Applying the transformation $T$ defined by the domain axioms:</p>
+                <p><strong>Step 1 (Transformation):</strong></p>
+                <p>Applying the transformation $T$ defined by the domain axioms:</p>
                 <p>$$ T(\\text{State}_0) \\implies \\text{Intermediate Result} $$</p>
+                <p><em>Justification: Application of domain rules.</em></p>
         
-                <p>3. Through rigorous verification of atomic steps, we arrive at:</p>
+                <p><strong>Step 2 (Verification):</strong></p>
+                <p>Through rigorous verification of atomic steps, we arrive at:</p>
                 <p>$$ \\text{Final Result} \\equiv \\text{Goal} $$</p>
         
-                <p style="text-align: right; margin-top: 2rem;"><strong>Q.E.D.</strong> $\\blacksquare$</p>
+                <hr style="border-color: var(--bg-input); margin: 1rem 0;">
+                <h3>Conclusion</h3>
+                <p>$$ \\text{Result} $$</p>
+                <p><strong>Q.E.D.</strong> &#8718;</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 1rem;"><em>Proof completed in 3 steps with 98.5% confidence.</em></p>
             `;
         
             container.innerHTML = proofContent;

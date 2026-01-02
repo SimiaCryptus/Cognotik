@@ -1,6 +1,5 @@
 package com.simiacryptus.diff
 
-import com.simiacryptus.cognotik.diff.FuzzyPatchMatcher
 import com.simiacryptus.cognotik.diff.ThermodynamicPatchMatcher
 import com.simiacryptus.diff.PatchTestCase.Companion.test
 import org.junit.jupiter.params.ParameterizedTest

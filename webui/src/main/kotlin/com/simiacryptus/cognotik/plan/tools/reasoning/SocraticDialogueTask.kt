@@ -6,7 +6,10 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.FileSelectionUtils
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.FileOutputStream
@@ -143,18 +146,8 @@ class SocraticDialogueTask(
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
         // Overview tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
+        val overviewTask = tabs.newTask("Overview")
 
-        MarkdownUtil.renderMarkdown(
-            """
-                |
-                |
-                |
-                |
-                """.trimMargin(),
-            ui = ui
-        )
         val overviewContent = buildString {
             appendLine("# Socratic Dialogue: Exploring the Question")
             appendLine()
@@ -175,7 +168,6 @@ class SocraticDialogueTask(
             appendLine("*Initializing dialogue agents...*")
         }
         overviewTask.add(overviewContent.renderMarkdown)
-        task.update()
 
         val priorContext = getPriorCode(agent.executionState)
         if (priorContext.isNotBlank()) {
@@ -258,8 +250,7 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                 flush()
             }
             // Add context tab
-            val contextTask = task.ui.newTask(false)
-            tabs["Context"] = contextTask.placeholder
+            val contextTask = tabs.newTask("Context")
             contextTask.add(
                 buildString {
                     appendLine("# Context from Previous Tasks")
@@ -267,7 +258,6 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                     appendLine(combinedContext)
                 }.renderMarkdown
             )
-            task.update()
         }
         // Update overview with agent initialization complete
         overviewTask.add(
@@ -278,7 +268,6 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                 appendLine("*Starting dialogue exchanges...*")
             }.renderMarkdown
         )
-        task.update()
 
         var currentQuestion = initialQuestion ?: ""
         var currentResponse = ""
@@ -290,8 +279,7 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                 log.info("Starting exchange $depth of $maxDepth")
 
                 // Create tab for this exchange
-                val exchangeTask = task.ui.newTask(false)
-                tabs["Exchange $depth"] = exchangeTask.placeholder
+                val exchangeTask = tabs.newTask("Exchange $depth")
 
                 exchangeTask.add(
                     buildString {
@@ -303,7 +291,6 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
 
                 // Get response to current question
                 val responsePrompt = if (depth == 1) {
@@ -322,7 +309,6 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
 
                 currentResponse = responderAgent.answer(listOf(responsePrompt))
                 if (currentResponse.isEmpty()) currentResponse = "No response generated"
@@ -347,12 +333,6 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                     dialogueBuilder.append("**A:** ${currentResponse.truncateForDisplay(maxDescriptionLength)}\n\n")
                 }
 
-                MarkdownUtil.renderMarkdown(
-                    """
-                        |
-                        """.trimMargin(),
-                    ui = ui
-                )
                 exchangeTask.add(
                     buildString {
                         appendLine("## Response")
@@ -361,7 +341,6 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                         appendLine()
                     }.renderMarkdown
                 )
-                task.update()
 
                 // Generate next question if not at max depth
                 if (depth < maxDepth) {
@@ -372,7 +351,6 @@ Provide substantive, well-reasoned responses that advance the dialogue.
                             appendLine()
                         }.renderMarkdown
                     )
-                    task.update()
 
                     val nextQuestionPrompt = """
 Previous question: $currentQuestion
@@ -405,7 +383,6 @@ Provide only the question, without preamble.
                         flush()
                     }
 
-                    task.update()
                 }
                 val exchangeTime = System.currentTimeMillis() - exchangeStartTime
                 exchangeTimes.add(exchangeTime)
@@ -419,7 +396,6 @@ Provide only the question, without preamble.
                         appendLine("**Processing Time:** ${exchangeTime / 1000.0}s")
                     }.renderMarkdown
                 )
-                task.update()
                 // Update overview with progress
                 overviewTask.add(
                     buildString {
@@ -431,13 +407,11 @@ Provide only the question, without preamble.
                         }
                     }.renderMarkdown
                 )
-                task.update()
                 log.info("Exchange $depth completed in ${exchangeTime}ms")
             }
 
             log.info("Generating synthesis of dialogue")
-            val synthesisTask = task.ui.newTask(false)
-            tabs["Synthesis"] = synthesisTask.placeholder
+            val synthesisTask = tabs.newTask("Synthesis")
 
             synthesisTask.add(
                 buildString {
@@ -447,7 +421,6 @@ Provide only the question, without preamble.
                     appendLine()
                 }.renderMarkdown
             )
-            task.update()
 
             val synthesisPrompt = """
 Review this Socratic dialogue and provide a synthesis that:
@@ -484,12 +457,6 @@ Provide a structured synthesis.
             dialogueBuilder.append("**Domain:** $domainConstraints | ")
             dialogueBuilder.append("**Time:** ${(System.currentTimeMillis() - startTime) / 1000}s\n")
 
-            MarkdownUtil.renderMarkdown(
-                """
-                    |
-                    """.trimMargin(),
-                ui = ui
-            )
             synthesisTask.add(
                 buildString {
                     appendLine("## Key Insights")
@@ -501,7 +468,6 @@ Provide a structured synthesis.
                     appendLine("**Status:** ✅ Complete")
                 }.renderMarkdown
             )
-            task.update()
 
             val finalResult = dialogueBuilder.toString()
             val fullDialogue = fullDialogueBuilder.toString()
@@ -521,13 +487,6 @@ Provide a structured synthesis.
             }
 
 
-            MarkdownUtil.renderMarkdown(
-                """
-                    |
-                    |
-                    """.trimMargin(),
-                ui = ui
-            )
             // Update overview with completion stats
             overviewTask.add(
                 buildString {
@@ -551,7 +510,6 @@ Provide a structured synthesis.
                     )
                 }.renderMarkdown
             )
-            task.update()
 
             task.complete("Completed $maxDepth exchanges in ${totalTime / 1000}s. Concise analysis: ${finalResult.length} chars.")
 
@@ -596,7 +554,6 @@ Provide a structured synthesis.
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            task.update()
 
             val errorOutput = buildString {
                 appendLine("# Error in Socratic Dialogue")
@@ -618,10 +575,11 @@ Provide a structured synthesis.
     }
 
     private fun createTranscriptFile(task: SessionTask): Pair<String, FileOutputStream?> {
-        val transcriptFile = this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val transcriptFile =
+            this.javaClass.simpleName + "_full_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
         val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.complete(
+        task.add(
             "Writing transcript to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
                 link.removeSuffix(".md")
             }.pdf' target='_blank'>pdf</a>"
@@ -653,6 +611,7 @@ Provide a structured synthesis.
         val SocraticDialogue = TaskType(
             "SocraticDialogue",
             "Reasoning",
+            SocraticDialogueTask::class.java,
             SocraticDialogueTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Explore ideas through Socratic questioning",
@@ -666,7 +625,7 @@ Provide a structured synthesis.
                 <li>Configurable dialogue depth and constraints</li>
                 <li>Generates synthesis of insights discovered</li>
               </ul>
-            """
+            """,
         )
     }
 }

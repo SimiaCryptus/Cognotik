@@ -28,10 +28,6 @@
         color: var(--theme-primary);
     }
 
-    .tab-button:hover {
-        background: var(--theme-surface);
-    }
-
     .cmd-button {
         background-color: var(--success-color);
     }

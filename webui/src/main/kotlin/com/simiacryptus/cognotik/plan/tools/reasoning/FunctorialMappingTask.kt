@@ -3,13 +3,13 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
-import com.simiacryptus.cognotik.plan.tools.safeComplete
-import com.simiacryptus.cognotik.util.*
+import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.newLogStream
 import org.slf4j.Logger
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
 class FunctorialMappingTask(
     orchestrationConfig: OrchestrationConfig,
@@ -24,6 +24,7 @@ class FunctorialMappingTask(
         val FunctorialMapping = TaskType(
             name = "FunctorialMapping",
             category = "Reasoning",
+            taskClass = FunctorialMappingTask::class.java,
             executionConfigClass = FunctorialMappingTaskExecutionConfigData::class.java,
             taskSettingsClass = TaskTypeConfig::class.java,
             description = "Translate problems from one category to another to solve them using different tools",
@@ -37,7 +38,7 @@ class FunctorialMappingTask(
                             <li>Solve the problem in the target category</li>
                             <li>Inverse transport the solution back to the source</li>
                           </ul>
-                        """
+                        """,
         )
     }
 
@@ -96,7 +97,7 @@ FunctorialMapping - Translate problems from one category to another
 
         executionConfig?.validate()?.let { errorMessage ->
             log.error("Configuration validation failed: $errorMessage")
-            task.safeComplete("VALIDATION ERROR: $errorMessage", log)
+            task.error(RuntimeException("VALIDATION ERROR: $errorMessage"))
             resultFn("VALIDATION ERROR: $errorMessage")
             return
         }
@@ -108,27 +109,27 @@ FunctorialMapping - Translate problems from one category to another
 
         val api = defaultSmart
         val tabs = TabbedDisplay(task)
-        val transcript = transcript(task)
+        val transcript = task.newLogStream("Functorial Mapping Transcript")
 
         // Overview Tab
-        val overviewTask = task.ui.newTask(false)
-        tabs["Overview"] = overviewTask.placeholder
-        overviewTask.add(MarkdownUtil.renderMarkdown("""
-            # Functorial Mapping Task
-            
-            **Problem:** $problem
-            **Source Category:** $sourceDef
-            **Target Category:** $targetDef
-            **Properties:** $properties
-        """.trimIndent(), ui = overviewTask.ui))
-        overviewTask.safeComplete("Initialized", log)
+        val overviewTask = tabs.newTask("Overview")
+
+        overviewTask.header("Functorial Mapping Task")
+        overviewTask.add(
+            """
+            <b>Problem:</b> $problem<br/>
+            <b>Source Category:</b> $sourceDef<br/>
+            <b>Target Category:</b> $targetDef<br/>
+            <b>Properties:</b> $properties
+        """.trimIndent()
+        )
+        overviewTask.complete()
 
         try {
             // Step 1: Category Definition
-            val step1Task = task.ui.newTask(false)
-            tabs["1. Categories"] = step1Task.placeholder
-            step1Task.add(MarkdownUtil.renderMarkdown("### Formalizing Categories...", ui = step1Task.ui))
-            
+            val step1Task = tabs.newTask("1. Categories")
+            step1Task.header("Formalizing Categories...", level = 3)
+
             val categoryPrompt = """
                 You are a Category Theory expert.
                 Formalize the following domains as Categories (Objects and Morphisms).
@@ -142,21 +143,20 @@ FunctorialMapping - Translate problems from one category to another
                 Output a structured description of the Objects and Morphisms for both categories.
                 Use mathematical notation where appropriate.
             """.trimIndent()
-            
+
             val categories = ChatAgent(
                 model = api,
                 temperature = 0.3,
                 prompt = "You are a Category Theory expert."
             ).answer(listOf(categoryPrompt))
             step1Task.add(MarkdownUtil.renderMarkdown(categories, ui = step1Task.ui))
-            step1Task.safeComplete("Categories Defined", log)
-            transcript?.write("\n## Categories\n\n$categories\n".toByteArray())
+            step1Task.complete()
+            transcript.write("\n## Categories\n\n$categories\n".toByteArray())
 
             // Step 2: Functor Construction
-            val step2Task = task.ui.newTask(false)
-            tabs["2. Functor"] = step2Task.placeholder
-            step2Task.add(MarkdownUtil.renderMarkdown("### Constructing Functor...", ui = step2Task.ui))
-            
+            val step2Task = tabs.newTask("2. Functor")
+            step2Task.header("Constructing Functor...", level = 3)
+
             val functorPrompt = """
                 You are a Category Theory expert.
                 Based on the category definitions:
@@ -170,21 +170,20 @@ FunctorialMapping - Translate problems from one category to another
                 2. Define how F maps Morphisms from Source to Target.
                 3. Explain why this mapping is a valid functor (preserves identity and composition).
             """.trimIndent()
-            
+
             val functor = ChatAgent(
                 model = api,
                 temperature = 0.4,
                 prompt = "You are a Category Theory expert."
             ).answer(listOf(functorPrompt))
             step2Task.add(MarkdownUtil.renderMarkdown(functor, ui = step2Task.ui))
-            step2Task.safeComplete("Functor Constructed", log)
-            transcript?.write("\n## Functor\n\n$functor\n".toByteArray())
+            step2Task.complete()
+            transcript.write("\n## Functor\n\n$functor\n".toByteArray())
 
             // Step 3: Problem Transport
-            val step3Task = task.ui.newTask(false)
-            tabs["3. Transport"] = step3Task.placeholder
-            step3Task.add(MarkdownUtil.renderMarkdown("### Transporting Problem...", ui = step3Task.ui))
-            
+            val step3Task = tabs.newTask("3. Transport")
+            step3Task.header("Transporting Problem...", level = 3)
+
             val transportPrompt = """
                 You are a Category Theory expert.
                 Using the Functor F defined as:
@@ -198,21 +197,20 @@ FunctorialMapping - Translate problems from one category to another
                 
                 Express the problem strictly in terms of the Target Category's objects and morphisms.
             """.trimIndent()
-            
+
             val transportedProblem = ChatAgent(
                 model = api,
                 temperature = 0.3,
                 prompt = "You are a Category Theory expert."
             ).answer(listOf(transportPrompt))
             step3Task.add(MarkdownUtil.renderMarkdown(transportedProblem, ui = step3Task.ui))
-            step3Task.safeComplete("Problem Transported", log)
-            transcript?.write("\n## Transported Problem\n\n$transportedProblem\n".toByteArray())
+            step3Task.complete()
+            transcript.write("\n## Transported Problem\n\n$transportedProblem\n".toByteArray())
 
             // Step 4: Remote Solution
-            val step4Task = task.ui.newTask(false)
-            tabs["4. Solution"] = step4Task.placeholder
-            step4Task.add(MarkdownUtil.renderMarkdown("### Solving in Target Category...", ui = step4Task.ui))
-            
+            val step4Task = tabs.newTask("4. Solution")
+            step4Task.header("Solving in Target Category...", level = 3)
+
             val solvePrompt = """
                 You are an expert in the Target Domain defined earlier.
                 Solve the following problem using tools and reasoning appropriate for this domain.
@@ -222,21 +220,20 @@ FunctorialMapping - Translate problems from one category to another
                 
                 Provide a detailed solution and the final result.
             """.trimIndent()
-            
+
             val targetSolution = ChatAgent(
                 model = api,
                 temperature = 0.5,
                 prompt = "You are an expert in the Target Domain."
             ).answer(listOf(solvePrompt))
             step4Task.add(MarkdownUtil.renderMarkdown(targetSolution, ui = step4Task.ui))
-            step4Task.safeComplete("Solved in Target", log)
-            transcript?.write("\n## Target Solution\n\n$targetSolution\n".toByteArray())
+            step4Task.complete()
+            transcript.write("\n## Target Solution\n\n$targetSolution\n".toByteArray())
 
             // Step 5: Inverse Transport
-            val step5Task = task.ui.newTask(false)
-            tabs["5. Result"] = step5Task.placeholder
-            step5Task.add(MarkdownUtil.renderMarkdown("### Mapping Solution Back...", ui = step5Task.ui))
-            
+            val step5Task = tabs.newTask("5. Result")
+            step5Task.header("Mapping Solution Back...", level = 3)
+
             val inversePrompt = """
                 You are a Category Theory expert.
                 We have solved the problem in the Target Category. Now map the solution back to the Source Category.
@@ -254,36 +251,26 @@ FunctorialMapping - Translate problems from one category to another
                 If the functor is not strictly invertible, provide the best interpretation or adjoint mapping.
                 State the final answer clearly.
             """.trimIndent()
-            
+
             val finalResult = ChatAgent(
                 model = api,
                 temperature = 0.3,
                 prompt = "You are a Category Theory expert."
             ).answer(listOf(inversePrompt))
             step5Task.add(MarkdownUtil.renderMarkdown(finalResult, ui = step5Task.ui))
-            step5Task.safeComplete("Completed", log)
-            transcript?.write("\n## Final Result\n\n$finalResult\n".toByteArray())
-            transcript?.close()
+            step5Task.complete()
+            transcript.write("\n## Final Result\n\n$finalResult\n".toByteArray())
+            transcript.close()
 
-            task.complete("Functorial Mapping Complete")
+            task.complete()
             resultFn(finalResult)
 
         } catch (e: Exception) {
             log.error("Error in FunctorialMappingTask", e)
             task.error(e)
-            transcript?.close()
+            transcript.close()
             resultFn("ERROR: ${e.message}")
         }
     }
 
-    private fun transcript(task: SessionTask): FileOutputStream? {
-        val transcriptFile = "functorial_mapping_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
-        val markdownTranscript = file?.outputStream()
-        task.add(MarkdownUtil.renderMarkdown(
-            "Writing transcript to <a href='$link' target='_blank'>$transcriptFile</a>",
-            ui = task.ui
-        ))
-        return markdownTranscript
-    }
 }

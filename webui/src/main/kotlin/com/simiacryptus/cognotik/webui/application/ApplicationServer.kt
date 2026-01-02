@@ -132,7 +132,7 @@ abstract class ApplicationServer(
 
     open fun <T : Any> initSettings(session: Session): T? = null
 
-    fun <T : Any> getSettings(
+    open fun <T : Any> getSettings(
         session: Session,
         userId: User?,
         @Suppress("UNCHECKED_CAST") clazz: Class<T> = settingsClass as Class<T>
@@ -143,7 +143,7 @@ abstract class ApplicationServer(
             userId?.email ?: "anonymous",
             clazz.simpleName
         )
-        val settingsFile = getSettingsFile(session, userId ?: UserSettingsManager.defaultUser)
+        val settingsFile = getSettingsFile(session, userId ?: defaultUser)
         logger.debug("Settings file path: {}", settingsFile.absolutePath)
         if (settingsFile.exists()) try {
             val text = settingsFile.readText()

@@ -47,6 +47,10 @@
                     text="🧠 Adaptive Chat"
                     description="Enhanced chat with automatic history summarization and intelligent query elevation for complex questions">
             </action>
+            <action class="cognotik.actions.analysis.SymbolExtractionAction"
+                    text="📊 Extract Symbols"
+                    description="Extract symbol definitions and references across the project into a JSON report">
+            </action>
             <action class="cognotik.actions.plan.UnifiedPlanFromMenuAction"
                     id="UnifiedPlan"
                     text="🧠 Task Planning"

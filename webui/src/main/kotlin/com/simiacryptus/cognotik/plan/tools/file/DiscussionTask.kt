@@ -102,7 +102,7 @@ class DiscussionTask(
                     taskConfig?.inquiry_questions?.joinToString(
                         "\n"
                     )
-                }\nGoal: ${taskConfig?.inquiry_goal}\n${JsonUtil.toJson(data = this)}"
+                }\nGoal: ${taskConfig?.inquiry_goal}\n\n${JsonUtil.toJson(executionConfig)}"
             )
             transcript?.write("# Analysis Request\n\n${input.joinToString("\n\n")}\n\n".toByteArray())
             insightActor.answer(input)
@@ -116,7 +116,7 @@ class DiscussionTask(
                         )
                     }\nGoal: ${taskConfig?.inquiry_goal}\n${this.executionConfig?.toJson()}"
                 },
-                heading = "",
+                heading = taskConfig?.task_description ?: "Discussion",
                 initialResponse = { it: String ->
                     transcript?.write("# Initial Request\n\n$it\n\n".toByteArray())
                     insightActor.answer(toInput(it)).also { response ->
@@ -124,7 +124,7 @@ class DiscussionTask(
                     }
                 },
                 outputFn = { design: String ->
-                    MarkdownUtil.renderMarkdown(design)
+                    MarkdownUtil.renderMarkdown(design, ui = task.ui)
                 },
                 reviseResponse = { usermessages: List<Pair<String, Role>> ->
                     val inStr = "Expand ${taskConfig?.task_description ?: ""}\nQuestions: ${
@@ -144,6 +144,7 @@ class DiscussionTask(
                 semaphore = Semaphore(0),
             ).call()
         transcript?.close()
+        task.complete()
         resultFn(inquiryResult ?: "(no response)")
     }
 
@@ -185,6 +186,7 @@ class DiscussionTask(
         val Discussion = TaskType(
             "Discussion",
             "File",
+            DiscussionTask::class.java,
             DiscussionTaskExecutionConfigData::class.java,
             DiscussionTaskTypeConfig::class.java,
             "Directly answer questions or provide insights using the LLM, optionally referencing files, with optional user feedback and iteration.",
@@ -199,7 +201,7 @@ class DiscussionTask(
               <li>Supports both one-shot and interactive discussion modes</li>
               <li>Ideal for technical Q&A, code reviews, and architectural analysis without making changes</li>
             </ul>
-            """
+            """,
         )
 
         fun getAvailableFiles(

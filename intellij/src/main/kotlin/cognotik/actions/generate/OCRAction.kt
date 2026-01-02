@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.UITools
 import java.io.File
-import javax.imageio.ImageIO
 
 class OCRAction : BaseAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
@@ -48,7 +47,9 @@ class OCRAction : BaseAction() {
                                         ),
                                         ModelSchema.ChatMessage(
                                             ModelSchema.Role.user,
-                                            listOf(ModelSchema.ContentPart("Convert this page").apply { this.image = image })
+                                            listOf(
+                                                ModelSchema.ContentPart("Convert this page")
+                                                    .apply { this.image = image })
                                         )
                                     )
                                 ).choices.first().message?.content ?: ""

@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataSt
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.text.SimpleDateFormat
@@ -41,7 +42,8 @@ abstract class SingleTaskApp(
     override val inputCnt: Int = 1
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> initSettings(session: Session): T = OrchestrationConfig(sessionId = session.sessionId, null) as T
+    override fun <T : Any> initSettings(session: Session): T =
+        OrchestrationConfig(sessionId = session.sessionId, null) as T
 
     abstract fun instance(model: ApiChatModel): ChatInterface
 
@@ -49,29 +51,40 @@ abstract class SingleTaskApp(
         user: User, session: Session
     ): SocketManager {
         val socketManager = super.newSession(user, session)
-        val settings = getSettings(session, user, OrchestrationConfig::class.java)
-        OrchestrationConfig.instanceFn = instanceFn
-        socketManager.newTask(cancelable = false, root = true).expandable(
-            "Session Info", """
-Session ID: `${session}`
-
-Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
-
-Root: `${settings?.absoluteWorkingDir}`
-
-Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
-
-Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
-
-Task Type: `${taskType.name}`
-
-          """.renderMarkdown()
-        )
-        socketManager.pool.submit { executeTask(session, user, socketManager, settings) }
+        startSession(session, user, socketManager)
         return socketManager
     }
 
-    private fun executeTask(
+    protected fun startSession(
+        session: Session,
+        user: User,
+        socketManager: SocketManager
+    ) {
+        val settings = getSettings(session, user, OrchestrationConfig::class.java)
+        if (null != instanceFn) OrchestrationConfig.instanceFn = instanceFn
+        socketManager.newTask(cancelable = false, root = true).expandable(
+            "Session Info", """
+    Session ID: `${session}`
+    
+    Start Time: `${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}`
+    
+    Root: `${settings?.absoluteWorkingDir}`
+    
+    Session Location: `${dataStorage.getSessionDir(user, session).absolutePath}`
+    
+    Data Location: `${dataStorage.getDataDir(user, session).absolutePath}`
+    
+    Task Type: `${taskType.name}`
+    
+              """.renderMarkdown()
+        )
+        socketManager.pool.submit { executeTask(session, user, socketManager, settings) }
+    }
+
+    protected open fun onTaskComplete(result: String, task: SessionTask) {}
+    protected open fun onTaskError(e: Throwable) {}
+
+    protected open fun executeTask(
         session: Session, user: User = defaultUser, ui: SocketManager, settings: OrchestrationConfig?
     ) {
         try {
@@ -99,6 +112,7 @@ Task Type: `${taskType.name}`
                 task = task,
                 resultFn = { result ->
                     task.complete(result.renderMarkdown)
+                    onTaskComplete(result, task)
                 },
                 orchestrationConfig = orchestrationConfig
             )
@@ -106,6 +120,7 @@ Task Type: `${taskType.name}`
         } catch (e: Throwable) {
             log.error("Error executing task", e)
             ui.newTask().error(e)
+            onTaskError(e)
         }
     }
 

@@ -159,7 +159,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
             }
             .message-content pre,
             .message-content code {
-                background: var(--theme-surface);
                 border: 1px solid var(--theme-border);
                 font-family: var(--font-mono); /* Use CSS var for code font */
             }

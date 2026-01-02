@@ -79,7 +79,7 @@ class AddApplyDiffLinks {
                 }
             }
 
-            val buttons = socketManager.newTask(cancelable = false, root = false)
+            val buttons = task.newTask()
             lateinit var hrefLink: StringBuilder
             var reverseHrefLink: StringBuilder? = null
             hrefLink = buttons.complete(socketManager.hrefLink("Apply Diff", classname = "href-link cmd-button") {
