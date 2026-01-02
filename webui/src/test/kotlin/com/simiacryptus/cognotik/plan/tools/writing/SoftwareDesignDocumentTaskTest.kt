@@ -13,7 +13,7 @@ object SoftwareDesignDocumentTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        TaskTestHarness.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
     //@Test

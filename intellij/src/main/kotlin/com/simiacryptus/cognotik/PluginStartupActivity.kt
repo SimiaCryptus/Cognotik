@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.diff.SimpleDiffApplier
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AwsPlatform
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
@@ -31,6 +32,7 @@ class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
         require(TaskType.values().isNotEmpty())
         require(ToolProvider.values().isNotEmpty())
+        require(CognitiveModeType.values().isNotEmpty())
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
         setLogInfo("org.apache.hc.client5.http")
         setLogInfo("org.eclipse.jetty")

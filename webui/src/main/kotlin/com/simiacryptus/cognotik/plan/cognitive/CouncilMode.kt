@@ -19,9 +19,9 @@ import java.util.concurrent.atomic.AtomicReference
 
 class CouncilModeConfig(
     var council: List<CognitiveSchemaStrategy> = listOf(
-        ProjectManagerStrategy(name = "CEO", description = "Focus on high-level goals and business value."),
-        ProjectManagerStrategy(name = "CTO", description = "Focus on technical feasibility and architecture."),
-        ProjectManagerStrategy(name = "QA", description = "Focus on testing and quality assurance.")
+        CognitiveSchemaStrategy.ProjectManager,
+        CognitiveSchemaStrategy.AgileDeveloper,
+        CognitiveSchemaStrategy.CreativeWriter,
     ),
     var maxTaskHistoryChars: Int = 20000,
     var maxTasksPerIteration: Int = 3,

@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.code
 
+import com.simiacryptus.cognotik.apps.general.PlanTestHarness
 import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask.LanguageServerTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask.LanguageServerTaskTypeConfig
@@ -12,7 +13,7 @@ object LanguageServerTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        TaskTestHarness.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
     //@Test

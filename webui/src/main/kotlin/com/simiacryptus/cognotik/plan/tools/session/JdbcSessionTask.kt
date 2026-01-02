@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.sql.Connection
-import java.sql.DriverManager
+import java.sql.Driver
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.concurrent.ConcurrentHashMap
@@ -198,19 +198,31 @@ class JdbcSessionTask(
         val password = executionConfig.password
         val driver = executionConfig.driver
 
-        if (driver != null) {
+        val driverClass = (if (driver != null && driver.isNotBlank()) {
             try {
                 Class.forName(driver)
             } catch (e: ClassNotFoundException) {
-                throw IllegalArgumentException("Driver class not found: $driver", e)
+                log.warn("Could not load driver class: $driver", e)
+                null
             }
-        }
-
-        val connection = if (user != null && password != null) {
-            DriverManager.getConnection(url, user, password)
         } else {
-            DriverManager.getConnection(url)
-        }
+            null
+        } ?: try {
+            when {
+                url.startsWith("jdbc:h2:") -> Class.forName("org.h2.Driver")
+                url.startsWith("jdbc:mysql:") -> Class.forName("com.mysql.cj.jdbc.Driver")
+                url.startsWith("jdbc:postgresql:") -> Class.forName("org.postgresql.Driver")
+                else -> null
+            }
+        } catch (e: ClassNotFoundException) {
+            log.warn("Could not load driver class", e)
+            null
+        } ?: throw IllegalArgumentException("JDBC Driver class not found for URL: $url")) as Class<Driver>
+
+        val connection = driverClass.newInstance().connect(url, java.util.Properties().apply {
+            if(!user.isNullOrBlank()) put("user", user)
+            if(!password.isNullOrBlank()) put("password", password)
+        })
 
         val newState = SessionState(connection)
         if (sessionId != null) {

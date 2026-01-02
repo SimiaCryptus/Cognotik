@@ -1,16 +1,15 @@
 package com.simiacryptus.cognotik.apps.general
 
+import com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.trayIcon
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.*
@@ -47,7 +46,6 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
 ) {
-    private val log = LoggerFactory.getLogger(TaskTestHarness::class.java)
     val workspace = createTempDirectory()
 
     fun run() {
@@ -126,42 +124,9 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
         } finally {
             if (openBrowser) {
-                val shutdownLatch = CountDownLatch(1)
-                var trayIcon: java.awt.TrayIcon? = null
-                if (java.awt.SystemTray.isSupported()) {
-                    val tray = java.awt.SystemTray.getSystemTray()
-                    val image = java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_RGB)
-                    val g = image.createGraphics()
-                    g.color = java.awt.Color.GREEN
-                    g.fillRect(0, 0, 16, 16)
-                    g.dispose()
-
-                    val popup = java.awt.PopupMenu()
-                    val exitItem = java.awt.MenuItem("Exit")
-                    exitItem.addActionListener { shutdownLatch.countDown() }
-                    popup.add(exitItem)
-
-                    trayIcon = java.awt.TrayIcon(image, "Task Test Harness", popup)
-                    trayIcon.isImageAutoSize = true
-                    try {
-                        tray.add(trayIcon)
-                    } catch (e: java.awt.AWTException) {
-                        log.warn("TrayIcon could not be added.")
-                    }
-                }
-
-                val inputThread = Thread {
-                    try {
-                        log.info("Press Enter to shut down...")
-                        System.`in`.read()
-                    } catch (e: Exception) {
-                        // ignore
-                    } finally {
-                        shutdownLatch.countDown()
-                    }
-                }
-                inputThread.isDaemon = true
-                inputThread.start()
+                val pair = trayIcon()
+                val shutdownLatch = pair.first
+                val trayIcon = pair.second
 
                 try {
                     shutdownLatch.await()
@@ -200,22 +165,7 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     )
 
     companion object {
-        fun configurePlatform() {
-            require(TaskType.values().isNotEmpty())
-            require(ToolProvider.values().isNotEmpty())
-            ApplicationServices.authenticationManager = object : AuthenticationInterface {
-                override fun getUser(accessToken: String?) = defaultUser
-                override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-                override fun logout(accessToken: String, user: User) {}
-            }
-            ApplicationServices.authorizationManager = object : AuthorizationManager() {
-                override fun isAuthorized(
-                    applicationClass: Class<*>?,
-                    user: User?,
-                    operationType: AuthorizationInterface.OperationType
-                ): Boolean = true
-            }
-        }
+        private val log = LoggerFactory.getLogger(TaskTestHarness::class.java)
     }
 }
 

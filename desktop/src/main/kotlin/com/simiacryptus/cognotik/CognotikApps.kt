@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
@@ -53,6 +54,7 @@ open class CognotikApps(
             try {
                 require(TaskType.values().isNotEmpty())
                 require(ToolProvider.values().isNotEmpty())
+                require(CognitiveModeType.values().isNotEmpty())
                 if (args.isEmpty()) {
                     log.info("No arguments provided - defaulting to server mode with default options")
                     handleServer()

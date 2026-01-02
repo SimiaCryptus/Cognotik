@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
+import com.simiacryptus.cognotik.apps.general.PlanTestHarness
 import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.DiscussionTask.DiscussionTaskExecutionConfigData
@@ -12,7 +13,7 @@ object DiscussionTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        TaskTestHarness.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
     //@Test

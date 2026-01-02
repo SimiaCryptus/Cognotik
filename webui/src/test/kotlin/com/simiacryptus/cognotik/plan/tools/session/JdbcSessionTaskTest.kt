@@ -13,10 +13,10 @@ object JdbcSessionTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        TaskTestHarness.configurePlatform()
+        com.simiacryptus.cognotik.apps.general.PlanTestHarness.Companion.configurePlatform()
     }
 
-    //@Test
+   //@Test
     @Timeout(5, unit = TimeUnit.MINUTES)
     fun testJdbcSession() {
         TaskTestHarness(
