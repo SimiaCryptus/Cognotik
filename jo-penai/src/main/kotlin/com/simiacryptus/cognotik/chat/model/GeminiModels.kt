@@ -157,6 +157,43 @@ object GeminiModels {
         inputTokenPricePerK = 0.0015,
         outputTokenPricePerK = 0.006
     )
+    val GeminiPro_30_Preview = ChatModel(
+        name = "GeminiPro_30_Preview",
+        modelName = "gemini-3-pro-preview",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 65536,
+        provider = APIProvider.Companion.Gemini,
+        inputTokenPricePerK = 0.0015,
+        outputTokenPricePerK = 0.006
+    )
+    val GeminiPro_30_Image_Preview = ChatModel(
+        name = "GeminiPro_30_Image_Preview",
+        modelName = "gemini-3-pro-image-preview",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 65536,
+        provider = APIProvider.Companion.Gemini,
+        inputTokenPricePerK = 0.0015,
+        outputTokenPricePerK = 0.006
+    )
+    val GeminiFlash_30_Preview = ChatModel(
+        name = "GeminiFlash_30_Preview",
+        modelName = "gemini-3-flash-preview",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 65536,
+        provider = APIProvider.Companion.Gemini,
+        inputTokenPricePerK = 0.00015,
+        outputTokenPricePerK = 0.0006
+    )
+    val GeminiRobotics_15_Preview = ChatModel(
+        name = "GeminiRobotics_15_Preview",
+        modelName = "gemini-robotics-er-1.5-preview",
+        maxTotalTokens = 1048576,
+        maxOutTokens = 8192,
+        provider = APIProvider.Companion.Gemini,
+        inputTokenPricePerK = 0.000075,
+        outputTokenPricePerK = 0.0003
+    )
+
 
     val values = mapOf(
         "GeminiPro_15" to GeminiPro_15,
@@ -170,5 +207,9 @@ object GeminiModels {
         "GeminiFlash_25" to GeminiFlash_25,
         "GeminiFlash_25_Lite" to GeminiFlash_25_Lite,
         "GeminiFlash_25_Live" to GeminiFlash_25_Live,
+        "GeminiPro_30_Preview" to GeminiPro_30_Preview,
+        "GeminiPro_30_Image_Preview" to GeminiPro_30_Image_Preview,
+        "GeminiFlash_30_Preview" to GeminiFlash_30_Preview,
+        "GeminiRobotics_15_Preview" to GeminiRobotics_15_Preview,
     )
 }

@@ -126,8 +126,6 @@ ImageTable - Generate a table/grid of AI-generated images
         val outputDir = executionConfig?.output_directory ?: "generated_images"
         val imageFormat = executionConfig?.image_format ?: "png"
 
-        val ui = task.ui
-
         task.header("Image Table Generation", level = 2)
         task.add("Generating ${rows.size}x${columns.size} image grid (${rows.size * columns.size} total images)")
 

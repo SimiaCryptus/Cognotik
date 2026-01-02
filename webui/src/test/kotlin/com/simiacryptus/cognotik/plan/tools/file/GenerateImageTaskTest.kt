@@ -2,12 +2,12 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.apps.general.TaskTestHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.GenerateImageTask.GenerateImageTaskExecutionConfigData
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
-object FileModificationTaskTest {
+object GenerateImageTaskTest {
 
     @JvmStatic
     @BeforeAll
@@ -19,14 +19,13 @@ object FileModificationTaskTest {
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         TaskTestHarness(
-            taskType = FileModificationTask.FileModification,
+            taskType = GenerateImageTask.GenerateImage,
             typeConfig = TaskTypeConfig(
-                task_type = FileModificationTask.FileModification.name
+                task_type = GenerateImageTask.GenerateImage.name
             ),
-            executionConfig = FileModificationTaskExecutionConfigData(
-                files = listOf("Calculator.kt"),
-                task_description = "Add a subtract function to the Calculator class",
-                modifications = "Implement fun subtract(a: Int, b: Int): Int",
+            executionConfig = GenerateImageTaskExecutionConfigData(
+                files = listOf("test_output_image.png"),
+                task_description = "A high-quality digital art piece of a serene mountain landscape at sunset, with a clear lake in the foreground reflecting the orange and purple sky, cinematic lighting, 8k resolution",
             ),
             timeoutMinutes = 10,
         ).run()

@@ -105,10 +105,9 @@ open class ParallelMode(
             val processor = FixedConcurrencyProcessor(task.ui.pool, plan.concurrency)
 
             val futures = combinations.map { combination ->
+                val label = combination.values.joinToString(",") { it.toString() }
+                val task = tabs.newTask(label)
                 processor.submit {
-                    val label = combination.values.joinToString(",") { it.toString() }.take(30)
-                    val task = tabs.newTask(label)
-
                     try {
                         val renderedMessage = renderTemplate(plan.template, combination)
                         task.expandable("Parameters", "```json\n${JsonUtil.toJson(combination)}\n```".renderMarkdown())

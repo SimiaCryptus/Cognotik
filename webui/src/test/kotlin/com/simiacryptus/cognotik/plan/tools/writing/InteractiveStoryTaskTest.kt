@@ -1,0 +1,43 @@
+package com.simiacryptus.cognotik.plan.tools.writing
+
+import com.simiacryptus.cognotik.apps.general.TaskTestHarness
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.writing.InteractiveStoryTask.InteractiveStoryTaskExecutionConfigData
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+import java.util.concurrent.TimeUnit
+
+object InteractiveStoryTaskTest {
+
+    @JvmStatic
+    @BeforeAll
+    fun setup() {
+        TaskTestHarness.configurePlatform()
+    }
+
+    //@Test
+    @Timeout(15, unit = TimeUnit.MINUTES)
+    fun test() {
+        TaskTestHarness(
+            taskType = InteractiveStoryTask.InteractiveStory,
+            typeConfig = TaskTypeConfig(
+                task_type = InteractiveStoryTask.InteractiveStory.name
+            ),
+            executionConfig = InteractiveStoryTaskExecutionConfigData(
+                premise = "A lone explorer discovers a derelict space station orbiting a dying star.",
+                genre = "sci-fi",
+                target_audience = "adult",
+                tone = "mysterious",
+                num_decision_points = 2,
+                choices_per_decision = 2,
+                num_endings = 2,
+                track_state_variables = true,
+                state_variables = listOf("oxygen", "sanity", "data_recovered"),
+                writing_style = "descriptive",
+                point_of_view = "second_person"
+            ),
+            timeoutMinutes = 15,
+        ).run()
+    }
+}

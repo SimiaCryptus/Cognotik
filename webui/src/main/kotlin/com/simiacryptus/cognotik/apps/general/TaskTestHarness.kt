@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.apps.general
 
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
@@ -10,30 +11,20 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.asApiChatModel
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.SessionProxyServer
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.AppInfoData
-import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
-import com.simiacryptus.cognotik.webui.servlet.OAuthBase
-import org.eclipse.jetty.webapp.WebAppContext
 import java.awt.Desktop
 import java.io.File
 import java.net.URI
+import java.text.SimpleDateFormat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.collections.set
-import kotlin.io.path.createTempDirectory
 
 open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val taskType: TaskType<T, U>,
@@ -51,12 +42,15 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val port: Int = 8082,
     val openBrowser: Boolean = false,
     val timeoutMinutes: Long = 30,
+    val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
+    val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
+    val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
 ) {
     private val log = LoggerFactory.getLogger(TaskTestHarness::class.java)
+    val root = createTempDirectory()
 
     fun run() {
-        val tempDir = createTempDirectory("task-test").toFile().apply { deleteOnExit() }
-        log.info("Running task in ephemeral workspace: ${tempDir.absolutePath}")
+        log.info("Running task in ephemeral workspace: ${root.absolutePath}")
 
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
@@ -82,8 +76,8 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
 
             override fun <T : Any> initSettings(session: Session): T {
-                val orchestrationConfig = newConfig(session, tempDir)
-                getSettingsFile(session, UserSettingsManager.defaultUser).writeText(orchestrationConfig.toJson())
+                val orchestrationConfig = newConfig(session, root)
+                getSettingsFile(session, defaultUser).writeText(orchestrationConfig.toJson())
                 @Suppress("UNCHECKED_CAST")
                 return orchestrationConfig as T
             }
@@ -139,6 +133,15 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
         }
     }
 
+    private fun createTempDirectory(): File {
+        val name = this.taskType.name
+        val time = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
+        return File(".").resolve("workspaces/$name/test-$time").apply {
+            mkdirs()
+            log.debug("Created temp directory: ${this.absolutePath}")
+        }
+    }
+
     @Suppress("UNCHECKED_CAST")
     open fun newConfig(session: Session, tempDir: File) = OrchestrationConfig(
         sessionId = session.sessionId,
@@ -146,8 +149,9 @@ open class TaskTestHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
         taskSettings = mutableMapOf(
             typeConfig.name!! to typeConfig
         ),
-        defaultFastModel = GeminiModels.GeminiFlash_25.asApiChatModel(),
-        defaultSmartModel = GeminiModels.GeminiFlash_25.asApiChatModel(),
+        defaultFastModel = fastModel.asApiChatModel(),
+        defaultSmartModel = smartModel.asApiChatModel(),
+        defaultImageModel = imageModel.asApiChatModel(),
         autoFix = !openBrowser,
     )
 
