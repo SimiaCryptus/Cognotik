@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Kotlin for Backend" name="description">
+    <title>Kotlin for Backend</title>
+    <link href="https://cdnjs.cloudflare.com" rel="preconnect">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/monokai.min.css" rel="stylesheet">
+    <link href="presentation.css" rel="stylesheet">
+</head>
+<body>
+<div aria-label="Presentation controls" id="controlsContainer" role="toolbar">
+    <button aria-label="Toggle autoplay" aria-pressed="false" id="autoplayButton">Autoplay: Off</button>
+    <label class="sr-only" for="voiceSelect">Select voice</label>
+    <select aria-label="Voice selection" id="voiceSelect"></select>
+</div>
+<div class="reveal">
+    <div class="slides">
+<section data-background-gradient="linear-gradient(to bottom, #000428, #004e92)">
+    <h1>Kotlin for Backend</h1>
+    <p class="subtitle">Modernizing the JVM for Java Developers 🚀</p>
+    <div style="margin-top: 20px; font-size: 0.8em; color: #42affa;">
+        The evolution of server-side development
+    </div>
+    <aside class="notes">
+        Welcome everyone. Today we are exploring why Kotlin has become the preferred choice for modern backend development on the JVM. We'll look at how it addresses Java's historical pain points while maintaining full compatibility with the ecosystem you already know.
+    </aside>
+</section>
+
+<section>
+    <h2>The "Billion Dollar Mistake" Fixed 🛡️</h2>
+    <p>Kotlin's type system distinguishes between nullable and non-nullable types.</p>
+    <ul>
+        <li class="fragment"><strong>String</strong> vs <strong>String?</strong></li>
+        <li class="fragment">Compile-time null safety checks</li>
+        <li class="fragment">Safe call operator: <code>user?.address?.city</code></li>
+        <li class="fragment">Elvis operator: <code>val name = input ?: "Guest"</code></li>
+    </ul>
+    <aside class="notes">
+        NullPointerExceptions are the most common cause of crashes in Java. Kotlin eliminates these at compile-time by making types non-nullable by default. This shift in the type system forces developers to handle nullability explicitly, leading to much more robust production code.
+    </aside>
+</section>
+
+<section data-auto-animate>
+    <h2>Conciseness & Productivity ✍️</h2>
+    <p>Say goodbye to boilerplate code.</p>
+    <div class="columns">
+        <div class="column">
+            <p><small>Java POJO (30+ lines)</small></p>
+            <pre><code class="language-java" data-trim>
+public class User {
+    private String name;
+    private int age;
+    // Getters, Setters, 
+    // Equals, HashCode, 
+    // ToString...
+}
+            </code></pre>
+        </div>
+        <div class="column fragment">
+            <p><small>Kotlin Data Class (1 line)</small></p>
+            <pre><code class="language-kotlin" data-trim>
+data class User(val name: String, val age: Int)
+            </code></pre>
+        </div>
+    </div>
+    <aside class="notes">
+        Kotlin significantly reduces the amount of code you need to write and maintain. Data classes automatically generate getters, setters, equals, hashCode, and toString methods. This allows developers to focus on business logic rather than ceremony.
+    </aside>
+</section>
+
+<section>
+    <h2>Seamless Interoperability 🤝</h2>
+    <p>Kotlin is 100% compatible with Java.</p>
+    <ul>
+        <li class="fragment">Call Java libraries from Kotlin (and vice versa)</li>
+        <li class="fragment">Mixed-language projects are supported by Maven/Gradle</li>
+        <li class="fragment">No performance overhead; compiles to the same bytecode</li>
+        <li class="fragment">Gradual migration: Convert one class at a time</li>
+    </ul>
+    <aside class="notes">
+        One of Kotlin's greatest strengths is that it doesn't require a "big bang" migration. You can keep your existing Java codebase and start writing new features in Kotlin. The two languages coexist perfectly in the same project, sharing the same classpath and libraries.
+    </aside>
+</section>
+
+<section data-auto-animate>
+    <h2>Coroutines: Scalable Concurrency 🧵</h2>
+    <p>Write asynchronous code that looks synchronous.</p>
+    <pre><code class="language-kotlin" data-trim data-line-numbers>
+suspend fun fetchDashboardData() = coroutineScope {
+    val user = async { userService.getUser() }
+    val posts = async { postService.getPosts() }
+    
+    Dashboard(user.await(), posts.await())
+}
+    </code></pre>
+    <ul>
+        <li class="fragment">Lightweight: Millions of coroutines on a few threads</li>
+        <li class="fragment">Non-blocking I/O without "Callback Hell"</li>
+        <li class="fragment">Built-in structured concurrency</li>
+    </ul>
+    <aside class="notes">
+        Traditional Java threading is expensive and complex. Kotlin Coroutines provide a way to handle thousands of concurrent requests with very low memory overhead. The 'suspend' keyword allows the thread to be released while waiting for I/O, making your backend highly scalable.
+    </aside>
+</section>
+
+<section>
+    <h2>Modern Language Features ✨</h2>
+    <div class="columns">
+        <div class="column">
+            <ul>
+                <li class="fragment"><strong>Smart Casts:</strong> No more explicit casting after <code>is</code> checks</li>
+                <li class="fragment"><strong>Extension Functions:</strong> Add methods to classes you don't own</li>
+            </ul>
+        </div>
+        <div class="column">
+            <ul>
+                <li class="fragment"><strong>Default Arguments:</strong> Reduces the need for method overloading</li>
+                <li class="fragment"><strong>Named Parameters:</strong> Improves readability of function calls</li>
+            </ul>
+        </div>
+    </div>
+    <aside class="notes">
+        These quality-of-life features make the daily coding experience much smoother. Extension functions allow you to extend third-party libraries with your own utility methods, while smart casts and named parameters make the code more readable and less error-prone.
+    </aside>
+</section>
+
+<section>
+    <h2>The Backend Ecosystem 🏗️</h2>
+    <p>Kotlin is a first-class citizen in the industry.</p>
+    <ul>
+        <li class="fragment"><strong>Spring Boot:</strong> Official support and dedicated Kotlin DSLs</li>
+        <li class="fragment"><strong>Ktor:</strong> JetBrains' native asynchronous framework for Kotlin</li>
+        <li class="fragment"><strong>Persistence:</strong> Excellent support for Hibernate, Exposed, and JDBI</li>
+        <li class="fragment"><strong>Testing:</strong> MockK and Kotest provide powerful testing DSLs</li>
+    </ul>
+    <aside class="notes">
+        You aren't losing any tools by switching. Spring Boot has treated Kotlin as a first-class citizen since version 5.0. Additionally, frameworks like Ktor offer a "Kotlin-first" approach that leverages the language's features like DSLs and Coroutines to their fullest extent.
+    </aside>
+</section>
+
+<section data-background-color="#1a1a2e">
+    <h2>Summary: Why Switch? 🎯</h2>
+    <ol>
+        <li class="fragment"><strong>Safety:</strong> Eliminate NullPointerExceptions</li>
+        <li class="fragment"><strong>Speed:</strong> Write less code, deliver features faster</li>
+        <li class="fragment"><strong>Scale:</strong> Handle more users with Coroutines</li>
+        <li class="fragment"><strong>Low Risk:</strong> Use your existing Java knowledge and libraries</li>
+    </ol>
+    <h3 class="fragment" style="margin-top: 40px; color: #64ffda;">Ready to <code>fun main()</code>?</h3>
+    <aside class="notes">
+        In conclusion, Kotlin offers a modern, safe, and highly productive environment for backend developers. It solves the frustrations of Java while keeping the power of the JVM. The transition is low-risk because of the perfect interoperability, making it the logical next step for any Java team.
+    </aside>
+</section>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/notes/notes.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/markdown/markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/zoom/zoom.min.js"></script>
+<script src="presentation.js"></script>
+<script src="reveal_init.js"></script>
+</body>
+</html>

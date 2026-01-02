@@ -1,0 +1,18 @@
+{
+  "prompt" : "Create a simple python script that prints 'Hello from WaterfallMode'",
+  "plan" : {
+    "1" : {
+      "task_type" : "FileModification",
+      "files" : [ "hello_waterfall.py" ],
+      "related_files" : [ ],
+      "extractContent" : false,
+      "modifications" : "Create a simple Python script that prints the message 'Hello from WaterfallMode'.",
+      "includeGitDiff" : false,
+      "task_description" : "Create a simple Python script named hello_waterfall.py that prints the message 'Hello from WaterfallMode'.",
+      "task_dependencies" : [ ],
+      "state" : "Pending",
+      "task_type" : "FileModification"
+    }
+  },
+  "planText" : "- **FileModification**: Create `hello_waterfall.py`\n  - **File Path**: `hello_waterfall.py`\n  - **Goal**: Create a simple Python script that prints the message 'Hello from WaterfallMode'.\n  - **Input Files**: None\n  - **Description**: This task involves creating a new Python file to fulfill the user's request for a basic script."
+}
