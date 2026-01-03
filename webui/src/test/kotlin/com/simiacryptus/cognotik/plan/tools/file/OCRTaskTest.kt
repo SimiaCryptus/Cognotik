@@ -8,10 +8,14 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
 import org.apache.pdfbox.pdmodel.font.PDType1Font
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
+import java.awt.Color
+import java.awt.Font
+import java.awt.image.BufferedImage
 import java.util.concurrent.TimeUnit
 
 object OCRTaskTest {
@@ -41,24 +45,32 @@ object OCRTaskTest {
             var page = PDPage()
             doc.addPage(page)
             var contentStream = PDPageContentStream(doc, page)
-            contentStream.beginText()
-//            contentStream.setFont(PDType1Font(
-//                org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.HELVETICA_BOLD
-//            ), 12f)
-            contentStream.newLineAtOffset(100f, 700f)
-            contentStream.showText("This is page 1 of the OCR test.")
-            contentStream.endText()
+            var image = BufferedImage(600, 800, BufferedImage.TYPE_INT_RGB)
+            var g = image.createGraphics()
+            g.color = Color.WHITE
+            g.fillRect(0, 0, 600, 800)
+            g.color = Color.BLACK
+            g.font = Font("SansSerif", Font.BOLD, 18)
+            g.drawString("This is page 1 of the OCR test.", 50, 100)
+            g.dispose()
+            var pdImage = LosslessFactory.createFromImage(doc, image)
+            contentStream.drawImage(pdImage, 0f, 0f, page.mediaBox.width, page.mediaBox.height)
             contentStream.close()
 
             // Page 2
             page = PDPage()
             doc.addPage(page)
             contentStream = PDPageContentStream(doc, page)
-            contentStream.beginText()
-//            contentStream.setFont(PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 12f)
-            contentStream.newLineAtOffset(100f, 700f)
-            contentStream.showText("This is page 2 containing secret code: 12345")
-            contentStream.endText()
+            image = BufferedImage(600, 800, BufferedImage.TYPE_INT_RGB)
+            g = image.createGraphics()
+            g.color = Color.WHITE
+            g.fillRect(0, 0, 600, 800)
+            g.color = Color.BLACK
+            g.font = Font("SansSerif", Font.BOLD, 18)
+            g.drawString("This is page 2 containing secret code: 12345", 50, 100)
+            g.dispose()
+            pdImage = LosslessFactory.createFromImage(doc, image)
+            contentStream.drawImage(pdImage, 0f, 0f, page.mediaBox.width, page.mediaBox.height)
             contentStream.close()
 
             doc.save(pdfPath)
