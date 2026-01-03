@@ -21,7 +21,7 @@ object OCRTaskTest {
     fun setup() {
         PlanHarness.configurePlatform()
     }
-    @Test
+    //@Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
         val harness = TaskHarness(

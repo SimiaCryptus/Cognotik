@@ -30,6 +30,8 @@ import org.eclipse.jetty.server.Server
 import java.awt.Desktop
 import java.awt.SystemTray
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.concurrent.CountDownLatch
@@ -39,6 +41,8 @@ open class UnifiedHarness(
     val port: Int = 8082,
     val serverless: Boolean = false,
     val openBrowser: Boolean = false,
+    val captureMessages: Boolean = serverless,
+    val redirectData: Boolean = serverless,
     val modelInstanceFn: (ApiChatModel) -> ChatInterface = { model ->
         val api = model.findApi()
         val model =
@@ -104,6 +108,7 @@ open class UnifiedHarness(
         val completionLatch = CountDownLatch(1)
         val session = Session.newGlobalID()
         DataStorage.sessionPaths[session] = finalWorkspace
+        if(redirectData) DataStorage.dataPaths[session] = finalWorkspace
 
         val planApp = object : UnifiedPlanApp(
             path = "/test",
@@ -131,6 +136,7 @@ open class UnifiedHarness(
                 if (serverless) {
                     val socketManager = ServerlessSocketManager(
                         session = session,
+                        messageEvents = getMessageLog(workspace),
                         owner = user,
                         clazz = this.javaClass
                     )
@@ -160,6 +166,7 @@ open class UnifiedHarness(
                     return socketManager
                 }
             }
+
         }
 
         if (!serverless) {
@@ -214,6 +221,7 @@ open class UnifiedHarness(
         var error: Throwable? = null
         val session = Session.newGlobalID()
         DataStorage.sessionPaths[session] = finalWorkspace
+        if(redirectData) DataStorage.dataPaths[session] = finalWorkspace
 
         val singleTaskApp = object : SingleTaskApp(
             path = "/test",
@@ -257,6 +265,7 @@ open class UnifiedHarness(
                 if (serverless) {
                     val socketManager = ServerlessSocketManager(
                         session = session,
+                        messageEvents = getMessageLog(workspace),
                         owner = user,
                         clazz = this.javaClass
                     )
@@ -310,6 +319,9 @@ open class UnifiedHarness(
         }
     }
 
+    private fun getMessageLog(workspace: File?): OutputStream? =
+        if (captureMessages) workspace?.resolve("messageEvents_${time()}.log")?.outputStream()?.buffered() else null
+
     protected open fun handleBrowserShutdown() {
         if (openBrowser && !serverless) {
             val pair = trayIcon()
@@ -338,6 +350,10 @@ open class UnifiedHarness(
 
     companion object {
         private val log = LoggerFactory.getLogger(UnifiedHarness::class.java)
+        fun time(): String {
+            val sdf = SimpleDateFormat("yyyyMMdd_HHmmss")
+            return sdf.format(System.currentTimeMillis())
+        }
     }
 }
 

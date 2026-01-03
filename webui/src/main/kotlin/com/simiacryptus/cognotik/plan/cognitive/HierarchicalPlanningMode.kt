@@ -15,7 +15,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import com.simiacryptus.cognotik.webui.session.newLogStream
 import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.*

@@ -41,6 +41,23 @@ open class SessionTask(
         send(currentText + if (showSpinner) "<div>$spinner</div>" else "")
         return stringBuilder
     }
+    fun newLogStream(name: String = """API log"""): BufferedOutputStream {
+        val relativePath = ".logs/api-${UUID.randomUUID()}.md"
+        val (file, createFile) = Pair(
+            linkTo(relativePath),
+            resolveSystemFile(relativePath)
+        )
+        val buffered = createFile?.outputStream()?.buffered()
+            ?: throw RuntimeException("Failed to create log file at path: $relativePath")
+        buffered.write("API Logging Started\n".toByteArray())
+        buffered.write("<details><summary>Stack Trace</summary>\n\n```text\n".toByteArray())
+        Thread.currentThread().stackTrace.forEach { element ->
+            buffered.write("  ${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
+        }
+        buffered.write("```\n</details>\n".toByteArray())
+        verbose("""<a href='${file.removeSuffix(".md")}.html' target='_blank'>$name</a>: <input type="text" value="${createFile.absolutePath}" id="file-path-${messageID}"/>""".trimMargin())
+        return buffered
+    }
 
     protected open fun send(
         html: String = currentText
@@ -215,7 +232,6 @@ open class SessionTask(
         return append(html, showSpinner)
     }
 
-
     @Description("Adds a verbose message to the task output; verbose messages are hidden by default.")
     fun verbose(
         @Description("The message to add")
@@ -362,72 +378,4 @@ fun ChatInterface.getChildClient(task: SessionTask): ChatInterface {
     val childClient = this.getChildClient()
     childClient.logStreams += task.newLogStream()
     return childClient
-}
-
-fun SessionTask.newLogStream(name: String = """API log"""): BufferedOutputStream {
-    val relativePath = ".logs/api-${UUID.randomUUID()}.md"
-    val (file, createFile) = Pair(
-        this@newLogStream.linkTo(relativePath),
-        this@newLogStream.resolveSystemFile(relativePath)
-    )
-    val buffered = createFile?.outputStream()?.buffered()
-        ?: throw RuntimeException("Failed to create log file at path: $relativePath")
-    buffered.write("API Logging Started\n".toByteArray())
-    buffered.write("<details><summary>Stack Trace</summary>\n\n```text\n".toByteArray())
-    Thread.currentThread().stackTrace.forEach { element ->
-        buffered.write("  ${element.className}.${element.methodName}(${element.fileName}:${element.lineNumber})\n".toByteArray())
-    }
-    buffered.write("```\n</details>\n".toByteArray())
-    verbose("""<a href='${file.removeSuffix(".md")}.html' target='_blank'>$name</a>: <input type="text" value="${createFile.absolutePath}" id="file-path-${messageID}"/>""".trimMargin())
-    return buffered
-}
-
-fun SocketManager.resolveUserFile(relativePath: String): File? {
-    require(relativePath.isNotBlank()) { "File path cannot be blank" }
-    require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
-    return dataStorage?.getSessionDir(
-        owner,
-        sessionId
-    )?.let { dir ->
-        val resolve = if (dir.exists()) {
-            dir.resolve(relativePath)
-        } else {
-            if (!dir.mkdirs()) {
-                throw RuntimeException("Failed to create directory: ${dir.absolutePath}")
-            }
-            val resolve = dir.resolve(relativePath)
-            resolve.parentFile?.let { parent ->
-                if (!parent.exists()) {
-                    if (!parent.mkdirs()) SessionTask.log.warn(
-                        "Failed to create parent directory: {}",
-                        parent.absolutePath
-                    )
-                }
-            }
-            SessionTask.log.debug("Successfully created file path: {}", resolve.absolutePath)
-            resolve
-        }
-        resolve
-    }
-}
-
-fun SocketManager.resolveSystemFile(relativePath: String): File? {
-    require(relativePath.isNotBlank()) { "File path cannot be blank" }
-    require(!relativePath.contains("..")) { "Invalid file path: path traversal not allowed" }
-    return dataStorage?.getDataDir(
-        owner,
-        sessionId
-    )?.let { dir ->
-        if (!dir.exists() && !dir.mkdirs()) {
-            throw RuntimeException("Failed to create session directory: ${dir.absolutePath}")
-        }
-        val resolve = dir.resolve(relativePath)
-        resolve.parentFile?.let { parent ->
-            if (!parent.exists()) {
-                if (!parent.mkdirs()) SessionTask.log.warn("Failed to create parent directory: {}", parent.absolutePath)
-            }
-        }
-        SessionTask.log.debug("Successfully created file path: {}", resolve.absolutePath)
-        resolve
-    }
 }
