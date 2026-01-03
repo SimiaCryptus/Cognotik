@@ -107,7 +107,7 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
                 Requirements:
                 - The image is 1:1 aspect ratio, minimum 512x512 pixels.
                 - Arrange sprites in a grid or logical layout.
-                - Use a solid, contrasting background color (e.g., magenta or bright green) to make separation easy.
+                - CRITICAL: Use a solid MAGENTA (Hex #FF00FF) background.
                 - Ensure sprites do not overlap.
                 - Maintain consistent style and scale.
             """.trimIndent()
@@ -119,7 +119,11 @@ GenerateSpriteSheet - Create a sprite sheet image and corresponding JSON metadat
             )
 
             val imageResult = imageAgent.answer(listOf(ImageAndText(imageGenPrompt)))
-            val generatedImage = imageResult.image ?: throw RuntimeException("Failed to generate image")
+            var generatedImage = imageResult.image ?: throw RuntimeException("Failed to generate image")
+
+            // Process transparency before saving or analyzing
+            task.header("Processing Transparency...", level = 3)
+            generatedImage = makeTransparent(generatedImage)
 
             // Save Image
             val imageOutputPath = root.resolve(imageFile)
@@ -256,6 +260,47 @@ $tableRows
             resultFn("ERROR: ${e.message}")
         }
     }
+    private fun makeTransparent(source: BufferedImage): BufferedImage {
+        // 1. Determine Background Color (assume top-left pixel is background)
+        val bgRgb = source.getRGB(0, 0)
+        val bgColor = Color(bgRgb)
+        val width = source.width
+        val height = source.height
+        val dest = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        // Configuration for "Soft Keying"
+        val tolerance = 15.0 // Pixels this close to BG color are fully transparent
+        val softness = 60.0  // The fade-in range (gradient)
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                val rgb = source.getRGB(x, y)
+                val c = Color(rgb)
+                // 2. Calculate Euclidean distance in RGB space
+                val distance = Math.sqrt(
+                    Math.pow((c.red - bgColor.red).toDouble(), 2.0) +
+                            Math.pow((c.green - bgColor.green).toDouble(), 2.0) +
+                            Math.pow((c.blue - bgColor.blue).toDouble(), 2.0)
+                )
+                // 3. Calculate Alpha based on distance
+                var alpha: Int
+                if (distance < tolerance) {
+                    alpha = 0 // Fully transparent
+                } else if (distance < tolerance + softness) {
+                    // Gradient / Anti-aliased edge
+                    val factor = (distance - tolerance) / softness
+                    alpha = (factor * 255).toInt().coerceIn(0, 255)
+                } else {
+                    alpha = 255 // Fully opaque
+                }
+                // 4. Reconstruct Pixel
+                // Note: For high-end spill removal, you would adjust RGB here to un-mix the background.
+                // For now, keeping original RGB with calculated Alpha is usually sufficient for sprites.
+                val newCol = (alpha shl 24) or (c.red shl 16) or (c.green shl 8) or c.blue
+                dest.setRGB(x, y, newCol)
+            }
+        }
+        return dest
+    }
+
 
     override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
         return ui.hrefLink("Accept Sprite Sheet") { fn() }

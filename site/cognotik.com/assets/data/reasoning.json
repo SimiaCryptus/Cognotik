@@ -4,7 +4,7 @@
     "label": "Chain of Thought",
     "url": "ChainOfThoughtTask.html",
     "description": "Break down complex problems into explicit reasoning steps to ensure logical consistency and thorough analysis",
-    "image": "assets/images/logic-pipeline-flow.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/deductive.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ChainOfThoughtTask.kt"
   },
   {
@@ -12,7 +12,7 @@
     "label": "Brainstorming",
     "url": "BrainstormingTask.html",
     "description": "Generate a wide range of creative ideas and solution options, then analyze and refine them",
-    "image": "assets/images/brainstorming-hero.png",
+    "image": "assets/images/cognotik_tasks_extended/lightbulb.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/BrainstormingTask.kt"
   },
   {
@@ -20,7 +20,7 @@
     "label": "Decomposition Synthesis",
     "url": "DecompositionSynthesisTask.html",
     "description": "Break down complex problems into manageable components, solve them individually, and synthesize the results",
-    "image": "assets/images/synthesis-crystal-abstract.png",
+    "image": "assets/images/cognotik_tasks_extended/magnifying_glass_puzzle.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/DecompositionSynthesisTask.kt"
   },
   {
@@ -28,7 +28,7 @@
     "label": "Systems Thinking",
     "url": "SystemsThinkingTask.html",
     "description": "Analyze complex systems by examining feedback loops, interdependencies, and emergent behaviors",
-    "image": "assets/images/recursive-network-graph.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/knowledge_graph.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/SystemsThinkingTask.kt"
   },
   {
@@ -36,7 +36,7 @@
     "label": "Socratic Dialogue",
     "url": "SocraticDialogueTask.html",
     "description": "Explore ideas and uncover underlying assumptions through a structured process of Socratic questioning",
-    "image": "assets/images/socratic-dialogue-hero.png",
+    "image": "assets/images/cognotik_tasks_extended/question_mark.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/SocraticDialogueTask.kt"
   },
   {
@@ -44,7 +44,7 @@
     "label": "Causal Inference",
     "url": "CausalInferenceTask.html",
     "description": "Identify causal relationships and root causes to understand the mechanisms driving observed phenomena",
-    "image": "assets/images/search-path-visualization.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/abductive.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/CausalInferenceTask.kt"
   },
   {
@@ -52,7 +52,7 @@
     "label": "Mathematical Reasoning",
     "url": "MathematicalReasoningTask.html",
     "description": "Solve mathematical problems through step-by-step logical reasoning with verifiable calculations",
-    "image": "assets/images/math-reasoning-hero.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/formal_logic.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/MathematicalReasoningTask.kt"
   },
   {
@@ -60,7 +60,7 @@
     "label": "Decision Tree",
     "url": "DecisionTreeTask.html",
     "description": "Construct and navigate a symbolic decision tree to evaluate choices and potential outcomes systematically",
-    "image": "assets/images/decision-tree-hero.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/heuristic_search.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/DecisionTreeTask.kt"
   },
   {
@@ -68,7 +68,7 @@
     "label": "Finite State Machine",
     "url": "FiniteStateMachineTask.html",
     "description": "Model systems or concepts as finite state machines to analyze transitions, states, and behaviors",
-    "image": "assets/images/fsm-hero-illustration.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/planning.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/FiniteStateMachineTask.kt"
   },
   {
@@ -76,7 +76,7 @@
     "label": "Game Theory",
     "url": "GameTheoryTask.html",
     "description": "Analyze strategic interactions and decision-making processes using game theoretic models",
-    "image": "assets/images/game-theory-hero.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/game_theory.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/GameTheoryTask.kt"
   },
   {
@@ -84,7 +84,7 @@
     "label": "Genetic Optimization",
     "url": "GeneticOptimizationTask.html",
     "description": "Iteratively evolve and refine text or solutions using genetic algorithms to maximize quality",
-    "image": "assets/images/genetic-text-dna-hero.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/optimization.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/GeneticOptimizationTask.kt"
   },
   {
@@ -92,7 +92,7 @@
     "label": "Abstraction Ladder",
     "url": "AbstractionLadderTask.html",
     "description": "Traverse up and down levels of abstraction to identify high-level patterns and concrete implementation details",
-    "image": "assets/images/architecture-layers-visual.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/ontology.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AbstractionLadderTask.kt"
   },
   {
@@ -100,7 +100,7 @@
     "label": "Adversarial Reasoning",
     "url": "AdversarialReasoningTask.html",
     "description": "Conduct red-team analysis to identify vulnerabilities, challenge assumptions, and strengthen arguments",
-    "image": "assets/images/system-validation-isometric.png",
+    "image": "assets/images/cognotik_tasks_extended/sword.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AdversarialReasoningTask.kt"
   },
   {
@@ -108,7 +108,7 @@
     "label": "Constraint Satisfaction",
     "url": "ConstraintSatisfactionTask.html",
     "description": "Find optimal solutions that satisfy a set of competing constraints and requirements",
-    "image": "assets/images/fitness-landscape-visualization.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/constraint_satisfaction.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ConstraintSatisfactionTask.kt"
   },
   {
@@ -116,7 +116,7 @@
     "label": "Isomorphism Discovery",
     "url": "IsomorphismDiscoveryTask.html",
     "description": "Identify and validate structural mappings between distinct domains to transfer knowledge and insights",
-    "image": "assets/images/stability-viz.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/transfer_learning.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/IsomorphismDiscoveryTask.kt"
   },
   {
@@ -124,7 +124,7 @@
     "label": "Probabilistic Reasoning",
     "url": "ProbabilisticReasoningTask.html",
     "description": "Reason under uncertainty using Bayesian analysis to estimate probabilities and update beliefs",
-    "image": "assets/images/stability-viz.png",
+    "image": "assets/images/cognotik_tasks_extended/dice.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ProbabilisticReasoningTask.kt"
   },
   {
@@ -132,7 +132,7 @@
     "label": "Structural Invariant Analysis",
     "url": "StructuralInvariantAnalysisTask.html",
     "description": "Identify the immutable properties and symmetries of an object or system to understand its core essence",
-    "image": "assets/images/atomic-verification-abstract.png",
+    "image": "assets/images/cognotik_tasks_extended/binary_matrix.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/StructuralInvariantAnalysisTask.kt"
   },
   {
@@ -140,7 +140,7 @@
     "label": "Temporal Reasoning",
     "url": "TemporalReasoningTask.html",
     "description": "Analyze how systems evolve over time, modeling sequences, durations, and future states",
-    "image": "assets/images/evolutionary-cycle-diagram.png",
+    "image": "assets/images/task_icons_spritesheet/terminal_clock_2.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/TemporalReasoningTask.kt"
   },
   {
@@ -148,7 +148,7 @@
     "label": "Abductive Reasoning",
     "url": "AbductiveReasoningTask.html",
     "description": "Generate and evaluate the most likely explanatory hypotheses for observed facts or surprising evidence",
-    "image": "assets/images/search-path-visualization.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/abductive.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AbductiveReasoningTask.kt"
   },
   {
@@ -156,7 +156,7 @@
     "label": "Analogical Reasoning",
     "url": "AnalogicalReasoningTask.html",
     "description": "Solve novel problems by drawing parallels and transferring solutions from analogous domains",
-    "image": "assets/images/synthesis-crystal-abstract.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/case_based.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/AnalogicalReasoningTask.kt"
   },
   {
@@ -164,7 +164,7 @@
     "label": "Constraint Relaxation",
     "url": "ConstraintRelaxationTask.html",
     "description": "Find acceptable solutions to over-constrained problems by systematically relaxing less critical requirements",
-    "image": "assets/images/fitness-landscape-visualization.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/constraint_satisfaction.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/ConstraintRelaxationTask.kt"
   },
   {
@@ -172,7 +172,7 @@
     "label": "Counterfactual Analysis",
     "url": "CounterfactualAnalysisTask.html",
     "description": "Explore 'what-if' scenarios to understand causal relationships and the impact of alternative decisions",
-    "image": "assets/images/search-path-visualization.png",
+    "image": "assets/images/cognotik_tasks_extended/question_mark.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/CounterfactualAnalysisTask.kt"
   },
   {
@@ -180,7 +180,7 @@
     "label": "Dialectical Reasoning",
     "url": "DialecticalReasoningTask.html",
     "description": "Resolve contradictions and synthesize opposing viewpoints through a thesis-antithesis-synthesis process",
-    "image": "assets/images/dialectic-process-flow.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/human_ai_collab_2.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/DialecticalReasoningTask.kt"
   },
   {
@@ -188,7 +188,7 @@
     "label": "Ethical Reasoning",
     "url": "EthicalReasoningTask.html",
     "description": "Analyze complex dilemmas using established ethical frameworks to determine the most moral course of action",
-    "image": "assets/images/system-validation-isometric.png",
+    "image": "assets/images/cognotik_tasks_extended/scales_of_justice.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/EthicalReasoningTask.kt"
   },
   {
@@ -196,7 +196,7 @@
     "label": "Functorial Mapping",
     "url": "FunctorialMappingTask.html",
     "description": "Translate problems and solutions between different mathematical or conceptual domains using Category Theory",
-    "image": "assets/images/recursive-network-graph.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/semantic_network.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/FunctorialMappingTask.kt"
   },
   {
@@ -204,7 +204,7 @@
     "label": "Iterative Graph Gen",
     "url": "IterativeGraphGenerationTask.html",
     "description": "Construct comprehensive knowledge graphs by iteratively expanding nodes and relationships",
-    "image": "assets/images/recursive-network-graph.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/knowledge_graph.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/writing/IterativeGraphGenerationTask.kt"
   },
   {
@@ -212,7 +212,7 @@
     "label": "Lateral Thinking",
     "url": "LateralThinkingTask.html",
     "description": "Break conventional thinking patterns to generate innovative solutions and novel perspectives",
-    "image": "assets/images/brainstorming-analysis-abstract.png",
+    "image": "assets/images/cognotik_tasks_extended/lightbulb.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/LateralThinkingTask.kt"
   },
   {
@@ -220,7 +220,7 @@
     "label": "Meta-Cognitive Reflection",
     "url": "MetaCognitiveReflectionTask.html",
     "description": "Reflect on, critique, and optimize the reasoning process itself to improve decision quality",
-    "image": "assets/images/cognitive-architecture-abstract.png",
+    "image": "assets/images/cognotik_tasks_extended/brain_with_gears.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/reasoning/MetaCognitiveReflectionTask.kt"
   },
   {
@@ -228,7 +228,7 @@
     "label": "Multi-Perspective Analysis",
     "url": "MultiPerspectiveAnalysisTask.html",
     "description": "Analyze problems from multiple diverse viewpoints to gain a holistic understanding and avoid bias",
-    "image": "assets/images/partitioned-processing-grid.png",
+    "image": "assets/images/ai_reasoning_icons_spritesheet/multi_agent_2.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/MultiPerspectiveAnalysisTask.kt"
   },
   {
@@ -236,7 +236,7 @@
     "label": "Political Optimization",
     "url": "PoliticalOptimizationTask.html",
     "description": "Optimize communication and strategy to achieve consensus or specific goals within a political context",
-    "image": "assets/images/nash-equilibrium-concept.png",
+    "image": "assets/images/ai_cognitive_modes/meeting_icon.png",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools/social/PoliticalOptimizationTask.kt"
   }
 ]

@@ -176,9 +176,132 @@ fun runSelfHealingBuild(projectDir: File) {
 }
 ```
 
+## 5. Task Reference & Configuration Details
+
+When running in "Headless" mode, you often need to manually construct the configuration objects for specific tasks. Every task requires two configuration components:
+1.  **`TypeConfig`**: Static settings (e.g., which Model to use, tool definitions).
+2.  **`ExecutionConfig`**: Runtime inputs (e.g., which files to edit, what command to run).
+Below are the configuration details for the most common tasks.
+
+### A. File Modification (`FileModificationTask`)
+
+Used for refactoring, bug fixing, or feature implementation.
+
+```kotlin
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
+val config = FileModificationTaskExecutionConfigData(
+    // Files to be read and potentially modified
+    files = listOf("src/main/kotlin/Main.kt"),
+    // Additional context files (read-only)
+    related_files = listOf("src/main/kotlin/Utils.kt"),
+    // The prompt for the AI
+    modifications = "Refactor the main loop to use the Utils class.",
+    // Must be true to let the AI see the file content
+    extractContent = true,
+    // Optional: Include git diff in the context
+    includeGitDiff = false
+)
+harness.runTask(FileModification, /* typeConfig */, config, workspace)
+```
+
+### B. File Append (`FileAppendTask`)
+
+Optimized for adding content to the end of a file (logs, exports, lists) without reading/rewriting the entire file.
+
+```kotlin
+import com.simiacryptus.cognotik.plan.tools.file.FileAppendTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileAppendTask.Companion.FileAppend
+val config = FileAppendTaskExecutionConfigData(
+    file = "CHANGELOG.md",
+    append_content = "## [1.0.1] - Fixed login bug",
+    // Optional: Read these files to generate the content contextually
+    related_files = listOf("src/auth/Login.kt") 
+)
+harness.runTask(FileAppend, /* typeConfig */, config, workspace)
+```
+
+### C. Read Documents / Q&A (`ReadDocumentsTask`)
+
+Pure analysis task. It reads files and answers questions without modifying the filesystem.
+
+```kotlin
+import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.ReadDocuments
+val config = ReadDocumentsTaskExecutionConfigData(
+    // Supports glob patterns
+    input_files = listOf("src/**/*.java", "README.md"),
+    inquiry_questions = listOf(
+        "How is authentication handled?",
+        "List all external API endpoints."
+    ),
+    inquiry_goal = "Generate security documentation"
+)
+harness.runTask(ReadDocuments, /* typeConfig */, config, workspace)
+```
+
+### D. File Search (`FileSearchTask`)
+
+Performs grep-like searches (literal or regex) and returns line numbers with context.
+
+```kotlin
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.file.FileSearchTask.Companion.FileSearch
+val config = FileSearchTaskExecutionConfigData(
+    search_pattern = "TODO|FIXME",
+    is_regex = true,
+    input_files = listOf("**/*.kt"),
+    context_lines = 2
+)
+harness.runTask(FileSearch, /* typeConfig */, config, workspace)
+```
+
+### E. Run Tool (`RunToolTask`)
+
+Executes external CLI tools configured in the user settings.
+
+```kotlin
+import com.simiacryptus.cognotik.plan.tools.run.RunToolTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.run.RunToolTask.Companion.RunTool
+val config = RunToolTaskExecutionConfigData(
+    tool = "python", // Must match a configured tool executable
+    args = listOf("scripts/verify_data.py", "--verbose"),
+    workingDir = "."
+)
+harness.runTask(RunTool, /* typeConfig */, config, workspace)
+```
+
+### F. Sub-Planning (`SubPlanTask`)
+
+The most powerful task. It spawns a nested agent to solve a complex goal. You can define a specific `CognitiveMode` for this sub-task (e.g., switching from Waterfall to Adaptive).
+
+```kotlin
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTaskExecutionConfigData
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.Companion.SubPlan
+import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.SubPlanTaskTypeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
+// 1. Configure the Strategy for the sub-agent
+val subAgentStrategy = SubPlanTaskTypeConfig(
+    cognitiveSettings = CognitiveModeConfig(type = CognitiveModeType.AdaptivePlanning),
+    purpose = "Research and Implementation"
+)
+// 2. Define the Goal
+val subAgentJob = SubPlanTaskExecutionConfigData(
+    planning_goal = "Research the best JSON library for Kotlin and implement a wrapper.",
+    context = listOf("Must be compatible with Java 11")
+)
+harness.runTask(
+    taskType = SubPlan,
+    typeConfig = subAgentStrategy,
+    executionConfig = subAgentJob,
+    workspace = workspace
+)
+```
+
 ---
 
-## 5. Advanced Configuration (`OrchestrationConfig`)
+## 6. Advanced Configuration (`OrchestrationConfig`)
 
 When running `runPlan`, you can inject a custom configuration lambda to control budget and safety limits.
 
@@ -210,7 +333,7 @@ harness.runPlan(
 
 ---
 
-## 6. Integration Examples
+## 7. Integration Examples
 
 ### A. As a Gradle Plugin
 You can wrap the harness in a custom Gradle Task to add AI capabilities to your build.
@@ -278,7 +401,7 @@ jobs:
           title: "AI Automated Fixes"
 ```
 
-## 7. Troubleshooting & Best Practices
+## 8. Troubleshooting & Best Practices
 
 1.  **Environment Variables:** Ensure `OPENAI_API_KEY` (or other provider keys) are available in the environment where the JAR runs. The `UnifiedHarness` does not load from local `.config` files when a custom `modelInstanceFn` is used.
 2.  **Context Window:** If working on large codebases, ensure you select a model with a large context window (e.g., `gpt-4-turbo` or `claude-3-opus`) in the `UnifiedHarness` constructor.

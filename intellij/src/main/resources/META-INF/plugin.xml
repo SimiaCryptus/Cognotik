@@ -114,108 +114,77 @@
                         description="Initiate an interactive dialogue session to discuss and analyze multiple image files simultaneously">
                 </action>
             </group>
-            <group id="cognotik.ui.ProjectMenu.Modify"
-                   class="com.intellij.openapi.actionSystem.DefaultActionGroup"
-                   popup="true"
-                   text="🔧 Macros"
-                   description="File modification tools">
-                <action class="cognotik.actions.agent.DocumentedMassPatchAction"
-                        text="🔨 Review Files"
-                        description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
-                </action>
-                <action class="cognotik.actions.generate.GenerateDocumentationAction"
-                        text="📚 Generate Documentation"
-                        description="Automatically generate comprehensive documentation for selected files or entire project, with customizable output formats">
-                </action>
-                <action class="cognotik.actions.agent.CustomFileSetPatchAction"
-                        text="🔨 Process Filesets"
-                        description="Analyze and patch multiple code files while considering markdown documentation files for context and standards">
-                </action>
-            </group>
-
-
-            <group id="cognotik.ui.ProjectMenu.Agents"
-                   class="com.intellij.openapi.actionSystem.DefaultActionGroup"
-                   popup="true"
-                   text="🤖 Agents"
-                   description="Cognotik-powered automation agents">
-                <group id="cognotik.ui.ProjectMenu.Tasks"
-                       class="com.intellij.openapi.actionSystem.DefaultActionGroup"
-                       popup="true"
-                       text="⚡ Single Tasks"
-                       description="Execute individual tasks with custom configuration">
-                    <action class="cognotik.actions.task.FileModificationTaskAction"
-                            text="📝 File Modification"
-                            description="Modify or create files with AI assistance using custom configuration">
-                    </action>
-                    <action class="cognotik.actions.task.WriteHtmlAction"
-                            text="🌐 Generate HTML Page"
-                            description="Create a complete HTML page with embedded CSS and JavaScript, optionally with AI-generated images">
-                    </action>
-                    <action class="cognotik.actions.task.DataIngestAction"
-                            text="📥 Data Ingestion"
-                            description="Parse unstructured logs or text files into structured data using AI-discovered regex patterns">
-                    </action>
-                    <action class="cognotik.actions.task.GeneratePresentationAction"
-                            text="📊 Generate Presentation"
-                            description="Create a complete Reveal.js presentation with speaker notes and optional AI-generated images">
-                    </action>
-                    <action class="cognotik.actions.task.IllustrateDocumentAction"
-                            text="🖼️ Illustrate Document"
-                            description="Generate illustrative images for a document based on its content, enhancing visual appeal and comprehension">
-                    </action>
-                    <group id="cognotik.ui.ProjectMenu.Tasks.More"
-                           class="com.intellij.openapi.actionSystem.DefaultActionGroup"
-                           popup="true"
-                           text="⚡ More"
-                           description="Additional single-task actions">
-                        <action class="cognotik.actions.task.BusinessProposalAction"
-                                text="📈 Business Proposal"
-                                description="Generate a comprehensive business proposal document tailored to your specific needs and objectives">
-                        </action>
-                        <action class="cognotik.actions.task.NarrativeGenerationAction"
-                                text="📖 Narrative Generation"
-                                description="Create engaging narratives or stories based on provided themes, characters, or settings">
-                        </action>
-                        <action class="cognotik.actions.task.PersuasiveEssayAction"
-                                text="📝 Persuasive Essay"
-                                description="Craft a compelling persuasive essay on a given topic, incorporating strong arguments and evidence to support your viewpoint">
-                        </action>
-                        <action class="cognotik.actions.task.ResearchPaperAction"
-                                text="📚 Research Paper"
-                                description="Generate a well-structured research paper complete with citations and references on a specified topic">
-                        </action>
-                    </group>
-                </group>
-                <action class="cognotik.actions.plan.UnifiedPlanAction"
-                        text="🧠 Task Planning"
-                        description="Choose from multiple planning strategies in a unified interface with customizable task settings">
-                </action>
-                <action class="cognotik.actions.agent.CommandAutofixAction"
-                        text="🔄 Run ... and Fix"
-                        description="Intelligent analysis and automatic resolution of build or test errors, with customizable fix suggestions">
-                </action>
-            </group>
-            <action class="cognotik.actions.generate.OCRAction"
-                    text="📄 OCR"
-                    description="Extract text from image files using Optical Character Recognition (OCR) and save to a new markdown file">
+            <action class="cognotik.actions.plan.UnifiedPlanAction"
+                    text="🧠 Task Planning"
+                    description="Choose from multiple planning strategies in a unified interface with customizable task settings">
             </action>
+            <action class="cognotik.actions.agent.CommandAutofixAction"
+                    text="🔄 Run ... and Fix"
+                    description="Intelligent analysis and automatic resolution of build or test errors, with customizable fix suggestions">
+            </action>
+            <group id="cognotik.ui.ProjectMenu.Tasks.More"
+                   class="com.intellij.openapi.actionSystem.DefaultActionGroup"
+                   popup="true"
+                   text="⚡ More"
+                   description="Additional single-task actions">
+                <action class="cognotik.actions.task.FileModificationTaskAction"
+                        text="📝 File Modification"
+                        description="Modify or create files with AI assistance using custom configuration">
+                </action>
+                <action class="cognotik.actions.task.WriteHtmlAction"
+                        text="🌐 Generate HTML Page"
+                        description="Create a complete HTML page with embedded CSS and JavaScript, optionally with AI-generated images">
+                </action>
+                <action class="cognotik.actions.task.DataIngestAction"
+                        text="📥 Data Ingestion"
+                        description="Parse unstructured logs or text files into structured data using AI-discovered regex patterns">
+                </action>
+                <action class="cognotik.actions.task.GeneratePresentationAction"
+                        text="📊 Generate Presentation"
+                        description="Create a complete Reveal.js presentation with speaker notes and optional AI-generated images">
+                </action>
+                <action class="cognotik.actions.task.IllustrateDocumentAction"
+                        text="🖼️ Illustrate Document"
+                        description="Generate illustrative images for a document based on its content, enhancing visual appeal and comprehension">
+                </action>
+                <action class="cognotik.actions.task.BusinessProposalAction"
+                        text="📈 Business Proposal"
+                        description="Generate a comprehensive business proposal document tailored to your specific needs and objectives">
+                </action>
+                <action class="cognotik.actions.task.NarrativeGenerationAction"
+                        text="📖 Narrative Generation"
+                        description="Create engaging narratives or stories based on provided themes, characters, or settings">
+                </action>
+                <action class="cognotik.actions.task.PersuasiveEssayAction"
+                        text="📝 Persuasive Essay"
+                        description="Craft a compelling persuasive essay on a given topic, incorporating strong arguments and evidence to support your viewpoint">
+                </action>
+                <action class="cognotik.actions.task.ResearchPaperAction"
+                        text="📚 Research Paper"
+                        description="Generate a well-structured research paper complete with citations and references on a specified topic">
+                </action>
+                <action class="cognotik.actions.generate.OCRAction"
+                        text="📄 OCR"
+                        description="Extract text from image files using Optical Character Recognition (OCR) and save to a new markdown file">
+                </action>
+
+                <action class="cognotik.actions.generate.GenerateRelatedFileAction"
+                        text="📄 Generate Related File"
+                        description="Intelligently create a new file related to the selected one, suggesting appropriate content and file location">
+                </action>
+                <action class="cognotik.actions.generate.CreateFileFromDescriptionAction"
+                        text="✨ Create File from Description"
+                        description="Create a new file with appropriate content based on a natural language description, intelligently determining file type and location">
+                </action>
+                <action class="cognotik.actions.generate.CreateImageAction"
+                        text="🖼️ Create Image from Description"
+                        description="Generate an image based on a natural language description, with customizable styles and formats">
+                </action>
+            </group>
 
             <action class="cognotik.actions.dev.ApplyPatchAction"
                     text="🔧 Apply Patch"
                     description="Intelligently apply a provided patch to the selected file, with automatic conflict resolution and error handling">
-            </action>
-            <action class="cognotik.actions.generate.GenerateRelatedFileAction"
-                    text="📄 Generate Related File"
-                    description="Intelligently create a new file related to the selected one, suggesting appropriate content and file location">
-            </action>
-            <action class="cognotik.actions.generate.CreateFileFromDescriptionAction"
-                    text="✨ Create File from Description"
-                    description="Create a new file with appropriate content based on a natural language description, intelligently determining file type and location">
-            </action>
-            <action class="cognotik.actions.generate.CreateImageAction"
-                    text="🖼️ Create Image from Description"
-                    description="Generate an image based on a natural language description, with customizable styles and formats">
             </action>
         </group>
 
