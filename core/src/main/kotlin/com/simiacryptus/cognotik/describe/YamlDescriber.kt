@@ -69,6 +69,7 @@ open class YamlDescriber : TypeDescriber() {
 
     override fun describe(
         rawType: Class<in Nothing>,
+        instance: Any?,
         stackMax: Int,
         describedTypes: MutableSet<String>
     ): String {
@@ -85,7 +86,7 @@ open class YamlDescriber : TypeDescriber() {
         val registeredSubTypes = getRegisteredSubTypes(rawType)
         val subTypesYaml = if (registeredSubTypes.isNotEmpty()) {
             val subTypeDescriptions = registeredSubTypes.map { subType ->
-                val subTypeDesc = describe(subType as Class<in Nothing>, stackMax - 1, describedTypes.toMutableSet())
+                val subTypeDesc = describe(subType as Class<in Nothing>, null, stackMax - 1, describedTypes.toMutableSet())
                 "${subType.simpleName}:\n  ${
                     subTypeDesc.lineSequence()
                         .map {
@@ -218,7 +219,7 @@ open class YamlDescriber : TypeDescriber() {
                 """
  ${it.name}:
   ${
-                    describe(it, rawType.kotlin, stackMax - 1, false, describedTypes).lineSequence()
+                    describe(it, rawType.kotlin, instance, stackMax - 1, false, describedTypes).lineSequence()
                         .map {
                             when {
                                 it.isBlank() -> {
@@ -247,7 +248,7 @@ open class YamlDescriber : TypeDescriber() {
                         """
  ${it.name}:
   ${
-                            describe(it, rawType, stackMax - 1).lineSequence()
+                            describe(it, rawType, instance, stackMax - 1).lineSequence()
                                 .map {
                                     when {
                                         it.isBlank() -> {
@@ -430,17 +431,20 @@ open class YamlDescriber : TypeDescriber() {
         "invokeMethod"
     )
 
-    override fun describe(self: Method, clazz: Class<*>?, stackMax: Int): String {
+    override fun describe(self: Method, clazz: Class<*>?, instance: Any?, stackMax: Int): String {
         if (stackMax <= 0) return "..."
         if (!coverMethods) return ""
 
         if (clazz != null && clazz.isKotlinClass()) {
             val function = clazz.kotlin.functions.find { it.name == self.name }
             if (function != null) {
-                return describe(function, clazz.kotlin, stackMax, true, mutableSetOf())
+                return describe(function, clazz.kotlin, instance, stackMax, true, mutableSetOf())
             }
         }
-        val parameterYaml = self.parameters.map { toYaml(it, stackMax - 1) }.toTypedArray().joinToString("\n").trim()
+        val overrides = (instance as? MethodTypeDescriber)?.getMethodTypes(self.name)
+        val parameterYaml = self.parameters.mapIndexed { index, parameter ->
+            toYaml(parameter, stackMax - 1, overrides?.getOrNull(index))
+        }.toTypedArray().joinToString("\n").trim()
         val returnTypeYaml = toYaml(self.genericReturnType, stackMax - 1, mutableSetOf()).trim()
         val description = self.getAnnotation(Description::class.java)?.value?.trim()?.replace("\"", "\\\"")
         val responseYaml = "responses:\n  application/json:\n    schema:\n      ${
@@ -487,12 +491,12 @@ open class YamlDescriber : TypeDescriber() {
         return buffer.toString()
     }
 
-    private fun toYaml(self: Parameter, stackMax: Int): String {
+    private fun toYaml(self: Parameter, stackMax: Int, typeOverride: Type? = null): String {
         if (stackMax <= 0) return "..."
         val description = self.getAnnotation(Description::class.java)?.value?.trim()
             ?.let { "description: " + it.replace("\n", "\\n") } ?: ""
         return "- name: ${self.name}\n  ${description}\n  ${
-            toYaml(self.parameterizedType, stackMax - 1, mutableSetOf()).lineSequence()
+            toYaml(typeOverride ?: self.parameterizedType, stackMax - 1, mutableSetOf()).lineSequence()
                 .map {
                     when {
                         it.isBlank() -> {
@@ -512,6 +516,7 @@ open class YamlDescriber : TypeDescriber() {
     private fun describe(
         self: KFunction<*>,
         concreteClass: KClass<*>,
+        instance: Any?,
         stackMax: Int,
         includeOperationID: Boolean = true,
         describedTypes: MutableSet<String>
@@ -521,8 +526,11 @@ open class YamlDescriber : TypeDescriber() {
         describedTypes.add(functionTypeRepresentation)
         if (stackMax <= 0) return "..."
         if (!coverMethods) return ""
+        val overrides = (instance as? MethodTypeDescriber)?.getMethodTypes(self.name)
         val parameterYaml = self.parameters.filter { it.name != null }
-            .map { toYaml(it, concreteClass, stackMax - 1, describedTypes) }.toTypedArray().joinToString("\n").trim()
+            .mapIndexed { index, kParameter ->
+                toYaml(kParameter, concreteClass, stackMax - 1, describedTypes, overrides?.getOrNull(index))
+            }.toTypedArray().joinToString("\n").trim()
         val returnTypeYaml = toYaml(self.returnType, stackMax - 1).trim()
         val description = (self.annotations.find { x -> x is Description } as? Description)
             ?.let { "description: ${it.value.trim().replace("\n", "\\n")}" } ?: ""
@@ -564,7 +572,8 @@ open class YamlDescriber : TypeDescriber() {
         self: KParameter,
         concreteClass: KClass<*>,
         stackMax: Int,
-        describedTypes: MutableSet<String>
+       describedTypes: MutableSet<String>,
+        typeOverride: Type? = null
     ): String {
         val parameterTypeRepresentation = "${concreteClass.qualifiedName}::${self.name}/${self.type}"
         if (describedTypes.contains(parameterTypeRepresentation) && parameterTypeRepresentation !in primitives) return "..."
@@ -575,7 +584,7 @@ open class YamlDescriber : TypeDescriber() {
             ?.let { "description: " + it.replace("\n", "\\n") } ?: ""
         val defaultValueInfo = if (self.isOptional) "required: false" else "required: true"
         return "- name: ${self.name}\n  ${description}\n  ${
-            toYaml(kType, stackMax - 1).lineSequence()
+            (if (typeOverride != null) toYaml(typeOverride, stackMax - 1, describedTypes) else toYaml(kType, stackMax - 1)).lineSequence()
                 .map {
                     when {
                         it.isBlank() -> {
@@ -676,7 +685,7 @@ open class YamlDescriber : TypeDescriber() {
                     .joinToString("\n")
             }".filterEmptyLines()
         } else {
-            describe(TypeToken.of(self).rawType, stackMax, describedTypes)
+            describe(TypeToken.of(self).rawType, null, stackMax, describedTypes)
         }
     }
 

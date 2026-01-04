@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
@@ -63,7 +64,6 @@ open class ConversationalMode(
         Regex("""@\((-?\d+)(?:\.{2,3}| to )(-?\d+)(?:(?::| by )(\d+))?\)""") // Matches @(start..end:step) or @(start to end by step)
 
     override fun initialize(task : SessionTask) {
-        val enabledTasks = TaskType.getAvailableTaskTypes(orchestrationConfig)
         log.debug(
             "ConversationalMode initialized with task types: ${enabledTasks.joinToString(", ") { it.name }}",
             RuntimeException()
@@ -272,7 +272,7 @@ open class ConversationalMode(
 
         val resultRef = AtomicReference<String>()
         tabs.newTask("Run").apply {
-            TaskType.getImpl(orchestrationConfig, chosenTask?.component2()).run(
+            orchestrationConfig.getImpl(chosenTask?.component2()).run(
                 agent = TaskOrchestrator(
                     user = user,
                     session = session,
@@ -464,7 +464,7 @@ open class ConversationalMode(
                 resultClass = Tasks::class.java,
                 exampleInstance = Tasks(
                     listOfNotNull(availableTaskTypes.firstOrNull()?.let {
-                        TaskType.getImpl(orchestrationConfig, it).executionConfig
+                        orchestrationConfig.getImpl(it).executionConfig
                     }).toMutableList()
                 ),
                 prompt = buildString {
@@ -474,7 +474,7 @@ open class ConversationalMode(
                         val taskType = TaskType.valueOf(config.task_type ?: return@joinToString "")
                         val configName = config.name?.let { " ($it)" } ?: ""
                         "* ${taskType.name}$configName:\n  ${
-                            TaskType.getImpl(orchestrationConfig, taskType).promptSegment().trim().trimIndent()
+                            orchestrationConfig.getImpl(taskType).promptSegment().trim().trimIndent()
                                 .indent("  ")
                         }" + (orchestrationConfig.workingDir?.let { root ->
                             "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"

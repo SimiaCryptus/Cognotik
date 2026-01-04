@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
@@ -95,8 +96,8 @@ abstract class SingleTaskApp(
             val task = ui.newTask(true)
 
             // Get the task implementation
-            val taskImpl = TaskType.getImpl(
-                orchestrationConfig = orchestrationConfig, taskType = taskType, cfg = taskConfig
+            val taskImpl = orchestrationConfig.getImpl(
+                taskType = taskType, cfg = taskConfig
             )
 
             // Execute the task

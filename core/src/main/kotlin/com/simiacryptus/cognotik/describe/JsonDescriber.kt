@@ -53,6 +53,7 @@ open class JsonDescriber(
 
     override fun describe(
         rawType: Class<in Nothing>,
+        instance: Any?,
         stackMax: Int,
         describedTypes: MutableSet<String>
     ): String {
@@ -195,7 +196,7 @@ open class JsonDescriber(
                 """
             "${it.name}": {
               ${
-                    describe(it, rawType.kotlin, stackMax - 1, false, describedTypes).lineSequence()
+                    describe(it, rawType.kotlin, instance, stackMax - 1, false, describedTypes).lineSequence()
                         .map {
                             when {
                                 it.isBlank() -> {
@@ -225,7 +226,7 @@ open class JsonDescriber(
                         """
                 "${it.name}": {
                   ${
-                            describe(it, rawType, stackMax - 1).lineSequence()
+                            describe(it, rawType, instance, stackMax - 1).lineSequence()
                                 .map {
                                     when {
                                         it.isBlank() -> {
@@ -278,16 +279,19 @@ open class JsonDescriber(
         return jsonBody.toString()
     }
 
-    override fun describe(self: Method, clazz: Class<*>?, stackMax: Int): String {
+    override fun describe(self: Method, clazz: Class<*>?, instance: Any?, stackMax: Int): String {
 
         val returnType = self.returnType
         clazz ?: return "..."
         val description = getAllAnnotations(clazz, self).find { x -> x is Description } as? Description
-        val parameterJson = self.parameters.map { toJson(it, stackMax - 1) }.toTypedArray().joinToString(",\n").trim()
+        val overrides = (instance as? MethodTypeDescriber)?.getMethodTypes(self.name)
+        val parameterJson = self.parameters.mapIndexed { index, parameter ->
+            toJson(parameter, stackMax - 1, overrides?.getOrNull(index))
+        }.toTypedArray().joinToString(",\n").trim()
         val methodDescription = if (description != null) """
             "description": "${description.value.trim()}",
             ${
-            describe(returnType, stackMax, mutableSetOf()).lineSequence()
+            describe(returnType, null, stackMax, mutableSetOf()).lineSequence()
                 .map {
                     when {
                         it.isBlank() -> {
@@ -304,7 +308,7 @@ open class JsonDescriber(
         }
             """.trimIndent().trim() else """
             ${
-            describe(returnType, stackMax, mutableSetOf()).lineSequence()
+            describe(returnType, null, stackMax, mutableSetOf()).lineSequence()
                 .map {
                     when {
                         it.isBlank() -> {
@@ -337,7 +341,7 @@ open class JsonDescriber(
                 ).toList()
     }
 
-    private fun toJson(self: Parameter, stackMax: Int): String {
+    private fun toJson(self: Parameter, stackMax: Int, typeOverride: Type? = null): String {
         if (stackMax <= 0) return "{...}"
         val description = self.getAnnotation(Description::class.java)?.value?.trim()
             ?.let { "\"description\": \"${it.replace("\n", "\\n")}\"," } ?: ""
@@ -346,7 +350,7 @@ open class JsonDescriber(
           "name": "${self.name}",
           $description
           ${
-            toJson(self.parameterizedType, stackMax - 1, mutableSetOf()).lineSequence()
+            toJson(typeOverride ?: self.parameterizedType, stackMax - 1, mutableSetOf()).lineSequence()
                 .map {
                     when {
                         it.isBlank() -> {
@@ -368,6 +372,7 @@ open class JsonDescriber(
     private fun describe(
         self: KFunction<*>,
         concreteClass: KClass<*>,
+        instance: Any?,
         stackMax: Int,
         includeOperationID: Boolean = true,
         describedTypes: MutableSet<String>
@@ -377,8 +382,11 @@ open class JsonDescriber(
         describedTypes.add(functionTypeRepresentation)
         if (stackMax <= 0) return "{...}"
         if (!coverMethods) return "{}"
+        val overrides = (instance as? MethodTypeDescriber)?.getMethodTypes(self.name)
         val parameterJson = self.parameters.filter { it.name != null }
-            .map { toJson(it, concreteClass, stackMax - 1, describedTypes) }.toTypedArray().joinToString(",\n").trim()
+            .mapIndexed { index, kParameter ->
+                toJson(kParameter, concreteClass, stackMax - 1, describedTypes, overrides?.getOrNull(index))
+            }.toTypedArray().joinToString(",\n").trim()
         val returnTypeJson = toJson(self.returnType, stackMax - 1, describedTypes).trim()
         val description = (self.annotations.find { x -> x is Description } as? Description)
             ?.let { "\"description\": \"${it.value.trim().replace("\n", "\\n")}\"," } ?: ""
@@ -399,7 +407,8 @@ open class JsonDescriber(
         self: KParameter,
         concreteClass: KClass<*>,
         stackMax: Int,
-        describedTypes: MutableSet<String>
+       describedTypes: MutableSet<String>,
+        typeOverride: Type? = null
     ): String {
         val parameterTypeRepresentation = "${concreteClass.qualifiedName}::${self.name}/${self.type}"
         if (describedTypes.contains(parameterTypeRepresentation) && parameterTypeRepresentation !in primitives) return "{...}"
@@ -414,7 +423,7 @@ open class JsonDescriber(
           "name": "${self.name}",
           $description
           ${
-            toJson(kType, stackMax - 1, describedTypes).lineSequence()
+            (if (typeOverride != null) toJson(typeOverride, stackMax - 1, describedTypes) else toJson(kType, stackMax - 1, describedTypes)).lineSequence()
                 .map {
                     when {
                         it.isBlank() -> {
@@ -487,7 +496,7 @@ open class JsonDescriber(
             }
             """.trimIndent()
         } else {
-            describe(TypeToken.of(self).rawType, stackMax, describedTypes)
+            describe(TypeToken.of(self).rawType, null, stackMax, describedTypes)
         }
     }
 

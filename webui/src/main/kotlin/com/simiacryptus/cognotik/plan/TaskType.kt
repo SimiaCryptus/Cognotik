@@ -146,16 +146,15 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             return values(TaskType::class.java)
         }
 
-        fun getImpl(
-            orchestrationConfig: OrchestrationConfig, planTask: TaskExecutionConfig?
+        fun OrchestrationConfig.getImpl(
+            planTask: TaskExecutionConfig?
         ) = getImpl(
-            orchestrationConfig = orchestrationConfig,
             taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
             cfg = planTask)
 
-        fun getImpl(
-            orchestrationConfig: OrchestrationConfig, taskType: TaskType<*, *>, cfg: TaskExecutionConfig? = null
-        ): AbstractTask<out TaskExecutionConfig, TaskTypeConfig> {
+        fun <T : TaskExecutionConfig, U : TaskTypeConfig> OrchestrationConfig.getImpl(
+            taskType: TaskType<T,U>, cfg: TaskExecutionConfig? = null
+        ): AbstractTask<out T, U> {
             val constructor = taskConstructors[taskType]
             if (constructor == null) {
                 throw RuntimeException("Unknown task type: ${taskType.name}")
@@ -165,7 +164,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             } catch (e: NoSuchMethodException) {
                 throw RuntimeException("Task execution config class ${taskType.executionConfigClass.name} does not have a no-arg constructor. Please provide a planTask instance.", e)
             }
-            return constructor(orchestrationConfig, executionConfig)
+            return constructor(this, executionConfig) as AbstractTask<out T, U>
         }
 
         fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig): List<TaskType<*, *>> {

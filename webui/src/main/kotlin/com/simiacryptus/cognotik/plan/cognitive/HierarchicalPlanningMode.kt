@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
@@ -539,7 +540,7 @@ open class HierarchicalPlanningMode(
                 return t.result
             }
             val semaphore = Semaphore(0)
-            val taskImpl = TaskType.getImpl(orchestrationConfig, planTask = planTask)
+            val taskImpl = orchestrationConfig.getImpl(planTask = planTask)
             taskImpl.run(
                 agent = coordinator,
                 messages = listOf(t.description ?: "") + contextData(),
@@ -595,7 +596,7 @@ open class HierarchicalPlanningMode(
             resultClass = Tasks::class.java, // Parse directly into TaskConfigBase
             exampleInstance = Tasks(
                 mutableListOf(TaskType.getAvailableTaskTypes(orchestrationConfig).firstOrNull()?.let {
-                    TaskType.getImpl(orchestrationConfig, it).executionConfig
+                    orchestrationConfig.getImpl(it).executionConfig
                 }).filterNotNull().toMutableList()
             ),
             prompt = """

@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
@@ -25,10 +26,12 @@ abstract class CognitiveMode<U : CognitiveModeConfig>(
         get() = orchestrationConfig.cognitiveSettings as? U
             ?: throw IllegalStateException("Cognitive settings not defined")
 
+    val enabledTasks get() = TaskType.getAvailableTaskTypes(orchestrationConfig)
+
     /**
      * Initialize the internal cognitive state.
      */
-    abstract fun initialize(task : SessionTask)
+    open fun initialize(task : SessionTask) {}
 
     /**
      * Handle a user message and trigger the appropriate planning or execution.

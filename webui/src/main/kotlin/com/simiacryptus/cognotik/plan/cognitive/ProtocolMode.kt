@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
@@ -34,10 +35,6 @@ open class ProtocolMode(
     private val log = LoggerFactory.getLogger(ProtocolMode::class.java)
     private var isRunning = false
     private val history = mutableListOf<String>()
-
-    override fun initialize(task : SessionTask) {
-        log.debug("Initializing ProtocolMode")
-    }
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         if (!isRunning) {
@@ -149,7 +146,7 @@ open class ProtocolMode(
                         }
 
                         val result = StringBuilder()
-                        val taskImpl = TaskType.getImpl(orchestrationConfig, taskConfig)
+                        val taskImpl = orchestrationConfig.getImpl(taskConfig)
                         val executionTask = stateTask.newTask()
                         stateTask.add(executionTask.placeholder)
                         executionTask.add(renderMarkdown("Executing: ${taskConfig?.task_description}"))

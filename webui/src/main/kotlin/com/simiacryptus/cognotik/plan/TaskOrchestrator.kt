@@ -166,7 +166,7 @@ class TaskOrchestrator(
                         visited = mutableSetOf()
                     )
                     task.add(("\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }).renderMarkdown)
-                    val impl = getImpl(orchestrationConfig, subTask)
+                    val impl = orchestrationConfig.getImpl(subTask)
                     val messages = listOf(
                         userMessage,
                         JsonUtil.toJson(plan),

@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
@@ -53,11 +54,6 @@ open class AdaptivePlanningMode(
     private var isRunning = false
     private var transcriptStream: FileOutputStream? = null
     private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+))}""")
-
-    override fun initialize(task : SessionTask) {
-        log.debug("Initializing AutoPlanMode")
-    }
-
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         log.debug("Handling user message: $userMessage")
         if (!isRunning) {
@@ -283,7 +279,7 @@ ${JsonUtil.toJson(taskConfig)}
     ): String {
         val currentThinkingStatus =
             reasoningState.get() ?: throw IllegalStateException("ThinkingStatus is null during runTask")
-        val taskImpl = TaskType.getImpl(orchestrationConfig, currentTask)
+        val taskImpl = orchestrationConfig.getImpl(currentTask)
         val result = StringBuilder()
 
         taskImpl.run(
@@ -329,7 +325,7 @@ ${JsonUtil.toJson(taskConfig)}
                             configs.map { config ->
                                 val configName = config.name?.let { " - Configuration: '$it'" } ?: ""
                                 "* ${taskType.name}$configName:\n  ${
-                                    TaskType.getImpl(orchestrationConfig, taskType).promptSegment().trim()
+                                    orchestrationConfig.getImpl(taskType).promptSegment().trim()
                                         .trimIndent()
                                         .indent("  ")
                                 }" + (orchestrationConfig.workingDir?.let { root ->
@@ -398,7 +394,7 @@ ${JsonUtil.toJson(taskConfig)}
                 ) to (if (taskConfigBase.task_type == null) {
                     null
                 } else {
-                    TaskType.getImpl(orchestrationConfig, taskConfigBase)
+                    orchestrationConfig.getImpl(taskConfigBase)
                 })?.executionConfig
             } ?: emptyList()
         }.flatten()

@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.diff.PatchProcessors
 import com.simiacryptus.cognotik.plan.PlanUtil.isWindows
+import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
@@ -88,7 +89,7 @@ class OrchestrationConfig(
         val availableTaskTypes = TaskType.getAvailableTaskTypes(this)
         return planningActor(
             taskDescriptions = availableTaskTypes.joinToString("\n") { taskType ->
-                val impl = TaskType.getImpl(this, taskType)
+                val impl = this.getImpl(taskType)
                 "* ${impl.promptSegment()}"
             } + (this.workingDir?.let { root ->
                 "\nAvailable files:\n\n" + getAvailableFiles(Path(root)).joinToString("\n") { "      - $it" } + "\n"
