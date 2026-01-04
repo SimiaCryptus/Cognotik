@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.run.RunToolTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
+import com.simiacryptus.cognotik.plan.tools.run.SymbolsDbCodeTask
 import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
 import com.simiacryptus.cognotik.plan.tools.session.JdbcSessionTask
 import com.simiacryptus.cognotik.plan.tools.social.*
@@ -129,6 +130,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument)
             registerConstructor(StructuralInvariantAnalysisTask.StructuralInvariantAnalysis)
             registerConstructor(SubPlanTask.SubPlan)
+            registerConstructor(SymbolsDbCodeTask.SymbolsDbCode)
             registerConstructor(SystemsThinkingTask.SystemsThinking)
             registerConstructor(TableCompilationTask.TableCompilation)
             registerConstructor(TechnicalExplanationTask.TechnicalExplanation)

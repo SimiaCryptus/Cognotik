@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.FailedToImplementException
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.toContentList
 import javax.script.ScriptException
 import kotlin.reflect.KClass
@@ -15,7 +16,8 @@ private const val TT = "`" + "`" + "`"
 typealias CodeInterceptor = (String) -> String
 
 open class CodeAgent(
-    val codeRuntimeClass: KClass<out CodeRuntime>,
+    val codeRuntime: CodeRuntime,
+    val codeRuntimeClass: KClass<out CodeRuntime> = codeRuntime::class,
     val symbols: Map<String, Any> = mapOf(),
     val describer: TypeDescriber = AbbrevWhitelistTSDescriber(
         "com.simiacryptus"
@@ -33,8 +35,8 @@ open class CodeAgent(
     model = model,
     temperature = temperature,
 ) {
-    val codeRuntime: CodeRuntime
-        get() = codeRuntimeClass.java.getConstructor(Map::class.java).newInstance(symbols + runtimeSymbols)
+//    val codeRuntime: CodeRuntime
+//        get() = codeRuntimeClass.java.getConstructor(Map::class.java).newInstance(symbols + runtimeSymbols)
 
     data class CodeRequest(
         val messages: List<Pair<String, Role>>,
@@ -432,7 +434,8 @@ Correct the code and try again.
     }
 
     override fun withModel(model: ChatInterface): CodeAgent = CodeAgent(
-        codeRuntimeClass = codeRuntimeClass,
+        codeRuntime = codeRuntime,
+//        codeRuntimeClass = codeRuntimeClass,
         symbols = symbols,
         describer = describer,
         name = name,
@@ -441,11 +444,11 @@ Correct the code and try again.
         fallbackModel = fallbackModel,
         temperature = temperature,
         runtimeSymbols = runtimeSymbols,
-        codeInterceptor = codeInterceptor
+        codeInterceptor = codeInterceptor,
     )
 
     companion object {
-        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(CodeAgent::class.java)
+        private val log = LoggerFactory.getLogger(CodeAgent::class.java)
 
         fun String.indent(indent: String = "  ") = this.lineSequence()
             .map {

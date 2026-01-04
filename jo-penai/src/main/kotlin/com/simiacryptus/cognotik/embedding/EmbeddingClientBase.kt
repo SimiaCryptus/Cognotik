@@ -43,7 +43,7 @@ abstract class SingleProviderEmbeddingClient(
 
 abstract class EmbeddingClientBase(
     workPool: ExecutorService,
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     scheduledPool: ListeningScheduledExecutorService,
 ) : HttpClientManager(

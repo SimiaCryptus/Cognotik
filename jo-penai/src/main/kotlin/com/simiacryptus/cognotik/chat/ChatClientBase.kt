@@ -54,7 +54,7 @@ abstract class SingleProviderChatClient(
 
 abstract class ChatClientBase(
     workPool: ExecutorService,
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     scheduledPool: ListeningScheduledExecutorService,
 ) : HttpClientManager(

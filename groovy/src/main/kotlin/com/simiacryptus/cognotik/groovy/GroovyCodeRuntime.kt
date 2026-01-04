@@ -42,12 +42,17 @@ open class GroovyCodeRuntime(private val defs: java.util.Map<String, Object>) : 
     }
 
     override fun validate(code: String): Exception? {
-        shell.parse(wrapCode(code))
-        return null
+        return try {
+            wrapExecution {
+                shell.parse(wrapCode(code))
+            }
+            null
+        } catch (e: Exception) {
+            e
+        }
     }
 
     companion object {
         val log = org.slf4j.LoggerFactory.getLogger(GroovyCodeRuntime::class.java)
     }
 }
-

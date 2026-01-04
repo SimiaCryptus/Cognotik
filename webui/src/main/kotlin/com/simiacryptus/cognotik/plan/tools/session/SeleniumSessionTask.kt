@@ -8,8 +8,8 @@ import io.github.bonigarcia.wdm.WebDriverManager
 import jakarta.servlet.http.Cookie
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
-import org.openqa.selenium.devtools.v136.log.Log
-import org.openqa.selenium.devtools.v136.network.Network
+import org.openqa.selenium.devtools.v143.log.Log
+import org.openqa.selenium.devtools.v143.network.Network
 import org.openqa.selenium.remote.RemoteWebDriver
 import java.io.FileOutputStream
 import java.util.*
@@ -304,7 +304,13 @@ class SeleniumSessionTask(
         val devTools = driver.devTools
         devTools.createSession()
 
-        devTools.send(Network.enable(Optional.empty(), Optional.empty(), Optional.empty()))
+        devTools.send(Network.enable(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty()
+        ))
         devTools.addListener(Network.requestWillBeSent()) { request ->
             println("Request URL: " + request.request.url)
         }

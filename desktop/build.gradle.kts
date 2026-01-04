@@ -508,11 +508,11 @@ tasks.register("buildDebManually", JPackageTask::class) {
             from(appImageDir)
             into(appInstallDir)
             // Ensure executables keep their permissions
-            eachFile(Action<FileCopyDetails> {
-                if (Files.isExecutable(file.toPath())) {
-                    mode = mode or 0b001_001_001 // Add execute permissions ugo+x
-                }
-            })
+//            eachFile(Action<FileCopyDetails> {
+//                if (Files.isExecutable(file.toPath())) {
+//                    mode = mode or 0b001_001_001 // Add execute permissions ugo+x
+//                }
+//            })
             // Remove the auto-generated .desktop file to avoid duplication
             exclude("lib/Cognotik.desktop")
         }

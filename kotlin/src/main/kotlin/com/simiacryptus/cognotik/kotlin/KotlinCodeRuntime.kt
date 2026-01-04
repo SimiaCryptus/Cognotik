@@ -99,7 +99,7 @@ open class KotlinCodeRuntime(
             scriptEngine = this.scriptEngine
             compile = scriptEngine.compile(wrappedCode)
             bindings = scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE)
-            return kotlinx.coroutines.runBlocking { compile.eval(bindings) }
+            return compile.eval(bindings)
         } catch (ex: ScriptException) {
             throw wrapException(ex, wrappedCode, code)
         } catch (ex: Throwable) {

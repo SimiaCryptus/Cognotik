@@ -24,21 +24,31 @@ dependencies {
 
     implementation(project(":jo-penai")) {
         exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
         exclude(group = "org.slf4j")
         exclude(group = "com.fasterxml.jackson.core")
     }
     implementation(project(":core")) {
         exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
         exclude(group = "org.slf4j")
         exclude(group = "com.fasterxml.jackson.core")
     }
     implementation(project(":groovy")) {
         exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
+        exclude(group = "org.slf4j")
+        exclude(group = "com.fasterxml.jackson.core")
+    }
+    implementation(project(":kotlin")) {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
         exclude(group = "org.slf4j")
         exclude(group = "com.fasterxml.jackson.core")
     }
     implementation(project(":webui")) {
         exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.jetbrains.kotlinx")
         exclude(group = "org.slf4j")
         exclude(group = "org.seleniumhq.selenium")
         exclude(group = "io.github.bonigarcia")
@@ -46,14 +56,6 @@ dependencies {
         exclude(group = "com.google.oauth-client")
     }
 
-    // Needed for PsiModifier and other PSI classes
-/*
-    implementation(libs.intellij.core) {
-        exclude(group = "org.jetbrains.kotlin")
-        exclude(group = "org.slf4j")
-    }
-*/
-    implementation(kotlin("compiler-embeddable"))
 
 
     implementation(libs.aws.bedrockruntime)
@@ -95,6 +97,13 @@ dependencies {
     }
 
 }
+//configurations.all {
+//    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+//    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+//    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-jdk8")
+//    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-slf4j")
+//}
+
 
 kotlin {
     jvmToolchain(21)

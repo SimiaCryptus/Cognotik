@@ -162,6 +162,28 @@ allprojects {
     }
 
 }
+
+// Configure the ben-manes versions plugin
+tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask> {
+    // Check for updates in the version catalog specifically
+    checkConstraints = true
+
+    // Define what constitutes a stable version
+    fun isNonStable(version: String): Boolean {
+        val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }
+        val regex = "^[0-9,.v-]+(-r)?$".toRegex()
+        val isStable = stableKeyword || regex.matches(version)
+        return isStable.not()
+    }
+
+    rejectVersionIf {
+        isNonStable(candidate.version) && !isNonStable(currentVersion)
+    }
+
+    // Generate output in formats easy for CI tools to parse
+    outputFormatter = "json,xml,plain"
+}
+
 // Add a task to generate an aggregated report for the entire project
 tasks.register<JacocoReport>("jacocoRootReport") {
     description = "Generates an aggregate report from all subprojects"

@@ -1,7 +1,9 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
 import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -15,17 +17,17 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.reflect.KClass
 
-class RunCodeTask(
+open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCodeTask.RunCodeTaskTypeConfig>(
     orchestrationConfig: OrchestrationConfig,
-    planTask: RunCodeTaskExecutionConfigData?,
-) : AbstractTask<RunCodeTask.RunCodeTaskExecutionConfigData, RunCodeTask.RunCodeTaskTypeConfig>(
+    planTask: T?,
+) : AbstractTask<T,U>(
     orchestrationConfig,
     planTask
 ) {
+    open fun symbols(): Map<String, Any> = emptyMap()
 
-    class RunCodeTaskTypeConfig(
+    open class RunCodeTaskTypeConfig(
         task_type: String = RunCode.name,
         val codeRuntime: CodeRuntimes? = null,
         model: ApiChatModel? = null,
@@ -36,16 +38,17 @@ class RunCodeTask(
         model = model,
     )
 
-    class RunCodeTaskExecutionConfigData(
+    open class RunCodeTaskExecutionConfigData(
         @Description("The task or goal to be accomplished")
         val goal: String? = null,
         @Description("The relative file path of the working directory")
         val workingDir: String? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
-        state: TaskState? = null
+        state: TaskState? = null,
+        task_type: String = RunCode.name
     ) : TaskExecutionConfig(
-        task_type = RunCode.name,
+        task_type = task_type,
         task_description = task_description,
         task_dependencies = task_dependencies?.toMutableList(),
         state = state
@@ -75,31 +78,24 @@ class RunCodeTask(
             ?: defaultSmart).getChildClient(task)
 
         val runtime = typeConfig.codeRuntime ?: CodeRuntimes.GroovyRuntime // Kotlin has issues running within IntelliJ
-        val defs = mapOf(
-            "env" to (orchestrationConfig.env ?: emptyMap()),
-            "workingDir" to (
-                    orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
-                        ?: orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
-                        ?: File(".").absolutePath
-                    ),
-        )
-        val codeRuntime = CodeRuntimes.getRuntime(runtime, defs)
 
+        val symbols = symbols()
         val codingAgent = object : CodingTask<CodeRuntime>(
             dataStorage = agent.dataStorage,
             session = agent.session,
             user = agent.user,
             ui = task.ui,
-            interpreter = codeRuntime::class as KClass<CodeRuntime>,
-            symbols = mapOf<String, Any>(
-                "env" to (orchestrationConfig.env ?: emptyMap()),
-                "workingDir" to (
-                        orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
-                            ?: orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
-                            ?: File(".").absolutePath
-                        ),
-                "language" to runtime.name.lowercase().replace("runtime", ""),
-            ),
+            codeRuntime = CodeRuntimes.getRuntime(
+                runtimeType = runtime,
+                params = mapOf(
+                    "env" to (orchestrationConfig.env ?: emptyMap()),
+                    "workingDir" to (
+                            orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
+                                ?: orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
+                                ?: File(".").absolutePath
+                            ),
+                ) + symbols),
+            symbols = symbols,
             temperature = orchestrationConfig.temperature,
             details = """
                 Code a solution using ${runtime.name} to the user's request.
@@ -107,6 +103,7 @@ class RunCodeTask(
             model = model,
             mainTask = task,
             retryable = false,
+            describer = describer(),
         ) {
             override fun displayFeedback(
                 task: SessionTask,
@@ -157,6 +154,7 @@ class RunCodeTask(
                 }
                 buttonsHtml.append(ui.hrefLink("Continue", "href-link play-button") {
                     transcript?.write("## User Action: Continue\n\n".toByteArray())
+                    transcript?.flush()
                     val finalOutput =
                         "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n"
                     resultFn(finalOutput)
@@ -164,6 +162,7 @@ class RunCodeTask(
                 })
                 val feedbackHtml = ui.textInput(oneAtATime { feedback: String ->
                     transcript?.write("## User Feedback\n$feedback\n\n".toByteArray())
+                    transcript?.flush()
                     super.responseAction(task, "Revising...", formHandle, formText) {
                         super.feedback(task, feedback, request, response)
                     }
@@ -188,6 +187,7 @@ class RunCodeTask(
                 val result = super.execute(task, response)
                 if (orchestrationConfig.autoFix) {
                     transcript?.write("## Auto-fix Execution\n\n".toByteArray())
+                    transcript?.flush()
                     response.let {
                         "## Command\n\n$TRIPLE_TILDE\n${response.code}\n$TRIPLE_TILDE\n## Result\n$TRIPLE_TILDE\n${response.result.resultValue}\n$TRIPLE_TILDE\n## Output\n$TRIPLE_TILDE\n${response.result.resultOutput}\n$TRIPLE_TILDE\n"
                     }.apply { resultFn(this) }
@@ -195,11 +195,15 @@ class RunCodeTask(
                 }
                 return result
             }
+
+
         }
+
+
         codingAgent.start(
             codingAgent.codeRequest(
                 messages.map { it to ModelSchema.Role.user } + listOf(
-                    (this.executionConfig?.goal ?: "") to ModelSchema.Role.user,
+                    (executionConfig?.goal ?: "") to ModelSchema.Role.user,
                 )
             )
         )
@@ -211,10 +215,14 @@ class RunCodeTask(
             log.warn("Error", e)
         } finally {
             transcript?.write("\n## Task Completed\n".toByteArray())
-            transcript?.close()
+            transcript?.flush()
             task.complete()
         }
     }
+
+    open fun describer(): TypeDescriber = AbbrevWhitelistTSDescriber(
+        "com.simiacryptus"
+    )
 
     companion object {
         private val log = LoggerFactory.getLogger(RunCodeTask::class.java)
@@ -239,3 +247,4 @@ class RunCodeTask(
 
     }
 }
+
