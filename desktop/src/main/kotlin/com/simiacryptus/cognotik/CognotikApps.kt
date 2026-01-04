@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.chat.BasicChatApp
 import com.simiacryptus.cognotik.webui.servlet.OAuthBase
@@ -52,9 +53,7 @@ open class CognotikApps(
         @JvmStatic
         fun main(args: Array<String>) {
             try {
-                require(TaskType.values().isNotEmpty())
-                require(ToolProvider.values().isNotEmpty())
-                require(CognitiveModeType.values().isNotEmpty())
+                initDynamicEnums()
                 if (args.isEmpty()) {
                     log.info("No arguments provided - defaulting to server mode with default options")
                     handleServer()

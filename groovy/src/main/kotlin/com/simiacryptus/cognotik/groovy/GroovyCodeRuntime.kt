@@ -9,6 +9,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
 open class GroovyCodeRuntime(private val defs: java.util.Map<String, Object>) : CodeRuntime {
 
     private val shell: GroovyShell
+    private val console = StringBuilder()
 
     init {
         try {
@@ -17,23 +18,32 @@ open class GroovyCodeRuntime(private val defs: java.util.Map<String, Object>) : 
             defs.forEach { key, value ->
                 shell.setVariable(key, value)
             }
+            shell.setVariable("out", java.io.PrintWriter(object : java.io.Writer() {
+                override fun write(cbuf: CharArray, off: Int, len: Int) {
+                    console.append(cbuf, off, len)
+                }
+                override fun flush() {}
+                override fun close() {}
+            }))
         } catch (e: Throwable) {
             log.error("Error initializing Groovy shell", e)
             throw RuntimeException("Failed to initialize Groovy shell", e)
         }
     }
 
-    override fun getLanguage(): String {
+    override val language : String get() {
         return "groovy"
     }
 
-    override fun getSymbols() = defs as Map<String, Any>
+    override val symbols = defs as Map<String, Any>
 
     override fun run(code: String): Any? {
         val wrapExecution = wrapExecution {
             try {
-                val script: Script = shell.parse(wrapCode(code))
-                script.run()
+                val scriptText = wrapCode(code)
+                val script: Script = shell.parse(scriptText)
+                val run = script.run()
+                if (console.isNotEmpty()) "$run\nConsole Output:\n$console" else run
             } catch (e: CompilationFailedException) {
                 throw e
             }

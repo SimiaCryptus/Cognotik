@@ -18,27 +18,30 @@ class SymbolsDbCodeTask(
 ) {
     companion object {
         val SymbolsDbCode = TaskType(
-            "SymbolsDbCodeTask",
-            "Execution & Automation",
-            SymbolsDbCodeTask::class.java,
-            SymbolsDbCodeTaskExecutionConfigData::class.java,
-            SymbolsDbCodeTaskTypeConfig::class.java,
-            "Execute code snippets with predefined symbols",
-            """
-          Executes code snippets in an interactive environment with access to predefined symbols.
-          <ul>
-            <li>User-approved code execution</li>
-            <li>Working directory configuration</li>
-            <li>Output capture and formatting</li>
-            <li>Error handling and reporting</li>
-            <li>Interactive result review</li>
-            <li>Access to predefined symbols for enhanced functionality</li>
-          </ul>
-        """,
+            name = "SymbolsDbCodeTask",
+            category = "Execution & Automation",
+            taskClass = SymbolsDbCodeTask::class.java,
+            executionConfigClass = SymbolsDbCodeTaskExecutionConfigData::class.java,
+            taskSettingsClass = SymbolsDbCodeTaskTypeConfig::class.java,
+            description = "Execute code snippets with predefined symbols",
+            tooltipHtml = """
+                      Executes code snippets in an interactive environment with access to a symbol graph.
+                      <ul>
+                        <li>Access to `symbols_db` (SymbolGraphService)</li>
+                        <li>Query code symbols and relationships</li>
+                        <li>User-approved code execution</li>
+                        <li>Interactive result review</li>
+                      </ul>
+                    """,
         )
     }
 
-    override fun symbols(): Map<String, Any> = typeConfig?.let {  typeConfig ->
+    override fun promptSegment() = super.promptSegment() + """
+        
+        You have access to a `symbols_db` object (SymbolGraphService) to assist with code execution.
+    """.trimIndent()
+
+    override fun symbols(): Map<String, Any> = typeConfig?.let { typeConfig ->
         mapOf(
             "symbols_db" to SymbolGraphService().apply {
                 load(root.toFile().resolve(typeConfig.symbolFile))
@@ -49,15 +52,13 @@ class SymbolsDbCodeTask(
     override fun describer() = AbbrevWhitelistTSDescriber("com.simiacryptus")
 
     open class SymbolsDbCodeTaskTypeConfig(
-        codeRuntime: CodeRuntimes? = null,
-        model: ApiChatModel? = null,
-        name: String? = SymbolsDbCode.name,
+        codeRuntime: CodeRuntimes? = CodeRuntimes.GroovyRuntime,
         val symbolFile: String = "symbol_graph.json",
     ) : RunCodeTaskTypeConfig(
         task_type = SymbolsDbCode.name,
         codeRuntime = codeRuntime,
-        model = model,
-        name = name,
+        model = null,
+        name = SymbolsDbCode.name,
     )
 
     open class SymbolsDbCodeTaskExecutionConfigData(

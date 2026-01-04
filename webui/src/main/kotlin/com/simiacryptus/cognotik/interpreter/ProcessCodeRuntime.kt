@@ -13,8 +13,8 @@ open class ProcessCodeRuntime(
     val command: List<String>?,
 ) : CodeRuntime {
 
-    override fun getSymbols(): Map<String, Any> = emptyMap()
-    final override fun getLanguage(): String = lang
+    override val symbols: Map<String, Any> = emptyMap()
+    final override val language: String = lang
 
     override fun validate(code: String): Throwable? {
         return null

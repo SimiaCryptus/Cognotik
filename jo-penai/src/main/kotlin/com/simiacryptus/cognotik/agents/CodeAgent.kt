@@ -69,7 +69,7 @@ open class CodeAgent(
                 if (evalFormat) """Code should be structured as appropriately parameterized function(s)
 
  with the final line invoking the function with the appropriate request parameters.""" else ""
-            val symbols = this.codeRuntime.getSymbols()
+            val symbols = this.codeRuntime.symbols
             return if (symbols.isNotEmpty()) {
                 """
 You are a coding assistant allows users actions to be enacted using $language and the script context.
@@ -107,7 +107,7 @@ ${details ?: ""}
             "$name:\n    ${describe.indent("    ")}"
         }.joinToString("\n")
 
-    val language: String by lazy { codeRuntime.getLanguage() }
+    val language: String by lazy { codeRuntime.language }
 
     override fun chatMessages(questions: CodeRequest): Array<ChatMessage> {
         var chatMessages = arrayOf(

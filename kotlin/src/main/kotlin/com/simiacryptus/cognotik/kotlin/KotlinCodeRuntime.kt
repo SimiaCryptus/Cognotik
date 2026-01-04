@@ -23,8 +23,8 @@ open class KotlinCodeRuntime(
     val defs: Map<String, Any> = mapOf(),
 ) : CodeRuntime {
 
-    final override fun getLanguage(): String = "Kotlin"
-    override fun getSymbols() = defs
+    final override val language: String = "Kotlin"
+    override val symbols = defs
 
     open val scriptEngine: KotlinJsr223JvmScriptEngineBase
         get() = object : KotlinJsr223JvmScriptEngineFactoryBase() {
@@ -52,7 +52,7 @@ open class KotlinCodeRuntime(
                     arrayOf()
                 )
             }.apply {
-                getBindings(ScriptContext.ENGINE_SCOPE).putAll(getSymbols())
+                getBindings(ScriptContext.ENGINE_SCOPE).putAll(symbols)
             }
         }.scriptEngine
 

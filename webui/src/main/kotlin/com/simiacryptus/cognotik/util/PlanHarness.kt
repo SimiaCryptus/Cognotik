@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
+import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.models.ToolProvider
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
@@ -101,10 +102,7 @@ open class PlanHarness(
                     base = api.baseUrl,
                 )
             }
-            require(TaskType.values().isNotEmpty())
-            require(ToolProvider.values().isNotEmpty())
-            require(CognitiveModeType.values().isNotEmpty())
-            require(CognitiveSchemaStrategy.values().isNotEmpty())
+            initDynamicEnums()
             ApplicationServices.authenticationManager = object : AuthenticationInterface {
                 override fun getUser(accessToken: String?) = defaultUser
                 override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
@@ -118,6 +116,15 @@ open class PlanHarness(
                 ): Boolean = true
             }
         }
+
+        fun initDynamicEnums() {
+            require(TaskType.values().isNotEmpty())
+            require(ToolProvider.values().isNotEmpty())
+            require(CognitiveModeType.values().isNotEmpty())
+            require(CognitiveSchemaStrategy.values().isNotEmpty())
+            require(CodeRuntimes.values().isNotEmpty())
+        }
+
         fun trayIcon(): Pair<CountDownLatch, TrayIcon?> {
             val shutdownLatch = CountDownLatch(1)
             var trayIcon: TrayIcon? = null
