@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.LoggerFactory
-import com.simiacryptus.cognotik.util.PlanHarness.initDynamicEnums
+import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import com.simiacryptus.cognotik.util.showDocument
 import software.amazon.awssdk.regions.Region
 import java.io.File

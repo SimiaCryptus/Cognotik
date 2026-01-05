@@ -78,7 +78,7 @@ class YamlDescriberTest : TypeDescriberTestBase() {
     fun testDescribedTypesPreventRecursion() {
         val describer = YamlDescriber()
         val describedTypes = mutableSetOf<String>()
-        val description = describer.describe(RecursiveType::class.java, 10, describedTypes)
+        val description = describer.describe(RecursiveType::class.java, null, 10, describedTypes)
         assertTrue(description.contains("..."), "Description should contain recursion prevention marker")
         assertTrue(
             describedTypes.contains(RecursiveType::class.java.name),
@@ -90,8 +90,8 @@ class YamlDescriberTest : TypeDescriberTestBase() {
     fun testDescribedTypesTrackMultipleTypes() {
         val describer = YamlDescriber()
         val describedTypes = mutableSetOf<String>()
-        describer.describe(FirstType::class.java, 10, describedTypes)
-        describer.describe(SecondType::class.java, 10, describedTypes)
+        describer.describe(FirstType::class.java, null, 10, describedTypes)
+        describer.describe(SecondType::class.java, null, 10, describedTypes)
         assertTrue(describedTypes.contains(FirstType::class.java.name), "Described types should contain FirstType")
         assertTrue(describedTypes.contains(SecondType::class.java.name), "Described types should contain SecondType")
     }
