@@ -86,7 +86,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                 "/test_coding_kotlin",
                 CodingActorTestApp(
                     CodeAgent(
-                        KotlinCodeRuntime::class,
+                        KotlinCodeRuntime(),
                         model = model,
                         fallbackModel = model,
                     )
@@ -96,7 +96,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                 "/test_coding_groovy",
                 CodingActorTestApp(
                     CodeAgent(
-                        GroovyCodeRuntime::class,
+                        GroovyCodeRuntime(),
                         model = model,
                         fallbackModel = model,
                     )

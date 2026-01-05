@@ -6,7 +6,9 @@ import groovy.lang.Script
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 
-open class GroovyCodeRuntime(private val defs: java.util.Map<String, Object>) : CodeRuntime {
+open class GroovyCodeRuntime(
+    defs: Map<String, Any> = emptyMap(),
+) : CodeRuntime {
 
     private val shell: GroovyShell
     private val console = StringBuilder()

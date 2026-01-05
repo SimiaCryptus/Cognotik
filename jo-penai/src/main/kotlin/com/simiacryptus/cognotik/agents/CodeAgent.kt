@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.agents
 
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.chat.model.ChatInterface
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema.*
@@ -19,13 +19,13 @@ open class CodeAgent(
     val codeRuntime: CodeRuntime,
     val codeRuntimeClass: KClass<out CodeRuntime> = codeRuntime::class,
     val symbols: Map<String, Any> = mapOf(),
-    val describer: TypeDescriber = AbbrevWhitelistTSDescriber(
+    val describer: TypeDescriber = AbbrevWhitelistYamlDescriber(
         "com.simiacryptus"
     ),
     name: String? = codeRuntimeClass.simpleName,
     val details: String? = null,
     model: ChatInterface,
-    val fallbackModel: ChatInterface,
+    val fallbackModel: ChatInterface? = null,
     temperature: Double = 0.1,
     val runtimeSymbols: Map<String, Any> = mapOf(),
     var codeInterceptor: CodeInterceptor = { it }
@@ -102,7 +102,7 @@ ${details ?: ""}
 
     open val apiDescription: String
         get() = this.symbols.map { (name, utilityObj) ->
-            val describe = this.describer.describe(utilityObj.javaClass)
+            val describe = this.describer.describe(utilityObj.javaClass, utilityObj)
             log.info("Describing $name (${utilityObj.javaClass}) in ${describe.length} characters")
             "$name:\n    ${describe.indent("    ")}"
         }.joinToString("\n")
@@ -244,7 +244,8 @@ ${details ?: ""}
             if (!givenCode.isNullOrBlank() && !givenResponse.isNullOrBlank()) (givenCode to givenResponse) else try {
                 implement(model)
             } catch (ex: FailedToImplementException) {
-                if (fallbackModel != model) {
+                val fallbackModel = fallbackModel
+                if (fallbackModel != model && null != fallbackModel) {
                     try {
                         implement(fallbackModel)
                     } catch (ex: FailedToImplementException) {

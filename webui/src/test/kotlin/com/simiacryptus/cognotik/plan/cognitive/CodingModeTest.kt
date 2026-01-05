@@ -5,9 +5,10 @@ import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import java.io.File
 
-object PersonaChatModeTest {
+object CodingModeTest {
 
     @JvmStatic
     @BeforeAll
@@ -15,11 +16,11 @@ object PersonaChatModeTest {
         PlanHarness.configurePlatform()
     }
 
-   //@Test
+   @Test
     fun test() {
         object : PlanHarness(
-            prompt = "Create a simple python script that prints 'Hello from PersonaChatMode'",
-            cognitiveSettings = CognitiveModeType.PersonaChat.newSettings(),
+            prompt = "Create a simple python script that prints 'Hello from CodingMode'",
+            cognitiveSettings = CodingModeConfig(),
         ) {
             override fun newConfig(session: Session, tempDir: File) = super.newConfig(session, tempDir).apply {
                 taskSettings[FileModificationTask.FileModification.name] = TaskTypeConfig(

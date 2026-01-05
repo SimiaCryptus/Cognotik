@@ -12,7 +12,7 @@ object GameNarrativeDesignTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        PlanHarness.Companion.configurePlatform()
+        PlanHarness.configurePlatform()
     }
 
     //@Test

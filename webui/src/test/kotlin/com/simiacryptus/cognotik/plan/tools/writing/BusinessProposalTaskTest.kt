@@ -13,7 +13,7 @@ object BusinessProposalTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        PlanHarness.Companion.configurePlatform()
+        PlanHarness.configurePlatform()
     }
 
    //@Test

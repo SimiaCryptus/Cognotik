@@ -125,7 +125,7 @@ open class TabbedDisplay(
             container.clear()
             container.append(render())
         }
-        task.complete()
+        task.update()
     }
 
 }

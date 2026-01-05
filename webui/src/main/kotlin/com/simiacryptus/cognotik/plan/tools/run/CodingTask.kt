@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.run
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -14,12 +14,10 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.util.*
-import kotlin.reflect.KClass
 
 open class CodingTask<T : CodeRuntime>(
     val dataStorage: StorageInterface,
@@ -35,7 +33,7 @@ open class CodingTask<T : CodeRuntime>(
     private val mainTask: SessionTask,
     val retryable: Boolean = true,
     val autoFix: Boolean = false,
-    val describer: TypeDescriber = AbbrevWhitelistTSDescriber(
+    val describer: TypeDescriber = AbbrevWhitelistYamlDescriber(
         "com.simiacryptus"
     ),
 ) {

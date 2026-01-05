@@ -1,13 +1,11 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.apps.SymbolGraphService
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.tools.run.SymbolsDbCodeTask.SymbolsDbCodeTaskExecutionConfigData
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
 
 class SymbolsDbCodeTask(
     orchestrationConfig: OrchestrationConfig,
@@ -49,7 +47,7 @@ class SymbolsDbCodeTask(
         )
     } ?: emptyMap()
 
-    override fun describer() = AbbrevWhitelistTSDescriber("com.simiacryptus")
+    override fun describer() = AbbrevWhitelistYamlDescriber("com.simiacryptus")
 
     open class SymbolsDbCodeTaskTypeConfig(
         codeRuntime: CodeRuntimes? = CodeRuntimes.GroovyRuntime,

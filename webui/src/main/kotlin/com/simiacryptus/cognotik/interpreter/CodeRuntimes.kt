@@ -79,7 +79,7 @@ class CodeRuntimes(
 
         init {
             registerConstructor(KotlinRuntime) { defs -> KotlinCodeRuntime(defs) }
-            registerConstructor(GroovyRuntime) { defs -> GroovyCodeRuntime(defs as java.util.Map<String, Object>) }
+            registerConstructor(GroovyRuntime) { defs -> GroovyCodeRuntime(defs) }
             registerConstructor(BashRuntime) { defs ->
                 ProcessCodeRuntime(
                     timeoutMinutes = defs["timeoutMinutes"]?.toString()?.toLongOrNull() ?: 15L,
