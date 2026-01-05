@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.CodeAgent
 import com.simiacryptus.cognotik.agents.ImageGenerationAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.general.StressTestApp
+import com.simiacryptus.cognotik.apps.StressTestApp
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
 import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
 import com.simiacryptus.cognotik.image.GeminiImageModels
@@ -86,7 +86,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                 "/test_coding_kotlin",
                 CodingActorTestApp(
                     CodeAgent(
-                        KotlinCodeRuntime::class,
+                        KotlinCodeRuntime(),
                         model = model,
                         fallbackModel = model,
                     )
@@ -96,7 +96,7 @@ object ActorTestAppServer : ApplicationDirectory(port = 7092) {
                 "/test_coding_groovy",
                 CodingActorTestApp(
                     CodeAgent(
-                        GroovyCodeRuntime::class,
+                        GroovyCodeRuntime(),
                         model = model,
                         fallbackModel = model,
                     )

@@ -22,21 +22,21 @@ class YamlDescriberTest : TypeDescriberTestBase() {
             type: object
             class: com.simiacryptus.cognotik.TypeDescriberTestBase${'$'}DataClassExample
             properties:
-                a:
+              a:
                 description: "This is an integer"
-                  type: int
+                type: int
               b:
-                  type: string
+                type: string
               c:
-                  type: array
+                type: array
                 items:
-                    class java.lang.String
+                  type: string
               d:
-                  type: map
+                type: map
                 keys:
-                    class java.lang.String
+                  type: string
                 values:
-                    type: integer
+                  type: integer
                 """.trimIndent()
 
     override val methodDescription
@@ -45,15 +45,15 @@ class YamlDescriberTest : TypeDescriberTestBase() {
             operationId: methodExample
             description: This is a method
             parameters:
-                - name: p1
+              - name: p1
                 description: This is a parameter
-                  type: int
+                type: int
               - name: p2
-                  type: string
+                type: string
             responses:
               application/json:
                 schema:
-                        type: string
+                  type: string
             """.trimIndent()
 
     @Test
@@ -64,11 +64,11 @@ class YamlDescriberTest : TypeDescriberTestBase() {
             type: object
             class: com.simiacryptus.cognotik.TypeDescriberTestBase${'$'}RecursiveDataClass
             properties:
-                name:
-                  type: string
+              name:
+                type: string
               parent:
                 description: "Recursive reference"
-                  ...
+                ...
             """.trimIndent()
         val actualDescription = typeDescriber.describe(RecursiveDataClass::class.java)
         Assertions.assertEquals(expectedDescription, actualDescription)
@@ -78,7 +78,7 @@ class YamlDescriberTest : TypeDescriberTestBase() {
     fun testDescribedTypesPreventRecursion() {
         val describer = YamlDescriber()
         val describedTypes = mutableSetOf<String>()
-        val description = describer.describe(RecursiveType::class.java, 10, describedTypes)
+        val description = describer.describe(RecursiveType::class.java, null, 10, describedTypes)
         assertTrue(description.contains("..."), "Description should contain recursion prevention marker")
         assertTrue(
             describedTypes.contains(RecursiveType::class.java.name),
@@ -90,8 +90,8 @@ class YamlDescriberTest : TypeDescriberTestBase() {
     fun testDescribedTypesTrackMultipleTypes() {
         val describer = YamlDescriber()
         val describedTypes = mutableSetOf<String>()
-        describer.describe(FirstType::class.java, 10, describedTypes)
-        describer.describe(SecondType::class.java, 10, describedTypes)
+        describer.describe(FirstType::class.java, null, 10, describedTypes)
+        describer.describe(SecondType::class.java, null, 10, describedTypes)
         assertTrue(describedTypes.contains(FirstType::class.java.name), "Described types should contain FirstType")
         assertTrue(describedTypes.contains(SecondType::class.java.name), "Described types should contain SecondType")
     }

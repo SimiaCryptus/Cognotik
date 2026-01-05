@@ -119,7 +119,7 @@ open class Selenium2S3(
     }
 
     override fun setScriptTimeout(timeout: Long) {
-        (driver as WebDriver).manage().timeouts().setScriptTimeout(timeout, TimeUnit.MILLISECONDS)
+        (driver as WebDriver).manage().timeouts().scriptTimeout(Duration.ofMillis(timeout))
     }
 
     override fun getBrowserInfo(): String {

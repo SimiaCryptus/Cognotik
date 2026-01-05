@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan
 
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.plan.PlanUtil.buildMermaidGraph
 import com.simiacryptus.cognotik.plan.PlanUtil.filterPlan
 import com.simiacryptus.cognotik.plan.PlanUtil.getAllDependencies
@@ -166,7 +166,7 @@ class TaskOrchestrator(
                         visited = mutableSetOf()
                     )
                     task.add(("\n### Dependencies:" + dependencies.joinToString("\n") { "* $it" }).renderMarkdown)
-                    val impl = getImpl(orchestrationConfig, subTask)
+                    val impl = orchestrationConfig.getImpl(subTask)
                     val messages = listOf(
                         userMessage,
                         JsonUtil.toJson(plan),

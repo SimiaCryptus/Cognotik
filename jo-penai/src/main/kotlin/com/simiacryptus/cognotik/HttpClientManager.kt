@@ -27,7 +27,7 @@ import java.util.function.Function
 import kotlin.math.pow
 
 abstract class HttpClientManager(
-    val logLevel: Level = Level.INFO,
+    val logLevel: Level = Level.DEBUG,
     val logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     val workPool: ExecutorService,
     val scheduledPool: ListeningScheduledExecutorService,

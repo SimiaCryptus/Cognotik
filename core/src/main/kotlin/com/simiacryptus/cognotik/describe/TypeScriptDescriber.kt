@@ -58,6 +58,7 @@ open class TypeScriptDescriber : TypeDescriber() {
 
     override fun describe(
         rawType: Class<in Nothing>,
+        instance: Any?,
         stackMax: Int,
         describedTypes: MutableSet<String>
     ): String {
@@ -97,7 +98,7 @@ open class TypeScriptDescriber : TypeDescriber() {
                     it.visibility == KVisibility.PUBLIC
                             && !methodBlacklist.contains(it.name)
                             && !it.isOperator && !it.isInfix && !it.isAbstract
-                }.map { describe(it, rawType.kotlin, stackMax - 1, false, describedTypes) }
+                }.map { describe(it, rawType.kotlin, instance, stackMax - 1, false, describedTypes) }
             } else {
                 rawType.methods
                     .filter {
@@ -105,7 +106,7 @@ open class TypeScriptDescriber : TypeDescriber() {
                             it.name
                         )
                     }
-                    .map { describe(it, rawType, stackMax - 1) }
+                    .map { describe(it, rawType, instance, stackMax - 1) }
             }).joinToString("\n")
         } else ""
 
@@ -162,7 +163,7 @@ open class TypeScriptDescriber : TypeDescriber() {
         "invokeMethod"
     )
 
-    override fun describe(self: Method, clazz: Class<*>?, stackMax: Int): String {
+    override fun describe(self: Method, clazz: Class<*>?, instance: Any?, stackMax: Int): String {
 
         if (stackMax <= 0) return ""
 
@@ -170,18 +171,19 @@ open class TypeScriptDescriber : TypeDescriber() {
         if (clazz != null && clazz.isKotlinClass()) {
             val function = clazz.kotlin.functions.find { it.name == self.name }
             if (function != null) {
-                return describe(function, clazz.kotlin, stackMax, true, mutableSetOf())
+                return describe(function, clazz.kotlin, instance, stackMax, true, mutableSetOf())
             }
         }
-        val parameterTs = self.parameters.joinToString(", ") {
-            "${it.name}: ${
+        val overrides = (instance as? MethodTypeDescriber)?.getMethodTypes(self.name)
+        val parameterTs = self.parameters.mapIndexed { index, parameter ->
+            "${parameter.name}: ${
                 toTypeScript(
-                    it.parameterizedType,
+                    overrides?.getOrNull(index) ?: parameter.parameterizedType,
                     stackMax - 1,
                     mutableSetOf()
                 )
             }"
-        }
+        }.joinToString(", ")
         val returnTypeTs = toTypeScript(self.genericReturnType, stackMax - 1, mutableSetOf())
         val description = self.getAnnotation(Description::class.java)?.value?.trim()
         val comment = if (description != null) "  /* $description */" else ""
@@ -191,6 +193,7 @@ open class TypeScriptDescriber : TypeDescriber() {
     private fun describe(
         self: KFunction<*>,
         concreteClass: KClass<*>,
+        instance: Any?,
         stackMax: Int,
         includeOperationID: Boolean = true,
         describedTypes: MutableSet<String>
@@ -203,8 +206,12 @@ open class TypeScriptDescriber : TypeDescriber() {
         if (stackMax <= 0) return ""
 
         if (!coverMethods) return ""
+        val overrides = (instance as? MethodTypeDescriber)?.getMethodTypes(self.name)
         val parameterTs = self.parameters.filter { it.name != null }
-            .joinToString(", ") { "${it.name}: ${toTypeScript(it.type, stackMax - 1)}" }
+            .mapIndexed { index, kParameter ->
+                val override = overrides?.getOrNull(index)
+                "${kParameter.name}: ${if (override != null) toTypeScript(override, stackMax - 1, mutableSetOf()) else toTypeScript(kParameter.type, stackMax - 1)}"
+            }.joinToString(", ")
         val returnTypeTs = toTypeScript(self.returnType, stackMax - 1)
         val description = (self.annotations.find { x -> x is Description } as? Description)?.value?.trim()
         val comment = if (description != null) "  /* $description */" else ""

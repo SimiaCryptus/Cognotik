@@ -1,14 +1,14 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
-import com.simiacryptus.cognotik.apps.general.TaskHarness
+import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.SubPlanTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.SubPlanTaskTypeConfig
+import com.simiacryptus.cognotik.util.PlanHarness
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.io.File
 
@@ -17,7 +17,7 @@ object SubPlanTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
+        PlanHarness.configurePlatform()
     }
 
     //@Test

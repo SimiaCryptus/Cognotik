@@ -6,22 +6,15 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 open class ProcessCodeRuntime(
-    private val defs: Map<String, Any>,
-    val timeoutMinutes: Long = defs["timeoutMinutes"]?.toString()?.toLongOrNull() ?: 15L,
-    val workingDir: File = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
-    val env: Map<String, String>? = defs["env"]?.let { env -> env as Map<String, String> },
-    val lang: String = defs["language"]?.toString() ?: "unknown",
-    val command: List<String>? = defs["command"]?.let { command ->
-        when (command) {
-            is String -> command.split(" ")
-            is List<*> -> command.map { it.toString() }
-            else -> throw IllegalArgumentException("Invalid command: $command")
-        }
-    },
+    val timeoutMinutes: Long,
+    val workingDir: File,
+    val env: Map<String, String>?,
+    val lang: String,
+    val command: List<String>?,
 ) : CodeRuntime {
 
-    override fun getSymbols(): Map<String, Any> = /*defs*/ emptyMap()
-    final override fun getLanguage(): String = lang
+    override val symbols: Map<String, Any> = emptyMap()
+    final override val language: String = lang
 
     override fun validate(code: String): Throwable? {
         return null
@@ -43,13 +36,17 @@ open class ProcessCodeRuntime(
         val error = process.errorStream.bufferedReader().readText()
 
         val waitFor = process.waitFor(timeoutMinutes, TimeUnit.MINUTES)
-        if (!waitFor) {
-            process.destroy()
-            throw RuntimeException("Process execution timed out after $timeoutMinutes minutes; output: $output; error: $error")
-        } else if (error.isNotEmpty()) {
-            return "ERROR:\n\n${error.indent("  ")}\n\nOUTPUT:\n\n${output.indent("  ")}\n"
-        } else {
-            return output
+        return when {
+            !waitFor -> {
+                process.destroy()
+                throw RuntimeException("Process execution timed out after $timeoutMinutes minutes; output: $output; error: $error")
+            }
+            error.isNotEmpty() -> {
+                "ERROR:\n\n${error.indent("  ")}\n\nOUTPUT:\n\n${output.indent("  ")}\n"
+            }
+            else -> {
+                output
+            }
         }
     }
 

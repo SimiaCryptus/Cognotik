@@ -44,7 +44,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.commons.io)
 
-    implementation("com.google.genai:google-genai:1.24.0")
+    implementation("com.google.genai:google-genai:1.32.0")
 
     compileOnly(libs.android)
 

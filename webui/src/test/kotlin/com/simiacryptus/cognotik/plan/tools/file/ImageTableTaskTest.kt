@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.apps.general.TaskHarness
+import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask.ImageTableTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.ImageTableTask.ImageTableTaskTypeConfig
+import com.simiacryptus.cognotik.util.PlanHarness
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
 
@@ -13,7 +13,7 @@ object ImageTableTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
+        PlanHarness.configurePlatform()
     }
 
    //@Test

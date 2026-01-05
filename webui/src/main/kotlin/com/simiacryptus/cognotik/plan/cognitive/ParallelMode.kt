@@ -1,8 +1,9 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode.Companion.requestToTask
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.Companion.getAvailableFiles
 import com.simiacryptus.cognotik.platform.Session
@@ -40,9 +41,6 @@ open class ParallelMode(
 
     private val log = LoggerFactory.getLogger(ParallelMode::class.java)
 
-    override fun initialize(task : SessionTask) {
-        log.debug("Initializing ParallelMode")
-    }
 
     override fun contextData(): List<String> = emptyList()
 
@@ -126,7 +124,7 @@ open class ParallelMode(
                             dataStorage = task.ui.dataStorage!!,
                             root = root
                         )
-                        val impl = TaskType.getImpl(orchestrationConfig, chosenTask)
+                        val impl = orchestrationConfig.getImpl(chosenTask)
                         var resultString = ""
                         impl.run(
                             agent = coordinator,
@@ -170,7 +168,7 @@ open class ParallelMode(
     private fun createParserAgent(task: SessionTask): ParsedAgent<ParallelPlan> {
         val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
         val taskDescriptions = availableTaskTypes.joinToString("\n") { taskType ->
-            val impl = TaskType.getImpl(orchestrationConfig, taskType)
+            val impl = orchestrationConfig.getImpl(taskType)
             "* ${taskType.name}: ${impl.promptSegment()}"
         }
 

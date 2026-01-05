@@ -65,6 +65,7 @@ dependencies {
 
     // Optional Android dependency
     compileOnly(libs.android)
+    compileOnly(libs.groovy.all)
 
     compileOnly(platform(libs.aws.bom))
     compileOnly(libs.aws.sdk)

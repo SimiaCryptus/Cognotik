@@ -1,8 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.agents.CodeAgent
-import com.simiacryptus.cognotik.apps.general.renderMarkdown
+import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
+import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.plan.transcript
@@ -12,19 +14,18 @@ import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.util.*
-import kotlin.reflect.KClass
 
 open class CodingTask<T : CodeRuntime>(
     val dataStorage: StorageInterface,
     val session: Session,
     val user: User?,
     val ui: SocketManager,
-    val interpreter: KClass<T>,
+    val codeRuntime: T,
+//    val interpreter: KClass<T>,
     val symbols: Map<String, Any>,
     val temperature: Double = 0.1,
     val details: String? = null,
@@ -32,16 +33,20 @@ open class CodingTask<T : CodeRuntime>(
     private val mainTask: SessionTask,
     val retryable: Boolean = true,
     val autoFix: Boolean = false,
+    val describer: TypeDescriber = AbbrevWhitelistYamlDescriber(
+        "com.simiacryptus"
+    ),
 ) {
 
     open val codeAgent by lazy {
         CodeAgent(
-            interpreter,
+            codeRuntime,
             symbols = symbols,
             temperature = temperature,
             details = details,
             model = model,
-            fallbackModel = model
+            fallbackModel = model,
+            describer = describer,
         )
     }
 

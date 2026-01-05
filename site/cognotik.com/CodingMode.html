@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="logo.svg" rel="icon" type="image/svg+xml">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Mode - Cognotik</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
+</head>
+<body>
+<!-- Header Component -->
+<cognotik-header current-page="coding-mode"></cognotik-header>
+
+<main>
+    <!-- Hero -->
+    <section class="hero">
+        <h1>Coding Mode</h1>
+        <p class="subtitle">
+            The Developer. An interactive, code-first environment where you can execute scripts,
+            manipulate data, and orchestrate tasks directly via code.
+        </p>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <h2>Core Capabilities</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i data-lucide="terminal"></i>
+                <h3>Interactive REPL</h3>
+                <p>Execute code snippets in real-time. Perfect for rapid prototyping, data analysis, and debugging complex logic.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="code-2"></i>
+                <h3>Direct API Access</h3>
+                <p>Interact directly with Cognotik's task orchestration engine and internal APIs through the scripting environment.</p>
+            </div>
+            <div class="feature-card">
+                <i data-lucide="layers"></i>
+                <h3>Multi-Language Support</h3>
+                <p>Supports various runtime environments (like Groovy) to suit your scripting preference and project needs.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Detail Section -->
+    <section class="modes-section" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+        <h2>How It Works</h2>
+        <div class="mode-grid" style="grid-template-columns: 1fr;">
+            <div class="mode-card">
+                <div class="mode-title">1. Input & Context</div>
+                <p>
+                    You provide a natural language request or raw code. The system prepares a coding environment with access to
+                    project files, environment variables, and defined task tools.
+                </p>
+            </div>
+            <div class="mode-card">
+                <div class="mode-title">2. Code Generation & Execution</div>
+                <p>
+                    The AI generates the necessary code to fulfill your request (or uses your provided code).
+                    This code is executed in a secure sandbox, capable of calling other agents or performing file I/O.
+                </p>
+            </div>
+            <div class="mode-card">
+                <div class="mode-title">3. Result Visualization</div>
+                <p>
+                    Execution results are captured and displayed in tabbed views:
+                <ul>
+                    <li><strong>Code:</strong> The script that was run.</li>
+                    <li><strong>Output:</strong> Standard output (logs, print statements).</li>
+                    <li><strong>Result:</strong> The return value of the script.</li>
+                </ul>
+                </p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    lucide.createIcons();
+</script>
+</body>
+</html>

@@ -4,8 +4,8 @@ import com.simiacryptus.cognotik.util.EnabledStrategy
 
 interface CodeRuntime : EnabledStrategy {
 
-    fun getLanguage(): String
-    fun getSymbols(): Map<String, Any>
+    val language: String
+    val symbols: Map<String, Any>
     fun run(code: String): Any?
     fun validate(code: String): Throwable?
 

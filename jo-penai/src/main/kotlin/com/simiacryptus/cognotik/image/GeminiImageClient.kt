@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutorService
 class GeminiImageClient(
     apiKey: String,
     workPool: ExecutorService,
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream>,
     scheduledPool: ListeningScheduledExecutorService,
     useVertexAI: Boolean = false,

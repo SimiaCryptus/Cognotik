@@ -2,11 +2,12 @@ package com.simiacryptus.cognotik.agents
 
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.chat.model.ChatInterface
-import com.simiacryptus.cognotik.describe.AbbrevWhitelistTSDescriber
+import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.FailedToImplementException
+import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.toContentList
 import javax.script.ScriptException
 import kotlin.reflect.KClass
@@ -15,15 +16,16 @@ private const val TT = "`" + "`" + "`"
 typealias CodeInterceptor = (String) -> String
 
 open class CodeAgent(
-    val codeRuntimeClass: KClass<out CodeRuntime>,
+    val codeRuntime: CodeRuntime,
+    val codeRuntimeClass: KClass<out CodeRuntime> = codeRuntime::class,
     val symbols: Map<String, Any> = mapOf(),
-    val describer: TypeDescriber = AbbrevWhitelistTSDescriber(
+    val describer: TypeDescriber = AbbrevWhitelistYamlDescriber(
         "com.simiacryptus"
     ),
     name: String? = codeRuntimeClass.simpleName,
     val details: String? = null,
     model: ChatInterface,
-    val fallbackModel: ChatInterface,
+    val fallbackModel: ChatInterface? = null,
     temperature: Double = 0.1,
     val runtimeSymbols: Map<String, Any> = mapOf(),
     var codeInterceptor: CodeInterceptor = { it }
@@ -33,8 +35,8 @@ open class CodeAgent(
     model = model,
     temperature = temperature,
 ) {
-    val codeRuntime: CodeRuntime
-        get() = codeRuntimeClass.java.getConstructor(Map::class.java).newInstance(symbols + runtimeSymbols)
+//    val codeRuntime: CodeRuntime
+//        get() = codeRuntimeClass.java.getConstructor(Map::class.java).newInstance(symbols + runtimeSymbols)
 
     data class CodeRequest(
         val messages: List<Pair<String, Role>>,
@@ -67,7 +69,7 @@ open class CodeAgent(
                 if (evalFormat) """Code should be structured as appropriately parameterized function(s)
 
  with the final line invoking the function with the appropriate request parameters.""" else ""
-            val symbols = this.codeRuntime.getSymbols()
+            val symbols = this.codeRuntime.symbols
             return if (symbols.isNotEmpty()) {
                 """
 You are a coding assistant allows users actions to be enacted using $language and the script context.
@@ -100,12 +102,12 @@ ${details ?: ""}
 
     open val apiDescription: String
         get() = this.symbols.map { (name, utilityObj) ->
-            val describe = this.describer.describe(utilityObj.javaClass)
+            val describe = this.describer.describe(utilityObj.javaClass, utilityObj)
             log.info("Describing $name (${utilityObj.javaClass}) in ${describe.length} characters")
             "$name:\n    ${describe.indent("    ")}"
         }.joinToString("\n")
 
-    val language: String by lazy { codeRuntime.getLanguage() }
+    val language: String by lazy { codeRuntime.language }
 
     override fun chatMessages(questions: CodeRequest): Array<ChatMessage> {
         var chatMessages = arrayOf(
@@ -242,7 +244,8 @@ ${details ?: ""}
             if (!givenCode.isNullOrBlank() && !givenResponse.isNullOrBlank()) (givenCode to givenResponse) else try {
                 implement(model)
             } catch (ex: FailedToImplementException) {
-                if (fallbackModel != model) {
+                val fallbackModel = fallbackModel
+                if (fallbackModel != model && null != fallbackModel) {
                     try {
                         implement(fallbackModel)
                     } catch (ex: FailedToImplementException) {
@@ -432,7 +435,8 @@ Correct the code and try again.
     }
 
     override fun withModel(model: ChatInterface): CodeAgent = CodeAgent(
-        codeRuntimeClass = codeRuntimeClass,
+        codeRuntime = codeRuntime,
+//        codeRuntimeClass = codeRuntimeClass,
         symbols = symbols,
         describer = describer,
         name = name,
@@ -441,11 +445,11 @@ Correct the code and try again.
         fallbackModel = fallbackModel,
         temperature = temperature,
         runtimeSymbols = runtimeSymbols,
-        codeInterceptor = codeInterceptor
+        codeInterceptor = codeInterceptor,
     )
 
     companion object {
-        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(CodeAgent::class.java)
+        private val log = LoggerFactory.getLogger(CodeAgent::class.java)
 
         fun String.indent(indent: String = "  ") = this.lineSequence()
             .map {

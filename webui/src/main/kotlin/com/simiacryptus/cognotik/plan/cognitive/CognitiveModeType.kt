@@ -25,6 +25,7 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
         val Protocol = CognitiveModeType("Protocol", ProtocolModeConfig::class.java, inputCnt = ProtocolMode.inputCnt)
         val Council = CognitiveModeType("Council", CouncilModeConfig::class.java, inputCnt = CouncilMode.inputCnt)
         val PersonaChat = CognitiveModeType("PersonaChat", PersonaChatConfig::class.java, inputCnt = PersonaChatMode.inputCnt)
+        val Coding = CognitiveModeType("Coding", CodingModeConfig::class.java)
 
         private val constructors by lazy {
             val map =
@@ -48,6 +49,7 @@ class CognitiveModeType<out U : CognitiveModeConfig>(
             register(Protocol) {  config, session, user -> ProtocolMode(config, session, user) }
             register(Council) {  config, session, user -> CouncilMode(config, session, user) }
             register(PersonaChat) {  config, session, user -> PersonaChatMode(config, session, user) }
+            register(Coding) {  config, session, user -> CodingMode(config, session, user) }
             map
         }
 

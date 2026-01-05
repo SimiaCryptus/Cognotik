@@ -7,7 +7,7 @@ plugins {
     `java-library`
     `maven-publish`
     signing
-    id("com.github.node-gradle.node") version "7.0.1"
+    id("com.github.node-gradle.node") version "7.1.0"
 }
 
 repositories {
@@ -33,6 +33,9 @@ dependencies {
     implementation(libs.pty4j)
     implementation(libs.webdrivermanager)
     implementation(libs.pdfbox)
+    implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
+    implementation("com.github.jai-imageio:jai-imageio-jpeg2000:1.4.0")
+    implementation("org.apache.pdfbox:jbig2-imageio:3.0.4")
     implementation(libs.poi)
     implementation(libs.poi.ooxml)
     implementation(libs.jsoup)

@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutorService
 open class OpenAIImageClient(
     protected var key: String,
     protected val apiBase: String,
-    logLevel: Level = Level.TRACE,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     workPool: ExecutorService,
     scheduledPool: ListeningScheduledExecutorService,

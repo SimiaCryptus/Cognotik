@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.User
@@ -51,9 +52,6 @@ open class CouncilMode(
     private val maxIterations: Int get() = config.maxIterations
     val describer: TaskContextYamlDescriber = TaskContextYamlDescriber(orchestrationConfig)
 
-    override fun initialize(task : SessionTask) {
-        log.debug("Initializing CouncilMode")
-    }
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
         if (!isRunning) {
@@ -325,7 +323,7 @@ ${JsonUtil.toJson(taskConfig)}
                             configs.map { config ->
                                 val configName = config.name?.let { " - Configuration: '$it'" } ?: ""
                                 "* ${taskType.name}$configName:\n  ${
-                                    TaskType.getImpl(orchestrationConfig, taskType).promptSegment().trim()
+                                    orchestrationConfig.getImpl(taskType).promptSegment().trim()
                                         .trimIndent()
                                         .indent("  ")
                                 }"
@@ -412,7 +410,7 @@ ${JsonUtil.toJson(taskConfig)}
         userMessage: String,
         task: SessionTask
     ): String {
-        val taskImpl = TaskType.getImpl(orchestrationConfig, currentTask)
+        val taskImpl = orchestrationConfig.getImpl(currentTask)
         val result = StringBuilder()
         taskImpl.run(
             agent = coordinator,

@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.apps.general.TaskHarness
+import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.data.toFile
 import com.simiacryptus.cognotik.plan.tools.file.PdfFormTask.PdfFormExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.file.PdfFormTask.PdfFormTypeConfig
-import org.apache.pdfbox.Loader
+import com.simiacryptus.cognotik.util.PlanHarness
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm
@@ -12,7 +12,6 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDTextField
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
 object PdfFormTaskTest {
@@ -20,7 +19,7 @@ object PdfFormTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        com.simiacryptus.cognotik.apps.general.PlanHarness.Companion.configurePlatform()
+        PlanHarness.configurePlatform()
     }
 
     //@Test
@@ -65,7 +64,7 @@ object PdfFormTaskTest {
         val outputFile = harness.workspace.resolve("output.pdf")
         assertTrue(outputFile.exists(), "The output PDF file should exist after task execution")
 
-        Loader.loadPDF(outputFile.toFile()).use { pdf ->
+        PDDocument.load(outputFile.toFile()).use { pdf ->
             val field = pdf.documentCatalog.acroForm.getField("name")
             assertEquals("John Doe", field.valueAsString)
         }

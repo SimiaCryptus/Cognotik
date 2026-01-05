@@ -1,7 +1,6 @@
 package cognotik.actions.analysis
 
 import cognotik.actions.BaseAction
-import com.simiacryptus.cognotik.apps.SymbolGraphService
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
@@ -12,16 +11,12 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiManager
-import com.intellij.psi.PsiNamedElement
-import com.intellij.psi.PsiRecursiveElementVisitor
+import com.intellij.psi.*
+import com.simiacryptus.cognotik.apps.SymbolGraphService
 import com.simiacryptus.cognotik.util.LoggerFactory
-import org.jetbrains.kotlin.com.intellij.psi.PsiModifier
-import org.jetbrains.kotlin.com.intellij.psi.PsiModifierListOwner
-import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
-import org.jetbrains.kotlin.psi.KtModifierListOwner
+//import org.jetbrains.kotlin.com.intellij.psi.PsiModifier
+//import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
+//import org.jetbrains.kotlin.psi.KtModifierListOwner
 import java.io.File
 import java.util.*
 
@@ -44,6 +39,14 @@ class SymbolExtractionAction : BaseAction() {
             override fun run(indicator: ProgressIndicator) {
                 if(verbose) log.info("Background task started")
                 val service = SymbolGraphService()
+                val jsonFile = File(project.basePath, "symbol_graph.json")
+                if (jsonFile.exists()) {
+                    try {
+                        service.load(jsonFile)
+                    } catch (e: Exception) {
+                        log.warn("Error loading existing symbol graph", e)
+                    }
+                }
                 val fileList = mutableListOf<VirtualFile>()
 
                 ReadAction.run<Throwable> {
@@ -59,6 +62,13 @@ class SymbolExtractionAction : BaseAction() {
                     }
                     if(verbose) log.info("Collected ${fileList.size} files")
                 }
+                val currentFilePaths = fileList.map { it.path }.toSet()
+                val graphFilePaths = service.listFileIds()
+                (graphFilePaths - currentFilePaths).forEach {
+                    if (verbose) log.info("Removing deleted file from graph: $it")
+                    service.removeFile(it)
+                }
+
 
                 indicator.isIndeterminate = false
                 val totalFiles = fileList.size
@@ -79,7 +89,15 @@ class SymbolExtractionAction : BaseAction() {
                                 if(verbose) log.debug("Analyzing file: ${virtualFile.path}")
                                 
                                 val fileId = virtualFile.path
-                                service.addFile(fileId, virtualFile.name)
+                                val lastModified = virtualFile.timeStamp
+                                val storedModified = service.getLastModified(fileId)
+                                if (storedModified != null && storedModified == lastModified) {
+                                    return@run
+                                }
+
+                                service.addFile(fileId, virtualFile.name, lastModified)
+                                service.clearOutgoingReferences(fileId)
+                                val foundSymbolIds = mutableSetOf<String>()
                                 val scopeStack = Stack<String>()
 
                                 psiFile.accept(object : PsiRecursiveElementVisitor() {
@@ -103,23 +121,24 @@ class SymbolExtractionAction : BaseAction() {
                                                 var visibility: String? = null
                                                 var modifiersStr: String? = null
                                                 var annotationsStr: String? = null
-                                                if (element is KtModifierListOwner) {
-                                                    element.modifierList?.let { modList ->
-                                                        visibility = when {
-                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("public")) -> "public"
-                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("private")) -> "private"
-                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("internal")) -> "internal"
-                                                            else -> "package"
-                                                        }
-                                                        val modifiers = listOf(PsiModifier.STATIC, PsiModifier.FINAL, PsiModifier.ABSTRACT, PsiModifier.SYNCHRONIZED)
-                                                            .filter { m -> modList.hasModifier(KtModifierKeywordToken.keywordModifier(m.lowercase())) }
-                                                        if (modifiers.isNotEmpty()) modifiersStr = modifiers.joinToString(",")
-                                                        val annotations = modList.annotations.mapNotNull { a -> a.name }
-                                                        if (annotations.isNotEmpty()) annotationsStr = annotations.joinToString(",")
-                                                    }
-                                                }
+//                                                if (element is KtModifierListOwner) {
+//                                                    element.modifierList?.let { modList ->
+//                                                        visibility = when {
+//                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("public")) -> "public"
+//                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("private")) -> "private"
+//                                                            modList.hasModifier(KtModifierKeywordToken.keywordModifier("internal")) -> "internal"
+//                                                            else -> "package"
+//                                                        }
+//                                                        val modifiers = listOf(PsiModifier.STATIC, PsiModifier.FINAL, PsiModifier.ABSTRACT, PsiModifier.SYNCHRONIZED)
+//                                                            .filter { m -> modList.hasModifier(KtModifierKeywordToken.keywordModifier(m.lowercase())) }
+//                                                        if (modifiers.isNotEmpty()) modifiersStr = modifiers.joinToString(",")
+//                                                        val annotations = modList.annotations.mapNotNull { a -> a.name }
+//                                                        if (annotations.isNotEmpty()) annotationsStr = annotations.joinToString(",")
+//                                                    }
+//                                                }
 
                                                 service.addSymbol(nodeId, elementName, fileId, startOffset, endOffset, line, visibility, modifiersStr, annotationsStr)
+                                                foundSymbolIds.add(nodeId)
                                                 scopeStack.push(nodeId)
                                                 pushed = true
                                                 if(verbose) log.trace("Found definition: $elementName")
@@ -157,6 +176,7 @@ class SymbolExtractionAction : BaseAction() {
                                         }
                                     }
                                 })
+                                service.pruneRemovedSymbols(fileId, foundSymbolIds)
                             } else {
                                 if(verbose) log.warn("PsiFile not found for ${virtualFile.path}")
                             }
@@ -169,7 +189,6 @@ class SymbolExtractionAction : BaseAction() {
                 try {
                     if(verbose) log.info("Serializing result")
                     
-                    val jsonFile = File(project.basePath, "symbol_graph.json")
                     service.save(jsonFile.absolutePath)
                     
 

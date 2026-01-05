@@ -14,6 +14,7 @@ abstract class TypeDescriber {
     var coverMethods = true
     abstract fun describe(
         rawType: Class<in Nothing>,
+        instance: Any? = null,
         stackMax: Int = 10,
         describedTypes: MutableSet<String> = mutableSetOf()
     ): String
@@ -21,7 +22,7 @@ abstract class TypeDescriber {
     abstract fun <T, U : T> registerSubType(parentClass: Class<T>, subClass: Class<U>)
     abstract fun <T, U : T> registerSubTypes(parentClass: Class<T>, vararg subClasses: Class<U>)
     abstract fun <T, U : T> clearSubTypes(parentClass: Class<T>)
-    abstract fun describe(self: Method, clazz: Class<*>? = null, stackMax: Int = 5): String
+    abstract fun describe(self: Method, clazz: Class<*>? = null, instance: Any? = null, stackMax: Int = 5): String
     open fun isAbbreviated(self: Type): Boolean {
 
         val name = self.typeName

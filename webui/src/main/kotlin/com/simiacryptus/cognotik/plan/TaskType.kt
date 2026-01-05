@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask
 import com.simiacryptus.cognotik.plan.tools.run.RunCodeTask
 import com.simiacryptus.cognotik.plan.tools.run.RunToolTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
+import com.simiacryptus.cognotik.plan.tools.run.SymbolsDbCodeTask
 import com.simiacryptus.cognotik.plan.tools.session.CommandSessionTask
 import com.simiacryptus.cognotik.plan.tools.session.JdbcSessionTask
 import com.simiacryptus.cognotik.plan.tools.social.*
@@ -58,82 +59,84 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
 
             }
 
-            registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet)
-            registerConstructor(FunctorialMappingTask.FunctorialMapping)
-            registerConstructor(StructuralInvariantAnalysisTask.StructuralInvariantAnalysis)
-            registerConstructor(IterativeGraphGenerationTask.IterativeGraphGeneration)
-            registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery)
-            registerConstructor(TableCompilationTask.TableCompilation)
-            registerConstructor(JdbcSessionTask.JdbcSession)
-            registerConstructor(ImageTableTask.ImageTable)
-            registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument)
-            registerConstructor(PoliticalOptimizationTask.PoliticalOptimization)
-            registerConstructor(LLMPollSimulationTask.LLMPollSimulation)
-            registerConstructor(LLMExperimentTask.LLMExperiment)
-            registerConstructor(GameLevelDesignTask.GameLevelDesign)
-            registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign)
-            registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign)
-            registerConstructor(GameEconomyTask.GameEconomy)
-            registerConstructor(ResearchPaperGenerationTask.ResearchPaperGeneration)
+            registerConstructor(AbductiveReasoningTask.AbductiveReasoning)
+            registerConstructor(AbstractionLadderTask.AbstractionLadder)
+            registerConstructor(AdversarialReasoningTask.AdversarialReasoning)
+            registerConstructor(AnalogicalReasoningTask.AnalogicalReasoning)
+            registerConstructor(ArticleGenerationTask.ArticleGeneration)
+            registerConstructor(AutoFixTask.AutoFix)
+            registerConstructor(BrainstormingTask.Brainstorming)
+            registerConstructor(BusinessProposalTask.BusinessProposal)
+            registerConstructor(CausalInferenceTask.CausalInference)
             registerConstructor(ChainOfThoughtTask.ChainOfThought)
-            registerConstructor(ReadDocumentsTask.ReadDocuments)
-            registerConstructor(DiscussionTask.Discussion)
+            registerConstructor(ComicBookGenerationTask.ComicBookGeneration)
+            registerConstructor(CommandSessionTask.CommandSession)
+            registerConstructor(ConstraintRelaxationTask.ConstraintRelaxation)
+            registerConstructor(ConstraintSatisfactionTask.ConstraintSatisfaction)
+            registerConstructor(CounterfactualAnalysisTask.CounterfactualAnalysis)
             registerConstructor(CrawlerAgentTask.CrawlerAgent)
+            registerConstructor(DataIngestTask.DataIngest)
+            registerConstructor(DecisionTreeTask.DecisionTree)
+            registerConstructor(DecompositionSynthesisTask.DecompositionSynthesis)
+            registerConstructor(DialecticalReasoningTask.DialecticalReasoning)
+            registerConstructor(DiscussionTask.Discussion)
+            registerConstructor(EmailCampaignTask.EmailCampaign)
+            registerConstructor(EthicalReasoningTask.EthicalReasoning)
             registerConstructor(FileAppendTask.FileAppend)
             registerConstructor(FileModificationTask.FileModification)
             registerConstructor(FileSearchTask.FileSearch)
-            registerConstructor(GitHubSearchTask.GitHubSearch)
-            registerConstructor(RunCodeTask.RunCode)
-            registerConstructor(RunToolTask.RunTool)
-            registerConstructor(CommandSessionTask.CommandSession)
-            registerConstructor(AutoFixTask.AutoFix)
-            registerConstructor(MCPToolTask.MCPTool)
-            registerConstructor(WriteHtmlTask.WriteHtml)
-            registerConstructor(GeneratePresentationTask.GeneratePresentation)
-            registerConstructor(MetaCognitiveReflectionTask.MetaCognitiveReflection)
-            registerConstructor(CausalInferenceTask.CausalInference)
-            registerConstructor(AbstractionLadderTask.AbstractionLadder)
-            registerConstructor(CounterfactualAnalysisTask.CounterfactualAnalysis)
-            registerConstructor(AnalogicalReasoningTask.AnalogicalReasoning)
-            registerConstructor(SocraticDialogueTask.SocraticDialogue)
-            registerConstructor(DecisionTreeTask.DecisionTree)
-            registerConstructor(MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysis)
-            registerConstructor(ConstraintSatisfactionTask.ConstraintSatisfaction)
-            registerConstructor(DecompositionSynthesisTask.DecompositionSynthesis)
-            registerConstructor(BrainstormingTask.Brainstorming)
             registerConstructor(FiniteStateMachineTask.FiniteStateMachine)
+            registerConstructor(FunctorialMappingTask.FunctorialMapping)
+            registerConstructor(GameEconomyTask.GameEconomy)
+            registerConstructor(GameLevelDesignTask.GameLevelDesign)
+            registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign)
+            registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign)
             registerConstructor(GameTheoryTask.GameTheory)
-            registerConstructor(AbductiveReasoningTask.AbductiveReasoning)
-            registerConstructor(AdversarialReasoningTask.AdversarialReasoning)
-            registerConstructor(ConstraintRelaxationTask.ConstraintRelaxation)
-            registerConstructor(DialecticalReasoningTask.DialecticalReasoning)
-            registerConstructor(LateralThinkingTask.LateralThinking)
-            registerConstructor(ProbabilisticReasoningTask.ProbabilisticReasoning)
-            registerConstructor(SystemsThinkingTask.SystemsThinking)
-            registerConstructor(TemporalReasoningTask.TemporalReasoning)
-            registerConstructor(NarrativeGenerationTask.NarrativeGeneration)
+            registerConstructor(GenerateImageTask.GenerateImage)
+            registerConstructor(GeneratePresentationTask.GeneratePresentation)
+            registerConstructor(GenerateQRImageTask.GenerateQRImage)
+            registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet)
             registerConstructor(GeneticOptimizationTask.GeneticOptimization)
-            registerConstructor(MathematicalReasoningTask.MathematicalReasoning)
-            registerConstructor(NeuralNetworkLayerTask.NeuralNetworkLayer)
-            registerConstructor(SubPlanTask.SubPlan)
-            registerConstructor(EthicalReasoningTask.EthicalReasoning)
-            registerConstructor(ArticleGenerationTask.ArticleGeneration)
-            registerConstructor(PersuasiveEssayTask.PersuasiveEssay)
-            registerConstructor(BusinessProposalTask.BusinessProposal)
-            registerConstructor(EmailCampaignTask.EmailCampaign)
+            registerConstructor(GitHubSearchTask.GitHubSearch)
+            registerConstructor(IllustrateDocumentTask.IllustrateDocument)
+            registerConstructor(ImageTableTask.ImageTable)
             registerConstructor(InteractiveStoryTask.InteractiveStory)
+            registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery)
+            registerConstructor(IterativeGraphGenerationTask.IterativeGraphGeneration)
+            registerConstructor(JdbcSessionTask.JdbcSession)
             registerConstructor(JournalismReasoningTask.JournalismReasoning)
             registerConstructor(LanguageServerTask.LanguageServer)
+            registerConstructor(LateralThinkingTask.LateralThinking)
+            registerConstructor(LLMExperimentTask.LLMExperiment)
+            registerConstructor(LLMPollSimulationTask.LLMPollSimulation)
+            registerConstructor(MathematicalReasoningTask.MathematicalReasoning)
+            registerConstructor(MCPToolTask.MCPTool)
+            registerConstructor(MetaCognitiveReflectionTask.MetaCognitiveReflection)
+            registerConstructor(MultiPerspectiveAnalysisTask.MultiPerspectiveAnalysis)
+            registerConstructor(NarrativeGenerationTask.NarrativeGeneration)
+            registerConstructor(NeuralNetworkLayerTask.NeuralNetworkLayer)
+            registerConstructor(OCRTask.OCR)
             registerConstructor(PdfFormTask.PdfForm)
-            registerConstructor(TechnicalExplanationTask.TechnicalExplanation)
-            registerConstructor(TutorialGenerationTask.TutorialGeneration)
+            registerConstructor(PersuasiveEssayTask.PersuasiveEssay)
+            registerConstructor(PoliticalOptimizationTask.PoliticalOptimization)
+            registerConstructor(ProbabilisticReasoningTask.ProbabilisticReasoning)
+            registerConstructor(ReadDocumentsTask.ReadDocuments)
             registerConstructor(ReportGenerationTask.ReportGeneration)
+            registerConstructor(ResearchPaperGenerationTask.ResearchPaperGeneration)
+            registerConstructor(RunCodeTask.RunCode)
+            registerConstructor(RunToolTask.RunTool)
             registerConstructor(ScriptwritingTask.Scriptwriting)
-            registerConstructor(GenerateImageTask.GenerateImage)
-            registerConstructor(IllustrateDocumentTask.IllustrateDocument)
-            registerConstructor(ComicBookGenerationTask.ComicBookGeneration)
-            registerConstructor(DataIngestTask.DataIngest)
-            registerConstructor(GenerateQRImageTask.GenerateQRImage)
+            registerConstructor(SocraticDialogueTask.SocraticDialogue)
+            registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument)
+            registerConstructor(StructuralInvariantAnalysisTask.StructuralInvariantAnalysis)
+            registerConstructor(SubPlanTask.SubPlan)
+            registerConstructor(SymbolsDbCodeTask.SymbolsDbCode)
+            registerConstructor(SystemsThinkingTask.SystemsThinking)
+            registerConstructor(TableCompilationTask.TableCompilation)
+            registerConstructor(TechnicalExplanationTask.TechnicalExplanation)
+            registerConstructor(TemporalReasoningTask.TemporalReasoning)
+            registerConstructor(TutorialGenerationTask.TutorialGeneration)
+            registerConstructor(WriteHtmlTask.WriteHtml)
 
             taskConstructors.toMap()
         }
@@ -143,16 +146,15 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             return values(TaskType::class.java)
         }
 
-        fun getImpl(
-            orchestrationConfig: OrchestrationConfig, planTask: TaskExecutionConfig?
+        fun OrchestrationConfig.getImpl(
+            planTask: TaskExecutionConfig?
         ) = getImpl(
-            orchestrationConfig = orchestrationConfig,
             taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
             cfg = planTask)
 
-        fun getImpl(
-            orchestrationConfig: OrchestrationConfig, taskType: TaskType<*, *>, cfg: TaskExecutionConfig? = null
-        ): AbstractTask<out TaskExecutionConfig, TaskTypeConfig> {
+        fun <T : TaskExecutionConfig, U : TaskTypeConfig> OrchestrationConfig.getImpl(
+            taskType: TaskType<T,U>, cfg: TaskExecutionConfig? = null
+        ): AbstractTask<out T, U> {
             val constructor = taskConstructors[taskType]
             if (constructor == null) {
                 throw RuntimeException("Unknown task type: ${taskType.name}")
@@ -162,7 +164,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             } catch (e: NoSuchMethodException) {
                 throw RuntimeException("Task execution config class ${taskType.executionConfigClass.name} does not have a no-arg constructor. Please provide a planTask instance.", e)
             }
-            return constructor(orchestrationConfig, executionConfig)
+            return constructor(this, executionConfig) as AbstractTask<out T, U>
         }
 
         fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig): List<TaskType<*, *>> {

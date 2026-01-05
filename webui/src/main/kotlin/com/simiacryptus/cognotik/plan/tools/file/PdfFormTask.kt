@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import org.apache.pdfbox.Loader
+import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.interactive.form.PDCheckBox
 import org.apache.pdfbox.pdmodel.interactive.form.PDChoice
 import org.apache.pdfbox.pdmodel.interactive.form.PDField
@@ -71,7 +71,7 @@ class PdfFormTask(
         }
 
         return try {
-            Loader.loadPDF(templateFile.toFile()).use { doc ->
+            PDDocument.load(templateFile.toFile()).use { doc ->
                 val acroForm = doc.documentCatalog.acroForm
                 val fieldList = acroForm?.fields?.joinToString("\n") { field ->
                     "  - ${getFieldDescription(field)}"
@@ -113,7 +113,7 @@ $fieldList
             val outputPath = executionConfig?.output_file ?: "filled_form.pdf"
             val outputFile = root.resolve(outputPath).toFile()
 
-            val availableFields = Loader.loadPDF(templateFile).use { doc ->
+            val availableFields = PDDocument.load(templateFile).use { doc ->
                 doc.documentCatalog.acroForm?.fields?.map { getFieldDescription(it) } ?: emptyList()
             }
 
@@ -172,7 +172,7 @@ Only include fields where a value can be confidently determined from the context
                 outputFile.parentFile?.mkdirs()
 
                 val bytes = ByteArrayOutputStream().use { baos ->
-                    Loader.loadPDF(templateFile).use { doc ->
+                    PDDocument.load(templateFile).use { doc ->
                         val acroForm = doc.documentCatalog.acroForm
                         if (acroForm == null) {
                             throw IllegalStateException("No AcroForm found in template PDF")

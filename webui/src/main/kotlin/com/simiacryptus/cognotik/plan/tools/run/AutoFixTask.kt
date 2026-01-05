@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
-import com.simiacryptus.cognotik.apps.general.CmdPatchApp
-import com.simiacryptus.cognotik.apps.general.PatchApp
+import com.simiacryptus.cognotik.apps.CmdPatchApp
+import com.simiacryptus.cognotik.apps.PatchApp
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.platform.ApplicationServices
