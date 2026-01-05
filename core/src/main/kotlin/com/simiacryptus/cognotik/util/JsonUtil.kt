@@ -57,6 +57,26 @@ object JsonUtil {
                     .configure(KotlinFeature.StrictNullChecks, false)
                     .build()
             ).registerModule(JavaTimeModule())
+            .apply {
+                try {
+                    val module = com.fasterxml.jackson.databind.module.SimpleModule()
+                    module.addSerializer(
+                        Class.forName("groovy.lang.GString") as Class<Any>,
+                        object : com.fasterxml.jackson.databind.JsonSerializer<Any>() {
+                            override fun serialize(
+                                value: Any,
+                                gen: com.fasterxml.jackson.core.JsonGenerator,
+                                serializers: com.fasterxml.jackson.databind.SerializerProvider
+                            ) {
+                                gen.writeString(value.toString())
+                            }
+                        }
+                    )
+                    registerModule(module)
+                } catch (e: Throwable) {
+                    // Ignore
+                }
+            }
     }
 
     fun toJson(data: Any?): String = when (data) {

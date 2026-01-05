@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -37,14 +38,16 @@ open class CodingMode(
     ) : TaskFunction<T>(
         executionConfigClass = taskType?.executionConfigClass as Class<out T>
     ) {
-        override fun call(executionConfig: T, vararg messages: String): String {
+        override fun call(executionConfig: Any, message: String): String {
             var result = ""
             val onComplete = Semaphore(0)
             val resultFn: (String) -> Unit = {
                 result = it
                 onComplete.release()
             }
-            orchestrationConfig.getImpl(taskType as TaskType<T, U>, executionConfig).run(
+            orchestrationConfig.getImpl(taskType as TaskType<T, U>, (executionConfig.jsonCast<Map<String,Any>>()+mapOf(
+                "task_type" to taskType.name
+            )).jsonCast()).run(
                 agent = TaskOrchestrator(
                     user = user,
                     session = session,
@@ -53,7 +56,7 @@ open class CodingMode(
                         ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
                         ?: File(".").toPath()
                 ),
-                messages = messages.toList(),
+                messages = listOf(message),
                 task = task,
                 resultFn = resultFn,
                 orchestrationConfig = orchestrationConfig
@@ -69,7 +72,7 @@ open class CodingMode(
         override fun getMethodTypes(methodName: String): List<Type> {
             return if (methodName == "call") listOf(executionConfigClass) else emptyList()
         }
-        abstract fun call(executionConfig: T, vararg messages: String): String
+        abstract fun call(executionConfig: Any, messages: String): String
     }
 
     override fun handleUserMessage(userMessage: String, task: SessionTask) {
