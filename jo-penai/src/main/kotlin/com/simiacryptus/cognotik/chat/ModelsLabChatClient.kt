@@ -55,7 +55,7 @@ class ModelsLabChatClient(
             val response: ModelSchema.ChatResponse =
                 JsonUtil.objectMapper().readValue(responseJson, ModelSchema.ChatResponse::class.java)
             if (response.usage != null && model is ChatModel) {
-                onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
+                onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
             }
             response
         }

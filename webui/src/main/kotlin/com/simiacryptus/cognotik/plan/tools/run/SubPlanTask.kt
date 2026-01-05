@@ -106,8 +106,6 @@ class SubPlanTask(
                 taskSettings = typeConfig.taskSettings,
                 cognitiveSettings = typeConfig.cognitiveSettings ?: orchestrationConfig.cognitiveSettings,
             )
-            log.debug("Created sub-orchestration config with maxIterations=${subConfig.maxIterations}, maxTasksPerIteration=${subConfig.maxTasksPerIteration}")
-
             log.info("Using cognitive mode: ${cognitiveMode.type?.name} for sub-planning")
 
             // Create tabs for displaying sub-plan execution

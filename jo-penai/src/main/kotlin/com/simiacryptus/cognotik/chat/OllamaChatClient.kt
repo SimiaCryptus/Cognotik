@@ -132,7 +132,7 @@ class OllamaChatClient(
                 )
 
                 if (response.usage != null && model is ChatModel) {
-                    onUsage(model, response.usage.copy(cost = model.pricing(response.usage)), logStreams = logStreams)
+                    onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!, logStreams = logStreams)
                 }
 
                 response

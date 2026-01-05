@@ -135,11 +135,7 @@ open class CodingMode(
 
     }
 
-    open val describer: TypeDescriber
-        get() {
-//        return AbbrevWhitelistTSDescriber("com.simiacryptus")
-            return AbbrevWhitelistYamlDescriber("com.simiacryptus")
-        }
+    open val describer: TypeDescriber = AbbrevWhitelistYamlDescriber("com.simiacryptus")
 
     open fun symbols(task: SessionTask): Map<String, Any> =
         orchestrationConfig.taskSettings.map { (name, taskTypeConfig) ->
@@ -152,8 +148,9 @@ open class CodingMode(
                 }, task)
             )
         }.toMap() + mapOf(
-            "env" to (orchestrationConfig.env ?: emptyMap()),
-            "workingDir" to (orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath } ?: ".")
+            "workingDir" to (orchestrationConfig.absoluteWorkingDir?.let { File(it).absoluteFile } ?: "."),
+            "smartModel" to orchestrationConfig.defaultSmart.getChildClient(task),
+            "fastModel" to orchestrationConfig.defaultFast.getChildClient(task)
         )
 
     override fun contextData(): List<String> = emptyList()

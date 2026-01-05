@@ -1,12 +1,13 @@
 package cognotik.actions.plan
 
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
-import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.simiacryptus.cognotik.chat.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
@@ -35,46 +36,12 @@ class PlanConfigDialog(
     val settings: OrchestrationConfig,
 ) : DialogWrapper(project) {
 
-    private val maxTaskHistoryCharsField = JBTextField(settings.maxTaskHistoryChars.toString()).apply {
-        toolTipText = "Maximum characters to retain in task history ($MIN_TASK_HISTORY-$MAX_TASK_HISTORY)"
-        inputVerifier = object : InputVerifier() {
-            override fun verify(input: JComponent): Boolean {
-                val text = (input as? JTextField)?.text ?: return false
-                return text.toIntOrNull()?.let { it in MIN_TASK_HISTORY..MAX_TASK_HISTORY } ?: false
-            }
-        }
-    }
-
-    private val maxTasksPerIterationField = JBTextField(settings.maxTasksPerIteration.toString()).apply {
-        toolTipText = "Maximum number of tasks to execute per iteration ($MIN_TASKS_PER_ITER-$MAX_TASKS_PER_ITER)"
-        inputVerifier = object : InputVerifier() {
-            override fun verify(input: JComponent): Boolean {
-                val text = (input as? JTextField)?.text ?: return false
-                return text.toIntOrNull()?.let { it in MIN_TASKS_PER_ITER..MAX_TASKS_PER_ITER } ?: false
-            }
-        }
-    }
-
-    private val maxIterationsField = JBTextField(settings.maxIterations.toString()).apply {
-        toolTipText = "Maximum number of planning iterations ($MIN_ITERATIONS-$MAX_ITERATIONS)"
-        inputVerifier = object : InputVerifier() {
-            override fun verify(input: JComponent): Boolean {
-                val text = (input as? JTextField)?.text ?: return false
-                return text.toIntOrNull()?.let { it in MIN_ITERATIONS..MAX_ITERATIONS } ?: false
-            }
-        }
-    }
-
     private val autoPlanPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         add(JLabel("Max Task History Chars:"))
-        add(maxTaskHistoryCharsField)
         add(Box.createVerticalStrut(5))
         add(JLabel("Max Tasks Per Iteration:"))
-        add(maxTasksPerIterationField)
         add(Box.createVerticalStrut(5))
-        add(JLabel("Max Iterations:"))
-        add(maxIterationsField)
         isVisible = false
     }
 
@@ -283,7 +250,6 @@ class PlanConfigDialog(
                 updateSettings()?.copy(
                     shellCmd = listOf(),
                     workingDir = null,
-                    language = null,
                 )
             )
             val clipboard = Toolkit.getDefaultToolkit().systemClipboard
@@ -358,43 +324,10 @@ class PlanConfigDialog(
         else -> true
     }
 
-    private fun validateNumericField(
-        field: JTextField, fieldName: String, min: Int = 1, max: Int = Int.MAX_VALUE
-    ): Int? {
-        return try {
-            val value = field.text.toInt()
-            when {
-                value < min -> {
-                    Messages.showWarningDialog(
-                        "$fieldName must be at least $min", "Invalid Value"
-                    )
-                    field.requestFocusInWindow()
-                    null
-                }
-
-                value > max -> {
-                    Messages.showWarningDialog(
-                        "$fieldName must be at most $max", "Invalid Value"
-                    )
-                    field.requestFocusInWindow()
-                    null
-                }
-
-                else -> value
-            }
-        } catch (_: NumberFormatException) {
-            Messages.showWarningDialog(
-                "$fieldName must be a valid number", "Invalid Value"
-            )
-            field.requestFocusInWindow()
-            null
-        }
-    }
-
     private fun getVisibleModels() =
         ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings().apis.flatMap { apiData ->
             apiData.provider?.getChatModels(apiData.key!!, apiData.baseUrl)?.filter { model ->
-                model.provider == apiData.provider && model.modelName?.isNotBlank() == true && isVisible(model)
+                model.provider == apiData.provider && model.modelName.isNotBlank() && isVisible(model)
             } ?: listOf()
         }.distinctBy { it.modelName }.sortedBy { "${it.provider?.name} - ${it.modelName}" }
 
@@ -465,9 +398,6 @@ class PlanConfigDialog(
             // Copy all settings from loaded config
             settings.temperature = config.temperature.coerceIn(0.0, 1.0)
             settings.autoFix = config.autoFix
-            settings.maxTaskHistoryChars = config.maxTaskHistoryChars
-            settings.maxTasksPerIteration = config.maxTasksPerIteration
-            settings.maxIterations = config.maxIterations
             settings.defaultSmartModel = config.defaultSmartModel
             settings.defaultFastModel = config.defaultFastModel
             settings.defaultImageModel = config.defaultImageModel
@@ -482,9 +412,6 @@ class PlanConfigDialog(
             temperatureSlider.value = (settings.temperature * TEMPERATURE_SCALE).toInt()
             temperatureLabel.text = TEMPERATURE_LABEL.format(settings.temperature)
             autoFixCheckbox.isSelected = settings.autoFix
-            maxTaskHistoryCharsField.text = settings.maxTaskHistoryChars.toString()
-            maxTasksPerIterationField.text = settings.maxTasksPerIteration.toString()
-            maxIterationsField.text = settings.maxIterations.toString()
 
             // Update cognitive mode and visibility
             val cognitiveModeName = config.cognitiveMode?.name ?: "Chat"
@@ -667,23 +594,8 @@ class PlanConfigDialog(
 
     fun updateSettings(): OrchestrationConfig? {
         // Validate numeric fields
-        val maxTaskHistory =
-            validateNumericField(maxTaskHistoryCharsField, "Max Task History Chars", MIN_TASK_HISTORY, MAX_TASK_HISTORY)
-                ?: return null
-        val maxTasksPerIter =
-            validateNumericField(
-                maxTasksPerIterationField,
-                "Max Tasks Per Iteration",
-                MIN_TASKS_PER_ITER,
-                MAX_TASKS_PER_ITER
-            ) ?: return null
-        val maxIters = validateNumericField(maxIterationsField, "Max Iterations", 1, 1000) ?: return null
-        validateNumericField(maxIterationsField, "Max Iterations", MIN_ITERATIONS, MAX_ITERATIONS) ?: return null
 
         settings.autoFix = autoFixCheckbox.isSelected
-        settings.maxTaskHistoryChars = maxTaskHistory
-        settings.maxTasksPerIteration = maxTasksPerIter
-        settings.maxIterations = maxIters
         // Apply model selections
         val selectedGlobalModel = globalModelCombo.selectedItem as? String
         if (selectedGlobalModel != null) {
@@ -723,12 +635,6 @@ class PlanConfigDialog(
         private const val TEMPERATURE_SCALE = 100.0
         private const val TEMPERATURE_LABEL = "%.2f"
         private const val FONT_SIZE_ENABLED = 14f
-        private const val MIN_TASK_HISTORY = 100
-        private const val MAX_TASK_HISTORY = 1000000
-        private const val MIN_TASKS_PER_ITER = 1
-        private const val MAX_TASKS_PER_ITER = 100
-        private const val MIN_ITERATIONS = 1
-        private const val MAX_ITERATIONS = 1000
 
         // Validation patterns
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")

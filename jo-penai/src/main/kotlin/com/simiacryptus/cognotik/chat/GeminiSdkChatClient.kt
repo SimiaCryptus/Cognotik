@@ -131,7 +131,7 @@ class GeminiSdkChatClient(
             if (chatResponse.usage != null) {
                 onUsage(
                     model,
-                    chatResponse.usage.copy(cost = model.pricing(chatResponse.usage)),
+                    chatResponse.usage?.copy(cost = model.pricing(chatResponse.usage!!))!!,
                     logStreams = logStreams
                 )
             }

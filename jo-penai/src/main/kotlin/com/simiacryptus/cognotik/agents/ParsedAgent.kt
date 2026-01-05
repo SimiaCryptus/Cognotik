@@ -107,12 +107,7 @@ open class ParsedAgent<T : Any>(
         }\n```\n\nThis is an example output:\n```json\n${JsonUtil.toJson(exampleInstance!!)}\n```${promptSuffix?.let { "\n$it" } ?: ""}"
         for (i in 0 until deserializerRetries) {
             try {
-                val content = parsingChatter.copy(
-                    temperature = when (i) {
-                        0 -> 0.0
-                        else -> 0.1 + i * 0.05 // increase temperature on retries
-                    }
-                ).chat(
+                val content = parsingChatter.chat(
                     listOf(
                         ModelSchema.ChatMessage(role = ModelSchema.Role.system, content = prompt.toContentList()),
                         ModelSchema.ChatMessage(

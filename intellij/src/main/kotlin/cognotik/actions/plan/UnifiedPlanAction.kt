@@ -50,7 +50,6 @@ open class UnifiedPlanAction(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
                 temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
-                env = mapOf(),
                 workingDir = root.absolutePath,
             ),
         )

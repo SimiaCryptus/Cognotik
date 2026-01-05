@@ -80,7 +80,7 @@ class OpenAIEmbeddingClient(
 
                 // Update usage with cost calculation
                 if (response.usage != null) {
-                    onUsage(model, response.usage.copy(cost = model.pricing(response.usage)))
+                    onUsage(model, response.usage?.copy(cost = model.pricing(response.usage!!))!!)
                 }
 
                 response

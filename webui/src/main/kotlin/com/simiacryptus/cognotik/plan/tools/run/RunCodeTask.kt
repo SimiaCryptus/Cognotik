@@ -88,7 +88,6 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U:RunCode
             codeRuntime = CodeRuntimes.getRuntime(
                 runtimeType = runtime,
                 params = mapOf(
-                    "env" to (orchestrationConfig.env ?: emptyMap()),
                     "workingDir" to (
                             orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
                                 ?: orchestrationConfig.absoluteWorkingDir?.let { File(it).absolutePath }
