@@ -41,6 +41,13 @@ Before choosing a mode, understand these three elements:
 **Best for:** Specialized consulting (e.g., talking to a "Security Auditor" or a "Scientific Researcher").
 *   **How it works:** Similar to Conversational Mode, but the AI adopts a specific **Cognitive Strategy**. It maintains an internal "Persona State" that evolves as the conversation progresses.
 *   **Strategies available:** Project Manager, Scientist, Agile Developer, Critical Auditor, Creative Writer.
+### Coding Mode
+**Best for:** Interactive coding, data analysis, and scripting.
+*   **How it works:** The AI operates as a REPL (Read-Eval-Print Loop) assistant.
+    1.  It translates your request into executable code (e.g., Groovy).
+    2.  It executes the code in a runtime environment that has access to project tools.
+    3.  It displays the code, the output, and the result value.
+*   **Key Feature:** Allows direct manipulation of the environment and tools via code, with the AI handling the syntax and API usage.
 
 ---
 
@@ -126,6 +133,7 @@ Every session generates a detailed **Markdown Transcript**.
 | If you want to... | Use this Mode |
 | :--- | :--- |
 | Just chat and do one thing at a time | **Conversational** |
+| Write and run code interactively | **Coding** |
 | Build a complex app with a strict plan | **Waterfall** |
 | Solve a hard problem step-by-step | **Adaptive Planning** |
 | Manage a project with many sub-parts | **Hierarchical Planning** |

@@ -7,6 +7,13 @@
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/ConversationalMode.kt"
   },
   {
+    "id": "coding-mode",
+    "label": "Coding",
+    "url": "CodingMode.html",
+    "description": "The Developer. Best for power users. Provides a direct code execution environment (REPL) to script complex behaviors and interact with system APIs.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/CodingMode.kt"
+  },
+  {
     "id": "waterfall-mode",
     "label": "Waterfall",
     "url": "WaterfallMode.html",

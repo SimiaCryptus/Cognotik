@@ -22,21 +22,21 @@ class YamlDescriberTest : TypeDescriberTestBase() {
             type: object
             class: com.simiacryptus.cognotik.TypeDescriberTestBase${'$'}DataClassExample
             properties:
-                a:
+              a:
                 description: "This is an integer"
-                  type: int
+                type: int
               b:
-                  type: string
+                type: string
               c:
-                  type: array
+                type: array
                 items:
-                    class java.lang.String
+                  type: string
               d:
-                  type: map
+                type: map
                 keys:
-                    class java.lang.String
+                  type: string
                 values:
-                    type: integer
+                  type: integer
                 """.trimIndent()
 
     override val methodDescription
@@ -45,15 +45,15 @@ class YamlDescriberTest : TypeDescriberTestBase() {
             operationId: methodExample
             description: This is a method
             parameters:
-                - name: p1
+              - name: p1
                 description: This is a parameter
-                  type: int
+                type: int
               - name: p2
-                  type: string
+                type: string
             responses:
               application/json:
                 schema:
-                        type: string
+                  type: string
             """.trimIndent()
 
     @Test
@@ -64,11 +64,11 @@ class YamlDescriberTest : TypeDescriberTestBase() {
             type: object
             class: com.simiacryptus.cognotik.TypeDescriberTestBase${'$'}RecursiveDataClass
             properties:
-                name:
-                  type: string
+              name:
+                type: string
               parent:
                 description: "Recursive reference"
-                  ...
+                ...
             """.trimIndent()
         val actualDescription = typeDescriber.describe(RecursiveDataClass::class.java)
         Assertions.assertEquals(expectedDescription, actualDescription)

@@ -279,9 +279,9 @@ open class YamlDescriber : TypeDescriber() {
     }
 
     private fun toYaml(self: Type, stackMax: Int, describedTypes: MutableSet<String>): String {
-        if (describedTypes.contains(self.toString())) return "..."
-        describedTypes.add(self.toString())
         val typeName = self.typeName.substringAfterLast('.').replace('$', '.')
+        if (describedTypes.contains(self.toString()) && typeName.lowercase() !in primitives) return "..."
+        describedTypes.add(self.toString())
         return if ((isAbbreviated(self) || stackMax <= 0) && typeName.lowercase() !in primitives)
             "type: object\nclass: ${self.typeName}".filterEmptyLines()
         else if (self is Class<*> && (self.isEnum || DynamicEnum::class.java.isAssignableFrom(self))) {
