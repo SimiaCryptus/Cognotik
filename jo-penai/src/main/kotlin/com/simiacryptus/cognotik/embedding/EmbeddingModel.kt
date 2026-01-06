@@ -15,6 +15,8 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.util.encrypt
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
@@ -42,9 +44,9 @@ open class EmbeddingModel(
         .also { log.info("Calculated pricing for model: $modelName with prompt tokens: ${usage.prompt_tokens}, price: $it") }
 
     fun instance(
-        key: String = "",
+        key: SecureString = "".encrypt,
         base: String = provider?.base ?: "",
-        logLevel: Level = Level.INFO,
+        logLevel: Level = Level.DEBUG,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
         workPool: ExecutorService = java.util.concurrent.Executors.newFixedThreadPool(8),
         scheduledPool: ListeningScheduledExecutorService = com.google.common.util.concurrent.MoreExecutors.listeningDecorator(

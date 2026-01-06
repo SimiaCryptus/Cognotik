@@ -8,12 +8,13 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 
 class OpenAIChatClient(
-    apiKey: String,
+    apiKey: SecureString,
     apiBase: String,
     workPool: ExecutorService,
     scheduledPool: ListeningScheduledExecutorService,

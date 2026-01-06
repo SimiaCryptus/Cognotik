@@ -6,8 +6,7 @@ import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
-import com.simiacryptus.cognotik.CognotikAppServer
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.models.ModelSchema
@@ -77,7 +76,10 @@ open class ModifyFilesAction(
                 loadImages = false,
                 showMenubar = false
             )
-            launchBrowser(session.toString(), CognotikAppServer.getServer().server.uri)
+            launchBrowser(session.toString(), com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                AppSettingsState.instance.listeningEndpoint,
+                AppSettingsState.instance.listeningPort
+            ).server.uri)
         } catch (e: Exception) {
 
             log.error("Error in MultiDiffChatAction", e)

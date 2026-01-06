@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.ApplicationServer.Companion.getCookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -24,11 +25,11 @@ class UserSettingsServlet : HttpServlet() {
                 val visibleSettings = UserSettings(
                     apis = settings.apis.map { apiData ->
                         ApiData(
-                            key = when (apiData.key) {
+                            key = when (apiData.key?.decrypt) {
                                 "" -> ""
                                 null -> null
                                 else -> mask
-                            },
+                            }?.encrypt,
                             baseUrl = apiData.baseUrl,
                             provider = apiData.provider
                         )//.validate()
@@ -94,8 +95,8 @@ class UserSettingsServlet : HttpServlet() {
             val reconstructedApis = settings.apis.mapIndexed { index, apiData ->
                 val prevApiData = prevSettings.apis.getOrNull(index)
                 ApiData(
-                    key = when (apiData.key) {
-                        mask -> prevApiData?.key ?: ""
+                    key = when (apiData.key?.decrypt) {
+                        mask -> prevApiData?.key ?: "".encrypt
                         else -> apiData.key
                     },
                     baseUrl = apiData.baseUrl,

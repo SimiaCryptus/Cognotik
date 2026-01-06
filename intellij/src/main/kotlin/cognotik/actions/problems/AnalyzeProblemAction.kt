@@ -17,10 +17,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -114,7 +113,10 @@ class AnalyzeProblemAction : AnAction() {
         Thread {
             Thread.sleep(500)
             try {
-                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {

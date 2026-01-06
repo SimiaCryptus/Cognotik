@@ -35,8 +35,5 @@ metadata.*
 .DS_Store
 test_config.json
 /experiment/search_lambda/terraform/.terraform/
-symbol_analysis.json
-symbol_graph.graphml
-symbol_graph_2.json
+symbol_graph.json
 workspaces
-settings.json

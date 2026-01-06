@@ -101,8 +101,8 @@ class GitHubSearchTask(
         try {
             val searchResults = performGitHubSearch(
                 agent.user
-                    ?.let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
-                    ?.apis?.firstOrNull { it.provider == APIProvider.Github }?.key?.trim()
+                  .let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
+                  .apis.firstOrNull { it.provider == APIProvider.Github }?.key?.decrypt?.trim()
                     ?: throw RuntimeException("GitHub API token is required")
             )
             val actorAnswerText = formatSearchResults(searchResults)

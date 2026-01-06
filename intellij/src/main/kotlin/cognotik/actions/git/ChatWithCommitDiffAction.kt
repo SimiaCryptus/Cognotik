@@ -13,7 +13,6 @@ import com.intellij.openapi.vcs.changes.CurrentContentRevision
 import com.intellij.openapi.vcs.changes.TextRevisionNumber
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
@@ -84,7 +83,10 @@ class ChatWithCommitDiffAction : BaseAction(
         IntellijAppManager.getApplication().executeOnPooledThread {
             Thread.sleep(500)
             try {
-                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {

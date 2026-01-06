@@ -38,18 +38,13 @@ class ApiProviderServlet : HttpServlet() {
     public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         try {
             val userinfo = ApplicationServices.authenticationManager.getUser(req.getCookie())
-            if (null == userinfo) {
-                resp.status = HttpServletResponse.SC_UNAUTHORIZED
-                resp.writer.write(JsonUtil.toJson(mapOf("error" to "Unauthorized")))
-                return
-            }
 
             val userSettings = ApplicationServices.fileApplicationServices()
                 .userSettingsManager.getUserSettings(userinfo)
             // Get all available providers (including unconfigured)
             val availableProviders = APIProvider.values().map { provider ->
                 val isConfigured = userSettings.apis.any {
-                    it.provider?.name == provider.name && !it.key.isNullOrEmpty()
+                    it.provider?.name == provider.name && !it.key?.decrypt.isNullOrEmpty()
                 }
                 AvailableProviderInfo(
                     id = provider.name,
@@ -70,14 +65,14 @@ class ApiProviderServlet : HttpServlet() {
                         it.provider?.name == provider.name
                     }
 
-                    if (apiConfig != null && !apiConfig.key.isNullOrEmpty()) {
+                    if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
                         val models = try {
                             provider.getChatModels(
-                                key = apiConfig.key ?: "",
-                                baseUrl = apiConfig.baseUrl ?: provider.base
+                                key = apiConfig.key,
+                                baseUrl = apiConfig.baseUrl
                             ).map { model ->
                                 ModelInfo(
-                                    name = model.modelName!!,
+                                    name = model.modelName,
                                     maxTokens = model.maxTotalTokens
                                 )
                             }
@@ -88,8 +83,8 @@ class ApiProviderServlet : HttpServlet() {
 
                         val supportsEmbedding = try {
                             provider.getEmbeddingClient(
-                                key = apiConfig.key ?: "",
-                                base = apiConfig.baseUrl ?: provider.base,
+                                key = apiConfig.key,
+                                base = apiConfig.baseUrl,
                                 workPool = com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService(),
                                 scheduledPool = com.google.common.util.concurrent.MoreExecutors.listeningDecorator(
                                     java.util.concurrent.Executors.newScheduledThreadPool(1)
@@ -106,7 +101,7 @@ class ApiProviderServlet : HttpServlet() {
                         providers.add(
                             ProviderInfo(
                                 name = provider.name,
-                                baseUrl = apiConfig.baseUrl ?: provider.base,
+                                baseUrl = apiConfig.baseUrl,
                                 models = models,
                                 supportsChat = models.isNotEmpty(),
                                 supportsEmbedding = supportsEmbedding

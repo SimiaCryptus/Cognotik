@@ -13,7 +13,6 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
@@ -85,7 +84,10 @@ class DataIngestAction : BaseAction() {
         Thread {
             Thread.sleep(500)
             try {
-                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {

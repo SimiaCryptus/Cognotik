@@ -2,7 +2,9 @@ package com.simiacryptus.cognotik.plan.macros
 
 import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CodingModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
+import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode.WaterfallModeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.BrainstormingTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
@@ -15,7 +17,7 @@ object SoftwareProjectGenerator {
         PlanHarness.configurePlatform()
         object : PlanHarness(
             prompt = "Build a fun and unique browser-based game.",
-            cognitiveSettings = WaterfallMode.WaterfallModeConfig(),
+            cognitiveSettings = WaterfallModeConfig(),
         ) {
             override fun newConfig(session: Session, tempDir: File) = super.newConfig(session, tempDir).apply {
                 taskSettings[BrainstormingTask.Brainstorming.name] = TaskTypeConfig(
@@ -24,7 +26,8 @@ object SoftwareProjectGenerator {
                 )
                 taskSettings[SubPlanTask.SubPlan.name] = SubPlanTask.SubPlanTaskTypeConfig(
                     name = SubPlanTask.SubPlan.name,
-                    cognitiveSettings = WaterfallMode.WaterfallModeConfig(),
+//                    cognitiveSettings = WaterfallModeConfig(),
+                    cognitiveSettings = CodingModeConfig(),
                     taskSettings = mutableMapOf(
                         FileModificationTask.FileModification.name to TaskTypeConfig(
                             task_type = FileModificationTask.FileModification.name,

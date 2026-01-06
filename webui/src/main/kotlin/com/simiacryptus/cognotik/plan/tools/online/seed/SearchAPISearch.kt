@@ -43,7 +43,7 @@ open class SearchAPISearch(
                     user ?: UserSettingsManager.defaultUser
                 )
             val apiKey = userSettings
-                .apis.firstOrNull { it.provider == APIProvider.SearchAPI }?.key?.trim()
+                .apis.firstOrNull { it.provider == APIProvider.SearchAPI }?.key?.decrypt?.trim()
                 ?: throw RuntimeException("SearchAPI.io API key is required")
             SeedMethod.Companion.log.debug("Preparing SearchAPI.io request")
             val uriBuilder =

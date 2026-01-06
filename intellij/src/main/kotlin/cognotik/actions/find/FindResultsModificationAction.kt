@@ -13,7 +13,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageInfo2UsageAdapter
 import com.intellij.usages.UsageView
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
@@ -79,7 +78,10 @@ class FindResultsModificationAction(
             UITools.runAsync(event.project, "Opening Browser", true) { progress ->
                 Thread.sleep(500)
                 try {
-                    val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                    val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                        AppSettingsState.instance.listeningEndpoint,
+                        AppSettingsState.instance.listeningPort
+                    ).server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)
                 } catch (e: Throwable) {

@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.chat.model.ModelsLabDataModel
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.runWithPermit
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
@@ -14,10 +15,10 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Semaphore
 
 class ModelsLabChatClient(
-    apiKey: String,
+    apiKey: SecureString,
     apiBase: String = APIProvider.ModelsLab.base!!,
     workPool: ExecutorService,
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(

@@ -11,9 +11,8 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.usages.ReadWriteAccessUsageInfo2UsageAdapter
 import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -77,7 +76,10 @@ class FindResultsChatAction(
             UITools.runAsync(event.project, "Opening Browser", true) { progress ->
                 Thread.sleep(500)
                 try {
-                    val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                    val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                        AppSettingsState.instance.listeningEndpoint,
+                        AppSettingsState.instance.listeningPort
+                    ).server.uri.resolve("/#$session")
                     log.info("Opening browser to $uri")
                     browse(uri)
                 } catch (e: Throwable) {

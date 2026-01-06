@@ -6,7 +6,6 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.CognotikAppServer
 import com.simiacryptus.cognotik.apps.UnifiedPlanApp
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.instance
@@ -87,7 +86,10 @@ open class UnifiedPlanAction(
         Thread {
             Thread.sleep(500)
             try {
-                val uri = CognotikAppServer.getServer().server.uri.resolve("/#$session")
+                val uri = com.simiacryptus.cognotik.webui.application.CognotikAppServer.getServer(
+                    AppSettingsState.instance.listeningEndpoint,
+                    AppSettingsState.instance.listeningPort
+                ).server.uri.resolve("/#$session")
                 log.info("Opening browser to $uri")
                 browse(uri)
             } catch (e: Throwable) {

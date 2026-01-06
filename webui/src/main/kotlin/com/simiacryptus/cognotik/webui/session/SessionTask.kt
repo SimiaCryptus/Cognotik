@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.apps.renderMarkdown
+
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.platform.Session
@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager.Companion.randomID
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
-import java.io.File
 import java.util.*
 import java.util.function.Consumer
 

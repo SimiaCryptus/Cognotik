@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.test
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.LoggerFactory

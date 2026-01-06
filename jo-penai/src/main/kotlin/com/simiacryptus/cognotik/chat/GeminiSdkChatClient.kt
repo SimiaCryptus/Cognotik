@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.SecureString
 import okio.ByteString.Companion.decodeBase64
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
@@ -25,10 +26,10 @@ import kotlin.jvm.optionals.getOrNull
  * Gemini Chat Client using the official Google Gen AI Java SDK
  */
 class GeminiSdkChatClient(
-    apiKey: String,
+    apiKey: SecureString,
     val apiBase: String = APIProvider.Gemini.base,
     workPool: ExecutorService,
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream>,
     scheduledPool: ListeningScheduledExecutorService,
     private val useVertexAI: Boolean = false,
@@ -44,7 +45,7 @@ class GeminiSdkChatClient(
     private val client: Client = buildClient(apiKey, useVertexAI, project, location)
 
     private fun buildClient(
-        apiKey: String,
+        apiKey: SecureString,
         useVertexAI: Boolean,
         project: String?,
         location: String?
@@ -56,10 +57,10 @@ class GeminiSdkChatClient(
             if (project != null && location != null) {
                 builder.project(project).location(location)
             } else {
-                builder.apiKey(apiKey)
+                builder.apiKey(apiKey.decrypt)
             }
         } else {
-            builder.apiKey(apiKey)
+            builder.apiKey(apiKey.decrypt)
         }
 
         return builder.build()

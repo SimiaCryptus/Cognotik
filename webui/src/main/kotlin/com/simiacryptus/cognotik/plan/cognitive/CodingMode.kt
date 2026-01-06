@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.agents.CodeAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.MethodTypeDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
@@ -13,6 +12,7 @@ import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.jsonCast
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -150,7 +150,8 @@ open class CodingMode(
         }.toMap() + mapOf(
             "workingDir" to (orchestrationConfig.absoluteWorkingDir?.let { File(it).absoluteFile } ?: "."),
             "smartModel" to orchestrationConfig.defaultSmart.getChildClient(task),
-            "fastModel" to orchestrationConfig.defaultFast.getChildClient(task)
+            "fastModel" to orchestrationConfig.defaultFast.getChildClient(task),
+            "task" to task,
         )
 
     override fun contextData(): List<String> = emptyList()

@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.core5.http.HttpRequest
 import org.apache.hc.core5.http.io.entity.EntityUtils
@@ -28,10 +29,10 @@ interface EmbeddingClientInterface {
 
 abstract class SingleProviderEmbeddingClient(
     protected val provider: APIProvider,
-    val apiKey: String,
+    val apiKey: SecureString,
     val apiBase: String = provider.base!!,
     workPool: ExecutorService,
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     scheduledPool: ListeningScheduledExecutorService,
 ) : EmbeddingClientBase(
@@ -126,7 +127,7 @@ abstract class EmbeddingClientBase(
     }
 
     inner class ChildClient() : EmbeddingClientBase(
-        logLevel = Level.INFO,
+        logLevel = Level.DEBUG,
         workPool = workPool,
         logStreams = logStreams,
         scheduledPool = scheduledPool

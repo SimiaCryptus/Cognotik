@@ -29,6 +29,9 @@ architecturally sound, planner-compatible, and user-safe.
       search_query").
     * **Type Config:** Must only contain global settings for the tool (e.g., "default_model", "api_keys", "
       enabled_features").
+* **Mutability & Scripting:**
+    * **Mutable Fields:** All fields in both `TaskExecutionConfig` and `TaskTypeConfig` subclasses must be mutable (`var`) and provide sensible default values.
+    * **Reasoning:** This is strictly required for interoperability with scripting environments (e.g., Groovy), where configurations are often instantiated and then modified dynamically via property setters.
 
 ## 3. Planner Compatibility (The "Description" Contract)
 
@@ -80,6 +83,12 @@ The Planner (LLM) relies entirely on text descriptions to understand how to use 
   what downstream tasks will see.
 * **Artifacts:** If the task generates files, the output text passed to `resultFn` should list the paths of created
   files to maintain context for the Planner.
+* **Markdown Rendering:**
+    * **Extension Method:** When sending content to the UI (via `task.add` or `task.complete`), always use the `String.renderMarkdown` extension method (e.g., `myString.renderMarkdown`).
+    * **Capabilities:** This utility automatically handles:
+        * Mermaid diagram generation (converting code blocks to SVGs).
+        * Tabbed views for complex outputs (separating Source vs. Rendered view).
+        * HTML sanitization and styling.
 
 ### 4.4 Prompt Engineering (`promptSegment`)
 
@@ -114,7 +123,7 @@ class ExampleTaskConfig(
 
 // 1b. Type Configuration (Global Settings)
 class ExampleTypeConfig(
-    val operationMode: String = "standard"
+    var operationMode: String = "standard"
 ) : TaskTypeConfig()
 
 
@@ -240,7 +249,7 @@ val footer = acceptButtonFooter(task.ui) {
     task.complete()
     semaphore.release() // Unblocks the TaskOrchestrator
 }
-task.complete(renderMarkdown(codeResult) + footer)
+task.complete(codeResult.renderMarkdown + footer)
 ```
 
 ## 5. Transcript Logging

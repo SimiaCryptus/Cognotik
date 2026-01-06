@@ -11,7 +11,7 @@ import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
 import org.slf4j.LoggerFactory
 import java.net.InetSocketAddress
-import java.util.EnumSet
+import java.util.*
 
 class CognotikAppServer(
     val localName: String,
@@ -43,10 +43,15 @@ class CognotikAppServer(
         }
     }
 
+    var context: WebAppContext? = null
+        private set
+
     private fun newWebAppContext(server: ChatServer, path: String): WebAppContext {
         return try {
             log.debug("Creating new WebAppContext for path: $path")
+            require(this.context == null) { "WebAppContext has already been initialized" }
             val context = WebAppContext()
+            this.context = context
             JettyWebSocketServletContainerInitializer.configure(context, null)
             context.baseResource = server.baseResource
             context.classLoader = CognotikAppServer::class.java.classLoader
@@ -80,6 +85,48 @@ class CognotikAppServer(
     companion object {
         private val log = LoggerFactory.getLogger(CognotikAppServer::class.java)
 
+
+        @Transient
+        private var server: CognotikAppServer? = null
+
+        fun isRunning(): Boolean {
+            val running = server?.server?.isRunning ?: false
+            log.debug("Server running status: $running")
+            return running
+        }
+
+        fun getServer(
+            endpoint: String = "localhost",
+            port: Int = 8181
+        ): CognotikAppServer {
+            try {
+                if (null == server || !server!!.server.isRunning) {
+                    if (endpoint.isBlank()) throw IllegalArgumentException("Endpoint cannot be blank when starting a new server")
+                    val endpoint = endpoint
+                    val port = port
+
+                    if (endpoint.isBlank()) {
+                        log.error("Listening endpoint is blank")
+                        throw IllegalStateException("Listening endpoint cannot be blank")
+                    }
+
+                    if (port <= 0 || port > 65535) {
+                        log.error("Invalid port number: $port")
+                        throw IllegalArgumentException("Port must be between 1 and 65535, got: $port")
+                    }
+
+                    log.info("Creating new CognotikAppServer instance for endpoint: $endpoint:$port")
+                    server = CognotikAppServer(endpoint, port)
+                    server!!.start()
+                } else {
+                    log.debug("Returning existing running server instance")
+                }
+                return server!!
+            } catch (e: Exception) {
+                log.error("Failed to get or create server instance", e)
+                throw e
+            }
+        }
     }
 
 }

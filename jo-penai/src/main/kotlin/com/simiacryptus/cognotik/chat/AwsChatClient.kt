@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProviderChain
@@ -23,10 +24,10 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 
 class AwsChatClient(
-    apiKey: String,
+    apiKey: SecureString,
     apiBase: String,
     workPool: ExecutorService,
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
     scheduledPool: ListeningScheduledExecutorService,
 ) : SingleProviderChatClient(
@@ -39,7 +40,7 @@ class AwsChatClient(
     scheduledPool = scheduledPool
 ) {
     private val awsAuth: AWSAuth by lazy {
-        JsonUtil.fromJson(apiKey, AWSAuth::class.java)
+        JsonUtil.fromJson(apiKey.decrypt, AWSAuth::class.java)
     }
     private val bedrockClient: BedrockRuntimeClient by lazy {
         BedrockRuntimeClient.builder().credentialsProvider(awsCredentials(awsAuth)).region(Region.of(awsAuth.region))

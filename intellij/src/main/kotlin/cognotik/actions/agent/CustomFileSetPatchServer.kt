@@ -1,7 +1,7 @@
 package cognotik.actions.agent
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.apps.renderMarkdown
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.diff.PatchProcessor
 import com.simiacryptus.cognotik.input.getDocumentReader

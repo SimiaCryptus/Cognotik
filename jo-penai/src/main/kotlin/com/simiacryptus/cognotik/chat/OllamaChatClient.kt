@@ -9,17 +9,18 @@ import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.*
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 class OllamaChatClient(
-    apiKey: String,
+    apiKey: SecureString,
     apiBase: String,
     workPool: ExecutorService,
     scheduledPool: ListeningScheduledExecutorService,
-    logLevel: Level = Level.INFO,
+    logLevel: Level = Level.DEBUG,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
 ) : SingleProviderChatClient(
     APIProvider.Ollama,

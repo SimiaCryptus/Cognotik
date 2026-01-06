@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.EncryptionUtil
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
+import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.util.toJson
 import java.awt.*
 import java.io.File
@@ -222,7 +223,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             val encryptedUserSettings = userSettings.copy(
                 apis = userSettings.apis.map { api ->
                     try {
-                        api.copy(key = api.key?.let { EncryptionUtil.encrypt(it, password.text) } ?: api.key)
+                        api.copy(key = api.key?.let { EncryptionUtil.encrypt(it.decrypt, password.text)?.encrypt } ?: api.key)
                     } catch (e: Exception) {
                         log.error("Failed to encrypt API key for provider: ${api.provider}", e)
                         api // Return original if encryption fails
@@ -411,7 +412,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 val decryptedUserSettings = importedUserSettings.copy(
                     apis = importedUserSettings.apis.map { api ->
                         try {
-                            api.copy(key = api.key?.let { EncryptionUtil.decrypt(it, password.text) } ?: api.key)
+                            api.copy(key = api.key?.let { EncryptionUtil.decrypt(it.decrypt, password.text)?.encrypt } ?: api.key)
                         } catch (e: Exception) {
                             log.error("Failed to decrypt API key for provider: ${api.provider}", e)
                             throw IllegalStateException(
@@ -552,7 +553,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                             userSettings.apis.add(
                                 ApiData(
                                     name = name.takeIf { it.isNotBlank() },
-                                    key = key.takeIf { it.isNotBlank() } ?: "",
+                                    key = (key.takeIf { it.isNotBlank() } ?: "").encrypt,
                                     baseUrl = base,
                                     provider = apiProvider))
                         } catch (e: Exception) {

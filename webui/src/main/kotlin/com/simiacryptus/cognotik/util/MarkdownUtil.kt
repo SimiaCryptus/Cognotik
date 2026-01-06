@@ -211,3 +211,6 @@ object MarkdownUtil {
     private val log = LoggerFactory.getLogger(MarkdownUtil::class.java)
 }
 
+
+val String.renderMarkdown: String get() = renderMarkdown(true)
+fun String.renderMarkdown(tabs: Boolean = false): String = MarkdownUtil.renderMarkdown(this, tabs = tabs)

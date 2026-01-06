@@ -85,7 +85,7 @@ fun myTask(task: SessionTask) {
 task.hideable("<b>Note:</b> Click the X to remove me.")
 
 // Add verbose output (rendered in a <pre> tag, often used for debug info)
-// This is hidden by default via CSS but visible if inspected or styled otherwise.
+// This is hidden by default via CSS but can be made visible.
 task.verbose("Detailed debug info...")
 ```
 ### Raw HTML

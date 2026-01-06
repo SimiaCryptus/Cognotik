@@ -7,13 +7,14 @@ import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema
 import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
 import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 class ChatInterface(
     val logStreams: MutableList<BufferedOutputStream>,
-    private val key: String,
+    private val key: SecureString,
     private val base: String,
     private val logLevel: Level,
     private val temperature: Double,

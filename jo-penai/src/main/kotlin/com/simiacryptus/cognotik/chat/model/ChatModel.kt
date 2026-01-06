@@ -15,6 +15,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.models.LLMModel
 import com.simiacryptus.cognotik.models.ModelSchema.Usage
+import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
@@ -42,9 +43,9 @@ open class ChatModel(
         (usage.prompt_tokens * inputTokenPricePerK + usage.completion_tokens * outputTokenPricePerK) / 1000.0
 
     fun instance(
-        key: String,
+        key: SecureString,
         base: String = provider?.base!!,
-        logLevel: Level = Level.INFO,
+        logLevel: Level = Level.DEBUG,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
         workPool: ExecutorService = Executors.newFixedThreadPool(4),
         temperature: Double = 0.1,
