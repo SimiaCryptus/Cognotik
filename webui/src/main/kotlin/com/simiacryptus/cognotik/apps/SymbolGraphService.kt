@@ -44,7 +44,8 @@ class SymbolGraphService {
         line: Int? = null,
         visibility: String? = null,
         modifiers: String? = null,
-        annotations: String? = null
+        annotations: String? = null,
+        lastModified: Long? = null
     ) {
         val v = getOrCreateVertex(id, "Symbol")
         v.property(VertexProperty.Cardinality.single, "name", name)
@@ -55,6 +56,7 @@ class SymbolGraphService {
         visibility?.let { v.property(VertexProperty.Cardinality.single, "visibility", it) }
         modifiers?.let { v.property(VertexProperty.Cardinality.single, "modifiers", it) }
         annotations?.let { v.property(VertexProperty.Cardinality.single, "annotations", it) }
+        lastModified?.let { v.property(VertexProperty.Cardinality.single, "lastModified", it) }
         val filePath = fileId
         val fileV = getOrCreateVertex(fileId, "File")
         fileV.property(VertexProperty.Cardinality.single, "name", filePath.substringAfterLast('/'))
@@ -301,6 +303,8 @@ class SymbolGraphService {
         val modifiers: String? get() = getProperty("modifiers")
         @get:Description("Annotations present on the symbol.")
         val annotations: String? get() = getProperty("annotations")
+        @get:Description("The timestamp when the symbol was last modified.")
+        val lastModified: Long? get() = getProperty("lastModified")
         @get:Description("A map of all properties stored on the vertex.")
         val properties: Map<String, Any>
             get() {

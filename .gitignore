@@ -37,6 +37,6 @@ test_config.json
 /experiment/search_lambda/terraform/.terraform/
 symbol_analysis.json
 symbol_graph.graphml
-symbol_graph.json
+symbol_graph_2.json
 workspaces
 settings.json
