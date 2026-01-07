@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan.cognitive
 
 import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CodingMode.CodingModeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
 import org.junit.jupiter.api.BeforeAll

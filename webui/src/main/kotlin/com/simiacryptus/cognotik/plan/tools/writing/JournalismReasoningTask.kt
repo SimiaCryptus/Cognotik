@@ -248,7 +248,7 @@ JournalismReasoning - Investigate stories through journalistic principles and me
         val startTime = System.currentTimeMillis()
         log.info("Starting JournalismReasoningTask for story: '${executionConfig?.story_topic}'")
         // Initialize detailed output file
-        val transcriptStream = transcript(task)
+        val transcriptStream = task.transcript()
         val transcript = transcriptStream?.bufferedWriter()
         transcript?.let { writer ->
 

@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.plan.macros
 
 import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.cognitive.CodingModeConfig
-import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
+import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode.WaterfallModeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.reasoning.BrainstormingTask
@@ -12,8 +12,8 @@ import com.simiacryptus.cognotik.platform.Session
 import java.io.File
 
 object SoftwareProjectGenerator {
-    @JvmStatic
-    fun main(args: Array<String>) {
+    val testName = javaClass.simpleName
+    @JvmStatic fun main(args: Array<String>) {
         PlanHarness.configurePlatform()
         object : PlanHarness(
             prompt = "Build a fun and unique browser-based game.",
@@ -22,12 +22,12 @@ object SoftwareProjectGenerator {
             override fun newConfig(session: Session, tempDir: File) = super.newConfig(session, tempDir).apply {
                 taskSettings[BrainstormingTask.Brainstorming.name] = TaskTypeConfig(
                     task_type = BrainstormingTask.Brainstorming.name,
-                    name = BrainstormingTask.Brainstorming.name,
                 )
                 taskSettings[SubPlanTask.SubPlan.name] = SubPlanTask.SubPlanTaskTypeConfig(
                     name = SubPlanTask.SubPlan.name,
 //                    cognitiveSettings = WaterfallModeConfig(),
-                    cognitiveSettings = CodingModeConfig(),
+//                    cognitiveSettings = CodingModeConfig(),
+                    cognitiveSettings = CognitiveModeConfig(type = CognitiveModeType.Hierarchical),
                     taskSettings = mutableMapOf(
                         FileModificationTask.FileModification.name to TaskTypeConfig(
                             task_type = FileModificationTask.FileModification.name,
@@ -36,6 +36,7 @@ object SoftwareProjectGenerator {
                     )
                 )
             }
+            override fun createWorkspace() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }
         }.run()
     }
 }

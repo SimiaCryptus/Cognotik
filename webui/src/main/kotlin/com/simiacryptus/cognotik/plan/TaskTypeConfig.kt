@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 )
 open class TaskTypeConfig(
     var task_type: String? = null,
-    name: String? = null,
+    name: String? = task_type,
     var model: ApiChatModel? = null
 ) {
     var name: String? = name

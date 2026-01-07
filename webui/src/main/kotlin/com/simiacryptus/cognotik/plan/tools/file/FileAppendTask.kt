@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
-import java.io.File
 import java.util.concurrent.Semaphore
 
 class FileAppendTask(

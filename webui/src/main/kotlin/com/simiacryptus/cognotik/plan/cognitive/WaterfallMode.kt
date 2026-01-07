@@ -21,6 +21,8 @@ import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
+import java.text.SimpleDateFormat
+import java.util.Date
 import kotlin.io.path.Path
 
 /**
@@ -46,7 +48,7 @@ open class WaterfallMode(
 
     override fun initialize(task : SessionTask) {
         log.debug("Initializing PlanAheadMode")
-        transcriptStream = transcript(task)
+        transcriptStream = task.transcript()
     }
 
     override fun contextData(): List<String> = emptyList()
@@ -95,7 +97,7 @@ open class WaterfallMode(
                 }
                 // Save plan to file for PrePlanned mode
                 try {
-                    val planFile = coordinator.root.resolve("plan.json").toFile()
+                    val planFile = coordinator.root.resolve(".logs/plan_${now()}.json").toFile()
                     JsonUtil.toJson(p).let { json ->
                         planFile.writeText(json)
                         task.add("Plan saved to [${planFile.name}](${task.linkTo("plan.json")})".renderMarkdown())
@@ -320,5 +322,6 @@ $availableFiles
 
     companion object {
         val inputCnt = 1
+        fun now(): String = SimpleDateFormat("yyyyMMdd_HHmmss_SSS").format(Date())
     }
 }

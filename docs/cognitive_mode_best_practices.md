@@ -1,100 +1,273 @@
- # Cognotik Cognitive Mode Best Practices & Configuration
+# Cognotik Cognitive Mode Development Guide
+
+## 1. Introduction
+
+While **Tasks** represent the "hands" of the Cognotik system (performing actions), **Cognitive Modes** represent the "
+brain" (strategy and planning). As a developer creating a new Cognitive Mode, you are defining the control loop that
+orchestrates these tasks.
+
+This guide outlines best practices for implementing robust modes, managing LLM context, and designing architectures that
+support Sub-Planning.
  
- ## 1. Introduction
- 
- While **Tasks** represent the "hands" of the Cognotik system (performing actions), **Cognitive Modes** represent the "brain" (strategy and planning). Choosing and configuring the right Cognitive Mode is the single most important factor in determining the success, speed, and cost of an agentic session.
- 
- This guide outlines best practices for selecting modes, configuring orchestration, and utilizing hybrid architectures via Sub-Planning.
- 
- ---
- 
- ## 2. Strategic Mode Selection
- 
- Do not default to `AdaptivePlanningMode` for everything. While powerful, it is often overkill. Use this rubric to select the most efficient mode:
- 
- | Scenario                     | Recommended Mode   | Why?                                                                                                     |
- |:-----------------------------|:-------------------|:---------------------------------------------------------------------------------------------------------|
- | **Exploration / Debugging**  | `Conversational`   | Lowest latency. Allows you to steer the AI quickly when you don't know the root cause yet.               |
- | **Greenfield Development**   | `Waterfall`        | Generates a cohesive architecture upfront. Prevents "spaghetti code" by forcing a plan before execution. |
- | **Research / Hard Problems** | `AdaptivePlanning` | The "Think-Act-Reflect" loop is necessary when the result of Step 1 determines Step 2.                   |
- | **Batch Operations**         | `Parallel`         | If you need to touch 50 files, `Adaptive` mode will take hours. `Parallel` takes minutes.                |
- | **Critical Decisions**       | `Council`          | Reduces hallucinations by forcing consensus between multiple personas.                                   |
- 
- ---
- 
- ## 3. Hybrid Architectures (The Sub-Planning Pattern)
- 
- The most advanced usage of Cognotik involves mixing modes using the `SubPlanningTask`. This allows you to treat a complex Cognitive Mode as a single atomic task within a larger plan.
- 
- ### The "Rigid Outer, Flexible Inner" Pattern
- **Best Practice:** Use a structured mode (like `Waterfall` or `Hierarchical`) for the high-level project management, and delegate difficult sub-steps to `Adaptive` or `Conversational` modes.
- 
- **Example Scenario:** Building a full web application.
- 1.  **Outer Loop (`WaterfallMode`):**
-     *   Step 1: Setup Project Structure.
-     *   Step 2: **[SubPlan]** Research and select a database library.
-     *   Step 3: Implement User Auth.
- 
- 2.  **Inner Loop (Step 2 via `AdaptivePlanningMode`):**
-     *   The sub-planner autonomously researches libraries, tests them, and returns the best choice.
-     *   The Outer Loop waits for the result, then proceeds to Step 3 using the selected library.
- 
- **Configuration:**
- When defining a `SubPlanningTask` in your `OrchestrationConfig` or plan, ensure you pass the relevant context but restrict the scope to prevent the sub-agent from modifying unrelated files.
- 
- ---
- 
- ## 4. Orchestration Configuration
- 
- Your `OrchestrationConfig` controls the brain power allocated to the modes.
- 
- ### 4.1 Model Selection
- *   **Planning Model (`defaultModel`):** Use your smartest available model (e.g., GPT-4o, Claude 3.5 Sonnet) for `Waterfall` planning and `Council` reasoning. These modes rely heavily on logic and context window.
- *   **Parsing Model:** You can often use a cheaper/faster model for parsing JSON outputs or handling simple `Conversational` interactions to reduce latency.
- 
- ### 4.2 Auto-Fix vs. Interactive
- *   **Interactive (`autoFix = false`):**
-     *   **Best for:** `Waterfall` and `Conversational`.
-     *   **Why:** In Waterfall, you want to review the `plan.json` before execution. In Conversational, you are the "Human-in-the-loop."
- *   **Autonomous (`autoFix = true`):**
-     *   **Best for:** `AdaptivePlanning` and `Parallel`.
-     *   **Why:** Adaptive mode is designed to self-correct. Stopping for human approval on every reflection cycle defeats the purpose of the "Agent."
- 
- ---
- 
- ## 5. Performance & Cost Management
- 
- ### 5.1 Managing Token Usage in Adaptive Mode
- `AdaptivePlanningMode` maintains a "Reasoning State" (Goals, Facts, Hypotheses). As the session grows, this context window fills up.
- *   **Tip:** If an Adaptive session is stuck in a loop, manually intervene to clear the "Facts" or restart the session with the discovered knowledge as the new prompt.
- 
- ### 5.2 Parallel Concurrency
- `ParallelMode` uses a `FixedConcurrencyProcessor`.
- *   **Configuration:** Ensure your thread pool size matches your API rate limits.
- *   **Warning:** Setting concurrency too high (e.g., >10) often triggers rate limits from LLM providers, causing all tasks to fail simultaneously. A safe default is 3-5.
- 
- ### 5.3 Council Mode Overhead
- `CouncilMode` triples (or quadruples) the token cost for every decision because it generates distinct personas and then runs a voting round.
- *   **Use Case:** Only use this for architectural decisions or security audits. Do not use it for writing boilerplate code.
- 
- ---
- 
- ## 6. Debugging Cognitive States
- 
- When an agent fails, check the artifacts specific to the mode:
- 
- 1.  **Waterfall:** Check `plan.json` in the working directory. You can manually edit this JSON to remove bad steps and "resume" the plan.
- 2.  **Adaptive:** Look at the **Thinking Status** tab in the UI. If the "Hypotheses" are wrong, the actions will be wrong.
- 3.  **Protocol:** Check the **Referee** logs. If the agent keeps failing a state transition, the success criteria in the Protocol definition might be too strict or ambiguous for the LLM.
+## 2. Core Principles
+
+1. **Transparency First:** The user must always know *what* the agent is doing and *why*. Never perform a complex
+   reasoning step without logging it to the Transcript or displaying it in the UI.
+2. **Bounded Autonomy:** Your mode must strictly adhere to the `autoFix` configuration. If `autoFix` is false, the mode
+   is a *proposer*, not an *executor* of side effects.
+3. **State Isolation:** Do not rely on global static state. All reasoning context must be contained within the `run()`
+   method's scope or the `CognitiveSchemaStrategy` state object to ensure thread safety and resumability.
+4. **Graceful Degradation:** If the "Smart" model fails or hallucinates, the mode should attempt to recover (e.g., by
+   simplifying the prompt) or fail loudly with a clear error, rather than looping infinitely.
+
+## 3. Mode Design Patterns
+
+### 3.1 The Adaptive Loop (OODA Loop)
+
+* **Structure:** Observe -> Orient -> Decide -> Act.
+* **Use Case:** Open-ended problems (e.g., "Fix this bug", "Research this topic").
+* **Implementation:** Use a `while` loop that continues until a termination condition is met. Inside the loop, use a
+  `CognitiveSchemaStrategy` to determine the next step based on the history of previous steps.
+
+### 3.2 The Waterfall (The Architect)
+
+* **Structure:** Plan -> Review -> Execute.
+* **Use Case:** High-risk or complex generation tasks (e.g., "Scaffold a new project").
+* **Implementation:**
+  1. **Phase 1:** Generate a JSON plan using the Smart Model.
+  2. **Phase 2:** Present the plan using `Discussable` (see UI Guide) to get user buy-in.
+  3. **Phase 3:** Iterate through the approved plan items and execute them sequentially.
+
+### 3.3 The Delegator (Hierarchical)
+
+* **Structure:** Analyze -> Decompose -> Sub-Plan.
+* **Use Case:** Massive tasks exceeding context windows.
+* **Implementation:** The mode identifies distinct sub-components and instantiates `SubPlanningTask` for each. This
+  spawns a recursive instance of the Cognotik framework.
+
+## 4. Handling Configuration
+
+Your mode must respect the `OrchestrationConfig` passed in by the user. Do not hardcode model or task selections.
+
+### 4.1 Model Usage Guidelines
+
+* **`config.defaultSmart`:** Use this for the core logic of your mode (Planning, Reasoning, Code Generation).
+* **`config.defaultFast`:** Use this for utility operations (JSON parsing, summarizing text, extracting intent) to
+  reduce latency and cost.
+
+### 4.2 Prompt Architecture
+
+* **Externalize Strings:** Never hardcode the "System Prompt" or "Persona Definition" inside the Cognitive Mode class
+  logic.
+* **Configurable Defaults:** Allow the `OrchestrationConfig` to override your default prompts. This allows users to
+  tweak the "Brain" without modifying your source code.
+
+```kotlin
+class MyCustomMode(val config: OrchestrationConfig) {
+  fun run() {
+    // Use the user's preferred smart model
+    val planner = config.defaultSmart
+
+    // Allow prompt injection
+    val systemPrompt = config.overrides["systemPrompt"] ?: DEFAULT_SYSTEM_PROMPT
+
+    // ... execution logic
+  }
+}
+```
+
+### 4.3 Respecting Interaction Modes
+
+* **If `config.autoFix == false`:** Your mode **must** pause for user confirmation before executing destructive
+  actions (writing files, running shell commands).
+* **If `config.autoFix == true`:** Your mode should implement self-healing logic (e.g., reading a stack trace and
+  retrying) rather than asking the user.
  
  ---
+
+## 5. State Management & Resource Limits
+
+### 5.0 Using Cognitive Schema Strategies
+
+Instead of managing raw strings or lists of messages, prefer using **Cognitive Schema Strategies** (see
+`cognitive_schema.md`).
+
+* **Why:** They provide structured state (e.g., `ScientificState`, `AgileState`) that handles serialization,
+  initialization, and updates automatically.
+* **How:**
+  ```kotlin
+  // Initialize strategy
+  val strategy = CognitiveSchemaStrategy.AgileDeveloper
+  var state = strategy.initialize(userPrompt, config.defaultSmart)
+  // In your loop
+  val guidance = strategy.getTaskSelectionGuidance(state)
+  // ... execute task ...
+  state = strategy.update(state, taskResult, config.defaultSmart)
+  ```
+
+### 5.1 Implementing Token Pruning
+
+Modes that maintain a "Reasoning State" (Goals, Facts, Hypotheses) will eventually overflow the context window.
+
+* **Requirement:** Your mode must implement a "Garbage Collection" strategy. Periodically summarize completed steps and
+  remove them from the prompt context, keeping only the active goal and relevant facts.
+
+### 5.2 Managing Concurrency
+
+When implementing parallel modes (like `ParallelMode`), do not spawn unlimited threads.
+
+* **Implementation:** Use `FixedConcurrencyProcessor` or a bounded `Semaphore`.
+* **Rate Limits:** Handle `429 Too Many Requests` exceptions gracefully by implementing exponential backoff within your
+  worker threads.
+
+### 5.3 Cost Awareness
+
+* **Council/Voting Patterns:** If your mode uses a "Council" pattern, ensure you are not running the voting loop on
+  every trivial step. Implement a "Confidence Threshold"—only trigger the Council if the primary model's confidence is
+  low.
  
- ## 7. Prompt Engineering for Personas
+ ---
+
+## 6. Observability & Transcripts
+
+Cognitive Modes are complex state machines. To debug them and provide value to the user, you **must** implement detailed
+Transcripts.
+
+### 6.1 Transcript Standards
+
+* **Format:** Markdown.
+* **Detail Level:** High. Use `<details>` tags to collapse raw LLM inputs/outputs, JSON state dumps, and stack traces.
+* **Visuals:** Use **Mermaid** diagrams to visualize state transitions (e.g., Waterfall steps, Adaptive reasoning
+  loops).
+
+```kotlin
+// Example: Logging to transcript with tabs
+val transcript = task.transcript()
+transcript?.write("## Step 1: Analysis\n".toByteArray())
+val tabs = TabbedDisplay(task)
+tabs["Plan"] = "```json\n$planJson\n```".renderMarkdown()
+tabs["Diagram"] = "```mermaid\n$stateDiagram\n```".renderMarkdown()
+```
+
+### 6.2 Debugging Artifacts
+
+1. **Waterfall:** Log the generated `plan.json` into a `<details>` block in the transcript.
+2. **Adaptive:** Log every "Reflection" cycle. Use Mermaid to show the tree of thoughts.
+3. **Protocol:** Log the Referee's scoring rationale.
+
+---
+
+## 8. Concurrency & Error Handling
+
+### 8.1 Thread Management
+
+Cognitive modes often orchestrate multiple sub-tasks or parallel reasoning chains.
+
+* **Heavy Computation:** Use `task.ui.pool` for any non-trivial processing (parsing large plans, RAG lookups).
+* **Scheduling:** Use `task.ui.scheduledThreadPoolExecutor` for periodic state checks or timeouts.
+* **Logging:** Always log start/stop/progress events to SLF4J to correlate with UI events.
+
+### 8.2 Exception Safety
+
+* **Catch All:** Wrap high-level logic in `try/catch` blocks.
+* **Reporting:**
+  1. **UI:** `task.error(e)`
+  2. **Log:** SLF4J error.
+  3. **Transcript:** Embed the stack trace in a `<details>` section.
+* **Recovery:** If a mode crashes, attempt to save the current state (e.g., `plan.json`) so the user can resume later.
+
+```kotlin
+try {
+  executeComplexLogic()
+} catch (e: Throwable) {
+  log.error("Critical failure in mode execution", e)
+  task.error(e)
+  transcript?.write(
+    """
+         <details>
+         <summary>Stack Trace</summary>
+         ```
+         ${e.stackTraceToString()}
+         ```
+         </details>
+     """.trimIndent().toByteArray()
+  )
+}
+```
+
+---
+
+## 9. Implementation Skeleton
+
+Below is a standard skeleton for a robust, interactive Cognitive Mode.
+
+```kotlin
+class MyAdaptiveMode(val config: OrchestrationConfig) {
+  private val log = LoggerFactory.getLogger(javaClass)
+  fun run(
+    task: SessionTask,
+    userPrompt: String,
+    availableTasks: List<TaskType>
+  ) {
+    val transcript = task.transcript()
+    val tabs = TabbedDisplay(task)
+    // 1. Initialize Strategy
+    val strategy = CognitiveSchemaStrategy.ProjectManager
+    var state = strategy.initialize(userPrompt, config.defaultSmart)
+    // 2. UI Setup
+    val reasoningTab = tabs.newTask("Reasoning")
+    val executionTab = tabs.newTask("Execution")
+    try {
+      while (!state.isComplete()) {
+        // 3. Plan Next Step
+        val guidance = strategy.getTaskSelectionGuidance(state)
+        reasoningTab.add("Thinking: $guidance".renderMarkdown())
+        // 4. Select Tool (Simplified)
+        val selectedTool = availableTasks.firstOrNull { it.canHandle(guidance) }
+          ?: throw RuntimeException("No tool found for guidance: $guidance")
+        // 5. Execute Tool
+        // Note: Pass 'executionTab' so the tool renders in the correct UI slot
+        val result = selectedTool.execute(
+          task = executionTab,
+          input = guidance,
+          config = config
+        )
+        // 6. Update State
+        state = strategy.update(state, result, config.defaultSmart)
+        // 7. Log to Transcript
+        transcript?.write("## Step Complete\nResult: $result\n".toByteArray())
+      }
+      task.complete("Goal Achieved!")
+    } catch (e: Exception) {
+      task.error(e)
+      transcript?.write(e.stackTraceToString().toByteArray())
+    } finally {
+      transcript?.close()
+    }
+  }
+}
+```
  
- In `PersonaChatMode` or `CouncilMode`, the specific phrasing of the persona definition alters the tool usage.
- 
- *   **"Security Auditor":** Will prioritize `AnalysisTask` and `FileSearchTask`.
- *   **"Hacker":** Will prioritize `RunShellCommandTask` and `RunCodeTask`.
- *   **"Product Manager":** Will prioritize `DecompositionSynthesisTask` (planning) over coding.
- 
- **Best Practice:** If the AI isn't using the tools you expect, switch the Persona, not just the prompt.
+---
+
+## 7. Prompt Architecture
+
+When defining the System Prompts for your mode, remember that specific phrasing alters tool usage probabilities.
+
+* **Security Contexts:** If your mode is for auditing, explicitly boost `AnalysisTask` and `FileSearchTask` in the
+  prompt instructions.
+* **Execution Contexts:** If your mode is for implementation, explicitly boost `RunShellCommandTask` and `RunCodeTask`.
+
+**Best Practice:** Do not rely on the model "guessing" which tools to use. Your mode should dynamically inject the list
+of available tools into the system prompt based on the current state.
+
+```kotlin
+// Example: Dynamic Prompt Construction
+val toolsPrompt = availableTools.joinToString("\n") { it.usageDescription }
+val systemPrompt = """
+     You are a specialized agent.
+
+     AVAILABLE TOOLS:
+     $toolsPrompt
+""".trimIndent()
+```

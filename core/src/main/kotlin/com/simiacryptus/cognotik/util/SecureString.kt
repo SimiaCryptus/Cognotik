@@ -94,4 +94,6 @@ class SecureString {
   }
 }
 
-val String.encrypt: SecureString get() = SecureString(this)
+val String.encrypt: SecureString get() {
+  return SecureString(this)
+}

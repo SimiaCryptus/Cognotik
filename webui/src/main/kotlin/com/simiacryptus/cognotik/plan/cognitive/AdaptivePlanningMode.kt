@@ -70,7 +70,7 @@ open class AdaptivePlanningMode(
     private fun startAutoPlanChat(task : SessionTask, userMessage: String) {
         log.debug("Starting auto plan chat with initial message: $userMessage")
         task.echo(renderMarkdown(userMessage))
-        transcriptStream = transcript(task)
+        transcriptStream = task.transcript()
 
         val continueLoop = true
         val tabbedDisplay = TabbedDisplay(task)

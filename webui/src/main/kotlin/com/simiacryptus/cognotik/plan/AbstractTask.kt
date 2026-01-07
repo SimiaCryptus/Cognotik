@@ -21,6 +21,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val orchestrationConfig: OrchestrationConfig,
     val executionConfig: T?
 ) {
+
     var state: TaskState? = TaskState.Pending
 
     protected open val root: Path
@@ -112,13 +113,11 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
             }
         }
 
-    fun transcript(
-        task: SessionTask,
-        transcriptFile: String = this.taskType + "_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
-    ): FileOutputStream? {
-        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
+    fun SessionTask.transcript(name: String = this@AbstractTask.taskType): FileOutputStream? {
+        val transcriptFile: String = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val (link, file) = Pair(linkTo(transcriptFile), resolveUserFile(transcriptFile))
         val markdownTranscript = file?.outputStream()
-        task.add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
+        add("[Transcript](${link.removeSuffix(".md")}.html)".renderMarkdown())
         return markdownTranscript
     }
 

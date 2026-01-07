@@ -207,7 +207,7 @@ GameTheory - Analyze strategic interactions using game theory
 
         val ui = task.ui
         val api = defaultSmart ?: return
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)
         // Overview tab

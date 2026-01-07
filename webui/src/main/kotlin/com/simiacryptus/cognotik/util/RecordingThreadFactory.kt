@@ -8,7 +8,7 @@ class RecordingThreadFactory(
     val session: Session,
     val user: User?
 ) : ImmediateExecutorService.ThreadFactoryTrackerInterface() {
-    private val inner = ThreadFactoryBuilder().setNameFormat("Session $session; User $user; #%d").build()
+    private val inner = ThreadFactoryBuilder().setNameFormat("Session $session; User $user; #%d").setDaemon(true).build()
     override fun newThread(r: Runnable): Thread {
         log.debug("Creating new thread for session: {}, user: {}", session, user)
         inner.newThread(r).also {

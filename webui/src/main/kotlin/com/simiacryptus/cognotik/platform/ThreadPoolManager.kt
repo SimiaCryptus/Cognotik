@@ -15,13 +15,16 @@ open class ThreadPoolManager {
 
     private val poolCache = mutableMapOf<SessionKey, ImmediateExecutorService>()
 
-    protected open fun createPool(session: Session, user: User?) =
-        ImmediateExecutorService(RecordingThreadFactory(session, user))
+    protected open fun createPool(session: Session, user: User?) = ImmediateExecutorService(threadFactory(session, user))
 
     private val scheduledPoolCache = mutableMapOf<SessionKey, ListeningScheduledExecutorService>()
 
     protected fun createScheduledPool(session: Session, user: User?) =
-        MoreExecutors.listeningDecorator(ScheduledThreadPoolExecutor(1))
+        MoreExecutors.listeningDecorator(ScheduledThreadPoolExecutor(1).apply {
+            threadFactory = threadFactory(session, user)
+        })
+
+    fun threadFactory(session: Session, user: User?): RecordingThreadFactory = RecordingThreadFactory(session, user)
 
     fun getPool(
         session: Session,

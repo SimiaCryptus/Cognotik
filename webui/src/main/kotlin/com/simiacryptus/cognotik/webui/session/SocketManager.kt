@@ -63,7 +63,7 @@ abstract class SocketManager(
             sessionId
         )?.let { dir ->
             val resolve = if (dir.exists()) {
-                dir.resolve(relativePath)
+                dir.resolve(relativePath).apply { parentFile.mkdirs() }
             } else {
                 if (!dir.mkdirs()) {
                     throw RuntimeException("Failed to create directory: ${dir.absolutePath}")

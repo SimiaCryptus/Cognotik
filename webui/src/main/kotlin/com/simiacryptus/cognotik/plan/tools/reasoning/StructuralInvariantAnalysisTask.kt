@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime

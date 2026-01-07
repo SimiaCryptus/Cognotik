@@ -251,7 +251,7 @@ EmailCampaign - Generate complete email sequences for marketing, sales, or outre
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting EmailCampaignTask for goal: '${executionConfig?.campaign_goal}'")
-        val transcript = transcript(task)
+        val transcript = task.transcript()
 
 
         // Validate configuration

@@ -32,6 +32,9 @@ architecturally sound, planner-compatible, and user-safe.
 * **Mutability & Scripting:**
     * **Mutable Fields:** All fields in both `TaskExecutionConfig` and `TaskTypeConfig` subclasses must be mutable (`var`) and provide sensible default values.
     * **Reasoning:** This is strictly required for interoperability with scripting environments (e.g., Groovy), where configurations are often instantiated and then modified dynamically via property setters.
+*   **Prompt Configuration:**
+    *   **Hardcoding Forbidden:** Do not hardcode prompt templates or system instructions inside the class.
+    *   **Config Fields:** Define prompt strings, templates, and formatters within the `TaskTypeConfig`. This allows users to tune the "personality" or specific instructions of a tool without recompiling.
 
 ## 3. Planner Compatibility (The "Description" Contract)
 
@@ -74,10 +77,12 @@ The Planner (LLM) relies entirely on text descriptions to understand how to use 
 * **Streaming:** The `run` method must utilize the `task: SessionTask` object to stream updates to the UI.
     * Use `task.add()` or `task.complete()` to provide real-time feedback.
 * **Transcripts (Detailed Logging):**
-    * For complex tasks, especially those with large inputs/outputs (like code execution), do not dump everything into
-      the main UI.
-    * Use `val transcript = task.transcript()` to create a linked Markdown file.
-    * Write detailed logs (inputs, raw outputs, stack traces) to this stream.
+    *   **Mandatory:** Transcripts are required for all tasks to enable postmortem diagnostics and user auditing.
+    *   **Format:** Transcripts must be valid Markdown.
+    *   **Rich Content:**
+        *   Use **Mermaid** diagrams for flows or logic visualization.
+        *   Use `<details><summary>Label</summary>...content...</details>` blocks for high-volume data (raw JSON, stack traces, large file content) to keep the document readable.
+    *   **Lifecycle:** Ensure `transcript?.close()` is called in a `finally` block.
     * **Crucial:** Ensure `transcript?.close()` is called in a `finally` block.
 * **Result Function:** The `resultFn` callback must be invoked with the final textual result of the task. This result is
   what downstream tasks will see.
@@ -85,6 +90,18 @@ The Planner (LLM) relies entirely on text descriptions to understand how to use 
   files to maintain context for the Planner.
 * **Markdown Rendering:**
     * **Extension Method:** When sending content to the UI (via `task.add` or `task.complete`), always use the `String.renderMarkdown` extension method (e.g., `myString.renderMarkdown`).
+### 4.5 Concurrency & Threading
+*   **Offloading:** Do not block the main execution thread with heavy computations or I/O.
+*   **Standard Pools:**
+    *   **Async Processing:** Access `task.ui.pool` (ExecutorService) for heavy lifting.
+    *   **Scheduling:** Access `task.ui.scheduledThreadPoolExecutor` for delayed checks, timeouts, or periodic polling.
+*   **Logging:** Ensure runtime progress of async threads is logged to SLF4J.
+### 4.6 Exception Handling
+*   **The "Triple Log" Rule:** All exceptions must be captured and logged to three destinations before rethrowing or recovering:
+    1.  **UI:** `task.error(e)` (Visual feedback for the user).
+    2.  **SLF4J:** `log.error("Context...", e)` (System logs).
+    3.  **Transcript:** Write a `<details>` block containing the stack trace to the transcript file.
+*   **Recovery:** If the task can recover, log the recovery action. If not, rethrow to let the Orchestrator handle the failure state.
     * **Capabilities:** This utility automatically handles:
         * Mermaid diagram generation (converting code blocks to SVGs).
         * Tabbed views for complex outputs (separating Source vs. Rendered view).
@@ -99,6 +116,7 @@ The Planner (LLM) relies entirely on text descriptions to understand how to use 
       state: "You are a Python interpreter..."
     * This ensures the LLM generates content compatible with the specific tool instance configured by the user.
 
+
 ## 5. Review Checklist for Agents
 
 When reviewing a specific Task file (e.g., `MyNewTask.kt`), apply the following checks:
@@ -111,6 +129,8 @@ When reviewing a specific Task file (e.g., `MyNewTask.kt`), apply the following 
 | **R4**   | **Context**  | Does the task handle `task_dependencies`?                                          | **Fail** if upstream data is ignored.                                                             |
 | **R5**   | **Registry** | Is the task registered in `TaskType.kt`?                                           | **Fail** if the `TaskType` enum or constructor map is missing the entry.                          |
 | **R6**   | **Docs**     | Is there a `tooltipHtml` or `description` provided in the `TaskType` definition?   | **Fail** if null or empty.                                                                        |
+| **R7**   | **Debug**    | Is the transcript used with `<details>` for verbose data?                          | **Fail** if raw dumps clutter the main view or if transcript is missing.                          |
+| **R8**   | **Async**    | Are heavy ops offloaded to `task.ui.pool`?                                         | **Fail** if `Thread.sleep` or blocking I/O occurs on the main thread.                             |
 
 ## 6. Example: Compliant Task Structure
 
@@ -123,7 +143,8 @@ class ExampleTaskConfig(
 
 // 1b. Type Configuration (Global Settings)
 class ExampleTypeConfig(
-    var operationMode: String = "standard"
+    var operationMode: String = "standard",
+    var promptTemplate: String = "Perform the example operation in '{mode}' mode."
 ) : TaskTypeConfig()
 
 
@@ -132,11 +153,11 @@ class ExampleTask(
     config: OrchestrationConfig,
     taskConfig: ExampleTaskConfig?
 ) : AbstractTask<ExampleTaskConfig, ExampleTypeConfig>(config, taskConfig) {
+    private val log = org.slf4j.LoggerFactory.getLogger(javaClass)
 
     // 3. Dynamic Prompting using TypeConfig
     override fun promptSegment(): String {
-        val mode = typeConfig?.operationMode ?: "standard"
-        return "Perform the example operation in '$mode' mode."
+        return typeConfig?.promptTemplate?.replace("{mode}", typeConfig?.operationMode ?: "standard") ?: ""
     }
 
     override fun run(
@@ -148,20 +169,37 @@ class ExampleTask(
     ) {
         // 4. Detailed Logging via Transcript
         val transcript = task.transcript()
+        
         try {
-            // 5. Dependency Handling
-            val context = getPriorCode(agent.executionState)
-            transcript?.write("# Analysis\nContext: $context\n".toByteArray())
+            // 5. Offload heavy work to session pool
+            task.ui.pool.submit {
+                try {
+                    log.info("Starting ExampleTask analysis...")
+                    
+                    // 6. Dependency Handling
+                    val context = getPriorCode(agent.executionState)
+                    transcript?.write("# Analysis\n<details><summary>Context Data</summary>\n\n```\n$context\n```\n</details>\n".toByteArray())
 
-            // 6. Streaming Feedback to UI
-            task.add("Analyzing context...")
+                    // 7. Streaming Feedback to UI
+                    task.add("Analyzing context...".renderMarkdown())
 
-            // 7. Safety Check for Side Effects
-            val output = "Proposed Change"
-            acceptButtonFooter(task.ui) {
-                File(executionConfig?.path).writeText(output)
-                transcript?.write("## Action\nWrote to file.\n".toByteArray())
-                resultFn("File updated.")
+                    // 8. Safety Check for Side Effects
+                    val output = "Proposed Change"
+                    
+                    // Switch back to UI thread for interaction if needed, or handle logic here
+                    acceptButtonFooter(task.ui) {
+                        File(executionConfig?.path).writeText(output)
+                        transcript?.write("## Action\nWrote to file.\n".toByteArray())
+                        log.info("ExampleTask completed successfully.")
+                        resultFn("File updated.")
+                    }
+                } catch (e: Exception) {
+                    // 9. Triple Log Exception Handling
+                    task.error(e)
+                    log.error("Error in ExampleTask", e)
+                    transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                    throw e
+                }
             }
         } finally {
             transcript?.close()

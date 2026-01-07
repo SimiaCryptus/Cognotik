@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettings
-import com.simiacryptus.cognotik.util.EncryptionUtil
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.encrypt
@@ -31,8 +30,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         AppSettingsState.auxiliaryLog = null
         AppSettingsState.notifySettingsLoaded()
     }
-
-    private val password = JPasswordField()
 
     override fun build(component: AppSettingsComponent): JComponent {
         val tabbedPane = com.intellij.ui.components.JBTabbedPane()
@@ -144,8 +141,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 }, BorderLayout.NORTH)
 
                 add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                    add(JLabel("Password:"))
-                    add(password)
                     add(JLabel("Configuration:"))
                     add(JButton("Export Config").apply {
                         addActionListener {
@@ -220,18 +215,8 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             // Export UserSettings with encrypted keys
             log.debug("Encrypting ${userSettings.apis.size} API configurations")
 
-            val encryptedUserSettings = userSettings.copy(
-                apis = userSettings.apis.map { api ->
-                    try {
-                        api.copy(key = api.key?.let { EncryptionUtil.encrypt(it.decrypt, password.text)?.encrypt } ?: api.key)
-                    } catch (e: Exception) {
-                        log.error("Failed to encrypt API key for provider: ${api.provider}", e)
-                        api // Return original if encryption fails
-                    }
-                }.toMutableList()
-            )
             val configJson = JsonUtil.toJson(encryptedSettings)
-            val userSettingsJson = JsonUtil.toJson(encryptedUserSettings)
+            val userSettingsJson = JsonUtil.toJson(userSettings)
             """
                 {
                     "appSettings": $configJson,
@@ -409,22 +394,10 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     userSettingsJson, UserSettings::class.java
                 )
                 log.debug("Decrypting ${importedUserSettings.apis.size} API configurations")
-                val decryptedUserSettings = importedUserSettings.copy(
-                    apis = importedUserSettings.apis.map { api ->
-                        try {
-                            api.copy(key = api.key?.let { EncryptionUtil.decrypt(it.decrypt, password.text)?.encrypt } ?: api.key)
-                        } catch (e: Exception) {
-                            log.error("Failed to decrypt API key for provider: ${api.provider}", e)
-                            throw IllegalStateException(
-                                "Failed to decrypt API key for ${api.provider}. Please check your password.", e
-                            )
-                        }
-                    }.toMutableList()
-                )
                 ApplicationServices.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(
-                    UserSettingsManager.defaultUser, decryptedUserSettings
+                    UserSettingsManager.defaultUser, importedUserSettings
                 )
-                log.info("Successfully imported configuration with ${decryptedUserSettings.apis.size} API configurations")
+                log.info("Successfully imported configuration with ${importedUserSettings.apis.size} API configurations")
             } else {
                 // Fall back to old format
                 log.info("Importing legacy format configuration")

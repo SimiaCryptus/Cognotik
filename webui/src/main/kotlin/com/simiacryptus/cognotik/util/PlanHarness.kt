@@ -41,7 +41,7 @@ open class PlanHarness(
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
 ) {
-    val workspace = createTempDirectory()
+    val workspace = createWorkspace()
     private val harness = UnifiedHarness(
         port = port,
         openBrowser = openBrowser,
@@ -83,12 +83,10 @@ open class PlanHarness(
         cognitiveSettings = cognitiveSettings,
     )
 
-    private fun createTempDirectory(): File {
-        val time = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
-        return File(".").resolve("workspaces/${cognitiveSettings.type!!.name}/test-$time").apply {
+    open fun createWorkspace(): File = File(".").resolve("workspaces/${cognitiveSettings.type!!.name}/test-${now()}")
+        .apply {
             mkdirs()
             log.debug("Created temp directory: ${this.absolutePath}")
-        }
     }
 
     companion object {
@@ -166,5 +164,6 @@ open class PlanHarness(
         }
 
         private val log = LoggerFactory.getLogger(PlanHarness::class.java)
+        fun now(): String? = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
     }
 }

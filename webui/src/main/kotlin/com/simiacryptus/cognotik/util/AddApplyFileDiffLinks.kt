@@ -127,7 +127,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
     private fun String.reverseLines(): String = lines().reversed().joinToString("\n")
 
     private fun record(socketManager: SocketManager, data: Any): String {
-        val relativePath = UUID.randomUUID().toString() + ".json"
+        val relativePath = "patch/${UUID.randomUUID()}.json"
         require(relativePath.isNotBlank()) { "File path cannot be blank" }
         socketManager.resolveSystemFile(relativePath)?.writeText(data.toJson())
         return "<a href='fileIndex/${socketManager.sessionId}/$relativePath' target='_blank' class='verbose'>Patch Data</a>"

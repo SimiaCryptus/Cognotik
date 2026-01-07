@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path

@@ -31,7 +31,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
 ) {
-    val workspace = createTempDirectory()
+    val workspace = createWorkspace()
     private val harness = UnifiedHarness(
         port = port,
         openBrowser = openBrowser,
@@ -58,7 +58,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
         }
     }
 
-    private fun createTempDirectory(): File {
+    open fun createWorkspace(): File {
         val name = this.taskType.name
         val time = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
         return File(".").resolve("workspaces/$name/test-$time").apply {

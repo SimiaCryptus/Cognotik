@@ -224,7 +224,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         try {
             val startTime = System.currentTimeMillis()
             log.info("Starting PoliticalOptimizationTask with ${executionConfig?.perspectives?.size} perspectives")

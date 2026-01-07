@@ -203,7 +203,7 @@ class ScriptwritingTask(
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting ScriptwritingTask for topic: '${executionConfig?.topic}'")
-        val markdownTranscript = transcript(task)
+        val markdownTranscript = task.transcript()
 
 
         // Validate configuration

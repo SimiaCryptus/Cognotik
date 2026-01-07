@@ -190,7 +190,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         try {
             val startTime = System.currentTimeMillis()
             log.info("Starting MathematicalReasoningTask with problem: ${executionConfig?.problem_statement?.take(100)}")

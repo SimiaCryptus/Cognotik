@@ -7,7 +7,6 @@ import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
 import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.plan.transcript
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.AuthorizationInterface
@@ -17,6 +16,8 @@ import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
 import java.util.Locale.getDefault
 
 open class CodingTask<T : CodeRuntime>(
@@ -81,6 +82,20 @@ open class CodingTask<T : CodeRuntime>(
         }
     }
 
+    fun SessionTask.transcript(name: String = this.javaClass.simpleName): FileOutputStream? {
+        val relativePath = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(System.currentTimeMillis())}.md"
+        val (link, file) = Pair(linkTo(relativePath), resolveUserFile(relativePath))
+        val markdownTranscript = file?.outputStream()
+        complete(
+            "Writing $name to <a href='$link' target='_blank'>$link</a> <a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> <a href='${
+                link.removeSuffix(
+                    ".md"
+                )
+            }.pdf' target='_blank'>pdf</a>",
+            additionalClasses = "verbose"
+        )
+        return markdownTranscript
+    }
     open fun codeRequest(messages: List<Pair<String, ModelSchema.Role>>) = CodeRequest(messages)
 
     fun displayCode(

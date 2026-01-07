@@ -197,7 +197,7 @@ GeneticOptimization - Iteratively evolve and perfect text through genetic algori
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         try {
             val startTime = System.currentTimeMillis()
             messages.joinToString("\n\n")

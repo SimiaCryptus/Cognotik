@@ -356,7 +356,7 @@ class NeuralNetworkLayerTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         try {
             val startTime = System.currentTimeMillis()
             log.info("Starting NeuralNetworkLayerTask for: ${executionConfig?.layer_name}")

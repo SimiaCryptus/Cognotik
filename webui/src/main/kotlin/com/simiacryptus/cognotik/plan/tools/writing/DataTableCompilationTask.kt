@@ -73,7 +73,7 @@ class DataTableCompilationTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         transcript?.let { out ->
             out.write("# Data Table Compilation Task\n\n".toByteArray())
             out.write("## Configuration\n\n".toByteArray())

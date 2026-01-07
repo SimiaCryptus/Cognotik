@@ -20,15 +20,15 @@ import java.io.FileOutputStream
 import java.lang.reflect.Type
 import java.util.concurrent.Semaphore
 
-class CodingModeConfig(
-    var codeRuntime: CodeRuntimes = CodeRuntimes.GroovyRuntime
-) : CognitiveModeConfig(type = CognitiveModeType.Coding)
-
 open class CodingMode(
     orchestrationConfig: OrchestrationConfig,
     session: Session,
     user: User
-) : CognitiveMode<CodingModeConfig>(orchestrationConfig, session, user) {
+) : CognitiveMode<CodingMode.CodingModeConfig>(orchestrationConfig, session, user) {
+
+    class CodingModeConfig(
+        var codeRuntime: CodeRuntimes = CodeRuntimes.GroovyRuntime
+    ) : CognitiveModeConfig(type = CognitiveModeType.Coding)
 
     protected val history = mutableListOf<Pair<String, ModelSchema.Role>>()
 
@@ -84,13 +84,20 @@ open class CodingMode(
             val tabs = TabbedDisplay(task)
             tabs["Code"] = ("```" + config.codeRuntime.name.lowercase().replace("runtime", "") + "\n" + response.code + "\n```").renderMarkdown()
             transcript?.write("Code:\n${response.code}\n".toByteArray())
+            task.resolveUserFile(".logs/code_${now()}.${config.codeRuntime.extension}")?.writeBytes(response.code.toByteArray())
             val executionResult = response.result // execute code
             output(executionResult, tabs, transcript, response)
         } catch (e: Throwable) {
+            log.error("Error during code execution", e)
             task.error(e)
             history.add("Error: ${e.message}" to ModelSchema.Role.system)
             transcript?.write("Error: ${e.message}\n".toByteArray())
         }
+    }
+
+    private fun now(): String {
+        val fmt = java.text.SimpleDateFormat("yyyyMMdd_HHmmss_SSS")
+        return fmt.format(java.util.Date())
     }
 
     open fun output(
@@ -155,4 +162,8 @@ open class CodingMode(
         )
 
     override fun contextData(): List<String> = emptyList()
+
+    companion object {
+        private val log = com.simiacryptus.cognotik.util.LoggerFactory.getLogger(CodingMode::class.java)
+    }
 }

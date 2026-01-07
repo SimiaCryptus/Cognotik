@@ -114,7 +114,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
         val startTime = System.currentTimeMillis()
         var stepStartTime = System.currentTimeMillis()
         log.info("Starting AbductiveReasoningTask with ${executionConfig?.observations?.size ?: 0} observations")
-        val transcript = transcript(task)
+        val transcript = task.transcript()
         // Combine messages with file input
         val inputContext = (messages + listOf(getInputFileCode())).filter { it.isNotBlank() }
 

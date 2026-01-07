@@ -262,7 +262,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
 
         val ui = task.ui
         val api = defaultSmart ?: return
-        val transcript = transcript(task)
+        val transcript = task.transcript()
 
         // Create tabbed display for organized output
         val tabs = TabbedDisplay(task)

@@ -30,7 +30,6 @@ import org.eclipse.jetty.server.Server
 import java.awt.Desktop
 import java.awt.SystemTray
 import java.io.File
-import java.io.FileOutputStream
 import java.io.OutputStream
 import java.net.URI
 import java.text.SimpleDateFormat
@@ -320,7 +319,9 @@ open class UnifiedHarness(
     }
 
     private fun getMessageLog(workspace: File?): OutputStream? =
-        if (captureMessages) workspace?.resolve("messageEvents_${time()}.log")?.outputStream()?.buffered() else null
+        if (captureMessages) workspace?.resolve(".logs/messageEvents_${time()}.log")?.apply {
+            parentFile?.mkdirs()
+        }?.outputStream()?.buffered() else null
 
     protected open fun handleBrowserShutdown() {
         if (openBrowser && !serverless) {

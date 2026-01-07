@@ -93,7 +93,7 @@ class SubPlanTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         log.info("Starting SubPlanningTask with goal: ${executionConfig?.planning_goal}")
-        val transcript = transcript(task)
+        val transcript = task.transcript()
 
         try {
             val typeConfig = this.typeConfig ?: throw RuntimeException()

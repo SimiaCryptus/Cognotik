@@ -61,7 +61,7 @@ Documentation for the web-based components of the framework.
 
 *   **[Servlets Guide](./servlets.md)**
     *   Overview of all HTTP endpoints (Auth, Session Management, File Serving, Proxying).
-*   **[Server-Driven UI](./session_task_ui.md)**
+*   **[Server-Driven UI](user_interface.md)**
     *   Guide to the `SessionTask` UI system.
     *   How to build interactive, streaming UIs using Kotlin (Tabs, Buttons, Markdown rendering).
 *   **[Application API](./application_api.md)**
@@ -73,7 +73,7 @@ Documentation for the web-based components of the framework.
 ### 6. Developer Standards & Best Practices
 Guidelines for extending the framework and maintaining quality.
 
-*   **[Task Implementation Standards](./task_best_practices.md)**
+*   **[Task Implementation Standards](task_type_best_practices.md)**
     *   **Critical for Contributors:** Rules for creating new `TaskType` entities.
     *   Safety protocols (Human-in-the-loop), UI feedback requirements, and configuration standards.
 *   **[Product Page Guidelines](./task_product_page.md)**
@@ -85,5 +85,5 @@ Guidelines for extending the framework and maintaining quality.
 
 1.  **New Users:** Start with **[Task Planning Overview](./taskplanning.md)** and **[Cognitive Modes](./cognitive_modes.md)** to understand what the system does.
 2.  **Architects:** Read **[Strategic Extensibility](./strategies.md)** and **[Platform Architecture](./platform.md)** to understand the design philosophy.
-3.  **Task Developers:** Read **[Actor Types](./actor_types.md)**, **[Task Library](./task_type_docs.md)**, and **[Task Implementation Standards](./task_best_practices.md)**.
-4.  **UI/Web Developers:** Focus on **[Servlets](./servlets.md)** and **[Server-Driven UI](./session_task_ui.md)**.
+3.  **Task Developers:** Read **[Actor Types](./actor_types.md)**, **[Task Library](./task_type_docs.md)**, and **[Task Implementation Standards](task_type_best_practices.md)**.
+4.  **UI/Web Developers:** Focus on **[Servlets](./servlets.md)** and **[Server-Driven UI](user_interface.md)**.
