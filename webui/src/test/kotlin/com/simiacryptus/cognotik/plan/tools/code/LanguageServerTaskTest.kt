@@ -35,7 +35,7 @@ object LanguageServerTaskTest {
         )
 
         // Create a sample file in the harness root for the LSP to analyze
-        val sampleFile = harness.workspace.resolve("Sample.kt")
+        val sampleFile = harness.dataDir.resolve("Sample.kt")
         sampleFile.parentFile.mkdirs()
         sampleFile.writeText("""
             fun main() {
@@ -63,7 +63,7 @@ object LanguageServerTaskTest {
         )
 
         // Create a file with a syntax error
-        val errorFile = harness.workspace.resolve("Error.kt")
+        val errorFile = harness.dataDir.resolve("Error.kt")
         errorFile.parentFile.mkdirs()
         errorFile.writeText("""
             fun main() {

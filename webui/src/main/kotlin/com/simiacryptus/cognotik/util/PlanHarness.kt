@@ -40,9 +40,12 @@ open class PlanHarness(
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
+    val workspace: File? = null,
 ) {
-    val workspace = createWorkspace()
-    private val harness = UnifiedHarness(
+
+    val dataDir = createWorkspace()
+
+    private val harness = object : UnifiedHarness(
         port = port,
         openBrowser = openBrowser,
         serverless = serverless,
@@ -50,7 +53,9 @@ open class PlanHarness(
         fastModel = fastModel,
         smartModel = smartModel,
         imageModel = imageModel
-    )
+    ) {
+        override fun createTempDirectory(prefix: String) = dataDir
+    }
 
     fun run() {
         harness.start()

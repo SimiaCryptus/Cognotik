@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.Discussable
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.util.renderMarkdown
@@ -19,6 +20,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.lang.reflect.Type
 import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
 
 open class CodingMode(
     orchestrationConfig: OrchestrationConfig,
@@ -45,23 +47,34 @@ open class CodingMode(
                 result = it
                 onComplete.release()
             }
-            orchestrationConfig.getImpl(taskType as TaskType<T, U>, (executionConfig.jsonCast<Map<String,Any>>()+mapOf(
-                "task_type" to taskType.name
-            )).jsonCast()).run(
-                agent = TaskOrchestrator(
-                    user = user,
-                    session = session,
-                    dataStorage = task.ui.dataStorage,
-                    root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                        ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
-                        ?: File(".").toPath()
-                ),
-                messages = listOf(message),
-                task = task,
-                resultFn = resultFn,
-                orchestrationConfig = orchestrationConfig
-            )
-            onComplete.acquire()
+            try {
+            try {
+                orchestrationConfig.getImpl(taskType as TaskType<T, U>, (executionConfig.jsonCast<Map<String,Any>>()+mapOf(
+                    "task_type" to taskType.name
+                )).jsonCast()).run(
+                    agent = TaskOrchestrator(
+                        user = user,
+                        session = session,
+                        dataStorage = task.ui.dataStorage,
+                        root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
+                            ?: task.ui.dataStorage.getSessionDir(user, session).toPath()
+                            ?: File(".").toPath()
+                    ),
+                    messages = listOf(message),
+                    task = task,
+                    resultFn = resultFn,
+                    orchestrationConfig = orchestrationConfig
+                )
+            } catch (e: Throwable) {
+                result = "Error initiating task: ${e.message}"
+                onComplete.release()
+            }
+                if (!onComplete.tryAcquire(1, TimeUnit.HOURS)) {
+                    throw RuntimeException("Task execution timed out")
+                }
+            } catch (e: Exception) {
+                throw RuntimeException("Failed to execute task", e)
+            }
             return result
         }
     }
@@ -80,7 +93,24 @@ open class CodingMode(
         try {
             transcript?.write("User: $userMessage\n".toByteArray())
             history.add(userMessage to ModelSchema.Role.user)
-            val response = plan(task)
+            val response = if (orchestrationConfig.autoFix) {
+                plan(task)
+            } else {
+                val baseHistory = history.dropLast(1)
+                Discussable(
+                    task = task,
+                    heading = "Code Plan",
+                    userMessage = { userMessage },
+                    initialResponse = { _ -> plan(task) },
+                    outputFn = { result ->
+                        ("```" + config.codeRuntime.name.lowercase()
+                            .replace("runtime", "") + "\n" + result.code + "\n```").renderMarkdown()
+                    },
+                    reviseResponse = { discussionHistory ->
+                        generateCode(task, baseHistory + discussionHistory)
+                    }
+                ).call() ?: throw IllegalStateException("Discussion failed to produce a result")
+            }
             val tabs = TabbedDisplay(task)
             tabs["Code"] = ("```" + config.codeRuntime.name.lowercase().replace("runtime", "") + "\n" + response.code + "\n```").renderMarkdown()
             transcript?.write("Code:\n${response.code}\n".toByteArray())
@@ -126,19 +156,26 @@ open class CodingMode(
         }
     }
 
-    open fun plan(task: SessionTask) = symbols(task).let { symbols ->
-        CodeAgent(
-            codeRuntime = CodeRuntimes.getRuntime(config.codeRuntime, symbols),
-            model = orchestrationConfig.defaultSmart.getChildClient(task),
-            details = "You are in an interactive coding session. Execute code to answer the user.",
-            temperature = orchestrationConfig.temperature,
-            symbols = symbols,
-            describer = describer,
-        ).respond(
-            CodeAgent.CodeRequest(
-                messages = history
+    open fun plan(task: SessionTask) = generateCode(task, history)
+
+    private fun generateCode(
+        task: SessionTask,
+        messages: List<Pair<String, ModelSchema.Role>>
+    ): CodeAgent.CodeResult {
+        return symbols(task).let { symbols ->
+            CodeAgent(
+                codeRuntime = CodeRuntimes.getRuntime(config.codeRuntime, symbols),
+                model = orchestrationConfig.defaultSmart.getChildClient(task),
+                details = "You are in an interactive coding session. Execute code to answer the user.",
+                temperature = orchestrationConfig.temperature,
+                symbols = symbols,
+                describer = describer,
+            ).respond(
+                CodeAgent.CodeRequest(
+                    messages = messages
+                )
             )
-        )
+        }
 
     }
 

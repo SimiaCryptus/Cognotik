@@ -315,3 +315,169 @@ This ensures that the final log of the session is a complete record of how the c
 4. [ ] Is there a `textInput` or `Discussable` to allow the user to correct the AI?
 5. [ ] Does the manual path end with a clear "Continue" or "Accept" button?
 6. [ ] Are all paths (Auto and Manual) logging to the `transcript`?
+
+
+# The Cognotik Task Definition Framework: A Guide to Self-Describing Task Types
+
+In the Cognotik framework, a **Task** is not just a unit of code execution; it is a semantic entity that advertises its own capabilities, requirements, and usage patterns to the AI Planner.
+
+This guide details the architecture of `TaskType` and its associated components, explaining how to create tasks that are "self-describing" so that the Cognitive Orchestrator can intelligently employ them to solve complex user problems.
+
+---
+
+## 1. The Anatomy of a Self-Describing Task
+
+A Task is defined by the convergence of four distinct elements. When you create a new tool, you are essentially defining a contract between the **Code** (Logic) and the **Cognitive Model** (Planner).
+
+### A. The Definition (`TaskType`)
+Located in `TaskType.kt`, this is the registry entry. It binds the logic, configuration, and metadata together.
+
+*   **Name:** The unique identifier (e.g., "Brainstorming").
+*   **Category:** Grouping for the UI and Planner (e.g., "Reasoning", "File Operations").
+*   **Classes:** References to the Logic Class (`AbstractTask`) and Data Class (`TaskExecutionConfig`).
+*   **Description:** A high-level summary used by the Planner to decide *if* this tool is relevant.
+*   **Tooltip HTML:** A user-facing description shown in the Web UI.
+
+### B. The Configuration (`TaskExecutionConfig`)
+This data class defines the **Inputs**. It uses Java/Kotlin annotations to describe itself to the LLM.
+
+*   **`@Description` Annotations:** Every field in this class must be annotated. The `TypeDescriber` reads these strings to generate the schema definition that tells the LLM exactly what arguments to provide.
+*   **Validation:** By implementing `ValidatedObject`, the config ensures the LLM didn't hallucinate invalid parameters (e.g., `target_option_count` must be between 3 and 20).
+
+### C. The Logic (`AbstractTask`)
+This is the implementation. It contains two critical components:
+1.  **`run()`**: The actual code execution.
+2.  **`promptSegment()`**: The "Sales Pitch" to the Planner.
+
+### D. The "Sales Pitch" (`promptSegment`)
+This method returns a string that is injected into the System Prompt of the Planning Agent. It must concisely explain:
+*   **What** the task does.
+*   **When** to use it.
+*   **How** to configure it (briefly).
+
+---
+
+## 2. The "Self-Describing" Workflow
+
+The power of this framework lies in how these facets interact during the Planning Phase.
+
+1.  **Introspection:** When `OrchestrationConfig.planningActor` is called, the system iterates through all enabled `TaskType`s.
+2.  **Schema Generation:** It uses reflection on the `executionConfigClass` to build a JSON schema, using the `@Description` text to explain fields to the LLM.
+3.  **Prompt Assembly:** It calls `promptSegment()` on every task instance.
+4.  **Context Injection:** The Planner receives a prompt containing:
+  *   "The available task types are:"
+  *   [List of all `promptSegment` outputs]
+  *   [JSON Schema of all `TaskExecutionConfig` objects]
+
+**Result:** The LLM understands how to use a Java/Kotlin class it has never seen before, simply by reading the metadata you provided in the code.
+
+---
+
+## 3. Creating and Maintaining a Task
+
+To create a new task, follow this standard procedure.
+
+### Step 1: Define the Input Data
+Create a class extending `TaskExecutionConfig`. Use `@Description` heavily.
+
+```kotlin
+class MyNewTaskConfig(
+    @Description("The primary file to analyze")
+    val target_file: String? = null,
+
+    @Description("How aggressive the analysis should be (low/medium/high)")
+    val intensity: String = "medium"
+) : TaskExecutionConfig(task_type = "MyNewTask")
+```
+
+### Step 2: Implement the Logic
+Create a class extending `AbstractTask`.
+
+```kotlin
+class MyNewTask(
+    config: OrchestrationConfig,
+    task: MyNewTaskConfig?
+) : AbstractTask<MyNewTaskConfig, TaskTypeConfig>(config, task) {
+
+    override fun promptSegment(): String {
+        return """
+        MyNewTask - Analyzes a specific file with configurable intensity.
+          ** Specify the target_file path
+          ** Set intensity (default: medium)
+          ** Use this when the user asks for deep code inspection.
+        """.trimIndent()
+    }
+
+    override fun run(...) {
+        // Implementation logic here
+        // 1. Validate inputs
+        // 2. Perform work
+        // 3. Write to Transcript (Audit)
+        // 4. Update UI (User)
+        // 5. Return result string (Planner Context)
+    }
+}
+```
+
+### Step 3: Register the Task
+Add the entry to the `TaskType` companion object in `TaskType.kt`.
+
+```kotlin
+val MyNewTask = TaskType(
+    "MyNewTask",
+    "Analysis",
+    MyNewTask::class.java,
+    MyNewTaskConfig::class.java,
+    TaskTypeConfig::class.java,
+    "Performs deep analysis on files",
+    "<ul><li>Analyzes code structure</li><li>Reports complexity</li></ul>"
+)
+```
+
+---
+
+## 4. Target Audiences and Objectives
+
+When writing the self-describing facets, you are writing for four distinct audiences simultaneously.
+
+| Audience              | Facet             | Objective                                              | Best Practice                                                                     |
+|:----------------------|:------------------|:-------------------------------------------------------|:----------------------------------------------------------------------------------|
+| **The Planner (LLM)** | `promptSegment()` | To convince the LLM to select this tool for the plan.  | Use bullet points. Be imperative. Highlight specific use cases ("Useful for..."). |
+| **The Planner (LLM)** | `@Description`    | To ensure the LLM fills the JSON parameters correctly. | Be precise about data types and constraints (e.g., "Must be a valid file path").  |
+| **The User**          | `tooltipHtml`     | To explain to the human what the tool does in the UI.  | Use HTML lists. Keep it non-technical and benefit-focused.                        |
+| **The Developer**     | `validate()`      | To prevent runtime errors from bad LLM output.         | Enforce constraints strictly (e.g., `require(count > 0)`).                        |
+
+---
+
+## 5. Interaction with Cognitive Planning
+
+The interaction between Task Types and Cognitive Planning is bidirectional.
+
+### A. Planner -> Task (Instantiation)
+The Planner (e.g., `WaterfallMode` or `ConversationalMode`) generates a JSON plan.
+*   The `task_type` field in JSON maps to the `TaskType` enum.
+*   The `Orchestrator` uses `TaskType.getImpl()` to instantiate the specific `AbstractTask`.
+*   The JSON parameters are deserialized into the `TaskExecutionConfig`.
+
+### B. Task -> Planner (Feedback Loop)
+Once a task completes via `run()`, it calls `resultFn(String)`.
+*   **Success:** The output string is fed back into the context window of the Planner.
+*   **Failure:** If `task.error()` is called, the exception message is fed back.
+*   **Adaptation:** The Planner reads this result to decide the *next* step. For example, if `FileSearchTask` returns "No files found," the Planner might decide to run `BrainstormingTask` to generate new ideas instead of proceeding to `FileModificationTask`.
+
+### C. Hierarchical Planning (`SubPlanningTask`)
+Tasks can be recursive. A `SubPlanningTask` is a specific `TaskType` that spins up a *new* Orchestrator.
+*   It allows a "Parent Plan" to delegate a complex objective to a "Child Plan."
+*   The Child Plan has its own set of allowed `TaskType`s, defined in its configuration.
+
+---
+
+## 6. Maintenance Best Practices
+
+1.  **Keep Prompts Concise:** The `promptSegment` consumes context tokens. Be brief. Do not explain *how* the code works, only *what* it does and *what* it needs.
+2.  **Validate Aggressively:** LLMs are probabilistic. They *will* occasionally send `null` for a non-nullable field or "five" instead of `5`. Use the `ValidatedObject` interface to catch these early and return clear error messages so the LLM can self-correct.
+3.  **IO Discipline:** Follow the "Triple Log Rule":
+  *   **UI:** Visual updates for the user.
+  *   **Transcript:** Detailed data dumps for audit.
+  *   **ResultFn:** Summarized, markdown-formatted text for the LLM's next thought process.
+4.  **Deprecation:** If changing a `TaskExecutionConfig` field, remember that old plans or saved sessions might fail to deserialize. Handle backward compatibility or version your tasks if necessary.

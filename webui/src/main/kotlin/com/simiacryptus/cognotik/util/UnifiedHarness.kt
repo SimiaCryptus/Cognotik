@@ -101,13 +101,8 @@ open class UnifiedHarness(
             cognitiveSettings = cognitiveSettings,
         ) }
     ) {
-        val finalWorkspace: File = workspace ?: createTempDirectory(cognitiveSettings.type?.name ?: "plan")
-        log.info("Running plan in workspace: ${finalWorkspace.absolutePath}")
-
         val completionLatch = CountDownLatch(1)
         val session = Session.newGlobalID()
-        DataStorage.sessionPaths[session] = finalWorkspace
-        if(redirectData) DataStorage.dataPaths[session] = finalWorkspace
 
         val planApp = object : UnifiedPlanApp(
             path = "/test",
@@ -123,7 +118,9 @@ open class UnifiedHarness(
             }
 
             override fun <T : Any> initSettings(session: Session): T {
-                val orchestrationConfig = config(session, finalWorkspace)
+                val orchestrationConfig = config(session,
+                    getRoot(workspace, session, cognitiveSettings.type?.name ?: "plan")
+                )
                 val settingsFile = getSettingsFile(session, defaultUser)
                 val json = orchestrationConfig.toJson()
                 settingsFile.writeText(json)
@@ -213,14 +210,9 @@ open class UnifiedHarness(
         autoFix: Boolean = !openBrowser,
         workspace: File? = null
     ) {
-        val finalWorkspace = workspace ?: createTempDirectory(taskType.name)
-        log.info("Running task in workspace: ${finalWorkspace.absolutePath}")
-
         val completionLatch = CountDownLatch(1)
         var error: Throwable? = null
         val session = Session.newGlobalID()
-        DataStorage.sessionPaths[session] = finalWorkspace
-        if(redirectData) DataStorage.dataPaths[session] = finalWorkspace
 
         val singleTaskApp = object : SingleTaskApp(
             path = "/test",
@@ -245,7 +237,7 @@ open class UnifiedHarness(
             override fun <T : Any> initSettings(session: Session): T {
                 val orchestrationConfig = OrchestrationConfig(
                     sessionId = session.sessionId,
-                    workingDir = finalWorkspace.absolutePath,
+                    workingDir = getRoot(workspace, session, taskType.name).absolutePath,
                     taskSettings = mutableMapOf(
                         typeConfig.name!! to typeConfig
                     ),
@@ -316,6 +308,18 @@ open class UnifiedHarness(
         } finally {
             handleBrowserShutdown()
         }
+    }
+
+    open fun getRoot(
+        workspace: File?,
+        session: Session,
+        name: String
+    ): File {
+        val tempDirectory = createTempDirectory(name)
+        log.info("Running task in workspace: ${tempDirectory.absolutePath}")
+        DataStorage.sessionPaths[session] = tempDirectory
+        if (redirectData) DataStorage.dataPaths[session] = tempDirectory
+        return workspace ?: tempDirectory
     }
 
     private fun getMessageLog(workspace: File?): OutputStream? =

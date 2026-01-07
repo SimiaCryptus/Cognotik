@@ -26,7 +26,7 @@ Understanding the foundation of the system, including session management, storag
 ### 2. AI Logic & Cognitive Models
 How the AI "thinks," assumes personas, and structures its reasoning.
 
-*   **[Actor Types](./actor_types.md)**
+*   **[Actor Types](agent_types.md)**
     *   Guide to the base AI workers: `SimpleActor` (Text), `ParsedActor` (Structured Data), `CodingActor` (Code Gen), and `ImageActor`.
 *   **[Cognitive Modes](./cognitive_modes.md)**
     *   User guide to the planning engines: Conversational, Waterfall, Adaptive Planning, and Hierarchical Planning.
@@ -85,5 +85,5 @@ Guidelines for extending the framework and maintaining quality.
 
 1.  **New Users:** Start with **[Task Planning Overview](./taskplanning.md)** and **[Cognitive Modes](./cognitive_modes.md)** to understand what the system does.
 2.  **Architects:** Read **[Strategic Extensibility](./strategies.md)** and **[Platform Architecture](./platform.md)** to understand the design philosophy.
-3.  **Task Developers:** Read **[Actor Types](./actor_types.md)**, **[Task Library](./task_type_docs.md)**, and **[Task Implementation Standards](task_type_best_practices.md)**.
+3.  **Task Developers:** Read **[Actor Types](agent_types.md)**, **[Task Library](./task_type_docs.md)**, and **[Task Implementation Standards](task_type_best_practices.md)**.
 4.  **UI/Web Developers:** Focus on **[Servlets](./servlets.md)** and **[Server-Driven UI](user_interface.md)**.

@@ -20,42 +20,17 @@ support Sub-Planning.
 4. **Graceful Degradation:** If the "Smart" model fails or hallucinates, the mode should attempt to recover (e.g., by
    simplifying the prompt) or fail loudly with a clear error, rather than looping infinitely.
 
-## 3. Mode Design Patterns
-
-### 3.1 The Adaptive Loop (OODA Loop)
-
-* **Structure:** Observe -> Orient -> Decide -> Act.
-* **Use Case:** Open-ended problems (e.g., "Fix this bug", "Research this topic").
-* **Implementation:** Use a `while` loop that continues until a termination condition is met. Inside the loop, use a
-  `CognitiveSchemaStrategy` to determine the next step based on the history of previous steps.
-
-### 3.2 The Waterfall (The Architect)
-
-* **Structure:** Plan -> Review -> Execute.
-* **Use Case:** High-risk or complex generation tasks (e.g., "Scaffold a new project").
-* **Implementation:**
-  1. **Phase 1:** Generate a JSON plan using the Smart Model.
-  2. **Phase 2:** Present the plan using `Discussable` (see UI Guide) to get user buy-in.
-  3. **Phase 3:** Iterate through the approved plan items and execute them sequentially.
-
-### 3.3 The Delegator (Hierarchical)
-
-* **Structure:** Analyze -> Decompose -> Sub-Plan.
-* **Use Case:** Massive tasks exceeding context windows.
-* **Implementation:** The mode identifies distinct sub-components and instantiates `SubPlanningTask` for each. This
-  spawns a recursive instance of the Cognotik framework.
-
-## 4. Handling Configuration
+## 3. Handling Configuration
 
 Your mode must respect the `OrchestrationConfig` passed in by the user. Do not hardcode model or task selections.
 
-### 4.1 Model Usage Guidelines
+### 3.1 Model Usage Guidelines
 
 * **`config.defaultSmart`:** Use this for the core logic of your mode (Planning, Reasoning, Code Generation).
 * **`config.defaultFast`:** Use this for utility operations (JSON parsing, summarizing text, extracting intent) to
   reduce latency and cost.
 
-### 4.2 Prompt Architecture
+### 3.2 Prompt Architecture
 
 * **Externalize Strings:** Never hardcode the "System Prompt" or "Persona Definition" inside the Cognitive Mode class
   logic.
@@ -76,7 +51,7 @@ class MyCustomMode(val config: OrchestrationConfig) {
 }
 ```
 
-### 4.3 Respecting Interaction Modes
+### 3.3 Respecting Interaction Modes
 
 * **If `config.autoFix == false`:** Your mode **must** pause for user confirmation before executing destructive
   actions (writing files, running shell commands).
@@ -85,9 +60,10 @@ class MyCustomMode(val config: OrchestrationConfig) {
  
  ---
 
-## 5. State Management & Resource Limits
 
-### 5.0 Using Cognitive Schema Strategies
+## 4. State Management & Resource Limits
+
+### 4.0 Using Cognitive Schema Strategies
 
 Instead of managing raw strings or lists of messages, prefer using **Cognitive Schema Strategies** (see
 `cognitive_schema.md`).
@@ -104,15 +80,17 @@ Instead of managing raw strings or lists of messages, prefer using **Cognitive S
   // ... execute task ...
   state = strategy.update(state, taskResult, config.defaultSmart)
   ```
+  *Note:* For specialized modes that act as a direct interface to a runtime (like `CodingMode`), you may bypass the Schema Strategy and interact directly with a specialized Agent (e.g., `CodeAgent`) or the LLM client, provided you handle state history manually.
 
-### 5.1 Implementing Token Pruning
+
+### 4.1 Implementing Token Pruning
 
 Modes that maintain a "Reasoning State" (Goals, Facts, Hypotheses) will eventually overflow the context window.
 
 * **Requirement:** Your mode must implement a "Garbage Collection" strategy. Periodically summarize completed steps and
   remove them from the prompt context, keeping only the active goal and relevant facts.
 
-### 5.2 Managing Concurrency
+### 4.2 Managing Concurrency
 
 When implementing parallel modes (like `ParallelMode`), do not spawn unlimited threads.
 
@@ -120,20 +98,61 @@ When implementing parallel modes (like `ParallelMode`), do not spawn unlimited t
 * **Rate Limits:** Handle `429 Too Many Requests` exceptions gracefully by implementing exponential backoff within your
   worker threads.
 
-### 5.3 Cost Awareness
+### 4.3 Cost Awareness
 
 * **Council/Voting Patterns:** If your mode uses a "Council" pattern, ensure you are not running the voting loop on
   every trivial step. Implement a "Confidence Threshold"—only trigger the Council if the primary model's confidence is
   low.
+### 4.4 Exposing Tasks as Functions
+For modes that allow the LLM to write code or scripts (like `CodingMode`), you can expose Cognotik Tasks as executable functions within the runtime environment.
+*   **Pattern:** Wrap the `TaskType` in a helper class that implements `MethodTypeDescriber`.
+*   **Usage:** This allows the LLM to "call" a task (e.g., `WebSearch.call(config)`) directly from the generated code.
+```kotlin
+// Example: Exposing a task to a scripting environment
+inner class TaskFunctionImpl(val taskType: TaskType<*, *>) {
+    fun call(config: Any, message: String): String {
+        // 1. Convert config to TaskExecutionConfig
+        // 2. Instantiate TaskOrchestrator
+        // 3. Run task and return result string
+    }
+}
+// In your mode's symbol registration:
+val symbols = mapOf(
+    "WebSearch" to TaskFunctionImpl(TaskType.WebSearch)
+)
+```
+### 4.5 Structured Task Selection
+When implementing a Planning Mode, you often need the LLM to select and configure multiple tasks in a single turn. Instead of parsing raw text or JSON manually, use `ParsedAgent` with a container class.
+*   **Container Class:** Define a class (e.g., `Tasks`) that wraps a `List<TaskExecutionConfig>`.
+*   **Polymorphism:** Use the `TypeDescriber` to register subtypes for `TaskExecutionConfig`. This enables the LLM to output a polymorphic list (e.g., a `WebSearchConfig` and a `FileReadConfig` in the same list).
+```kotlin
+// 1. Define Container
+data class Tasks(val tasks: MutableList<TaskExecutionConfig>? = null)
+// 2. Register Subtypes
+TaskType.getAvailableTaskTypes(config).forEach { taskType ->
+    describer.registerSubType(TaskExecutionConfig::class.java, taskType.executionConfigClass)
+}
+// 3. Create Agent
+val planner = ParsedAgent(
+    resultClass = Tasks::class.java,
+    model = config.defaultSmart,
+    describer = describer // Pass the configured describer
+)
+// 4. Get Plan
+val plan = planner.respond(messages).obj
+plan.tasks?.forEach { taskConfig ->
+    // Execute taskConfig...
+}
+```
  
  ---
 
-## 6. Observability & Transcripts
+## 5. Observability & Transcripts
 
 Cognitive Modes are complex state machines. To debug them and provide value to the user, you **must** implement detailed
 Transcripts.
 
-### 6.1 Transcript Standards
+### 5.1 Transcript Standards
 
 * **Format:** Markdown.
 * **Detail Level:** High. Use `<details>` tags to collapse raw LLM inputs/outputs, JSON state dumps, and stack traces.
@@ -147,9 +166,14 @@ transcript?.write("## Step 1: Analysis\n".toByteArray())
 val tabs = TabbedDisplay(task)
 tabs["Plan"] = "```json\n$planJson\n```".renderMarkdown()
 tabs["Diagram"] = "```mermaid\n$stateDiagram\n```".renderMarkdown()
+// Example: Coding Mode Output
+tabs["Code"] = "```groovy\n$generatedCode\n```".renderMarkdown()
+if (output.isNotBlank()) {
+    tabs["Output"] = "```text\n$output\n```".renderMarkdown()
+}
 ```
 
-### 6.2 Debugging Artifacts
+### 5.2 Debugging Artifacts
 
 1. **Waterfall:** Log the generated `plan.json` into a `<details>` block in the transcript.
 2. **Adaptive:** Log every "Reflection" cycle. Use Mermaid to show the tree of thoughts.
@@ -157,9 +181,9 @@ tabs["Diagram"] = "```mermaid\n$stateDiagram\n```".renderMarkdown()
 
 ---
 
-## 8. Concurrency & Error Handling
+## 6. Concurrency & Error Handling
 
-### 8.1 Thread Management
+### 6.1 Thread Management
 
 Cognitive modes often orchestrate multiple sub-tasks or parallel reasoning chains.
 
@@ -167,7 +191,7 @@ Cognitive modes often orchestrate multiple sub-tasks or parallel reasoning chain
 * **Scheduling:** Use `task.ui.scheduledThreadPoolExecutor` for periodic state checks or timeouts.
 * **Logging:** Always log start/stop/progress events to SLF4J to correlate with UI events.
 
-### 8.2 Exception Safety
+### 6.2 Exception Safety
 
 * **Catch All:** Wrap high-level logic in `try/catch` blocks.
 * **Reporting:**
@@ -197,9 +221,9 @@ try {
 
 ---
 
-## 9. Implementation Skeleton
+## 7. Implementation Skeleton
 
-Below is a standard skeleton for a robust, interactive Cognitive Mode.
+Below is a standard skeleton for a robust, interactive **Planning Mode**.
 
 ```kotlin
 class MyAdaptiveMode(val config: OrchestrationConfig) {
