@@ -40,7 +40,7 @@ object PdfFormTaskTest {
         )
 
         // Create a simple PDF template with a form field in the harness workspace
-        val templatePath = harness.workspace.resolve("template.pdf")
+        val templatePath = harness.dataDir.resolve("template.pdf")
         val doc = PDDocument()
         try {
             val page = PDPage()
@@ -61,7 +61,7 @@ object PdfFormTaskTest {
         harness.run()
 
         // Verify that the output file was created
-        val outputFile = harness.workspace.resolve("output.pdf")
+        val outputFile = harness.dataDir.resolve("output.pdf")
         assertTrue(outputFile.exists(), "The output PDF file should exist after task execution")
 
         PDDocument.load(outputFile.toFile()).use { pdf ->

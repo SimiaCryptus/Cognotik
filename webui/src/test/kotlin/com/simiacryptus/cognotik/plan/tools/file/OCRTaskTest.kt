@@ -38,7 +38,7 @@ object OCRTaskTest {
             typeConfig = TaskTypeConfig(OCRTask.OCR.name),
         )
 
-        val pdfPath = harness.workspace.resolve("test_document.pdf")
+        val pdfPath = harness.dataDir.resolve("test_document.pdf")
         val doc = PDDocument()
         try {
             // Page 1
@@ -80,7 +80,7 @@ object OCRTaskTest {
 
         harness.run()
 
-        val outputPath = harness.workspace.resolve("test_document.md")
+        val outputPath = harness.dataDir.resolve("test_document.md")
         assertTrue(outputPath.exists(), "Output markdown file should exist")
 
         val content = outputPath.readText()

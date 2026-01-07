@@ -35,7 +35,7 @@ object IllustrateDocumentTaskTest {
         )
 
         // Create a sample document to illustrate
-        harness.workspace.resolve("test_document.md").toFile().writeText(
+        harness.dataDir.resolve("test_document.md").toFile().writeText(
             """
             # System Architecture Overview
             

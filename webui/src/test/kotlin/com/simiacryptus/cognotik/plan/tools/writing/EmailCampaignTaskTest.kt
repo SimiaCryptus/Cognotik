@@ -47,7 +47,7 @@ object EmailCampaignTaskTest {
         )
 
         // Seed input data for the task to process
-        val workingDir = harness.workspace
+        val workingDir = harness.dataDir
         workingDir.mkdirs()
         File(workingDir, "brand_guidelines.md").writeText("""
             # Cognotik Brand Guidelines

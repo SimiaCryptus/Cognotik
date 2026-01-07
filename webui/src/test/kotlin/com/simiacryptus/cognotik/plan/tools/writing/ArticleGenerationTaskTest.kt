@@ -42,7 +42,7 @@ object ArticleGenerationTaskTest {
         )
 
         // Seed input data for the task to process
-        val workingDir = harness.workspace
+        val workingDir = harness.dataDir
         workingDir.mkdirs()
         File(workingDir, "context.md").writeText("""
             # AI in Software Engineering
