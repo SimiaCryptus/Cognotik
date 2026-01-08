@@ -140,7 +140,7 @@ ${settings?.toJson()}
                 log.error("Error retrieving orchestration config, using default", e)
                 null
             }?.apply {
-                absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
+                if(null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
             val cognitiveMode = (settings.cognitiveMode ?: CognitiveModeType.Chat).getImpl(

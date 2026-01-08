@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.platform.Session
-import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.*
@@ -71,13 +70,10 @@ open class UnifiedPlanAction(
         progress: ProgressIndicator,
         orchestrationConfig: OrchestrationConfig
     ) {
-        progress.text = "Setting up session..."
         val session = Session.newGlobalID()
-        val root = File(orchestrationConfig.workingDir)
         progress.text = "Processing files..."
         setupChatSession(
             session,
-            root,
             orchestrationConfig.copy(
                 sessionId = session.sessionId
             )
@@ -132,10 +128,8 @@ open class UnifiedPlanAction(
 
     private fun setupChatSession(
         session: Session,
-        root: File,
         orchestrationConfig: OrchestrationConfig
     ) {
-        DataStorage.sessionPaths[session] = DataStorage.sessionPaths[session] ?: root
         val app = object : UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",

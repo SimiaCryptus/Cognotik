@@ -19,9 +19,12 @@ object TaskImplUpdater {
             workspace = File(".").absoluteFile,
         ) {
             override fun newConfig(session: Session, tempDir: File) = super.newConfig(session, tempDir).apply {
-                this.defaultSmartModel = GeminiModels.GeminiPro_30_Preview.asApiChatModel()
+                //this.defaultSmartModel = GeminiModels.GeminiPro_30_Preview.asApiChatModel()
                 this.temperature = 0.0
-                taskSettings[FileModification.name] = TaskTypeConfig(FileModification.name)
+                taskSettings[FileModification.name] = TaskTypeConfig(
+                  task_type = FileModification.name,
+                  model = GeminiModels.GeminiPro_30_Preview.asApiChatModel()
+                )
             }
             override fun createWorkspace() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }
         }.run()

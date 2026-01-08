@@ -91,7 +91,7 @@ abstract class SingleTaskApp(
     ) {
         try {
             val orchestrationConfig = settings?.apply {
-                absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
+                if(null == DataStorage.sessionPaths[session]) absoluteWorkingDir?.let { DataStorage.sessionPaths[session] = File(it) }
             } ?: throw IllegalStateException("OrchestrationConfig not found in session settings")
 
             val task = ui.newTask(true)
