@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -65,11 +66,26 @@ FileAppend - Append content to the end of an existing file
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
         val transcript = task.transcript()
+        val tabs = TabbedDisplay(task)
+        val overviewTab = tabs.newTask("Overview")
 
         try {
+            overviewTab.header("File Append Task: $targetPath")
+            val status = overviewTab.add(renderMarkdown("🔄 Preparing append operation...", ui = task.ui))
+            
             transcript?.write("# File Append Task Transcript\n\n".toByteArray())
             Retryable(task, process = { task: SessionTask ->
                 completionNotes.clear()
+                val context = getInputFileContent(executionConfig?.related_files, root)
+                if (context.isNotBlank()) {
+                    val contextTab = tabs.newTask("Context")
+                    contextTab.add(renderMarkdown("### Context Files\n\n$context", ui = task.ui))
+                    contextTab.complete()
+                }
+                status?.setLength(0)
+                status?.append(renderMarkdown("🔄 Generating content to append...", ui = task.ui))
+                task.update()
+
                 val chatAgent = ChatAgent(
                     name = "FileAppend",
                     prompt = """
@@ -84,7 +100,6 @@ FileAppend - Append content to the end of an existing file
                     model = chatInterface,
                     temperature = this.orchestrationConfig.temperature,
                 )
-                val context = getInputFileContent(executionConfig?.related_files, root)
 
                 val codeResult = chatAgent.answer(
                     (messages + listOf(
@@ -93,6 +108,9 @@ FileAppend - Append content to the end of an existing file
                         "Append Goal/Content: ${executionConfig?.append_content ?: executionConfig?.task_description ?: ""}",
                     )).filter { it.isNotBlank() }
                 ).let { extractCode(it) }
+                val proposedTab = tabs.newTask("Proposed Append")
+                proposedTab.add(renderMarkdown("### Proposed Append to `$targetPath`\n\n```\n$codeResult\n```", ui = task.ui))
+
 
                 transcript?.write("\n## AI Proposed Append to $targetPath\n\n".toByteArray())
                 transcript?.write(codeResult.toByteArray())
@@ -103,29 +121,34 @@ FileAppend - Append content to the end of an existing file
                     completionNotes += ("<a href='fileIndex/${agent.session}/$targetPath'>$targetPath</a> Appended")
                 }
 
-                val markdown = "### Proposed Append to `$targetPath`\n\n```\n$codeResult\n```"
                 if (orchestrationConfig.autoFix) {
                     appendAction()
-                    task.complete(renderMarkdown(markdown + "\n\n**Auto-applied append.**", ui = task.ui))
+                    status?.setLength(0)
+                    status?.append(renderMarkdown("✅ **Auto-applied append to `$targetPath`.**", ui = task.ui))
+                    proposedTab.complete()
                     semaphore.release()
                 } else {
                     val footer = acceptButtonFooter(task.ui) {
                         appendAction()
-                        task.complete(renderMarkdown(markdown + "\n\n**Appended successfully.**", ui = task.ui))
+                        status?.setLength(0)
+                        status?.append(renderMarkdown("✅ **Appended successfully to `$targetPath`.**", ui = task.ui))
+                        proposedTab.complete()
                         semaphore.release()
                     }
-                    task.complete(renderMarkdown(markdown, ui = task.ui) + footer)
+                    proposedTab.add(footer)
                 }
 
                 transcript?.flush()
             }.async(task.ui))
 
             semaphore.acquire()
+            overviewTab.complete()
             transcript?.write("\n## Completion Notes\n\n".toByteArray())
             transcript?.write(completionNotes.joinToString("\n").toByteArray())
             resultFn(completionNotes.joinToString("\n"))
         } catch (e: Throwable) {
             log.warn("Error in FileAppendTask", e)
+            overviewTab.add(renderMarkdown("❌ **Error:** ${e.message}", ui = task.ui))
             task.error(e)
         } finally {
             transcript?.close()

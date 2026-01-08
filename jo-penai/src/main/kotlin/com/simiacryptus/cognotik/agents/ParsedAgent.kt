@@ -44,17 +44,19 @@ open class ParsedAgent<T : Any>(
             }
             val jsonInstructions = """
                 |
-                |Response requires a json object described by:
+                |The response must be a JSON object conforming to the following YAML schema:
                 |
                 |```yaml
                 |${describe.replace("\n", "\n  ")}
                 |```
                 |
-                |This is an example output:
+                |Example of a valid response:
                 |```json
                 |${JsonUtil.toJson(exampleInstance!!)}
                 |```
                 |${parserPrompt?.let { "\n$it" } ?: ""}
+                |
+                |Return ONLY the JSON object.
             """.trimMargin()
             if (prompt.isBlank()) jsonInstructions else "$prompt\n$jsonInstructions"
         } else {
@@ -99,12 +101,26 @@ open class ParsedAgent<T : Any>(
             describer.describe(resultClass!!)
         }
         val exceptions = mutableListOf<Exception>()
-        val prompt = "Parse the user's message into a json object described by:\n\n```yaml\n${
-            describe.replace(
-                "\n",
-                "\n  "
-            )
-        }\n```\n\nThis is an example output:\n```json\n${JsonUtil.toJson(exampleInstance!!)}\n```${promptSuffix?.let { "\n$it" } ?: ""}"
+        val prompt = """
+            |Extract information from the user's message and format it as a JSON object.
+            |
+            |Schema (YAML):
+            |```yaml
+            |${
+                describe.replace(
+                    "\n",
+                    "\n  "
+                )
+            }
+            |```
+            |
+            |Example Output:
+            |```json
+            |${JsonUtil.toJson(exampleInstance!!)}
+            |```${promptSuffix?.let { "\n$it" } ?: ""}
+            |
+            |Respond with the JSON object wrapped in a ```json code block.
+        """.trimMargin()
         for (i in 0 until deserializerRetries) {
             try {
                 val content = parsingChatter.chat(
@@ -130,25 +146,19 @@ open class ParsedAgent<T : Any>(
 
     private fun parse(content: String): T {
         var contentUnwrapped = content.trim()
-        if (!contentUnwrapped.startsWith("{") && !contentUnwrapped.startsWith("```")) {
-            val start = contentUnwrapped.indexOf("{").coerceAtMost(contentUnwrapped.indexOf("```"))
-            val end =
-                contentUnwrapped.lastIndexOf("}").coerceAtLeast(contentUnwrapped.lastIndexOf("```") + 2) + 1
-            if (start < end && start >= 0) contentUnwrapped = contentUnwrapped.substring(start, end)
-        }
-        if (contentUnwrapped.startsWith("```json")) {
-            val endIndex = contentUnwrapped.lastIndexOf("```")
-            if (endIndex > 7) {
-                contentUnwrapped = contentUnwrapped.substring(7, endIndex)
+        if (contentUnwrapped.isEmpty()) throw RuntimeException("Empty response from model")
+        if (!contentUnwrapped.startsWith("{") && !contentUnwrapped.startsWith("[")) {
+            val codeStart = contentUnwrapped.indexOf("```json")
+            val codeEnd = contentUnwrapped.lastIndexOf("```")
+            
+            if (codeStart != -1 && codeEnd > codeStart + 7) {
+                contentUnwrapped = contentUnwrapped.substring(codeStart + 7, codeEnd).trim()
             } else {
-                throw RuntimeException(
-                    "Failed to parse response: ${
-                        contentUnwrapped.replace(
-                            "\n",
-                            "\n  "
-                        )
-                    }"
-                )
+                val jsonStart = contentUnwrapped.indexOf("{").let { if (it == -1) contentUnwrapped.indexOf("[") else it }
+                val jsonEnd = contentUnwrapped.lastIndexOf("}").let { if (it == -1) contentUnwrapped.lastIndexOf("]") else it }
+                if (jsonStart != -1 && jsonEnd > jsonStart) {
+                    contentUnwrapped = contentUnwrapped.substring(jsonStart, jsonEnd + 1).trim()
+                }
             }
         }
         return contentUnwrapped.let {

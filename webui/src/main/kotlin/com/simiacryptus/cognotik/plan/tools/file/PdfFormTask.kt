@@ -4,7 +4,9 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
@@ -78,13 +80,15 @@ class PdfFormTask(
                 } ?: "  (No fields found)"
 
                 """
-PdfForm - Fill out a PDF form based on the template: $templatePath
 
-The following fields are available in the PDF template:
-$fieldList
 
-* Specify the 'output_file' path.
-* Provide the 'fields' map with values for the fields listed above.
+PdfForm - Fill out a PDF form template.
+- template_file: $templatePath
+- output_file: Path for the generated PDF.
+- fields: Map of field names to values.
+- flatten: (Boolean) Make fields read-only.
+Available Fields:
+${fieldList.lines().take(10).joinToString("\n")}${if (fieldList.lines().size > 10) "\n  ... (truncated)" else ""}
                 """.trimIndent()
             }
         } catch (e: Exception) {
@@ -100,9 +104,11 @@ $fieldList
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript("pdf_fill_log")
-        task.header("PDF Form Filler")
-        val statusBuffer = task.add("Initializing PDF task...")
+        val transcript = task.transcript()
+        val tabs = TabbedDisplay(task)
+        val statusTask = tabs.newTask("Status")
+        statusTask.header("PDF Form Filler")
+        val statusBuffer = statusTask.add("Initializing PDF task...")
         try {
             val templatePath = typeConfig?.template_file
                 ?: throw IllegalStateException("Template file not configured in TaskTypeConfig")
@@ -121,7 +127,7 @@ $fieldList
             val extractedFields = if (api != null && messages.isNotEmpty()) {
                 statusBuffer?.setLength(0)
                 statusBuffer?.append("Analyzing context to extract form data...")
-                task.update()
+                statusTask.update()
                 val parsingChatter = defaultFast.getChildClient(task)
                 val defaultChatter = api.getChildClient(task)
 
@@ -156,7 +162,8 @@ Only include fields where a value can be confidently determined from the context
             val fieldDataJson = fieldData.entries.joinToString(",\n  ", "{\n  ", "\n}") {
                 "\"${it.key}\": \"${it.value.replace("\"", "\\\"")}\""
             }
-            task.expandable("Extracted Fields", "<pre>$fieldDataJson</pre>")
+            val extractionTask = tabs.newTask("Extraction")
+            extractionTask.expandable("Extracted Fields", "<pre>$fieldDataJson</pre>")
 
 
             transcript?.write("# PDF Form Fill Execution\n".toByteArray())
@@ -166,7 +173,7 @@ Only include fields where a value can be confidently determined from the context
 
             statusBuffer?.setLength(0)
             statusBuffer?.append("Filling ${fieldData.size} fields into $outputPath...")
-            task.update()
+            statusTask.update()
 
             try {
                 outputFile.parentFile?.mkdirs()
@@ -211,8 +218,9 @@ Only include fields where a value can be confidently determined from the context
                 transcript?.write("\n## Success\n$successMsg\n".toByteArray())
                 statusBuffer?.setLength(0)
                 statusBuffer?.append("<strong>Complete!</strong>")
-                task.update()
-                task.add(
+                statusTask.update()
+                val resultTask = tabs.newTask("Result")
+                resultTask.add(
                     """
                     <div class="alert alert-success">
                         $successMsg<br/>
@@ -234,7 +242,7 @@ Only include fields where a value can be confidently determined from the context
             resultFn("Error executing PDF task: ${e.message}")
         } finally {
             transcript?.close()
-            task.complete()
+            task.safeComplete("PDF processing finished", log)
         }
     }
 

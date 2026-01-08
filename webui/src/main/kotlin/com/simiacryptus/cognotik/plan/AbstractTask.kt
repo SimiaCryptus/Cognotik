@@ -6,7 +6,9 @@ import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.input.isDocumentFile
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.set
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
@@ -49,12 +51,19 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         executionConfig?.task_dependencies?.joinToString("\n\n\n") { dependency ->
             "# $dependency\n\n${executionState?.taskResult[dependency] ?: ""}"
         } ?: ""
+    protected open fun renderTaskHeader(task: SessionTask, title: String? = null) {
+        task.header(title ?: taskType)
+        executionConfig?.task_description?.let {
+            task.add("**Description:** $it".renderMarkdown())
+        }
+    }
+
 
     protected open fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
         val footerTask = ui.newTask(false)
         lateinit var textHandle: StringBuilder
         @Suppress("AssignedValueIsNeverRead")
-        textHandle = footerTask.complete(ui.hrefLink("Accept", classname = "href-link cmd-button") {
+        textHandle = footerTask.complete("""<div style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">""" + ui.hrefLink("Accept Result", classname = "href-link cmd-button") {
             try {
                 textHandle.set("""<div class="cmd-button">Accepted</div>""")
                 footerTask.complete()
@@ -62,7 +71,7 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
                 log.warn("Error", e)
             }
             fn()
-        })!!
+        } + "</div>")!!
         return footerTask.placeholder
     }
 
@@ -121,8 +130,31 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         return markdownTranscript
     }
 
+    open fun initializeTranscript(task: SessionTask, name: String = this@AbstractTask.taskType): Pair<String, FileOutputStream?> {
+        val transcriptFile = "transcript/${name}_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
+        val (link, file) = Pair(task.linkTo(transcriptFile), task.resolveUserFile(transcriptFile))
+        val markdownTranscript = file?.outputStream()
+        task.add(
+            MarkdownUtil.renderMarkdown(
+                "Writing transcript to <a href='$link' target='_blank'>transcript.md</a> " +
+                        "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a>",
+                ui = task.ui
+            )
+        )
+        return Pair(link, markdownTranscript)
+    }
+
+    fun writeToTranscript(stream: FileOutputStream?, content: String) {
+        try {
+            stream?.write(content.toByteArray(Charsets.UTF_8))
+            stream?.flush()
+        } catch (e: Exception) {
+            log.error("Failed to write to transcript", e)
+        }
+    }
+    fun createTabbedDisplay(task: SessionTask) = TabbedDisplay(task)
+
     companion object {
         val log = LoggerFactory.getLogger(AbstractTask::class.java)
     }
 }
-

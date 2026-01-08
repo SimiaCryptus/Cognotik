@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
@@ -64,31 +65,33 @@ OCR - Convert documents (PDF, Images) to Markdown text.
         }
 
         val transcript = task.transcript()
+        val tabs = TabbedDisplay(task)
+        val summaryTask = tabs.newTask("Summary")
         val results = mutableMapOf<File, String>()
 
         try {
-            files.forEach { filePath ->
+            files.forEachIndexed { index, filePath ->
                 val file = root.resolve(filePath).toFile()
                 if (!file.exists()) {
                     log.warn("File not found: $filePath")
                     task.add("❌ File not found: $filePath", additionalClasses = "text-danger")
-                    return@forEach
+                    return
                 }
 
-                task.header("Processing ${file.name}", level = 3)
+                val fileTask = tabs.newTask(file.name)
+                fileTask.header("Processing ${file.name}", level = 3)
                 val sb = StringBuilder()
-                val progressTask = task.newTask()
 
                 try {
                     file.getDocumentReader().use { reader ->
                         if (reader is PaginatedDocumentReader && reader is RenderableDocumentReader) {
                             val pageCount = reader.getPageCount()
-                            val progressBuffer = progressTask.add("Initializing...")
+                            val progressBuffer = fileTask.add("Initializing...")
 
                             for (page in 0 until pageCount) {
                                 progressBuffer?.setLength(0)
                                 progressBuffer?.append("Processing page ${page + 1}/$pageCount...")
-                                progressTask.update()
+                                fileTask.update()
 
                                 val image = reader.renderImage(page, executionConfig!!.dpi)
 
@@ -111,14 +114,16 @@ OCR - Convert documents (PDF, Images) to Markdown text.
                             }
                             progressBuffer?.setLength(0)
                             progressBuffer?.append("✅ Processed $pageCount pages")
-                            progressTask.update()
-                            progressTask.complete()
+                            fileTask.update()
+                            fileTask.add(sb.toString())
+                            fileTask.complete()
                         } else {
-                            task.add("❌ Cannot read document: ${file.name}", additionalClasses = "text-danger")
-                            return@forEach
+                            fileTask.add("❌ Cannot read document: ${file.name}", additionalClasses = "text-danger")
+                            return
                         }
                     }
 
+                    
                     val outputFileName = file.nameWithoutExtension + ".md"
                     val outputFile = File(file.parentFile, outputFileName)
                     results[outputFile] = sb.toString()
@@ -130,7 +135,7 @@ OCR - Convert documents (PDF, Images) to Markdown text.
             }
 
             if (results.isEmpty()) {
-                task.safeComplete("No documents processed successfully", log)
+                summaryTask.safeComplete("No documents processed successfully", log)
                 resultFn("Failed to process documents")
                 return
             }
@@ -138,25 +143,26 @@ OCR - Convert documents (PDF, Images) to Markdown text.
             if (orchestrationConfig.autoFix) {
                 results.forEach { (file, content) ->
                     file.writeText(content)
-                    task.add("✅ Saved <code>${file.name}</code>")
+                    summaryTask.add("✅ Saved <code>${file.name}</code>")
                 }
                 val summary = "OCR Completed for ${results.size} files."
-                task.safeComplete(summary, log)
+                summaryTask.safeComplete(summary, log)
                 resultFn(summary)
             } else {
                 val semaphore = Semaphore(0)
-                task.header("Review OCR Results", level = 3)
+                summaryTask.header("Review OCR Results", level = 3)
                 results.forEach { (file, content) ->
-                    task.expandable("Preview: ${file.name}", "<pre>${content.take(500)}...</pre>")
+                    summaryTask.expandable("Preview: ${file.name}", "<pre>${content.take(500)}...</pre>")
                 }
 
-                task.add(task.ui.hrefLink("💾 Save All", "btn btn-success") {
+                summaryTask.add(task.ui.hrefLink("💾 Save All", "btn btn-success") {
                     results.forEach { (file, content) ->
                         file.writeText(content)
-                        task.add("✅ Saved <code>${file.name}</code>")
+                        summaryTask.add("✅ Saved <code>${file.name}</code>")
                     }
                     semaphore.release()
                 })
+                summaryTask.update()
 
                 semaphore.acquire()
                 val summary = "OCR Completed for ${results.size} files."

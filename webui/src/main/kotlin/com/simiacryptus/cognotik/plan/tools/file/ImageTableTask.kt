@@ -5,6 +5,8 @@ import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.TabbedDisplay
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -126,8 +128,19 @@ ImageTable - Generate a table/grid of AI-generated images
         val outputDir = executionConfig?.output_directory ?: "generated_images"
         val imageFormat = executionConfig?.image_format ?: "png"
 
-        task.header("Image Table Generation", level = 2)
-        task.add("Generating ${rows.size}x${columns.size} image grid (${rows.size * columns.size} total images)")
+        val tabs = TabbedDisplay(task)
+        val configTab = tabs.newTask("Configuration")
+        configTab.add(buildString {
+            appendLine("# Image Table Configuration")
+            appendLine("- **Rows:** ${rows.size}")
+            appendLine("- **Columns:** ${columns.size}")
+            appendLine("- **Total Images:** ${rows.size * columns.size}")
+            appendLine("- **Prompt Template:** `$promptTemplate`")
+            appendLine("- **Base Style:** `${baseStyle.ifBlank { "None" }}`")
+            appendLine("- **Output Directory:** `$outputDir`")
+        }.renderMarkdown)
+
+        val progressTab = tabs.newTask("Generation Progress")
 
         // Create output directory
         val outputPath = task.resolveUserFile(outputDir)
@@ -153,10 +166,13 @@ ImageTable - Generate a table/grid of AI-generated images
                 val rowLabel = rows[rowIdx]
                 val colLabel = columns[colIdx]
 
-                task.header(
-                    "Generating image $completedImages/$totalImages: Row='$rowLabel', Column='$colLabel'",
-                    level = 3
-                )
+                progressTab.add(buildString {
+                    appendLine("### Generating $completedImages/$totalImages")
+                    appendLine("- **Row:** $rowLabel")
+                    appendLine("- **Column:** $colLabel")
+                }.renderMarkdown)
+                progressTab.update()
+
 
                 // Build the prompt for this cell
                 var prompt = promptTemplate.replace("{row}", rowLabel).replace("{column}", colLabel)
@@ -188,7 +204,6 @@ ImageTable - Generate a table/grid of AI-generated images
                 }
 
 
-                task.verbose("Prompt: $prompt")
 
                 try {
                     // Generate the image
@@ -209,20 +224,21 @@ ImageTable - Generate a table/grid of AI-generated images
                     imageResults[rowIdx][colIdx] = relativePath
 
                     // Show preview
-                    task.image(generatedImage!!)
+                    progressTab.image(generatedImage!!)
+                    progressTab.update()
 
                 } catch (e: Exception) {
                     log.error("Error generating image for row='$rowLabel', column='$colLabel'", e)
                     imageResults[rowIdx][colIdx] = "ERROR"
-                    task.error(e)
+                    progressTab.error(e)
                 }
             }
         }
 
         // Generate the HTML table output
-        task.header("Generated Image Table", level = 2)
+        val galleryTab = tabs.newTask("Gallery")
         val htmlTable = formatAsHtmlTable(rows, columns, imageResults, task)
-        task.add(htmlTable)
+        galleryTab.add(htmlTable)
 
         // Generate markdown summary
         val markdownSummary = formatAsMarkdownSummary(rows, columns, imageResults)
@@ -239,7 +255,7 @@ ImageTable - Generate a table/grid of AI-generated images
         }
 
         task.complete(summary)
-        resultFn("$summary\n\n$markdownSummary")
+        resultFn(summary)
     }
 
     private fun Path.loadImage(): BufferedImage? {

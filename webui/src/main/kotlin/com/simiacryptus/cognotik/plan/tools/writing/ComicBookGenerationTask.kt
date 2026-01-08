@@ -97,10 +97,10 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
     override fun promptSegment(): String {
         return """
 ComicBookGeneration - Generate comic book scripts and visuals
-  ** Create a comic book script with page/row/frame structure
-  ** Specify subject, target pages, and art style
-  ** Generates character profiles and visual descriptions
-  ** Can generate images for each row (strip)
+  - Create a comic book script with page/row/frame structure
+  - Specify subject, target pages, and art style
+  - Generates character profiles and visual descriptions
+  - Can generate images for each row (strip)
         """.trimIndent()
     }
 
@@ -136,10 +136,10 @@ ComicBookGeneration - Generate comic book scripts and visuals
             val scriptAgent = ParsedAgent(
                 resultClass = ComicScript::class.java,
                 prompt = """
-                    You are a professional comic book writer. Create a script for a comic book.
-                    Subject: ${genConfig.subject}
-                    Target Pages: ${genConfig.target_pages}
-                    Style: ${genConfig.art_style}
+                    You are a professional comic book writer. Create a detailed script for a comic book.
+                    **Subject:** ${genConfig.subject}
+                    **Target Pages:** ${genConfig.target_pages}
+                    **Style:** ${genConfig.art_style}
                     ${if (genConfig.style_details.isNotBlank()) "Style Details: ${genConfig.style_details}" else ""}
                     
                     Structure the output with:
@@ -154,7 +154,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
                     - Dialog (Character: Text)
                     - Captions (if any)
                     
-                    For each row, provide a 'visual_description' that summarizes the row for an artist to draw as a strip. Include lighting, mood, and composition details.
+                    For each row, provide a 'visual_description' that summarizes the row for an artist to draw as a strip. Include lighting, mood, and composition details. Ensure visual consistency across panels.
                 """.trimIndent(),
                 model = api,
                 parsingChatter = parsingChatter,
@@ -252,7 +252,7 @@ ComicBookGeneration - Generate comic book scripts and visuals
 
                 script.pages.forEach { page ->
                     val pageTask = tabs.newTask("Page ${page.page_number}")
-                    pageTask.header("Page ${page.page_number}", 1)
+                    pageTask.header("Page ${page.page_number}: Visuals & Script", 1)
                     finalOutput.append("## Page ${page.page_number}\n\n")
 
                     page.rows.forEach { row ->

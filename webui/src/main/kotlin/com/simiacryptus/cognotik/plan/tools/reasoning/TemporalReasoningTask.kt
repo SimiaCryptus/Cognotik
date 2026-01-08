@@ -98,21 +98,15 @@ class TemporalReasoningTask(
 
     override fun promptSegment(): String {
         return """
-TemporalReasoning - Analyze how systems evolve over time and predict future states
-  ** Specify the subject or system to analyze
-  ** Define the time range to examine
-  ** Set granularity (daily, weekly, monthly, quarterly, yearly)
-  ** Optionally identify temporal patterns and cycles
-  ** Optionally predict future states based on trends
-  ** Optionally analyze rate of change and acceleration
-  ** Optionally identify critical transition points
-  ** Provide related files with temporal data (logs, metrics)
-  ** Useful for:
-     - Technical debt accumulation analysis
-     - System evolution and architecture drift
-     - Performance degradation over time
-     - Bug introduction timeline analysis
-     - Feature adoption and usage patterns
+TemporalReasoning - Analyze system evolution and predict future states.
+- subject: The system or topic to analyze.
+- time_range: Period to examine (e.g., '2023-01-01 to 2024-01-01').
+- granularity: daily, weekly, monthly, quarterly, yearly.
+- related_files: Logs, metrics, or history files.
+- identify_patterns: (Boolean) Find cycles/trends.
+- predict_future: (Boolean) Extrapolate trends.
+- analyze_rate_of_change: (Boolean) Velocity analysis.
+- identify_transitions: (Boolean) Find inflection points.
         """.trimIndent()
     }
 

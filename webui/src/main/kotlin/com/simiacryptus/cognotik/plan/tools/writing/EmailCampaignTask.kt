@@ -229,16 +229,15 @@ class EmailCampaignTask(
 
     override fun promptSegment(): String {
         return """
-EmailCampaign - Generate complete email sequences for marketing, sales, or outreach
-  ** Specify the campaign goal and subject matter
-  ** Define target audience and campaign type
-  ** Set number of emails and send intervals
-  ** Configure brand voice and primary CTA
-  ** Enable A/B test variants for subject lines
-  ** Include personalization tokens and preview text
-  ** Control body length and formatting options
-  ** Performs strategy planning, outlining, and email generation
-  ** Produces complete, ready-to-use email sequence
+EmailCampaign - Generate multi-email marketing or outreach sequences.
+- campaign_goal: Primary objective.
+- subject_matter: Product or topic.
+- target_audience: Who is receiving the emails.
+- campaign_type: welcome_series, nurture, sales, etc.
+- num_emails: Length of sequence (1-10).
+- brand_voice: professional, friendly, etc.
+- primary_cta: Main action desired.
+- related_files: Brand guidelines or context.
         """.trimIndent()
     }
 

@@ -73,6 +73,7 @@ class DataTableCompilationTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+        renderTaskHeader(task)
         val transcript = task.transcript()
         transcript?.let { out ->
             out.write("# Data Table Compilation Task\n\n".toByteArray())
@@ -81,7 +82,7 @@ class DataTableCompilationTask(
             out.write("- Output File: ${executionConfig?.output_file}\n\n".toByteArray())
         }
 
-        task.header("Step 1: Collecting files from patterns", level = 2)
+        task.header("Step 1: Collecting Files", level = 3)
         val result = mutableListOf<Path>()
         val basePath = Paths.get(orchestrationConfig.absoluteWorkingDir ?: ".")
         executionConfig?.file_patterns?.forEach { pattern ->
@@ -124,6 +125,7 @@ class DataTableCompilationTask(
         val chatter =
             (typeConfig.model?.let { orchestrationConfig.instance(it) }
                 ?: defaultSmart).getChildClient(task)
+        task.header("Step 2: Identifying Columns", level = 3)
         val columnsResponse = ParsedAgent(
             name = "ColumnIdentifier",
             resultClass = Columns::class.java,
@@ -179,6 +181,7 @@ class DataTableCompilationTask(
             }
             out.write("\n".toByteArray())
         }
+        task.header("Step 3: Identifying Rows", level = 3)
 
         val rowsList = ParsedAgent(
             name = "RowIdentifier",
@@ -228,7 +231,7 @@ class DataTableCompilationTask(
             out.write("\n".toByteArray())
         }
 
-        task.header("Step 4: Extracting cell data for each row", level = 2)
+        task.header("Step 4: Extracting Cell Data", level = 3)
         val tableData = mutableListOf<Map<String, Any>>()
         val progressTotal = rowsList.obj.rows.size
         var progressCurrent = 0
@@ -286,7 +289,7 @@ class DataTableCompilationTask(
             rowTask.complete()
         }
 
-        task.header("Step 5: Compiling and saving data table", level = 2)
+        task.header("Step 5: Finalizing Table", level = 3)
 
         val outputPath = executionConfig?.output_file ?: "compiled_data.json"
         val outputFile = if (orchestrationConfig.absoluteWorkingDir != null) {
@@ -343,19 +346,24 @@ class DataTableCompilationTask(
             }
         }
 
-        val resultMessage = ("""
-      Data table compilation complete!
-      - Processed ${matchedFiles.size} source files
-      - Identified ${rowsList.obj.rows.size} rows and ${columnsList.size} columns
-      - Saved compiled data to: ${outputFile.absolutePath}
-    """.trimIndent() + "\n\n" + "### Compiled Data\n\n${
-            StringWriter().use {
-                BufferedWriter(it).use {
-                    writeMarkdown(columnsList, it, tableData)
-                }
-                it.toString()
+        val markdownTable = StringWriter().use {
+            BufferedWriter(it).use { bw ->
+                writeMarkdown(columnsList, bw, tableData)
             }
-        }").renderMarkdown()
+            it.toString()
+        }
+
+        val resultMessage = ("""
+            |### Compilation Summary
+            |- **Source Files:** ${matchedFiles.size}
+            |- **Rows:** ${rowsList.obj.rows.size}
+            |- **Columns:** ${columnsList.size}
+            |- **Output:** `${outputFile.absolutePath}`
+            |
+            |### Compiled Data
+            |
+            |$markdownTable
+        """).renderMarkdown()
         transcript?.let { out ->
             out.write("## Step 5: Final Results\n\n".toByteArray())
             out.write("### Summary\n\n".toByteArray())
@@ -370,6 +378,10 @@ class DataTableCompilationTask(
                 out.write(sw.toString().toByteArray())
             }
         }
+        val finalTabs = TabbedDisplay(task)
+        finalTabs["Summary"] = resultMessage
+        finalTabs["Markdown"] = "```markdown\n$markdownTable\n```".renderMarkdown()
+
 
         resultFn(resultMessage)
         task.complete()

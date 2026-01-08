@@ -316,15 +316,6 @@ Provide a comprehensive synthesis that integrates all perspectives.
         resultFn(finalResult)
     }
 
-    private fun writeToTranscript(stream: FileOutputStream, content: String) {
-        try {
-            stream.write(content.toByteArray(StandardCharsets.UTF_8))
-            stream.flush()
-        } catch (e: Exception) {
-            log.error("Failed to write to transcript", e)
-        }
-    }
-
 
     private fun getContextFiles(): String {
         val relatedFiles = executionConfig?.related_files ?: return ""

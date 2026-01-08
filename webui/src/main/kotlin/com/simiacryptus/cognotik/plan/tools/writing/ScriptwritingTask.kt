@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
 import java.io.File
+import java.util.concurrent.Semaphore
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -230,6 +231,7 @@ class ScriptwritingTask(
         val api = defaultSmart ?: return
 
         val tabs = TabbedDisplay(task)
+        val semaphore = Semaphore(0)
 
         // Overview tab
         val overviewTask = tabs.newTask("Overview")
@@ -268,13 +270,11 @@ class ScriptwritingTask(
             appendLine("*Analyzing topic and creating script structure...*")
         }
         markdownTranscript?.write(overviewContent2.toByteArray())
-        markdownTranscript?.write(overviewContent2.toByteArray())
-        markdownTranscript?.write("\n".toByteArray())
         overviewTask.add(overviewContent2.renderMarkdown)
         task.update()
 
         val resultBuilder = StringBuilder()
-        markdownTranscript?.write("# Research Context\n\n".toByteArray())
+        markdownTranscript?.write("# Research Context\n<details>\n<summary>Context Details</summary>\n\n".toByteArray())
         markdownTranscript?.write("Context loaded from prior tasks and related files.\n\n".toByteArray())
         resultBuilder.append("# Script: $topic\n\n")
 
@@ -303,11 +303,10 @@ class ScriptwritingTask(
                 )
                 task.update()
             }
-            markdownTranscript?.write("# Research Context\n\n".toByteArray())
+            markdownTranscript?.write("\n</details>\n".toByteArray())
 
             // Phase 1: Create outline
             log.info("Phase 1: Creating script outline")
-            markdownTranscript?.write("# Script Outline\n\n".toByteArray())
             val outlineTask = tabs.newTask("Outline")
 
             outlineTask.add(
@@ -318,8 +317,7 @@ class ScriptwritingTask(
                     appendLine()
                 }.renderMarkdown
             )
-            markdownTranscript?.write("# Script Outline\n\n".toByteArray())
-            markdownTranscript?.write("Creating structured outline...\n\n".toByteArray())
+            markdownTranscript?.write("# Script Outline\n<details>\n<summary>Outline Details</summary>\n\n".toByteArray())
             task.update()
 
             val targetDurationSeconds = executionConfig.target_duration_minutes * 60
@@ -428,8 +426,7 @@ Ensure the outline:
             }
             outlineTask.add(outlineContent.renderMarkdown)
             markdownTranscript?.write(outlineContent.toByteArray())
-            markdownTranscript?.write(outlineContent.toByteArray())
-            markdownTranscript?.write("\n".toByteArray())
+            markdownTranscript?.write("\n</details>\n".toByteArray())
             task.update()
 
             overviewTask.add("✅ Phase 1 Complete: Outline created (${outline.sections.size} sections)\n".renderMarkdown)
@@ -530,7 +527,6 @@ Ensure the dialogue sounds natural when spoken aloud.
                         appendLine("**Status:** ✅ Complete")
                     }.renderMarkdown
                 )
-                markdownTranscript?.write("# Opening Hook\n\n".toByteArray())
                 markdownTranscript?.write("# Opening Hook\n\n".toByteArray())
                 markdownTranscript?.write(hookSegment.dialogue.toByteArray())
                 markdownTranscript?.write("\n\n".toByteArray())
@@ -673,7 +669,6 @@ Aim for approximately ${sectionOutline.estimated_duration_seconds} seconds of co
                     }.renderMarkdown
                 )
                 markdownTranscript?.write("## Section ${sectionOutline.section_number}: ${sectionOutline.title}\n\n".toByteArray())
-                markdownTranscript?.write("## Section ${sectionOutline.section_number}: ${sectionOutline.title}\n\n".toByteArray())
                 markdownTranscript?.write(sectionSegment.dialogue.toByteArray())
                 markdownTranscript?.write("\n\n".toByteArray())
                 task.update()
@@ -775,7 +770,6 @@ Target duration: 15-20 seconds.
                     appendLine("**Status:** ✅ Complete")
                 }.renderMarkdown
             )
-            markdownTranscript?.write("# Closing\n\n".toByteArray())
             markdownTranscript?.write("# Closing\n\n".toByteArray())
             markdownTranscript?.write(closingSegment.dialogue.toByteArray())
             markdownTranscript?.write("\n\n".toByteArray())
@@ -927,7 +921,6 @@ Provide the complete revised script with all formatting intact.
 
             finalTask.add(finalScript.renderMarkdown)
             markdownTranscript?.write("\n---\n\n# Complete Script\n\n".toByteArray())
-            markdownTranscript?.write("\n---\n\n# Complete Script\n\n".toByteArray())
             markdownTranscript?.write(finalScript.toByteArray())
             markdownTranscript?.write("\n".toByteArray())
             task.update()
@@ -989,7 +982,6 @@ Provide the complete revised script with all formatting intact.
 
                 productionNotesTask.add(productionNotes.renderMarkdown)
                 markdownTranscript?.write("\n---\n\n".toByteArray())
-                markdownTranscript?.write("\n---\n\n".toByteArray())
                 markdownTranscript?.write(productionNotes.toByteArray())
                 markdownTranscript?.write("\n".toByteArray())
                 task.update()
@@ -1024,7 +1016,6 @@ Provide the complete revised script with all formatting intact.
                 }.renderMarkdown
             )
             markdownTranscript?.write("\n---\n\n## Generation Complete\n\n".toByteArray())
-            markdownTranscript?.write("\n---\n\n## Generation Complete\n\n".toByteArray())
             markdownTranscript?.write("Script generation completed successfully.\n".toByteArray())
             task.update()
 
@@ -1049,13 +1040,16 @@ Provide the complete revised script with all formatting intact.
             }
 
             log.info("ScriptwritingTask completed: duration=${cumulativeDuration}s, words=$cumulativeWordCount, segments=${scriptSegments.size}, time=${totalTime}ms")
-            markdownTranscript?.close()
-            markdownTranscript?.close()
 
-            task.safeComplete(
-                "Script generation complete: ${formatTiming(cumulativeDuration)} in ${totalTime / 1000}s",
-                log
-            )
+
+            // Best Practice: Use acceptButtonFooter for manual review
+            task.add(acceptButtonFooter(task.ui) {
+                semaphore.release()
+            })
+            semaphore.acquire()
+
+            task.complete()
+            log.info("Script generation complete: ${formatTiming(cumulativeDuration)} in ${totalTime / 1000}s")
             resultFn(finalResult)
 
         } catch (e: Exception) {

@@ -111,9 +111,11 @@ open class IterativeGraphGenerationTask<T : IterativeGraphGenerationTask.Iterati
     override fun promptSegment(): String {
         return """
 IterativeGraphGeneration - Build knowledge graphs incrementally
-  ** Specify goal_prompt and context
-  ** Define schema (node_types, edge_types)
-  ** Iteratively observes graph state and adds nodes/edges
+  * goal_prompt: The goal or question the graph should answer/represent.
+  * context_data: Input text to analyze.
+  * input_files: Input files to analyze.
+  * node_types/edge_types: Allowed labels for nodes and edges.
+  * Use this to extract entities and relationships for complex knowledge management and visualization.
         """.trimIndent()
     }
 
@@ -394,8 +396,18 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
             IterativeGraphGenerationTask::class.java,
             IterativeGraphGenerationTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
-            "Iteratively build a knowledge graph",
-            "Constructs a knowledge graph by iteratively analyzing context and adding nodes/edges.",
+            "Extract structured knowledge from unstructured data by iteratively building an entity-relationship graph.",
+            """
+            Constructs a knowledge graph by iteratively analyzing context and adding nodes/edges.
+            <ul>
+              <li>Processes large contexts by chunking and iterative refinement</li>
+              <li>Supports custom schemas for nodes and edges</li>
+              <li>Visualizes progress using Mermaid diagrams</li>
+              <li>Allows merging nodes to resolve entities</li>
+              <li>Exports the final graph as GraphSON JSON</li>
+              <li>Ideal for mapping complex domains, research analysis, and knowledge extraction</li>
+            </ul>
+            """.trimIndent(),
         )
     }
 }

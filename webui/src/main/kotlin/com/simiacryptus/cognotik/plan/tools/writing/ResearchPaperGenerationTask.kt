@@ -10,9 +10,11 @@ import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.plan.tools.truncateForDisplay
 import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 import java.nio.file.FileSystems
 import java.time.LocalDateTime
@@ -197,13 +199,19 @@ class ResearchPaperGenerationTask(
     override fun promptSegment(): String {
         return """
 ResearchPaperGeneration - Generate comprehensive academic research papers with citations
-  ** Specify the research topic and paper type (empirical, theoretical, review, meta-analysis)
-  ** Define academic level (undergraduate, masters, PhD, postdoc)
-  ** Configure citation style (APA, MLA, Chicago, IEEE)
-  ** Provide research source files for literature synthesis
-  ** Enable literature review, methodology, and statistical analysis sections
-  ** Optional peer review simulation to identify weaknesses
-  ** Produces complete academic paper with bibliography
+  ** research_topic: The main research question or topic
+  ** paper_type: 'empirical', 'theoretical', 'review', or 'meta-analysis'
+  ** academic_level: 'undergraduate', 'masters', 'phd', or 'postdoc'
+  ** target_word_count: Target word count for the complete paper
+  ** citation_style: 'apa', 'mla', 'chicago', or 'ieee'
+  ** include_literature_review: Whether to include a literature review section
+  ** include_methodology: Whether to include methodology section
+  ** include_statistical_analysis: Whether to include statistical analysis descriptions
+  ** include_peer_review: Whether to include peer review simulation
+  ** number_of_sections: Number of main sections
+  ** revision_passes: Number of revision passes
+  ** research_files: Research source files or data to incorporate
+  ** input_files: Specific files or patterns to use as input
         """.trimIndent()
     }
 
@@ -971,11 +979,31 @@ Provide the complete revised paper.
             markdownTranscript?.write("\n\n---\n\n# Final Result\n\n${finalResult}".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             markdownTranscript?.close()
 
-            task.safeComplete(
-                "Research paper generation complete: $cumulativeWordCount words in ${totalTime / 1000}s",
-                log
-            )
-            resultFn(finalResult)
+            if (orchestrationConfig.autoFix) {
+                task.safeComplete(
+                    "Research paper generation complete: $cumulativeWordCount words in ${totalTime / 1000}s",
+                    log
+                )
+                resultFn(finalResult)
+            } else {
+                finalTask.add(
+                    MarkdownUtil.renderMarkdown(
+                        acceptButtonFooter(task.ui) {
+                            try {
+                                task.safeComplete(
+                                    "Research paper generation accepted: $cumulativeWordCount words",
+                                    log
+                                )
+                                resultFn(finalResult)
+                            } catch (e: Exception) {
+                                log.error("Error accepting research paper", e)
+                                task.error(e)
+                                resultFn("ERROR: ${e.message}")
+                            }
+                        }, ui = task.ui
+                    )
+                )
+            }
 
         } catch (e: Exception) {
             log.error("Error during research paper generation", e)
@@ -1100,6 +1128,18 @@ Provide the complete revised paper.
             "Error reading file: ${e2.message}"
         }
     }
+    override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+        val acceptLink = ui.hrefLink("Accept and Save Research Paper") {
+            fn()
+        }
+        return """
+        |
+        |---
+        |
+        |$acceptLink
+        """.trimMargin()
+    }
+
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ResearchPaperGenerationTask::class.java)

@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -251,8 +252,8 @@ $tableRows
             """.trimIndent(), ui = task.ui
             )
 
-            task.complete("Generated sprite sheet with ${metadata.sprites.size} sprites")
-            resultFn("Generated sprite sheet: $imageFile and $metadataFile")
+            task.safeComplete("Generated sprite sheet with ${metadata.sprites.size} sprites", log)
+            resultFn("Generated sprite sheet: $imageFile and $metadataFile. Found ${metadata.sprites.size} sprites.")
 
         } catch (e: Exception) {
             log.error("Error generating sprite sheet", e)

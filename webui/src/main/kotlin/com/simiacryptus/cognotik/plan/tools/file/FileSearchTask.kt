@@ -64,22 +64,23 @@ FileSearch - Search for patterns in files and provide results with context
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
+        renderTaskHeader(task)
         val searchResults = performSearch()
         val formattedResults = formatSearchResults(searchResults)
         val transcript = task.transcript()
         transcript?.write(formattedResults.toByteArray())
         transcript?.close()
 
-        task.header("Search Results")
         if (searchResults.isEmpty()) {
             task.add("No matches found.")
         } else {
             val totalMatches = searchResults.sumOf { it.matches.size }
             val filesWithMatches = searchResults.distinctBy { it.file }.size
-            task.add("Found $totalMatches match(es) in $filesWithMatches file(s).")
+            val summaryText = "Found $totalMatches match(es) in $filesWithMatches file(s)."
+            task.add(summaryText)
 
             val tabs = TabbedDisplay(task)
-            tabs["All Results"] = MarkdownUtil.renderMarkdown(formattedResults, ui = task.ui)
+            tabs["Summary"] = MarkdownUtil.renderMarkdown("# Search Summary\n\n$summaryText\n\n$formattedResults", ui = task.ui)
 
             val files = searchResults.groupBy { it.file }
             if (files.size <= 20) {

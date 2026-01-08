@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -198,7 +199,7 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
             // Validate configuration
             executionConfig?.validate()?.let { errorMessage ->
                 log.error("Configuration validation failed: $errorMessage")
-                task.complete("VALIDATION ERROR: $errorMessage")
+                task.safeComplete("VALIDATION ERROR: $errorMessage", log)
                 task.error(ValidatedObject.ValidationError(errorMessage, executionConfig))
                 transcript?.close()
                 resultFn("VALIDATION ERROR: $errorMessage")
@@ -435,14 +436,14 @@ MathematicalReasoning - Solve mathematical problems through step-by-step logical
                 "Unable to find a complete solution after exploring $pathsExplored paths. See the Solution tab for partial progress."
             }
 
-            task.complete("Mathematical reasoning complete in ${totalTime / 1000}s")
+            task.safeComplete("Mathematical reasoning complete in ${totalTime / 1000}s", log)
             resultFn(resultMessage)
 
         } catch (e: Exception) {
             log.error("Error during MathematicalReasoningTask execution", e)
             transcript?.close()
             task.error(e)
-            task.complete("Failed with error: ${e.message}")
+            task.safeComplete("Failed with error: ${e.message}", log)
             resultFn("ERROR: ${e.message}")
         }
     }

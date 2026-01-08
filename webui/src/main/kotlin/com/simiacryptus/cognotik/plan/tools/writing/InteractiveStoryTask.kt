@@ -324,8 +324,8 @@ class InteractiveStoryTask(
         overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent))
         task.update()
 
-        val resultBuilder = StringBuilder()
-        resultBuilder.append("# Interactive Story: $premise\n\n")
+            val storyBuilder = StringBuilder()
+            storyBuilder.append("# Interactive Story: $premise\n\n")
 
         try {
             // Gather context from input files and messages
@@ -660,13 +660,12 @@ Make it immersive and compelling. The reader should feel invested immediately.
             )
             task.update()
 
-            resultBuilder.append("## ${structure.title}\n\n")
-            resultBuilder.append(openingSegment.content)
-            resultBuilder.append("\n\n---\n\n")
+            storyBuilder.append("## ${structure.title}\n\n")
+            storyBuilder.append(openingSegment.content)
+            storyBuilder.append("\n\n---\n\n")
 
             overviewTask.add(MarkdownUtil.renderMarkdown("✅ Phase 2 Complete: Opening written (${openingSegment.word_count} words)\n"))
             overviewTask.add(MarkdownUtil.renderMarkdown("\n### Phase 3: Decision Points\n*Writing branching narrative segments...*\n"))
-            task.update()
 
             // Phase 3: Write each decision point
             transcriptWriter.apply {
@@ -809,14 +808,14 @@ Make the reader feel the weight of their choice. Each option should feel viable 
                 )
                 task.update()
 
-                resultBuilder.append("## ${decisionPoint.id}\n\n")
-                resultBuilder.append(segment.content)
-                resultBuilder.append("\n\n")
-                resultBuilder.append("### ${decisionPoint.decision_prompt}\n\n")
+                storyBuilder.append("## ${decisionPoint.id}\n\n")
+                storyBuilder.append(segment.content)
+                storyBuilder.append("\n\n")
+                storyBuilder.append("### ${decisionPoint.decision_prompt}\n\n")
                 decisionPoint.choices.forEachIndexed { choiceIndex, choice ->
-                    resultBuilder.append("${choiceIndex + 1}. ${choice.text}\n")
+                    storyBuilder.append("${choiceIndex + 1}. ${choice.text}\n")
                 }
-                resultBuilder.append("\n---\n\n")
+                storyBuilder.append("\n---\n\n")
 
                 overviewTask.add(MarkdownUtil.renderMarkdown("✅ (${segment.word_count} words)\n"))
                 task.update()
@@ -931,9 +930,9 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 )
                 task.update()
 
-                resultBuilder.append("## ${ending.id}: ${ending.ending_type}\n\n")
-                resultBuilder.append(endingSegment.content)
-                resultBuilder.append("\n\n**THE END**\n\n---\n\n")
+                storyBuilder.append("## ${ending.id}: ${ending.ending_type}\n\n")
+                storyBuilder.append(endingSegment.content)
+                storyBuilder.append("\n\n**THE END**\n\n---\n\n")
 
                 overviewTask.add(MarkdownUtil.renderMarkdown("✅ (${endingSegment.word_count} words)\n"))
                 task.update()
@@ -1101,7 +1100,7 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 "Interactive story generation complete: $cumulativeWordCount words, ${structure.decision_points.size} decisions, ${structure.endings.size} endings in ${totalTime / 1000}s",
                 log
             )
-            resultFn(buildFinalResultWithLinks(task, finalResult, storyMap, cumulativeWordCount, structure, totalTime))
+            resultFn(buildFinalResultWithLinks(task, finalResult, storyBuilder.toString(), cumulativeWordCount, structure, totalTime))
 
         } catch (e: Exception) {
             log.error("Error during interactive story generation", e)
@@ -1129,10 +1128,10 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
                 appendLine()
                 appendLine("**Error:** ${e.message}")
                 appendLine()
-                if (resultBuilder.isNotEmpty()) {
+                if (storyBuilder.isNotEmpty()) {
                     appendLine("## Partial Results")
                     appendLine()
-                    appendLine(resultBuilder.toString())
+                    appendLine(storyBuilder.toString())
                 }
             }
             resultFn(errorOutput)

@@ -98,17 +98,17 @@ TableCompilation - Generate structured tables with AI-computed cell values
             resultFn("VALIDATION ERROR: $errorMessage")
             return
         }
+        renderTaskHeader(task)
 
         val rows = executionConfig?.rows ?: emptyList()
         val columns = executionConfig?.columns ?: emptyList()
         val cellQuery = executionConfig?.cell_query ?: ""
         val partitionSize = typeConfig?.partition_size ?: 2
 
-        val ui = task.ui
         val api = defaultSmart.getChildClient(task)
 
-        task.header("Table Compilation")
-        task.add("Generating ${rows.size}x${columns.size} table with partition size $partitionSize")
+        task.add("Generating **${rows.size}x${columns.size}** table using partition size **$partitionSize**.")
+        task.add("Query Template: `$cellQuery`")
 
         // Initialize the results table
         val cellResults = Array(rows.size) { Array(columns.size) { "" } }

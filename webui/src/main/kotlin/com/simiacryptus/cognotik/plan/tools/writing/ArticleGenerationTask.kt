@@ -643,7 +643,7 @@ Make each snippet:
             val finalResult = buildString {
                 appendLine("# Article Generation Summary")
                 appendLine()
-                appendLine("A complete **${genConfig.article_format}** article of **${article.word_count} words** was generated in **${totalTime / 1000.0}s**.")
+                appendLine("A complete **${genConfig.article_format}** article of **${article.word_count} words** was generated.")
                 appendLine()
                 appendLine("## ${article.headline}")
                 appendLine()

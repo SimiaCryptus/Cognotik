@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.util.LoggerFactory
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
@@ -74,11 +75,12 @@ class GenerateQRImageTask(
     override fun promptSegment(): String {
         return """
 GenerateQRImage - Generate artistic QR codes using AI image processing
-  ** Specify the data to encode in qr_content
-  ** Provide artistic style instructions in style_directive
-  ** The QR code is generated with high error correction (H level - 30% redundancy)
-  ** The Image Agent will stylize the QR code while preserving scannability
-  ** The result is verified to ensure the QR code remains readable
+  ** files: The output image file to be created (relative path, must end with .png, .jpg, or .jpeg)
+  ** qr_content: The data/text content to encode in the QR code
+  ** style_directive: Artistic style directive for the Image Agent (e.g., 'watercolor painting')
+  ** qr_size: Size of the QR code in pixels (default: 500)
+  ** max_retries: Maximum number of retry attempts if QR verification fails (default: 3)
+  ** related_files: Additional files for context (e.g., reference images)
         """.trimIndent()
     }
 
@@ -123,18 +125,21 @@ GenerateQRImage - Generate artistic QR codes using AI image processing
             return
         }
 
-        task.header("Generating Artistic QR Code: `$imageOutputFile`", level = 2)
-        task.add(MarkdownUtil.renderMarkdown("### QR Content\n```\n$qrContent\n```", ui = task.ui))
-        task.add(MarkdownUtil.renderMarkdown("### Style Directive\n$styleDirective", ui = task.ui))
+        val tabs = TabbedDisplay(task)
+        val overviewTab = tabs.newTask("Overview")
+        overviewTab.header("Generating Artistic QR Code: `$imageOutputFile`", level = 2)
+        overviewTab.add(MarkdownUtil.renderMarkdown("### QR Content\n```\n$qrContent\n```", ui = task.ui))
+        overviewTab.add(MarkdownUtil.renderMarkdown("### Style Directive\n$styleDirective", ui = task.ui))
 
         try {
             // Step 1: Generate base QR code with high error correction
-            task.header("Step 1: Generating Base QR Code (Error Correction Level H)", level = 3)
+            val baseQrTab = tabs.newTask("Base QR")
+            baseQrTab.header("Step 1: Generating Base QR Code (Error Correction Level H)", level = 3)
             val baseQrImage = generateQRCode(qrContent, qrSize)
 
             // Display base QR
-            task.add("Base QR Code:")
-            task.image(baseQrImage)
+            baseQrTab.add("Base QR Code:")
+            baseQrTab.image(baseQrImage)
 
             // Verify base QR is readable
             val baseVerification = verifyQRCode(baseQrImage)
@@ -142,7 +147,7 @@ GenerateQRImage - Generate artistic QR codes using AI image processing
                 resultFn("ERROR: Base QR code verification failed")
                 return
             }
-            task.add("✓ Base QR code verified successfully", additionalClasses = "text-success")
+            baseQrTab.add("✓ Base QR code verified successfully", additionalClasses = "text-success")
 
             // Load reference images if any
             val inputImageFiles = executionConfig?.related_files?.filter {
@@ -157,7 +162,8 @@ GenerateQRImage - Generate artistic QR codes using AI image processing
             }
 
             // Step 2: Process with Image Agent
-            task.header("Step 2: Applying Artistic Style", level = 3)
+            val stylingTab = tabs.newTask("Styling")
+            stylingTab.header("Step 2: Applying Artistic Style", level = 3)
 
             val imageAgent = ImageProcessingAgent(
                 prompt = """You are an artistic QR code designer. Your task is to stylize a QR code while ensuring it remains scannable.
@@ -180,7 +186,7 @@ CRITICAL REQUIREMENTS:
 
             while (attempt < maxRetries && verifiedContent != qrContent) {
                 attempt++
-                task.header("Attempt $attempt of $maxRetries", level = 4)
+                stylingTab.header("Attempt $attempt of $maxRetries", level = 4)
 
                 val prompt = if (attempt == 1) {
                     """Apply this artistic style to the QR code: $styleDirective
@@ -201,11 +207,11 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
                 styledImage = result.image
 
                 // Display styled image
-                task.add("Styled QR Code (Attempt $attempt):")
-                task.image(styledImage!!)
+                stylingTab.add("Styled QR Code (Attempt $attempt):")
+                stylingTab.image(styledImage!!)
 
                 // Step 3: Verify the styled QR code
-                task.add("Verifying Styled QR Code...")
+                stylingTab.add("Verifying Styled QR Code...")
                 verifiedContent = try {
                     styledImage?.let { verifyQRCode(it) }
                 } catch (e: Exception) {
@@ -214,9 +220,9 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
                 }
 
                 if (verifiedContent == qrContent) {
-                    task.add("✓ Verification successful! QR code is readable.", additionalClasses = "text-success")
+                    stylingTab.add("✓ Verification successful! QR code is readable.", additionalClasses = "text-success")
                 } else {
-                    task.add(
+                    stylingTab.add(
                         "✗ Verification failed. " +
                                 if (verifiedContent == null) "QR code could not be read."
                                 else "Content mismatch: got '$verifiedContent'",
@@ -226,8 +232,8 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
             }
 
             if (verifiedContent != qrContent || styledImage == null) {
-                task.add("⚠️ Warning: Final QR code may not be scannable", additionalClasses = "alert alert-warning")
-                task.add("After $maxRetries attempts, the styled QR code could not be verified. Saving the last attempt anyway.")
+                stylingTab.add("⚠️ Warning: Final QR code may not be scannable", additionalClasses = "alert alert-warning")
+                stylingTab.add("After $maxRetries attempts, the styled QR code could not be verified. Saving the last attempt anyway.")
             }
 
             // Save the final image
@@ -247,8 +253,31 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
                 if (verifiedContent == qrContent) "verified and scannable" else "may not be scannable"
             val summary =
                 "Generated artistic QR code ($verificationStatus) saved to <a href=\"${task.linkTo(imageOutputFile)}\">$imageOutputFile</a>."
-            task.complete(summary)
-            resultFn(summary)
+
+            val finalTab = tabs.newTask("Final Result")
+            finalTab.header("Final Artistic QR Code", level = 3)
+            finalTab.image(styledImage ?: baseQrImage)
+            finalTab.add(MarkdownUtil.renderMarkdown(summary, ui = task.ui))
+
+            if (orchestrationConfig.autoFix) {
+                task.complete(summary)
+                resultFn(summary)
+            } else {
+                finalTab.add(
+                    MarkdownUtil.renderMarkdown(
+                        acceptButtonFooter(task.ui) {
+                            try {
+                                task.complete(summary)
+                                resultFn(summary)
+                            } catch (e: Exception) {
+                                log.error("Error accepting QR image", e)
+                                task.error(e)
+                                resultFn("ERROR: ${e.message}")
+                            }
+                        }, ui = task.ui
+                    )
+                )
+            }
 
         } catch (e: Exception) {
             log.error("Error generating QR image", e)

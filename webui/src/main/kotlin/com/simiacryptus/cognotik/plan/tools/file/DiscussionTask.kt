@@ -72,7 +72,7 @@ class DiscussionTask(
         resultFn: (String) -> Unit,
         orchestrationConfig: OrchestrationConfig
     ) {
-        val transcript = task.transcript("transcript")
+        val (_, transcript) = initializeTranscript(task)
 
         val toInput = { it: String ->
             messages + listOf(

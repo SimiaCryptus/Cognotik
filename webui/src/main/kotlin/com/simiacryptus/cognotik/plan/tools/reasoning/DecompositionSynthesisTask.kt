@@ -737,15 +737,6 @@ class DecompositionSynthesisTask(
             }
         }
 
-    private fun writeToTranscript(stream: FileOutputStream, content: String) {
-        try {
-            stream.write(content.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
-            stream.flush()
-        } catch (e: Exception) {
-            log.error("Failed to write to transcript", e)
-        }
-    }
-
     private fun decomposeProblem(
         problem: String,
         strategy: String,

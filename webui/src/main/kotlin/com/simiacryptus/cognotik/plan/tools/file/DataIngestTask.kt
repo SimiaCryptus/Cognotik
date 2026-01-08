@@ -74,11 +74,11 @@ class DataIngestTask(
 
     override fun promptSegment(): String {
         return """
-DataIngest - Parse unstructured logs/text into structured data
-  ** Specify input file patterns (glob)
-  ** Iteratively discovers Regex patterns using LLM
-  ** Generates data.jsonl, patterns.json, and index.csv
-  ** Handles large files via streaming
+DataIngest - Iteratively parse unstructured logs/text into structured data
+  ** Specify input_files patterns (glob) to process
+  ** Iteratively discovers Regex patterns using LLM for residual data
+  ** Generates structured artifacts: data.jsonl, data.csv, patterns.json, and index.csv
+  ** Efficiently handles large files via streaming extraction
         """.trimIndent()
     }
 
@@ -304,6 +304,12 @@ DataIngest - Parse unstructured logs/text into structured data
                     }
                 }
             }
+            val summaryTask = tabs.newTask("Summary")
+            summaryTask.header("Ingestion Summary")
+            summaryTask.add("**Total Extracted Records:** $totalExtracted")
+            summaryTask.add("**Patterns Discovered:** ${registry.size}")
+            summaryTask.complete()
+
 
             // Final Report
             val summary = buildString {

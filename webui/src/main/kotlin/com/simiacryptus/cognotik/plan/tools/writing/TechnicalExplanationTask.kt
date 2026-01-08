@@ -938,21 +938,13 @@ Provide the complete revised explanation.
             overviewTask.update()
 
             // Concise summary for resultFn
-            val finalResult = buildString {
-                appendLine("# Technical Explanation Summary: ${outline.title}")
-                appendLine()
-                appendLine("A complete technical explanation of **$topic** was generated in **${totalTime / 1000.0}s**.")
-                appendLine()
-                appendLine("**Target Audience:** ${executionConfig.target_audience}")
-                appendLine()
-                appendLine("**Coverage:**")
-                appendLine("- ${sections.size} main sections")
-                appendLine("- $wordCount words")
-                appendLine("- $codeExampleCount code examples")
-                appendLine("- ${outline.analogies.size} analogies")
-                appendLine()
-                appendLine("> The full explanation is available in the Complete Explanation tab for detailed review.")
-            }
+            val finalResult = """
+                |# Technical Explanation: ${outline.title}
+                |
+                |Generated a $wordCount-word explanation for a **${executionConfig.target_audience}** audience.
+                |The explanation covers ${sections.size} key concepts with $codeExampleCount code examples and ${outline.analogies.size} analogies.
+                |
+                |*Full content is available in the task UI.*""".trimMargin()
 
             log.info("TechnicalExplanationTask completed: sections=${sections.size}, words=$wordCount, time=${totalTime}ms")
             markdownTranscript?.close()

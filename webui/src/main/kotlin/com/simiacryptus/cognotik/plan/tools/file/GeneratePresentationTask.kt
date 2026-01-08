@@ -3,10 +3,13 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
+import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -94,6 +97,20 @@ class GeneratePresentationTask(
   ** Output will be presented for review before being written to disk
         """.trimIndent()
     }
+    data class PresentationSlide(
+        @Description("The title of the slide")
+        val title: String = "",
+        @Description("The HTML content of the slide (Reveal.js compatible)")
+        val html_content: String = "",
+        @Description("Detailed speaker notes for this slide")
+        val speaker_notes: String = "",
+        @Description("A prompt for an AI image generator to create a visual for this slide")
+        val image_prompt: String? = null
+    )
+    data class PresentationStructure(
+        val slides: List<PresentationSlide> = emptyList()
+    )
+
 
     override fun run(
         agent: TaskOrchestrator,
@@ -124,12 +141,13 @@ class GeneratePresentationTask(
         val revealInitCode = this::class.java.getResource("/presentations/reveal_init.js")?.readText() ?: ""
         filesToWrite.add("reveal_init.js" to revealInitCode)
 
-        val newTask = task.newTask()
+        val tabs = TabbedDisplay(task)
+        val overviewTask = tabs.newTask("Overview")
         val toInput = { it: String -> listOf(it) }
         val ui = task.ui
         val api = defaultSmart
 
-        newTask.header("Creating Presentation: $htmlFile", level = 2)
+        overviewTask.header("Creating Presentation: $htmlFile", level = 2)
 
         val contextFiles = getInputFileCode()
         val priorCode = getPriorCode(agent.executionState)
@@ -191,36 +209,36 @@ ${TT}html
 $TT
         """.trimIndent()
 
-        val chatAgent = ChatAgent(
+        val slideAgent = ParsedAgent(
+            resultClass = PresentationStructure::class.java,
             prompt = outlinePrompt,
             model = api,
+            parsingChatter = defaultFast
         )
 
-        newTask.header("Step 1: Generating Presentation Structure", level = 3)
 
-        val response = chatAgent.answer(listOf("Generate the presentation."))
-        val slideContent = extractCodeFromResponse(response, "html")
 
-        if (slideContent.isEmpty()) {
+        overviewTask.header("Step 1: Generating Presentation Structure", level = 3)
+        val presentationStructure = slideAgent.answer(listOf("Generate the presentation.")).obj
+
+        if (presentationStructure.slides.isEmpty()) {
             resultFn("ERROR: Failed to generate presentation structure")
             return
         }
+
         // Step 1.5: Generate images for key slides if enabled
         val imageMap = mutableMapOf<Int, String>()
         if (executionConfig?.generate_images != false) {
-            newTask.header("Step 1.5: Generating Images for Key Slides", level = 3)
-            imageMap.putAll(generateSlideImages(slideContent, task, orchestrationConfig, newTask))
+
+            val imageTask = tabs.newTask("Images")
+            imageTask.header("Generating Images for Key Slides", level = 3)
+            imageMap.putAll(generateSlideImages(presentationStructure, task, orchestrationConfig, imageTask))
+            imageTask.complete()
         }
 
-        // Extract title from first slide for the HTML template
-        val titleMatch = "<h1>(.*?)</h1>".toRegex().find(slideContent)
-        val presentationTitle = titleMatch?.groupValues?.get(1) ?: "Presentation"
+        val presentationTitle = presentationStructure.slides.firstOrNull()?.title ?: "Presentation"
         // Inject images into slide content
-        val enhancedSlideContent = if (imageMap.isNotEmpty()) {
-            injectImagesIntoSlides(slideContent, imageMap)
-        } else {
-            slideContent
-        }
+        val enhancedSlideContent = buildSlideHtml(presentationStructure, imageMap)
 
         // Wrap slides in the HTML template
         val htmlStructure = """
@@ -267,7 +285,7 @@ Based on the following Reveal.js presentation HTML, generate custom CSS styling.
 
  ## Slide Content:
  ${TT}html
- $slideContent
+$enhancedSlideContent
 $TT
 
 ## Requirements:
@@ -297,7 +315,9 @@ ${TT}css
 $TT
         """.trimIndent()
 
-        newTask.header("Step 2: Generating Custom CSS", level = 3)
+        val stylingTask = tabs.newTask("Styling")
+        stylingTask.header("Generating Custom CSS", level = 3)
+        val chatAgent = ChatAgent(prompt = cssPrompt, model = api)
 
         val cssCode = extractCodeFromResponse(chatAgent.answer(toInput(cssPrompt)), "css")
 
@@ -306,21 +326,24 @@ $TT
             return
         }
 
-        newTask.header("Step 3: Generating Presentation JavaScript", level = 3)
+        stylingTask.complete()
+
+        overviewTask.header("Step 3: Finalizing Files", level = 3)
         filesToWrite.add(htmlFile to htmlStructure)
         filesToWrite.add("presentation.css" to (standardCss + "\n\n" + cssCode))
-        // Generate transcript
-        val transcriptStream = task.transcript("${presentationTitle.replace(Regex("[^a-zA-Z0-9]"), "_")}_presentation")
+        val transcriptStream = task.transcript("${presentationTitle.replace(Regex("[^a-zA-Z0-9]"), "_")}")
         transcriptStream?.close()
 
 
         // Display preview
-        newTask.header("Generated Files Preview", level = 3)
+        val filesTask = tabs.newTask("Files")
+        filesTask.header("Generated Files Preview", level = 3)
         filesToWrite.forEach { (filename, content) ->
-            newTask.header(filename, level = 4)
+            filesTask.header(filename, level = 4)
             val codeBlock = "$TT${getFileExtension(filename)}\n$content\n$TT"
-            newTask.expandable("View Content", MarkdownUtil.renderMarkdown(codeBlock, ui = ui))
+            filesTask.expandable("View Content", MarkdownUtil.renderMarkdown(codeBlock, ui = ui))
         }
+        filesTask.complete()
 
         try {
             val outputPath = root.resolve(htmlFile)
@@ -335,15 +358,15 @@ $TT
                 path.toFile().parentFile?.mkdirs()
                 path.toFile().writeText(content)
                 writtenFiles.add(filename)
-                newTask.add("""<a href="${task.linkTo(filename)}">${filename}</a> created""")
+                overviewTask.add("""<a href="${task.linkTo(filename)}">${filename}</a> created""")
             }
 
             val summary = "Successfully wrote ${writtenFiles.joinToString(", ")}"
-            newTask.complete(summary)
+            overviewTask.complete(summary)
             resultFn(summary)
         } catch (e: Exception) {
             log.error("Error writing presentation files", e)
-            newTask.error(e)
+            overviewTask.error(e)
             resultFn("ERROR: ${e.message}")
         }
     }
@@ -378,27 +401,23 @@ $TT
     }
 
     private fun generateSlideImages(
-        slideContent: String,
+        structure: PresentationStructure,
         task: SessionTask,
         orchestrationConfig: OrchestrationConfig,
-        newTask: SessionTask
+        imageTask: SessionTask
     ): Map<Int, String> {
         val imageMap = mutableMapOf<Int, String>()
         try {
-            // Extract slides and identify key ones for image generation
-            val sectionRegex = "<section[^>]*>(.*?)</section>".toRegex(RegexOption.DOT_MATCHES_ALL)
-            val sections = sectionRegex.findAll(slideContent).toList()
+            val slides = structure.slides
             val maxImages = executionConfig?.max_images?.coerceIn(1, 10) ?: 3
-            val slideIndices = selectSlidesForImages(sections.size, maxImages)
-            newTask.add("Generating images for ${slideIndices.size} slides (indices: ${slideIndices.joinToString(", ")})")
+            val slideIndices = selectSlidesForImages(slides.size, maxImages)
+            imageTask.add("Generating images for ${slideIndices.size} slides (indices: ${slideIndices.joinToString(", ")})")
             slideIndices.forEachIndexed { idx, slideIndex ->
-                if (slideIndex >= sections.size) return@forEachIndexed
-                val section = sections[slideIndex]
-                val sectionContent = section.groupValues[1]
-                // Extract heading and content for image prompt
-                val headingRegex = "<h[1-6][^>]*>(.*?)</h[1-6]>".toRegex(RegexOption.DOT_MATCHES_ALL)
-                val heading = headingRegex.find(sectionContent)?.groupValues?.get(1)
-                    ?.replace(Regex("<[^>]+>"), "")?.trim() ?: "Slide ${slideIndex + 1}"
+                if (slideIndex >= slides.size) return@forEachIndexed
+                val slide = slides[slideIndex]
+                val sectionContent = slide.html_content
+                val heading = slide.title
+                
                 // Extract text content (remove HTML tags)
                 val textContent = sectionContent
                     .replace(Regex("<aside[^>]*>.*?</aside>", RegexOption.DOT_MATCHES_ALL), "")
@@ -408,7 +427,7 @@ $TT
                     .take(200)
                 val imageFilename = "slide_${slideIndex + 1}_image.png"
                 try {
-                    newTask.add("Generating image ${idx + 1}/${slideIndices.size}: <b>$heading</b>")
+                    imageTask.add("Generating image ${idx + 1}/${slideIndices.size}: <b>$heading</b>")
                     val imageAgent = ImageProcessingAgent(
                         prompt = "Create a professional, visually appealing image for a presentation slide",
                         model = orchestrationConfig.defaultImage,
@@ -417,6 +436,7 @@ $TT
                     val imagePrompt = """
 Create a professional presentation slide image for:
 Title: $heading
+Context: ${slide.image_prompt ?: ""}
 Content: $textContent
 Style: Clean, modern, professional presentation aesthetic
           """.trimIndent()
@@ -426,12 +446,12 @@ Style: Clean, modern, professional presentation aesthetic
                     val imageFile = task.resolveUserFile(imageFilename)!!
                     ImageIO.write(image, "png", imageFile)
                     imageMap[slideIndex] = imageFilename
-                    newTask.image(image!!)
-                    newTask.add("✅ Generated image for slide ${slideIndex + 1}: <a href='${task.linkTo(imageFilename)}' target='_blank'>$imageFilename</a>")
+                    imageTask.image(image!!)
+                    imageTask.add("✅ Generated image for slide ${slideIndex + 1}: <a href='${task.linkTo(imageFilename)}' target='_blank'>$imageFilename</a>")
                     log.debug("Generated image for slide ${slideIndex + 1}: $imageFilename")
                 } catch (e: Exception) {
                     log.error("Failed to generate image for slide ${slideIndex + 1}", e)
-                    newTask.add(
+                    imageTask.add(
                         "⚠️ Failed to generate image for slide ${slideIndex + 1}: ${e.message}",
                         additionalClasses = "text-danger"
                     )
@@ -439,7 +459,7 @@ Style: Clean, modern, professional presentation aesthetic
             }
         } catch (e: Exception) {
             log.error("Error during image generation", e)
-            newTask.add("⚠️ Image generation encountered errors: ${e.message}", additionalClasses = "text-danger")
+            imageTask.add("⚠️ Image generation encountered errors: ${e.message}", additionalClasses = "text-danger")
         }
         return imageMap
     }
@@ -461,44 +481,31 @@ Style: Clean, modern, professional presentation aesthetic
         return indices.sorted()
     }
 
-    private fun injectImagesIntoSlides(slideContent: String, imageMap: Map<Int, String>): String {
-        val sectionRegex = "<section[^>]*>(.*?)</section>".toRegex(RegexOption.DOT_MATCHES_ALL)
-        val sections = sectionRegex.findAll(slideContent).toList()
+    private fun buildSlideHtml(structure: PresentationStructure, imageMap: Map<Int, String>): String {
         val result = StringBuilder()
-        sections.forEachIndexed { index, section ->
-            val sectionContent = section.groupValues[1]
+        structure.slides.forEachIndexed { index, slide ->
+            result.append("<section>\n")
+            result.append("    <h1>${slide.title}</h1>\n")
+            
             if (imageMap.containsKey(index)) {
                 val imageFilename = imageMap[index]!!
-                // Find the position to insert the image (after the heading, before content)
-                val headingRegex = "(<h[1-6][^>]*>.*?</h[1-6]>)".toRegex(RegexOption.DOT_MATCHES_ALL)
-                val headingMatch = headingRegex.find(sectionContent)
-                val enhancedContent = if (headingMatch != null) {
-                    val heading = headingMatch.value
-                    val afterHeading = sectionContent.substring(headingMatch.range.last + 1)
-                    val imageHtml = """
+                result.append("""
         <div class="slide-image">
             <img src="$imageFilename" alt="Slide visual" style="max-width: 80%; max-height: 400px; margin: 20px auto; display: block; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         </div>
-""".trimIndent()
-                    heading + "\n" + imageHtml + afterHeading
-                } else {
-                    // No heading found, prepend image
-                    val imageHtml = """
-        <div class="slide-image">
-            <img src="$imageFilename" alt="Slide visual" style="max-width: 80%; max-height: 400px; margin: 20px auto; display: block; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        </div>
-""".trimIndent()
-                    imageHtml + "\n" + sectionContent
-                }
-                result.append("<section>")
-                result.append(enhancedContent)
-                result.append("</section>\n\n")
-            } else {
-                result.append(section.value)
-                result.append("\n\n")
+""".trimIndent()).append("\n")
             }
+            
+            result.append(slide.html_content).append("\n")
+            
+            if (slide.speaker_notes.isNotBlank()) {
+                result.append("    <aside class=\"notes\">\n")
+                result.append("        ${slide.speaker_notes}\n")
+                result.append("    </aside>\n")
+            }
+            result.append("</section>\n\n")
         }
-        return result.toString().trim()
+        return result.toString()
     }
 
 

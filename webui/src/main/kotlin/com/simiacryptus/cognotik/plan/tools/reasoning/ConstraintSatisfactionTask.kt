@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.Logger
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
@@ -86,20 +87,12 @@ class ConstraintSatisfactionTask(
     override fun promptSegment(): String {
         return """
  ConstraintSatisfaction - Solve problems with multiple competing constraints
-  ** Optionally, list input files (supports glob patterns) to be examined when solving the problem
-  ** Specify the problem description clearly
-  ** Define hard constraints that MUST be satisfied (non-negotiable requirements)
-  ** Define soft constraints with weights (0.0-1.0) representing their relative importance
-  ** Choose a search strategy:
-     - 'backtracking': Systematic search with backtracking (thorough but slower)
-     - 'forward': Greedy forward search (faster but may miss optimal solutions)
-     - 'local': Local search/hill-climbing (good for optimization problems)
-  ** Set max_iterations to control search depth vs. time tradeoff
-  ** Use cases include:
-     - Architectural decisions balancing performance, maintainability, and cost
-     - Resource allocation with competing priorities
-     - Configuration optimization with multiple objectives
-     - Design trade-off analysis
+  ** problem_description: The problem requiring constraint satisfaction
+  ** input_files: List of files or glob patterns to use as input
+  ** hard_constraints: List of constraints that must be satisfied
+  ** soft_constraints: Map of constraints to optimize with weights (0.0-1.0)
+  ** search_strategy: 'backtracking', 'forward', or 'local'
+  ** max_iterations: Maximum search iterations
         """.trimIndent()
     }
 
@@ -298,7 +291,9 @@ class ConstraintSatisfactionTask(
                     MarkdownUtil.renderMarkdown(
                         acceptButtonFooter(task.ui) {
                             try {
-                                val (link, _) = task.createFile("constraint_solution_transcript.md")
+                                val (link, _) = task.createFile(
+                                  "constraint_solution_transcript.md"
+                                )
                                 val summaryMessage = "Constraint satisfaction solution accepted. " +
                                         "View detailed transcript: <a href='$link' target='_blank'>markdown</a> " +
                                         "<a href='${link.removeSuffix(".md")}.html' target='_blank'>html</a> " +
@@ -452,6 +447,18 @@ Provide your solution in the following structure:
 Generate the constraint satisfaction solution now:
         """.trimIndent()
     }
+    override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+        val acceptLink = ui.hrefLink("Accept and Save Solution") {
+            fn()
+        }
+        return """
+        |
+        |---
+        |
+        |$acceptLink
+        """.trimMargin()
+    }
+
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ConstraintSatisfactionTask::class.java)

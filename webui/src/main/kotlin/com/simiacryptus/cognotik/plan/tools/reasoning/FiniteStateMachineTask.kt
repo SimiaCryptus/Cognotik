@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
 import com.simiacryptus.cognotik.input.getDocumentReader
 import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
@@ -100,7 +101,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             log.error(errorMsg)
             writeToTranscript("## Error\n\n$errorMsg\n\n")
             closeTranscript()
-            task.complete(errorMsg)
+            task.safeComplete(errorMsg, log)
             resultFn(errorMsg)
             return
         }
@@ -110,7 +111,7 @@ FiniteStateMachine - Model concepts using finite state machine analysis
             log.error("No default chatter available")
             writeToTranscript("## Error\n\nNo API available\n\n")
             closeTranscript()
-            task.complete("ERROR: No API available")
+            task.safeComplete("ERROR: No API available", log)
             resultFn("ERROR: No API available")
             return
         }
@@ -644,10 +645,10 @@ Keep the summary concise but informative.
                 mmdLink = l
             }
 
-            task.complete(
+            task.safeComplete(
                 "FSM analysis completed for: $conceptToModel. " +
                         "Full analysis written to <a href='$link' target='_blank'>$link</a> " +
-                        (if (mmdLink.isNotEmpty()) " <a href='$mmdLink' target='_blank'>Mermaid Diagram</a>" else "")
+                        (if (mmdLink.isNotEmpty()) " <a href='$mmdLink' target='_blank'>Mermaid Diagram</a>" else ""), log
             )
             resultFn(conciseResult)
 
@@ -660,7 +661,7 @@ Keep the summary concise but informative.
             writeToTranscript("```\n${e.stackTraceToString()}\n```\n\n")
             closeTranscript()
             task.error(e)
-            task.complete("Analysis failed: ${e.message}")
+            task.safeComplete("Analysis failed: ${e.message}", log)
             resultFn("ERROR: FSM analysis failed - ${e.message}")
         }
     }

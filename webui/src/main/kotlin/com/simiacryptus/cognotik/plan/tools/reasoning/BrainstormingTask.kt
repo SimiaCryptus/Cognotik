@@ -176,10 +176,9 @@ Brainstorming - Generate and analyze multiple solution options
 
             // Overview tab
             val overviewTask = tabs.newTask("Overview")
+            overviewTask.header("Brainstorming: $problemStatement")
 
             val overviewContent = buildString {
-                appendLine("# Brainstorming Session")
-                appendLine()
                 appendLine("**Problem Statement:** $problemStatement")
                 appendLine()
                 appendLine("**Target Options:** $targetCount")
@@ -208,12 +207,11 @@ Brainstorming - Generate and analyze multiple solution options
                 appendLine()
                 appendLine("---")
                 appendLine()
-                appendLine("## Progress")
-                appendLine()
-                appendLine("*Generating options...*")
             }
             overviewTask.add(MarkdownUtil.renderMarkdown(overviewContent, ui = ui))
+            val progressStatus = overviewTask.add(MarkdownUtil.renderMarkdown("🔄 *Generating options...*", ui = ui))
             task.update()
+
             // Get input file content
             val inputFileContent = getInputFileCode()
             if (inputFileContent.isNotBlank()) {
@@ -315,16 +313,8 @@ Brainstorming - Generate and analyze multiple solution options
             task.update()
 
             // Update overview
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
-          |
-          |✅ Generated ${options.size} options
-          |
-          |*Analyzing each option...*
-          """.trimMargin(), ui = ui
-                )
-            )
+            progressStatus?.setLength(0)
+            progressStatus?.append(MarkdownUtil.renderMarkdown("✅ Generated ${options.size} options\n\n🔄 *Analyzing each option...*", ui = ui))
             task.update()
 
             // Step 2: Analyze each option independently
@@ -422,14 +412,8 @@ Brainstorming - Generate and analyze multiple solution options
                 task.update()
 
                 // Update overview
-                overviewTask.add(
-                    MarkdownUtil.renderMarkdown(
-                        """
-            |
-            |✅ Analyzed option $optionNumber: ${option.title}
-            """.trimMargin(), ui = ui
-                    )
-                )
+                progressStatus?.setLength(0)
+                progressStatus?.append(MarkdownUtil.renderMarkdown("✅ Generated ${options.size} options\n✅ Analyzed $optionNumber/${options.size} options\n\n🔄 *Analyzing next option...*", ui = ui))
                 task.update()
             }
 
@@ -442,6 +426,8 @@ Brainstorming - Generate and analyze multiple solution options
                     ui = ui
                 )
             )
+            progressStatus?.setLength(0)
+            progressStatus?.append(MarkdownUtil.renderMarkdown("✅ Generated ${options.size} options\n✅ Analyzed all ${options.size} options\n\n🔄 *Synthesizing findings...*", ui = ui))
             task.update()
 
             val summaryPrompt = buildSummaryPrompt(
@@ -549,24 +535,16 @@ Brainstorming - Generate and analyze multiple solution options
             log.info("BrainstormingTask completed: total_time=${totalTime}ms, options=${options.size}, output_size=${finalOutput.length} chars")
 
             // Update overview with completion
-            overviewTask.add(
-                MarkdownUtil.renderMarkdown(
-                    """
-          |
-          |---
-          |
-          |## ✅ Brainstorming Complete
-          |
-          |**Total Time:** ${totalTime / 1000.0}s
-          |
-          |**Options Generated:** ${options.size}
-          |
-          |**Options Analyzed:** ${analyses.size}
-          |
-          |**Completed:** ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}
-          """.trimMargin(), ui = ui
-                )
-            )
+            progressStatus?.setLength(0)
+            progressStatus?.append(MarkdownUtil.renderMarkdown("""
+                |---
+                |## ✅ Brainstorming Complete
+                |
+                |${summary.truncateForDisplay(1000)}
+                |
+                |**Total Time:** ${totalTime / 1000.0}s | **Options:** ${options.size}
+            """.trimMargin(), ui = ui))
+            overviewTask.complete()
             task.update()
 
             task.safeComplete("Generated and analyzed ${options.size} options in ${totalTime / 1000}s", log)

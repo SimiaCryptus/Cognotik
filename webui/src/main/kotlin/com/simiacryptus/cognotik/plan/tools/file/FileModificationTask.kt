@@ -82,6 +82,7 @@ FileModification - Modify existing files or create new files
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
         val transcript = task.transcript()
+        val tabs = TabbedDisplay(task)
 
         try {
             transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
@@ -107,23 +108,29 @@ FileModification - Modify existing files or create new files
                 val fileContext = getInputFileWithDiff()
                 val taskDesc = executionConfig?.task_description ?: ""
 
-                // 2. Log Context to Transcript (Best Practice: Use <details>)
+                // 2. Log Context to Transcript & UI Tabs
                 transcript?.write("""
 ## Context Data
 <details>
 <summary>Input Files & Dependencies</summary>
 
 ### Dependencies
-$dependencyContext
+${dependencyContext.ifBlank { "None" }}
 
 ### File Context
-$fileContext
+${fileContext.ifBlank { "None" }}
 
 ### Task Description
 $taskDesc
 </details>
 
                 """.toByteArray())
+                val contextTab = tabs.newTask("Context")
+                contextTab.add("""
+                    # Task Context
+                    ${taskDesc.renderMarkdown()}
+                """.trimIndent().renderMarkdown())
+                contextTab.complete()
 
                 val chatAgent = ChatAgent(
                     name = "FileModification",
@@ -132,7 +139,8 @@ $taskDesc
                     temperature = this.orchestrationConfig.temperature,
                 )
 
-                task.add("Generating modifications...".renderMarkdown())
+                val mainTask = tabs.newTask("Proposed Changes")
+                mainTask.add("Generating modifications...".renderMarkdown())
 
                 // 3. Execute AI
                 val codeResult = chatAgent.answer(
@@ -157,7 +165,7 @@ $codeResult
                 val autoFix = orchestrationConfig.autoFix
 
                 // 5. Render and Instrument
-                val markdown = renderMarkdown(codeResult, ui = task.ui) {
+                val markdown = renderMarkdown(codeResult, ui = mainTask.ui) {
                     AddApplyFileDiffLinks.instrumentFileDiffs(
                         task.ui,
                         root = agent.root,
@@ -179,12 +187,12 @@ $codeResult
 
                 if (autoFix) {
                     transcript?.write("\n**Auto-applying changes...**\n".toByteArray())
-                    task.complete(markdown)
+                    mainTask.complete(markdown)
                     semaphore.release()
                 } else {
-                    task.add(markdown)
+                    mainTask.add(markdown)
                     // Best Practice: Use acceptButtonFooter for manual review
-                    task.complete(acceptButtonFooter(task.ui) {
+                    mainTask.complete(acceptButtonFooter(mainTask.ui) {
                         task.complete()
                         semaphore.release()
                     })

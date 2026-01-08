@@ -168,25 +168,13 @@ class GeneticOptimizationTask(
     override fun promptSegment(): String {
         return """
 GeneticOptimization - Iteratively evolve and perfect text through genetic algorithms
-  ** Specify the FULL text(s) items to optimize
-  ** Define the optimization goal (e.g., clarity, persuasiveness, technical accuracy)
-  ** Configure number of generations (default: 5)
-  ** Set population size and selection size
-  ** Choose mutation strategies (rephrase, simplify, elaborate, restructure)
-  ** Enable/disable crossover for combining traits
-  ** Define evaluation criteria and weights
-  ** The task will:
-     - Generate variations using mutation strategies
-     - Evaluate each variant against optimization criteria
-     - Select top performers for next generation
-     - Apply crossover to combine successful traits
-     - Track evolution across generations
-     - Provide detailed fitness analysis
-  ** Useful for:
-     - Perfecting prompts and instructions
-     - Refining marketing copy
-     - Optimizing technical documentation
-     - Improving clarity and impact of messaging
+  - Specify the FULL text(s) items to optimize
+  - Define the optimization goal (e.g., clarity, persuasiveness)
+  - Configure number of generations (default: 5)
+  - Set population size and selection size
+  - Choose mutation strategies (rephrase, simplify, elaborate, restructure)
+  - Enable/disable crossover for combining traits
+  - Define evaluation criteria and weights
         """.trimIndent()
     }
 

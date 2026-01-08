@@ -259,7 +259,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting ReportGenerationTask for topic: '${executionConfig?.report_topic}'")
-        val markdownTranscript = task.transcript()
+        val (_, markdownTranscript) = initializeTranscript(task, "ReportGen")
         // Read input from messages parameter
         val messageContext = messages.filter { it.isNotBlank() }.joinToString("\n\n")
         log.debug("Received ${messages.size} messages with total length: ${messageContext.length}")
@@ -288,7 +288,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
 
         val api = defaultSmart ?: return
 
-        val tabs = TabbedDisplay(task)
+        val tabs = createTabbedDisplay(task)
 
         // Overview tab
         val overviewTask = tabs.newTask("Overview")
@@ -323,7 +323,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
             appendLine("### Phase 1: Data Analysis")
             appendLine("*Analyzing metrics and data points...*")
         }
-        markdownTranscript?.write(overviewContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+        writeToTranscript(markdownTranscript, overviewContent)
         overviewTask.add(overviewContent.renderMarkdown)
         task.update()
 
@@ -357,7 +357,7 @@ ReportGeneration - Generate comprehensive business reports with data analysis an
                     if (priorContext.isNotBlank()) appendLine("## Prior Context\n${priorContext.truncateForDisplay(2000)}\n")
                     if (contextFiles.isNotBlank()) appendLine("## Related Files\n${contextFiles.truncateForDisplay(2000)}")
                 }
-                markdownTranscript?.write(contextContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                writeToTranscript(markdownTranscript, contextContent)
 
                 task.update()
             }
@@ -458,7 +458,7 @@ Be specific with numbers and percentages where available.
                 }
                 appendLine("**Status:** ✅ Complete")
             }
-            markdownTranscript?.write(dataAnalysisContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            writeToTranscript(markdownTranscript, dataAnalysisContent)
             dataAnalysisTask.add(dataAnalysisContent.renderMarkdown)
             dataAnalysisTask.complete()
             task.update()
@@ -576,7 +576,7 @@ Structure should be appropriate for ${executionConfig.target_audience} with a ${
                 }
                 appendLine("**Status:** ✅ Complete")
             }
-            markdownTranscript?.write(outlineContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            writeToTranscript(markdownTranscript, outlineContent)
             outlineTask.add(outlineContent.renderMarkdown)
             outlineTask.complete()
             task.update()
@@ -705,7 +705,7 @@ Be specific, data-driven, and actionable.
                         appendLine("**Status:** ✅ Complete")
                     }.renderMarkdown
                 )
-                markdownTranscript?.write(sectionTask.toString().toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                writeToTranscript(markdownTranscript, sectionTask.toString())
                 sectionTask.complete()
                 task.update()
 
@@ -819,7 +819,7 @@ Tailor recommendations to ${executionConfig.target_audience}.
                     appendLine("**Status:** ✅ Complete")
                 }
                 recommendationsTask.add(recommendationsContent.renderMarkdown)
-                markdownTranscript?.write(recommendationsContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                writeToTranscript(markdownTranscript, recommendationsContent)
                 recommendationsTask.complete()
                 task.update()
 
@@ -927,7 +927,7 @@ Be realistic and specific. Focus on risks that ${executionConfig.target_audience
                     appendLine("**Status:** ✅ Complete")
                 }
                 riskTask.add(riskContent.renderMarkdown)
-                markdownTranscript?.write(riskContent.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                writeToTranscript(markdownTranscript, riskContent)
                 riskTask.complete()
                 task.update()
 
@@ -1004,7 +1004,7 @@ Provide the complete revised report.
                             appendLine()
                         }.renderMarkdown
                     )
-                    markdownTranscript?.write("## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+                    writeToTranscript(markdownTranscript, "## Revision Pass ${passNum + 1}\n\n✅ Complete\n\n")
                     task.update()
                 }
                 revisionTask.complete()
@@ -1064,7 +1064,7 @@ Provide the complete revised report.
             val reportUrl = task.saveFile("reports/$reportFileName", finalReport.toByteArray())
             finalTask.add("<div class='mt-3'><a href='$reportUrl' class='btn btn-primary' target='_blank'>Download Report (Markdown)</a></div>")
             finalTask.complete()
-            markdownTranscript?.write(finalReport.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            writeToTranscript(markdownTranscript, finalReport)
             task.update()
 
             // Final statistics
@@ -1089,14 +1089,14 @@ Provide the complete revised report.
                     appendLine("- Revision Passes: ${executionConfig.revision_passes}")
                     appendLine("- Total Time: ${totalTime / 1000.0}s")
                     appendLine()
-                    appendLine(
+                    appendLine( 
                         "**Completed:** ${
                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         }"
                     )
                 }.renderMarkdown
             )
-            markdownTranscript?.write(overviewTask.toString().toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            writeToTranscript(markdownTranscript, overviewTask.toString())
             overviewTask.complete()
             task.update()
 
@@ -1127,7 +1127,7 @@ Provide the complete revised report.
             }
 
             log.info("ReportGenerationTask completed: words=$cumulativeWordCount, sections=${generatedSections.size}, time=${totalTime}ms")
-            markdownTranscript?.write("\n\n---\n\n# Final Result\n\n${finalResult}".toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            writeToTranscript(markdownTranscript, "\n\n---\n\n# Final Result\n\n${finalResult}")
             markdownTranscript?.close()
 
             task.safeComplete("Report generation complete: $cumulativeWordCount words in ${totalTime / 1000}s", log)
@@ -1149,11 +1149,7 @@ Provide the complete revised report.
                     appendLine("**Type:** ${e.javaClass.simpleName}")
                 }.renderMarkdown
             )
-            markdownTranscript?.write(
-                "\n\n---\n\n# Error\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray(
-                    java.nio.charset.StandardCharsets.UTF_8
-                )
-            )
+            writeToTranscript(markdownTranscript, "\n\n---\n\n# Error\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n")
             task.update()
 
             val errorOutput = buildString {

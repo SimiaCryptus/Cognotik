@@ -608,17 +608,6 @@ class CrawlerAgentTask(
         }
     }
 
-    private fun writeToTranscript(stream: FileOutputStream, content: String) {
-        try {
-            stream.write(content.toByteArray(StandardCharsets.UTF_8))
-            stream.flush()
-        } catch (e: Exception) {
-            if (e !is java.io.IOException || e.message?.contains("closed") != true) {
-                log.error("Failed to write to transcript", e)
-            }
-        }
-    }
-
     private fun writeTranscriptFooter(stream: FileOutputStream, totalTime: Long, processedCount: Int, errorCount: Int) {
         try {
             val footer = buildString {

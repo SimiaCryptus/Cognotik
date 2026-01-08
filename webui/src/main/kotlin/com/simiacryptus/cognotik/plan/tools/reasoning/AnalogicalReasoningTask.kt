@@ -681,15 +681,6 @@ Provide a brief validation assessment.
         }
     }
 
-    private fun writeToTranscript(stream: FileOutputStream, content: String) {
-        try {
-            stream.write(content.toByteArray(StandardCharsets.UTF_8))
-            stream.flush()
-        } catch (e: Exception) {
-            log.error("Failed to write to transcript", e)
-        }
-    }
-
     private fun writeTranscriptFooter(stream: FileOutputStream, totalTime: Long, analogyCount: Int) {
         try {
             val footer = buildString {

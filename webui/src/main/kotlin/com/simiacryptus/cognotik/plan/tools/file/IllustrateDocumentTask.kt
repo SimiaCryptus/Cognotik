@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.plan.*
 import com.simiacryptus.cognotik.plan.tools.safeComplete
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
+import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
@@ -90,19 +91,13 @@ class IllustrateDocumentTask(
     override fun promptSegment(): String {
         return """
 IllustrateDocument - Analyze a document and generate images to enhance its content
-* Specify a markdown or HTML file to illustrate
-* Configure maximum number of images (default: 5)
-* Choose image format (png/jpg)
-* Enable/disable automatic insertion of image references
-* Analyzes document structure and content
-* Generates contextually appropriate images
-* Saves images with descriptive names in the same folder
-* Optionally inserts image references at appropriate locations
-* Useful for:
-    * Enhancing documentation
-    * Creating visual guides
-    * Illustrating blog posts
-    * Adding diagrams to technical content
+  - Specify a markdown or HTML file to illustrate
+  - Configure maximum number of images (default: 5)
+  - Choose image format (png/jpg)
+  - Analyzes document structure and content
+  - Generates contextually appropriate images
+  - Saves images with descriptive names in the same folder
+  - Optionally inserts image references at appropriate locations
 """.trimIndent()
     }
 
@@ -141,35 +136,38 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
 
         val ui = task.ui
         val transcript = task.transcript()
+        val tabs = TabbedDisplay(task)
 
         try {
 // Read document content
             val documentContent = documentPath.toFile().readText()
             val isMarkdown = documentFile.endsWith(".md", ignoreCase = true)
 
-            task.header("Illustrating Document: $documentFile", level = 2)
-            task.add("<b>Format:</b> ${if (isMarkdown) "Markdown" else "HTML"}")
-            task.add("<b>Max Images:</b> $maxImages")
-            task.add("<b>Image Format:</b> $imageFormat")
+            val overviewTask = tabs.newTask("Overview")
+            overviewTask.header("Illustrating Document: $documentFile", level = 2)
+            overviewTask.add("<b>Format:</b> ${if (isMarkdown) "Markdown" else "HTML"}")
+            overviewTask.add("<b>Max Images:</b> $maxImages")
+            overviewTask.add("<b>Image Format:</b> $imageFormat")
             if (!executionConfig.composerDirective.isNullOrBlank()) {
-                task.add("<b>Composer Directive:</b> ${executionConfig.composerDirective}")
+                overviewTask.add("<b>Composer Directive:</b> ${executionConfig.composerDirective}")
             }
             if (!executionConfig.integratorDirective.isNullOrBlank()) {
-                task.add("<b>Integrator Directive:</b> ${executionConfig.integratorDirective}")
+                overviewTask.add("<b>Integrator Directive:</b> ${executionConfig.integratorDirective}")
             }
 
 // Step 1: Analyze document and suggest images
             log.info("Analyzing document to suggest images")
-            task.header("🔍 Analyzing Document", level = 3)
-            task.add("Identifying sections that would benefit from visual enhancement...")
+            val analysisTask = tabs.newTask("Analysis")
+            analysisTask.header("🔍 Analyzing Document", level = 3)
+            analysisTask.add("Identifying sections that would benefit from visual enhancement...")
 
             val analysisPrompt = buildAnalysisPrompt(
                 documentContent, maxImages, isMarkdown, executionConfig.composerDirective
             )
 
             val api = defaultSmart ?: return
-            val parsingChatter = defaultFast.getChildClient(task)
-            val defaultChatter = api.getChildClient(task)
+            val parsingChatter = defaultFast.getChildClient(analysisTask)
+            val defaultChatter = api.getChildClient(analysisTask)
 
             val analysisAgent = ParsedAgent(
                 resultClass = DocumentAnalysis::class.java,
@@ -183,12 +181,12 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
             val suggestions = analysis.obj.suggestions.take(maxImages)
 
             log.info("Generated ${suggestions.size} image suggestions")
-            task.add("✅ Identified ${suggestions.size} opportunities for images")
+            analysisTask.add("✅ Identified ${suggestions.size} opportunities for images")
 
 // Display suggestions
-            task.header("📋 Planned Images", level = 3)
+            analysisTask.header("📋 Planned Images", level = 3)
             suggestions.forEachIndexed { index, suggestion ->
-                task.add(
+                analysisTask.add(
                     """
                     <b>${index + 1}. ${suggestion.imageName}</b>
                     <ul>
@@ -200,19 +198,20 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
             }
             if (!orchestrationConfig.autoFix) {
                 val semaphore = Semaphore(0)
-                task.header("✋ Approval Required", level = 3)
-                task.add("Please review the planned images above.")
-                task.add(ui.hrefLink("🚀 Proceed with Generation", "btn btn-primary") {
+                analysisTask.header("✋ Approval Required", level = 3)
+                analysisTask.add("Please review the planned images above.")
+                analysisTask.add(ui.hrefLink("🚀 Proceed with Generation", "btn btn-primary") {
                     semaphore.release()
                 })
                 semaphore.acquire()
-                task.add("✅ <b>User Approved</b>. Starting generation...")
+                analysisTask.add("✅ <b>User Approved</b>. Starting generation...")
             }
 
 
 // Step 2: Generate images
             log.info("Generating ${suggestions.size} images")
-            task.header("🎨 Generating Images", level = 3)
+            val generationTask = tabs.newTask("Generation")
+            generationTask.header("🎨 Generating Images", level = 3)
 
             val imageAgent = ImageProcessingAgent(
                 prompt = "Transform the user request into an image that enhances document content",
@@ -225,7 +224,7 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
 
             suggestions.forEachIndexed { index, suggestion ->
                 try {
-                    task.header("Generating: ${suggestion.imageName}", level = 4)
+                    generationTask.header("Generating: ${suggestion.imageName}", level = 4)
 
 // Build enhanced prompt with all supplemental instructions
                     val enhancedPrompt = buildString {
@@ -254,27 +253,28 @@ IllustrateDocument - Analyze a document and generate images to enhance its conte
                     val previewFile = task.resolveUserFile(imageFileName)
                     ImageIO.write(generatedImage, imageFormat, previewFile!!)
                     val previewLink = task.linkTo(imageFileName)
-                    task.add("""<a href="$previewLink" target="_blank"><img src="$previewLink" style="max-width: 400px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" /></a>""")
-                    task.add("✅ Saved as <code>$imageFileName</code>")
+                    generationTask.add("""<a href="$previewLink" target="_blank"><img src="$previewLink" style="max-width: 400px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" /></a>""")
+                    generationTask.add("✅ Saved as <code>$imageFileName</code>")
 
                     generatedImages.add(Triple(imageFileName, imagePath.toString(), suggestion))
 
                 } catch (e: Exception) {
                     log.error("Failed to generate image: ${suggestion.imageName}", e)
-                    task.add(
+                    generationTask.add(
                         "❌ Failed to generate: ${suggestion.imageName} - ${e.message}",
                         additionalClasses = "text-danger"
                     )
                 }
             }
-            task.header("📝 Generating Document Patches", level = 3)
-            task.complete(
+            val integrationTask = tabs.newTask("Integration")
+            integrationTask.header("📝 Generating Document Patches", level = 3)
+            integrationTask.complete(
                 generateImageInsertionPatches(
                     documentContent,
                     generatedImages,
                     isMarkdown,
                     executionConfig.integratorDirective,
-                    task,
+                    integrationTask,
                     defaultChatter,
                     documentFile
                 ) ?: ""
