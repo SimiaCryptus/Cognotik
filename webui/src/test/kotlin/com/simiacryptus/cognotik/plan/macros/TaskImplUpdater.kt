@@ -23,7 +23,7 @@ object TaskImplUpdater {
                 this.temperature = 0.0
                 taskSettings[FileModification.name] = TaskTypeConfig(
                   task_type = FileModification.name,
-                  model = GeminiModels.GeminiPro_30_Preview.asApiChatModel()
+                  //model = GeminiModels.GeminiPro_30_Preview.asApiChatModel()
                 )
             }
             override fun createWorkspace() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }

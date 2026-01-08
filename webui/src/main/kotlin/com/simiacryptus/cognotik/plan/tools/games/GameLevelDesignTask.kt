@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
-import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -24,7 +23,6 @@ class GameLevelDesignTask(
     orchestrationConfig,
     planTask
 ) {
-    protected val codeFiles = mutableMapOf<Path, String>()
 
     class GameLevelDesignTaskExecutionConfigData(
         @Description("The name of the level")
@@ -431,7 +429,7 @@ class GameLevelDesignTask(
         try {
             // Gather context
             val priorContext = getPriorCode(agent.executionState)
-            val inputContext = getInputFileCode()
+            val inputContext = getInputFileContent(executionConfig?.input_files, root)
             val combinedContext = (if (inputContext.isNotBlank()) inputContext else "") +
                     (if (priorContext.isNotBlank()) "\n\n## Prior Context\n\n$priorContext" else "")
 
@@ -1434,32 +1432,6 @@ Ensure variants maintain the core level design while adjusting challenge.
         }
     }
 
-    private fun getInputFileCode() = (executionConfig?.input_files ?: listOf())
-        .flatMap { pattern: String ->
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
-            FileSelectionUtils.filteredWalk(root.toFile()) {
-                when {
-                    FileSelectionUtils.isLLMIgnored(it.toPath()) -> false
-                    matcher.matches(root.relativize(it.toPath())) -> true
-                    it.isDirectory -> true
-                    else -> false
-                }
-            }
-        }.filter { file ->
-            file.isFile && file.exists()
-        }
-        .distinct()
-        .sortedBy { it }
-        .joinToString("\n\n") { relativePath ->
-            val file = root.toFile().resolve(relativePath)
-            try {
-                val content = codeFiles[file.toPath()] ?: file.readText()
-                "# $relativePath\n\n```\n$content\n```"
-            } catch (e: Throwable) {
-                log.warn("Error reading file: $relativePath", e)
-                ""
-            }
-        }
 
     // Additional data classes for player guidance
     data class PlayerGuidance(

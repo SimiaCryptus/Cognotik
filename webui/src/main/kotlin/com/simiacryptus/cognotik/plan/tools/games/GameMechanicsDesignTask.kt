@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import org.slf4j.Logger
+import java.io.BufferedWriter
 import java.io.FileOutputStream
 import java.nio.file.FileSystems
 import java.text.SimpleDateFormat
@@ -343,7 +344,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
     ) {
         val startTime = System.currentTimeMillis()
         log.info("Starting GameMechanicsDesignTask for concept: '${executionConfig?.game_concept}'")
-        var transcriptStream: FileOutputStream? = null
+        var transcriptWriter: BufferedWriter? = null
 
         val gameConcept = executionConfig?.game_concept
         if (gameConcept.isNullOrBlank()) {
@@ -367,7 +368,8 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
 
         val ui = task.ui
         val tabs = TabbedDisplay(task)
-        transcriptStream = initializeTranscript(task)
+        val transcriptStream = task.transcript()
+        transcriptWriter = transcriptStream?.bufferedWriter()
 
         val overviewTask = task.newTask()
         try {
@@ -412,19 +414,21 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("**Status:** 🔄 Gathering context...")
                 }.renderMarkdown
             )
-            transcriptStream?.write(
+            transcriptWriter?.write(
                 "# Game Mechanics Design\n\n**Game Concept:** $gameConcept\n\n**Started:** ${
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                }\n\n---\n\n".toByteArray()
+                }\n\n---\n\n"
             )
+            transcriptWriter?.flush()
 
             // Gather context
             log.debug("Gathering context from prior tasks and input files")
             val priorContext = getPriorCode(agent.executionState)
-            val inputFileContext = getInputFileCode()
+            val inputFileContext = getInputFileContent(executionConfig?.input_files, root)
 
             if (priorContext.isNotBlank() || inputFileContext.isNotBlank()) {
-                transcriptStream?.write("## Context\n\n$priorContext\n\n$inputFileContext\n\n---\n\n".toByteArray())
+                transcriptWriter?.write("## Context\n\n$priorContext\n\n$inputFileContext\n\n---\n\n")
+                transcriptWriter?.flush()
                 val contextTask = task.newTask()
                 tabs["Context"] = contextTask.placeholder
                 contextTask.add(
@@ -560,6 +564,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine()
                 }
             }.toByteArray())
+            transcriptWriter?.flush()
             mechanicsTask.complete()
 
             // Step 2: Analyze Mechanic Interactions
@@ -687,6 +692,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 appendLine("---")
                 appendLine()
             }.toByteArray())
+            transcriptWriter?.flush()
             interactionsTask.complete()
 
             // Step 3: Progression System (if enabled)
@@ -775,7 +781,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                         }
                     }.renderMarkdown
                 )
-                transcriptStream?.write(buildString {
+                transcriptWriter?.write(buildString {
                     appendLine("## Progression System")
                     appendLine()
                     appendLine("**Summary:** ${progression.size} levels designed")
@@ -817,7 +823,8 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     }
                     appendLine("---")
                     appendLine()
-                }.toByteArray())
+                })
+                transcriptWriter?.flush()
                 progressionTask.complete()
             }
 
@@ -900,7 +907,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                         appendLine(economy.balance_assessment)
                     }.renderMarkdown
                 )
-                transcriptStream?.write(buildString {
+                transcriptWriter?.write(buildString {
                     appendLine("## Economy System")
                     appendLine()
                     appendLine("**Summary:** ${economy.resource_types.size} resource types designed")
@@ -933,7 +940,8 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine()
                     appendLine("---")
                     appendLine()
-                }.toByteArray())
+                })
+                transcriptWriter?.flush()
                 economyTask.complete()
             }
 
@@ -1083,6 +1091,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                 appendLine("---")
                 appendLine()
             }.toByteArray())
+            transcriptWriter?.flush()
             balanceTask.complete()
 
             // Step 6: Playtesting Predictions
@@ -1161,7 +1170,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     }
                 }.renderMarkdown
             )
-            transcriptStream?.write(buildString {
+            transcriptWriter?.write(buildString {
                 appendLine("## Playtesting Predictions")
                 appendLine()
                 appendLine("**Summary:** ${playtesting.size} scenarios simulated")
@@ -1193,7 +1202,8 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("---")
                     appendLine()
                 }
-            }.toByteArray())
+            })
+            transcriptWriter?.flush()
             playtestingTask.complete()
 
             // Step 7: Tuning Guide (if enabled)
@@ -1305,6 +1315,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     appendLine("---")
                     appendLine()
                 }.toByteArray())
+                transcriptWriter?.flush()
                 tuningTask.complete()
             }
 
@@ -1370,11 +1381,12 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
                     )
                 }.renderMarkdown
             )
-            transcriptStream?.write(
+            transcriptWriter?.write(
                 "\n\n## Design Complete\n\n**Total Time:** ${duration / 1000.0}s\n\n**Completed:** ${
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                }\n".toByteArray()
+                }\n"
             )
+            transcriptWriter?.flush()
             overviewTask.complete()
 
             val relativePath = "game_mechanics_design_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
@@ -1390,7 +1402,7 @@ GameMechanicsDesign - Generate comprehensive game mechanics with balance analysi
 
         } catch (e: Exception) {
             val duration = System.currentTimeMillis() - startTime
-            transcriptStream?.write("\n\n## Error Occurred\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n".toByteArray())
+            transcriptWriter?.write("\n\n## Error Occurred\n\n**Error:** ${e.message}\n\n**Type:** ${e.javaClass.simpleName}\n")
             log.error("GameMechanicsDesignTask failed after ${duration}ms for concept: $gameConcept", e)
             task.error(e)
 
