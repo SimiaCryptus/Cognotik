@@ -142,7 +142,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         log.debug("Instrumenting file diffs for root: {}", root)
         val initiator = getInitiatorPattern()
         if (response.contains(initiator) && !response.split(initiator, 2)[1].contains("\n```(?![^\n])".toRegex())) {
-            return@instrument instrument(
+            return instrument(
                 socketManager = socketManager,
                 root = root,
                 response = response + "\n```\n",
@@ -254,7 +254,6 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
                     )
                 markdown.replace("```$lang\n$codeValue\n```", newMarkdown)
             }
-
         return withSaveLinks
     }
 

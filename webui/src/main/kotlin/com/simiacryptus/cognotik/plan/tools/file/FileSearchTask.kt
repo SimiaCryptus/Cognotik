@@ -123,12 +123,11 @@ FileSearch - Search for patterns in files and provide results with context
     )
 
     private fun performSearch(): List<DisplayBlock> {
-        val currentConfig = executionConfig
+        val currentConfig = executionConfig ?: return emptyList()
         if (currentConfig == null) {
             log.warn("FileSearchTask taskConfig is null. Cannot perform search.")
             return emptyList()
         }
-
         val pattern = if (currentConfig.is_regex) {
             Pattern.compile(currentConfig.search_pattern)
         } else {

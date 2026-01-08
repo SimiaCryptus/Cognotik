@@ -135,7 +135,7 @@ open class UnifiedPlanAction(
         root: File,
         orchestrationConfig: OrchestrationConfig
     ) {
-        DataStorage.sessionPaths[session] = root
+        DataStorage.sessionPaths[session] = DataStorage.sessionPaths[session] ?: root
         val app = object : UnifiedPlanApp(
             applicationName = "Unified Planning",
             path = "/unifiedPlan",

@@ -1,17 +1,12 @@
 package com.simiacryptus.cognotik.plan.macros
 
-import com.simiacryptus.cognotik.util.PlanHarness
+import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.cognitive.CodingMode
-import com.simiacryptus.cognotik.plan.cognitive.CodingMode.CodingModeConfig
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
-import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.cognitive.ParallelModeConfig
-import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode.WaterfallModeConfig
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
-import com.simiacryptus.cognotik.plan.tools.reasoning.BrainstormingTask
-import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.model.asApiChatModel
+import com.simiacryptus.cognotik.util.PlanHarness
 import java.io.File
 
 object TaskImplUpdater {
@@ -24,9 +19,9 @@ object TaskImplUpdater {
             workspace = File(".").absoluteFile,
         ) {
             override fun newConfig(session: Session, tempDir: File) = super.newConfig(session, tempDir).apply {
-                taskSettings[FileModificationTask.FileModification.name] = TaskTypeConfig(
-                    task_type = FileModificationTask.FileModification.name,
-                )
+                this.defaultSmartModel = GeminiModels.GeminiPro_30_Preview.asApiChatModel()
+                this.temperature = 0.0
+                taskSettings[FileModification.name] = TaskTypeConfig(FileModification.name)
             }
             override fun createWorkspace() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }
         }.run()

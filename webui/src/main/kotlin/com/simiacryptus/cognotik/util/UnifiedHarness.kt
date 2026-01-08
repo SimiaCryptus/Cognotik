@@ -118,9 +118,7 @@ open class UnifiedHarness(
             }
 
             override fun <T : Any> initSettings(session: Session): T {
-                val orchestrationConfig = config(session,
-                    getRoot(workspace, session, cognitiveSettings.type?.name ?: "plan")
-                )
+                val orchestrationConfig = config(session, getRoot(workspace, session, cognitiveSettings.type?.name ?: "plan"))
                 val settingsFile = getSettingsFile(session, defaultUser)
                 val json = orchestrationConfig.toJson()
                 settingsFile.writeText(json)

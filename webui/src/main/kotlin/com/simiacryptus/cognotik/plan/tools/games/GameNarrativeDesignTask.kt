@@ -30,6 +30,81 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.imageio.ImageIO
 
+
+/**
+* Enum representing standard game genres for UI dropdown generation.
+*/
+enum class GameGenre {
+    RPG,
+    FPS,
+    STRATEGY,
+    ADVENTURE,
+    SIMULATION,
+    PUZZLE,
+    HORROR,
+    VISUAL_NOVEL
+}
+
+/**
+* Enum representing the narrative tone.
+*/
+enum class NarrativeTone {
+    DARK,
+    HUMOROUS,
+    EPIC,
+    MYSTERIOUS,
+    WHOLESOME,
+    CYBERPUNK,
+    HIGH_FANTASY
+}
+
+/**
+* Structured input for the Narrative Design Task.
+* Follows User Interface best practices by providing typed fields.
+*/
+data class GameNarrativeDesignInput(
+    val genre: GameGenre = GameGenre.RPG,
+    val tone: NarrativeTone = NarrativeTone.EPIC,
+    val theme: String = "The hero's journey",
+    val settingDescription: String = "A sprawling fantasy world",
+    val keyCharacters: List<String> = listOf("Protagonist", "Antagonist"),
+    val plotConstraints: String? = null
+)
+
+/**
+* Structured output representing a Game Design Document (Narrative section).
+* Follows Agentic I/O best practices by returning a structured artifact.
+*/
+data class GameNarrativeDesignOutput(
+    val title: String,
+    val logline: String,
+    val worldBuilding: String,
+    val characterProfiles: List<CharacterProfile>,
+    val plotOutline: List<PlotPoint>,
+    val dialogueSamples: List<DialogueSnippet>
+)
+
+data class CharacterProfile(
+    val name: String,
+    val role: String,
+    val backstory: String,
+    val motivation: String
+)
+
+data class PlotPoint(
+    val act: String,
+    val description: String
+)
+
+data class DialogueSnippet(
+    val speakers: List<String>,
+    val content: String
+)
+
+/**
+* Task implementation for generating Game Narrative designs.
+* Aligns with task_type_best_practices.md by being atomic and schema-driven.
+*/
 class GameNarrativeDesignTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: GameNarrativeDesignConfigData?

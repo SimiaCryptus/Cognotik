@@ -38,7 +38,7 @@ open class PlanHarness(
     val openBrowser: Boolean = false,
     val timeoutMinutes: Long = 30,
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-    val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
+    var smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
     val workspace: File? = null,
 ) {
@@ -80,7 +80,7 @@ open class PlanHarness(
         finalWorkspace: File
     ): OrchestrationConfig = OrchestrationConfig(
         sessionId = session.sessionId,
-        workingDir = finalWorkspace.absolutePath,
+        workingDir = workspace?.absolutePath ?: finalWorkspace.absolutePath,
         defaultFastModel = fastModel.asApiChatModel(),
         defaultSmartModel = smartModel.asApiChatModel(),
         defaultImageModel = imageModel.asApiChatModel(),
