@@ -269,6 +269,8 @@ open class CodingTask<T : CodeRuntime>(
         transcript?.write(
             """
             # Execution Result
+            <details><summary>Output & Value</summary>
+            
             ## Output
             ```text
             $resultOutput
@@ -277,6 +279,7 @@ open class CodingTask<T : CodeRuntime>(
             ```text
             $resultValue
             ```
+            </details>
             """.trimIndent().toByteArray()
         )
         val tabs = TabbedDisplay(task)

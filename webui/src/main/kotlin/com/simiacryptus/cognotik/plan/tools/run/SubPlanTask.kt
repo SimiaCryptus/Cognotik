@@ -21,8 +21,21 @@ class SubPlanTask(
 
     class SubPlanTaskTypeConfig(
         @Description("Cognitive strategy to use for sub-planning (overrides default)") var cognitiveSettings: CognitiveModeConfig? = null,
-        @Description("Task-specific configurations available within sub-plans") val taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
-        @Description("Supplemental description of the purpose of this configuration") val purpose: String = "",
+        @Description("Task-specific configurations available within sub-plans") var taskSettings: MutableMap<String, TaskTypeConfig> = mutableMapOf(),
+        @Description("Supplemental description of the purpose of this configuration") var purpose: String = "",
+        @Description("Prompt template for summarizing sub-plan results") var summaryPrompt: String = """
+               Create a comprehensive summary of the sub-planning results below.
+               
+               Original Goal: {goal}
+               
+               The summary should:
+               - Highlight key findings and accomplishments
+               - Identify any issues or blockers encountered
+               - Provide actionable next steps if applicable
+               - Be concise but complete
+               
+               Use markdown formatting with headers and bullet points.
+           """.trimIndent(),
         model: ApiChatModel? = null,
         name: String? = SubPlan.name,
     ) : TaskTypeConfig(task_type = SubPlan.name, name = name, model = model), ValidatedObject {
@@ -39,8 +52,8 @@ class SubPlanTask(
     }
 
     class SubPlanTaskExecutionConfigData(
-        @Description("The goal or objective for the sub-planning task") val planning_goal: String? = null,
-        @Description("Context information to provide to the sub-planner") val context: List<String>? = null,
+        @Description("The goal or objective for the sub-planning task") var planning_goal: String? = null,
+        @Description("Context information to provide to the sub-planner") var context: List<String>? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null,
@@ -152,7 +165,7 @@ class SubPlanTask(
                 }
                 if (!executionConfig?.context.isNullOrEmpty()) {
                     appendLine("**Context:**")
-                    executionConfig.context.forEach { ctx ->
+                    executionConfig.context?.forEach { ctx ->
                         appendLine("- $ctx")
                     }
                     appendLine()
@@ -298,19 +311,10 @@ class SubPlanTask(
             ?: defaultSmart).getChildClient(task)
 
         val summaryAgent = ChatAgent(
-            prompt = """
-               Create a comprehensive summary of the sub-planning results below.
                
-               Original Goal: $goal
                
-               The summary should:
-               - Highlight key findings and accomplishments
-               - Identify any issues or blockers encountered
-               - Provide actionable next steps if applicable
-               - Be concise but complete
                
-               Use markdown formatting with headers and bullet points.
-           """.trimIndent(), model = model
+            prompt = typeConfig.summaryPrompt.replace("{goal}", goal), model = model
         )
 
         val summary = summaryAgent.answer(listOf(combinedResults))

@@ -134,9 +134,9 @@ class OrchestrationConfig(
         var exampleInstance = TaskBreakdownResult(
             tasksByID = mapOf(
                 "1" to AutoFixTaskExecutionConfigData(
-                    task_description = "Task 1", task_dependencies = listOf(), commands = listOf(
+                    task_description = "Task 1", task_dependencies = listOf(), commands = mutableListOf(
                         AutoFixTask.CommandWithWorkingDir(
-                            command = listOf("echo", "Hello, World!"), workingDir = "."
+                            command = mutableListOf("echo", "Hello, World!"), workingDir = "."
                         )
                     )
                 ), "2" to FileModificationTaskExecutionConfigData(

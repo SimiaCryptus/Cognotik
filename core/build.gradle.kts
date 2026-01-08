@@ -92,7 +92,12 @@ dependencies {
     tasks.named("compileTestJava") {
         dependsOn(tasks.named("compileTestKotlin"))
     }
+}
 
+configurations.all {
+    resolutionStrategy {
+        force(libs.antlr.runtime)
+    }
 }
 
 

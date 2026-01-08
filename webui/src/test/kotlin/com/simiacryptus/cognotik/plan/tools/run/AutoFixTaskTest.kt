@@ -25,9 +25,9 @@ object AutoFixTaskTest {
                 task_type = AutoFixTask.AutoFix.name
             ),
             executionConfig = AutoFixTaskExecutionConfigData(
-                commands = listOf(
+                commands = mutableListOf(
                     CommandWithWorkingDir(
-                        command = listOf("git", "status"),
+                        command = mutableListOf("git", "status"),
                         workingDir = "."
                     )
                 ),

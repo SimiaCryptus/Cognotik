@@ -3,7 +3,10 @@ package com.simiacryptus.cognotik.plan.tools.file
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.plan.*
+import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.TaskOrchestrator
+import com.simiacryptus.cognotik.plan.TaskType
+import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.AddApplyFileDiffLinks
@@ -12,6 +15,7 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.util.Retryable
 import com.simiacryptus.cognotik.util.Retryable.Companion.async
 import com.simiacryptus.cognotik.util.ValidatedObject
+import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
@@ -23,6 +27,7 @@ class FileModificationTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: FileModificationTaskExecutionConfigData?
 ) : AbstractFileTask<FileModificationTaskExecutionConfigData>(orchestrationConfig, planTask) {
+
     class FileModificationTaskExecutionConfigData(
         files: List<String>? = null,
         related_files: List<String>? = null,
@@ -73,107 +78,89 @@ FileModification - Modify existing files or create new files
         orchestrationConfig: OrchestrationConfig
     ) {
         val defaultFile = getDefaultFile()
-        val typeConfig = typeConfig ?: throw RuntimeException()
+        val typeConfig = typeConfig ?: throw RuntimeException("TypeConfig is missing")
         val chatInterface =
             (typeConfig.model?.let<ApiChatModel, ChatInterface> { this.orchestrationConfig.instance(it) }
                 ?: defaultSmart).getChildClient(task)
+
         val semaphore = Semaphore(0)
         val completionNotes = mutableListOf<String>()
-        // Initialize transcript for this task
         val transcript = task.transcript()
+
         try {
             transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
-            Retryable(task, process = { task : SessionTask ->
+
+            Retryable(task, process = { task: SessionTask ->
                 completionNotes.clear()
+
+                // 1. Prepare Context
+                val dependencyContext = agent.executionState?.tasksByDescription?.filter {
+                    executionConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskExecutionConfigData
+                }?.entries?.joinToString("\n\n") {
+                    (it.value as FileModificationTaskExecutionConfigData).files?.joinToString("\n") { path ->
+                        val file = root.resolve(path).toFile()
+                        if (file.exists()) {
+                            val relativePath = root.relativize(file.toPath())
+                            "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { content -> "${TRIPLE_TILDE}\n${content}\n${TRIPLE_TILDE}" }}"
+                        } else {
+                            "File not found: $path"
+                        }
+                    } ?: ""
+                } ?: ""
+
+                val fileContext = getInputFileWithDiff()
+                val taskDesc = executionConfig?.task_description ?: ""
+
+                // 2. Log Context to Transcript (Best Practice: Use <details>)
+                transcript?.write("""
+## Context Data
+<details>
+<summary>Input Files & Dependencies</summary>
+
+### Dependencies
+$dependencyContext
+
+### File Context
+$fileContext
+
+### Task Description
+$taskDesc
+</details>
+
+                """.toByteArray())
+
                 val chatAgent = ChatAgent(
                     name = "FileModification",
-                    prompt = """
-        Generate precise code modifications and new files based on requirements:
-        For modifying existing files:
-        - Write efficient, readable, and maintainable code changes
-        - Ensure modifications integrate smoothly with existing code
-        - Follow project coding standards and patterns
-        - Consider dependencies and potential side effects
-        - Provide clear context and rationale for changes
-        
-        For creating new files:
-        - Choose appropriate file locations and names
-        - Structure code according to project conventions
-        - Include necessary imports and dependencies
-        - Add comprehensive documentation
-        - Ensure no duplication of existing functionality
-        
-        Provide a clear summary explaining:
-        - What changes were made and why
-        - Any important implementation details
-        - Potential impacts on other code
-        - Required follow-up actions
-        
-        Response format:
-        For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
-        For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
-        The diff format should use + for line additions, - for line deletions.
-        Include 2 lines of context before and after every change in diffs.
-        Separate code blocks with a single blank line.
-        For new files, specify the language for syntax highlighting after the opening triple backticks.
-        
-        Example:
-        
-        Here are the modifications:
-        
-        ### src/utils/existingFile.js
-        ${TRIPLE_TILDE}diff
-        
-        function existingFunction() {
-        return 'old result';
-        return 'new result';
-        }
-        ${TRIPLE_TILDE}
-        
-        ### src/utils/newFile.js
-        ${TRIPLE_TILDE}js
-        
-        function newFunction() {
-         return 'new functionality';
-        }
-        ${TRIPLE_TILDE}
-        """.trimIndent(),
+                    prompt = getSystemPrompt(), // Extracted for readability
                     model = chatInterface,
                     temperature = this.orchestrationConfig.temperature,
                 )
+
+                task.add("Generating modifications...".renderMarkdown())
+
+                // 3. Execute AI
                 val codeResult = chatAgent.answer(
                     (messages + listOf(
-                        agent.executionState?.tasksByDescription?.filter {
-                            executionConfig?.task_dependencies?.contains(it.key) == true && it.value is FileModificationTaskExecutionConfigData
-                        }?.entries?.joinToString("\n\n") {
-                            (it.value as FileModificationTaskExecutionConfigData).files?.joinToString("\n") {
-                                val file = root.resolve(it).toFile()
-                                if (file.exists()) {
-                                    val relativePath = root.relativize(file.toPath())
-                                    "## $relativePath\n\n${(codeFiles[file.toPath()] ?: file.readText()).let { "${TRIPLE_TILDE}\n${it}\n${TRIPLE_TILDE}" }}"
-                                } else {
-                                    "File not found: $it"
-                                }
-                            } ?: ""
-                        } ?: "",
-                        getInputFileWithDiff(),
-                        executionConfig?.task_description ?: "",
+                        dependencyContext,
+                        fileContext,
+                        taskDesc,
                     )).filter { it.isNotBlank() }
                 )
-                // Write to transcript
-                transcript?.write("\n## AI Response\n\n".toByteArray())
-                transcript?.write(codeResult.toByteArray())
-                transcript?.write("\n\n".toByteArray())
 
-                val footer = if (orchestrationConfig.autoFix) {
-                    "\n\n## Auto-applied changes"
-                } else {
-                    acceptButtonFooter(task.ui) {
-                        task.complete()
-                        semaphore.release()
-                    }
-                }
+                // 4. Log Response to Transcript (Best Practice: Use <details>)
+                transcript?.write("""
+## AI Response
+<details>
+<summary>Raw Output</summary>
 
+$codeResult
+</details>
+
+                """.toByteArray())
+
+                val autoFix = orchestrationConfig.autoFix
+
+                // 5. Render and Instrument
                 val markdown = renderMarkdown(codeResult, ui = task.ui) {
                     AddApplyFileDiffLinks.instrumentFileDiffs(
                         task.ui,
@@ -181,39 +168,122 @@ FileModification - Modify existing files or create new files
                         response = it,
                         handle = { newCodeMap ->
                             newCodeMap.forEach<Path, String> { (path, _) ->
-                                completionNotes += ("<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated")
+                                val note = "<a href='${"fileIndex/${agent.session}/$path"}'>$path</a> Updated"
+                                completionNotes += note
+                                // Log individual file updates to transcript
+                                transcript?.write("- $note\n".toByteArray())
                             }
                         },
-                        shouldAutoApply = { orchestrationConfig.autoFix },
+                        shouldAutoApply = { autoFix },
                         model = chatInterface,
                         defaultFile = defaultFile,
                         processor = orchestrationConfig.processor
-                    ) + footer
+                    )
                 }
 
-                if (orchestrationConfig.autoFix) {
-                    // Log auto-applied changes to transcript
-                    transcript?.write("## Auto-Applied Changes\n\n".toByteArray())
-                    transcript?.write(completionNotes.joinToString<String>("\n").toByteArray())
+                if (autoFix) {
+                    transcript?.write("\n**Auto-applying changes...**\n".toByteArray())
                     task.complete(markdown)
                     semaphore.release()
                 } else {
-                    task.complete(markdown)
+                    task.add(markdown)
+                    // Best Practice: Use acceptButtonFooter for manual review
+                    task.complete(acceptButtonFooter(task.ui) {
+                        task.complete()
+                        semaphore.release()
+                    })
                 }
                 transcript?.flush()
             }.async(task.ui))
 
             semaphore.acquire()
-            // Write final completion notes to transcript
-            transcript?.write("\n## Completion Notes\n\n".toByteArray())
-            transcript?.write(completionNotes.joinToString("\n").toByteArray())
-            resultFn(completionNotes.joinToString("\n"))
+
+            // 6. Finalize
+            val summary = if (completionNotes.isNotEmpty()) {
+                "### Modifications Applied\n" + completionNotes.joinToString("\n") { "* $it" }
+            } else {
+                "No modifications were applied."
+            }
+
+            transcript?.write("\n## Completion\n$summary\n".toByteArray())
+            resultFn(summary)
+
         } catch (e: Throwable) {
-            log.warn("Error", e)
-            task.error(e)
+            // Best Practice: Triple Log Rule
+            task.error(e) // 1. UI
+            log.error("Error in FileModificationTask", e) // 2. Log
+
+            // 3. Transcript
+            transcript?.write("""
+
+## Error
+<details>
+<summary>Stack Trace</summary>
+
+```
+${e.stackTraceToString()}
+```
+</details>
+            """.toByteArray())
+
+            throw e
         } finally {
             transcript?.close()
         }
+    }
+
+    private fun getSystemPrompt(): String {
+        return """
+        Generate precise code modifications and new files based on requirements:
+        For modifying existing files:
+        - Write efficient, readable, and maintainable code changes
+        - Ensure modifications integrate smoothly with existing code
+        - Follow project coding standards and patterns
+        - Consider dependencies and potential side effects
+        - Provide clear context and rationale for changes
+
+        For creating new files:
+        - Choose appropriate file locations and names
+        - Structure code according to project conventions
+        - Include necessary imports and dependencies
+        - Add comprehensive documentation
+        - Ensure no duplication of existing functionality
+
+        Provide a clear summary explaining:
+        - What changes were made and why
+        - Any important implementation details
+        - Potential impacts on other code
+        - Required follow-up actions
+
+        Response format:
+        For existing files: Use ${TRIPLE_TILDE}diff code blocks with a header specifying the file path.
+        For new files: Use ${TRIPLE_TILDE} code blocks with a header specifying the new file path.
+        The diff format should use + for line additions, - for line deletions.
+        Include 2 lines of context before and after every change in diffs.
+        Separate code blocks with a single blank line.
+        For new files, specify the language for syntax highlighting after the opening triple backticks.
+
+        Example:
+
+        Here are the modifications:
+
+        ### src/utils/existingFile.js
+        ${TRIPLE_TILDE}diff
+
+        function existingFunction() {
+        return 'old result';
+        return 'new result';
+        }
+        ${TRIPLE_TILDE}
+
+        ### src/utils/newFile.js
+        ${TRIPLE_TILDE}js
+
+        function newFunction() {
+         return 'new functionality';
+        }
+        ${TRIPLE_TILDE}
+        """.trimIndent()
     }
 
     fun getDefaultFile() =
@@ -273,4 +343,3 @@ FileModification - Modify existing files or create new files
         }
     }
 }
-

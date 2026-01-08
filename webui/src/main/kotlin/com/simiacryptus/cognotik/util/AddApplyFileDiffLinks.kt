@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.chat.model.ChatInterface
 import com.simiacryptus.cognotik.diff.DiffApplicationResult
 import com.simiacryptus.cognotik.diff.PatchProcessor
@@ -78,18 +77,15 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
             model: ChatInterface? = null,
             defaultFile: String? = null,
             processor: PatchProcessor,
-        ): String {
-            log.debug("Instrumenting file diffs for root: {}", root)
-            return AddApplyFileDiffLinks(processor).instrument(
-                self = self,
-                root = root,
-                response = response,
-                handle = handle,
-                shouldAutoApply = shouldAutoApply,
-                model = model,
-                defaultFile = defaultFile
-            )
-        }
+        ) = AddApplyFileDiffLinks(processor).instrument(
+            socketManager = self,
+            root = root,
+            response = response,
+            handle = handle,
+            shouldAutoApply = shouldAutoApply,
+            model = model,
+            defaultFile = defaultFile
+        )
 
         fun newFile(
             filepath: Path,
@@ -134,7 +130,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
     }
 
     fun instrument(
-        self: SocketManager,
+        socketManager: SocketManager,
         root: Path,
         response: String,
         handle: (Map<Path, String>) -> Unit = {},
@@ -143,99 +139,123 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         defaultFile: String? = null,
         resolver: ((Path, String) -> String?) = ::resolveToRelativePath,
     ): String {
+        log.debug("Instrumenting file diffs for root: {}", root)
+        val initiator = getInitiatorPattern()
+        if (response.contains(initiator) && !response.split(initiator, 2)[1].contains("\n```(?![^\n])".toRegex())) {
+            return@instrument instrument(
+                socketManager = socketManager,
+                root = root,
+                response = response + "\n```\n",
+                handle = handle,
+                model = model,
+                defaultFile = defaultFile,
+            )
+        }
 
-        self.apply {
-            val initiator = getInitiatorPattern()
-            if (response.contains(initiator) && !response.split(initiator, 2)[1].contains("\n```(?![^\n])".toRegex())) {
-                return@instrument instrument(
-                    self = self,
-                    root = root,
-                    response = response + "\n```\n",
-                    handle = handle,
-                    model = model,
-                    defaultFile = defaultFile,
-                )
+        val codeBlocks = processor.extractCodeBlocks(response)
+        val codeBlocksWithHeaders = codeBlocks.mapIndexed { index, (lang, code) ->
+            val headerForBlock = findHeaderForBlock(response, code)
+            Triple(
+                if (headerForBlock != null) {
+                    headerForBlock
+                } else {
+                    defaultFile
+                }, lang, code
+            )
+        }
+        if (codeBlocksWithHeaders.isNotEmpty()) {
+            log.debug("Found ${codeBlocksWithHeaders.size} code blocks")
+            codeBlocksWithHeaders.forEach { (header, lang, _) ->
+                log.debug("Block: header='$header', lang='$lang'")
             }
+        }
 
-            val codeBlocks = processor.extractCodeBlocks(response)
-            val codeBlocksWithHeaders = codeBlocks.mapIndexed { index, (lang, code) ->
-                val headerForBlock = findHeaderForBlock(response, code)
-                Triple(
-                    if (headerForBlock != null) {
-                        headerForBlock
-                    } else {
-                        defaultFile
-                    }, lang, code
-                )
-            }
-
-            fun isFileResolvable(header: String?): Boolean {
-                try {
-                    val prefiltered = prefilterFilename(normalizeFilename(header ?: "")) ?: ""
-                    val resolvedPath =
-                        resolver(root, prefiltered) ?: return (true != header?.contains('.') && null != defaultFile)
-                    if (root.resolve(resolvedPath).toFile().exists()) return true
-                    if (!resolvedPath.contains('.') && null != defaultFile) return true // Allow default file for extensionless paths (likely to be a mis-parse)
-                    return false
-                } catch (e: Throwable) {
-                    log.info("Error processing code block", e)
-                    return false
+        fun isFileResolvable(header: String?): Boolean {
+            return try {
+                val resolvedPath = resolver(root, prefilterFilename(normalizeFilename(header ?: "")) ?: "")
+                if (resolvedPath == null) {
+                    return (true != header?.contains('.') && null != defaultFile)
                 }
-            }
-
-            val newFileBlocks = codeBlocksWithHeaders.filter { (header, lang, code) -> !isFileResolvable(header) }
-            val patchBlocks = codeBlocksWithHeaders.filter { (header, lang, code) -> isFileResolvable(header) }
-
-            val withPatchLinks: String = patchBlocks.reversed().fold(response) { markdown, (header, lang, diffValue) ->
-                var normalizeFilename = normalizeFilename(header ?: "")
-                if (normalizeFilename.isBlank() || !normalizeFilename.contains('.')) {
-                    if (defaultFile == null) {
-                        return@fold markdown
+                when {
+                    root.resolve(resolvedPath).toFile().exists() -> {
+                        true
                     }
-                    normalizeFilename = defaultFile
+                    !resolvedPath.contains('.') && null != defaultFile -> {
+                        log.debug("File not found for header '$header': resolved to '$resolvedPath', but default file is set")
+                        true // Allow default file for extensionless paths (likely to be a mis-parse)
+                    }
+
+                    else -> {
+                        log.debug("File not found for header '$header': resolved to '$resolvedPath'")
+                        false
+                    }
                 }
-                val filename = resolver(root, normalizeFilename) ?: return@fold markdown
-                val newValue = renderDiffBlock(root, filename, diffValue, handle, self, shouldAutoApply)
-                val startOfMatch = markdown.indexOf(diffValue)
-                if (startOfMatch < 0) {
+            } catch (e: Throwable) {
+                log.info("Error processing code block", e)
+                false
+            }
+        }
+
+        val (newFileBlocks, patchBlocks) = codeBlocksWithHeaders
+            .partition { (header, lang, code) -> !isFileResolvable(header) }
+
+        log.debug("Categorized blocks: ${newFileBlocks.size} new files, ${patchBlocks.size} patches")
+
+        val withPatchLinks: String = patchBlocks.reversed().fold(response) { markdown, (header, lang, diffValue) ->
+            var normalizeFilename = normalizeFilename(header ?: "")
+            if (normalizeFilename.isBlank() || !normalizeFilename.contains('.')) {
+                if (defaultFile == null) {
                     return@fold markdown
                 }
-                val endOfMatch = startOfMatch + diffValue.length
-                val precedingText = markdown.substring(0, startOfMatch)
-                val followingText = markdown.substring(endOfMatch)
-                val prependLength =
-                    precedingText.lastIndexOf("```").let { if (it >= 0) precedingText.length - it else 0 }
-                val appendLength = followingText.indexOf("```").let { if (it >= 0) it + 3 else 0 }
-                markdown.replaceRange(
-                    startIndex = startOfMatch - prependLength,
-                    endIndex = endOfMatch + appendLength,
-                    replacement = newValue
-                )
+                normalizeFilename = defaultFile
+            }
+            val filename = resolver(root, normalizeFilename) ?: return@fold markdown
+            val newValue =
+                try { socketManager.renderDiffBlock(root, filename, diffValue, handle, socketManager, shouldAutoApply) }
+                catch (e: Throwable) {
+                    log.error("Error rendering diff block for file: $filename", e)
+                    "\n```diff\n$diffValue\n```\n<div class=\"warning\">Error rendering diff block for file $filename: ${e.message?.renderMarkdown()
+                        ?: "Unknown error"}</div>\n"
+                }
+            val startOfMatch = markdown.indexOf(diffValue)
+            if (startOfMatch < 0) {
+                return@fold markdown
+            }
+            val endOfMatch = startOfMatch + diffValue.length
+            val precedingText = markdown.substring(0, startOfMatch)
+            val followingText = markdown.substring(endOfMatch)
+            val prependLength = precedingText.lastIndexOf("```")
+                .let { if (it >= 0) precedingText.length - it else 0 }
+            val appendLength = followingText.indexOf("```").let { if (it >= 0) it + 3 else 0 }
+            markdown.replaceRange(
+                startIndex = startOfMatch - prependLength,
+                endIndex = endOfMatch + appendLength,
+                replacement = newValue
+            )
+        }
+
+        val withSaveLinks =
+            newFileBlocks.foldIndexed(withPatchLinks) { index, markdown, (header, lang, codeValue) ->
+                var processedCode = codeValue.trimIndent()
+                if (codeValue.lines().all { it.startsWith('+') || it.startsWith('-') }) {
+                    processedCode = codeValue.lines().joinToString("\n") { it.drop(1) }
+                }
+                if (header.isNullOrBlank()) return markdown
+                val filename = prefilterFilename(normalizeFilename(header))
+                if (filename.isNullOrBlank()) return markdown
+                val newMarkdown =
+                    socketManager.renderNewFile(root, filename, processedCode, handle, socketManager, lang, shouldAutoApply) + record(
+                        socketManager, mapOf(
+                            "filename" to filename,
+                            "code" to processedCode,
+                            "header" to header,
+                            "language" to lang,
+                        )
+                    )
+                markdown.replace("```$lang\n$codeValue\n```", newMarkdown)
             }
 
-            val withSaveLinks =
-                newFileBlocks.foldIndexed(withPatchLinks) { index, markdown, (header, lang, codeValue) ->
-                    var processedCode = codeValue.trimIndent()
-                    if (codeValue.lines().all { it.startsWith('+') || it.startsWith('-') }) {
-                        processedCode = codeValue.lines().joinToString("\n") { it.drop(1) }
-                    }
-                    if (header.isNullOrBlank()) return markdown
-                    val filename = prefilterFilename(normalizeFilename(header))
-                    if (filename.isNullOrBlank()) return markdown
-                    val newMarkdown =
-                        renderNewFile(root, filename, processedCode, handle, self, lang, shouldAutoApply) + record(
-                            self, mapOf(
-                                "filename" to filename,
-                                "code" to processedCode,
-                                "header" to header,
-                                "language" to lang,
-                            )
-                        )
-                    markdown.replace("```$lang\n$codeValue\n```", newMarkdown)
-                }
-
-            return withSaveLinks
-        }
+        return withSaveLinks
     }
 
     private fun findHeaderForBlock(response: String, code: String): String? {
@@ -478,6 +498,7 @@ open class AddApplyFileDiffLinks(val processor: PatchProcessor) {
         return if (newCode.isValid) {
             diffTask.placeholder + "\n" + applydiffTask.placeholder
         } else {
+            log.warn("Invalid patch for $filename: ${newCode.error}")
             diffTask.placeholder + """<div class="warning">Warning: The patch is not valid: ${newCode.error?.renderMarkdown() ?: "???"}</div>""" + applydiffTask.placeholder
         } + record(
             ui, mapOf(

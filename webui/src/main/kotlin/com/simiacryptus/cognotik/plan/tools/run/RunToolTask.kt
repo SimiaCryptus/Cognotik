@@ -29,11 +29,11 @@ class RunToolTask(
 
     class RunToolTaskExecutionConfigData(
         @Description("The tool to run")
-        val tool: String? = null,
+        var tool: String? = null,
         @Description("The arguments to pass to the tool")
-        val args: List<String>? = null,
+        var args: List<String>? = null,
         @Description("The relative file path of the working directory")
-        val workingDir: String? = null,
+        var workingDir: String? = null,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = null
@@ -81,70 +81,84 @@ class RunToolTask(
         orchestrationConfig: OrchestrationConfig
     ) {
         val transcript = task.transcript()
-        try {
-            val tool = executionConfig?.tool ?: throw IllegalArgumentException("Tool not specified")
-            val args = executionConfig.args ?: emptyList()
-            val workingDir = executionConfig.workingDir?.let { File(it) }
-                ?: File(orchestrationConfig.absoluteWorkingDir ?: ".")
-            val executable = executionConfig.executable?.absolutePath
-                ?: throw IllegalArgumentException("Executable for tool '$tool' not found")
-            val command = listOf(executable) + args
-            val commandStr = command.joinToString(" ")
 
-            transcript?.write("## Command\n```bash\n$commandStr\n```\n\n".toByteArray())
 
-            fun execute(): String {
-                val process = ProcessBuilder(command)
-                    .directory(workingDir)
-                    .redirectErrorStream(true)
-                    .start()
 
-                val output = process.inputStream.bufferedReader().readText()
-                val exitCode = process.waitFor()
 
-                transcript?.write("## Output\n```\n$output\n```\n\n".toByteArray())
 
-                return if (exitCode == 0) {
-                    "Tool execution successful.\nOutput:\n$output"
-                } else {
-                    "Tool execution failed with exit code $exitCode.\nOutput:\n$output"
+        task.ui.pool.submit {
+            try {
+                val context = getPriorCode(agent.executionState)
+                if (context.isNotBlank()) {
+                    transcript?.write("# Context\n<details><summary>Prior Code</summary>\n\n```\n$context\n```\n</details>\n".toByteArray())
                 }
-            }
-            if (orchestrationConfig.autoFix) {
-                task.header("Executing tool: $tool", level = 3)
-                resultFn(execute())
-                task.complete()
-            } else {
-                task.header("Proposed command to run", level = 3)
-                task.add("<pre>$commandStr</pre>")
-                val semaphore = Semaphore(0)
-                var result = "Skipped"
-                task.add(task.ui.hrefLink("Run Tool") {
-                    try {
-                        val statusBuffer = task.add("Running...")
-                        result = execute()
-                        statusBuffer?.setLength(0)
-                        statusBuffer?.append("<b>Execution Complete</b>")
-                        task.update()
-                        task.expandable("Output", "<pre>${result.replace("<", "&lt;")}</pre>")
-                        task.add(acceptButtonFooter(task.ui) {
-                            semaphore.release()
-                        })
-                    } catch (e: Exception) {
-                        task.error(e)
+
+                val tool = executionConfig?.tool ?: throw IllegalArgumentException("Tool not specified")
+                val args = executionConfig?.args ?: emptyList()
+                val workingDir = executionConfig?.workingDir?.let { File(it) }
+                    ?: File(orchestrationConfig.absoluteWorkingDir ?: ".")
+                val executable = executionConfig?.executable?.absolutePath
+                    ?: throw IllegalArgumentException("Executable for tool '$tool' not found")
+                val command = listOf(executable) + args
+                val commandStr = command.joinToString(" ")
+
+                transcript?.write("## Command\n```bash\n$commandStr\n```\n\n".toByteArray())
+
+                fun execute(): String {
+                    val process = ProcessBuilder(command)
+                        .directory(workingDir)
+                        .redirectErrorStream(true)
+                        .start()
+
+                    val output = process.inputStream.bufferedReader().readText()
+                    val exitCode = process.waitFor()
+
+                    transcript?.write("## Output\n<details><summary>Process Output</summary>\n\n```\n$output\n```\n</details>\n\n".toByteArray())
+
+                    return if (exitCode == 0) {
+                        "Tool execution successful.\nOutput:\n$output"
+                    } else {
+                        "Tool execution failed with exit code $exitCode.\nOutput:\n$output"
                     }
-                })
-                semaphore.acquire()
-                resultFn(result)
-                task.complete()
+                }
+                if (orchestrationConfig.autoFix) {
+                    task.header("Executing tool: $tool", level = 3)
+                    resultFn(execute())
+                    task.complete()
+                } else {
+                    task.header("Proposed command to run", level = 3)
+                    task.add("<pre>$commandStr</pre>")
+                    val semaphore = Semaphore(0)
+                    var result = "Skipped"
+                    task.add(task.ui.hrefLink("Run Tool") {
+                        try {
+                            val statusBuffer = task.add("Running...")
+                            result = execute()
+                            statusBuffer?.setLength(0)
+                            statusBuffer?.append("<b>Execution Complete</b>")
+                            task.update()
+                            task.expandable("Output", "<pre>${result.replace("<", "&lt;")}</pre>")
+                            task.add(acceptButtonFooter(task.ui) {
+                                semaphore.release()
+                            })
+                        } catch (e: Exception) {
+                            task.error(e)
+                            log.error("Error in RunTool hrefLink", e)
+                            transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                        }
+                    })
+                    semaphore.acquire()
+                    resultFn(result)
+                    task.complete()
+                }
+            } catch (e: Exception) {
+                task.error(e)
+                log.error("Error running tool", e)
+                transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+                throw e
+            } finally {
+                transcript?.close()
             }
-        } catch (e: Exception) {
-            log.warn("Error running tool", e)
-            transcript?.write("## Error\n```\n${e.message}\n```\n\n".toByteArray())
-            resultFn("Error running tool: ${e.message}")
-            task.complete()
-        } finally {
-            transcript?.close()
         }
     }
 
