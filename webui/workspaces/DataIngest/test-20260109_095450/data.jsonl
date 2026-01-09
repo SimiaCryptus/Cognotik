@@ -1,0 +1,5 @@
+{"timestamp":"2023-10-27 10:00:01","level":"INFO","logger":"Main","message":"Application starting"}
+{"timestamp":"2023-10-27 10:00:02","level":"DEBUG","logger":"Config","message":"Loading properties from disk"}
+{"timestamp":"2023-10-27 10:00:05","level":"WARN","logger":"Database","message":"Connection pool reaching limit"}
+{"timestamp":"2023-10-27 10:00:10","level":"ERROR","logger":"Auth","message":"Failed login attempt for user 'admin'"}
+{"timestamp":"2023-10-27 10:00:15","level":"INFO","logger":"Main","message":"Application ready"}

@@ -1,0 +1,8 @@
+{
+  "filename" : "hello.py",
+  "originalCode" : "\"\"\"A simple implementation of the CouncilMode greeting.\"\"\"\nprint('Hello from CouncilMode')",
+  "diff" : "## Verification\n\nA test suite is provided to verify the output of the scripts:",
+  "newCode" : "\"\"\"A simple implementation of the CouncilMode greeting.\"\"\"\nprint('Hello from CouncilMode')",
+  "isValid" : true,
+  "errors" : ""
+}

@@ -1,0 +1,6 @@
+{
+  "filename" : "test_hello.py",
+  "code" : "import unittest\nimport io\nfrom contextlib import redirect_stdout\nimport council_initiation\n\nclass TestCouncilInitiation(unittest.TestCase):\n    \"\"\"\n    Test suite for the Council Integration Protocol.\n    This captures the stdout of the initiation script to verify the handshake.\n    \"\"\"\n\n    def test_output_message(self):\n        \"\"\"\n        Verify that the main function prints the exact 'Hello from CouncilMode' message.\n        \"\"\"\n        captured_output = io.StringIO()\n        with redirect_stdout(captured_output):\n            council_initiation.main()\n        \n        # Strip whitespace to ensure clean comparison\n        actual_output = captured_output.getvalue().strip()\n        expected_output = \"Hello from CouncilMode\"\n        \n        self.assertEqual(\n            actual_output, \n            expected_output, \n            f\"Expected '{expected_output}', but got '{actual_output}'\"\n        )\n\nif __name__ == \"__main__\":\n    unittest.main()",
+  "header" : "test_hello.py",
+  "language" : "python"
+}

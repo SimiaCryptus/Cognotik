@@ -1,0 +1,333 @@
+/* Improved styling for better readability and visual appeal */
+#statusMessage {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    transform: translateY(-1px);
+}
+
+#autoplayButton:active {
+    transform: translateY(0);
+    max-width: 80%;
+    text-align: center;
+}
+
+.reveal .slides {
+    text-align: left;
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+.reveal h1, .reveal h2, .reveal h3 {
+    text-transform: none;
+    margin-bottom: 0.5em;
+    color: #42affa;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.reveal .slides section {
+    height: auto;
+    min-height: 100vh;
+    padding: clamp(1rem, 3vw, 2rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.reveal .progress {
+    color: #42affa;
+}
+
+.reveal ul, .reveal ol {
+    margin-left: 1em;
+    margin-bottom: 1em;
+}
+
+.reveal li {
+    margin-bottom: 0.5em;
+}
+
+.reveal .columns {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.reveal .column {
+    flex: 1;
+    padding: 0 1em;
+    min-width: 250px;
+}
+
+.reveal .highlight {
+    color: #42affa;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.reveal .footer {
+    position: absolute;
+    bottom: 1em;
+    left: 1em;
+    font-size: 0.5em;
+    color: #888;
+}
+
+.reveal {
+    position: relative;
+    overflow: hidden;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.reveal pre {
+    width: 100%;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.reveal pre code {
+    padding: 10px;
+    font-size: 0.9em;
+}
+
+#controlsContainer {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+#autoplayButton {
+    padding: 10px 20px;
+    background-color: #42affa;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+    transition: background-color 0.3s ease;
+}
+
+#autoplayButton:hover {
+    background-color: #2980b9;
+}
+
+#voiceSelect {
+    padding: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+#voiceSelect:hover {
+    background: rgba(26, 26, 46, 1);
+    border-color: #667eea;
+    background-color: #42affa;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+    .reveal .slides {
+        font-size: 0.8em;
+    }
+
+
+    /* Screen reader only content */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* Focus visible styles for keyboard navigation */
+    button:focus-visible,
+    select:focus-visible,
+    a:focus-visible {
+        outline: 3px solid #64ffda;
+        outline-offset: 2px;
+    }
+
+    #controlsContainer {
+        align-items: center;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #autoplayButton, #voiceSelect {
+        margin-bottom: 10px;
+    }
+}
+
+
+/* Custom Presentation Styles */
+
+:root {
+    --accent-cyan: #42affa;
+    --accent-purple: #9d50bb;
+    --text-glow: 0 0 15px rgba(66, 175, 250, 0.6);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Typography & Highlights */
+.reveal h1, .reveal h2, .reveal h3 {
+    text-transform: none;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+}
+
+.highlight {
+    color: var(--accent-cyan) !important;
+    text-shadow: var(--text-glow);
+    font-weight: 700;
+}
+
+.subtitle {
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    font-size: 0.9em !important;
+}
+
+/* Layout Components */
+.columns {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.column {
+    flex: 1;
+}
+
+/* Animated Text & Transitions */
+.fade-in-text {
+    animation: futuristicFade 1.5s ease-out forwards;
+}
+
+@keyframes futuristicFade {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+        filter: blur(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+/* List Styling */
+.intro-points ul, .reveal ul {
+    list-style: none;
+    margin-left: 0;
+}
+
+.intro-points li::before, .reveal ul li::before {
+    content: "▹";
+    color: var(--accent-cyan);
+    margin-right: 15px;
+    display: inline-block;
+}
+
+.reveal ul li {
+    margin-bottom: 15px;
+    transition: transform 0.3s ease;
+}
+
+.reveal ul li:hover {
+    transform: translateX(10px);
+}
+
+/* SDLC Cards & Glassmorphism */
+.fragment[data-fragment-index] {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+div[style*="background: rgba(66, 175, 250, 0.1)"] {
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+div[style*="background: rgba(66, 175, 250, 0.1)"]:hover {
+    transform: translateY(-10px);
+    border-color: var(--accent-cyan);
+}
+
+/* Code Block Enhancements */
+.reveal pre {
+    background: #0d1117;
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    width: 90%;
+}
+
+.reveal code {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+/* Image Styling */
+.slide-image img {
+    transition: all 0.5s ease;
+    filter: saturate(0.8) contrast(1.1);
+}
+
+.slide-image img:hover {
+    filter: saturate(1.2) contrast(1.2);
+    transform: scale(1.02);
+    box-shadow: 0 0 30px rgba(66, 175, 250, 0.3) !important;
+}
+
+/* Background Specifics */
+section[data-background-gradient] h1 {
+    background: linear-gradient(to right, #fff, var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Custom Scrollbar for Code */
+.reveal pre code::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.reveal pre code::-webkit-scrollbar-thumb {
+    background: var(--accent-cyan);
+    border-radius: 10px;
+}

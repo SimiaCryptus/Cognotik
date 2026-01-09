@@ -1,0 +1,6 @@
+{
+  "filename" : "hello.py",
+  "code" : "def main():\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
+  "header" : "hello.py",
+  "language" : "python"
+}

@@ -1,0 +1,3 @@
+✅ Causal inference analysis completed for effect: The application experiences a significant latency spike every 60 seconds.
+
+📄 Detailed results: <a href='fileIndex/G-20260109-JK9F/analysis_results.md' target='_blank'>fileIndex/G-20260109-JK9F/analysis_results.md</a> <a href='fileIndex/G-20260109-JK9F/analysis_results.html' target='_blank'>html</a> <a href='fileIndex/G-20260109-JK9F/analysis_results.pdf' target='_blank'>pdf</a>

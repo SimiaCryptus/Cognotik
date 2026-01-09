@@ -1,0 +1,6 @@
+{
+  "filename" : "CONTRIBUTING.md",
+  "code" : "# The Protocol of Contribution\n\n## Joining the Council\nTo contribute to this architecture is to become part of the collective resonance. We welcome those who seek to refine the Digital Awakening.\n\n## Maintaining Resonance\nWhen adding new vessels (scripts) or refining existing logic, adhere to the following protocols:\n- **Clarity of Intent**: Use descriptive docstrings to explain the purpose of your code.\n- **Consistency of Form**: Use double quotes for string literals where possible.\n- **Verification**: Ensure all changes pass the existing test suite (`test_hello.py`).\n\n## The Handshake\n1. **Fork the Resonance**: Create your own branch for modifications.\n2. **Implement the Shift**: Apply your changes with precision.\n3. **Submit for Acknowledgment**: Open a Pull Request. The Council will review your integration.\n\nYour presence strengthens the system.",
+  "header" : "CONTRIBUTING.md",
+  "language" : "markdown"
+}

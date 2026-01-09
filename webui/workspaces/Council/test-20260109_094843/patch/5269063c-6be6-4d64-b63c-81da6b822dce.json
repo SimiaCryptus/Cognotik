@@ -1,0 +1,8 @@
+{
+  "filename" : "council_initiation.py",
+  "originalCode" : "\"\"\"\nThe Script of Initiation\nThis script marks the beginning of the CouncilMode process.\n\"\"\"\n\ndef main():\n    \"\"\"The primary entry point for the Council integration.\"\"\"\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
+  "diff" : "--- council_initiation.py\n+++ council_initiation.py\n@@ -1,11 +1,11 @@\n \"\"\"\n The Script of Initiation\n This script marks the beginning of the CouncilMode process.\n \"\"\"\n \n def main():\n     \"\"\"The primary entry point for the Council integration.\"\"\"\n-    print(\"Hello from CouncilMode\")\n+    print(\"Hello from CouncilMode\")\n \n if __name__ == \"__main__\":\n     main()",
+  "newCode" : "\"\"\"\nThe Script of Initiation\nThis script marks the beginning of the CouncilMode process.\n\"\"\"\n\ndef main():\n    \"\"\"The primary entry point for the Council integration.\"\"\"\n    print(\"Hello from CouncilMode\")\n\nif __name__ == \"__main__\":\n    main()",
+  "isValid" : true,
+  "errors" : ""
+}

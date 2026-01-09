@@ -1,0 +1,6 @@
+level,logger,message,timestamp
+INFO,Main,Application starting,2023-10-27 10:00:01
+DEBUG,Config,Loading properties from disk,2023-10-27 10:00:02
+WARN,Database,Connection pool reaching limit,2023-10-27 10:00:05
+ERROR,Auth,Failed login attempt for user 'admin',2023-10-27 10:00:10
+INFO,Main,Application ready,2023-10-27 10:00:15
