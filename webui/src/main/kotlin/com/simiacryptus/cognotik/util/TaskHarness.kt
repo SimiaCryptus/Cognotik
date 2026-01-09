@@ -6,6 +6,9 @@ import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.TaskType
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -14,13 +17,21 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val taskType: TaskType<T, U>,
     val typeConfig: U,
     val executionConfig: T,
-    val modelInstanceFn: (ApiChatModel) -> ChatInterface = { model ->
+    val modelInstanceFn: (ApiChatModel, Session) -> ChatInterface = { model,session ->
         val api = model.findApi()
         val model =
             model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
         model.instance(
             key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
             base = api.baseUrl,
+            onUsage = { model, usage ->
+                ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+                    session,
+                    UserSettingsManager.defaultUser,
+                    model,
+                    usage
+                )
+            },
         )
     },
     val port: Int = 8082,

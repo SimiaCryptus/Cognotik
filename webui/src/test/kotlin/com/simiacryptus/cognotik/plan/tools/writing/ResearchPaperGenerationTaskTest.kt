@@ -16,7 +16,7 @@ object ResearchPaperGenerationTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+     @org.junit.jupiter.api.Test
     @Timeout(20, unit = TimeUnit.MINUTES)
     fun test() {
         TaskHarness(

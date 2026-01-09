@@ -25,7 +25,7 @@ object OCRTaskTest {
     fun setup() {
         PlanHarness.configurePlatform()
     }
-    //@Test
+     @org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun test() {
         val harness = TaskHarness(
@@ -87,7 +87,7 @@ object OCRTaskTest {
         assertTrue(content.isNotBlank(), "Output content should not be blank")
     }
 
-    //@Test
+     @org.junit.jupiter.api.Test
     @Timeout(30, unit = TimeUnit.MINUTES)
     fun test_convert() {
         TaskHarness(

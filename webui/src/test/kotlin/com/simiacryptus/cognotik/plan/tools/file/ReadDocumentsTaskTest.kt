@@ -16,7 +16,7 @@ object ReadDocumentsTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+     @org.junit.jupiter.api.Test
     @Timeout(10, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun test() {
         TaskHarness(

@@ -1,1 +1,0 @@
-OCR Completed for 1 files.

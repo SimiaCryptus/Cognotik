@@ -32,14 +32,17 @@ object TaskDocumentationGenerator {
             sb.append("## $category\n\n")
             tasks.sortedBy { it.name }.forEach { taskType ->
                 log.info("Processing task: ${taskType.name}")
-                sb.append("### ${taskType.name}\n\n")
-                
+                sb.append("### ${taskType.name}")
+                sb.append("\n\n")
+
                 if (!taskType.description.isNullOrBlank()) {
-                    sb.append("${taskType.description}\n\n")
+                    sb.append(taskType.description)
+                    sb.append("\n\n")
                 }
                 
                 if (!taskType.tooltipHtml.isNullOrBlank()) {
-                    sb.append("<details><summary>Details</summary>\n${taskType.tooltipHtml}\n</details>\n\n")
+                    sb.append(taskType.tooltipHtml.trimIndent())
+                    sb.append("\n\n")
                 }
                 
                 // Prompt Segment

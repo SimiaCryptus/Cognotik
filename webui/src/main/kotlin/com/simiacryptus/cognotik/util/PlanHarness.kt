@@ -13,8 +13,10 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveSchemaStrategy
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.File
@@ -24,13 +26,21 @@ import java.util.concurrent.CountDownLatch
 open class PlanHarness(
     val prompt: String,
     val cognitiveSettings: CognitiveModeConfig,
-    val modelInstanceFn: (ApiChatModel) -> ChatInterface = { model ->
+    val modelInstanceFn: (ApiChatModel, Session) -> ChatInterface = { model, session ->
         val api = model.findApi()
         val model =
             model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
         model.instance(
             key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
             base = api.baseUrl,
+            onUsage = { model, usage ->
+                ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+                    session = session,
+                    UserSettingsManager.defaultUser,
+                    model,
+                    usage
+                )
+            },
         )
     },
     val port: Int = 8082,
@@ -67,6 +77,7 @@ open class PlanHarness(
                 autoFix = !openBrowser,
                 workspace = workspace,
                 config = { session: Session, finalWorkspace: File ->
+                    OrchestrationConfig.instanceFn = instanceFn(session)
                     newConfig(session, finalWorkspace)
                 }
             )
@@ -95,16 +106,12 @@ open class PlanHarness(
     }
 
     companion object {
+        fun configurePlatform(session: Session) {
+            OrchestrationConfig.instanceFn = instanceFn(session)
+            configurePlatform()
+        }
+
         fun configurePlatform() {
-            OrchestrationConfig.instanceFn = { model ->
-                val api = model.findApi()
-                val model =
-                    model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
-                model.instance(
-                    key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
-                    base = api.baseUrl,
-                )
-            }
             initDynamicEnums()
             ApplicationServices.authenticationManager = object : AuthenticationInterface {
                 override fun getUser(accessToken: String?) = defaultUser
@@ -118,6 +125,25 @@ open class PlanHarness(
                     operationType: AuthorizationInterface.OperationType
                 ): Boolean = true
             }
+        }
+
+        fun instanceFn(session: Session): (ApiChatModel) -> ChatInterface = { model ->
+            val api = model.findApi()
+            val model =
+                model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
+            model.instance(
+                key = api?.key
+                    ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
+                base = api.baseUrl,
+                onUsage = { model, usage ->
+                    ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+                        session = session,
+                        defaultUser,
+                        model,
+                        usage
+                    )
+                },
+            )
         }
 
         fun initDynamicEnums() {

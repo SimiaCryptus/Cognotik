@@ -1,4 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.file
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.simiacryptus.cognotik.agents.ImageAndText
+import com.simiacryptus.cognotik.agents.ParsedImageAgent
 
 import com.simiacryptus.cognotik.describe.Description
 import com.simiacryptus.cognotik.input.PaginatedDocumentReader
@@ -11,9 +14,13 @@ import com.simiacryptus.cognotik.util.LoggerFactory
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.webui.session.getChildClient
+import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.text.PDFTextStripper
 import org.slf4j.Logger
 import java.io.File
 import java.util.concurrent.Semaphore
+import javax.imageio.ImageIO
 
 class OCRTask(
     orchestrationConfig: OrchestrationConfig,
@@ -23,6 +30,9 @@ class OCRTask(
     class OCRTaskExecutionConfigData(
         @Description("The files to process (PDF or images)") files: List<String>? = null,
         @Description("DPI for rendering pages (default: 150)") val dpi: Float = 150f,
+        @Description("Extract figures as images") val extract_figures: Boolean = false,
+        @Description("Extract form fields and metadata") val extract_metadata: Boolean = false,
+        @Description("Extract existing text content") val extract_text: Boolean = false,
         task_description: String? = null,
         task_dependencies: List<String>? = null,
         state: TaskState? = TaskState.Pending,
@@ -38,12 +48,25 @@ class OCRTask(
             return ValidatedObject.validateFields(this)
         }
     }
+    data class FigureLocation(
+        @Description("Description/Name of the figure") val name: String = "",
+        @Description("X coordinate (0-1000)") val x: Int = 0,
+        @Description("Y coordinate (0-1000)") val y: Int = 0,
+        @Description("Width (0-1000)") val width: Int = 0,
+        @Description("Height (0-1000)") val height: Int = 0
+    )
+    data class PageAnalysis(
+        @Description("List of figures/images/charts found on the page") val figures: List<FigureLocation> = emptyList(),
+        @Description("Form fields, key-value pairs, and other metadata") val metadata: Map<String, String> = emptyMap()
+    )
+
 
     override fun promptSegment(): String {
         return """
 OCR - Convert documents (PDF, Images) to Markdown text.
 * Extracts text from images and PDFs using Vision models.
 * Preserves formatting as Markdown.
+* Optionally extracts figures as images and metadata/form fields.
 * Saves output to a .md file with the same name.
 """.trimIndent()
     }
@@ -81,12 +104,28 @@ OCR - Convert documents (PDF, Images) to Markdown text.
                 val fileTask = tabs.newTask(file.name)
                 fileTask.header("Processing ${file.name}", level = 3)
                 val sb = StringBuilder()
+                if (executionConfig?.extract_text == true && file.extension.equals("pdf", ignoreCase = true)) {
+                    try {
+                        PDDocument.load(file).use { doc ->
+                            val stripper = PDFTextStripper()
+                            val text = stripper.getText(doc)
+                            val textFile = File(file.parentFile, file.nameWithoutExtension + "_text.txt")
+                            textFile.writeText(text)
+                            fileTask.add("✅ Extracted text to <code>${textFile.name}</code>")
+                        }
+                    } catch (e: Exception) {
+                        log.warn("Failed to extract text from PDF", e)
+                        fileTask.add("❌ Failed to extract text: ${e.message}", additionalClasses = "text-danger")
+                    }
+                }
+
 
                 try {
                     file.getDocumentReader().use { reader ->
                         if (reader is PaginatedDocumentReader && reader is RenderableDocumentReader) {
                             val pageCount = reader.getPageCount()
                             val progressBuffer = fileTask.add("Initializing...")
+                            val allMetadata = mutableListOf<PageAnalysis>()
 
                             for (page in 0 until pageCount) {
                                 progressBuffer?.setLength(0)
@@ -111,7 +150,55 @@ OCR - Convert documents (PDF, Images) to Markdown text.
                                 ).choices.first().message?.content ?: ""
 
                                 sb.append(response).append("\n\n")
+                                if (executionConfig?.extract_figures == true || executionConfig?.extract_metadata == true) {
+                                    val config = executionConfig!!
+                                    try {
+                                        val analysisAgent = ParsedImageAgent(
+                                            resultClass = PageAnalysis::class.java,
+                                            model = orchestrationConfig.defaultSmart.getChildClient(task),
+                                            prompt = """
+                                                Analyze this page.
+                                                ${if (config.extract_figures) "Identify any figures, charts, or diagrams. Provide bounding boxes (0-1000 scale)." else ""}
+                                                ${if (config.extract_metadata) "Extract any form fields or key-value metadata." else ""}
+                                            """.trimIndent()
+                                        )
+                                        val analysis = analysisAgent.answer(
+                                            listOf(ImageAndText(image = image, text = "Analyze page"))
+                                        ).obj
+                                        if (config.extract_metadata) {
+                                            allMetadata.add(analysis)
+                                        }
+                                        if (config.extract_figures) {
+                                            val figuresDir = File(file.parentFile, "${file.nameWithoutExtension}_figures")
+                                            figuresDir.mkdirs()
+                                            analysis.figures.forEachIndexed { i, fig ->
+                                                val scaledX = (fig.x * image.width / 1000.0).toInt().coerceIn(0, image.width - 1)
+                                                val scaledY = (fig.y * image.height / 1000.0).toInt().coerceIn(0, image.height - 1)
+                                                val scaledW = (fig.width * image.width / 1000.0).toInt().coerceAtMost(image.width - scaledX)
+                                                val scaledH = (fig.height * image.height / 1000.0).toInt().coerceAtMost(image.height - scaledY)
+                                                if (scaledW > 10 && scaledH > 10) {
+                                                    val subImage = image.getSubimage(scaledX, scaledY, scaledW, scaledH)
+                                                    val safeName = fig.name.replace(Regex("[^a-zA-Z0-9.-]"), "_").take(50)
+                                                    val figFile = File(figuresDir, "p${page + 1}_${i + 1}_$safeName.png")
+                                                    ImageIO.write(subImage, "png", figFile)
+                                                }
+                                            }
+                                            if (analysis.figures.isNotEmpty()) {
+                                                fileTask.add("  - Saved ${analysis.figures.size} figures from page ${page + 1}")
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        log.warn("Analysis failed for page $page", e)
+                                    }
+                                }
                             }
+                            if (executionConfig?.extract_metadata == true && allMetadata.isNotEmpty()) {
+                                val metaFile = File(file.parentFile, "${file.nameWithoutExtension}_metadata.json")
+                                val mapper = jacksonObjectMapper().writerWithDefaultPrettyPrinter()
+                                metaFile.writeText(mapper.writeValueAsString(allMetadata))
+                                fileTask.add("✅ Saved metadata to <code>${metaFile.name}</code>")
+                            }
+
                             progressBuffer?.setLength(0)
                             progressBuffer?.append("✅ Processed $pageCount pages")
                             fileTask.update()
@@ -194,6 +281,7 @@ Uses Vision models to extract text and formatting from documents.
 <li>Supports PDF and Image files</li>
 <li>Converts to Markdown format</li>
 <li>Preserves layout and structure where possible</li>
+<li>Optionally extracts figures and metadata</li>
 </ul>
 """
         )

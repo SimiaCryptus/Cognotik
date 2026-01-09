@@ -1,44 +1,74 @@
 package com.simiacryptus.cognotik.plan.macros
 
-import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.cognitive.CodingMode
+import com.simiacryptus.cognotik.plan.cognitive.AdaptivePlanningConfig
 import com.simiacryptus.cognotik.plan.cognitive.CodingMode.CodingModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode.WaterfallModeConfig
-import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
+import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.reasoning.BrainstormingTask
+import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.AutoFixTaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.Companion.AutoFix
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.PlanHarness
 import java.io.File
 
 object SoftwareProjectGenerator {
-    val testName = javaClass.simpleName
     @JvmStatic fun main(args: Array<String>) {
         PlanHarness.configurePlatform()
-        object : PlanHarness(
-            prompt = "Build a fun and unique browser-based game.",
-            cognitiveSettings = WaterfallModeConfig(),
-        ) {
-            override fun newConfig(session: Session, tempDir: File) = super.newConfig(session, tempDir).apply {
-                taskSettings[BrainstormingTask.Brainstorming.name] = TaskTypeConfig(
-                    task_type = BrainstormingTask.Brainstorming.name,
-                )
-                taskSettings[SubPlanTask.SubPlan.name] = SubPlanTask.SubPlanTaskTypeConfig(
-                    name = SubPlanTask.SubPlan.name,
-//                    cognitiveSettings = WaterfallModeConfig(),
-                    cognitiveSettings = CodingModeConfig(),
-//                    cognitiveSettings = CognitiveModeConfig(type = CognitiveModeType.Hierarchical),
-                    taskSettings = mutableMapOf(
-                        FileModificationTask.FileModification.name to TaskTypeConfig(
-                            task_type = FileModificationTask.FileModification.name,
-                            name = FileModificationTask.FileModification.name,
-                        )
-                    )
-                )
-            }
-            override fun createWorkspace() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }
-        }.run()
+        for (cognitiveSettings2 in listOf(
+            WaterfallModeConfig(),
+            AdaptivePlanningConfig(type = CognitiveModeType.Coding),
+            CognitiveModeConfig(type = CognitiveModeType.Hierarchical),
+            CodingModeConfig()
+        )) {
+            ProjectGenerator(
+                cognitiveSettings2 = cognitiveSettings2,
+                taskSettings = mutableMapOf(
+                    FileModification.name to TaskTypeConfig(task_type = FileModification.name),
+                ),
+                testName = "SoftwareProjectGenerator_" + cognitiveSettings2.type?.name + "_blind",
+                prompt = "Build a fun and unique browser-based game.",
+            ).run()
+            ProjectGenerator(
+                cognitiveSettings2 = cognitiveSettings2,
+                taskSettings = mutableMapOf(
+                    FileModification.name to TaskTypeConfig(task_type = FileModification.name),
+                ),
+                testName = "SoftwareProjectGenerator_" + cognitiveSettings2.type?.name + "_spec",
+                prompt = "Build a fun and unique browser-based game. As the first phase of implementation, create detailed plan and design documents.",
+            ).run()
+            ProjectGenerator(
+                cognitiveSettings2 = cognitiveSettings2,
+                taskSettings = mutableMapOf(
+                    FileModification.name to TaskTypeConfig(task_type = FileModification.name),
+                    AutoFix.name to AutoFixTaskTypeConfig(),
+                ),
+                testName = "SoftwareProjectGenerator_" + cognitiveSettings2.type?.name + "_fixed",
+                prompt = "Build a fun and unique browser-based game.",
+            ).run()
+        }
     }
+}
+
+class ProjectGenerator(
+    cognitiveSettings1: CognitiveModeConfig = WaterfallModeConfig(),
+    val cognitiveSettings2: CognitiveModeConfig,
+    val taskSettings: MutableMap<String, TaskTypeConfig>,
+    val testName: String,
+    prompt: String,
+) : PlanHarness(prompt = prompt, cognitiveSettings = cognitiveSettings1,) {
+    override fun newConfig(session: Session, tempDir: File) = super.newConfig(session, tempDir).apply {
+        taskSettings[BrainstormingTask.Brainstorming.name] = TaskTypeConfig(
+            task_type = BrainstormingTask.Brainstorming.name,
+        )
+        taskSettings[SubPlanTask.SubPlan.name] = SubPlanTask.SubPlanTaskTypeConfig(
+            name = SubPlanTask.SubPlan.name,
+            cognitiveSettings = cognitiveSettings2,
+            taskSettings = taskSettings
+        )
+    }
+    override fun createWorkspace() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }
 }

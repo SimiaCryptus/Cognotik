@@ -1,5 +1,0 @@
-2023-10-27 10:00:01 INFO  Main - Application starting
-2023-10-27 10:00:02 DEBUG Config - Loading properties from disk
-2023-10-27 10:00:05 WARN  Database - Connection pool reaching limit
-2023-10-27 10:00:10 ERROR Auth - Failed login attempt for user 'admin'
-2023-10-27 10:00:15 INFO  Main - Application ready

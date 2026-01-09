@@ -16,7 +16,7 @@ object LanguageServerTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+     @org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testHover() {
         val harness = TaskHarness(
@@ -46,7 +46,7 @@ object LanguageServerTaskTest {
         harness.run()
     }
 
-    //@Test
+     @org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testDiagnostics() {
         val harness = TaskHarness(

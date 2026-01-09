@@ -179,8 +179,6 @@ class ScriptwritingTask(
         return """
  Scriptwriting - Generate complete scripts for videos, podcasts, and presentations
   ** Optionally, list input files (supports glob patterns) to be examined when generating the script
-  ** Available files:
-  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
   ** Specify the topic and script type (video, podcast, presentation, etc.)
   ** Set target duration and audience
   ** Configure tone and pacing
@@ -1142,23 +1140,6 @@ Provide the complete revised script with all formatting intact.
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ScriptwritingTask::class.java)
-        fun getAvailableFiles(
-            path: Path,
-            treatDocumentsAsText: Boolean = false,
-        ): List<String> {
-            return try {
-                listOf(
-                    FileSelectionUtils.filteredWalkAsciiTree(
-                        path.toFile(),
-                        20,
-                        treatDocumentsAsText = treatDocumentsAsText
-                    )
-                )
-            } catch (e: Exception) {
-                log.error("Error listing available files", e)
-                listOf("Error listing files: ${e.message}")
-            }
-        }
 
         fun extractDocumentContent(file: File) = try {
             file.readText()

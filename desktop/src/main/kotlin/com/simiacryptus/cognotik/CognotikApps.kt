@@ -403,7 +403,9 @@ fun ApiChatModel.instance(
     onUsage = { model, usage ->
         ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
             session,
-            user, model, usage
+            user,
+            model,
+            usage
         )
     }
 )

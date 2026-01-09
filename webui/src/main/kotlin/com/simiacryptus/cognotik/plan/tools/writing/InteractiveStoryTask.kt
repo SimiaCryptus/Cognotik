@@ -217,8 +217,6 @@ class InteractiveStoryTask(
   ** Optimize for replay value with different experiences
   ** Track consequences across choices for coherent storytelling
   ** Produces complete interactive narrative with decision tree
-  Available files:
-  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
         """.trimIndent()
     }
 
@@ -1254,24 +1252,6 @@ Make this ending feel earned and meaningful. It should resonate with the path ta
               </ul>
             """,
         )
-
-        fun getAvailableFiles(
-            path: Path,
-            treatDocumentsAsText: Boolean = false,
-        ): List<String> {
-            return try {
-                listOf(
-                    FileSelectionUtils.filteredWalkAsciiTree(
-                        path.toFile(),
-                        20,
-                        treatDocumentsAsText = treatDocumentsAsText
-                    )
-                )
-            } catch (e: Exception) {
-                log.error("Error listing available files", e)
-                listOf("Error listing files: ${e.message}")
-            }
-        }
 
         private val textExtensions = setOf(
             "txt", "md", "kt", "java", "js", "ts", "py", "rb", "go", "rs", "c", "cpp", "h", "hpp",

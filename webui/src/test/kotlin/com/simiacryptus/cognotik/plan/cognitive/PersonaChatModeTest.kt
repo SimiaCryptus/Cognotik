@@ -15,7 +15,7 @@ object PersonaChatModeTest {
         PlanHarness.configurePlatform()
     }
 
-   //@Test
+    @org.junit.jupiter.api.Test
     fun test() {
         object : PlanHarness(
             prompt = "Create a simple python script that prints 'Hello from PersonaChatMode'",

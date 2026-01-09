@@ -329,8 +329,6 @@ class GameLevelDesignTask(
         return """
  GameLevelDesign - Generate complete game level designs with layout, pacing, and encounters
   ** Optionally, list input files (supports glob patterns) to be examined for context
-  ** Available files:
-  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
   ** Specify level name and game type (platformer, shooter, puzzle, rpg, etc.)
   ** Set target duration and difficulty tier
   ** Configure player count (single or multiplayer)
@@ -1507,23 +1505,5 @@ Ensure variants maintain the core level design while adjusting challenge.
               </ul>
             """,
         )
-
-        fun getAvailableFiles(
-            path: Path,
-            treatDocumentsAsText: Boolean = false,
-        ): List<String> {
-            return try {
-                listOf(
-                    FileSelectionUtils.filteredWalkAsciiTree(
-                        path.toFile(),
-                        20,
-                        treatDocumentsAsText = treatDocumentsAsText
-                    )
-                )
-            } catch (e: Exception) {
-                log.error("Error listing available files", e)
-                listOf("Error listing files: ${e.message}")
-            }
-        }
     }
 }

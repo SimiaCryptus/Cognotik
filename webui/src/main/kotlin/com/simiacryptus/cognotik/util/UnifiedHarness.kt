@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager.Companion.defaultUser
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
@@ -42,13 +43,21 @@ open class UnifiedHarness(
     val openBrowser: Boolean = false,
     val captureMessages: Boolean = serverless,
     val redirectData: Boolean = serverless,
-    val modelInstanceFn: (ApiChatModel) -> ChatInterface = { model ->
+    val modelInstanceFn: (ApiChatModel, Session) -> ChatInterface = { model,session ->
         val api = model.findApi()
         val model =
             model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
         model.instance(
             key = api?.key ?: throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}"),
             base = api.baseUrl,
+            onUsage = { model, usage ->
+                ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
+                    session = session,
+                    UserSettingsManager.defaultUser,
+                    model,
+                    usage
+                )
+            },
         )
     },
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
@@ -110,10 +119,12 @@ open class UnifiedHarness(
             showMenubar = false,
             useExpansionSyntax = true
         ) {
-            override fun instance(model: ApiChatModel) = modelInstanceFn(model)
+            override fun instance(model: ApiChatModel) = modelInstanceFn(model,session)
 
             override fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
                 task.resolveUserFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
+                val usageManager = ApplicationServices.fileApplicationServices().usageManager
+                task.resolveUserFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
                 super.onComplete(mode, task)
             }
 
@@ -160,7 +171,6 @@ open class UnifiedHarness(
                     return socketManager
                 }
             }
-
         }
 
         if (!serverless) {
@@ -196,7 +206,7 @@ open class UnifiedHarness(
             }
 
         } finally {
-            handleBrowserShutdown()
+            handleBrowserShutdown(session)
         }
     }
 
@@ -216,13 +226,15 @@ open class UnifiedHarness(
             path = "/test",
             taskType = taskType,
             taskConfig = executionConfig,
-            instanceFn = modelInstanceFn
+            instanceFn = { model -> modelInstanceFn(model,session) },
         ) {
-            override fun instance(model: ApiChatModel) = modelInstanceFn(model)
+            override fun instance(model: ApiChatModel) = modelInstanceFn(model,session)
 
             override fun onTaskComplete(result: String, task: SessionTask) {
                 log.info("Task completed successfully")
                 task.resolveUserFile("result.md")?.writeText(result)
+                val usageManager = ApplicationServices.fileApplicationServices().usageManager
+                task.resolveUserFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
                 completionLatch.countDown()
             }
 
@@ -304,7 +316,7 @@ open class UnifiedHarness(
             }
 
         } finally {
-            handleBrowserShutdown()
+            handleBrowserShutdown(session)
         }
     }
 
@@ -325,7 +337,8 @@ open class UnifiedHarness(
             parentFile?.mkdirs()
         }?.outputStream()?.buffered() else null
 
-    protected open fun handleBrowserShutdown() {
+    protected open fun handleBrowserShutdown(session: Session) {
+
         if (openBrowser && !serverless) {
             val pair = trayIcon()
             val shutdownLatch = pair.first

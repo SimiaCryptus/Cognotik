@@ -71,8 +71,6 @@ class SocraticDialogueTask(
   ** Creates a dialogue between questioner and responder agents
   ** Explores definitions, assumptions, implications, and contradictions
   ** Produces a structured dialogue transcript with insights
-  Available files:
-  ${getAvailableFiles(root).joinToString("\n") { "  - $it" }}
   ** Specify the initial question or hypothesis to explore
   ** Configure maximum dialogue depth (default: 5 exchanges)
   ** Enable/disable assumption challenging
@@ -586,25 +584,6 @@ Provide a structured synthesis.
         )
         return Pair(link, markdownTranscript)
     }
-
-    private fun getAvailableFiles(
-        path: Path,
-        treatDocumentsAsText: Boolean = false,
-    ): List<String> {
-        return try {
-            listOf(
-                FileSelectionUtils.filteredWalkAsciiTree(
-                    path.toFile(),
-                    20,
-                    treatDocumentsAsText = treatDocumentsAsText
-                )
-            )
-        } catch (e: Exception) {
-            log.error("Error listing available files", e)
-            listOf("Error listing files: ${e.message}")
-        }
-    }
-
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SocraticDialogueTask::class.java)

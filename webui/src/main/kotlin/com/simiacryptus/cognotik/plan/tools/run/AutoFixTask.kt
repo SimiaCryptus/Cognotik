@@ -44,9 +44,8 @@ class AutoFixTask(
     }
 
     class AutoFixTaskTypeConfig(
-        task_type: String? = null,
+        name: String? = AutoFix.name,
         model: ApiChatModel? = null,
-        name: String? = task_type,
         var promptTemplate: String = """
   SelfHealing - Run a command and automatically fix any issues that arise
   * Specify the commands to be executed along with their working directories
@@ -56,7 +55,7 @@ class AutoFixTask(
   * Available commands:
   {executables}
         """.trimIndent()
-    ) : TaskTypeConfig(task_type, name, model)
+    ) : TaskTypeConfig(AutoFix.name, name, model)
 
     class AutoFixTaskExecutionConfigData(
         @Description("The commands to be executed with their respective working directories") var commands: MutableList<CommandWithWorkingDir>? = ArrayList(),

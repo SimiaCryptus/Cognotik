@@ -17,7 +17,7 @@ object CrawlerAgentTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+     @org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testCrawler() {
         TaskHarness(
@@ -37,7 +37,7 @@ object CrawlerAgentTaskTest {
         ).run()
     }
 
-    //@Test
+     @org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testDirectUrlCrawler() {
         TaskHarness(

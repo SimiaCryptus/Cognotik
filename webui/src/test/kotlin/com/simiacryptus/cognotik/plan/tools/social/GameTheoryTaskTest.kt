@@ -16,7 +16,7 @@ object GameTheoryTaskTest {
         PlanHarness.configurePlatform()
     }
 
-    //@Test
+     @org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testPrisonersDilemma() {
         TaskHarness(
@@ -49,7 +49,7 @@ object GameTheoryTaskTest {
         ).run()
     }
 
-    //@Test
+     @org.junit.jupiter.api.Test
     @Timeout(10, unit = TimeUnit.MINUTES)
     fun testRepeatedGame() {
         TaskHarness(
