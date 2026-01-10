@@ -1,0 +1,984 @@
+[ {
+  "id" : "page_0",
+  "label" : "Full Image",
+  "description" : "Root level analysis",
+  "bounds" : {
+    "x" : 0,
+    "y" : 0,
+    "width" : 1159,
+    "height" : 1703
+  },
+  "depth" : 0,
+  "children" : [ {
+    "id" : "page_0_0",
+    "label" : "Patent Header",
+    "description" : "Header information including the inventor's name, the title of the invention, the patent number, and the patent date.",
+    "bounds" : {
+      "x" : 133,
+      "y" : 204,
+      "width" : 724,
+      "height" : 127
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_0_0_0",
+      "label" : "(No Model.)",
+      "description" : "Text indicating that no physical model was submitted with the patent application.",
+      "bounds" : {
+        "x" : 140,
+        "y" : 210,
+        "width" : 111,
+        "height" : 17
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image segment contains the text '(No Model.)' in a black, serif font against a white background. The text is enclosed in parentheses and includes a period after the word 'Model'. The characters appear slightly pixelated or distressed, suggesting it may be a scan from an older printed document, such as a patent application."
+    }, {
+      "id" : "page_0_0_1",
+      "label" : "M. G. SCHINKE.",
+      "description" : "The name of the inventor, M. G. Schinke.",
+      "bounds" : {
+        "x" : 389,
+        "y" : 216,
+        "width" : 212,
+        "height" : 17
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image is a narrow horizontal segment containing black, bold, serif-style text on a white background. The text appears to be the word 'SCIENCE' in all capital letters, though it is heavily cropped, showing only the middle section of the characters. There are several small black specks or noise artifacts scattered across the white background above and around the letters."
+    }, {
+      "id" : "page_0_0_2",
+      "label" : "SUBMERGED PIPE.",
+      "description" : "The title of the invention, 'Submerged Pipe'.",
+      "bounds" : {
+        "x" : 398,
+        "y" : 236,
+        "width" : 192,
+        "height" : 14
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a horizontal line of black text on a white background. The text is in an uppercase, serif font that resembles a typewriter or old printing press style. The characters are \"M. G. SCHINKE\". There are periods after the 'M' and the 'G', and a space before the word 'SCHINKE'. The letters have a slightly grainy and irregular texture, typical of scanned historical documents or physical ink on paper."
+    }, {
+      "id" : "page_0_0_3",
+      "label" : "No. 486,986.",
+      "description" : "The patent number assigned to this invention.",
+      "bounds" : {
+        "x" : 148,
+        "y" : 294,
+        "width" : 157,
+        "height" : 27
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains the text \"No. 486,986.\" printed in a black, serif font on a white background. The text consists of the abbreviation \"No.\" followed by a space, then the number \"486,986\", which includes a comma as a thousands separator, and ends with a final period. The style of the typeface is reminiscent of older printed documents, such as those found in historical patents or legal records."
+    }, {
+      "id" : "page_0_0_4",
+      "label" : "Patented Nov. 29, 1892.",
+      "description" : "The date the patent was officially granted.",
+      "bounds" : {
+        "x" : 537,
+        "y" : 295,
+        "width" : 308,
+        "height" : 23
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a single line of black text on a white background. The text is in a serif font and reads: \"Patented Nov. 29, 1892.\" The typography has a classic, slightly weathered appearance characteristic of late 19th-century printing. There are minor speckles and imperfections in the background and around the letters, suggesting it is a scan or photograph of an old document."
+    } ]
+  }, {
+    "id" : "page_0_1",
+    "label" : "Fig. 2: Straight Joint Cross-section",
+    "description" : "Figure 2 of the patent drawing, showing a cross-sectional view of the submerged pipe joint in a straight configuration.",
+    "bounds" : {
+      "x" : 110,
+      "y" : 332,
+      "width" : 527,
+      "height" : 417
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_0_1_0",
+      "label" : "Fig. 2.",
+      "description" : "The label 'Fig. 2.' indicating the figure number of the technical drawing.",
+      "bounds" : {
+        "x" : 131,
+        "y" : 615,
+        "width" : 52,
+        "height" : 104
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image segment contains the text 'Fig. 2.' written in a vertical, cursive script. The text is oriented so that it reads from bottom to top. In the upper right corner, there is a small portion of a hatched or shaded area, consisting of parallel diagonal lines within a border. The entire image is in black and white, typical of a technical or patent drawing."
+    }, {
+      "id" : "page_0_1_1",
+      "label" : "A (Shaft/Pipe)",
+      "description" : "Central shaft or pipe component labeled 'A', entering the top of the assembly.",
+      "bounds" : {
+        "x" : 268,
+        "y" : 340,
+        "width" : 210,
+        "height" : 104
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment is a black and white line drawing, likely part of a technical or scientific diagram. It features a central rectangular area bounded on the left and right by vertical bars filled with diagonal hatching, which often represents a solid material or a cross-section in technical drawings. Near the top of the central area, a horizontal dashed line spans the width between the two hatched bars. Above this dashed line, the top edge of the image is defined by a wavy, irregular line, possibly representing a liquid surface or an uneven boundary. On the right side of the central space, there is a stylized, script-like letter 'A' oriented vertically (rotated 90 degrees clockwise)."
+    }, {
+      "id" : "page_0_1_2",
+      "label" : "C (Chamber)",
+      "description" : "The internal chamber or main body of the joint, labeled 'C'.",
+      "bounds" : {
+        "x" : 294,
+        "y" : 457,
+        "width" : 158,
+        "height" : 125
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image segment features a horizontal dashed line running across the middle. Below this line, towards the left, there is a thick, black, curved mark resembling a handwritten letter 'C' or a hook. The entire image is on a white background and is peppered with numerous small black dots or speckles, which appear to be digital noise or artifacts from a scan."
+    }, {
+      "id" : "page_0_1_3",
+      "label" : "D (Upper Housing)",
+      "description" : "Upper housing or flange component labeled 'D', which surrounds the shaft 'A'.",
+      "bounds" : {
+        "x" : 225,
+        "y" : 365,
+        "width" : 52,
+        "height" : 83
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image is a black and white technical drawing, specifically a cross-sectional view of a multi-layered structure. It features several vertical sections, each filled with a distinct diagonal hatching pattern to represent different materials or components. The leftmost section has diagonal lines sloping from the top-left to the bottom-right. Adjacent to it is a thinner vertical section with diagonal lines sloping in the opposite direction (top-right to bottom-left). To the right of that is another wider section with hatching similar to the first. A solid horizontal line defines the top boundary of these sections. There are also thin leader lines pointing towards the hatched areas, which are typically used in such diagrams to indicate labels or callouts that would be present in the full drawing."
+    }, {
+      "id" : "page_0_1_4",
+      "label" : "E (Lower Housing)",
+      "description" : "Lower housing or base component labeled 'E'.",
+      "bounds" : {
+        "x" : 215,
+        "y" : 603,
+        "width" : 52,
+        "height" : 104
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment is a black and white technical illustration or line drawing. It depicts a corner of a rectangular frame-like structure with rounded edges. The interior of the frame's body is filled with dense, parallel diagonal cross-hatching lines, a common convention in engineering drawings to represent a cross-section or a specific material. The drawing has a bold, high-contrast style with thick outer borders and finer internal lines, giving it a vintage or printed appearance. The frame is shown from an angled perspective, revealing its three-dimensional form."
+    }, {
+      "id" : "page_0_1_5",
+      "label" : "F (Bellows/Diaphragm)",
+      "description" : "Flexible, corrugated bellows or diaphragm element labeled 'F', allowing for movement while maintaining a seal.",
+      "bounds" : {
+        "x" : 189,
+        "y" : 457,
+        "width" : 79,
+        "height" : 145
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment is a black and white technical illustration, likely from a patent or engineering diagram. It features a thick, undulating band that curves in an S-like shape. The band is filled with diagonal hatching lines, giving it a textured appearance. A horizontal dashed line passes through the center of the image, intersecting the curved band. To the left of the band's central curve, there is a stylized letter 'H' used as a label. The background is white with some minor black speckles or noise typical of scanned old documents."
+    }, {
+      "id" : "page_0_1_6",
+      "label" : "G (Outer Casing)",
+      "description" : "Outer casing or clamp labeled 'G' that holds the assembly together.",
+      "bounds" : {
+        "x" : 141,
+        "y" : 469,
+        "width" : 52,
+        "height" : 125
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image is a black and white technical cross-section drawing of a mechanical component. It features two main parts, both indicated as solid material by diagonal cross-hatching. The part on the left has a central horizontal hub and a vertical, slightly curved flange. To its right is another thinner, slightly curved vertical component. A horizontal dashed centerline passes through the middle of the assembly, suggesting axial symmetry. Several thin, solid lines extend from the parts, likely serving as lead lines for dimensions or labels in a larger diagram. The overall structure is characteristic of a valve, seal, or diaphragm assembly."
+    }, {
+      "id" : "page_0_1_7",
+      "label" : "e, f, g (Fasteners)",
+      "description" : "Fastening mechanism including a bolt 'e', flange 'f', and nut 'g' holding the outer casing halves together.",
+      "bounds" : {
+        "x" : 110,
+        "y" : 507,
+        "width" : 52,
+        "height" : 41
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment is a black and white technical cross-section diagram. It shows a vertical rectangular component, possibly a bolt or pin, passing through a material. The material is indicated by diagonal cross-hatching on either side of the central component. At the top of the vertical component is a wider, horizontal rectangular shape, which could represent a bolt head or a nut. To the left of the assembly, there is a lowercase letter 'v' with a leader line pointing towards the cross-hatched section. There are also some faint, indistinct markings above the main structure."
+    } ]
+  }, {
+    "id" : "page_0_2",
+    "label" : "Fig. 1: Angled Joint Cross-section",
+    "description" : "Figure 1 of the patent drawing, showing a cross-sectional view of the flexible pipe joint at an angle, illustrating its flexibility.",
+    "bounds" : {
+      "x" : 115,
+      "y" : 817,
+      "width" : 527,
+      "height" : 655
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_0_2_0",
+      "label" : "Fig 1",
+      "description" : "Label for the first figure of the technical drawing.",
+      "bounds" : {
+        "x" : 133,
+        "y" : 885,
+        "width" : 63,
+        "height" : 78
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image is a small, low-resolution segment showing handwritten black marks on a white background. The most prominent feature is a character that looks like a '7' with a horizontal crossbar or a stylized 'Z'. Above this character is a small, short horizontal dash. At the very bottom of the frame, the top part of another character is visible, consisting of two curved lines that suggest the upper portion of a letter like 'B' or a number like '8'. The strokes are somewhat jagged due to the low resolution."
+    }, {
+      "id" : "page_0_2_1",
+      "label" : "Witnesses: Geo W. Young, N. E. Oliphant",
+      "description" : "Signatures of the witnesses for the patent application, including 'Geo W. Young' and 'N. E. Oliphant'.",
+      "bounds" : {
+        "x" : 120,
+        "y" : 1337,
+        "width" : 158,
+        "height" : 131
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image shows a segment of a document with handwritten text in a formal, cursive script. The text is arranged in three lines:\n\n1.  **Witnesses**: The word \"Witnesses\" is written at the top, featuring a highly decorative and ornate capital 'W'.\n2.  **Geo W. Young**: The second line appears to be a signature or name, likely \"Geo W. Young,\" where \"Geo\" is a common abbreviation for George. The capital 'G' is also quite stylized.\n3.  **N. E. Oliphant**: The third line contains another name, \"N. E. Oliphant,\" written in a clear, though still cursive, hand.\n\nThe handwriting style is characteristic of late 19th or early 20th-century official or legal documents. There are some faint, partially obscured markings in the upper right corner, possibly indicating a page or exhibit number."
+    }, {
+      "id" : "page_0_2_2",
+      "label" : "Main Joint Assembly",
+      "description" : "The central mechanical assembly showing the internal structure of the joint, including pipes A and B, and flexible element C.",
+      "bounds" : {
+        "x" : 162,
+        "y" : 823,
+        "width" : 432,
+        "height" : 641
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image is a detailed technical cross-section drawing, likely from a patent application, illustrating a flexible mechanical joint or coupling. The drawing uses black and white line art with extensive cross-hatching and shading to represent different materials and three-dimensional forms.\n\nKey components are labeled with letters:\n- **'A'** identifies a pipe or shaft entering the joint from the top right at an angle.\n- **'B'** identifies a vertical pipe or shaft at the bottom of the assembly.\n- **'C'** is a flexible, bellows-like component that connects pipes A and B, allowing for angular movement while maintaining a seal. It has a complex, convoluted shape.\n- **'D'** and **'E'** appear to be parts of a spherical outer housing or casing that encloses the flexible joint.\n- **'F'** indicates an internal component within the housing, possibly a bearing or a secondary seal.\n- Small lowercase **'a'** labels point to various interfaces, likely representing gaskets, washers, or thin sealing layers between the larger components.\n- The label **'b'** points to the outer surface of the spherical housing.\n\nThe drawing shows the joint in a flexed position, with pipe A tilted relative to pipe B. The flexible member 'C' is compressed on one side and extended on the other to accommodate this angle. In the bottom left corner, there is cursive text under the heading 'Witnesses', including the names 'Geo. W. Young' and 'H. Oliphant', which is typical for historical patent documents."
+    }, {
+      "id" : "page_0_2_3",
+      "label" : "Right side labels (Fig 3, etc.)",
+      "description" : "Labels and figure numbers on the right side of the drawing, including 'Fig 3' and various component letters.",
+      "bounds" : {
+        "x" : 597,
+        "y" : 1046,
+        "width" : 42,
+        "height" : 360
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment is a black and white technical illustration, likely from a patent or engineering document, shown in a vertical orientation. It depicts a cross-sectional view of a mechanical assembly. Two main components, indicated by diagonal cross-hatching, are joined together by a central bolt or fastener. The assembly has a flared, somewhat conical shape. Several handwritten labels are present: 'Fig. 3' is clearly visible at the bottom, and individual parts or features are marked with letters such as 'G', 'H', 'e', and 'f'. The cross-hatching is a standard convention in technical drawing to represent solid material in a section view."
+    } ]
+  }, {
+    "id" : "page_0_3",
+    "label" : "Fig. 3: Submerged Pipe Application",
+    "description" : "Figure 3 of the patent drawing, showing a schematic of the pipe being laid on a submerged surface, demonstrating how the flexible joints allow it to follow the terrain.",
+    "bounds" : {
+      "x" : 625,
+      "y" : 306,
+      "width" : 295,
+      "height" : 1149
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_0_3_0",
+      "label" : "ed Nov. 29, 1892.",
+      "description" : "Partial date text from the top of the patent document, indicating the year 1892.",
+      "bounds" : {
+        "x" : 625,
+        "y" : 306,
+        "width" : 221,
+        "height" : 45
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image is a small, black-and-white segment of a printed document. It contains the text 'ed Nov. 29, 1882.' in a serif typeface. The letters 'ed' at the beginning are partially cut off at the top. The background is white with some minor black speckling or noise, characteristic of an old scanned document. The text likely represents the conclusion of a word followed by a specific date."
+    }, {
+      "id" : "page_0_3_1",
+      "label" : "Right bank pipe assembly",
+      "description" : "The upper right portion of the diagram showing a pipe (labeled A) on a ground surface, connected via a joint (labeled G, H) to another pipe section (labeled B) that enters the water.",
+      "bounds" : {
+        "x" : 855,
+        "y" : 317,
+        "width" : 64,
+        "height" : 517
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment is a black and white technical line drawing. It depicts a vertical rod or pipe positioned adjacent to a textured, uneven surface, which could represent a rock face or the side of a borehole. The rod is shown with solid lines in its upper portion and features several small horizontal markings. Near the bottom of the solid section, there is a flared collar or joint. Below this point, the rod's path is indicated by dashed lines, suggesting it continues underground or is a projected extension. The surface to the right is rendered with a wavy outline and short, diagonal hatch marks to indicate texture and depth."
+    }, {
+      "id" : "page_0_3_2",
+      "label" : "Submerged pipe section",
+      "description" : "The central part of the drawing showing the main pipe section (B) crossing through a body of water. Solid lines show its current position, while dashed lines indicate an alternative or lowered position.",
+      "bounds" : {
+        "x" : 669,
+        "y" : 420,
+        "width" : 206,
+        "height" : 919
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment is a portion of a technical or patent drawing, rendered in black and white line art. It depicts a mechanical apparatus, likely related to marine or hydraulic engineering, given the background texture of short, dashed lines commonly used to represent water. \n\nA prominent feature is a long, segmented rod or pipe labeled 'B', which extends diagonally across the frame. It is connected at its upper end to another horizontal rod labeled 'A' via a joint or coupling marked with the letters 'G' and 'H'. Below the solid line of rod 'B', a dashed-line version of the same structure is shown, indicating a range of motion or an alternative position. \n\nThe left side of the image features a series of scalloped, wavy lines that likely represent a shoreline or the surface of a body of water. In the bottom right corner, stylized cursive text is partially visible, spelling out the word 'Inventor', which is typical for patent illustrations. The overall style is precise and functional, intended to illustrate the design and movement of a mechanical device."
+    }, {
+      "id" : "page_0_3_3",
+      "label" : "Left side pipe assembly",
+      "description" : "The lower left portion of the diagram showing the pipe assembly on the opposite side, with horizontal pipe A connected to pipe B. It includes detailed labels like e, f, g for specific components.",
+      "bounds" : {
+        "x" : 625,
+        "y" : 937,
+        "width" : 59,
+        "height" : 517
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment is a vertical crop from a technical or patent drawing, rendered in black and white line art. It features a long, horizontal rod or pipe labeled with the letter 'B'. This rod has several small vertical marks along its length and is terminated at both ends by rounded, bulbous fittings labeled 'H' and 'G'. Below rod 'B', another parallel rod labeled 'A' is partially visible. To the left of the main rod, there is a small, cross-hatched rectangular component labeled with the letters 'e' and 'g'. A wavy line runs along the bottom of the frame, which might represent a water surface or uneven ground. The overall style is characteristic of early 20th-century mechanical diagrams."
+    }, {
+      "id" : "page_0_3_4",
+      "label" : "Inventor and Attorney signatures",
+      "description" : "Handwritten signatures at the bottom right of the document, identifying the inventor and their attorney.",
+      "bounds" : {
+        "x" : 748,
+        "y" : 1248,
+        "width" : 171,
+        "height" : 206
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image segment contains handwritten text in black ink on a white, slightly grainy background. The text is arranged in three lines:\n\n1.  **Top line:** The word \"Inventor\" written in an ornate, decorative cursive script. The capital 'I' is particularly flourished.\n2.  **Middle line:** The name \"Max G. Schinke,\" written in a clear, legible cursive hand. There is a comma following the name.\n3.  **Bottom line:** The name \"H. G. Underwood\" written in a similar cursive style. \n\nThe overall appearance is characteristic of the signature or attribution section of a late 19th or early 20th-century patent application or legal document. The background shows some minor speckling and noise, typical of a scanned historical document."
+    } ]
+  }, {
+    "id" : "page_0_4",
+    "label" : "Witnesses Signatures",
+    "description" : "Signatures of the witnesses to the patent application.",
+    "bounds" : {
+      "x" : 115,
+      "y" : 1336,
+      "width" : 179,
+      "height" : 144
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_0_4_0",
+      "label" : "Witnesses",
+      "description" : "The word 'Witnesses' written in a decorative cursive script.",
+      "bounds" : {
+        "x" : 127,
+        "y" : 1344,
+        "width" : 152,
+        "height" : 40
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image shows the word 'Witnesses' written in a highly decorative, calligraphic script. The style is characteristic of 19th-century formal documents, such as legal papers or patents. The initial 'W' is particularly ornate, featuring large loops and elegant flourishes. The subsequent letters are written in a smaller, flowing cursive. The ink is black against a plain white background, and the varying thickness of the lines suggests the use of a traditional pen. There are some small, faint markings or superscript characters above the latter part of the word, which may be part of the decorative style or a specific notation."
+    }, {
+      "id" : "page_0_4_1",
+      "label" : "Geo W. Young",
+      "description" : "The handwritten name 'Geo W. Young'. 'Geo' is a common abbreviation for George.",
+      "bounds" : {
+        "x" : 127,
+        "y" : 1383,
+        "width" : 152,
+        "height" : 40
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image shows a black and white, low-resolution scan of a handwritten signature. The signature appears to read 'Geo W. Young'. The writing is in a formal, cursive script typical of the late 19th or early 20th century. 'Geo' is a common abbreviation for George, featuring a large, flourishing initial 'G'. This is followed by a middle initial 'W.' and the surname 'Young', which starts with a large, stylized 'Y' and ends with a 'g' that has a long, looping descender. The image has some digital noise and pixelation, consistent with a scanned document."
+    }, {
+      "id" : "page_0_4_2",
+      "label" : "N. E. Oliphant",
+      "description" : "The handwritten name 'N. E. Oliphant'.",
+      "bounds" : {
+        "x" : 127,
+        "y" : 1422,
+        "width" : 152,
+        "height" : 50
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a handwritten name in black ink on a white background. The text reads \"N. E. Oliphant\". The handwriting is in a cursive, elegant style, likely from a historical document. The initials 'N.' and 'E.' are clearly followed by periods. The surname 'Oliphant' is written with a capital 'O', and features a prominent descender on the 'p' and a tall ascender on the 'h'. There is a small, upward-slanted mark at the end of the name, which could be a stylistic flourish or an apostrophe. The background is white with some minor digital noise or paper texture visible."
+    }, {
+      "id" : "page_0_4_3",
+      "label" : "Annotations",
+      "description" : "Small, possibly reference characters or annotations near the top right corner.",
+      "bounds" : {
+        "x" : 243,
+        "y" : 1336,
+        "width" : 35,
+        "height" : 25
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image is a small, low-resolution, black and white segment containing what appears to be handwritten or poorly printed text. On the left, there is a character that resembles a capital 'N' or possibly an 'H'. To its right is a lowercase letter 'a' or a Greek letter alpha 'α'. A horizontal line runs across the top of these characters. The image is highly pixelated and contains significant visual noise, suggesting it is a zoomed-in portion of a larger document or scan."
+    } ]
+  }, {
+    "id" : "page_0_5",
+    "label" : "Inventor and Attorney Signatures",
+    "description" : "Signatures of the inventor, Max G. Schinke, and his attorney, H. G. Underwood.",
+    "bounds" : {
+      "x" : 678,
+      "y" : 1277,
+      "width" : 237,
+      "height" : 212
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_0_5_0",
+      "label" : "Inventor",
+      "description" : "Handwritten word 'Inventor' indicating the role of the person named below.",
+      "bounds" : {
+        "x" : 744,
+        "y" : 1277,
+        "width" : 154,
+        "height" : 53
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a single word, \"Inventor\", written in a highly decorative, calligraphic cursive script. The style is characteristic of historical handwriting, featuring an ornate capital 'I' with multiple loops and flourishes. The lowercase letters 'n', 'v', 'e', and 'n' are fluidly connected. The letter 't' has a prominent, sweeping ascender that curves back over the following letters 'o' and 'r'. The text is in black ink on a white background, with some minor black speckling or noise typical of a scan from an older document."
+    }, {
+      "id" : "page_0_5_1",
+      "label" : "Max G. Schinke,",
+      "description" : "Handwritten name of the inventor, 'Max G. Schinke,'.",
+      "bounds" : {
+        "x" : 725,
+        "y" : 1340,
+        "width" : 177,
+        "height" : 31
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a handwritten name in black ink on a white background. The text reads 'Max G. Schinke,'. The handwriting is in a cursive style, with a prominent, slightly flourished capital 'M' in 'Max', a capital 'G' followed by a period, and a capital 'S' in 'Schinke'. The name is followed by a comma. The ink appears slightly uneven, characteristic of a pen on paper."
+    }, {
+      "id" : "page_0_5_2",
+      "label" : "By H.G. Underwood",
+      "description" : "Handwritten phrase 'By H.G. Underwood', likely the name of the attorney or legal representative.",
+      "bounds" : {
+        "x" : 678,
+        "y" : 1410,
+        "width" : 232,
+        "height" : 53
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image shows a snippet of handwritten text in black ink on a white background. The text clearly reads \"By H.G. Underwood\". The handwriting is in a cursive style, with a decorative, looped capital 'B' in the word \"By\". The initials \"H.G.\" are followed by periods. Below this line, the tops of letters from a subsequent line are visible, which appear to be \"D.D.\" followed by other partially obscured characters. The overall appearance is that of a signature or an author credit from an older document, with some minor scanning noise or speckles visible in the background."
+    }, {
+      "id" : "page_0_5_3",
+      "label" : "Attorney",
+      "description" : "Handwritten word 'Attorney' identifying the role of H.G. Underwood.",
+      "bounds" : {
+        "x" : 768,
+        "y" : 1450,
+        "width" : 142,
+        "height" : 38
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains the word \"Attorneys\" written in a decorative, cursive script. The handwriting is elegant and calligraphic, featuring a large, stylized capital 'A' with a prominent loop. The subsequent letters are connected in a fluid, flowing manner. The text is black on a white background, and there are several small black dots or speckles scattered around the word, which may be artifacts from scanning or a textured paper surface."
+    }, {
+      "id" : "page_0_5_4",
+      "label" : "Drawing elements",
+      "description" : "Portion of a technical drawing, showing dashed and solid lines, typical of a patent illustration.",
+      "bounds" : {
+        "x" : 678,
+        "y" : 1277,
+        "width" : 47,
+        "height" : 127
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment is a black and white line drawing, appearing to be a detail from a larger technical or architectural sketch. On the left, there are several vertical, wavy lines that suggest a textured surface or a specific material boundary. To the right of these, there are straighter vertical lines. A diagonal dashed line or a series of short strokes extends from the middle-left towards the upper right. Along this diagonal, there is some small, partially illegible text or numbers, possibly '4000', oriented parallel to the line. The drawing is composed of simple, rough strokes, giving it a hand-drawn or preliminary sketch quality."
+    } ]
+  } ]
+}, {
+  "id" : "page_1",
+  "label" : "Full Image",
+  "description" : "Root level analysis",
+  "bounds" : {
+    "x" : 0,
+    "y" : 0,
+    "width" : 1159,
+    "height" : 1703
+  },
+  "depth" : 0,
+  "children" : [ {
+    "id" : "page_1_0",
+    "label" : "UNITED STATES PATENT OFFICE.",
+    "description" : "The main header of the document identifying it as a United States Patent Office record.",
+    "bounds" : {
+      "x" : 152,
+      "y" : 241,
+      "width" : 770,
+      "height" : 76
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_1_0_0",
+      "label" : "UNITED",
+      "description" : "The word 'UNITED' in a serif, all-caps font.",
+      "bounds" : {
+        "x" : 152,
+        "y" : 241,
+        "width" : 192,
+        "height" : 76
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image shows the word 'UNITED' in a black, serif typeface against a white background. The first letter 'U' is larger than the subsequent letters 'NITED', which appear to be in a small-caps style. The overall appearance is somewhat distressed or aged, with visible grain, small black specks, and uneven ink distribution within the letters, suggesting a vintage print or a scanned document."
+    }, {
+      "id" : "page_1_0_1",
+      "label" : "STATES",
+      "description" : "The word 'STATES' in a serif, all-caps font.",
+      "bounds" : {
+        "x" : 344,
+        "y" : 241,
+        "width" : 192,
+        "height" : 76
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains the word 'STATES' in all capital letters. The font is a bold, serif typeface with a classic, perhaps slightly aged appearance. The letters are black against a white background. There is a significant amount of visual noise, consisting of small black dots or specks scattered throughout the image, both on the letters themselves and in the surrounding white space. This texture suggests the image might be a scan of a physical document or a print with some wear. The edges of the letters are not perfectly smooth, further contributing to a printed or scanned aesthetic."
+    }, {
+      "id" : "page_1_0_2",
+      "label" : "PATENT",
+      "description" : "The word 'PATENT' in a serif, all-caps font.",
+      "bounds" : {
+        "x" : 537,
+        "y" : 241,
+        "width" : 192,
+        "height" : 76
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains the word \"PATENT\" in a black, serif, all-caps font against a white background. The first letter, 'P', is significantly larger than the following letters ('ATENT'), which are in a smaller capital style. The image has a grainy texture with numerous small black specks and artifacts scattered throughout, giving it the appearance of a scan from an older, printed document."
+    }, {
+      "id" : "page_1_0_3",
+      "label" : "OFFICE.",
+      "description" : "The word 'OFFICE.' in a serif, all-caps font, followed by a period.",
+      "bounds" : {
+        "x" : 729,
+        "y" : 241,
+        "width" : 192,
+        "height" : 76
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains the word \"OFFICE.\" in a bold, serif, all-caps typeface. The first letter 'O' is slightly larger than the subsequent letters 'FFICE'. The text is followed by a period. The letters have a slightly textured or grainy appearance, characteristic of older printing or a scanned document. There are several small, dark specks or noise artifacts scattered across the light-colored background around the text."
+    } ]
+  }, {
+    "id" : "page_1_1",
+    "label" : "MAX G. SCHINKE, OF MILWAUKEE, WISCONSIN. SUBMERGED PIPE.",
+    "description" : "The name of the inventor, their location, and the title of the invention.",
+    "bounds" : {
+      "x" : 292,
+      "y" : 359,
+      "width" : 573,
+      "height" : 93
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_1_1_0",
+      "label" : "AX G. SCHINKE, OF MILWAUKEE, WISCONSIN.",
+      "description" : "The first line of text, identifying an individual and their location. The first letter is partially cut off.",
+      "bounds" : {
+        "x" : 292,
+        "y" : 359,
+        "width" : 544,
+        "height" : 37
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a single line of printed text in a black, all-caps, serif font against a white background that shows some minor scanning noise or speckling. The text reads: \"AX G. SCHINKE, OF MILWAUKEE, WISCONSIN.\" The first word, \"AX\", is partially cut off on the left side, suggesting it is the end of a name like \"MAX\". The line appears to be from a formal document, such as a patent or legal record, identifying a person and their location."
+    }, {
+      "id" : "page_1_1_1",
+      "label" : "SUBMERGED PIPE.",
+      "description" : "The second line of text, which serves as a title or subject heading, printed in a larger, bold font.",
+      "bounds" : {
+        "x" : 409,
+        "y" : 414,
+        "width" : 257,
+        "height" : 32
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains the text 'SUBMERGED PIPE.' in a bold, black, sans-serif font against a white background. The text is in all capital letters and ends with a period. There is some visible noise or speckling around the letters, giving it a slightly weathered or scanned appearance."
+    } ]
+  }, {
+    "id" : "page_1_2",
+    "label" : "SPECIFICATION forming part of Letters Patent No. 486,986, dated November 29, 1892.",
+    "description" : "Official patent details including the patent number, date of issue, and application filing information.",
+    "bounds" : {
+      "x" : 156,
+      "y" : 470,
+      "width" : 764,
+      "height" : 71
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_1_2_0",
+      "label" : "SPECIFICATION forming part of Letters Patent No. 486,986, dated November 29, 1892.",
+      "description" : "The first line of the patent specification header, containing the patent number and date.",
+      "bounds" : {
+        "x" : 156,
+        "y" : 473,
+        "width" : 764,
+        "height" : 31
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a single line of printed text from a historical document, likely a United States patent. The text reads: 'SPECIFICATION forming part of Letters Patent No. 486,986, dated November 29, 1892.' The word 'SPECIFICATION' is in all capital letters and appears in a slightly bolder, larger serif font than the rest of the sentence. The entire line is in a black, serif typeface against a white background that shows some minor speckling and noise, typical of a scanned vintage document. The text is horizontally oriented and centered within the frame."
+    }, {
+      "id" : "page_1_2_1",
+      "label" : "Application filed July 27, 1892. Serial No. 441,376. (No model.)",
+      "description" : "The second line of the patent specification header, containing application details.",
+      "bounds" : {
+        "x" : 156,
+        "y" : 505,
+        "width" : 764,
+        "height" : 31
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a single line of printed text in a bold, serif font, characteristic of late 19th-century official documents. The text reads: 'Application filed July 27, 1892. Serial No. 441,376. (No model.)'. The background is off-white with some visible grain and minor dark spots, indicating it is a scan of an aged paper document. This line likely comes from a United States patent specification header."
+    } ]
+  }, {
+    "id" : "page_1_3",
+    "label" : "Left Column Text",
+    "description" : "The first column of the detailed specification text, describing the invention and its purpose.",
+    "bounds" : {
+      "x" : 69,
+      "y" : 544,
+      "width" : 452,
+      "height" : 1021
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_1_3_0",
+      "label" : "Introductory Statement (Lines 1-9)",
+      "description" : "Introductory statement of the patent, identifying the inventor Max G. Schinke and the subject of the invention: 'Improvements in Submerged Pipes'.",
+      "bounds" : {
+        "x" : 69,
+        "y" : 544,
+        "width" : 452,
+        "height" : 183
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image is a black-and-white scan of a text segment from what appears to be a formal legal or patent document. The text is printed in a classic serif typeface. \n\nThe content of the text is as follows:\n\"To all whom it may concern:\nBe it known that I, MAX G. SCHINKE, a citizen of the United States, and a resident of Milwaukee, in the county of Milwaukee, and in the State of Wisconsin, have invented certain new and useful Improvements in Submerged Pipes; and I do hereby declare that the following is a full, clear, and exact description thereof.\"\n\nKey visual features include:\n- The opening phrase \"To all whom it may concern:\" is in italics.\n- The name \"MAX G. SCHINKE\" is written in small capital letters.\n- A line number \"5\" is visible on the left margin, indicating this is part of a larger numbered text.\n- The text is justified, and some words are hyphenated at the end of lines (e.g., \"citi-\", \"cer-\", \"Sub-\", \"de-\").\n- The background is a light grey with some visible grain and speckles, characteristic of an old scanned document."
+    }, {
+      "id" : "page_1_3_1",
+      "label" : "Object of Invention (Lines 10-19)",
+      "description" : "Description of the problem being solved (need for divers to work underwater) and the primary object of the invention: providing flexible, water-tight joints with protective casings that can be assembled above water.",
+      "bounds" : {
+        "x" : 69,
+        "y" : 727,
+        "width" : 452,
+        "height" : 193
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment contains a block of printed text, likely from a historical patent document. The text is set in a classic serif typeface and is justified. On the left margin, there are line numbers '10' and '15'. \n\nThe full text in the segment reads:\n\"10 My invention relates particularly to the lay-\ning of submerged pipe where heretofore the\nservices of a diver have been required to ad-\njust the pipe in position and calk the joints\nunder water; and the object of said invention\n15 is to provide flexible water-tight joints (at in-\ntervals of the submerged-pipe system) having\nprotective casings, the joints and casings be-\ning completed above water and then lowered\nto position.\"\n\nThe content describes an invention designed to improve the process of laying underwater pipes by creating flexible, water-tight joints that can be assembled above water, thereby eliminating the need for a diver to adjust and seal them underwater. The image has a grainy texture with some speckling, characteristic of a scanned old document."
+    }, {
+      "id" : "page_1_3_2",
+      "label" : "General Description (Lines 20-24)",
+      "description" : "A general statement transitioning to the detailed description and referencing the accompanying drawings.",
+      "bounds" : {
+        "x" : 69,
+        "y" : 921,
+        "width" : 452,
+        "height" : 81
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment contains a portion of a printed document, likely a legal or technical text such as a patent application. The text is in a serif font and appears somewhat aged, with visible grain and minor speckling. \n\nThe visible text reads:\n\"to position.\"\n\"20 Having stated the object of my invention,\"\n\"the latter consists in certain peculiarities of\"\n\"construction and combination of parts here-\"\n\"inafter described with reference to the accom-\"\n\nThe number \"20\" is positioned in the left margin, indicating line numbering common in legal or patent documents. The text is left-aligned and the snippet ends mid-sentence and mid-word (\"here-inafter\", \"accom-\")."
+    }, {
+      "id" : "page_1_3_3",
+      "label" : "Brief Description of Drawings (Lines 25-32)",
+      "description" : "Brief description of what each figure in the patent drawings represents (Figures 1, 2, and 3).",
+      "bounds" : {
+        "x" : 69,
+        "y" : 1003,
+        "width" : 452,
+        "height" : 183
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment contains a portion of a printed technical document, likely a patent specification, given the formal language and the presence of line numbers (25 and 30) in the left margin. The text is printed in a classic serif typeface and describes the figures included in the document's drawings.\n\nThe transcribed text is as follows:\n\"matter described with reference to the accom-\npanying drawings and subsequently claimed.\n25 In the drawings, Figure 1 represents a sec-\ntional view of a flexible pipe-joint construct-\ned according to my invention as it appears\nwhen two non-flexible sections of the joint\nare at an angle to each other; Fig. 2, a simi-\n30 lar view of the joint on a straight line, and\nFig. 3 a diagram illustrating my improved\nmanner of laying submerged pipe.\"\n\nThe content specifically outlines that Figure 1 shows a sectional view of a flexible pipe-joint at an angle, Figure 2 shows the same joint in a straight line, and Figure 3 illustrates a method for laying submerged pipe. The print shows some signs of age, such as slight ink bleed and minor speckling on the background."
+    }, {
+      "id" : "page_1_3_4",
+      "label" : "Detailed Description (Lines 33-50)",
+      "description" : "Detailed technical description of the pipe joint components, including non-flexible sections (A, B), an intermediate flexible section (C), and clamping rings (D, E) with protective spherical casings.",
+      "bounds" : {
+        "x" : 69,
+        "y" : 1187,
+        "width" : 452,
+        "height" : 377
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image is a segment of a printed document, likely a patent specification, containing a block of text with line numbers on the left margin. The text describes a mechanical assembly involving pipe sections. \n\nSpecifically, the text reads:\n'Referring by letter to the drawings, A B represent opposing pipe-sections of non-flexible material—such as iron—that in practice are joined to an intermediate pipe-section C, of lead or other suitable flexible material, this latter pipe-section being preferably corrugated. As shown, the flexible pipe-section is joined at its ends to the adjacent ends of the opposing non-flexible pipe-sections by clamping-rings D E of suitable material—such as iron—the joints being calked with lead or other suitable material a in order to be watertight, and, as is also shown, the clamping-rings are preferably integral with sections of spherical casings designed to protect said flexible pipe-section from external mechanical influences and forces, as well as to guide and limit the movement of the flexible water-'\n\nThe line numbers 35, 40, 45, and 50 are visible on the left, indicating the position of the text within a larger document. The font is a classic serif style, and the print quality shows some age-related characteristics like slight ink bleed and unevenness."
+    } ]
+  }, {
+    "id" : "page_1_4",
+    "label" : "Right Column Text",
+    "description" : "The second column of the detailed specification text, continuing the description of the invention's components and operation.",
+    "bounds" : {
+      "x" : 533,
+      "y" : 544,
+      "width" : 452,
+      "height" : 1021
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_1_4_0",
+      "label" : "tight joint when being lowered to its submerged position, as will be hereinafter more fully described.",
+      "description" : "The first partial paragraph of the text, concluding a previous thought about a tight joint in a submerged position.",
+      "bounds" : {
+        "x" : 533,
+        "y" : 544,
+        "width" : 452,
+        "height" : 66
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains three lines of printed text in a serif font, likely from an old document or patent. The text reads: 'tight joint when being lowered to its sub-', 'merged position, as will be hereinafter more', and 'fully described.' The word 'submerged' is hyphenated between the first and second lines. There is a thin vertical line on the left side of the text. The background is light with some visible grain and small dark specks."
+    }, {
+      "id" : "page_1_4_1",
+      "label" : "As illustrated, the ring D, that clamps the flexible pipe-section C to the non-flexible pipe-section A, has a rearward bell-like extension F, terminating in an outturned annular flange d, and external longitudinal ribs c are cast with said ring and its extension to form guides for an inturned annular flange b on a collar G, that is provided with an exterior flange e, strengthened by webs f, having a series of bolt-openings therein, these openings being designed for registration with similar openings in an opposing flange g on a bell-like forward extension H of the ring E, that clamps said flexible pipe-section to the non-flexible pipe-section B, the inner end of this latter ring being preferably in the form of a flange h in opposition to the corrugated portion of the aforesaid flexible pipe-section. The bell-like extensions of the clamping-rings form the spherical casing for the guidance of the flexible pipe-section, as well as its protection from external mechanical influences and forces, these sections of the casing having a sliding motion one upon the other to permit of the non-flexible pipe-sections being brought to various angles of deflection.",
+      "description" : "A detailed paragraph describing the mechanical components of a flexible pipe joint, including rings (D, E), pipe sections (A, B, C), extensions (F, H), flanges (b, d, e, g, h), and a collar (G). It explains how these parts form a protective spherical casing that allows for angular deflection.",
+      "bounds" : {
+        "x" : 533,
+        "y" : 610,
+        "width" : 452,
+        "height" : 515
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a block of technical text, likely from a patent specification or a mechanical engineering manual. The text describes a mechanical assembly for connecting flexible and non-flexible pipe sections. \n\nKey components mentioned include:\n- **Ring D**: Clamps flexible pipe-section C to non-flexible pipe-section A.\n- **Extension F**: A rearward bell-like extension of ring D, ending in an outturned annular flange 'd'.\n- **Ribs 'c'**: External longitudinal ribs on ring D and extension F that act as guides.\n- **Collar G**: Features an inturned annular flange 'b' and an exterior flange 'e' strengthened by webs 'f'. It contains bolt-openings.\n- **Ring E**: Clamps the flexible pipe-section to non-flexible pipe-section B.\n- **Extension H**: A forward bell-like extension of ring E, featuring an opposing flange 'g' with bolt-openings that align with those on collar G.\n- **Flange 'h'**: Located at the inner end of ring E, opposing the corrugated portion of the flexible pipe-section.\n\nThe text explains that the bell-like extensions form a spherical casing that guides and protects the flexible pipe-section from external forces. This casing allows for a sliding motion, enabling the non-flexible pipe sections to be positioned at various angles of deflection. \n\nSmall numbers (5, 6, 6, 7, 7) are visible along the right margin, indicating line numbering common in legal or patent documents."
+    }, {
+      "id" : "page_1_4_2",
+      "label" : "It is preferable to have the interior of the clamping-rings somewhat conical and to flange the ends of the non-flexible pipe-sections, these flanges serving as stops for the calking, while the conical interiors of said clamping-rings is a matter of detail and expediency toward obtaining the tightest possible joint between said non-flexible pipe-sections and the intermediate flexible one, the joint of the spherical protective casing being completed by bolting the flanged collar G to the flanged extension H of the clamping-ring E, above specified.",
+      "description" : "This paragraph discusses design preferences for the interior of the clamping rings (conical shape) and the use of flanges as stops for caulking to ensure a tight joint. It also mentions the final assembly step of bolting the collar G to extension H.",
+      "bounds" : {
+        "x" : 533,
+        "y" : 1125,
+        "width" : 452,
+        "height" : 260
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment contains a block of printed text, likely from a patent or technical document. The text is set in a serif typeface and is justified. On the right margin, there are line numbers: 80, 85, and 90. The background is a light, slightly textured off-white, characteristic of a scanned paper document.\n\nThe text reads as follows:\n\"to various angles of deflection.\nIt is preferable to have the interior of the 80\nclamping-rings somewhat conical and to flange\nthe ends of the non-flexible pipe-sections,\nthese flanges serving as stops for the calking,\nwhile the conical interiors of said clamping-\nrings is a matter of detail and expediency to- 85\nward obtaining the tightest possible joint be-\ntween said non-flexible pipe-sections and the\nintermediate flexible one, the joint of the\nspherical protective casing being completed\nby bolting the flanged collar G to the flanged 90\nextension H of the clamping-ring E, above\nspecified.\"\n\nThe content describes mechanical details of a pipe joint assembly, specifically mentioning clamping-rings, non-flexible pipe-sections, flanges, calking, and a spherical protective casing. It also references specific parts labeled 'G', 'H', and 'E'."
+    }, {
+      "id" : "page_1_4_3",
+      "label" : "The work of laying the pipe being done from a staging or vessel, any convenient or desirable number of non-flexible pipe-sections may be joined together by other than flexible connections if preferred; but at certain intervals in the line of the pipe system I necessarily employ the flexible joint hereinbefore specified.",
+      "description" : "The final paragraph explains the practical application of laying the pipe from a vessel, noting that while most sections can be joined with non-flexible connections, the flexible joint described is used at necessary intervals.",
+      "bounds" : {
+        "x" : 533,
+        "y" : 1386,
+        "width" : 452,
+        "height" : 178
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment contains a block of printed text, likely from a historical patent document or technical manual. The text is set in a classic serif typeface and is slightly grainy, characteristic of an older scan. \n\nThe transcribed text reads:\n\"specified.\nThe work of laying the pipe being done\nfrom a staging or vessel, any convenient or\ndesirable number of non-flexible pipe-sec- 95\ntions may be joined together by other than\nflexible connections if preferred; but at cer-\ntain intervals in the line of the pipe system\nI necessarily employ the flexible joint herein-\nbefore specified.\"\n\nKey features of the image include:\n- **Line Numbers:** The number \"95\" is visible on the right margin, aligned with the fourth line of the main paragraph. A partial \"10\" (likely part of \"100\") is visible at the bottom right corner.\n- **Content:** The text describes a method for laying pipe from a platform or ship. It explains that while multiple non-flexible pipe sections can be joined with rigid connections, flexible joints must be used at specific intervals within the overall pipe system.\n- **Visual Quality:** The image is a black-and-white scan with some visible 'noise' or speckling throughout the background, typical of aged paper or microfilm reproductions."
+    } ]
+  } ]
+}, {
+  "id" : "page_2",
+  "label" : "Full Image",
+  "description" : "Root level analysis",
+  "bounds" : {
+    "x" : 0,
+    "y" : 0,
+    "width" : 1159,
+    "height" : 1703
+  },
+  "depth" : 0,
+  "children" : [ {
+    "id" : "page_2_0",
+    "label" : "Header",
+    "description" : "The header of the patent page, containing the page number '2' and the patent number '486,986'.",
+    "bounds" : {
+      "x" : 164,
+      "y" : 190,
+      "width" : 446,
+      "height" : 59
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_2_0_0",
+      "label" : "2",
+      "description" : "A single character, possibly a number '2' or a stylized letter, located on the far left of the image segment.",
+      "bounds" : {
+        "x" : 168,
+        "y" : 206,
+        "width" : 22,
+        "height" : 26
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a single, bold, black character that appears to be the number '2' on a white background. The character has a slightly stylized or handwritten appearance with some pixelation along its edges. There are a few small, faint artifacts or noise marks around the character: a small dot to the upper right, a thin diagonal line segment to the left, and two small dots to the lower right."
+    }, {
+      "id" : "page_2_0_1",
+      "label" : "486",
+      "description" : "A three-digit number '486' located on the far right of the image segment.",
+      "bounds" : {
+        "x" : 576,
+        "y" : 196,
+        "width" : 33,
+        "height" : 23
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image segment contains the number '486' in a bold, black, sans-serif typeface. The characters appear slightly pixelated, suggesting a low-resolution or zoomed-in source. The background is a solid white. There is a small, faint greyish artifact or dot located above the digit '8'."
+    } ]
+  }, {
+    "id" : "page_2_1",
+    "label" : "Left Column Text",
+    "description" : "The left column of text, describing the process of lifting and joining submerged pipe sections.",
+    "bounds" : {
+      "x" : 164,
+      "y" : 246,
+      "width" : 457,
+      "height" : 638
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_2_1_0",
+      "label" : "First paragraph: pipe lifting and joining process",
+      "description" : "The first paragraph of the text, which describes the process of lifting a submerged pipe section above water to join it with a new section using a flexible joint and protective casing.",
+      "bounds" : {
+        "x" : 173,
+        "y" : 246,
+        "width" : 447,
+        "height" : 366
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a block of printed text in a serif font, characteristic of late 19th or early 20th-century technical documents or patents. The text is justified and describes a mechanical process involving submerged pipes and flexible joints. \n\nThe full text reads:\n\"As shown in Fig. 3, a length of submerged pipe is lifted above water at one end (the other end of this length being also provided with a flexible joint) and held at an angle to the water-level. The present upper outer flexible pipe-section having been primarily prepared for the required angle of deflection and the new length brought to position to be joined, the several parts constituting the flexible joint and protective casing are put together in proper succession and said flexible pipe-section connected water-tight to the ends of the rigid sections. Upon completion of the flexible joint and its casing the same are lowered and the free end of the added length of non-flexible pipe held above water for immediate further connection or temporarily lowered to be lifted at a convenient time.\"\n\nThe printing shows some signs of age, such as slight ink bleeding and unevenness in the letterforms. A vertical black line is visible along the right edge of the text block."
+    }, {
+      "id" : "page_2_1_1",
+      "label" : "Second paragraph: distinction from prior art",
+      "description" : "The second paragraph of the text, where the author distinguishes their invention from existing flexible pipe couplings, emphasizing that the flexible section is cast or rolled without joints and the casing is devoid of pivots.",
+      "bounds" : {
+        "x" : 173,
+        "y" : 612,
+        "width" : 447,
+        "height" : 271
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment contains a block of printed text, likely from a historical technical document or patent application. The text is set in a classic serif typeface and appears to be black ink on an aged, slightly speckled off-white background. \n\nThe visible text reads:\n\"I am aware of various flexible pipe-coup-\nlings; but none of these are adapted to my\npurpose—the laying of submerged water or\ngas pipe of large size—and at this point in\nthe description it is proper to emphasize the\nfact that the flexible pipe-section herein de-\nscribed is cast or rolled without joints. It is\nalso to be observed that the protective casing\nis devoid of pivots and that the ends of the\nnon-flexible pipe-sections do not have to be\nespecially prepared in casting or otherwise\nfor their connection with said flexible pipe-\nsection, it being my purpose to flexibly join\"\n\nOn the left margin, there are partial line numbers visible, specifically a '5' and what appears to be a '10' (partially cut off as 'o'). The text discusses the unique features of a flexible pipe coupling design, specifically for large-diameter submerged pipes, highlighting that the flexible section is seamless and the casing lacks pivots."
+    } ]
+  }, {
+    "id" : "page_2_2",
+    "label" : "Claims Section",
+    "description" : "The top part of the right column, containing the formal claims (1 and 2) of the invention.",
+    "bounds" : {
+      "x" : 625,
+      "y" : 246,
+      "width" : 457,
+      "height" : 468
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_2_2_0",
+      "label" : "sections of water or gas pipe such as is in common use.",
+      "description" : "The concluding sentence of the preceding descriptive section of the patent.",
+      "bounds" : {
+        "x" : 625,
+        "y" : 246,
+        "width" : 434,
+        "height" : 42
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains two lines of printed text in a black, serif font against a light, slightly speckled background. The text reads: \"sections of water or gas pipe such as is in\" on the first line, and \"common use.\" on the second line. The print quality appears aged, with some minor ink bleed and background noise typical of scanned historical documents."
+    }, {
+      "id" : "page_2_2_1",
+      "label" : "Having now fully described my invention, what I claim as new, and desire to secure by Letters Patent, is—",
+      "description" : "The formal introductory statement for the patent claims.",
+      "bounds" : {
+        "x" : 625,
+        "y" : 288,
+        "width" : 434,
+        "height" : 56
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains three lines of printed text in a bold, serif typeface, characteristic of historical legal or patent documents. The text is black on a light, slightly textured background. The transcription of the text is as follows:\n\nLine 1: \"Having now fully described my invention,\"\nLine 2: \"what I claim as new, and desire to secure by\"\nLine 3: \"Letters Patent, is—\"\n\nThe text is left-aligned, and the final line concludes with an em-dash. There are minor printing artifacts and speckles visible throughout the image, indicating it is likely a scan of an older physical document."
+    }, {
+      "id" : "page_2_2_2",
+      "label" : "1. In submerged pipe, the combination of two non-flexible pipe-sections, an intermediate flexible pipe-section engaging the ends of the former sections, but free to be bent to various angles, clamping-rings arranged on the engaged pipe-sections, and calking material interposed between the ends of said non-flexible and flexible pipe-sections, substantially as set forth.",
+      "description" : "The first claim of the patent, describing a combination of pipe sections and sealing materials.",
+      "bounds" : {
+        "x" : 625,
+        "y" : 344,
+        "width" : 434,
+        "height" : 177
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a block of printed text, which appears to be a claim from a patent document. The text is in a black serif font on a light, slightly textured background. \n\nThe text reads:\n\"1. In submerged pipe, the combination of two non-flexible pipe-sections, an intermediate flexible pipe-section engaging the ends of the former sections, but free to be bent to various angles, clamping-rings arranged on the engaged pipe-sections, and calking material interposed between the ends of said non-flexible and flexible pipe-sections, substantially as set forth.\"\n\nAt the very top, the words \"Letters Patent,\" are partially visible and cut off. The number \"1.\" at the beginning of the paragraph is slightly larger or bolder than the rest of the text, indicating it is the first claim. The overall appearance is that of an old, scanned document."
+    }, {
+      "id" : "page_2_2_3",
+      "label" : "2. In submerged pipe, two non-flexible pipe-sections, an intermediate flexible pipe-section engaging the ends of the former sections, but free to be bent to various angles, and suitable means for forming water-tight connection between said pipe-sections, in combination with a guiding and protective casing that incloses the joint formed by said pipe-sections, substantially as set forth.",
+      "description" : "The second claim of the patent, describing a pipe connection with a protective casing.",
+      "bounds" : {
+        "x" : 625,
+        "y" : 522,
+        "width" : 434,
+        "height" : 191
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains a block of printed text, which appears to be a numbered claim from a technical or legal document, such as a patent. The text is in a black, serif font on a light, slightly textured background with some visible noise or speckling. \n\nThe text reads as follows:\n\"as set forth.\n2. In submerged pipe, two non-flexible pipe-sections, an intermediate flexible pipe-section engaging the ends of the former sections, but free to be bent to various angles, and suitable means for forming water-tight connection between said pipe-sections, in combination with a guiding and protective casing that incloses the joint formed by said pipe-sections, substantially as set forth.\"\n\nThe paragraph describes a mechanical assembly for submerged pipes, specifically focusing on a flexible joint between two non-flexible pipe sections, protected by a casing."
+    } ]
+  }, {
+    "id" : "page_2_3",
+    "label" : "Testimony and Signatures",
+    "description" : "The bottom part of the right column, containing the inventor's testimony, signature (Max G. Schinke), and witness names (N. E. Oliphant, John E. Wiles).",
+    "bounds" : {
+      "x" : 625,
+      "y" : 706,
+      "width" : 457,
+      "height" : 178
+    },
+    "depth" : 1,
+    "children" : [ {
+      "id" : "page_2_3_0",
+      "label" : "In testimony that I claim the foregoing I 55\nhave hereunto set my hand, at Milwaukee, in\nthe county of Milwaukee and State of Wis-\nconsin, in the presence of two witnesses.",
+      "description" : "The main body of the concluding statement, declaring the signing of the document in Milwaukee, Wisconsin.",
+      "bounds" : {
+        "x" : 629,
+        "y" : 706,
+        "width" : 447,
+        "height" : 80
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "This image segment contains four lines of printed text in a bold, serif typeface, characteristic of late 19th or early 20th-century documents, such as a patent application. The text is black on a light, slightly textured background, showing some signs of age or scanning artifacts like small speckles. \n\nThe text reads:\n\"In testimony that I claim the foregoing I 5\"\n\"have hereunto set my hand, at Milwaukee, in\"\n\"the county of Milwaukee and State of Wis-\"\n\"consin, in the presence of two witnesses.\"\n\nKey details include:\n- A formal legal declaration or closing statement.\n- The location is specified as Milwaukee, in the county of Milwaukee and the State of Wisconsin.\n- The word \"Wisconsin\" is hyphenated between the third and fourth lines (\"Wis-\" and \"consin\").\n- There is a small numeral \"5\" at the far right of the first line, likely a line number or part of a page numbering system.\n- The overall appearance is that of a scanned historical document."
+    }, {
+      "id" : "page_2_3_1",
+      "label" : "MAX G. SCHINKE.",
+      "description" : "The name of the individual signing the document.",
+      "bounds" : {
+        "x" : 835,
+        "y" : 786,
+        "width" : 210,
+        "height" : 17
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image contains the text 'MAX G. SCHINKE.' in a bold, black, serif typeface. The letters are all capitalized and set against a plain white background. There is a period at the end of the name. The print quality shows some slight irregularities and speckling, characteristic of an older printed document or a scan."
+    }, {
+      "id" : "page_2_3_2",
+      "label" : "Witnesses:\nN. E. OLIPHANT,\nJOHN E. WILES.",
+      "description" : "The section listing the witnesses to the signature.",
+      "bounds" : {
+        "x" : 652,
+        "y" : 809,
+        "width" : 210,
+        "height" : 65
+      },
+      "depth" : 2,
+      "children" : [ ],
+      "analysis" : "The image is a black and white text segment, likely from a legal or official document. It contains three lines of text in a bold, serif typeface. The first line reads 'Witnesses:' followed by a colon. The second line is indented and reads 'N. E. OLIPHANT,'. The third line is also indented and reads 'JOHN E. WILES.'. The background is white with some minor digital noise or artifacts typical of a scanned document."
+    } ]
+  } ]
+} ]
