@@ -1,11 +1,9 @@
-package com.simiacryptus.cognotik.plan.tools.analysis
+package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
-import com.simiacryptus.cognotik.plan.tools.file.IterativeImageDecompositionTask
-import com.simiacryptus.cognotik.plan.tools.file.IterativeImageDecompositionTask.IterativeImageDecompositionConfig
 import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.util.TaskHarness
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -22,7 +20,7 @@ class IterativeImageDecompositionTaskTest {
         @JvmStatic
         @BeforeAll
         fun setup() {
-            PlanHarness.configurePlatform()
+            PlanHarness.Companion.configurePlatform()
         }
     }
 
@@ -32,19 +30,19 @@ class IterativeImageDecompositionTaskTest {
         val outputJson = "analysis_result.json"
 
         val harness = TaskHarness(
-            taskType = IterativeImageDecompositionTask.IterativeImageDecomposition,
-            executionConfig = IterativeImageDecompositionConfig(
-                files = listOf(
-                    "test_image.png"
+          taskType = IterativeImageDecompositionTask.IterativeImageDecomposition,
+          executionConfig = IterativeImageDecompositionTask.IterativeImageDecompositionConfig(
+            files = listOf(
+              "test_image.png"
 //                    "test.pdf"
-                ),
-                segmentation_query = "Decompose, analyze, and translate into english.",
-                max_depth = 2,
-                min_region_size = 50,
-                output_file = outputJson
             ),
-            timeoutMinutes = 10,
-            typeConfig = TaskTypeConfig(IterativeImageDecompositionTask.IterativeImageDecomposition.name),
+            segmentation_query = "Decompose, analyze, and translate into english.",
+            max_depth = 2,
+            min_region_size = 50,
+            output_file = outputJson
+          ),
+          timeoutMinutes = 10,
+          typeConfig = TaskTypeConfig(IterativeImageDecompositionTask.IterativeImageDecomposition.name),
         )
 
         // Create a test image
@@ -55,13 +53,13 @@ class IterativeImageDecompositionTaskTest {
         harness.run()
 
         val jsonFile = harness.dataDir.resolve(outputJson)
-        assertTrue(jsonFile.exists(), "Output JSON file should exist")
-        assertTrue(jsonFile.length() > 0, "Output JSON file should not be empty")
+      Assertions.assertTrue(jsonFile.exists(), "Output JSON file should exist")
+      Assertions.assertTrue(jsonFile.length() > 0, "Output JSON file should not be empty")
     }
 
-    private fun writeTestImage(
-        harness: TaskHarness<IterativeImageDecompositionConfig, TaskTypeConfig>,
-        imageName: String
+  private fun writeTestImage(
+    harness: TaskHarness<IterativeImageDecompositionTask.IterativeImageDecompositionConfig, TaskTypeConfig>,
+    imageName: String
     ) {
         val imagePath = harness.dataDir.resolve(imageName)
         val width = 800

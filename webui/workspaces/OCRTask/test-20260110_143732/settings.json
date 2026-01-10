@@ -1,5 +1,5 @@
 {
-  "sessionId" : "G-20260109-hCYg",
+  "sessionId" : "G-20260110-Vbmn",
   "defaultSmartModel" : {
     "model" : {
       "name" : "GeminiFlash_30_Preview",
@@ -61,5 +61,5 @@
     }
   },
   "autoFix" : true,
-  "workingDir" : "/home/andrew/code/Cognotik/webui/./workspaces/OCRTask/test-20260109_102305"
+  "workingDir" : "/home/andrew/code/Cognotik/webui/./workspaces/OCRTask/test-20260110_143732"
 }
