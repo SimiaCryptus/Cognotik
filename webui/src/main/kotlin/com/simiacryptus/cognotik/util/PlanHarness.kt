@@ -36,7 +36,7 @@ open class PlanHarness(
             onUsage = { model, usage ->
                 ApplicationServices.fileApplicationServices().usageManager.incrementUsage(
                     session = session,
-                    UserSettingsManager.defaultUser,
+                    defaultUser,
                     model,
                     usage
                 )
@@ -53,8 +53,6 @@ open class PlanHarness(
     val workspace: File? = null,
 ) {
 
-    val dataDir = createWorkspace()
-
     private val harness = object : UnifiedHarness(
         port = port,
         openBrowser = openBrowser,
@@ -64,25 +62,30 @@ open class PlanHarness(
         smartModel = smartModel,
         imageModel = imageModel
     ) {
-        override fun createTempDirectory(prefix: String) = dataDir
+        override fun createTempDirectory(prefix: String) = createWorkspace()
     }
 
     fun run() {
-        harness.start()
         try {
-            harness.runPlan(
-                prompt = prompt,
-                cognitiveSettings = cognitiveSettings,
-                timeoutMinutes = timeoutMinutes,
-                autoFix = !openBrowser,
-                workspace = workspace,
-                config = { session: Session, finalWorkspace: File ->
-                    OrchestrationConfig.instanceFn = instanceFn(session)
-                    newConfig(session, finalWorkspace)
-                }
-            )
-        } finally {
-            harness.stop()
+            harness.start()
+            try {
+                harness.runPlan(
+                    prompt = prompt,
+                    cognitiveSettings = cognitiveSettings,
+                    timeoutMinutes = timeoutMinutes,
+                    autoFix = !openBrowser,
+                    workspace = workspace,
+                    config = { session: Session, finalWorkspace: File ->
+                        OrchestrationConfig.instanceFn = instanceFn(session)
+                        newConfig(session, finalWorkspace)
+                    }
+                )
+            } finally {
+                harness.stop()
+            }
+        } catch (e: Exception){
+            fix(e)
+            throw RuntimeException(e)
         }
     }
 
@@ -196,5 +199,8 @@ open class PlanHarness(
 
         private val log = LoggerFactory.getLogger(PlanHarness::class.java)
         fun now(): String? = SimpleDateFormat("yyyyMMdd_HHmmss").format(System.currentTimeMillis())
+        var fix : (Exception) -> Unit = { e ->
+            log.error("Error during task execution", e)
+        }
     }
 }

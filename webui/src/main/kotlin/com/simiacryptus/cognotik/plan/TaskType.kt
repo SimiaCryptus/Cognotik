@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.simiacryptus.cognotik.plan.tools.file.IterativeImageDecompositionTask
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
 import com.simiacryptus.cognotik.plan.tools.file.*
@@ -99,6 +100,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(GeneticOptimizationTask.GeneticOptimization)
             registerConstructor(GitHubSearchTask.GitHubSearch)
             registerConstructor(IllustrateDocumentTask.IllustrateDocument)
+            registerConstructor(IterativeImageDecompositionTask.IterativeImageDecomposition)
             registerConstructor(ImageTableTask.ImageTable)
             registerConstructor(InteractiveStoryTask.InteractiveStory)
             registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery)

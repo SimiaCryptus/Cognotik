@@ -1164,12 +1164,12 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
 
 Search Google, fetch top results, and analyze content
 
-         Searches Google for specified queries and analyzes the top results.
-         <ul>
-           <li>Performs Google searches</li>
-           <li>Fetches top search results</li>
-           <li>Analyzes content for specific goals</li>
-           <li>Generates detailed analysis reports</li>
+Searches Google for specified queries and analyzes the top results.
+<ul>
+ <li>Performs Google searches</li>
+ <li>Fetches top search results</li>
+ <li>Analyzes content for specific goals</li>
+ <li>Generates detailed analysis reports</li>
 </ul>
 
 #### Planner Prompt Segment

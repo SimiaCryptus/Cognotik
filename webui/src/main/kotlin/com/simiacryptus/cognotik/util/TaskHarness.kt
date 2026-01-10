@@ -43,7 +43,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
     val workspace: File? = null,
 ) {
-    val dataDir = createWorkspace()
+    val dataDir: File by lazy { createWorkspace() }
 
     private val harness = object : UnifiedHarness(
         port = port,
@@ -58,18 +58,23 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     }
 
     fun run() {
-        harness.start()
         try {
-            harness.runTask(
-                taskType = taskType,
-                typeConfig = typeConfig,
-                executionConfig = executionConfig,
-                timeoutMinutes = timeoutMinutes,
-                autoFix = !openBrowser,
-                workspace = workspace
-            )
-        } finally {
-            harness.stop()
+            harness.start()
+            try {
+                harness.runTask(
+                    taskType = taskType,
+                    typeConfig = typeConfig,
+                    executionConfig = executionConfig,
+                    timeoutMinutes = timeoutMinutes,
+                    autoFix = !openBrowser,
+                    workspace = workspace
+                )
+            } finally {
+                harness.stop()
+            }
+        } catch (e: Exception) {
+            fix(e)
+            throw RuntimeException(e)
         }
     }
 
@@ -84,5 +89,8 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
 
     companion object {
         private val log = LoggerFactory.getLogger(TaskHarness::class.java)
+        var fix : (Exception) -> Unit = { e ->
+            log.error("Error during task execution", e)
+        }
     }
 }
