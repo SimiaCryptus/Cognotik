@@ -40,7 +40,8 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val timeoutMinutes: Long = 30,
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-    val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
+//    val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
+    val imageModel: ChatModel = GeminiModels.GeminiFlash_25_Image_Generation,
     val workspace: File? = null,
 ) {
     val dataDir: File by lazy { createWorkspace() }

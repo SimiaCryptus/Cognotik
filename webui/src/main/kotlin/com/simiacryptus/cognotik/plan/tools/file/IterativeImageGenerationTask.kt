@@ -124,6 +124,11 @@ IterativeImageGeneration - Generates ultra-high-resolution images via recursive 
         transcript?.write("# Iterative Image Generation\n\n$configInfo\n\n".toByteArray())
 
 
+        val imageAgent = ImageProcessingAgent(
+          prompt = "Generate an image based on the user description",
+          name = "BaseGenerator",
+          model = writeModel
+        )
         // 1. Generate Root Image
 
 
@@ -138,11 +143,6 @@ IterativeImageGeneration - Generates ultra-high-resolution images via recursive 
           transcript?.write("## Base Image\nLoaded from: $inputFile\n\n![Base Image]($baseLink)\n\n".toByteArray())
         } else {
           logTab.add("Generating base image...".renderMarkdown())
-          val imageAgent = ImageProcessingAgent(
-            prompt = "Generate an image based on the user description",
-            name = "BaseGenerator",
-            model = writeModel
-          )
 
           val baseResult = imageAgent.answer(listOf(ImageAndText(prompt)))
           currentImage = baseResult.image ?: throw RuntimeException("Failed to generate base image")
