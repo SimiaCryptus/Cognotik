@@ -12,17 +12,15 @@ import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.SocketManager
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
-import java.io.BufferedWriter
 import java.io.File
 import javax.imageio.ImageIO
 
-class GenerateImageTask(
+class ImageGenerationTask(
     orchestrationConfig: OrchestrationConfig,
     planTask: GenerateImageTaskExecutionConfigData?
-) : AbstractFileTask<GenerateImageTask.GenerateImageTaskExecutionConfigData>(orchestrationConfig, planTask) {
+) : AbstractFileTask<ImageGenerationTask.GenerateImageTaskExecutionConfigData>(orchestrationConfig, planTask) {
 
     class GenerateImageTaskExecutionConfigData(
         @Description("The image file to be created (relative path, must end with .png, .jpg, or .jpeg)")
@@ -199,11 +197,11 @@ GenerateImage - Create images using AI image generation models
 
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(GenerateImageTask::class.java)
+        private val log: Logger = LoggerFactory.getLogger(ImageGenerationTask::class.java)
         val GenerateImage = TaskType(
             "GenerateImage",
             "Writing",
-            GenerateImageTask::class.java,
+            ImageGenerationTask::class.java,
             GenerateImageTaskExecutionConfigData::class.java,
             TaskTypeConfig::class.java,
             "Generate images using AI image generation models",

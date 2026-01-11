@@ -63,6 +63,7 @@ open class UnifiedHarness(
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
+    val temperature: Double = 0.0,
 ) {
     private var jettyServer: Any? = null
     private var appServer: CognotikAppServer? = null
@@ -107,6 +108,7 @@ open class UnifiedHarness(
             defaultSmartModel = smartModel.asApiChatModel(),
             defaultImageModel = imageModel.asApiChatModel(),
             autoFix = autoFix,
+            temperature = temperature,
             cognitiveSettings = cognitiveSettings,
         ) }
     ) {
@@ -255,6 +257,7 @@ open class UnifiedHarness(
                     defaultSmartModel = smartModel.asApiChatModel(),
                     defaultImageModel = imageModel.asApiChatModel(),
                     autoFix = autoFix,
+                    temperature = temperature,
                 )
                 val json = orchestrationConfig.toJson()
                 getSettingsFile(session, defaultUser).writeText(json)

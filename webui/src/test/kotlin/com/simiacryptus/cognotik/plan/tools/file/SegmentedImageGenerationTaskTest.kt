@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
+import com.simiacryptus.cognotik.plan.tools.file.SegmentedImageGenerationTask.SegmentedImageGenerationConfig
 import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.util.TaskHarness
 import org.junit.jupiter.api.Assertions
@@ -9,7 +10,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
 
-class IterativeImageGenerationTaskTest {
+class SegmentedImageGenerationTaskTest {
 
   companion object {
     @JvmStatic
@@ -24,20 +25,20 @@ class IterativeImageGenerationTaskTest {
   fun test() {
     val output_file = "image.png"
     val harness = TaskHarness(
-      taskType = TiledImageGenerationTask.TiledImageGeneration,
-      executionConfig = TiledImageGenerationTask.TiledImageGenerationConfig(
-        output_file = output_file,
+      taskType = SegmentedImageGenerationTask.SegmentedImageGeneration,
+      executionConfig = SegmentedImageGenerationConfig(
         prompts = listOf(
           "Generate a detailed cartoon of woodland critters.",
           "Upscale and re-render as a photograph.",
           "Re-render as a circuit diagram.",
         ),
-        upscale_factor = 4.0,
         min_region_size = 50,
+        upscale_factor = 3.0,
+        output_file = output_file
       ),
       temperature = 0.7,
       timeoutMinutes = 30,
-      typeConfig = TaskTypeConfig(TiledImageGenerationTask.TiledImageGeneration.name),
+      typeConfig = TaskTypeConfig(SegmentedImageGenerationTask.SegmentedImageGeneration.name),
     )
 
     harness.run()

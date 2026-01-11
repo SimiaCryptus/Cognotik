@@ -47,14 +47,10 @@ object PlanUtil {
         .replace(")", "\\)")
         .let { "`$it`" }
 
-    private fun escapeMermaidCharacters(input: String) = input
-        .replace("\"", "\\\"")
-        .let { '"' + it + '"' }
-
     private val mermaidGraphCache = ConcurrentHashMap<String, String>()
     private val mermaidExceptionCache = ConcurrentHashMap<String, Exception>()
 
-    fun buildMermaidGraph(subTasks: Map<String, TaskExecutionConfig>): String {
+    fun buildMermaidGraph(subTasks: Map<String, TaskExecutionConfig>, includeStyles: Boolean = true): String {
 
         val cacheKey = JsonUtil.toJson(subTasks)
 
@@ -65,27 +61,31 @@ object PlanUtil {
             subTasks.forEach { (taskId, task) ->
                 val sanitizedTaskId = sanitizeForMermaid(taskId)
                 val taskType = task.task_type ?: "Unknown"
-                val escapedDescription =
-                    escapeMermaidCharacters(task.task_description ?: "")
-                val style = when (task.state) {
-                    TaskState.Completed -> ":::completed"
-                    TaskState.InProgress -> ":::inProgress"
-                    else -> ":::$taskType"
+                if(includeStyles) {
+                    graphBuilder.append(
+                        "    " + sanitizedTaskId + "[" + sanitizeForMermaid(
+                            task.task_description ?: ""
+                        ) + "]" + when (task.state) {
+                            TaskState.Completed -> ":::completed"
+                            TaskState.InProgress -> ":::inProgress"
+                            else -> ":::$taskType"
+                        } + ";\n")
                 }
-                graphBuilder.append("    ${sanitizedTaskId}[$escapedDescription]$style;\n")
                 task.task_dependencies?.forEach { dependency ->
                     val sanitizedDependency = sanitizeForMermaid(dependency)
                     graphBuilder.append("    $sanitizedDependency --> ${sanitizedTaskId};\n")
                 }
             }
-            graphBuilder.append("    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;\n")
-            graphBuilder.append("    classDef NewFile fill:lightblue,stroke:#333,stroke-width:2px;\n")
-            graphBuilder.append("    classDef EditFile fill:lightgreen,stroke:#333,stroke-width:2px;\n")
-            graphBuilder.append("    classDef Documentation fill:lightyellow,stroke:#333,stroke-width:2px;\n")
-            graphBuilder.append("    classDef Inquiry fill:orange,stroke:#333,stroke-width:2px;\n")
-            graphBuilder.append("    classDef TaskPlanning fill:lightgrey,stroke:#333,stroke-width:2px;\n")
-            graphBuilder.append("    classDef completed fill:#90EE90,stroke:#333,stroke-width:2px;\n")
-            graphBuilder.append("    classDef inProgress fill:#FFA500,stroke:#333,stroke-width:2px;\n")
+            if(includeStyles) {
+                graphBuilder.append("    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;\n")
+                graphBuilder.append("    classDef NewFile fill:lightblue,stroke:#333,stroke-width:2px;\n")
+                graphBuilder.append("    classDef EditFile fill:lightgreen,stroke:#333,stroke-width:2px;\n")
+                graphBuilder.append("    classDef Documentation fill:lightyellow,stroke:#333,stroke-width:2px;\n")
+                graphBuilder.append("    classDef Inquiry fill:orange,stroke:#333,stroke-width:2px;\n")
+                graphBuilder.append("    classDef TaskPlanning fill:lightgrey,stroke:#333,stroke-width:2px;\n")
+                graphBuilder.append("    classDef completed fill:#90EE90,stroke:#333,stroke-width:2px;\n")
+                graphBuilder.append("    classDef inProgress fill:#FFA500,stroke:#333,stroke-width:2px;\n")
+            }
             val graph = graphBuilder.toString()
             mermaidGraphCache[cacheKey] = graph
             return graph

@@ -1,72 +1,205 @@
 package com.simiacryptus.cognotik.util
 
-import java.awt.Color
 import java.awt.image.BufferedImage
-import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.*
 
 object ImagePatchLocalization {
     data class SubImageBounds(val x: Int, val y: Int, val width: Int, val height: Int, val score: Double)
 
     fun findBounds(parentImage: BufferedImage, subImage: BufferedImage, estimate: SubImageBounds? = null): SubImageBounds {
         val maxDim = 200
-        val scale = min(1.0, maxDim.toDouble() / max(parentImage.width, parentImage.height))
+        val globalScale = min(1.0, maxDim.toDouble() / max(parentImage.width, parentImage.height))
 
-        val smallParent = resize(parentImage, scale)
-        val smallSub = resize(subImage, scale)
+        val smallParent = normalize(resize(parentImage, globalScale))
+        val smallSub = normalize(resize(subImage, globalScale))
 
-        var bestScore = Double.MAX_VALUE
-        var bestRect = SubImageBounds(0, 0, parentImage.width, parentImage.height, Double.MAX_VALUE)
-        if (estimate != null) {
-            val estX = (estimate.x * scale).toInt()
-            val estY = (estimate.y * scale).toInt()
-            val estW = (estimate.width * scale).toInt()
-            val estH = (estimate.height * scale).toInt()
-            if (estW > 0 && estH > 0 && estX >= 0 && estY >= 0 && estX + estW <= smallParent.width && estY + estH <= smallParent.height) {
-                val scaledSub = resize(smallSub, estW, estH)
-                val score = diff(smallParent, estX, estY, scaledSub, bestScore)
-                if (score < bestScore) {
-                    bestScore = score
-                    bestRect = estimate.copy(score = score)
-                }
+        fun score(x: Double, y: Double, s: Double): Double {
+            val w = (smallSub.width * s).toInt()
+            val h = (smallSub.height * s).toInt()
+            if (w <= 5 || h <= 5 || w > smallParent.width || h > smallParent.height) return Double.MAX_VALUE
+
+            val ix = x.toInt()
+            val iy = y.toInt()
+            if (ix < 0 || iy < 0 || ix + w > smallParent.width || iy + h > smallParent.height) return Double.MAX_VALUE
+
+            var penalty = 0.0
+            if (estimate != null) {
+                val estX = estimate.x * globalScale
+                val estY = estimate.y * globalScale
+                val estW = estimate.width * globalScale
+                val estH = estimate.height * globalScale
+                val currW = smallSub.width * s
+                val currH = smallSub.height * s
+                penalty = (x - estX).pow(2) + (y - estY).pow(2) + (currW - estW).pow(2) + (currH - estH).pow(2)
             }
+
+            val scaledSub = resize(smallSub, w, h)
+            return diff(smallParent, ix, iy, scaledSub, Double.MAX_VALUE) + penalty
         }
 
+        var bestScore = Double.MAX_VALUE
+        var bestX = 0.0
+        var bestY = 0.0
+        var bestS = 1.0
 
-        // Search scales from 0.5 to 1.5 to handle expanded context (zoomed out) or slight zoom in
-        val scales = (50..150 step 5).map { it / 100.0 }
-
-        for (s in scales) {
-            val targetW = (smallSub.width * s).toInt()
-            val targetH = (smallSub.height * s).toInt()
-            if (targetW <= 5 || targetH <= 5 || targetW > smallParent.width || targetH > smallParent.height) continue
-
-            val scaledSub = resize(smallSub, targetW, targetH)
-            val step = 1
-
-            for (y in 0 until (smallParent.height - targetH) step step) {
-                for (x in 0 until (smallParent.width - targetW) step step) {
-                    val score = diff(smallParent, x, y, scaledSub, bestScore)
-                    if (score < bestScore) {
-                        bestScore = score
-                        val origX = (x / scale).toInt()
-                        val origY = (y / scale).toInt()
-                        val origW = (targetW / scale).toInt()
-                        val origH = (targetH / scale).toInt()
-                        bestRect = SubImageBounds(origX, origY, origW, origH, score)
+        if (estimate != null) {
+            bestX = estimate.x * globalScale
+            bestY = estimate.y * globalScale
+            bestS = estimate.width.toDouble() / subImage.width
+            bestScore = score(bestX, bestY, bestS)
+        } else {
+            val scales = listOf(0.5, 0.75, 1.0, 1.25, 1.5)
+            for (s in scales) {
+                val w = (smallSub.width * s).toInt()
+                val h = (smallSub.height * s).toInt()
+                if (w > smallParent.width || h > smallParent.height) continue
+                val step = max(1, min(smallParent.width, smallParent.height) / 10)
+                for (y in 0 until (smallParent.height - h) step step) {
+                    for (x in 0 until (smallParent.width - w) step step) {
+                        val sc = score(x.toDouble(), y.toDouble(), s)
+                        if (sc < bestScore) {
+                            bestScore = sc
+                            bestX = x.toDouble()
+                            bestY = y.toDouble()
+                            bestS = s
+                        }
                     }
                 }
             }
         }
 
-        // Clamp to parent bounds
-        val finalX = max(0, min(parentImage.width - 1, bestRect.x))
-        val finalY = max(0, min(parentImage.height - 1, bestRect.y))
-        val finalW = min(parentImage.width - finalX, bestRect.width)
-        val finalH = min(parentImage.height - finalY, bestRect.height)
+        var stepX = if (estimate != null) 5.0 else max(1.0, smallParent.width / 4.0)
+        var stepY = if (estimate != null) 5.0 else max(1.0, smallParent.height / 4.0)
+        var stepS = if (estimate != null) 0.1 else 0.2
 
-        return bestRect.copy(x = finalX, y = finalY, width = finalW, height = finalH)
+        while (stepX > 0.5 || stepY > 0.5 || stepS > 0.01) {
+            var improved = false
+            fun tryMove(nx: Double, ny: Double, ns: Double): Boolean {
+                val s = score(nx, ny, ns)
+                if (s < bestScore) {
+                    bestScore = s
+                    bestX = nx
+                    bestY = ny
+                    bestS = ns
+                    return true
+                }
+                return false
+            }
+
+            if (stepX > 0.5) {
+                val s0 = bestScore
+                val sLeft = score(bestX - stepX, bestY, bestS)
+                val sRight = score(bestX + stepX, bestY, bestS)
+                if (sLeft < s0 && sLeft < sRight) {
+                    bestX -= stepX; bestScore = sLeft; improved = true
+                } else if (sRight < s0) {
+                    bestX += stepX; bestScore = sRight; improved = true
+                } else if (sLeft != Double.MAX_VALUE && sRight != Double.MAX_VALUE) {
+                    val denom = sLeft - 2 * s0 + sRight
+                    if (denom > 1e-5) {
+                        val delta = stepX * (sLeft - sRight) / (2 * denom)
+                        if (abs(delta) < stepX) tryMove(bestX + delta, bestY, bestS)
+                    }
+                }
+            }
+            if (stepY > 0.5) {
+                val s0 = bestScore
+                val sUp = score(bestX, bestY - stepY, bestS)
+                val sDown = score(bestX, bestY + stepY, bestS)
+                if (sUp < s0 && sUp < sDown) {
+                    bestY -= stepY; bestScore = sUp; improved = true
+                } else if (sDown < s0) {
+                    bestY += stepY; bestScore = sDown; improved = true
+                } else if (sUp != Double.MAX_VALUE && sDown != Double.MAX_VALUE) {
+                    val denom = sUp - 2 * s0 + sDown
+                    if (denom > 1e-5) {
+                        val delta = stepY * (sUp - sDown) / (2 * denom)
+                        if (abs(delta) < stepY) tryMove(bestX, bestY + delta, bestS)
+                    }
+                }
+            }
+            if (stepS > 0.01) {
+                val s0 = bestScore
+                val sSmall = score(bestX, bestY, bestS - stepS)
+                val sLarge = score(bestX, bestY, bestS + stepS)
+                if (sSmall < s0 && sSmall < sLarge) {
+                    bestS -= stepS; bestScore = sSmall; improved = true
+                } else if (sLarge < s0) {
+                    bestS += stepS; bestScore = sLarge; improved = true
+                } else if (sSmall != Double.MAX_VALUE && sLarge != Double.MAX_VALUE) {
+                    val denom = sSmall - 2 * s0 + sLarge
+                    if (denom > 1e-5) {
+                        val delta = stepS * (sSmall - sLarge) / (2 * denom)
+                        if (abs(delta) < stepS) tryMove(bestX, bestY, bestS + delta)
+                    }
+                }
+            }
+            if (!improved) {
+                stepX /= 2
+                stepY /= 2
+                stepS /= 2
+            }
+        }
+
+        // Clamp to parent bounds
+        val finalW = (smallSub.width * bestS).toInt()
+        val finalH = (smallSub.height * bestS).toInt()
+        val finalX = (bestX / globalScale).toInt()
+        val finalY = (bestY / globalScale).toInt()
+        val finalWOrig = (finalW / globalScale).toInt()
+        val finalHOrig = (finalH / globalScale).toInt()
+
+        val cx = max(0, min(parentImage.width - 1, finalX))
+        val cy = max(0, min(parentImage.height - 1, finalY))
+        val cw = min(parentImage.width - cx, finalWOrig)
+        val ch = min(parentImage.height - cy, finalHOrig)
+
+        return SubImageBounds(cx, cy, cw, ch, bestScore)
     }
+
+    private fun normalize(image: BufferedImage): BufferedImage {
+        val width = image.width
+        val height = image.height
+        val pixels = image.getRGB(0, 0, width, height, null, 0, width)
+        var sumR = 0.0
+        var sumG = 0.0
+        var sumB = 0.0
+        var sumSqR = 0.0
+        var sumSqG = 0.0
+        var sumSqB = 0.0
+        for (pixel in pixels) {
+            val r = (pixel shr 16) and 0xFF
+            val g = (pixel shr 8) and 0xFF
+            val b = pixel and 0xFF
+            sumR += r
+            sumG += g
+            sumB += b
+            sumSqR += r * r
+            sumSqG += g * g
+            sumSqB += b * b
+        }
+        val count = pixels.size.toDouble()
+        val meanR = sumR / count
+        val meanG = sumG / count
+        val meanB = sumB / count
+        val stdR = sqrt(max(0.0, sumSqR / count - meanR * meanR))
+        val stdG = sqrt(max(0.0, sumSqG / count - meanG * meanG))
+        val stdB = sqrt(max(0.0, sumSqB / count - meanB * meanB))
+        for (i in pixels.indices) {
+            val pixel = pixels[i]
+            val r = (pixel shr 16) and 0xFF
+            val g = (pixel shr 8) and 0xFF
+            val b = pixel and 0xFF
+            val newR = ((r - meanR) / (stdR + 1.0) * 64.0 + 128.0).coerceIn(0.0, 255.0).toInt()
+            val newG = ((g - meanG) / (stdG + 1.0) * 64.0 + 128.0).coerceIn(0.0, 255.0).toInt()
+            val newB = ((b - meanB) / (stdB + 1.0) * 64.0 + 128.0).coerceIn(0.0, 255.0).toInt()
+            pixels[i] = (newR shl 16) or (newG shl 8) or newB
+        }
+        val result = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+        result.setRGB(0, 0, width, height, pixels, 0, width)
+        return result
+    }
+
 
     private fun resize(img: BufferedImage, scale: Double): BufferedImage {
         val w = max(1, (img.width * scale).toInt())

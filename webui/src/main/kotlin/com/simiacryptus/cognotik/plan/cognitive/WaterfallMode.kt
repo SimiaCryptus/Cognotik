@@ -72,7 +72,8 @@ open class WaterfallMode(
                     ?: task.ui.dataStorage?.getSessionDir(
                         user,
                         session
-                    )?.toPath() ?: File(".").toPath()
+                    )?.toPath() ?: File(".").toPath(),
+                transcriptStream = transcriptStream
             )
 
 
@@ -81,7 +82,7 @@ open class WaterfallMode(
             } else {
                 val describer = TaskContextYamlDescriber(orchestrationConfig)
                 Tasks.initDescriber(orchestrationConfig, describer)
-                val p = initialPlan(
+                val plan = initialPlan(
                     codeFiles = coordinator.codeFiles,
                     files = coordinator.files,
                     root = coordinator.root,
@@ -92,20 +93,19 @@ open class WaterfallMode(
                     describer = describer
                 )
                 transcriptStream?.let { stream ->
-                    stream.write("\n## Generated Plan\n\n${p.planText}\n\n".toByteArray())
+                    stream.write("\n## Generated Plan\n\n${plan.planText}\n\n".toByteArray())
+                    stream.write("\n### Plan Diagram\n\n```mermaid\n${buildMermaidGraph((filterPlan { plan.plan } ?: emptyMap()).toMap(), false)}\n```\n\n".toByteArray())
                     stream.flush()
                 }
                 // Save plan to file for PrePlanned mode
                 try {
                     val planFile = coordinator.root.resolve(".logs/plan_${now()}.json").toFile()
-                    JsonUtil.toJson(p).let { json ->
-                        planFile.writeText(json)
-                        task.add("Plan saved to [${planFile.name}](${task.linkTo("plan.json")})".renderMarkdown())
-                    }
+                    planFile.writeText(JsonUtil.toJson(plan))
+                    task.add("Plan saved to [${planFile.name}](${task.linkTo("plan.json")})".renderMarkdown())
                 } catch (e: Exception) {
                     log.warn("Failed to save plan json", e)
                 }
-                p
+                plan
             }
             task.header("Executing Plan")
 

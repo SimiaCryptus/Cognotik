@@ -24,15 +24,15 @@ import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 import javax.imageio.ImageIO
 
-class IterativeImageDecompositionTask(
+class ImageDecompositionTask(
   orchestrationConfig: OrchestrationConfig,
-  planTask: IterativeImageDecompositionConfig?
-) : AbstractFileTask<IterativeImageDecompositionTask.IterativeImageDecompositionConfig>(
+  planTask: ImageDecompositionConfig?
+) : AbstractFileTask<ImageDecompositionTask.ImageDecompositionConfig>(
   orchestrationConfig,
   planTask
 ) {
 
-  class IterativeImageDecompositionConfig(
+  class ImageDecompositionConfig(
     @Description("The image file to analyze (relative path)")
     files: List<String>? = null,
     @Description("The goal of the analysis (e.g., 'Find Waldo', 'Read all text', 'Describe every person')")
@@ -50,7 +50,7 @@ class IterativeImageDecompositionTask(
     task_dependencies: List<String>? = null,
     state: TaskState? = TaskState.Pending,
   ) : ValidatedObject, FileTaskExecutionConfig(
-    task_type = IterativeImageDecomposition.name,
+    task_type = ImageDecomposition.name,
     task_description = segmentation_query,
     files = files,
     task_dependencies = task_dependencies,
@@ -423,7 +423,7 @@ ${result.toJson()}
 
   private fun loadImage(
     inputFile: File,
-    executionConfig: IterativeImageDecompositionConfig,
+    executionConfig: ImageDecompositionConfig,
     page: Int
   ): BufferedImage {
     var originalImage: BufferedImage? = null
@@ -448,12 +448,12 @@ ${result.toJson()}
   }
 
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(IterativeImageDecompositionTask::class.java)
-    val IterativeImageDecomposition = TaskType(
-      "IterativeImageDecomposition",
+    private val log: Logger = LoggerFactory.getLogger(ImageDecompositionTask::class.java)
+    val ImageDecomposition = TaskType(
+      "ImageDecomposition",
       "File Operations",
-      IterativeImageDecompositionTask::class.java,
-      IterativeImageDecompositionConfig::class.java,
+      ImageDecompositionTask::class.java,
+      ImageDecompositionConfig::class.java,
       TaskTypeConfig::class.java,
       "Recursively analyze an image to find details, text, or specific objects.",
       """

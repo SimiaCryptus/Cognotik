@@ -43,6 +43,7 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
 //    val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiFlash_25_Image_Generation,
     val workspace: File? = null,
+    val temperature: Double = 0.0,
 ) {
     val dataDir: File by lazy { createWorkspace() }
 
@@ -53,7 +54,8 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
         modelInstanceFn = modelInstanceFn,
         fastModel = fastModel,
         smartModel = smartModel,
-        imageModel = imageModel
+        imageModel = imageModel,
+        temperature = temperature,
     ) {
         override fun createTempDirectory(prefix: String) = dataDir
     }

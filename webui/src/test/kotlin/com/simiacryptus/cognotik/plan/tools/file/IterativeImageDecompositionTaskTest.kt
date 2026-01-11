@@ -30,8 +30,8 @@ class IterativeImageDecompositionTaskTest {
         val outputJson = "analysis_result.json"
 
         val harness = TaskHarness(
-          taskType = IterativeImageDecompositionTask.IterativeImageDecomposition,
-          executionConfig = IterativeImageDecompositionTask.IterativeImageDecompositionConfig(
+          taskType = ImageDecompositionTask.ImageDecomposition,
+          executionConfig = ImageDecompositionTask.ImageDecompositionConfig(
             files = listOf(
               "test_image.png"
 //                    "test.pdf"
@@ -42,12 +42,12 @@ class IterativeImageDecompositionTaskTest {
             output_file = outputJson
           ),
           timeoutMinutes = 10,
-          typeConfig = TaskTypeConfig(IterativeImageDecompositionTask.IterativeImageDecomposition.name),
+          typeConfig = TaskTypeConfig(ImageDecompositionTask.ImageDecomposition.name),
         )
 
         // Create a test image
         //writeTestImage(harness, imageName)
-        File("src/test/resources/hieroglyphics.jpg").copyTo(harness.dataDir.resolve("test_image.png"), overwrite = true)
+        File("/home/andrew/code/Cognotik/webui/workspaces/SegmentedImageGeneration/test-20260111_110850/base_generation.png").copyTo(harness.dataDir.resolve("test_image.png"), overwrite = true)
 //        File("/home/andrew/Downloads/US486986.pdf").copyTo(harness.dataDir.resolve("test.pdf"), overwrite = true)
 
         harness.run()
@@ -58,7 +58,7 @@ class IterativeImageDecompositionTaskTest {
     }
 
   private fun writeTestImage(
-    harness: TaskHarness<IterativeImageDecompositionTask.IterativeImageDecompositionConfig, TaskTypeConfig>,
+    harness: TaskHarness<ImageDecompositionTask.ImageDecompositionConfig, TaskTypeConfig>,
     imageName: String
     ) {
         val imagePath = harness.dataDir.resolve(imageName)

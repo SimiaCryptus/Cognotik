@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.simiacryptus.cognotik.plan.tools.file.IterativeImageDecompositionTask
+import com.simiacryptus.cognotik.plan.tools.file.ImageDecompositionTask
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
 import com.simiacryptus.cognotik.plan.tools.file.*
@@ -93,16 +93,17 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(GameMechanicsDesignTask.GameMechanicsDesign)
             registerConstructor(GameNarrativeDesignTask.GameNarrativeDesign)
             registerConstructor(GameTheoryTask.GameTheory)
-            registerConstructor(GenerateImageTask.GenerateImage)
+            registerConstructor(ImageGenerationTask.GenerateImage)
             registerConstructor(GeneratePresentationTask.GeneratePresentation)
             registerConstructor(GenerateQRImageTask.GenerateQRImage)
             registerConstructor(GenerateSpriteSheetTask.GenerateSpriteSheet)
             registerConstructor(GeneticOptimizationTask.GeneticOptimization)
             registerConstructor(GitHubSearchTask.GitHubSearch)
             registerConstructor(IllustrateDocumentTask.IllustrateDocument)
-            registerConstructor(IterativeImageGenerationTask.IterativeImageGeneration)
-            registerConstructor(IterativeImageDecompositionTask.IterativeImageDecomposition)
+            registerConstructor(TiledImageGenerationTask.TiledImageGeneration)
+            registerConstructor(ImageDecompositionTask.ImageDecomposition)
             registerConstructor(ImageTableTask.ImageTable)
+            registerConstructor(ImageVariationTask.ImageVariation)
             registerConstructor(InteractiveStoryTask.InteractiveStory)
             registerConstructor(IsomorphismDiscoveryTask.IsomorphismDiscovery)
             registerConstructor(IterativeGraphGenerationTask.IterativeGraphGeneration)
@@ -128,6 +129,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(ResearchPaperGenerationTask.ResearchPaperGeneration)
             registerConstructor(RunCodeTask.RunCode)
             registerConstructor(RunToolTask.RunTool)
+            registerConstructor(SegmentedImageGenerationTask.SegmentedImageGeneration)
             registerConstructor(ScriptwritingTask.Scriptwriting)
             registerConstructor(SocraticDialogueTask.SocraticDialogue)
             registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument)

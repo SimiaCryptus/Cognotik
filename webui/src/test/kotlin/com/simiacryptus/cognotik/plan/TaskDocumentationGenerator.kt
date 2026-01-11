@@ -15,9 +15,6 @@ object TaskDocumentationGenerator {
         log.info("Found ${taskTypes.size} task types.")
         val grouped = taskTypes.groupBy { it.category }.toSortedMap()
         
-        val sb = StringBuilder()
-        sb.append("# Task Types\n\n")
-        sb.append("This document lists all available task types in the system, categorized and alphabetized.\n\n")
         
         val mapper = ObjectMapper()
             .registerModule(KotlinModule.Builder().build())
@@ -27,12 +24,16 @@ object TaskDocumentationGenerator {
         // Attempt to mock OrchestrationConfig to generate prompt segments
         // This requires Mockito to be in the classpath
         val orchestrationConfig = OrchestrationConfig()
+        val docsDir = File("docs")
+        if (!docsDir.exists()) docsDir.mkdirs()
+
         grouped.forEach { (category, tasks) ->
             log.info("Processing category: $category")
-            sb.append("## $category\n\n")
+            val sb = StringBuilder()
+            sb.append("# $category\n\n")
             tasks.sortedBy { it.name }.forEach { taskType ->
                 log.info("Processing task: ${taskType.name}")
-                sb.append("### ${taskType.name}")
+                sb.append("## ${taskType.name}")
                 sb.append("\n\n")
 
                 if (!taskType.description.isNullOrBlank()) {
@@ -87,12 +88,10 @@ object TaskDocumentationGenerator {
                 
                 sb.append("---\n\n")
             }
+            val outputFile = File(docsDir, "TaskTypes_${category}.md")
+            outputFile.writeText(sb.toString())
+            log.info("Documentation generated at ${outputFile.absolutePath}")
         }
         
-        val docsDir = File("docs")
-        if (!docsDir.exists()) docsDir.mkdirs()
-        val outputFile = File(docsDir, "TaskTypes.md")
-        outputFile.writeText(sb.toString())
-        log.info("Documentation generated at ${outputFile.absolutePath}")
     }
 }

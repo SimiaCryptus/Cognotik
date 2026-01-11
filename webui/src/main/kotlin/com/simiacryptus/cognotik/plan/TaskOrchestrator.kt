@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.session.SessionTask
 import java.io.File
+import java.io.OutputStream
 import java.nio.file.Path
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
@@ -22,7 +23,8 @@ class TaskOrchestrator(
     val user: User = defaultUser,
     val session: Session,
     val dataStorage: StorageInterface,
-    val root: Path
+    val root: Path,
+    val transcriptStream: OutputStream? = null
 ) {
 
     val pool: ExecutorService by lazy { ApplicationServices.threadPoolManager.getPool(session, user) }
@@ -153,6 +155,12 @@ class TaskOrchestrator(
                 subTask.state = AbstractTask.TaskState.InProgress
                 taskTabs.update()
                 log.debug("Running task: ${System.identityHashCode(subTask)} ${subTask.task_description}")
+                transcriptStream?.let { stream ->
+                    synchronized(stream) {
+                        stream.write("\n## Task `$taskId` Started\n\n${subTask.task_description}\n\n".toByteArray())
+                        stream.flush()
+                    }
+                }
                 val task = executionState.uitaskMap[taskId] ?: taskTabs.newTask(taskId)
                 task.add(
                     ("\n## Task `" + taskId + "`" + (subTask.task_description ?: "") + "\n" +
@@ -176,17 +184,37 @@ class TaskOrchestrator(
                         agent = this,
                         messages = messages,
                         task = task,
-                        resultFn = { executionState.taskResult[taskId] = it },
+                        resultFn = {
+                            executionState.taskResult[taskId] = it
+                            transcriptStream?.let { stream ->
+                                synchronized(stream) {
+                                    stream.write("\n### Task `$taskId` Result\n\n$it\n\n".toByteArray())
+                                    stream.flush()
+                                }
+                            }
+                        },
                         orchestrationConfig = orchestrationConfig
                     )
                 } catch (e: Throwable) {
                     log.warn("Error during task execution", e)
                     task.error(e)
+                    transcriptStream?.let { stream ->
+                        synchronized(stream) {
+                            stream.write("\n### Task `$taskId` Error\n\n```\n${e.message}\n${e.stackTraceToString()}\n```\n\n".toByteArray())
+                            stream.flush()
+                        }
+                    }
                 } finally {
                     executionState.completedTasks.add(element = taskId)
                     subTask.state = AbstractTask.TaskState.Completed
                     log.debug("Completed task: $taskId ${System.identityHashCode(subTask)}")
                     taskTabs.update()
+                    transcriptStream?.let { stream ->
+                        synchronized(stream) {
+                            stream.write("\n### Task `$taskId` Completed\n\n".toByteArray())
+                            stream.flush()
+                        }
+                    }
                 }
             }
         }
@@ -207,12 +235,14 @@ class TaskOrchestrator(
         user: User = this.user,
         session: Session = this.session,
         dataStorage: StorageInterface = this.dataStorage,
-        root: Path = this.root
+        root: Path = this.root,
+        transcriptStream: OutputStream? = this.transcriptStream
     ) = TaskOrchestrator(
         user = user,
         session = session,
         dataStorage = dataStorage,
-        root = root
+        root = root,
+        transcriptStream = transcriptStream
     )
 
     companion object {
