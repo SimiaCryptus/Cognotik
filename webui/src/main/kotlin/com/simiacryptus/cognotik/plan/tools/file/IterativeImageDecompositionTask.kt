@@ -451,7 +451,7 @@ ${result.toJson()}
     private val log: Logger = LoggerFactory.getLogger(IterativeImageDecompositionTask::class.java)
     val IterativeImageDecomposition = TaskType(
       "IterativeImageDecomposition",
-      "Analysis",
+      "File Operations",
       IterativeImageDecompositionTask::class.java,
       IterativeImageDecompositionConfig::class.java,
       TaskTypeConfig::class.java,

@@ -100,6 +100,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(GeneticOptimizationTask.GeneticOptimization)
             registerConstructor(GitHubSearchTask.GitHubSearch)
             registerConstructor(IllustrateDocumentTask.IllustrateDocument)
+            registerConstructor(IterativeImageGenerationTask.IterativeImageGeneration)
             registerConstructor(IterativeImageDecompositionTask.IterativeImageDecomposition)
             registerConstructor(ImageTableTask.ImageTable)
             registerConstructor(InteractiveStoryTask.InteractiveStory)
