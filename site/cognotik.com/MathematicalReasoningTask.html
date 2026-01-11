@@ -10,7 +10,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- MathJax for rendering LaTeX outputs -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="../assets/styles/main.css">
 
     <!-- Component Script -->
-    <script type="module" src="../assets/scripts/components/CognotikHeader.js"></script>
+  <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
 
 
@@ -491,7 +491,7 @@
         }
         
         .terminal-window {
-            font-family: var(--font-family-mono);
+          font-family: var(--font-mono);
             font-size: 0.85rem;
             color: #10b981;
         }
@@ -746,11 +746,11 @@
                         <div class="form-row">
                             <div class="form-group half">
                                 <label for="domain">Domain</label>
-                                <select id="domain">
+                          <select id="sim-domain">
                                     <option value="general">General</option>
                                     <option value="algebra">Algebra</option>
                                     <option value="calculus">Calculus</option>
-                                    <option value="number_theory">Number Theory</option>
+                              <option value="number_theory" selected>Number Theory</option>
                                     <option value="geometry">Geometry</option>
                                     <option value="linear_algebra">Linear Algebra</option>
                                 </select>
@@ -1119,14 +1119,14 @@
             let steps = [];
         
             // Mock content generation based on domain
-            if (config.domain === 'calculus') {
+          if (domain === 'calculus') {
                 steps = [
                     { id: 'S0', type: 'Initial', text: 'Define the integral.', latex: '\\int x^2 dx', justification: 'Given problem statement', confidence: 100 },
                     { id: 'S1', type: 'Rule Application', text: 'Apply the power rule for integration.', latex: '\\int x^n dx = \\frac{x^{n+1}}{n+1} + C', justification: 'Power Rule of Integration', confidence: 100 },
                     { id: 'S2', type: 'Substitution', text: 'Substitute n = 2.', latex: '\\frac{x^{2+1}}{2+1} + C', justification: 'Substitution', confidence: 100 },
                     { id: 'S3', type: 'Simplification', text: 'Simplify the fraction.', latex: '\\frac{x^3}{3} + C', justification: 'Arithmetic simplification', confidence: 100 }
                 ];
-            } else if (config.domain === 'algebra') {
+          } else if (domain === 'algebra') {
                 steps = [
                     { id: 'S0', type: 'Initial', text: 'State the equation.', latex: '2x + 5 = 15', justification: 'Given problem statement', confidence: 100 },
                     { id: 'S1', type: 'Operation', text: 'Subtract 5 from both sides.', latex: '2x = 10', justification: 'Subtraction Property of Equality', confidence: 100 },

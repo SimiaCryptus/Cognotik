@@ -22,7 +22,7 @@ object ImageGameTest {
     @Test
     fun test() {
         object : PlanHarness(
-            prompt = "Create a complex image featuring a number of different elements, then compile into a game.",
+            prompt = "Create a complex image featuring a number of different elements, then compile into a game featuring a wide variety of variants.",
             cognitiveSettings = WaterfallMode.WaterfallModeConfig(),
         ) {
             override fun newConfig(session: Session, tempDir: File) = super.newConfig(session, tempDir).apply {

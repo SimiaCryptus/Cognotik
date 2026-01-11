@@ -8,7 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
@@ -131,8 +131,8 @@
         /* Simulator */
         .sim-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+          grid-template-columns: 1fr 40px 1fr;
+          gap: 1rem;
             background: var(--surface-color);
             border-radius: 16px;
             overflow: hidden;
@@ -164,11 +164,11 @@
             padding: 0.75rem;
             border-radius: 6px;
             font-family: monospace;
-            font-size: 0.9rem;
+          font-size: 0.85rem;
         }
         .form-control:focus {
             outline: none;
-            border-color: var(--accent-secondary);
+          border-color: var(--accent-primary);
         }
         textarea.form-control {
             resize: vertical;
@@ -293,7 +293,7 @@
                         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div>
                                 <label>Report Type</label>
-                                <select id="report_type" class="form-control">
+                      <select id="sim_type" class="form-control">
                                     <option value="status_update">Status Update</option>
                                     <option value="quarterly_review" selected>Quarterly Review</option>
                                     <option value="incident_report">Incident Report</option>
@@ -334,7 +334,7 @@
                             </div>
                             <div>
                                 <label>Revisions</label>
-                                <input type="number" id="revision_passes" class="form-control" value="1" min="0" max="5">
+                      <input type="number" id="sim_revisions" class="form-control" value="1" min="0" max="3">
                             </div>
                         </div>
                         <div class="form-group">
@@ -398,8 +398,8 @@
             document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
         }
         function runSimulation() {
-            const topic = document.getElementById('report_topic').value;
-            const type = document.getElementById('report_type').value;
+      const topic = document.getElementById('sim_topic').value;
+      const type = document.getElementById('sim_type').value;
             const tone = document.getElementById('tone').value;
             const audience = document.getElementById('target_audience').value;
             const period = document.getElementById('time_period').value;
@@ -447,7 +447,7 @@
                 if (logIndex < logs.length) {
                     const line = document.createElement('div');
                     line.textContent = `> ${new Date().toLocaleTimeString()} ${logs[logIndex]}`;
-                    line.style.marginBottom = '4px';
+              line.style.marginBottom = '2px';
                     if (logs[logIndex].includes('SUCCESS')) line.style.color = '#4ade80';
                     else if (logs[logIndex].includes('INFO')) line.style.color = '#60a5fa';
                     logsEl.appendChild(line);
@@ -471,7 +471,7 @@
 <h2>Executive Summary</h2>
 <p>This report provides a comprehensive analysis of ${topic} for ${period}. Key performance indicators show positive trends in customer acquisition, though retention metrics require attention. Overall, the strategic initiatives implemented have yielded a 15% increase in ROI.</p>
 
-<h2>Key Metrics Analysis</h2>
+          <h2>Metrics Analysis</h2>
 <ul>
     ${metrics.map(m => `<li><strong>${m.trim()}:</strong> 🔵 Notable. Showing steady improvement. Current value exceeds target by 5%.</li>`).join('')}
 </ul>

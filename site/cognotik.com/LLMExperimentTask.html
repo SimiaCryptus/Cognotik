@@ -7,7 +7,7 @@
     <title>LLM Experiment - Cognotik</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
@@ -99,11 +99,11 @@
                     <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
                     <div class="control-group">
                         <label>Prompt Template</label>
-                        <textarea id="template">Write a {tone} email to a client about a delay.</textarea>
+                      <textarea id="sim-template" class="sim-textarea">Write a {tone} email to a client about a delay.</textarea>
                     </div>
                     <div class="control-group">
                         <label>Variables (JSON)</label>
-                        <textarea id="variables">{"tone": ["polite", "apologetic", "direct"]}</textarea>
+                      <textarea id="sim-variables" class="sim-textarea">{"tone": ["polite", "apologetic", "direct"]}</textarea>
                     </div>
                     <div class="control-group">
                         <label>Temperatures (comma-separated)</label>
@@ -120,8 +120,8 @@
                     <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Run Experiment</button>
                 </div>
                 <div class="sim-output">
-                    <div id="output-logs" class="output-area">
-                        <div style="color: var(--text-muted); text-align: center; margin-top: 4rem;">
+                  <div id="output-logs" class="output-terminal">
+                      <div style="color: #64748b; text-align: center; margin-top: 4rem;">
                             Configure the experiment and click "Run" to see results.
                         </div>
                     </div>
@@ -152,22 +152,22 @@
 
     <script>
         function runSimulation() {
-            const template = document.getElementById('template').value;
-            const temperatures = document.getElementById('temperatures').value;
-            const repetitions = document.getElementById('repetitions').value;
+      const template = document.getElementById('sim-template').value;
+      const temperatures = document.getElementById('sim-temperatures').value;
+      const repetitions = document.getElementById('sim-repetitions').value;
             const logsEl = document.getElementById('output-logs');
             
             logsEl.innerHTML = '';
             const steps = [
-                `[INFO] Initializing LLMExperimentTask: repetitions=${repetitions}`,
-                `[INFO] Generated 6 experimental conditions (3 variables x 2 temps)`,
-                `[INFO] Running condition 1/6: temp=0.1, vars={tone=polite}...`,
-                `[INFO] Running condition 2/6: temp=0.7, vars={tone=polite}...`,
-                `[INFO] Running condition 3/6: temp=0.1, vars={tone=apologetic}...`,
-                `[INFO] Running condition 4/6: temp=0.7, vars={tone=apologetic}...`,
-                `[INFO] Collecting metrics via LLM evaluator...`,
-                `[INFO] Generating detailed statistical tables (α = 0.05)...`,
-                `[SUCCESS] Experiment Complete.`
+          `[INIT] Initializing LLMExperimentTask: repetitions=${repetitions}`,
+          `[PLAN] Generated 6 experimental conditions (3 variables x 2 temps)`,
+          `[EXEC] Running condition 1/6: temp=0.1, vars={tone=polite}...`,
+          `[EXEC] Running condition 2/6: temp=0.7, vars={tone=polite}...`,
+          `[EXEC] Running condition 3/6: temp=0.1, vars={tone=apologetic}...`,
+          `[EXEC] Running condition 4/6: temp=0.7, vars={tone=apologetic}...`,
+          `[ANALYSIS] Collecting metrics via LLM evaluator...`,
+          `[STATS] Generating detailed statistical tables (α = 0.05)...`,
+          `[DONE] Experiment Complete.`
             ];
             
             let i = 0;
@@ -176,24 +176,24 @@
                     const line = document.createElement('div');
                     line.textContent = `> ${new Date().toLocaleTimeString()} ${steps[i]}`;
                     line.style.marginBottom = '4px';
-                    if (steps[i].includes('SUCCESS')) line.style.color = '#4ade80';
-                    else line.style.color = '#22d3ee';
+              if (steps[i].includes('DONE')) line.style.color = '#4ade80';
+              else line.style.color = '#e2e8f0';
                     logsEl.appendChild(line);
                     i++;
                 } else {
                     clearInterval(interval);
                     const result = document.createElement('div');
                     result.innerHTML = `
-                        <br><strong style="color: var(--accent-secondary)">### Table 1: Descriptive Statistics by Temperature</strong><br>
-                        <table style="width:100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem;">
-                            <tr style="border-bottom: 1px solid #444; text-align: left;"><th>Temp</th><th>Metric</th><th>Mean</th><th>SD</th><th>CV</th></tr>
+                  <br><strong style="color: var(--accent-primary)">### Table 1: Descriptive Statistics by Temperature</strong><br>
+                  <table style="width:100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem; border: 1px solid #333;">
+                      <tr style="border-bottom: 1px solid #444; text-align: left; color: #94a3b8;"><th>Temp</th><th>Metric</th><th>Mean</th><th>SD</th><th>CV</th></tr>
                             <tr><td>0.1</td><td>Length</td><td>145.2</td><td>12.4</td><td>0.085</td></tr>
                             <tr><td>0.7</td><td>Length</td><td>168.5</td><td>45.2</td><td>0.268</td></tr>
                             <tr><td>0.1</td><td>Sentiment</td><td>8.5</td><td>0.5</td><td>0.058</td></tr>
                             <tr><td>0.7</td><td>Sentiment</td><td>7.2</td><td>1.8</td><td>0.250</td></tr>
                         </table>
                         <br>
-                        <strong style="color: var(--accent-secondary)">### Table 2: Pairwise Temperature Comparisons</strong><br>
+                  <strong style="color: var(--accent-primary)">### Table 2: Pairwise Temperature Comparisons</strong><br>
                         <div style="font-size: 0.85rem; margin-top: 0.5rem;">
                         | Metric | T1 | T2 | p-value | Sig | Effect Size |<br>
                         |--------|----|----|---------|-----|-------------|<br>
@@ -205,7 +205,7 @@
                         - Temp 0.1: Low Diversity (Compressibility: 1.85)<br>
                         - Temp 0.7: High Diversity (Compressibility: 1.08)<br>
                         <br>
-                        <em>Insight:</em> Higher temperature significantly increases response length variance and diversity, but reduces sentiment consistency.
+                  <em style="color: #94a3b8;">Insight: Higher temperature significantly increases response length variance and diversity, but reduces sentiment consistency.</em>
                     `;
                     result.style.color = '#e2e8f0';
                     result.style.marginTop = '1rem';
@@ -214,7 +214,7 @@
                     result.style.borderRadius = '8px';
                     logsEl.appendChild(result);
                 }
-            }, 600);
+      }, 400);
         }
     </script>
 </body>

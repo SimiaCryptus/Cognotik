@@ -367,8 +367,8 @@ ImageVariation - Creates 'Find the Differences' style image sets.
       val assets = mutableListOf<Map<String, String>>()
       assets.add(
         mapOf(
-          "image" to task.linkTo(baseImage),
-          "json" to task.linkTo(baseJsonName),
+          "image" to baseImage,
+          "json" to baseJsonName,
           "type" to "base"
         )
       )

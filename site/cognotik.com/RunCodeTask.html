@@ -626,7 +626,7 @@
                 // Simple syntax highlighting wrapper
                 const highlight = (str) => {
                     return str
-                        .replace(/(def|return|if|for|import|new|class)/g, '<span style="color:#c678dd">$1</span>')
+                  .replace(/(def|return|if|for|import|new|class|val|var)/g, '<span style="color:#c678dd">$1</span>')
                         .replace(/(".+?")/g, '<span style="color:#98c379">$1</span>')
                         .replace(/(\/\/.*)/g, '<span style="color:#5c6370">$1</span>');
                 };
@@ -645,7 +645,7 @@
             };
         
             // Console Logger
-            const logToConsole = (msg, type = 'info') => {
+      const log = (msg, type = 'info') => {
                 const span = document.createElement('span');
                 span.className = 'term-line';
                 if (type === 'error') span.style.color = '#ef4444';

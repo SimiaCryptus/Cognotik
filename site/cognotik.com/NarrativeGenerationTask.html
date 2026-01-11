@@ -11,7 +11,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
     <title>Narrative Generation Task | Cognotik</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -468,7 +468,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+          from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
@@ -488,7 +488,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         
         .form-group label {
             display: block;
-            margin-bottom: 0.8rem;
+          margin-bottom: 0.5rem;
             color: var(--text-secondary);
             font-size: 0.9rem;
             font-weight: 600;
@@ -510,7 +510,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         
         .form-control:focus {
             outline: none;
-            border-color: var(--accent-color);
+          border-color: var(--accent-primary);
             box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
         }
         
@@ -623,8 +623,8 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         }
         
         .stat-value {
-            font-family: var(--font-heading);
-            color: var(--accent-color);
+          font-family: var(--font-mono);
+          color: var(--accent-primary);
             font-size: 1.2rem;
             font-weight: bold;
         }
@@ -716,9 +716,9 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
         }
         
         .outline-list li {
-            margin-bottom: 1.5rem;
-            padding-left: 1.5rem;
-            border-left: 3px solid var(--accent-color);
+          margin-bottom: 1rem;
+          padding-left: 1rem;
+          border-left: 2px solid var(--accent-primary);
             background: rgba(212, 175, 55, 0.05);
             padding: 1rem;
             border-radius: 0 4px 4px 0;
@@ -916,8 +916,8 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
                     </div>
 
                     <div class="form-group">
-                        <label>Target Word Count: <span id="wordCountDisplay" style="color: var(--accent-gold);">5000</span></label>
-                        <input type="range" min="1000" max="20000" step="500" value="5000" id="wordCountSlider">
+                      <label>Target Word Count: <span id="wordCountDisplay" style="color: var(--accent-primary);">5000</span></label>
+                      <input type="range" min="1000" max="20000" step="500" value="5000" id="wordCountSlider" style="width: 100%;">
                     </div>
 
                     <div class="grid grid-2" style="gap: 1rem;">
@@ -1035,7 +1035,7 @@ Description: Product page for the NarrativeGenerationTask feature, showcasing it
             <!-- Outline Tab -->
             <div id="tab-outline" class="tab-content active">
                 <h3>Act 1: The Glitch in Paradise</h3>
-                <p style="font-style: italic; margin-bottom: 1rem;">Purpose: Introduce Detective Kael and the anomaly in the server.</p>
+                  <p style="font-style: italic; color: var(--text-dim); margin-bottom: 1rem;">Purpose: Introduce Detective Kael and the anomaly in the server.</p>
                 <ul class="outline-list">
                     <li>
                         <strong>Scene 1: The Neon Rain</strong>

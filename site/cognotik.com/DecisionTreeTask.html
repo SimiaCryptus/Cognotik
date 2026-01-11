@@ -4,7 +4,7 @@
     <link href="logo.svg" rel="icon" type="image/svg+xml">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cognotik | Decision Tree Agent</title>
+  <title>Cognotik | DecisionTreeTask</title>
     <meta name="description" content="Build interpretable, LLM-driven symbolic decision trees for complex data analysis.">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
@@ -78,9 +78,9 @@
         svg { width: 100%; height: 100%; }
 
 
-        .node circle { fill: var(--surface-color); stroke: var(--accent-color); stroke-width: 2px; }
-        .node text { font-size: 12px; text-anchor: middle; dominant-baseline: middle; fill: var(--text-color); }
-        .link { stroke: var(--border-color); stroke-width: 2px; }
+      .node circle { fill: var(--bg-panel); stroke: var(--accent-primary); stroke-width: 2px; }
+      .node text { font-size: 12px; text-anchor: middle; dominant-baseline: middle; fill: var(--text-main); font-family: var(--font-sans); }
+      .link { stroke: var(--border-subtle); stroke-width: 2px; }
         .node-label { font-size: 10px; fill: var(--text-muted); background: var(--surface-color); }
 
         @media (max-width: 768px) {
@@ -215,15 +215,15 @@
                         </div>
                         <div class="control-group">
                             <label>Max Depth</label>
-                            <input type="number" id="maxDepth" value="3" min="1" max="5">
+                      <input type="number" id="simMaxDepth" value="3" min="1" max="5">
                         </div>
                         <div class="control-group">
-                            <label>Candidate Rules per Node</label>
-                            <input type="number" id="candidateRules" value="3" min="1" max="10">
+                      <label>Candidate Rules</label>
+                      <input type="number" id="simCandidateRules" value="3" min="1" max="10">
                         </div>
                         <button class="run-button" onclick="runSimulation()">Run Task</button>
                         
-                        <div style="margin-top: 2rem; font-size: 0.8rem; color: var(--text-light);">
+                  <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-dim);">
                             <strong>Dataset Preview:</strong><br>
                             - Age (Int)<br>
                             - Contract (String)<br>
@@ -233,17 +233,17 @@
                     </div>
                     
                     <div class="sim-output">
-                        <div class="tabs">
+                  <div class="sim-tabs">
                             <div class="tab active" onclick="switchTab('viz')">Tree Visualization</div>
                             <div class="tab" onclick="switchTab('log')">Agent Logs</div>
                             <div class="tab" onclick="switchTab('code')">Generated Code</div>
                         </div>
                         
-                        <div id="viz-panel" class="viz-area">
+                  <div id="sim-viz-panel" class="viz-area">
                             <svg id="treeSvg"></svg>
                         </div>
                         
-                        <div id="log-panel" class="viz-area" style="display: none;">
+                  <div id="sim-log-panel" class="viz-area" style="display: none;">
                             <div class="terminal" id="terminalOutput">
                                 <div class="log-entry">Waiting to start...</div>
                             </div>
@@ -570,15 +570,15 @@
             // DOM Elements
             const ui = {
                 runBtn: document.querySelector('.run-button[onclick="runSimulation()"]'),
-                tabs: document.querySelectorAll('.tab'),
+          simTabs: document.querySelectorAll('.sim-tab'),
                 panels: {
-                    viz: document.getElementById('viz-panel'),
-                    log: document.getElementById('log-panel'),
-                    code: document.getElementById('code-panel')
+              viz: document.getElementById('sim-viz-panel'),
+              log: document.getElementById('sim-log-panel'),
+              code: document.getElementById('sim-code-panel')
                 },
                 inputs: {
-                    depth: document.getElementById('maxDepth'),
-                    candidates: document.getElementById('candidateRules')
+              depth: document.getElementById('simMaxDepth'),
+              candidates: document.getElementById('simCandidateRules')
                 },
                 terminal: document.getElementById('terminalOutput'),
                 svg: document.getElementById('treeSvg'),
@@ -715,7 +715,7 @@
                         visualizer.drawLink(startX, startY, startX + spread, startY + levelH, "Else");
                 
                         visualizer.drawNode(startX - spread, startY + levelH, step === 1 ? "?" : "Split");
-                        visualizer.drawNode(startX + spread, startY + levelH, step === 1 ? "?" : "No", step >= 3 ? colors.noChurn : colors.surface);
+                  visualizer.drawNode(startX + spread, startY + levelH, step === 1 ? "?" : "No", step >= 3 ? "#4ade80" : "#1e293b");
                     }
         
                     if (step >= 2) {
@@ -726,8 +726,8 @@
                         visualizer.drawLink(leftX, leftY, leftX - 60, leftY + levelH, "Usage<10");
                         visualizer.drawLink(leftX, leftY, leftX + 60, leftY + levelH, "Else");
         
-                        visualizer.drawNode(leftX - 60, leftY + levelH, "Yes", colors.churn);
-                        visualizer.drawNode(leftX + 60, leftY + levelH, "No", colors.noChurn);
+                  visualizer.drawNode(leftX - 60, leftY + levelH, "Yes", "#f87171");
+                  visualizer.drawNode(leftX + 60, leftY + levelH, "No", "#4ade80");
                     }
                 }
             };
@@ -759,7 +759,7 @@
                     await wait(800);
         
                     // 2. Root Node Analysis
-                    logger.log(`Depth 0: Analyzing root node...`);
+              logger.log(`Depth 0: Analyzing root...`);
                     await wait(600);
                     logger.log(`LLM generating candidate rules...`, 'info');
                     await wait(800);

@@ -126,7 +126,7 @@
         
         /* Output Specifics */
         .log-terminal {
-            font-family: var(--font-family-mono);
+          font-family: var(--font-mono);
             color: var(--success-color);
         }
         
@@ -193,8 +193,8 @@
         
         .char-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 1.5rem;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 1rem;
         }
         
         .char-card {
@@ -207,7 +207,7 @@
         
         .char-img-placeholder {
             width: 100%;
-            height: 150px;
+          height: 100px;
             background: #000;
             margin-bottom: 0.5rem;
             border-radius: 4px;
@@ -251,7 +251,7 @@
         
             .hero { grid-template-columns: 1fr; text-align: center; padding-top: 6rem; }
             .simulator-container { grid-template-columns: 1fr; height: auto; }
-            .sim-controls { border-right: none; border-bottom: 1px solid var(--border-color); }
+          .sim-controls { border-right: none; border-bottom: 1px solid var(--border-subtle); }
         }
     </style>
 <!-- Generated Images:
@@ -316,7 +316,7 @@
 
         <!-- Interactive Simulator -->
         <section id="simulator" class="simulator container">
-            <div class="simulator-container">
+          <div class="sim-container">
                 <!-- Left: Inputs -->
                 <div class="sim-controls">
                     <h2>Configuration</h2>
@@ -324,7 +324,7 @@
                         
                         <div class="control-group">
                             <label for="subject">Subject / Premise</label>
-                            <textarea id="subject" class="sim-input" rows="4" placeholder="e.g., A detective noir story set in a cyberpunk Tokyo where it never stops raining..."></textarea>
+                          <textarea id="subject" class="sim-input" rows="4" placeholder="e.g., A detective noir story set in a cyberpunk Tokyo..."></textarea>
                         </div>
 
                         <div class="control-group">
@@ -339,7 +339,7 @@
                         </div>
 
                         <div class="control-group">
-                            <label for="target_pages">Target Pages: <span id="page-val">5</span></label>
+                          <label for="target_pages">Pages: <span id="page-val">3</span></label>
                             <div class="range-wrapper">
                                 <input type="range" id="target_pages" min="1" max="20" value="5" class="sim-input" oninput="document.getElementById('page-val').innerText = this.value">
                             </div>
@@ -352,13 +352,13 @@
                             </label>
                         </div>
 
-                        <button type="submit" class="btn" id="run-btn">Generate Comic</button>
+                      <button type="submit" class="btn-sim" id="run-btn">Run Task</button>
                     </form>
                 </div>
 
                 <!-- Right: Outputs -->
                 <div class="sim-output">
-                    <div class="tabs">
+                  <div class="sim-tabs">
                         <button class="tab active" onclick="switchTab('overview')">Overview</button>
                         <button class="tab" onclick="switchTab('script')">Script</button>
                         <button class="tab" onclick="switchTab('characters')">Characters</button>
@@ -374,21 +374,21 @@
                         </div>
                     </div>
 
-                    <div id="tab-script" class="tab-content">
+                  <div id="sim-script" class="sim-content">
                         <div class="script-view" id="script-display">
                             <!-- Script content will be injected here -->
                             <p class="text-muted">Waiting for generation...</p>
                         </div>
                     </div>
 
-                    <div id="tab-characters" class="tab-content">
+                  <div id="sim-characters" class="sim-content">
                         <div class="char-grid" id="char-display">
                             <!-- Character cards injected here -->
                             <p class="text-muted" style="grid-column: 1/-1;">Waiting for script analysis...</p>
                         </div>
                     </div>
 
-                    <div id="tab-visuals" class="tab-content">
+                  <div id="sim-visuals" class="sim-content">
                         <div id="visuals-display">
                             <!-- Images injected here -->
                             <p class="text-muted">Waiting for character designs...</p>
@@ -473,7 +473,7 @@
 
         // Simulation Logic
         function runSimulation() {
-            const subject = document.getElementById('subject').value || "A generic hero story";
+      const subject = document.getElementById('subject').value || "Generic Hero Story";
             const style = document.getElementById('art_style').value;
             const pages = document.getElementById('target_pages').value;
             const genImages = document.getElementById('generate_images').checked;
@@ -487,7 +487,7 @@
             // Reset UI
             runBtn.disabled = true;
             runBtn.innerText = "Processing...";
-            logDisplay.innerHTML = `<div style="margin-bottom: 5px;">> Initializing ComicBookGenerationTask...</div>`;
+      logDisplay.innerHTML = '<div style="color: #64748b;">// Initializing ComicBookGenerationTask...</div>';
             scriptDisplay.innerHTML = "";
             charDisplay.innerHTML = "";
             visualsDisplay.innerHTML = "";
@@ -602,7 +602,7 @@
          */
         function setupRangeSlider() {
             const rangeInput = document.getElementById('target_pages');
-            const rangeValueDisplay = document.getElementById('page-val');
+      const rangeVal = document.getElementById('page-val');
         
             if (rangeInput && rangeValueDisplay) {
                 rangeInput.addEventListener('input', (e) => {
@@ -616,7 +616,7 @@
          */
         function setupFormSubmission() {
             const form = document.getElementById('task-config-form');
-            if (form) {
+      if(form) {
                 form.addEventListener('submit', (e) => {
                     e.preventDefault();
                     runSimulation();

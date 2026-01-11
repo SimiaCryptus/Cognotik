@@ -55,7 +55,7 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
             --accent-glow: rgba(56, 189, 248, 0.3);
         
             --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+          --text-dim: #94a3b8;
             --border-color: rgba(148, 163, 184, 0.1);
         
             /* Typography */
@@ -76,7 +76,7 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
         }
         
         body {
-            background-color: var(--bg-dark);
+          background-color: var(--bg-app);
             color: var(--text-main);
             font-family: var(--font-sans);
             line-height: 1.6;
@@ -104,7 +104,7 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
         .container {
             max-width: var(--container-width);
             margin: 0 auto;
-            padding: 0 1.5rem;
+          padding: 2rem 1.5rem;
         }
         
         .text-gradient {
@@ -456,7 +456,7 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
         
         .toggle-label {
             font-size: 0.85rem;
-            color: var(--text-main);
+          color: var(--text-dim);
         }
         
         /* Range Slider */
@@ -556,7 +556,7 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
             border-radius: var(--radius-md);
             border: 1px solid var(--border-color);
             font-family: var(--font-mono);
-            font-size: 0.85rem;
+          font-size: 0.75rem;
             color: #a5b4fc;
             overflow-x: auto;
             white-space: pre;
@@ -1008,7 +1008,7 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
 
                     <!-- Right Column: Outputs -->
                     <div class="sim-output">
-                        <div class="output-tabs">
+                  <div class="output-toolbar">
                             <button class="tab-btn active" data-tab="overview">Overview</button>
                             <button class="tab-btn" data-tab="diagrams">Architecture (C4)</button>
                             <button class="tab-btn" data-tab="json">Project Data (JSON)</button>
@@ -1333,7 +1333,7 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
             Node0 --> DB[(Primary Database)]
             ${data.techStack.length > 1 ? `Node0 --> Node1` : ''}
             classDef primary fill:#1e293b,stroke:#38bdf8,stroke-width:2px;
-            class User,LB,API,Node0,DB primary;`;
+  class User,LB,API,Svc0,DB primary;`;
         
                 codeBlock.textContent = mermaidCode;
             }
@@ -1367,7 +1367,7 @@ Style: Cyberpunk professional, clean lines, volumetric lighting.
                 const projectData = {
                     project_name: data.projectName,
                     description: data.description,
-                    created_at: new Date().toISOString(),
+          generated_at: new Date().toISOString(),
                     epics: [
                         { id: "EPIC-ARCH", name: "System Architecture", description: "Core infra setup", priority: "High", story_points: 21 },
                         { id: "EPIC-CORE", name: "Core Features", description: "Main business logic", priority: "High", story_points: 34 }

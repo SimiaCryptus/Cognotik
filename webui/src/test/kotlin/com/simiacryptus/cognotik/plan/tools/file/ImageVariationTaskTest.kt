@@ -29,12 +29,16 @@ class ImageVariationTaskTest {
       taskType = ImageVariationTask.ImageVariation,
       executionConfig = ImageVariationConfig(
         input_file = inputFile,
+        num_subimages = 10,
+        num_subimage_alternates = 3,
+        num_changes_per_variation = 5,
+        num_variations = 30,
       ),
       temperature = 0.7,
       timeoutMinutes = 30,
       typeConfig = TaskTypeConfig(ImageVariationTask.ImageVariation.name),
     )
-    File("/home/andrew/code/Cognotik/webui/workspaces/Waterfall/test-20260111_135611/base_scene.png")
+    File("/home/andrew/code/Cognotik/webui/workspaces/Waterfall/test-20260111_145442/complex_base_scene.png")
       .copyTo(harness.dataDir.resolve(inputFile), overwrite = true)
     harness.run()
 

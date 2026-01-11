@@ -11,7 +11,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="assets/styles/main.css">
     <style>
-        /* Page-specific overrides */
+      /* Page-Specific Overrides */
         .hero-visual {
             width: 100%;
             height: 400px;
@@ -168,7 +168,7 @@
                 logs.appendChild(div);
                 logs.scrollTop = logs.scrollHeight;
             };
-            addLog("Initializing DataIngestTask...", "info");
+      log("Initializing DataIngestTask...");
             await new Promise(r => setTimeout(r, 800));
             addLog(`Resolving files for pattern: ${document.getElementById('inputFiles').value}`, "info");
             await new Promise(r => setTimeout(r, 600));

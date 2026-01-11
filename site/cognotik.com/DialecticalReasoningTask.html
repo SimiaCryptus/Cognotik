@@ -8,7 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
@@ -80,11 +80,11 @@
                     <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
                     <div class="control-group">
                         <label>Thesis</label>
-                        <textarea id="thesis" placeholder="Enter the initial position...">Remote work increases productivity and employee satisfaction.</textarea>
+                  <textarea id="sim-thesis" placeholder="Enter initial position...">Remote work increases productivity and employee satisfaction.</textarea>
                     </div>
                     <div class="control-group">
                         <label>Antithesis</label>
-                        <textarea id="antithesis" placeholder="Enter the opposing position...">In-office work fosters collaboration and company culture.</textarea>
+                  <textarea id="sim-antithesis" placeholder="Enter opposing position...">In-office work fosters collaboration and company culture.</textarea>
                     </div>
                     <div class="control-group">
                         <label>Context</label>
@@ -126,9 +126,9 @@
 
     <script>
         function runSimulation() {
-            const thesis = document.getElementById('thesis').value;
-            const antithesis = document.getElementById('antithesis').value;
-            const logsEl = document.getElementById('output-logs');
+      const thesis = document.getElementById('sim-thesis').value;
+      const antithesis = document.getElementById('sim-antithesis').value;
+      const logsEl = document.getElementById('sim-output');
             
             logsEl.innerHTML = '';
             const steps = [
@@ -154,7 +154,7 @@
                     clearInterval(interval);
                     const result = document.createElement('div');
                     result.innerHTML = `
-                        <br><strong>Synthesis Result:</strong><br>
+              <strong>Synthesis Result:</strong><br><br>
                         A hybrid model that mandates specific "collaboration days" for in-office presence while allowing flexible remote work for deep focus tasks effectively bridges the gap. This approach preserves the autonomy and productivity of remote work while ensuring the social cohesion and spontaneous innovation of physical presence.
                     `;
                     result.style.color = '#e2e8f0';
@@ -164,7 +164,7 @@
                     result.style.borderRadius = '8px';
                     logsEl.appendChild(result);
                 }
-            }, 800);
+      }, 6000);
         }
     </script>
 </body>

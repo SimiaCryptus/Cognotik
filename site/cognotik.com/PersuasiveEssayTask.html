@@ -7,7 +7,7 @@
     <title>Persuasive Essay - Cognotik</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
@@ -62,16 +62,16 @@
                 <h3 style="margin-bottom: 1.5rem; color: var(--accent-color);">Configuration</h3>
                 <div class="control-group">
                     <label>Thesis Statement</label>
-                    <textarea id="thesis">Space exploration is a vital investment for humanity's future.</textarea>
+                  <textarea id="sim-thesis">Space exploration is a vital investment for humanity's future.</textarea>
                 </div>
                 <div class="control-row" style="display: flex; gap: 1rem;">
                     <div class="control-group" style="flex: 1;">
                         <label>Audience</label>
-                        <input type="text" id="audience" value="General Public">
+                  <input type="text" id="sim-audience" value="General Public">
                     </div>
                     <div class="control-group" style="flex: 1;">
                         <label>Tone</label>
-                        <input type="text" id="tone" value="Inspirational">
+                  <input type="text" id="sim-tone" value="Inspirational">
                     </div>
                 </div>
                 <div class="control-row" style="display: flex; gap: 1rem;">
@@ -81,7 +81,7 @@
                     </div>
                     <div class="control-group" style="flex: 1;">
                         <label>Arguments</label>
-                        <input type="number" id="argCount" value="3" min="1" max="10">
+                  <input type="number" id="sim-argCount" value="3" min="1" max="5">
                     </div>
                 </div>
                 <div class="control-group">
@@ -95,10 +95,10 @@
                 </div>
                 <div class="control-group" style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem;">
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="useCounter" checked> Counterarguments
+                          <input type="checkbox" id="sim-counter" checked> Counter-args
                     </label>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="useImages" checked> Generate Images
+                          <input type="checkbox" id="sim-images" checked> Gen Images
                     </label>
                 </div>
                 <button class="run-button" onclick="runSimulation()" style="margin-top: auto;">Generate Essay</button>
@@ -133,16 +133,16 @@
 
     <script>
         function runSimulation() {
-            const thesis = document.getElementById('thesis').value;
-            const argCount = document.getElementById('argCount').value;
-            const useCounter = document.getElementById('useCounter').checked;
-            const useImages = document.getElementById('useImages').checked;
-            const logsEl = document.getElementById('output-logs');
+      const thesis = document.getElementById('sim-thesis').value;
+      const argCount = document.getElementById('sim-argCount').value;
+      const useCounter = document.getElementById('sim-counter').checked;
+      const useImages = document.getElementById('sim-images').checked;
+      const logsEl = document.getElementById('sim-logs');
             
             logsEl.innerHTML = '';
             const steps = [
-                `[INFO] Analyzing thesis: "${thesis.substring(0, 30)}..."`,
-                useImages ? `[INFO] Generating cover image...` : null,
+          `[INIT] Analyzing thesis: "${thesis.substring(0, 30)}..."`,
+          useImages ? `[IMG] Generating cover art prompt...` : null,
                 `[INFO] Creating outline...`,
                 useImages ? `[INFO] Generating outline visualization...` : null,
                 `[INFO] Writing introduction...`,
@@ -152,7 +152,7 @@
                 useCounter ? `[INFO] Addressing counterarguments & rebuttals...` : null,
                 `[INFO] Writing conclusion...`,
                 `[INFO] Performing revision pass 1/1...`,
-                `[INFO] Assembling final document...`,
+          `[FINAL] Assembling document...`,
                 `[SUCCESS] Essay Generated.`
             ].filter(Boolean);
             
@@ -186,7 +186,7 @@
                     result.style.borderRadius = '8px';
                     logsEl.appendChild(result);
                 }
-            }, 800);
+      }, 600);
         }
     </script>
 </body>

@@ -186,3 +186,246 @@ respecting the format of each:
 | **Log**        | `log.error(...)` | Text (Single Line)     | Alert the developer/system monitor. |
 | **Transcript** | `write(...)`     | Markdown + `<details>` | Preserve the stack trace for audit. |
 
+
+
+---
+
+---
+
+# Cognotik IO Best Practices: Component Analysis
+
+---
+
+# Part 1: Actors and Roles
+
+Before analyzing the components, we must define the four distinct audiences (actors) that interact with the system, as defined in the IO Best Practices.
+
+1.  **The User (Human):**
+  *   **Role:** Sets goals, approves side effects, views progress.
+  *   **Interface:** Browser-based UI (HTML/Markdown).
+2.  **The LLM (AI Agent/Planner):**
+  *   **Role:** Analyzes context, generates plans, configures tasks, and consumes task results to determine the next step.
+  *   **Interface:** Context Window (Text/JSON).
+3.  **The Auditor (Human/Compliance):**
+  *   **Role:** Reviews historical actions for safety, logic failures, or compliance.
+  *   **Interface:** Transcripts (Markdown files with `<details>` tags).
+4.  **The Developer/System Admin (Human):**
+  *   **Role:** Monitors system health, debugs crashes, optimizes performance.
+  *   **Interface:** SLF4J Logs (Console/File).
+
+---
+
+# Part 2: Component Analysis - Task Types (The "Hands")
+
+A `TaskType` is a self-describing, atomic unit of work (e.g., "Modify File", "Run Code"). It is the bridge between the LLM's intent and actual system execution.
+
+### 1. Inputs
+*   **From LLM (Dynamic):** `TaskExecutionConfig`. A JSON object containing specific arguments for *this* run (e.g., `target_file: "src/main.kt"`, `code: "println('hello')"`).
+*   **From System (Static/Global):** `TaskTypeConfig`. Global settings for the tool (e.g., `api_keys`, `default_model`, `enabled_features`).
+*   **From Context:** `SessionTask` (Handle to the UI), `OrchestrationConfig` (Global flags like `autoFix`).
+*   **From Upstream:** `task_dependencies` or `getPriorCode(executionState)` to read results from previous tasks.
+
+### 2. Outputs
+*   **To LLM (`resultFn`):** A concise Markdown string summarizing the result (e.g., "File updated successfully. 3 lines changed."). *Crucial for the token economy.*
+*   **To System (Side Effects):** File writes, network requests, shell command execution.
+*   **To User (Artifacts):** Downloadable files (PDFs, CSVs) via `task.saveFile`.
+
+### 3. Configuration & Schema
+*   **Self-Description:** Uses `@Description` annotations on `TaskExecutionConfig` fields.
+*   **Prompt Segment:** A method `promptSegment()` that returns a "sales pitch" string injected into the LLM's system prompt, explaining *what* the task does and *how* to use it.
+
+### 4. IO Channels (The "Triple Log" Rule)
+*   **UI (`task.ui`):** Renders Markdown to HTML. Uses `TabbedDisplay` for complex outputs. Must use `acceptButtonFooter` or `hrefLink` if `autoFix` is false.
+*   **Transcript (`task.transcript`):** Detailed audit trail. Uses Mermaid diagrams for logic and `<details>` tags for heavy JSON/Stack traces.
+*   **Logs (`log.info/error`):** Single-line, plain text system status updates.
+
+### 5. Safety Mechanisms
+*   **`autoFix` Logic:**
+  *   If `true`: Execute side effects immediately, log to transcript, release semaphore.
+  *   If `false`: Display proposed change, wait for user interaction via `acceptButtonFooter` or `Discussable`.
+
+---
+
+# Part 3: Component Analysis - Cognitive Modes (The "Brain")
+
+A `CognitiveMode` is the control loop or strategy engine. It decides *which* tasks to use and in *what order* to achieve the user's goal.
+
+### 1. Inputs
+*   **User Goal:** High-level prompt (e.g., "Refactor the database layer").
+*   **Available Tools:** A list of registered `TaskType`s.
+*   **OrchestrationConfig:** Determines the `defaultSmart` (Reasoning) and `defaultFast` (Utility) models.
+
+### 2. Outputs
+*   **Plan:** A structured sequence of steps (often visualized via Mermaid).
+*   **Execution:** The actual invocation of `TaskType` instances.
+*   **Final Result:** A summary message indicating success or failure.
+
+### 3. Configuration
+*   **Model Selection:** Configurable via `OrchestrationConfig`.
+*   **Prompts:** System prompts should be externalized in config, not hardcoded, allowing "personality" tuning.
+
+### 4. State Management
+*   **Cognitive Schema Strategy:** Uses structured state objects (e.g., `ScientificState`, `AgileState`) rather than raw message lists.
+*   **Token Pruning:** Must implement "Garbage Collection" to summarize past steps and free up context window space.
+
+### 5. IO Channels
+*   **UI:** Uses `TabbedDisplay` to separate "Reasoning" (The Plan) from "Execution" (The Tasks).
+*   **Transcript:** Logs the "Thought Process" (e.g., Reflection loops, Plan JSONs).
+
+---
+
+# Part 4: Interaction Analysis
+
+The interaction follows a **Planning -> Instantiation -> Execution -> Feedback** cycle.
+
+1.  **Discovery:** The `CognitiveMode` asks all `TaskType`s for their `promptSegment()` and `@Description` schema.
+2.  **Planning:** The LLM (driven by the Mode) analyzes the User Goal and the Task Descriptions. It outputs a JSON plan selecting a specific Task and populating its `TaskExecutionConfig`.
+3.  **Instantiation:** The System uses reflection to instantiate the specific `AbstractTask` using the config provided by the LLM.
+4.  **Execution:**
+  *   The Task runs.
+  *   It updates the **UI** (User sees progress).
+  *   It writes to the **Transcript** (Auditor record).
+  *   It logs to **SLF4J** (System health).
+5.  **Completion:** The Task calls `resultFn(String)`.
+6.  **Feedback:** This String is fed back into the `CognitiveMode`'s context. The LLM analyzes the result and decides the next move.
+
+---
+
+# Part 5: Visualizing Interactions (Mermaid)
+
+### Diagram 1: The "Triple Log" & Execution Flow (Task Level)
+This diagram illustrates the internal lifecycle of a single Task, emphasizing the IO requirements and Safety checks.
+
+```mermaid
+flowchart TD
+    subgraph Context [Inputs]
+        LLM_Config[TaskExecutionConfig\nFrom LLM]
+        Global_Config[OrchestrationConfig\nautoFix settings]
+    end
+
+    Start((Start Task)) --> Init[Initialize AbstractTask]
+    Init --> Context
+    Init --> LogStart[Log: SLF4J Info]
+
+    subgraph Execution_Logic [Run Method]
+        LogStart --> UI_Update[UI: task.add\nRender Markdown]
+        UI_Update --> Transcript_Start[Transcript: Write Intent]
+
+        Transcript_Start --> Check_SideEffect{Is Destructive?}
+
+        Check_SideEffect -- No --> DoWork[Perform Logic\nRead/Calc]
+        Check_SideEffect -- Yes --> Check_AutoFix{autoFix == true?}
+
+        Check_AutoFix -- Yes --> DoWork
+        Check_AutoFix -- No --> User_Gate[UI: Show 'Approve' Button\nacceptButtonFooter]
+        User_Gate -->|User Clicks| DoWork
+
+        DoWork -->|Success| Result_Gen[Generate Result String]
+        DoWork -->|Error| Error_Handler
+
+        subgraph Error_Handling [The Triple Log Rule]
+            Error_Handler --> UI_Err[UI: task.error]
+            UI_Err --> Log_Err[Log: SLF4J Error]
+            Log_Err --> Trans_Err[Transcript: Stack Trace\nin details tag]
+            Trans_Err --> Rethrow((Rethrow))
+        end
+    end
+
+    Result_Gen --> Transcript_End[Transcript: Write Result]
+    Transcript_End --> Log_End[Log: SLF4J Success]
+    Log_End --> Return[Callback: resultFn String]
+    Return --> End((End))
+
+    style Error_Handling fill:#f9f,stroke:#333,stroke-width:2px
+    style User_Gate fill:#ff9,stroke:#333,stroke-width:2px
+```
+
+### Diagram 2: The Cognitive Orchestration Loop (System Level)
+This diagram shows how the `CognitiveMode` (The Brain) manipulates the `TaskTypes` (The Hands) and manages state.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Session UI
+    participant Mode as CognitiveMode
+    participant LLM as LLM (Planner)
+    participant Task as TaskType (Instance)
+    participant Transcript as Audit Transcript
+
+    User->>UI: Enters Goal
+    UI->>Mode: Start(Goal, Config)
+
+    loop Cognitive Cycle
+        Mode->>LLM: Send Context (Goal + Task Descriptions + History)
+        LLM-->>Mode: Return Plan (JSON: TaskType + Config)
+
+        Mode->>Transcript: Log Plan (Mermaid/JSON)
+        Mode->>UI: Update "Reasoning" Tab
+
+        create participant SpecificTask as AbstractTask
+        Mode->>SpecificTask: Instantiate(TaskExecutionConfig)
+
+        Mode->>SpecificTask: run()
+        activate SpecificTask
+
+        SpecificTask->>UI: Update "Execution" Tab (Streaming)
+        SpecificTask->>Transcript: Log Details
+
+        alt Side Effect & autoFix=false
+            SpecificTask->>UI: Request Approval
+            User->>UI: Click "Approve"
+            UI->>SpecificTask: Resume
+        end
+
+        SpecificTask-->>Mode: resultFn("Summary of work done")
+        deactivate SpecificTask
+
+        Mode->>Mode: Update State (Prune Tokens / Update Schema)
+    end
+
+    Mode->>UI: Task Complete
+    Mode->>Transcript: Close File
+```
+
+### Diagram 3: The Self-Describing Architecture
+This illustrates how Tasks "advertise" themselves to the Planner.
+
+```mermaid
+classDiagram
+    class TaskType {
+        +String name
+        +Class executionConfigClass
+        +AbstractTask implementation
+        +String description
+    }
+
+    class TaskExecutionConfig {
+        +String field1
+        +Int field2
+        <<Annotated with @Description>>
+    }
+
+    class AbstractTask {
+        +promptSegment() String
+        +run()
+    }
+
+    class CognitiveMode {
+        +run()
+        +OrchestrationConfig config
+    }
+
+    class LLM_Context {
+        +System Prompt
+        +JSON Schema
+    }
+
+    TaskType *-- TaskExecutionConfig : Defines Schema
+    TaskType *-- AbstractTask : Defines Logic
+
+    AbstractTask --> LLM_Context : Injects promptSegment()
+    TaskExecutionConfig --> LLM_Context : Injects JSON Schema via Reflection
+
+    CognitiveMode --> TaskType : Iterates Available Tasks
+    CognitiveMode --> LLM_Context : Builds
+```

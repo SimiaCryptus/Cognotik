@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.plan
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.plan.tools.file.ImageDecompositionTask
+import com.simiacryptus.cognotik.plan.tools.file.ImageDecompositionTask
 import com.simiacryptus.cognotik.plan.tools.code.LanguageServerTask
 import com.simiacryptus.cognotik.plan.tools.data.DataIngestTask
 import com.simiacryptus.cognotik.plan.tools.file.*
@@ -100,6 +101,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(GeneticOptimizationTask.GeneticOptimization)
             registerConstructor(GitHubSearchTask.GitHubSearch)
             registerConstructor(IllustrateDocumentTask.IllustrateDocument)
+            registerConstructor(ImageDecompositionTask.ImageDecomposition)
             registerConstructor(TiledImageGenerationTask.TiledImageGeneration)
             registerConstructor(ImageDecompositionTask.ImageDecomposition)
             registerConstructor(ImageTableTask.ImageTable)
@@ -130,6 +132,7 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
             registerConstructor(RunCodeTask.RunCode)
             registerConstructor(RunToolTask.RunTool)
             registerConstructor(SegmentedImageGenerationTask.SegmentedImageGeneration)
+            registerConstructor(SegmentedImageGenerationTask.SegmentedImageGeneration)
             registerConstructor(ScriptwritingTask.Scriptwriting)
             registerConstructor(SocraticDialogueTask.SocraticDialogue)
             registerConstructor(SoftwareDesignDocumentTask.SoftwareDesignDocument)
@@ -156,6 +159,15 @@ class TaskType<out T : TaskExecutionConfig, out U : TaskTypeConfig>(
         ) = getImpl(
             taskType = planTask?.task_type?.let { valueOf(it) } ?: throw RuntimeException("Task type not specified"),
             cfg = planTask)
+        fun getAvailableTaskTypes(orchestrationConfig: OrchestrationConfig): List<TaskType<*, *>> {
+            @Suppress("SENSELESS_COMPARISON") require(taskConstructors != null) { "Task constructors not initialized" } // Trigger lazy initialization
+            return orchestrationConfig.taskSettings.mapNotNull { x ->
+                valueOf(
+                    x.value.task_type ?: return@mapNotNull null
+                )
+            }
+        }
+
 
         fun <T : TaskExecutionConfig, U : TaskTypeConfig> OrchestrationConfig.getImpl(
             taskType: TaskType<T,U>, cfg: TaskExecutionConfig? = null

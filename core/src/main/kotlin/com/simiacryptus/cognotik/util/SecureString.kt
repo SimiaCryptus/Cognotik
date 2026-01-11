@@ -59,6 +59,15 @@ class SecureString {
     }
 
     private fun encrypt(str: String): ByteArray {
+      if(str.isEmpty()) return ByteArray(0)
+      if(str.startsWith(PREFIX)) try {
+        return Base64.getDecoder().decode(str.removePrefix(PREFIX)).apply {
+          // Test decryption to ensure validity
+          decrypt(this)
+        }
+      } catch(e: Throwable) {
+        throw RuntimeException("Failed to decrypt pre-encrypted string", e)
+      }
       val cipher = Cipher.getInstance("AES/GCM/NoPadding")
       cipher.init(Cipher.ENCRYPT_MODE, key)
       val iv = cipher.iv

@@ -1,0 +1,194 @@
+</details>
+                        """.toByteArray()
+              )
+
+              if (result.regions.isNotEmpty()) {
+                result.regions.forEachIndexed { index, region: IdentifiedRegion ->
+                  val localX = (region.x * currentImage.width / 1000.0).toInt()
+                  val localY = (region.y * currentImage.height / 1000.0).toInt()
+                  val localW = (region.width * currentImage.width / 1000.0).toInt()
+                  val localH = (region.height * currentImage.height / 1000.0).toInt()
+                  val globalX = globalOffsetX + localX
+                  val globalY = globalOffsetY + localY
+
+                  val childNode = AnalysisNode(
+                    id = "${currentNode.id}_$index",
+                    label = region.label,
+                    description = region.description,
+                    bounds = ImageBounds(globalX, globalY, localW, localH),
+                    depth = currentDepth + 1
+                  )
+                  currentNode.children.add(childNode)
+                  allNodes.add(childNode)
+
+
+                  val canRecurse = (currentDepth + 1) <= maxDepth
+                  val validForRecursion = region.isValid(currentImage, minSize)
+                  val validForAnalysis = region.isValid(currentImage, 0)
+
+                  if (region.requires_zoom && canRecurse && validForRecursion) {
+                    val subImage = region.subImage(currentImage)
+                    task.resolveUserFile("${currentNode.id}_$index.png")?.also { imgFile ->
+                      ImageIO.write(subImage, "png", imgFile)
+                      val imgLink = task.linkTo(imgFile.name)
+                      logTab.add(
+                        """Saved sub-image for ${childNode.label} at depth ${currentDepth + 1}: 
+                                                                  |<a href="$imgLink" target="_blank">${imgFile.name}</a>""".trimMargin()
+                          .renderMarkdown()
+                      )
+                      transcript?.write(
+                        """
+                    |
+                    |#### Sub-image for ${childNode.label} at depth ${currentDepth + 1} 
+                    |<a href="$imgLink" target="_blank"><img src="$imgLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
+                    |""".trimMargin().toByteArray()
+                      )
+                    }
+                    processRegion(subImage, childNode, currentDepth + 1, globalX, globalY)
+                  } else if (validForAnalysis) {
+                    if (region.requires_zoom && !validForRecursion) {
+                      logTab.add("Skipped recursion for ${childNode.label} (too small) at depth ${currentDepth + 1}".renderMarkdown())
+                      transcript?.write(
+                        "Skipped recursion for ${childNode.label} (too small) at depth ${currentDepth + 1}\n".toByteArray()
+                      )
+                    }
+                    analyzeLeaf(region.subImage(currentImage), childNode)
+                  }
+                }
+              } else {
+                logTab.add("No regions identified at depth $currentDepth for ${currentNode.label}".renderMarkdown())
+                transcript?.write("No regions identified at depth $currentDepth for ${currentNode.label}\n".toByteArray())
+                analyzeLeaf(currentImage, currentNode)
+              }
+            } catch (e: Exception) {
+              log.error("Error processing region at depth $currentDepth for ${currentNode.label}", e)
+              transcript?.write(
+                "Error processing region at depth $currentDepth for ${currentNode.label}: ${e.message}\n".toByteArray()
+              )
+            }
+          }
+          processRegion(originalImage, rootNode, 0, 0, 0)
+
+          task.header("Generating Report...", level = 3)
+
+          // 1. Draw Debug Image
+          val debugImage = BufferedImage(originalImage.width, originalImage.height, BufferedImage.TYPE_INT_ARGB)
+          val g = debugImage.createGraphics()
+          g.drawImage(originalImage, 0, 0, null)
+
+          // Color map for depth
+          val depthColors = listOf(Color.RED, Color.GREEN, Color.BLUE, Color.ORANGE, Color.MAGENTA)
+
+          allNodes.forEach { node ->
+            if (node.depth > 0) { // Don't draw root
+              g.color = depthColors[node.depth % depthColors.size]
+              g.stroke = BasicStroke((maxDepth - node.depth + 1).toFloat()) // Thicker lines for higher levels
+              g.drawRect(node.bounds.x, node.bounds.y, node.bounds.width, node.bounds.height)
+
+              // Draw label background
+              if (node.bounds.width > 20) {
+                g.color = Color(0, 0, 0, 150)
+                g.fillRect(node.bounds.x, node.bounds.y, node.bounds.width.coerceAtMost(100), 15)
+                g.color = Color.WHITE
+                g.font = g.font.deriveFont(10f)
+                g.drawString(node.label, node.bounds.x + 2, node.bounds.y + 12)
+              }
+            }
+          }
+          g.dispose()
+
+          val debugFileName = "${File(imagePath).nameWithoutExtension}_${rootID}_analysis.png"
+          ImageIO.write(debugImage, "png", root.resolve(debugFileName).toFile())
+          val debugLink = task.linkTo(debugFileName)
+
+          // 3. Update UI Tabs
+          tabs["Visual Analysis"] = """
+                    <a href="$debugLink" target="_blank"><img src="$debugLink" style="max-width: 100%; border: 1px solid #ccc;" /></a>
+                """.trimIndent()
+
+          // 4. Flattened Summary for LLM
+          val flatSummary = allNodes.joinToString("\n") { node ->
+            val analysisText = node.analysis?.let { " Analysis: $it" } ?: ""
+            if (node.depth == 0) "Root Image: ${node.description}$analysisText" else
+              "- [Depth ${node.depth}] ${node.label} at (${node.bounds.x},${node.bounds.y}): ${node.description}$analysisText"
+          }
+
+          tabs["Summary"] = MarkdownUtil.renderMarkdown(flatSummary, ui = task.ui)
+        }
+
+
+        val jsonOutput = rootNodes.toJson()
+        root.resolve(outputFile).toFile().writeText(jsonOutput)
+        tabs["Structured Data"] = """
+                    <p>Full analysis saved to <a href="${task.linkTo(outputFile)}">$outputFile</a></p>
+                    <pre style="max-height: 400px; overflow: auto;">$jsonOutput</pre>
+                """.trimIndent()
+        task.header("Final Analysis", level = 3)
+        val finalResult = ChatAgent(
+          model = model,
+          prompt = """Review the following hierarchical analysis of the image regions and answer the query: "$analysis_query" """.trimIndent()
+        ).answer(listOf(rootNodes.toJson()))
+
+        tabs["Final Report"] = MarkdownUtil.renderMarkdown(finalResult, ui = task.ui)
+        task.safeComplete("Analysis complete. Found ${allNodes.size - 1} regions.", log)
+        root.resolve("final_analysis_${WaterfallMode.Companion.now()}.md").toFile().writeText(finalResult)
+        resultFn("Completed iterative analysis of $imagePath. Found ${allNodes.size - 1} regions. See $outputFile for structure.\n\nSummary:\n${finalResult}")
+      } catch (e: Exception) {
+        log.error("Error in IterativeImageDecomposition", e)
+        task.error(e)
+        transcript?.write("\n## Error\n<details><summary>Stack Trace</summary>\n\n```\n${e.stackTraceToString()}\n```\n</details>".toByteArray())
+        resultFn("Error analyzing image: ${e.message}")
+      } finally {
+        transcript?.close()
+      }
+    }
+  }
+
+
+  private fun loadImage(
+    inputFile: File,
+    executionConfig: ImageDecompositionConfig,
+    page: Int
+  ): BufferedImage {
+    var originalImage: BufferedImage? = null
+    try {
+      inputFile.getDocumentReader().use { reader ->
+        if (reader is RenderableDocumentReader) {
+          originalImage = reader.renderImage(page, executionConfig.dpi)
+        }
+      }
+    } catch (e: Throwable) {
+      log.warn("Error reading as document: ${e.message}")
+    }
+    if (originalImage == null) {
+      originalImage = ImageIO.read(inputFile)
+    }
+    if (originalImage == null) throw RuntimeException("Failed to load image from $inputFile")
+    return originalImage
+  }
+
+  override fun acceptButtonFooter(ui: SocketManager, fn: () -> Unit): String {
+    return ui.hrefLink("Accept Analysis") { fn() }
+  }
+
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(ImageDecompositionTask::class.java)
+    val ImageDecomposition = TaskType(
+      "ImageDecomposition",
+      "File Operations",
+      ImageDecompositionTask::class.java,
+      ImageDecompositionConfig::class.java,
+      TaskTypeConfig::class.java,
+      "Recursively analyze an image to find details, text, or specific objects.",
+      """
+Performs a deep-dive analysis of an image by:
+<ul>
+    <li>Identifying regions of interest based on a query</li>
+    <li>Recursively cropping and re-analyzing those regions</li>
+    <li>Stitching results into a hierarchical dataset</li>
+</ul>
+Useful for OCR on complex forms, crowd analysis, or finding small details.
+            """,
+    )
+  }
+}

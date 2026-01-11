@@ -239,15 +239,15 @@
                  ctx.globalAlpha = Math.random() * 0.5;
                  const x = Math.random() * canvas.width;
                  const y = Math.random() * canvas.height;
-                 const w = Math.random() * 200;
-                 const h = Math.random() * 200;
+              const w = Math.random() * 150;
+              const h = Math.random() * 150;
                  ctx.fillRect(x, y, w, h);
              }
              ctx.globalAlpha = 1.0;
              // Add text overlay
              ctx.fillStyle = '#fff';
-             ctx.font = '20px Inter';
-             ctx.fillText("AI Generated Preview", 20, 40);
+          ctx.font = '16px Inter';
+          ctx.fillText("AI Generated Preview: " + file, 20, 30);
          }
          form.addEventListener('submit', (e) => {
              e.preventDefault();
@@ -256,7 +256,7 @@
              const related = document.getElementById('related_files').value;
              const btn = form.querySelector('button');
              if(!description || !filename) {
-                 alert("Please fill in Description and Filename");
+          alert("Please provide a description and filename.");
                  return;
              }
              // Reset
@@ -271,16 +271,16 @@
              const steps = [
                  { msg: "Initializing ImageGenerator Agent...", delay: 500 },
                  { msg: `Reading context files: ${related || "None"}`, delay: 1000 },
-                 { msg: "Analyzing task description...", delay: 1500 },
-                 { msg: "Optimizing prompt for DALL-E...", delay: 2500 },
-                 { msg: "Sending request to image model...", delay: 3500 },
-                 { msg: "Receiving image data...", delay: 5500 },
-                 { msg: `Saving image to ${filename}...`, delay: 6000 },
-                 { msg: "Task Completed Successfully.", delay: 6500 }
+          { msg: "Analyzing task description and context...", delay: 1200 },
+          { msg: "Optimizing prompt for DALL-E...", delay: 2000 },
+          { msg: "Sending request to image model...", delay: 3000 },
+          { msg: "Receiving image data...", delay: 4500 },
+          { msg: `Saving image to ${file}...`, delay: 5000 },
+          { msg: "Task Completed Successfully.", delay: 5500 }
              ];
              let currentStep = 0;
              function runStep() {
-                 if(currentStep >= steps.length) {
+          if (currentStep >= steps.length) {
                      btn.disabled = false;
                      btn.textContent = "Run Generation Task";
                      // Show result

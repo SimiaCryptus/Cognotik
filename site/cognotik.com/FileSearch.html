@@ -87,7 +87,7 @@
              border-left: 3px solid var(--accent-gold);
          }
          @media (max-width: 768px) {
-             .simulator-container { grid-template-columns: 1fr; }
+          .sim-controls { grid-template-columns: 1fr; }
          }
      </style>
 </head>
@@ -150,7 +150,7 @@
                      <h3>Configuration</h3>
                      <div class="control-group">
                          <label>Search Pattern</label>
-                         <input type="text" id="searchPattern" value="TaskExecutionConfig" placeholder="e.g. class MyClass">
+                  <input type="text" id="simPattern" value="val" placeholder="e.g. class MyClass">
                      </div>
                      <div class="control-group toggle-row">
                          <label>Use Regex</label>
@@ -238,13 +238,13 @@
              contextVal: document.getElementById('contextVal'),
              files: document.getElementById('inputFiles'),
              extract: document.getElementById('extractContent'),
-             output: document.getElementById('outputContent')
+      output: document.getElementById('simOutput')
          };
          let currentTab = 'preview';
          function updateSimulation() {
-             const pattern = elements.pattern.value;
-             const context = parseInt(elements.context.value);
-             const isRegex = elements.isRegex.checked;
+      const pattern = els.pattern.value;
+      const context = parseInt(els.context.value);
+      const isRegex = els.regex.checked;
              elements.contextVal.textContent = context;
              if (!pattern) {
                  renderOutput([], context);
@@ -260,7 +260,7 @@
                      }
                  });
              } catch (e) {
-                 elements.output.innerHTML = `<div style="color: #ef4444">Invalid Regex Pattern</div>`;
+          els.output.innerHTML = `<div style="color: #ef4444">Invalid Regex Pattern</div>`;
                  return;
              }
              renderOutput(matches, context);
@@ -273,9 +273,9 @@
              // Group matches into blocks
              let blocks = [];
              let currentBlock = null;
-             matchIndices.forEach(lineIdx => {
-                 const start = Math.max(0, lineIdx - contextLines);
-                 const end = Math.min(mockFileContent.length - 1, lineIdx + contextLines);
+      matches.forEach(lineIdx => {
+          const start = Math.max(0, lineIdx - context);
+          const end = Math.min(mockFileContent.length - 1, lineIdx + context);
                  if (currentBlock && start <= currentBlock.end + 1) {
                      currentBlock.end = Math.max(currentBlock.end, end);
                      currentBlock.matches.push(lineIdx);
@@ -306,7 +306,7 @@
                      html += `<div class="code-block">`;
                      for (let i = block.start; i <= block.end; i++) {
                          const isMatch = block.matches.includes(i);
-                         const lineClass = isMatch ? "code-match" : "code-context";
+              const lineClass = isMatch ? "line-match" : "line-context";
                          const prefix = isMatch ? ">" : " ";
                          // Escape HTML
                          const content = mockFileContent[i].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

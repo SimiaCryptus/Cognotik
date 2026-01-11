@@ -8,11 +8,11 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
-        /* Page-specific overrides */
+      /* Page-Specific Overrides */
         /* Utilities */
         .container {
             max-width: var(--container-max-width);
@@ -163,9 +163,9 @@
                         </div>
                         <div class="control-group" style="flex: 1;">
                             <label>Style</label>
-                            <select id="writing_style">
-                                <option value="AP style">AP Style</option>
-                                <option value="narrative">Narrative</option>
+                  <select id="sim_style">
+                      <option value="AP Style">AP Style</option>
+                      <option value="Narrative">Narrative</option>
                                 <option value="analytical">Analytical</option>
                             </select>
                         </div>
@@ -247,8 +247,8 @@
             </div>
     </section>
     <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
             
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -261,9 +261,9 @@
             }
         }
         function runSimulation() {
-            const topic = document.getElementById('story_topic').value;
-            const format = document.getElementById('article_format').value;
-            const style = document.getElementById('writing_style').value;
+      const topic = document.getElementById('sim_topic').value;
+      const format = document.getElementById('sim_format').value;
+      const style = document.getElementById('sim_style').value;
             const wordCount = document.getElementById('word_count').value;
             const publication = document.getElementById('target_publication').value;
             const incSocial = document.getElementById('inc_social').checked;
@@ -278,14 +278,14 @@
             
             const logs = [
                 `[INFO] Initializing ArticleGenerationTask...`,
-                `[INFO] Topic: ${topic}`,
+          `[INFO] Topic: "${topic}"`,
                 `[INFO] Config: ${format}, ${style}, ${wordCount} words`,
                 `[INFO] Phase 1: Running journalism investigation...`,
                 `[INFO] Analyzing context and verifying facts...`,
                 `[INFO] Phase 2: Generating article structure...`,
                 `[INFO] Creating outline: Headline, Lede, Sections, Conclusion...`,
                 `[INFO] Phase 3: Writing article draft...`,
-                `[INFO] Applying ${publication} tone and ${style}...`,
+          `[INFO] Applying ${pub} tone and ${style}...`,
                 `[INFO] Performing revision pass 1...`,
                 incSocial ? `[INFO] Phase 4: Generating social media snippets...` : null,
                 `[SUCCESS] Article generation complete.`

@@ -655,7 +655,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
                         <div class="form-group">
                             <label for="processing_strategy">Processing Strategy</label>
                             <select id="processing_strategy">
-                                <option value="DefaultSummarizer" selected>Default Summarizer</option>
+                          <option value="DefaultSummarizer">Default Summarizer</option>
                                 <option value="FactChecking">Fact Checking</option>
                                 <option value="JobMatching">Job Matching</option>
                                 <option value="SchemaExtraction">Schema Extraction</option>
@@ -923,7 +923,7 @@ No literal spiders, but rather a structural abstraction of network traversal and
                     addLog(`Fetch failed for ${url} (403 Forbidden)`, 'warn');
                 } else {
                     addLog(`Fetched ${Math.floor(Math.random() * 5000) + 1000} chars. Analyzing...`);
-                    await wait(500);
+              await wait(400);
                     addLog(`Strategy ${strategy} applied successfully.`, 'success');
                     
                     // Simulate finding new links

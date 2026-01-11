@@ -8,7 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
@@ -97,22 +97,22 @@
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-muted);
+          font-size: 0.85rem;
+          color: var(--text-dim);
         }
         .form-control {
             width: 100%;
             background: var(--background-color);
             border: 1px solid rgba(255,255,255,0.1);
             color: var(--text-color);
-            padding: 0.75rem;
-            border-radius: 6px;
+          padding: 0.5rem;
+          border-radius: 4px;
             font-family: monospace;
-            font-size: 0.9rem;
+          font-size: 0.85rem;
         }
         .form-control:focus {
             outline: none;
-            border-color: var(--accent-secondary);
+          border-color: var(--accent-primary);
         }
         textarea.form-control {
             resize: vertical;
@@ -210,7 +210,7 @@
                         <input type="text" id="inquiry_goal" class="form-control" placeholder="e.g., Understand the authentication flow" value="Discuss architectural patterns">
                     </div>
                     <div class="form-group">
-                        <label>Inquiry Questions (One per line)</label>
+                  <label>Questions (One per line)</label>
                         <textarea id="inquiry_questions" class="form-control" placeholder="Specific questions...">What are the pros and cons of the current structure?
 How can we improve modularity?</textarea>
                     </div>
@@ -258,16 +258,16 @@ How can we improve modularity?</textarea>
         </div>
     </section>
     <script>
-        function switchTab(tabName) {
+  function switchTab(tabId) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
             document.getElementById('output-report').style.display = tabName === 'report' ? 'block' : 'none';
             document.getElementById('output-logs').style.display = tabName === 'logs' ? 'block' : 'none';
         }
         function runSimulation() {
-            const goal = document.getElementById('inquiry_goal').value;
-            const questions = document.getElementById('inquiry_questions').value.split('\n').filter(q => q.trim());
-            const files = document.getElementById('input_files').value;
+      const goal = document.getElementById('sim-goal').value;
+      const questions = document.getElementById('sim-questions').value.split('\n').filter(q => q.trim());
+      const files = document.getElementById('sim-files').value;
             const reportEl = document.getElementById('output-report');
             const logsEl = document.getElementById('output-logs');
             // Reset

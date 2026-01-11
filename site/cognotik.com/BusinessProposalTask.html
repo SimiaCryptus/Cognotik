@@ -8,7 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
@@ -187,7 +187,7 @@
                     </div>
                     <div class="control-group">
                         <label>Timeline</label>
-                        <input type="text" id="timeline" value="6 months">
+                      <input type="text" id="sim_timeline" value="3 months">
                     </div>
                     <div class="control-group">
                         <label>Tone</label>
@@ -242,9 +242,9 @@
         </div>
     </section>
     <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tabs-nav button').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
             
             if (tabName === 'proposal') {
@@ -254,8 +254,8 @@
             }
         }
         function runSimulation() {
-            const title = document.getElementById('proposal_title').value;
-            const objective = document.getElementById('objective').value;
+      const title = document.getElementById('sim_title').value;
+      const objective = document.getElementById('sim_objective').value;
             const type = document.getElementById('proposal_type').value;
             const budget = document.getElementById('budget_range').value;
             const timeline = document.getElementById('timeline').value;

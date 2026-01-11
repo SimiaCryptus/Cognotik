@@ -20,6 +20,14 @@ data class Tasks(
         }
         return errors.ifEmpty { null }?.joinToString("; ")
     }
+    companion object {
+        fun initDescriber(orchestrationConfig: OrchestrationConfig, describer: TaskContextYamlDescriber) {
+            describer.clearSubTypes(TaskExecutionConfig::class.java)
+            TaskType.getAvailableTaskTypes(orchestrationConfig).forEach { taskType ->
+                describer.registerSubType(TaskExecutionConfig::class.java, taskType.executionConfigClass)
+            }
+        }
+    }
 
     companion object {
         fun initDescriber(orchestrationConfig: OrchestrationConfig, describer: TaskContextYamlDescriber) {

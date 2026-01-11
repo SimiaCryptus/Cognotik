@@ -50,8 +50,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
-            padding: 0.75rem;
+          margin-bottom: 0.5rem;
+          padding: 0.5rem;
             background: rgba(255, 255, 255, 0.02);
             border-radius: 0.5rem;
         }
@@ -59,8 +59,8 @@
         .toggle-switch {
             position: relative;
             display: inline-block;
-            width: 44px;
-            height: 24px;
+          width: 36px;
+          height: 20px;
         }
 
         .toggle-switch input {
@@ -78,14 +78,14 @@
             bottom: 0;
             background-color: #334155;
             transition: .4s;
-            border-radius: 24px;
+          border-radius: 20px;
         }
 
         .slider:before {
             position: absolute;
             content: "";
-            height: 18px;
-            width: 18px;
+          height: 14px;
+          width: 14px;
             left: 3px;
             bottom: 3px;
             background-color: white;
@@ -117,7 +117,7 @@
 
         .mermaid-mock {
             background: #0f172a;
-            padding: 2rem;
+          padding: 1rem;
             border-radius: 0.5rem;
             display: flex;
             justify-content: center;
@@ -204,7 +204,7 @@
                         <form id="configForm">
                             <div class="control-group">
                                 <label>System Description</label>
-                                <textarea id="systemDesc">Software Engineering Team Burnout: High feature demand leads to overtime, which increases fatigue and error rates, leading to more rework and even less time for new features.</textarea>
+                              <textarea id="systemDesc" rows="4">Software Engineering Team Burnout: High feature demand leads to overtime, which increases fatigue and error rates, leading to more rework and even less time for new features.</textarea>
                             </div>
                             <div class="control-group">
                                 <label>Input Files (Glob patterns)</label>
@@ -238,7 +238,7 @@
                                 <label>Analysis Components</label>
 
                                 <div class="toggle-group">
-                                    <span>Identify Feedback Loops</span>
+                                  <span>Feedback Loops</span>
                                     <label class="toggle-switch">
                                         <input type="checkbox" id="checkLoops" checked>
                                         <span class="slider"></span>
@@ -246,7 +246,7 @@
                                 </div>
 
                                 <div class="toggle-group">
-                                    <span>Map Delays</span>
+                                  <span>Delays</span>
                                     <label class="toggle-switch">
                                         <input type="checkbox" id="checkDelays" checked>
                                         <span class="slider"></span>
@@ -281,7 +281,7 @@
                             <div class="control-group">
                                 <label>Simulate Interventions (One per line)</label>
                                 <textarea id="interventions" style="min-height: 80px;">Implement mandatory cooldown weeks
-Hire more QA engineers</textarea>
+Hire QA engineers</textarea>
                             </div>
                         </form>
                 </div>
@@ -333,9 +333,9 @@ Hire more QA engineers</textarea>
         const outputContainer = document.getElementById('outputContainer');
         let currentTab = 'overview';
 
-        function switchTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab').forEach(btn => {
+  function switchSimTab(tab) {
+      currentSimTab = tab;
+      document.querySelectorAll('.sim-tab').forEach(btn => {
                 btn.classList.toggle('active', btn.getAttribute('onclick').includes(tab));
             });
             renderOutput();
@@ -357,7 +357,7 @@ Hire more QA engineers</textarea>
 
             let content = '';
 
-            if (currentTab === 'overview') {
+      if (currentSimTab === 'overview') {
                 content = `
                     <div class="tab-content active">
                         <h1>Systems Analysis Report</h1>
@@ -380,10 +380,10 @@ Hire more QA engineers</textarea>
                         ` : ''}
 
                         ${hasLoops ? `
-                        <h2>Key Feedback Loops</h2>
+                  <h4>Key Feedback Loops</h4>
                         <ul>
-                            <li><strong>R1 (Vicious Cycle):</strong> Overtime &rarr; Fatigue &rarr; Error Rate &rarr; Rework &rarr; Backlog &rarr; Overtime.</li>
-                            <li><strong>B1 (Balancing):</strong> Feature Demand &rarr; Development &rarr; Features Released &rarr; Demand Satisfied.</li>
+                      <li><strong>R1 (Reinforcing):</strong> Overtime &rarr; Fatigue &rarr; Error Rate &rarr; Rework &rarr; Backlog.</li>
+                      <li><strong>B1 (Balancing):</strong> Feature Demand &rarr; Development &rarr; Release &rarr; Demand Satisfied.</li>
                         </ul>
                         ` : ''}
 
@@ -406,11 +406,11 @@ Hire more QA engineers</textarea>
                         ` : ''}
                     </div>
                 `;
-            } else if (currentTab === 'diagram') {
+      } else if (currentSimTab === 'diagram') {
                 content = `
                     <div class="tab-content active">
                         <div class="mermaid-mock">
-                            <svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+                  <svg width="100%" height="250" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
                                 <defs>
                                     <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
                                         <path d="M0,0 L0,6 L9,3 z" fill="#06b6d4" />
@@ -439,12 +439,12 @@ Hire more QA engineers</textarea>
                                 <text x="200" y="150" text-anchor="middle" fill="#8b5cf6" font-weight="bold" font-size="14">R1</text>
                             </svg>
                         </div>
-                        <p style="text-align: center; margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
-                            Visual representation of the reinforcing feedback loop (R1) driving burnout.
+              <p style="text-align: center; margin-top: 1rem; color: var(--text-dim); font-size: 0.8rem;">
+                  Visual representation of the reinforcing feedback loop (R1).
                         </p>
                     </div>
                 `;
-            } else if (currentTab === 'simulation') {
+      } else if (currentSimTab === 'simulation') {
                 if (interventions.length === 0) {
                     content = `<div class="tab-content active"><p style="color: var(--text-muted); padding: 2rem; text-align: center;">No interventions specified. Add interventions in the configuration panel to see simulation results.</p></div>`;
                 } else {

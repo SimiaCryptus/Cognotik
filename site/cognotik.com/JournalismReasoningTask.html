@@ -8,11 +8,11 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
     <style>
-        /* Page Specific Overrides */
+      /* Page-Specific Overrides */
         .container {
             max-width: var(--container-max-width);
             margin: 0 auto;
@@ -210,7 +210,7 @@
                     <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">Configuration</h3>
                     <div class="control-group">
                         <label>Story Topic</label>
-                        <input type="text" id="story_topic" value="Impact of AI on Creative Jobs">
+                  <input type="text" id="sim-topic" value="Impact of AI on Creative Jobs">
                     </div>
                     <div class="control-group">
                         <label>Journalism Elements</label>
@@ -267,15 +267,15 @@ Why: Efficiency vs. Displacement</textarea>
         </div>
     </section>
     <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById('output-' + tabName).classList.add('active');
         }
         function runSimulation() {
-            const topic = document.getElementById('story_topic').value;
-            const elements = document.getElementById('elements').value;
+      const topic = document.getElementById('sim-topic').value;
+      const anglesCount = document.getElementById('sim-angles').value;
             const anglesCount = document.getElementById('angles').value;
             const reportEl = document.getElementById('output-report');
             const logsEl = document.getElementById('output-logs');
@@ -343,9 +343,9 @@ Why: Efficiency vs. Displacement</textarea>
 
 <h2>Story Angles</h2>
 <ul>
-    <li><strong>1. The Human Element:</strong> Focus on artists adapting their workflow (Human Interest).</li>
-    <li><strong>2. The Legal Frontier:</strong> Deep dive into copyright lawsuits (Policy/Legal).</li>
-    ${anglesCount > 2 ? '<li><strong>3. The Economic Shift:</strong> Impact on freelance rates and agency models (Business).</li>' : ''}
+              <li><strong>1. The Human Element:</strong> Artists adapting workflows (Human Interest).</li>
+              <li><strong>2. The Legal Frontier:</strong> Copyright lawsuits (Policy/Legal).</li>
+              ${anglesCount > 2 ? '<li><strong>3. The Economic Shift:</strong> Impact on freelance rates (Business).</li>' : ''}
 </ul>
 
 <h2>Information Gaps</h2>
@@ -357,7 +357,7 @@ Why: Efficiency vs. Displacement</textarea>
 <h2>Editorial Synthesis</h2>
 <p>The story is not just about job loss, but a fundamental shift in the definition of creativity and the value of human input. Coverage should balance economic realities with cultural implications.</p>
             `;
-            reportEl.innerHTML = markdown;
+      reportDiv.innerHTML = markdown;
         }
     </script>
 </body>

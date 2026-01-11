@@ -34,18 +34,18 @@
     <section id="demo" class="simulator">
         <h2>Interactive Simulator</h2>
         <div class="simulator-container">
-            <div class="sim-controls">
-                <div class="control-group">
+              <div class="sim-form">
+                  <div class="form-group">
                     <label>Problem Statement</label>
-                    <textarea rows="3">Optimize a delivery route for a fleet of trucks.</textarea>
+                      <textarea id="sim-problem" rows="2">Optimize a delivery route for a fleet of trucks.</textarea>
                 </div>
-                <div class="control-group">
+                  <div class="form-group">
                     <label>Source Category</label>
-                    <input type="text" value="Logistics (Trucks, Locations, Routes)">
+                      <input type="text" id="sim-source" value="Logistics (Trucks, Locations, Routes)">
                 </div>
-                <div class="control-group">
+                  <div class="form-group">
                     <label>Target Category</label>
-                    <input type="text" value="Graph Theory (Nodes, Edges, Weights)">
+                      <input type="text" id="sim-target" value="Graph Theory (Nodes, Edges, Weights)">
                 </div>
                 <button class="run-button">Map & Solve</button>
             </div>

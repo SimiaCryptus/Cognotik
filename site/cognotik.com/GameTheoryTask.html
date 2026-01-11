@@ -14,7 +14,7 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles/main.css">
     <script type="module" src="assets/scripts/components/CognotikHeader.js"></script>
 
@@ -161,7 +161,7 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
             border-radius: var(--border-radius);
         }
         .payoff-table th, .payoff-table td {
-            border: 1px solid var(--border-color);
+          border: 1px solid var(--border-subtle);
             padding: 1rem;
             text-align: center;
         }
@@ -407,7 +407,7 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
                     <div class="control-group">
                         <label for="gameType">Game Type</label>
                         <select id="gameType">
-                            <option value="non-cooperative" selected>Non-Cooperative</option>
+                          <option value="non-cooperative">Non-Cooperative</option>
                             <option value="cooperative">Cooperative</option>
                             <option value="zero-sum">Zero-Sum</option>
                             <option value="sequential">Sequential</option>
@@ -915,7 +915,7 @@ Abstract 3D visualization of strategic game theory. Glowing geometric nodes repr
                                     <tr>
                                         <th>Defect</th>
                                         <td>(5, 0)<br><small>Temptation</small></td>
-                                        <td>(1, 1)<br><small>Punishment / Nash Eq.</small></td>
+                      <td>(1, 1)<br><small>Nash Eq.</small></td>
                                     </tr>
                                 </table>
                                 <p style="margin-top:1rem; font-size:0.9rem; color:var(--text-muted);">
