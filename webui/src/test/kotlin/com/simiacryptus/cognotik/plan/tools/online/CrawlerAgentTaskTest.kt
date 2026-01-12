@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.online.CrawlerAgentTask.CrawlerTaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.online.processing.ProcessingStrategyType
-import com.simiacryptus.cognotik.util.PlanHarness
+import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
@@ -14,7 +14,7 @@ object CrawlerAgentTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        PlanHarness.configurePlatform()
+      UnifiedHarness.configurePlatform()
     }
 
     //@org.junit.jupiter.api.Test

@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.OCRTask.OCRTaskExecutionConfigData
-import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.util.TaskHarness
+import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
@@ -22,7 +22,7 @@ object OCRTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        PlanHarness.configurePlatform()
+      UnifiedHarness.configurePlatform()
     }
 
    //@org.junit.jupiter.api.Test

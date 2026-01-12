@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.platform.Session
+import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
 import java.io.File
 
@@ -12,7 +13,7 @@ object AdaptivePlanningModeTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        PlanHarness.configurePlatform()
+      UnifiedHarness.configurePlatform()
     }
 
    //@org.junit.jupiter.api.Test

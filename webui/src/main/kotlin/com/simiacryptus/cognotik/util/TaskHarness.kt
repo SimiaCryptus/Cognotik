@@ -41,40 +41,24 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
     val timeoutMinutes: Long = 30,
     val fastModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
     val smartModel: ChatModel = GeminiModels.GeminiFlash_30_Preview,
-//    val imageModel: ChatModel = GeminiModels.GeminiPro_30_Image_Preview,
     val imageModel: ChatModel = GeminiModels.GeminiFlash_25_Image_Generation,
     val workspace: File? = null,
     val temperature: Double = 0.0,
 ) {
     val dataDir: File by lazy { createWorkspace() }
-    open fun <T : TaskExecutionConfig, U : TaskTypeConfig> initSettings(
-        session: Session,
-        workspace: File?,
-        autoFix: Boolean,
-        taskType: TaskType<T, U>,
-        typeConfig: U,
-        harness: UnifiedHarness
-    ) = harness.initSettings(
-        session = session,
-        workspace = workspace,
-        autoFix = autoFix,
-        taskType = taskType,
-        typeConfig = typeConfig,
-    )
-    private val harness = object : UnifiedHarness(
-        port = port,
-        openBrowser = openBrowser,
-        serverless = serverless,
-        modelInstanceFn = modelInstanceFn,
-        fastModel = fastModel,
-        smartModel = smartModel,
-        imageModel = imageModel,
-        temperature = temperature,
-    ) {
-        override fun createTempDirectory(prefix: String) = dataDir
-    }
-
     fun run() {
+        val harness = object : UnifiedHarness(
+            port = port,
+            openBrowser = openBrowser,
+            serverless = serverless,
+            modelInstanceFn = modelInstanceFn,
+            fastModel = fastModel,
+            smartModel = smartModel,
+            imageModel = imageModel,
+            temperature = temperature,
+        ) {
+            override fun createTempDirectory(prefix: String) = dataDir
+        }
         try {
             harness.start()
             try {
@@ -95,6 +79,21 @@ open class TaskHarness<T : TaskExecutionConfig, U : TaskTypeConfig>(
             throw RuntimeException(e)
         }
     }
+
+    open fun <T : TaskExecutionConfig, U : TaskTypeConfig> initSettings(
+        session: Session,
+        workspace: File?,
+        autoFix: Boolean,
+        taskType: TaskType<T, U>,
+        typeConfig: U,
+        harness: UnifiedHarness
+    ) = harness.initSettings(
+        session = session,
+        workspace = workspace,
+        autoFix = autoFix,
+        taskType = taskType,
+        typeConfig = typeConfig,
+    )
 
     open fun createWorkspace(): File {
         val name = this.taskType.name

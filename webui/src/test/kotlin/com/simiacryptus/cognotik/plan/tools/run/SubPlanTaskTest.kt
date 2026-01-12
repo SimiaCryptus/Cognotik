@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.SubPlanTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask.SubPlanTaskTypeConfig
-import com.simiacryptus.cognotik.util.PlanHarness
+import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
@@ -17,7 +17,7 @@ object SubPlanTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        PlanHarness.configurePlatform()
+      UnifiedHarness.configurePlatform()
     }
 
     //@org.junit.jupiter.api.Test

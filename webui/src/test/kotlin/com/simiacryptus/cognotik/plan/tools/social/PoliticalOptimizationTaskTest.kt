@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.social
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.social.PoliticalOptimizationTask.PoliticalOptimizationTaskExecutionConfigData
-import com.simiacryptus.cognotik.util.PlanHarness
+import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
@@ -13,7 +13,7 @@ object PoliticalOptimizationTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        PlanHarness.configurePlatform()
+      UnifiedHarness.configurePlatform()
     }
 
     //@org.junit.jupiter.api.Test

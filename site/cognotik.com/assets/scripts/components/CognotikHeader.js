@@ -353,7 +353,8 @@ class CognotikHeader extends HTMLElement {
                     position: static;
                 }
                 .submenu-bar {
-                    display: none;
+                    visibility: hidden;
+                    opacity: 0;
                     position: absolute;
                     top: 100%;
                     left: 0;
@@ -361,9 +362,12 @@ class CognotikHeader extends HTMLElement {
                     background-color: var(--surface-color, #1e293b);
                     border-bottom: 1px solid var(--border-color, #334155);
                     z-index: 999;
+                    transition: opacity 0.2s ease 0.2s, visibility 0s linear 0.4s;
                 }
                 .submenu-parent:hover .submenu-bar {
-                    display: block;
+                    visibility: visible;
+                    opacity: 1;
+                    transition: opacity 0.2s, visibility 0s;
                 }
                 .submenu-bar .nav-menu {
                     max-width: var(--max-width, 1200px);

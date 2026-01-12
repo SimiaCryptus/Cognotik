@@ -13,12 +13,15 @@ import com.simiacryptus.cognotik.plan.tools.run.AutoFixTask.Companion.AutoFix
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.PlanHarness
+import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import java.io.File
 
 class SoftwareProjectGenerator {
-    init { PlanHarness.configurePlatform() }
+    init {
+      UnifiedHarness.configurePlatform()
+    }
     @TestFactory
     fun tests() = listOf(
         WaterfallModeConfig(),

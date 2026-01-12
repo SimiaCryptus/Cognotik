@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.platform.Session
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
-import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.now
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
@@ -20,7 +19,7 @@ object ModeProductPageGenerator {
   private val root = File(".")
   @JvmStatic
   fun main(args: Array<String>) {
-    PlanHarness.configurePlatform()
+    UnifiedHarness.configurePlatform()
     val files =
       File("webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive").listFilesRecursively()
     val filter = files.filter { it.isFile && it.extension in setOf("kt") }

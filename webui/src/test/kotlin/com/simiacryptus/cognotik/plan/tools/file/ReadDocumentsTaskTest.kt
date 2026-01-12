@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.plan.tools.data.toFile
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.ReadDocumentsTaskExecutionConfigData
 import com.simiacryptus.cognotik.plan.tools.file.ReadDocumentsTask.ReadDocumentsTaskTypeConfig
-import com.simiacryptus.cognotik.util.PlanHarness
+import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 
@@ -13,7 +13,7 @@ object ReadDocumentsTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-        PlanHarness.configurePlatform()
+      UnifiedHarness.configurePlatform()
     }
 
     //@org.junit.jupiter.api.Test
