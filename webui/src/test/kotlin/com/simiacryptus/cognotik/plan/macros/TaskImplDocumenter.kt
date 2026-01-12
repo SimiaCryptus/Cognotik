@@ -19,14 +19,9 @@ object TaskImplDocumenter {
       ) {
         override fun newConfig(session: Session, tempDir: File) =
           super.newConfig(session, tempDir).apply {
-            //this.defaultSmartModel = GeminiModels.GeminiPro_30_Preview.asApiChatModel()
             this.temperature = 0.0
-            taskSettings[FileAppend.name] = TaskTypeConfig(
-              task_type = FileAppend.name,
-              //model = GeminiModels.GeminiPro_30_Preview.asApiChatModel()
-            )
+            taskSettings[FileAppend.name] = TaskTypeConfig(task_type = FileAppend.name,)
           }
-
         override fun createWorkspace() = File(".").resolve("workspaces/$testName/test-${now()}").apply { mkdirs() }
       }.run()
     }
