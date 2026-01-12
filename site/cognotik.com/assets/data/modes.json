@@ -61,5 +61,12 @@
     "url": "HierarchicalPlanningMode.html",
     "description": "The Manager. Best for massive projects with many dependencies. Decomposes requests into a goal tree with real-time visual progress tracking.",
     "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/HierarchicalPlanningMode.kt"
+  },
+  {
+    "id": "coding-mode",
+    "label": "Coding",
+    "url": "CodingMode.html",
+    "description": "The Developer. Best for power users. Provides a direct code execution environment (REPL) to script complex behaviors and interact with system APIs.",
+    "code": "https://github.com/SimiaCryptus/Cognotik/tree/main/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/CodingMode.kt"
   }
 ]

@@ -19,10 +19,11 @@ object ImageGameTest {
         PlanHarness.configurePlatform()
     }
 
-   //@org.junit.jupiter.api.Test
+   @org.junit.jupiter.api.Test
     fun test() {
         object : PlanHarness(
-            prompt = "Create a complex image featuring a number of different elements, then compile into a game featuring a wide variety of variants.",
+            prompt = "Create a complex image featuring a number of different elements, then compile into a game featuring a wide variety of variants." +
+                " The image should feature various cats sleeping in unusual places - on bookshelves and in teacups etc. Main colors: pink, yellow, purple. Style: surrealism.",
             cognitiveSettings = WaterfallMode.WaterfallModeConfig(),
         ) {
             override fun newConfig(session: Session, tempDir: File) = super.newConfig(session, tempDir).apply {

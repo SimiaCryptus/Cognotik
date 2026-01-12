@@ -35,7 +35,7 @@ object TaskMenuGenerator {
                     "description" to buildString {
                         appendLine(task.description ?: "")
                         appendLine()
-                        appendLine(task.tooltipHtml ?: "")
+                        appendLine(task.tooltipHtml?.replace(Regex("<ul>(.*?)</ul>", RegexOption.DOT_MATCHES_ALL), "") ?: "")
                     },
                     "code" to getGitHubLink(task.taskClass)
                 )
